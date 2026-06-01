@@ -520,96 +520,99 @@
             "id": "T-016",
             "title": "Upgrade Admin EDITOR card H from placeholder to live feed",
             "description": "Edit apps/admin/src/lib/dashboard-sources/editor.ts — card H source definition. Replace the deferred placeholder with a live data source that calls GET /api/v1/admin/comments/recent (pageSize=10). Render each item as: entity type badge (POST/EVENT), content excerpt (truncated ~80 chars), author name, moderationState badge (APPROVED/PENDING/REJECTED color-coded), relative timestamp. Use TanStack Query for data fetching with appropriate stale time. Apply onMissing:'hide' gating on POST_COMMENT_VIEW AND EVENT_COMMENT_VIEW (card must be invisible when the acting user lacks either permission — AC-31 gate, pattern from SPEC-155 IA config). Empty state when no comments exist (AC-32). Key files: apps/admin/src/lib/dashboard-sources/editor.ts, apps/admin/src/components/dashboard/cards/CommentsFeedCard.tsx (new), relevant Tailwind CSS. Acceptance: AC-31, AC-32.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-013"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Update editor.ts card H source to call /admin/comments/recent",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create CommentsFeedCard.tsx with item rendering (badge, excerpt, author, state, time)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply onMissing:'hide' permission gate for POST_COMMENT_VIEW+EVENT_COMMENT_VIEW",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add empty state when no comments (AC-32)", "completed": false }
+                { "title": "Add empty state when no comments (AC-32)", "completed": true }
             ],
             "tags": ["admin", "dashboard", "SPEC-155"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "implementationNote": "Registered editor.comments.recent source in dashboard-sources/editor.ts (fetchApi GET /admin/comments/recent → result.data.data.data unwrap). Card H in config/ia/dashboards.ts flipped from type:'callout'+deferred to type:'feed'+source (feed was already a valid WidgetType in schema.ts; card-h is the ONLY feed widget → no regression). New CommentsFeedCard.tsx (widgets/) renders entity badge + 80-char excerpt + author + moderation badge + relative time; empty state via comments.homeCard.empty (AC-32). DashboardRenderer dispatches 'feed' → CommentsFeedCard. AC-31 AND-gate: IA PermissionGate is OR-only, so the real AND (POST_COMMENT_VIEW && EVENT_COMMENT_VIEW) is enforced inside the component via useHasPermission x2 → returns null. Works for real roles (EDITOR/ADMIN have both; others have neither → onMissing:'hide'). Edge: a user with exactly one VIEW (via override) leaves an empty grid cell — minor, security still correct. 25/25 tests. biome clean, 0 typecheck errors in new files (pre-existing routeTree.gen.ts errors only).",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Admin moderation queue page (/admin/comments)",
             "description": "Create the admin moderation queue route at apps/admin/src/routes/_authed/comments/index.tsx (TanStack Start file-based routing). Components: filter bar (entityType select, moderationState select, date range, free-text search), paginated table (TanStack Table) with columns: entity type + link, content excerpt, author, moderation state badge, created at, actions column. Inline actions per row: Approve button (calls PATCH .../moderation {moderationState:'APPROVED'}), Reject button (calls PATCH .../moderation {moderationState:'REJECTED'}), Soft-delete button (calls DELETE .../), with confirmation dialog for hard-delete. TanStack Query for data fetching (useQuery + useMutation). On mutation success, invalidate the comments list query (optimistic or refetch — AC-34). beforeLoad guard: requires POST_COMMENT_VIEW OR EVENT_COMMENT_VIEW (redirect to forbidden if neither). Shadcn UI components (Table, Badge, Button, Dialog, Select). Tailwind CSS v4 styling. i18n strings from comments.* namespace (T-013). Key files: apps/admin/src/routes/_authed/comments/index.tsx, apps/admin/src/components/comments/CommentsTable.tsx, CommentsFilters.tsx. Acceptance: AC-33, AC-34.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-011", "T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create /admin/comments route file with beforeLoad guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build CommentsFilters component (entityType, moderationState, date, search)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build CommentsTable with TanStack Table + inline Approve/Reject/Delete actions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire TanStack Query mutations with list invalidation on success (AC-34)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add confirmation dialog for hard-delete action", "completed": false }
+                { "title": "Add confirmation dialog for hard-delete action", "completed": true }
             ],
             "tags": ["admin", "moderation", "frontend"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "implementationNote": "routes/_authed/comments/index.tsx + -components/{CommentsFilters,CommentsTable}.tsx. Permission gate via <RoutePermissionGuard> (OR), NOT beforeLoad (project convention). NATIVE HTML table (no TanStack Table — none exists in custom admin pages). Shared hook apps/admin/src/hooks/use-comment-moderation.ts (list useQuery + moderate/softDelete/hardDelete/restore mutations, onSuccess invalidates list key → AC-34 badge updates without reload). Hard-delete uses AlertDialog. ModerationStateBadge shared component. 51/51 tests. biome clean. Committed by sub-agent in fe2bdbad4.",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Admin comment detail page (/admin/comments/:id)",
             "description": "Create the comment detail route at apps/admin/src/routes/_authed/comments/$commentId.tsx. Page sections: (1) full comment content display (no truncation), (2) author info panel (name, link to /admin/users/:id), (3) entity panel (type badge, link to the post or event), (4) metadata: moderationState badge, createdAt, updatedAt (lightweight moderation history using updatedAt + updatedById — no separate audit table in MVP). Action buttons: Approve (PATCH moderation), Reject (PATCH moderation), Soft-delete (DELETE), Restore (POST restore — only visible if deletedAt is set), Hard-delete (DELETE .../hard — with confirmation dialog). beforeLoad guard: requires POST_COMMENT_VIEW or EVENT_COMMENT_VIEW (resolved from stored entityType; use a shared permission helper). TanStack Query for data fetch (useQuery on GET /admin/comments/:id) and mutations. Shadcn UI (Card, Button, Badge, Dialog, Separator). Tailwind CSS v4. i18n strings from comments.* namespace. Key files: apps/admin/src/routes/_authed/comments/$commentId.tsx, apps/admin/src/components/comments/CommentDetailPanel.tsx. Acceptance: full display of AC-17 response fields, all moderation actions available inline.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011", "T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create $commentId.tsx route with beforeLoad guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build CommentDetailPanel with full content + author + entity sections",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire all moderation action buttons (Approve/Reject/Soft-delete/Restore/Hard-delete)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add confirmation dialog for hard-delete", "completed": false }
+                { "title": "Add confirmation dialog for hard-delete", "completed": true }
             ],
             "tags": ["admin", "moderation", "frontend"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "implementationNote": "routes/_authed/comments/$commentId.tsx + components/comments/CommentDetailPanel.tsx. <RoutePermissionGuard> (OR) gate. useComment(id) + mutations. Sections: full content, author panel (links to /access/users/$id when authorId present, else name + deleted-user note), entity panel (POST→/posts/$id, EVENT→/events/$id), metadata badges. Restore button only when deletedAt set; Hard-delete via AlertDialog. 51/51 tests (shared with T-017). biome clean. Committed by sub-agent in fe2bdbad4.",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
                 "started": null,
