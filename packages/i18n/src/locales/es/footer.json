@@ -90,6 +90,14 @@
         "errorMessage": "No pudimos procesar tu suscripción. Intentá de nuevo.",
         "alreadyPendingMessage": "Ya enviamos un email de confirmación. Revisá tu bandeja de entrada o spam.",
         "consentNote": "Al suscribirte aceptás recibir nuestro newsletter y métricas de entrega básicas.",
-        "guestLockLabel": "Iniciá sesión para suscribirte"
+        "guestLockLabel": "Iniciá sesión para suscribirte",
+        "invalidEmail": "Ingresá un email válido.",
+        "unsubscribeConfirm": "¿Confirmás que querés desuscribirte del newsletter?",
+        "unsubscribeSuccess": "Te desuscribiste del newsletter.",
+        "unsubscribeError": "No pudimos desuscribirte. Probá de nuevo en unos minutos.",
+        "unsubscribeBusy": "Desuscribiendo...",
+        "unsubscribeCta": "Desuscribirme",
+        "blockedUnverifiedMessage": "Verificá el email de tu cuenta antes de suscribirte al newsletter.",
+        "blockedUnverifiedCta": "Ir a mi cuenta"
     }
 }
