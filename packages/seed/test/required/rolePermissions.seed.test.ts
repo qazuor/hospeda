@@ -130,6 +130,37 @@ describe('ROLE_PERMISSIONS — SPEC-164 admin billing surface (SUPER_ADMIN-only)
 });
 
 // ---------------------------------------------------------------------------
+// SPEC-170 T-011 — Per-user permission-management trio seeded to SUPER_ADMIN
+// ---------------------------------------------------------------------------
+// Literal permission values from packages/schemas/src/enums/permission.enum.ts.
+// Seeding these explicitly stops the panel gate from relying on the
+// all-permissions short-circuit; they remain SUPER_ADMIN-only.
+
+const PERMISSION_MANAGEMENT_TRIO = [
+    'permission.view',
+    'permission.assign',
+    'permission.revoke'
+] as const;
+
+describe('ROLE_PERMISSIONS — SPEC-170 permission-management gate (SUPER_ADMIN-only)', () => {
+    type RoleKey = keyof typeof ROLE_PERMISSIONS;
+    const superAdminPerms = ROLE_PERMISSIONS[
+        SUPER_ADMIN as unknown as RoleKey
+    ] as readonly string[];
+    const adminPerms = ROLE_PERMISSIONS[ADMIN as unknown as RoleKey] as readonly string[];
+
+    for (const perm of PERMISSION_MANAGEMENT_TRIO) {
+        it(`grants "${perm}" to SUPER_ADMIN`, () => {
+            expect(superAdminPerms).toContain(perm);
+        });
+
+        it(`does NOT grant "${perm}" to ADMIN`, () => {
+            expect(adminPerms).not.toContain(perm);
+        });
+    }
+});
+
+// ---------------------------------------------------------------------------
 // SPEC-156 — Platform Settings V1 role bundle assignments (D1, AC-22..AC-27)
 // ---------------------------------------------------------------------------
 // Literal permission values from packages/schemas/src/enums/permission.enum.ts
