@@ -10,7 +10,7 @@
  *    intentionally not exercised here (its Suspense fallback is null).
  */
 
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchBar, buildSearchUrl } from '../../../src/components/sections/SearchBar.client';
@@ -284,5 +284,114 @@ describe('<SearchBar /> submit flow', () => {
         expect(navigatedTo).not.toContain('checkOut=');
         expect(navigatedTo).not.toContain('children=');
         expect(navigatedTo).not.toContain('types=');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: BETA-26 — guests selector appears to "not save" the value 2
+// ---------------------------------------------------------------------------
+
+describe('<SearchBar /> guests selector (BETA-26 regression)', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('shows the value (even at the default 2) once the stepper is touched, not the placeholder', async () => {
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        const guestsTrigger = screen.getByRole('button', { name: /huéspedes/i });
+        // Untouched: the placeholder hint is shown (2 adults / 0 children is the default).
+        expect(guestsTrigger).toHaveTextContent('¿Cuántas personas son?');
+
+        await user.click(guestsTrigger);
+
+        // Bump adults 2 -> 3, then back 3 -> 2: the user deliberately lands on 2.
+        await user.click(screen.getByRole('button', { name: /more adults/i }));
+        await user.click(screen.getByRole('button', { name: /fewer adults/i }));
+
+        // The chosen value must remain visible; it must NOT collapse back to the
+        // placeholder just because it equals the default (the original bug).
+        expect(guestsTrigger).toHaveTextContent('2 adultos, 0 niños');
+        expect(guestsTrigger).not.toHaveTextContent('¿Cuántas personas son?');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Regression: BETA-24 — type panel pops the mobile keyboard, overlapping the
+// option list. Autofocus must only run on desktop popover sizes (>900px).
+// ---------------------------------------------------------------------------
+
+describe('<SearchBar /> type panel autofocus (BETA-24 regression)', () => {
+    beforeEach(() => {
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { assign: vi.fn(), href: 'http://localhost/', pathname: '/', search: '' }
+        });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('autofocuses the type search input on desktop popover sizes', async () => {
+        // Default matchMedia mock reports matches:false -> desktop popover.
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /tipo/i }));
+
+        const input = screen.getByRole('textbox', { name: /buscar entre los tipos/i });
+        await waitFor(() => expect(input).toHaveFocus());
+    });
+
+    it('does NOT autofocus the type search input on mobile bottom-sheet sizes', async () => {
+        // Force mobile: the (max-width: 900px) media query matches.
+        vi.spyOn(window, 'matchMedia').mockImplementation(
+            (query: string) =>
+                ({
+                    matches: query.includes('900px'),
+                    media: query,
+                    onchange: null,
+                    addListener: () => {},
+                    removeListener: () => {},
+                    addEventListener: () => {},
+                    removeEventListener: () => {},
+                    dispatchEvent: () => false
+                }) as MediaQueryList
+        );
+
+        const user = userEvent.setup();
+        render(
+            <SearchBar
+                locale="es"
+                destinations={MOCK_DESTINATIONS}
+                searchBaseUrl={SEARCH_BASE}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /tipo/i }));
+
+        const input = screen.getByRole('textbox', { name: /buscar entre los tipos/i });
+        expect(input).not.toHaveFocus();
     });
 });
