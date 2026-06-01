@@ -3,7 +3,7 @@ spec-id: SPEC-146
 title: Sentry release wiring + SDK version alignment
 type: fix
 complexity: low
-status: draft
+status: completed
 created: 2026-05-18T00:00:00Z
 effort_estimate_hours: 0.5-1
 tags: [sentry, monitoring, observability, web, admin]
@@ -31,6 +31,7 @@ discovered_during: 2026-05-18 staging Sentry health check after SPEC-140 verific
 - Admin SDK is at `10.36.0` while web is at `10.40.0`. Trivial drift but worth aligning so dependabot / future bumps don't ping-pong between two minor versions.
 
 **Scope:** Three cohesive small changes:
+
 - **(a)** `apps/web` — confirm the existing `PUBLIC_SENTRY_RELEASE` env var is consumed by `sentry.client.config.ts` (it is, with the `'development'` fallback). The change is OPERATIONAL — set `PUBLIC_SENTRY_RELEASE` as a Docker build-arg in Coolify for both `hospeda-web-staging` and `hospeda-web-prod` pointing at the deploy's git SHA.
 - **(b)** `apps/admin` — confirm the existing `VITE_SENTRY_RELEASE` env var is consumed by the admin Sentry config. Same Coolify wiring as web with the `VITE_` prefix.
 - **(c)** `apps/admin/package.json` — bump `@sentry/react` to `^10.40.x` (whatever version matches `@sentry/astro` in `apps/web`).
@@ -48,37 +49,39 @@ discovered_during: 2026-05-18 staging Sentry health check after SPEC-140 verific
 
 Phased so each step is independently committable + verifiable.
 
-**Phase 1 — Code: confirm env-var consumption (web)**
+#### Phase 1 — Code: confirm env-var consumption (web)
 
 1. Read `apps/web/sentry.client.config.ts` and confirm `release: import.meta.env.PUBLIC_SENTRY_RELEASE || 'development'` is the current pattern.
 2. If the fallback is `'development'`, leave it (acceptable safety net for local dev). The fix lives in Coolify, not code.
 3. If the fallback is empty string or missing, replace with `'development'` so local dev still groups predictably.
 
-**Phase 2 — Code: confirm env-var consumption (admin)**
+#### Phase 2 — Code: confirm env-var consumption (admin)
 
 4. Locate the admin Sentry init file (`apps/admin/sentry.client.config.ts` or `src/instrumentation/sentry.ts` — check during implementation).
 5. Confirm it reads `import.meta.env.VITE_SENTRY_RELEASE`. If the read is missing or the fallback is empty string, add the same `|| 'development'` fallback as web for parity.
 6. If the env var declaration exists in `apps/admin/src/env.ts` `AdminEnvSchema` but isn't wired into the actual `Sentry.init(...)` call, wire it.
 
-**Phase 3 — Code: SDK version alignment**
+#### Phase 3 — Code: SDK version alignment
 
 7. Update `apps/admin/package.json`: bump `@sentry/react` from the current `10.36.x` line to `10.40.x` (or whatever matches `@sentry/astro` in `apps/web/package.json` at the time of work).
 8. Run `pnpm install` to regenerate the lockfile.
 9. Run `pnpm typecheck` from the admin package — `@sentry/react` is a peer dep of TanStack-Start's instrumentation in places, so any breaking signature change will surface here.
 10. Run admin's test suite to verify no regression (the existing 7 pre-existing failures from SPEC-140 days are expected — make sure no new ones appear).
 
-**Phase 4 — Operational: Coolify env vars**
+#### Phase 4 — Operational: Coolify env vars
 
 11. SSH to the VPS and run, for each web resource:
+
     ```bash
     hops env-set web PUBLIC_SENTRY_RELEASE "${HOSPEDA_COMMIT_SHA}" --target=staging
     hops env-set web PUBLIC_SENTRY_RELEASE "${HOSPEDA_COMMIT_SHA}" --target=prod
     ```
+
     (Or via Coolify UI: Environment Variables → add `PUBLIC_SENTRY_RELEASE`, value `${HOSPEDA_COMMIT_SHA}`, marked Build-time.)
 12. Same for admin with `VITE_SENTRY_RELEASE`.
 13. Trigger `hops redeploy web --target=staging` and `hops redeploy admin --target=staging`.
 
-**Phase 5 — Verification**
+#### Phase 5 — Verification
 
 14. Open `https://staging.hospeda.com.ar` with DevTools → evaluate `window.__SENTRY__[version].defaultCurrentScope._client.getOptions().release` → confirm value is a git SHA, not `'development'`.
 15. Same on `https://staging-admin.hospeda.com.ar` → confirm value is a git SHA, not `''`.
@@ -95,7 +98,7 @@ Phased so each step is independently committable + verifiable.
   - Web: `apps/web/src/env.ts` `serverEnvBaseSchema` already declares `PUBLIC_SENTRY_RELEASE: z.string().optional()`.
   - Admin: `apps/admin/src/env.ts` `AdminEnvSchema` already declares `VITE_SENTRY_RELEASE: z.string().optional()`.
 - Operational CLI: `hops env-set <kind> KEY VALUE --target=<staging|prod>` (`scripts/server-tools/`).
-- Sentry release docs: https://docs.sentry.io/product/releases/
+- Sentry release docs: <https://docs.sentry.io/product/releases/>
 
 ### 5. Tasks
 
