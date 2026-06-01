@@ -20,6 +20,7 @@ import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import TagChips from '@/components/TagChips.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -383,6 +384,15 @@ const breadcrumbItems = [
 
 		<!-- Post body -->
 		<PostContent safeContentHtml={safeContentHtml} />
+
+		<!-- Comment thread (SPEC-165 T-014: AC-27/28/29) -->
+		<CommentThread
+			entityType="POST"
+			entityId={postId}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			currentUrl={Astro.url.href}
+		/>
 
 		<!-- Videos (if any) -->
 		{postVideos.length > 0 && (
