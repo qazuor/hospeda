@@ -153,6 +153,10 @@ export function useFaqDelete(entityType: FaqEntityType, parentId: string) {
 /**
  * Mutation to reorder FAQs via the PATCH .../faqs/reorder endpoint.
  *
+ * On both success and failure the FAQ list is refetched from the server so
+ * that a failed reorder snaps the UI back to the persisted order instead of
+ * keeping the optimistic (un-persisted) sequence under an error banner.
+ *
  * @param entityType - 'destinations' or 'accommodations'
  * @param parentId   - UUID of the parent entity
  */
@@ -167,7 +171,7 @@ export function useFaqReorder(entityType: FaqEntityType, parentId: string) {
                 body: payload
             });
         },
-        onSuccess: () => {
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: faqQueryKeys.list(entityType, parentId)
             });
