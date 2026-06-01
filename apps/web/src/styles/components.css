@@ -284,7 +284,7 @@
 .btn-gradient--outline-primary:hover,
 .btn-gradient--outline-accent:hover {
     color: #fff;
-    box-shadow: 0 4px 14px oklch(from currentColor l c h / 0);
+    box-shadow: 0 4px 14px transparent;
 }
 
 .btn-gradient--outline-primary:hover {

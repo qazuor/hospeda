@@ -13,7 +13,7 @@
         "test:visual:install": "playwright install chromium --with-deps",
         "test:visual:baseline": "playwright test --config=playwright-visual.config.ts --update-snapshots",
         "test:visual": "playwright test --config=playwright-visual.config.ts",
-        "lint": "biome check . && pnpm check-tokens",
+        "lint": "biome check . && pnpm check-tokens && pnpm check:relative-colors",
         "format": "biome format --write .",
         "typecheck": "astro sync && tsc --noEmit --project ./tsconfig.json",
         "check-tokens": "node scripts/check-css-tokens.cjs",

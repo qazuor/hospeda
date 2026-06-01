@@ -10,15 +10,37 @@
  * which identifies CSS relative-color syntax (Chrome 119+ only).
  *
  * Exit codes:
- *   0 — no `oklch(from` occurrences found (post-codemod / expected final state)
- *   1 — at least one occurrence found (pre-codemod or regression introduced)
+ *   0 — occurrences match the documented allowlist exactly (expected final state)
+ *   1 — a NON-allowlisted occurrence exists, OR an allowlisted file's count
+ *       drifted from its expected value (new violation, or a residual was
+ *       removed without updating the allowlist).
  *
- * Current state (T-001): the web source has ~679 violations. This script is
- * EXPECTED to exit 1 right now. After T-005 (codemod) runs and replaces all
- * 679 call-sites with `var(--token)` references, this script will exit 0.
- * The script is wired into CI in T-013 via `apps/web/package.json`.
+ * Allowlist (T-011): after the T-005 codemod swapped 658 static call-sites to
+ * precomputed `var(--token)` references, 16 occurrences remain that CANNOT be
+ * statically tokenized — the base color and/or alpha is resolved at RUNTIME:
  *
- * Allowlist: only `apps/web/src/` is scanned. The generated artifact
+ *   - lib/colors.ts (4): generic helpers; both the `var(--${cssToken})` base and
+ *     the alpha/lightness are caller-supplied at runtime (incl. non-alpha
+ *     lightness ops `min(l, 0.6)`).
+ *   - components/GlobalAnnouncements.astro (2): base is a hardcoded hex literal
+ *     (`#ef4444`), not a `var(--token)` — no static token to map to.
+ *   - components/ShareButtons.module.css (1): base is `var(--primary, <fallback>)`,
+ *     an undefined alias with an inline oklch fallback.
+ *   - components/shared/cards/EventCardFeatured.astro (3): base is
+ *     `var(--event-cat-bg, ...)`, a CSS var injected at runtime per event category.
+ *   - components/account/CollectionCard.tsx (3): base is a JS template `${color}`
+ *     where `color` is arbitrary user-chosen collection color from the API.
+ *   - components/account/SubscriptionDashboard.module.css (2): base is
+ *     `var(--primary, <fallback>)`, same undefined-alias case as ShareButtons.
+ *   - pages/500.astro (1): SVG fill is `oklch(from ${destructiveColor} ...)` with
+ *     destructiveColor interpolated in the Astro frontmatter at runtime.
+ *
+ * These degrade on Chrome <119 (the badge/overlay tint falls back to the
+ * browser default for an unresolved relative color) — an accepted cosmetic
+ * residual per PDR §10 / Edge Case 6. The allowlist is COUNT-PINNED per file so
+ * a NEW `oklch(from` (regression) or a removed residual still fails CI.
+ *
+ * Only `apps/web/src/` is scanned. The generated artifact
  * `packages/design-tokens/dist/tokens.css` is NOT in scope — it intentionally
  * contains `oklch(from` inside `@supports` blocks, which is correct behavior.
  *
@@ -46,6 +68,28 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', '.astro', '.turbo', '.vercel'
 
 /** The pattern that identifies CSS relative-color syntax (Chrome 119+ only). */
 const PATTERN = 'oklch(from';
+
+/**
+ * Count-pinned allowlist of un-tokenizable runtime-dynamic residuals (T-011).
+ * Keys are paths relative to `apps/web/`; values are the EXACT expected number
+ * of `oklch(from` occurrences. A file at its expected count passes; any drift
+ * (new occurrence, or a residual removed without updating this map) fails so the
+ * residual set stays frozen and reviewed. See the file header for the rationale
+ * behind each entry.
+ *
+ * @type {Readonly<Record<string, number>>}
+ */
+const ALLOWLIST = Object.freeze({
+    'src/lib/colors.ts': 4,
+    'src/components/GlobalAnnouncements.astro': 2,
+    'src/components/ShareButtons.module.css': 1,
+    'src/components/shared/cards/EventCardFeatured.astro': 3,
+    'src/components/account/CollectionCard.tsx': 3,
+    'src/components/account/SubscriptionDashboard.module.css': 2,
+    // 500 error page: SVG fill uses `oklch(from ${destructiveColor} ...)` where
+    // destructiveColor is interpolated in the Astro frontmatter at runtime.
+    'src/pages/500.astro': 1
+});
 
 // ============================================================================
 // Helpers
@@ -86,18 +130,28 @@ function collectSourceFiles(dir) {
 }
 
 /**
- * Strip block comments (`/* ... *\/` and `<!-- ... -->`) from source content
- * to avoid counting occurrences that are commented out.
+ * Strip block comments (`/* ... *\/` and `<!-- ... -->`) and `@supports (...)`
+ * feature-detection conditions from source content before scanning.
+ *
+ * Block comments are stripped to avoid counting commented-out code. `@supports`
+ * conditions are stripped because an `oklch(from ...)` inside a `@supports (...)`
+ * probe is the EXACT mechanism this system uses to gate the modern oklch path
+ * (e.g. `@supports (background-color: oklch(from white l c h / 0.95)) { ... }`).
+ * That is correct, intended usage — not an unguarded relative color — so it must
+ * not count as a violation. Only the parenthesized condition is blanked; the
+ * block body is left intact so any real violation inside it is still caught.
  *
  * Mirrors the approach used in the sibling `check-css-tokens.cjs` script.
  *
  * @param {string} source - Raw file content.
- * @returns {string} Content with block comments replaced by equal-length whitespace.
+ * @returns {string} Content with comments + @supports conditions blanked to
+ *   equal-length whitespace (offsets preserved).
  */
 function stripBlockComments(source) {
     return source
         .replace(/\/\*[\s\S]*?\*\//g, (match) => ' '.repeat(match.length))
-        .replace(/<!--[\s\S]*?-->/g, (match) => ' '.repeat(match.length));
+        .replace(/<!--[\s\S]*?-->/g, (match) => ' '.repeat(match.length))
+        .replace(/@supports\s*\([^{]*\)/g, (match) => ' '.repeat(match.length));
 }
 
 /**
@@ -134,9 +188,8 @@ function main() {
 
     const files = collectSourceFiles(SRC_ROOT);
 
-    /** @type {{ file: string; count: number }[]} */
-    const violations = [];
-    let totalOccurrences = 0;
+    /** @type {Map<string, number>} Observed count per relative file path. */
+    const observed = new Map();
 
     for (const filePath of files) {
         /** @type {string} */
@@ -153,25 +206,62 @@ function main() {
         const cleaned = stripBlockComments(raw);
         const count = countOccurrences(cleaned);
         if (count > 0) {
-            violations.push({ file: path.relative(APP_ROOT, filePath), count });
-            totalOccurrences += count;
+            observed.set(path.relative(APP_ROOT, filePath), count);
         }
     }
 
-    if (violations.length === 0) {
+    // Classify each observed file against the count-pinned allowlist.
+    /** @type {string[]} Hard failures: new files, or counts above the allowed. */
+    const failures = [];
+    for (const [file, count] of observed) {
+        const allowed = ALLOWLIST[file] ?? 0;
+        if (count > allowed) {
+            const extra = allowed === 0 ? count : count - allowed;
+            failures.push(
+                `  ${file}  (${count} occurrence${count === 1 ? '' : 's'}${
+                    allowed === 0 ? ', not allowlisted' : `, allowlisted ${allowed} — ${extra} NEW`
+                })`
+            );
+        }
+    }
+
+    // Stale allowlist entries: a residual was removed (or the file deleted) but
+    // the allowlist still expects it. Surface so the allowlist stays honest.
+    /** @type {string[]} */
+    const stale = [];
+    for (const [file, allowed] of Object.entries(ALLOWLIST)) {
+        const count = observed.get(file) ?? 0;
+        if (count < allowed) {
+            stale.push(
+                `  ${file}  (allowlisted ${allowed}, found ${count} — reduce the allowlist)`
+            );
+        }
+    }
+
+    if (failures.length === 0 && stale.length === 0) {
+        const allowedTotal = Object.values(ALLOWLIST).reduce((a, b) => a + b, 0);
         process.stdout.write(
-            `[check-css-relative-colors] OK — scanned ${files.length} files, 0 "${PATTERN}" occurrences found.\n`
+            `[check-css-relative-colors] OK — scanned ${files.length} files. ` +
+                `${allowedTotal} allowlisted runtime-dynamic residual(s), 0 new "${PATTERN}" occurrences.\n`
         );
         process.exit(0);
     }
 
-    process.stdout.write(
-        `[check-css-relative-colors] FAIL — Found ${totalOccurrences} \`${PATTERN}\` occurrences in ${violations.length} files. Fix: run codemod-relative-colors.mjs\n\n`
-    );
-    for (const v of violations) {
-        process.stdout.write(`  ${v.file}  (${v.count} occurrence${v.count === 1 ? '' : 's'})\n`);
+    if (failures.length > 0) {
+        process.stdout.write(
+            `[check-css-relative-colors] FAIL — new \`${PATTERN}\` occurrence(s) detected. Replace with a precomputed var(--token-aNN) reference (run the codemod), or, if genuinely runtime-dynamic, update the ALLOWLIST in this script.\n\n`
+        );
+        for (const line of failures) process.stdout.write(`${line}\n`);
+        process.stdout.write('\n');
     }
-    process.stdout.write('\n');
+    if (stale.length > 0) {
+        process.stdout.write(
+            '[check-css-relative-colors] FAIL — stale allowlist entr(y/ies): a residual was ' +
+                'removed but the allowlist still counts it. Lower the count in ALLOWLIST.\n\n'
+        );
+        for (const line of stale) process.stdout.write(`${line}\n`);
+        process.stdout.write('\n');
+    }
     process.exit(1);
 }
 
