@@ -2029,7 +2029,7 @@
             "title": "Web color-system fallback for older browsers (oklch/@supports) + admin browser gate",
             "type": "fix",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-176-web-color-fallback-old-browsers",
             "created": "2026-05-30T00:00:00.000Z",
             "branch": "spec/SPEC-176-web-color-fallback-old-browsers",
@@ -2037,9 +2037,13 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-176-web-color-fallback-old-browsers",
             "firstAllocatedViaEngramProtocol": true,
             "driver": "Linear BETA-44",
-            "archived": false,
+            "archived": true,
             "tags": ["web", "css", "oklch", "browser-support", "color-tokens", "admin", "beta-44"],
-            "note": "Driver BETA-44. Web color system uses oklch(from var()) relative syntax (679 uses/132 files, real floor Chrome 119) -> breaks Chrome 109 cosmetically (login button unstyled). Approach: centralize 42 variant computations into intermediate tokens with sRGB fallback + @supports oklch override; swap 679 call-sites to var(); generalize existing @supports at components.css:539; @repo/icons JS fallback for 5 dynamic badge cases; admin browser-gate banner <Chrome111 (Tailwind v4 hard floor, no fallback). JS proven clean both apps. Seed spec.md written; NOT atomized; impl NOT started. Full analysis engram worktree/linear-issues/beta-44."
+            "note": "Driver BETA-44. Web color system uses oklch(from var()) relative syntax (679 uses/132 files, real floor Chrome 119) -> breaks Chrome 109 cosmetically (login button unstyled). Approach: centralize 42 variant computations into intermediate tokens with sRGB fallback + @supports oklch override; swap 679 call-sites to var(); generalize existing @supports at components.css:539; @repo/icons JS fallback for 5 dynamic badge cases; admin browser-gate banner <Chrome111 (Tailwind v4 hard floor, no fallback). JS proven clean both apps. Seed spec.md written; NOT atomized; impl NOT started. Full analysis engram worktree/linear-issues/beta-44.",
+            "completedAt": "2026-06-01T04:00:15.000Z",
+            "completionRef": "PR #1346 (merge commit 114925d8a) to staging",
+            "archivedAt": "2026-06-01T04:00:15.000Z",
+            "archiveNote": "SPEC-176 shipped to staging via PR #1346 (16/16). Fixed BETA-44 (Chrome 109 invisible login button): oklch(from var()) relative-color syntax broke pre-Chrome-119. Delivered 254 variant tokens (sRGB :root fallback + @supports oklch override), 658-site codemod, 126 domain alpha tokens + 2-level resolver, dark-mode sRGB block, admin BrowserGateBanner (CSS.supports + i18n es/en/pt), count-pinned CI guard, visual parity <=3/255. Linear BETA-44 closed Done. Marta retest pending staging->prod promotion."
         }
     ]
 }
