@@ -1,21 +1,21 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 3/26 (in-progress).
+26 atomic tasks across 6 phase groups. Status: 7/26 (in-progress) — foundations phase DONE.
 
 ## Phase: foundations (migration artifacts)
 
 - [x] **T-001** Adopt drizzle-kit generate+migrate config; commit the journal — un-gitignored `migrations/meta/`, config confirmed
 - [x] **T-002** Generate the 0000 baseline (full schema incl. 29 billing tables) — `0000_baseline.sql` + journal; validated clean apply (82 tables, 32 billing, 45 enums, exit 0) on ephemeral PG
 - [x] **T-003** Build `migrations/extras/` — consolidate 21 cat-A extras (`NNN-name.kind.sql`) — 9 consolidated files, validated apply + idempotency on ephemeral PG
-- [ ] **T-004** Delete 8 obsolete B/C/D + gh_refresh role + dead `verify-gh-refresh.mjs` — *blockedBy T-003*
-- [ ] **T-005** Fix `db:migrate` alias to real `drizzle-kit migrate` — *blockedBy T-002*
-- [ ] **T-006** Create extensions preflight + reset SQL artifacts
+- [x] **T-004** Delete obsolete migrations — git rm'd entire `manual/` + `verify-gh-refresh.mjs`; apply-extras now reads `extras/`
+- [x] **T-005** Fix `db:migrate` alias to real `drizzle-kit migrate` — validated (applied baseline from journal)
+- [x] **T-006** Create extensions preflight + reset SQL — `reset/000-reset-schema.sql` + `001-extensions.sql`, validated end-to-end
 
 ## Phase: tooling (hops + scripts)
 
 - [ ] **T-007** Rewrite `migrate-production.sh` (real migrate + extras + abort-on-fail) — *blockedBy T-005*
 - [ ] **T-008** Add `hops db-migrate --target` (migrate + extras, no push) — *blockedBy T-005*
-- [ ] **T-009** Update apply-postgres-extras to read `migrations/extras/` (NNN sort) — *blockedBy T-003*
+- [x] **T-009** Update apply-postgres-extras to read `migrations/extras/` (NNN sort) — done in the foundations close-out (required by `manual/` removal)
 - [ ] **T-010** Split `hops db-seed` (keep data flags, add `--migrate`, swap push->migrate) — *blockedBy T-005, T-008*
 - [ ] **T-011** Fold reset (DROP SCHEMA + DROP USER + extensions) into `hops db-migrate --reset` — *blockedBy T-006, T-008*
 

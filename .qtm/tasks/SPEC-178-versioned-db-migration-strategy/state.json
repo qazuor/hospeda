@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 23,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 3.0
     },
@@ -69,8 +69,8 @@
         {
             "id": "T-004",
             "title": "Delete obsolete migrations: 8 B/C/D files + gh_refresh role + dead script",
-            "description": "Delete the 8 one-time B/C/D manual files made obsolete by the reset (0013, 0017, 0024, 0027, 0028, 0029 + the C/D portions of 0011/0025/0026), the gh_refresh role file (0021), and the dead packages/db/scripts/verify-gh-refresh.mjs. gh_refresh is VERIFIED obsolete (Vercel+Neon-era GitHub Action; matview refresh is now the in-process node-cron job). Acceptance: files removed; git history preserves them; no remaining reference to gh_refresh or the deleted files in code/scripts.",
-            "status": "pending",
+            "description": "Delete the 8 one-time B/C/D manual files made obsolete by the reset (0013, 0017, 0024, 0027, 0028, 0029 + the C/D portions of 0011/0025/0026), the gh_refresh role file (0021), and the dead packages/db/scripts/verify-gh-refresh.mjs. gh_refresh is VERIFIED obsolete (Vercel+Neon-era GitHub Action; matview refresh is now the in-process node-cron job). Acceptance: files removed; git history preserves them; no remaining reference to gh_refresh or the deleted files in code/scripts. DONE: git rm'd the ENTIRE manual/ dir (cat-A already consolidated into extras/ in T-003, B/C/D obsolete on a fresh DB) + verify-gh-refresh.mjs; also switched apply-postgres-extras.mjs to read extras/ (adelanta T-009 core, so manual/ removal does not break apply-extras). Validated end-to-end: gh_refresh role absent after reset.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
@@ -87,8 +87,8 @@
         {
             "id": "T-005",
             "title": "Fix the db:migrate alias to a real drizzle-kit migrate",
-            "description": "In packages/db/package.json change db:migrate from `drizzle-kit push` to a real `drizzle-kit migrate`. Keep db:push as the dev-only push command. db:fresh-dev stays on push (disposable local DB). Update db:regenerate accordingly. Acceptance: `pnpm --filter @repo/db db:migrate` applies versioned migrations; db:push still pushes; db:fresh-dev still works end-to-end locally.",
-            "status": "pending",
+            "description": "In packages/db/package.json change db:migrate from `drizzle-kit push` to a real `drizzle-kit migrate`. Keep db:push as the dev-only push command. db:fresh-dev stays on push (disposable local DB). Update db:regenerate accordingly. Acceptance: `pnpm --filter @repo/db db:migrate` applies versioned migrations; db:push still pushes; db:fresh-dev still works end-to-end locally. DONE: packages/db/package.json db:migrate -> `drizzle-kit migrate` (was push); db:push unchanged; db:regenerate still chains generate+migrate (now real migrate). Validated: `db:migrate` against an ephemeral PG applied the 0000 baseline from the journal -> 'migrations applied successfully!', 82 tables.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-008", "T-010", "T-019", "T-020", "T-022"],
@@ -105,8 +105,8 @@
         {
             "id": "T-006",
             "title": "Create the extensions preflight + reset SQL artifacts",
-            "description": "Author the reset SQL used by the VPS rebuild: (a) a CREATE EXTENSION IF NOT EXISTS preflight for uuid-ossp, pgcrypto, unaccent (VERIFIED: no VPS flow re-creates them, schema needs gen_random_uuid()); (b) the reset block `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` + `DROP USER IF EXISTS gh_refresh` (cluster-wide role survives DROP SCHEMA). Acceptance: SQL artifacts exist (e.g. packages/db/scripts/reset/) and run cleanly as superuser; extensions present after preflight.",
-            "status": "pending",
+            "description": "Author the reset SQL used by the VPS rebuild: (a) a CREATE EXTENSION IF NOT EXISTS preflight for uuid-ossp, pgcrypto, unaccent (VERIFIED: no VPS flow re-creates them, schema needs gen_random_uuid()); (b) the reset block `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` + `DROP USER IF EXISTS gh_refresh` (cluster-wide role survives DROP SCHEMA). Acceptance: SQL artifacts exist (e.g. packages/db/scripts/reset/) and run cleanly as superuser; extensions present after preflight. DONE: packages/db/scripts/reset/000-reset-schema.sql (DROP SCHEMA CASCADE + CREATE + GRANTs + DROP USER gh_refresh) and 001-extensions.sql (CREATE EXTENSION IF NOT EXISTS uuid-ossp/pgcrypto/unaccent). Validated end-to-end: reset -> extensions -> migrate -> apply-extras all exit 0; without 001 migrate would fail on gen_random_uuid().",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -159,8 +159,8 @@
         {
             "id": "T-009",
             "title": "Update apply-postgres-extras to read migrations/extras/ (NNN sort)",
-            "description": "Point packages/db/scripts/apply-postgres-extras.mjs at the new migrations/extras/ dir, sorting by the NNN- prefix lexically (drop the old manual/ path). Keep idempotent re-apply semantics. Acceptance: apply-extras iterates the consolidated extras in numeric order and is a no-op on a second run.",
-            "status": "pending",
+            "description": "Point packages/db/scripts/apply-postgres-extras.mjs at the new migrations/extras/ dir, sorting by the NNN- prefix lexically (drop the old manual/ path). Keep idempotent re-apply semantics. Acceptance: apply-extras iterates the consolidated extras in numeric order and is a no-op on a second run. DONE (brought forward into the foundations close-out, since vaciar manual/ required it): apply-postgres-extras.mjs EXTRAS_DIR now points at src/migrations/extras; the legacy manual/ path is gone. Validated: applies all 9 extras in NNN order (exit 0); idempotency confirmed in T-003's ephemeral run.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-013", "T-016"],
