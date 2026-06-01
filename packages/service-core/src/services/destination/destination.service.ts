@@ -2,8 +2,10 @@ import {
     AccommodationModel,
     DestinationFaqModel,
     DestinationModel,
-    buildSearchCondition
+    buildSearchCondition,
+    withTransaction
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -16,7 +18,10 @@ import type {
     DestinationFaqAddInput,
     DestinationFaqListInput,
     DestinationFaqListOutput,
+    DestinationFaqRemoveInput,
+    DestinationFaqReorderInput,
     DestinationFaqSingleOutput,
+    DestinationFaqUpdateInput,
     DestinationIdType,
     DestinationRatingInput,
     DestinationSearchForListOutput,
@@ -32,13 +37,17 @@ import type {
     GetDestinationChildrenInput,
     GetDestinationDescendantsInput,
     GetDestinationStatsInput,
-    GetDestinationSummaryInput
+    GetDestinationSummaryInput,
+    Success
 } from '@repo/schemas';
 import {
     DestinationAdminSearchSchema,
     DestinationCreateInputSchema,
     DestinationFaqAddInputSchema,
     DestinationFaqListInputSchema,
+    DestinationFaqRemoveInputSchema,
+    DestinationFaqReorderInputSchema,
+    DestinationFaqUpdateInputSchema,
     DestinationSearchSchema,
     DestinationUpdateInputSchema,
     GetDestinationAccommodationsInputSchema,
@@ -1411,6 +1420,10 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Adds a FAQ to a destination.
+     *
+     * Assigns `displayOrder = max(current displayOrder) + 1` so new FAQs always
+     * appear at the end of the ordered list. When no FAQs exist yet, starts at 0.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId and faq
      * @param ctx - Optional service context for transaction propagation
@@ -1432,9 +1445,19 @@ export class DestinationService extends BaseCrudService<
                 }
                 this._canUpdate(actor, destination);
                 const faqModel = new DestinationFaqModel();
+                // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
+                const existing = await faqModel.findAll(
+                    { destinationId: validated.destinationId, deletedAt: null },
+                    { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.displayOrder ?? -1;
+                const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
                 const faqToCreate = {
                     ...validated.faq,
-                    destinationId: validated.destinationId as DestinationIdType
+                    destinationId: validated.destinationId as DestinationIdType,
+                    displayOrder: nextOrder
                 };
                 const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
                 return { faq: createdFaq };
@@ -1444,7 +1467,8 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Gets all FAQs for a destination.
-     * Optimized to use a single query with relations.
+     * Optimized to use a single query with relations, ordered by displayOrder ASC NULLS LAST,
+     * then createdAt ASC (SPEC-177 T-012).
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
      * @param ctx - Optional service context for transaction propagation
@@ -1470,11 +1494,221 @@ export class DestinationService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
                 }
                 this._canView(actorFromRun, destination);
-                // FAQs are already loaded via the relation.
+                // FAQs are already loaded via the relation (ordered by the model — SPEC-177 T-012).
                 // TYPE-WORKAROUND: Drizzle relation result widens the entity type to include
                 // the joined `faqs` array which is not part of the base Destination type.
                 const faqs = (destination as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as DestinationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Updates a FAQ for a destination (SPEC-177 T-006).
+     *
+     * Gated with the destination's existing `_canUpdate` (requires `DESTINATION_UPDATE`).
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId, faqId, and the fields to update
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The updated FAQ
+     */
+    public async updateFaq(
+        actor: Actor,
+        data: DestinationFaqUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqUpdateInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
+                if (!faq || faq.destinationId !== validated.destinationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this destination'
+                    );
+                }
+                const updatedFaq = await faqModel.update(
+                    { id: validated.faqId },
+                    {
+                        ...validated.faq,
+                        destinationId: validated.destinationId as DestinationIdType
+                    },
+                    ctx?.tx
+                );
+                if (!updatedFaq) {
+                    throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
+                }
+                return { faq: updatedFaq };
+            }
+        });
+    }
+
+    /**
+     * Removes a FAQ from a destination (SPEC-177 T-007).
+     *
+     * Hard-deletes the FAQ row (mirrors the accommodation pattern). Gated with
+     * `_canUpdate` (requires `DESTINATION_UPDATE`).
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId and faqId
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async removeFaq(
+        actor: Actor,
+        data: DestinationFaqRemoveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqRemoveInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
+                if (!faq || faq.destinationId !== validated.destinationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this destination'
+                    );
+                }
+                await faqModel.hardDelete({ id: validated.faqId }, ctx?.tx);
+                return { success: true };
+            }
+        });
+    }
+
+    /**
+     * Retrieves a destination's FAQs for the ADMIN sub-tab (SPEC-177 T-008).
+     *
+     * Same data as {@link getFaqs} but gated with the destination `_canUpdate` check
+     * (requires `DESTINATION_UPDATE`) rather than the broad `_canView`. Destinations
+     * have no `_canAdminView`/`checkCanAdminView` helper (they have no host-owner
+     * scoping), so we use `_canUpdate` as the admin-write-level gate, consistent with
+     * how the mutation methods are secured.
+     *
+     * FAQs are returned ordered by `display_order ASC NULLS LAST, created_at ASC`
+     * (ordering applied at the model layer — SPEC-177 T-012).
+     *
+     * @param actor - The actor performing the action (must hold DESTINATION_UPDATE).
+     * @param data - The FAQ list input (destinationId).
+     * @param ctx - Optional service context.
+     * @returns A `ServiceOutput` with the FAQ list, or a `ServiceError`.
+     */
+    public async adminGetFaqs(
+        actor: Actor,
+        data: DestinationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqListInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findWithRelations(
+                    { id: validated.destinationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                // Use _canUpdate as the admin gate (destinations have no host-owner scoping).
+                this._canUpdate(actor, destination);
+                // FAQs are loaded via the relation (ordered at the model layer — SPEC-177 T-012).
+                // TYPE-WORKAROUND: Drizzle relation result widens the entity type to include
+                // the joined `faqs` array which is not part of the base Destination type.
+                const faqs = (destination as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as DestinationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Reorders FAQs on a destination (SPEC-177 T-009).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (requires `DESTINATION_UPDATE`).
+     * 2. Load all active FAQs for the destination.
+     * 3. Validate that every `faqId` in `order` belongs to this destination
+     *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
+     * 4. Apply each `displayOrder` in a single transaction.
+     * 5. Write an audit entry `destination_faqs_reordered`.
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId and the ordered array of { faqId, displayOrder }
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async reorderFaqs(
+        actor: Actor,
+        data: DestinationFaqReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqReorderInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+
+                const faqModel = new DestinationFaqModel();
+                // Load all active FAQs for this destination to validate ownership.
+                const { items: existingFaqs } = await faqModel.findAll(
+                    { destinationId: validated.destinationId, deletedAt: null },
+                    { pageSize: 200 },
+                    undefined,
+                    ctx?.tx
+                );
+                const existingIds = new Set(existingFaqs.map((f) => f.id));
+
+                // Reject any faqId that doesn't belong to this destination.
+                const unknownIds = validated.order
+                    .map((item) => item.faqId)
+                    .filter((id) => !existingIds.has(id));
+                if (unknownIds.length > 0) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Unknown or foreign faqId(s) for this destination: ${unknownIds.join(', ')}`
+                    );
+                }
+
+                // Apply all displayOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (const item of validated.order) {
+                        await faqModel.update(
+                            { id: item.faqId },
+                            { displayOrder: item.displayOrder },
+                            tx
+                        );
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                return { success: true };
             }
         });
     }
