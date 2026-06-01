@@ -24,6 +24,9 @@ export type { ChecklistWidgetProps } from './ChecklistWidget';
 export { StatusWidget } from './StatusWidget';
 export type { StatusWidgetProps } from './StatusWidget';
 
+export { CommentsFeedCard } from './CommentsFeedCard';
+export type { CommentsFeedCardProps } from './CommentsFeedCard';
+
 export {
     WidgetCard,
     WidgetSkeletonBody,

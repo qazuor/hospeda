@@ -755,13 +755,17 @@ const editorDashboard: DashboardInput = {
             }
         },
 
-        // Card H — Comentarios (Row 6, full width banner)
-        // DeferredWidget — recent comments endpoint pending SPEC-165.
-        // Sits at the bottom as a full-width banner so the placeholder
-        // doesn't leave a lopsided half on any other row.
+        // Card H — Comentarios recientes (Row 6, full width banner)
+        // SPEC-165 T-016: live recent-comments feed.
+        // Uses a custom 'feed' widget type so WidgetDispatcher falls through to
+        // CommentsFeedCard (registered as the 'feed' renderer for this card's
+        // source via the config-driven extension in DashboardRenderer).
+        // The permissions AND-gate (POST_COMMENT_VIEW + EVENT_COMMENT_VIEW) is
+        // enforced inside CommentsFeedCard itself; onMissing: 'hide' ensures the
+        // card disappears entirely when the component hides it.
         {
             id: 'editor-card-h',
-            type: 'callout',
+            type: 'feed',
             label: {
                 es: 'Comentarios',
                 en: 'Comments',
@@ -769,14 +773,14 @@ const editorDashboard: DashboardInput = {
             },
             scope: 'all',
             onMissing: 'hide',
+            // AND-gate: user must hold BOTH permissions; see CommentsFeedCard.
+            permissions: ['POST_COMMENT_VIEW', 'EVENT_COMMENT_VIEW'],
             gridSpan: { cols: 3 },
             config: {
-                deferred: true,
-                phaseSpec: 'SPEC-165',
+                source: 'editor.comments.recent',
                 accent: 'warning',
                 icon: 'chat',
-                description:
-                    'Comentarios recientes en posts y eventos para moderar — disponible cuando se implemente el endpoint de listado de comentarios.'
+                maxItems: 10
             }
         }
     ]

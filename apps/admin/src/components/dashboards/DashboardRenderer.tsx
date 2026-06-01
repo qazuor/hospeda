@@ -8,16 +8,17 @@
  *
  * ## Type → renderer dispatch map
  *
- * | Widget type  | Renderer        | Notes                          |
- * |-------------|-----------------|--------------------------------|
- * | `kpi`       | KpiWidget       | Single numeric KPI card        |
- * | `list`      | ListWidget      | Top-N list with optional CTA   |
- * | `chart`     | ChartWidget     | Line/bar/area placeholder      |
- * | `checklist` | ChecklistWidget | Completeness health checklist  |
- * | `status`    | StatusWidget    | Health/badge-style status card |
- * | all others  | DeferredWidget  | Phase-2 slots (feed, callout…) |
+ * | Widget type  | Renderer          | Notes                          |
+ * |-------------|-------------------|--------------------------------|
+ * | `kpi`       | KpiWidget         | Single numeric KPI card        |
+ * | `list`      | ListWidget        | Top-N list with optional CTA   |
+ * | `chart`     | ChartWidget       | Line/bar/area placeholder      |
+ * | `checklist` | ChecklistWidget   | Completeness health checklist  |
+ * | `status`    | StatusWidget      | Health/badge-style status card |
+ * | `feed`      | CommentsFeedCard  | Recent-comments feed (SPEC-165)|
+ * | all others  | DeferredWidget    | Phase-2 slots (callout…)       |
  *
- * "All others" includes: `feed`, `callout`, `shortcut`, `map`, `calendar`.
+ * "All others" includes: `callout`, `shortcut`, `map`, `calendar`.
  * These are deferred widget types whose renderers ship in phase 2. Any widget
  * with an unrecognised type also falls here — the page never crashes.
  *
@@ -63,6 +64,7 @@ import { gridSpanClasses } from './dashboard-grid';
 import {
     ChartWidget,
     ChecklistWidget,
+    CommentsFeedCard,
     DeferredWidget,
     KpiWidget,
     ListWidget,
@@ -76,8 +78,18 @@ import {
 /**
  * The set of widget types that have a live renderer in V1.
  * All other types in WidgetTypeSchema are deferred to phase 2.
+ *
+ * `'feed'` was added in SPEC-165 T-016 for the EDITOR recent-comments card H.
+ * It dispatches to {@link CommentsFeedCard}.
  */
-const LIVE_WIDGET_TYPES = new Set<WidgetType>(['kpi', 'list', 'chart', 'checklist', 'status']);
+const LIVE_WIDGET_TYPES = new Set<WidgetType>([
+    'kpi',
+    'list',
+    'chart',
+    'checklist',
+    'status',
+    'feed'
+]);
 
 /**
  * Fallback phaseSpec badge label shown on deferred widgets when
@@ -129,6 +141,8 @@ function WidgetDispatcher({ widget }: { readonly widget: Widget }) {
             return <ChecklistWidget widget={widget} />;
         case 'status':
             return <StatusWidget widget={widget} />;
+        case 'feed':
+            return <CommentsFeedCard widget={widget} />;
         default:
             // Safety net — TypeScript narrowing makes this unreachable given
             // the LIVE_WIDGET_TYPES guard above.
