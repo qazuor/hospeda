@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 27,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -126,7 +126,7 @@
             "id": "T-006",
             "title": "destination.service: add updateFaq (mirror accommodation)",
             "description": "Add updateFaq to destination.service.ts mirroring accommodation.service.ts (~2116). _canUpdate gate. Acceptance: method works, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-015", "T-026"],
@@ -134,21 +134,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "destination.service: add removeFaq (mirror accommodation)",
             "description": "Add removeFaq to destination.service.ts mirroring accommodation.service.ts (~2080). Soft-delete + _canUpdate gate + audit. Acceptance: method works, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-016", "T-026"],
@@ -156,21 +156,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "destination.service: add adminGetFaqs (admin-gated view)",
             "description": "Add adminGetFaqs to destination.service.ts mirroring accommodation.service.ts (~2205). Acceptance: method works, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-026"],
@@ -178,21 +178,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "destination.service: add reorderFaqs",
             "description": "reorderFaqs(actor, { destinationId, order }). _canUpdate gate; validate each faqId belongs to the destination; apply display_order in a transaction; write audit entry; reject unknown faqIds. Acceptance: persists order, ownership + membership enforced.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-004"],
             "blocks": ["T-017", "T-027"],
@@ -200,21 +200,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "accommodation.service: add reorderFaqs",
             "description": "Same as T-009 for accommodation.service.ts. _canUpdate gate + membership validation + transaction + audit. Acceptance: persists order, ownership enforced.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": ["T-017", "T-027"],
@@ -222,21 +222,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "addFaq assigns display_order = max+1 (both services)",
             "description": "Update addFaq in destination.service.ts and accommodation.service.ts to set display_order = current max for that parent + 1 at create time. Acceptance: new FAQ appended last, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-027"],
@@ -244,21 +244,21 @@
             "tags": ["service-core", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Read order display_order ASC NULLS LAST in faq reads (both)",
             "description": "Order getFaqs / adminGetFaqs and the destination/accommodation findWithRelations faqs load by `display_order ASC NULLS LAST, created_at ASC`. Acceptance: reads return ordered FAQs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-030"],
@@ -266,14 +266,14 @@
             "tags": ["service-core", "db", "phase-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
