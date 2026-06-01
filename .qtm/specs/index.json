@@ -1746,7 +1746,7 @@
             "specId": "SPEC-160",
             "title": "Newsletter Engagement Tracking (Open / Click)",
             "type": "feature",
-            "complexity": "high",
+            "complexity": "low",
             "status": "draft",
             "path": "SPEC-160-newsletter-engagement-tracking",
             "created": "2026-05-26T00:00:00Z",
@@ -1754,15 +1754,9 @@
             "dependsOn": ["SPEC-101"],
             "enables": ["SPEC-155"],
             "firstAllocatedViaEngramProtocol": true,
-            "tags": [
-                "newsletter",
-                "analytics",
-                "open-rate",
-                "ctr",
-                "tracking",
-                "backend",
-                "phase-2"
-            ]
+            "revised": "2026-05-30T00:00:00.000Z",
+            "note": "Re-scoped 2026-05-30: the open/click tracking backend (newsletter_campaign_deliveries table, NewsletterTrackingService applyOpened/applyClick, Brevo webhook handler, NewsletterCampaignService.computeMetrics, GET /admin/newsletter/campaigns/{id}/metrics endpoint, use-campaign-metrics hook) ALREADY shipped under SPEC-101. Remaining work is frontend-only: EDITOR dashboard Card C widget (apps/admin/src/lib/dashboard-sources/editor.ts:29 still says PHASE 2) plus optionally exposing openRate/clickRate percentages in the API response. Complexity downgraded high->low.",
+            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"]
         },
         {
             "specId": "SPEC-161",
@@ -1841,14 +1835,17 @@
             "title": "Post and Event Comments System",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-165-post-event-comments-system",
             "created": "2026-05-27T00:00:00.000Z",
             "extractedFrom": "SPEC-155",
             "archived": false,
             "extractionReason": "Phase-1 scout 2026-05-27: no post_comments or event_comments table exists; posts has only an integer comments counter. EDITOR dashboard card H renders a deferred placeholder until this spec ships.",
             "enables": ["SPEC-155 EDITOR card H (Comentarios)"],
-            "tags": ["comments", "editor", "backend", "phase-2"]
+            "tags": ["comments", "editor", "backend", "phase-2"],
+            "startedAt": "2026-05-30T00:00:00.000Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-165-post-event-comments-system",
+            "branch": "spec/SPEC-165-post-event-comments-system"
         },
         {
             "specId": "SPEC-166",
@@ -1863,6 +1860,20 @@
             "extractionReason": "Phase-1 scout 2026-05-27: accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not moderationState. No review moderation flow exists. ADMIN dashboard card F reviews-pending sub-slot renders a deferred placeholder until this spec ships.",
             "enables": ["SPEC-155 ADMIN card F reviews-pending sub-slot"],
             "tags": ["reviews", "moderation", "admin", "backend", "phase-2"]
+        },
+        {
+            "specId": "SPEC-167",
+            "title": "Downgrade preflight + excess remediation",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-167-downgrade-preflight-remediation",
+            "created": "2026-05-27T00:00:00.000Z",
+            "origin": "SPEC-143 local smoke findings F-F1/F-F2",
+            "dependsOn": ["SPEC-143"],
+            "archived": false,
+            "tags": ["billing", "downgrade", "entitlements", "limits", "backend"],
+            "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry — registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land."
         },
         {
             "specId": "SPEC-169",
@@ -1887,14 +1898,16 @@
             "title": "Per-User Granular Permission Management Panel",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-170-user-permission-management",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-170-user-permission-management",
             "worktree": "/home/qazuor/projects/WEBS/hospeda3-spec-170-user-permission-management",
             "base": "staging",
             "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-01",
+            "mergedVia": "PR #1342 → staging",
             "tags": ["permissions", "admin", "rbac", "frontend"],
             "note": "IN PROGRESS (worktree spec-170, branch spec/SPEC-170-user-permission-management from staging). Planning COMPLETE: all 6 OQs resolved by owner 2026-05-30 (gating=granular PERMISSION_VIEW/ASSIGN/REVOKE seeded explicit to SUPER_ADMIN; deny overrides IN scope via effect pgEnum column on user_permission; deny never applies to super, API 400 on super target; immediate cache invalidation; picker role-inherited disabled+badge & denyable; posts _OWN deferred per SPEC-169 D7; audit via PERMISSION_CHANGE). tech-analysis.md written (16 sections). Atomized into 31 tasks (avg complexity 2.6, all ≤4). TDD gates: T-006 (actor.ts 10 precedence cases) + T-012 (permission-grouping). GATE task T-007 (deny-resolution) blocks API/UI integration testing. Backend ~95% exists; work = effect column migration + actor.ts resolution rewrite + 3 admin API routes + admin UI picker. Implementation not yet started."
         },
@@ -1938,14 +1951,14 @@
             "complexity": "high",
             "status": "in-progress",
             "path": "SPEC-172-accommodation-amenities-features-chips",
+            "created": "2026-05-29T00:00:00.000Z",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-172-accommodation-amenities-features-chips",
             "branch": "spec/SPEC-172-accommodation-amenities-features-chips",
-            "created": "2026-05-29T00:00:00.000Z",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
             "extractedFrom": "SPEC-154",
-            "tags": ["schemas", "database", "migration", "admin", "web", "i18n"],
-            "note": "Spun off from SPEC-154. PREMISE CORRECTED 2026-05-30: original spec assumed boolean columns (hasWifi/hasPool) on accommodation to migrate+drop — those columns DO NOT EXIST. hasWifi/hasPool/hasParking/allowsPets are VIRTUAL search filters in accommodation.http.schema.ts resolved to amenity slugs via quick-amenity-resolver.ts; they stay as-is. Real scope after owner decisions (2026-05-30): (PR1) write path — AccommodationCreate/UpdateInputSchema accept amenityIds[]/featureIds[] + accommodation.service syncs junctions transactionally, replacing the standalone add/removeFeatureFromAccommodation endpoints; (PR2) fix AccommodationWithFeaturesSchema removing phantom isOptional/additionalCost (r_accommodation_feature lacks them) + migrate amenity/feature name+description to JSONB i18n {es,en,pt}; (PR3) admin MultiSelectChipsField over public catalog endpoints; (PR4) web reads from amenities[] + search_index + fixtures. Decisions: Q-1 keep amenity & feature SEPARATE; Q-2 align schema to DB (remove phantom fields); Q-3 STAGED multi-PR; Q-4 migrate catalogs to JSONB i18n; Q-5 virtual filters documented, not dropped. spec.md to be rewritten via task-master:spec in the worktree. Tasks not yet atomized."
+            "tags": ["schemas", "database", "migration", "admin", "web", "breaking"],
+            "note": "Spun off from SPEC-154 entity view/edit redesign. DB catalog tables (amenity, feature) and junction tables (r_accommodation_amenity, r_accommodation_feature) already exist along with models and read schemas — only write path + admin form + web read migration is missing. Pending owner decisions: Q-1 amenity vs feature distinction, Q-2 isOptional/additionalCost defaults, Q-3 staged vs big-bang rollout, Q-4 catalog i18n shape, Q-5 external consumer audit. Tasks not yet atomized. | RECONCILED 2026-05-30: index said draft but engram had it in-progress AND a physical worktree exists — flipped to in-progress to match reality. BLOCKED: 0 commits, FALSE PREMISE confirmed (NO boolean hasWifi/hasPool columns exist on accommodation; catalog + junction tables already shipped, so the original 'migrate booleans -> drop columns' framing is moot). Real remaining scope = finish junction write path (crud schema amenityIds/featureIds + service _beforeCreate/_beforeUpdate sync + admin chips UI replacing legacy switches + web read migration). Needs re-scope before implementation."
         },
         {
             "specId": "SPEC-174",

@@ -3,6 +3,7 @@
  * Routes that don't require authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { publicPostCommentRoutes } from '../comments/public/index.js';
 import { publicGetPostsByCategoryRoute } from './getByCategory';
 import { publicGetPostByIdRoute } from './getById';
 import { publicGetPostsByRelatedAccommodationRoute } from './getByRelatedAccommodation';
@@ -54,5 +55,8 @@ app.route('/', publicGetPostByIdRoute);
 
 // GET /:id/summary - Get summary (registered after /:id since both share /:id prefix)
 app.route('/', publicGetPostSummaryRoute);
+
+// GET /:postId/comments - Public comment thread (SPEC-165)
+app.route('/', publicPostCommentRoutes);
 
 export { app as publicPostRoutes };

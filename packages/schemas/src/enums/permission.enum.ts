@@ -12,6 +12,7 @@ export enum PermissionCategoryEnum {
     DESTINATION_REVIEW = 'DESTINATION_REVIEW',
     DISCOUNT_CODE_USAGE = 'DISCOUNT_CODE_USAGE',
     EVENT = 'EVENT',
+    EVENT_COMMENT = 'EVENT_COMMENT',
     EVENT_LOCATION = 'EVENT_LOCATION',
     EVENT_ORGANIZER = 'EVENT_ORGANIZER',
     EXCHANGE_RATE = 'EXCHANGE_RATE',
@@ -22,6 +23,7 @@ export enum PermissionCategoryEnum {
     PAYMENT_METHOD = 'PAYMENT_METHOD',
     PERMISSION = 'PERMISSION',
     POST = 'POST',
+    POST_COMMENT = 'POST_COMMENT',
     POST_SPONSOR = 'POST_SPONSOR',
     POST_SPONSORSHIP = 'POST_SPONSORSHIP',
     PURCHASE = 'PURCHASE',
@@ -186,6 +188,8 @@ export enum PermissionEnum {
     EVENT_ORGANIZER_MANAGE = 'event.organizer.manage', // Allows managing event organizers.
     EVENT_SLUG_MANAGE = 'event.slug.manage', // Allows managing event slugs.
     EVENT_COMMENT_CREATE = 'event.comment.create', // Allows creating comments on events.
+    EVENT_COMMENT_VIEW = 'event.comment.view', // Allows viewing all comments on events (admin-level).
+    EVENT_COMMENT_MODERATE = 'event.comment.moderate', // Allows approving/rejecting/deleting event comments.
     EVENT_VIEW_PRIVATE = 'event.view.private', // Allows viewing private events.
     EVENT_VIEW_DRAFT = 'event.view.draft', // Allows viewing draft events.
     EVENT_VIEW_ALL = 'event.viewAll', // Allows viewing all events.
@@ -207,6 +211,8 @@ export enum PermissionEnum {
     POST_MODERATION_CHANGE = 'post.moderation.change', // Allows changing post moderation state.
     POST_SLUG_MANAGE = 'post.slug.manage', // Allows managing post slugs.
     POST_COMMENT_CREATE = 'post.comment.create', // Allows creating comments on posts.
+    POST_COMMENT_VIEW = 'post.comment.view', // Allows viewing all comments on posts (admin-level).
+    POST_COMMENT_MODERATE = 'post.comment.moderate', // Allows approving/rejecting/deleting post comments.
     POST_VIEW_PRIVATE = 'post.view.private', // Allows viewing private posts.
     POST_VIEW_DRAFT = 'post.view.draft', // Allows viewing draft posts.
     POST_VIEW_ALL = 'post.viewAll', // Allows viewing all posts.

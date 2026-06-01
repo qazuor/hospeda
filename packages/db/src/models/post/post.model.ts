@@ -164,6 +164,30 @@ export class PostModel extends BaseModelImpl<Post> {
     }
 
     /**
+     * Atomically adjusts the `comments` counter by `delta` (clamped at 0).
+     *
+     * Used by the comment service to keep `posts.comments` in sync as comments
+     * are created (+1), soft-deleted/hard-deleted (-1), moderated APPROVED↔REJECTED
+     * (±1), and restored (+1). The existing value is treated as a baseline, so
+     * legacy counts that predate the comments table are preserved (SPEC-165 RD-7 /
+     * AC-24 / AC-25). `GREATEST(..., 0)` guards against the counter going negative.
+     *
+     * @param params.id - The post id.
+     * @param params.delta - The amount to add (use a negative value to subtract).
+     * @param tx - Optional transaction client.
+     */
+    async adjustCommentCount(
+        { id, delta }: { id: string; delta: number },
+        tx?: DrizzleClient
+    ): Promise<void> {
+        const db = this.getClient(tx);
+        await db
+            .update(posts)
+            .set({ comments: sql`GREATEST(COALESCE(${posts.comments}, 0) + ${delta}, 0)` })
+            .where(eq(posts.id, id));
+    }
+
+    /**
      * Returns a 12-month posts-per-month trend series, zero-filled.
      *
      * Uses a PostgreSQL CTE with `generate_series` to materialise the
