@@ -20,6 +20,7 @@ import type { Accommodation } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -40,7 +41,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
 // ---------------------------------------------------------------------------
