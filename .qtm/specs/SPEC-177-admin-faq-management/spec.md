@@ -137,11 +137,15 @@ Add to **both** `destination_faqs` and `accommodation_faqs`:
 displayOrder: integer('display_order')   // nullable
 ```
 
-- **Migration** generated via `pnpm db:generate` (formal Drizzle migration — NOT `db:push` alone; the
-  `search_index` materialized view + triggers are invisible to push — see ADR-017 / root CLAUDE.md).
-- **Backfill** in the migration: `display_order` set per parent ordered by `created_at`.
-- After `db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh` (dynamic `set_updated_at`
-  trigger already covers the table; no new trigger needed).
+- **Column add** is applied by `drizzle-kit push` (the project's real schema-sync path: `db:migrate`
+  and `db:fresh-dev` both run `push`, NOT generated migrations — the generated `meta/` journal is
+  gitignored, so `db:generate` would emit a full-schema `0000`, which is wrong here).
+- **Backfill** is a hand-written idempotent SQL at `packages/db/src/migrations/manual/0031_faq_display_order_backfill.sql`
+  (`display_order` per parent ordered by `created_at`, `WHERE display_order IS NULL`), applied by
+  `packages/db/scripts/apply-postgres-extras.mjs` after push (which runs every `*.sql` under `manual/`).
+- After `db:fresh-dev`, `apply-postgres-extras` runs automatically; the dynamic `set_updated_at`
+  trigger already covers the table (no new trigger needed). New FAQs get `max(display_order)+1` from
+  the service, so on a fresh seed the backfill is a no-op.
 
 ### 7. API Design
 
