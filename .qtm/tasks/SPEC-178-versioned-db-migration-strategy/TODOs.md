@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 16/26 (in-progress) — foundations + tooling + testing DONE; CI drift-guard built (wiring deferred); docs + validation remain.
+26 atomic tasks across 6 phase groups. Status: 21/26 (in-progress) — foundations + tooling + testing + docs DONE; CI wiring (T-013/14) deferred to local-runners migration; only the real staging/prod reset execution (T-024/025/026) remains.
 
 ## Phase: foundations (migration artifacts)
 
@@ -34,11 +34,11 @@
 
 ## Phase: docs + agent-rules
 
-- [ ] **T-019** Rewrite `packages/db/CLAUDE.md` (two carriles + golden rule + dev-vs-VPS) — *blockedBy T-005, T-009*
-- [ ] **T-020** Fix root `CLAUDE.md` (db:migrate line + push-not-enough gotcha) — *blockedBy T-005*
-- [ ] **T-021** New ADR (versioned migrations + two-carril + reset rationale)
-- [ ] **T-022** Rewrite `docs/guides/migrations.md` (currently out of sync) — *blockedBy T-005*
-- [ ] **T-023** "Rules for agents touching the schema" + db-drizzle-engineer surfacing — *blockedBy T-019*
+- [x] **T-019** Rewrite `packages/db/CLAUDE.md` — two carriles + golden rule + dev-vs-VPS + 5-step protocol
+- [x] **T-020** Fix root `CLAUDE.md` — db:migrate line + push-not-enough gotcha corrected
+- [x] **T-021** New ADR — `ADR-029-versioned-migration-strategy.md`, supersedes ADR-017 push-only note
+- [x] **T-022** Rewrite `docs/guides/migrations.md` — canonical how-to, common-mistakes table
+- [x] **T-023** Agent protocol surfaced to `.claude/agents/db-drizzle-engineer.md`
 
 ## Phase: validation (execution + close-out)
 

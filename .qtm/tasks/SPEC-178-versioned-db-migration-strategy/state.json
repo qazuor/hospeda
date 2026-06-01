@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 8,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 21,
         "blocked": 2,
         "averageComplexity": 3.0
     },
@@ -339,8 +339,8 @@
         {
             "id": "T-019",
             "title": "Rewrite packages/db/CLAUDE.md (two carriles + golden rule + dev-vs-VPS)",
-            "description": "Rewrite the Migrations + Common Gotchas sections: the two carriles (migrations/ vs migrations/extras/), the golden routing rule, the dev-vs-VPS table, push is dev-only, db:generate is mandatory before a schema PR, the NNN-name.kind.sql extras convention, apply-extras after migrate. Acceptance: the doc matches the new reality; no stale `db:migrate = apply migrations` claim.",
-            "status": "pending",
+            "description": "Rewrite the Migrations + Common Gotchas sections: the two carriles (migrations/ vs migrations/extras/), the golden routing rule, the dev-vs-VPS table, push is dev-only, db:generate is mandatory before a schema PR, the NNN-name.kind.sql extras convention, apply-extras after migrate. Acceptance: the doc matches the new reality; no stale `db:migrate = apply migrations` claim. DONE: rewrote Migrations + PostgreSQL Extras + Common Gotchas in packages/db/CLAUDE.md — two-carril model, golden rule table, dev-vs-VPS table, 5-step agent protocol, migrations/extras/ NNN convention, extensions preflight; removed the stale db:migrate=push NOTE.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-009"],
             "blocks": ["T-023"],
@@ -357,8 +357,8 @@
         {
             "id": "T-020",
             "title": "Fix root CLAUDE.md (db:migrate line + push-not-enough gotcha)",
-            "description": "Correct the misleading `db:migrate` = 'Apply migrations' quick-command line and the 'drizzle-kit push is not enough' gotcha to point at the new generate+migrate flow and the two carriles. Acceptance: root CLAUDE.md is consistent with packages/db/CLAUDE.md.",
-            "status": "pending",
+            "description": "Correct the misleading `db:migrate` = 'Apply migrations' quick-command line and the 'drizzle-kit push is not enough' gotcha to point at the new generate+migrate flow and the two carriles. Acceptance: root CLAUDE.md is consistent with packages/db/CLAUDE.md. DONE: corrected the db:migrate quick-command line (real migrate) and replaced the 'push is not enough' gotcha with bullets covering the two carriles, push-dev-only, and generate-before-PR; links to packages/db/CLAUDE.md.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": [],
@@ -375,8 +375,8 @@
         {
             "id": "T-021",
             "title": "New ADR: versioned migrations + two-carril model + reset rationale",
-            "description": "Author an ADR (supersedes the relevant parts of ADR-017) recording the decision to adopt versioned drizzle-kit generate+migrate as the single source of truth, the two-carril model, push-dev-only, the reset-to-zero rationale, and the drift-guard. Cross-link from ADR-017. Acceptance: ADR added under docs/decisions/ and referenced from ADR-017.",
-            "status": "pending",
+            "description": "Author an ADR (supersedes the relevant parts of ADR-017) recording the decision to adopt versioned drizzle-kit generate+migrate as the single source of truth, the two-carril model, push-dev-only, the reset-to-zero rationale, and the drift-guard. Cross-link from ADR-017. Acceptance: ADR added under docs/decisions/ and referenced from ADR-017. DONE: docs/decisions/ADR-029-versioned-migration-strategy.md (versioned carril as SSOT, two-carril model, push-dev-only, reset-to-zero rationale, drift guard, dev-vs-VPS table, 5-step protocol); supersedes the push-only note in ADR-017; cross-reference block added at the top of ADR-017.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -393,8 +393,8 @@
         {
             "id": "T-022",
             "title": "Rewrite docs/guides/migrations.md (currently out of sync)",
-            "description": "The existing guide describes an aspirational migrate flow that was never used. Rewrite it to the actual new flow: dev push/fresh-dev, generate-before-PR, migrate on the VPS, extras carril, hops db-migrate. Acceptance: the guide matches the implemented reality and the CLAUDE.md docs.",
-            "status": "pending",
+            "description": "The existing guide describes an aspirational migrate flow that was never used. Rewrite it to the actual new flow: dev push/fresh-dev, generate-before-PR, migrate on the VPS, extras carril, hops db-migrate. Acceptance: the guide matches the implemented reality and the CLAUDE.md docs. DONE: rewrote docs/guides/migrations.md as the canonical how-to — golden rule, dev push loop, generate-before-PR, USING conversion example, extras NNN convention, hops db-migrate + reset flow, the 3 shell tests, and a common-mistakes table (incl. 'never push a VPS').",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": [],
@@ -411,8 +411,8 @@
         {
             "id": "T-023",
             "title": "'Rules for agents touching the schema' protocol + db-drizzle-engineer surfacing",
-            "description": "Add the explicit copy-pasteable 5-step protocol to packages/db/CLAUDE.md AND surface it to the db-drizzle-engineer sub-agent (frontmatter skills / prompt), so delegated agents follow it: iterate in dev with push; generate before close; hand-edit USING for conversions; never push the VPS; CI blocks a missing migration. Acceptance: protocol present in CLAUDE.md and referenced in the db-drizzle-engineer agent definition.",
-            "status": "pending",
+            "description": "Add the explicit copy-pasteable 5-step protocol to packages/db/CLAUDE.md AND surface it to the db-drizzle-engineer sub-agent (frontmatter skills / prompt), so delegated agents follow it: iterate in dev with push; generate before close; hand-edit USING for conversions; never push the VPS; CI blocks a missing migration. Acceptance: protocol present in CLAUDE.md and referenced in the db-drizzle-engineer agent definition. DONE: the agent file .claude/agents/db-drizzle-engineer.md exists; added a 'Two-Carril Migration Protocol' section (5-step protocol + golden rule + dev-vs-VPS table) after its Migration Workflow step. Self-contained because sub-agents don't inherit skill context.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": [],

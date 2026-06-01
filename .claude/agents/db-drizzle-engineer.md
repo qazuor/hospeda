@@ -439,6 +439,40 @@ npx drizzle-kit studio
 
 ---
 
+## Hospeda Project: Two-Carril Migration Protocol
+
+**MANDATORY** for any work touching `packages/db/src/schemas/`. Read
+`packages/db/CLAUDE.md` (Migrations section) for full details. The 5-step protocol:
+
+1. **Iterate freely in dev** with `pnpm db:push` / `pnpm db:fresh-dev`.
+2. **At close**: run `pnpm --filter @repo/db db:generate` and review the generated `.sql`.
+3. **Data conversion?** Hand-edit the generated `.sql` to add the `USING` expression.
+   Drizzle never generates `USING` — an omitted `USING` causes runtime failure.
+4. **Never run `push` against the VPS.** Use `hops db-migrate --target=staging|prod`.
+5. **CI drift guard** (`scripts/check-schema-drift.sh`) blocks a PR if the TS schema changed
+   without a committed migration. It is not optional.
+
+### Golden rule: which carril?
+
+| Object type | Carril | How |
+|-------------|--------|-----|
+| Table / column / normal index / FK / enum | `src/migrations/` | `db:generate` then commit |
+| Trigger / matview / CHECK (w/ fn calls) / special index | `src/migrations/extras/` | Hand-write idempotent SQL, `NNN-name.kind.sql` |
+| Data conversion (USING / UPDATE) | `src/migrations/` | Hand-edit the generated file |
+
+### dev vs VPS
+
+| | Dev (local) | CI + VPS |
+|---|---|---|
+| Structural changes | `push` (fast, disposable) | versioned `migrate` |
+| Extras | `db:apply-extras` | `db:apply-extras` (via `hops db-migrate`) |
+| Source of truth | TS schema | migrations in git |
+
+Always run `pnpm db:apply-extras` after `pnpm db:migrate` — extras are not applied
+automatically by `migrate`.
+
+---
+
 ## Common Patterns
 
 ### Transactions
