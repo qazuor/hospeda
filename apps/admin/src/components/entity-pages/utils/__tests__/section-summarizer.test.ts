@@ -181,4 +181,96 @@ describe('computeSectionSummary', () => {
         });
         expect(result).toBe('Hotel');
     });
+
+    // ---- UUID-array fields (SPEC-172 PR4 fix) ----
+
+    it('shows count instead of raw UUIDs for arrays of UUID strings', () => {
+        const section = makeSection([{ id: 'relatedIds', type: FieldTypeEnum.TEXT }]);
+        const uuids = [
+            '6199060f-d0c5-4e1a-b044-c4ca5a7c0b0b',
+            'da6ad2ed-63ad-4417-853d-88328570d9e2',
+            '822cbd3d-005f-4d84-8b15-b26ab190bba7'
+        ];
+        const result = computeSectionSummary({
+            values: { relatedIds: uuids },
+            section
+        });
+        // Should show "3 elementos" not the raw UUIDs joined
+        expect(result).toBe('3 elementos');
+        expect(result).not.toContain('6199060f');
+    });
+
+    // ---- AMENITY_SELECT / FEATURE_SELECT count summary (SPEC-172 PR4) ----
+
+    it('shows "N amenidades" for AMENITY_SELECT fields', () => {
+        const section = makeSection([{ id: 'amenityIds', type: FieldTypeEnum.AMENITY_SELECT }]);
+        const amenityIds = [
+            '6199060f-d0c5-4e1a-b044-c4ca5a7c0b0b',
+            'da6ad2ed-63ad-4417-853d-88328570d9e2',
+            '822cbd3d-005f-4d84-8b15-b26ab190bba7',
+            '3a744b90-e3ef-4468-8f32-a4d6351910c3',
+            '91ed29a6-bcd0-4879-ad18-6257c9c86d92'
+        ];
+        const result = computeSectionSummary({
+            values: { amenityIds },
+            section
+        });
+        expect(result).toBe('5 amenidades');
+    });
+
+    it('shows "1 amenidad" singular for a single amenity', () => {
+        const section = makeSection([{ id: 'amenityIds', type: FieldTypeEnum.AMENITY_SELECT }]);
+        const result = computeSectionSummary({
+            values: { amenityIds: ['6199060f-d0c5-4e1a-b044-c4ca5a7c0b0b'] },
+            section
+        });
+        expect(result).toBe('1 amenidad');
+    });
+
+    it('shows "N características" for FEATURE_SELECT fields', () => {
+        const section = makeSection([{ id: 'featureIds', type: FieldTypeEnum.FEATURE_SELECT }]);
+        const featureIds = [
+            'f71ccd34-9c1d-41b8-929e-516df9ae8452',
+            'e58c3847-bd4f-4ac6-9b04-2000601ea9ea',
+            'e06a1699-c163-41ce-8829-50fbcee76901'
+        ];
+        const result = computeSectionSummary({
+            values: { featureIds },
+            section
+        });
+        expect(result).toBe('3 características');
+    });
+
+    it('shows combined "N amenidades, M características" for mixed section', () => {
+        const section = makeSection([
+            { id: 'amenityIds', type: FieldTypeEnum.AMENITY_SELECT },
+            { id: 'featureIds', type: FieldTypeEnum.FEATURE_SELECT }
+        ]);
+        const result = computeSectionSummary({
+            values: {
+                amenityIds: Array.from(
+                    { length: 13 },
+                    (_, i) => `aaaaaaaa-0000-0000-0000-${String(i).padStart(12, '0')}`
+                ),
+                featureIds: Array.from(
+                    { length: 7 },
+                    (_, i) => `ffffffff-0000-0000-0000-${String(i).padStart(12, '0')}`
+                )
+            },
+            section
+        });
+        expect(result).toBe('13 amenidades, 7 características');
+    });
+
+    it('returns "— sin datos" when amenity/feature arrays are empty', () => {
+        const section = makeSection([
+            { id: 'amenityIds', type: FieldTypeEnum.AMENITY_SELECT },
+            { id: 'featureIds', type: FieldTypeEnum.FEATURE_SELECT }
+        ]);
+        const result = computeSectionSummary({
+            values: { amenityIds: [], featureIds: [] },
+            section
+        });
+        expect(result).toBe('— sin datos');
+    });
 });

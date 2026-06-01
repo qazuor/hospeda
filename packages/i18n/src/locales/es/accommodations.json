@@ -38,7 +38,9 @@
         "blackout_curtains": "Cortinas blackout",
         "baby_crib": "Cuna",
         "wheelchair_accessible": "Accesible para silla de ruedas",
-        "pet_friendly": "Se aceptan mascotas"
+        "pet_friendly": "Se aceptan mascotas",
+        "electric_kettle": "Pava eléctrica",
+        "kitchen_utensils": "Utensilios de cocina"
     },
     "title": "Alojamientos",
     "description": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura.",

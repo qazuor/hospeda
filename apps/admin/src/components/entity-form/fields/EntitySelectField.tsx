@@ -115,7 +115,9 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
 
         // Load selected options by IDs
         React.useEffect(() => {
-            const valuesKey = values.sort().join(',');
+            // Use a sorted copy to build the stable key — never mutate the
+            // `values` array derived from the `value` prop.
+            const valuesKey = [...values].sort().join(',');
 
             // Skip if we've already loaded options for these exact values
             if (loadedValuesRef.current === valuesKey) {
@@ -142,7 +144,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                         .current(values)
                         .then((newOptions) => {
                             // Only update if the values haven't changed while we were loading
-                            const currentValuesKey = values.sort().join(',');
+                            const currentValuesKey = [...values].sort().join(',');
                             if (currentValuesKey === valuesKey) {
                                 setSelectedOptions(newOptions);
                                 loadedValuesRef.current = valuesKey;

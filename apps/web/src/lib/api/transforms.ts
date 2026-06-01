@@ -29,6 +29,7 @@ import {
     extractGalleryItems,
     extractGalleryUrls
 } from '../media';
+import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -560,12 +561,19 @@ export function toTestimonialCardProps({
  * IMPORTANT: Uses `price.price` (canonical PriceSchema field).
  * Does NOT propagate the legacy `price.amount` fallback.
  *
+ * SPEC-172 PR2: amenity and feature catalog `name` (and `description`) changed
+ * from plain strings to JSONB i18n objects `{ es, en, pt }`. The `locale`
+ * parameter is used to resolve these objects to plain strings before the data
+ * reaches components. Defaults to `'es'` if omitted.
+ *
  * @param item - Raw accommodation object from the API (getBySlug response)
+ * @param locale - Page locale used to resolve i18n name/description fields
  * @returns Typed AccommodationDetailData for the detail page components
  */
 export function toAccommodationDetailPageProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationDetailData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
     // SPEC-095: prefer the `cityDestination` projection from the API; fall back
@@ -700,12 +708,25 @@ export function toAccommodationDetailPageProps({
         // SPEC-018: extract displayWeight from either the join row or the
         // nested entity (API shape varies), then order DESC so the detail
         // page renders the most important amenities/features first.
+        //
+        // SPEC-172 PR4: amenity/feature `name` is now a JSONB i18n object
+        // `{ es, en, pt }` from PR2. We resolve it to a plain string here
+        // using the page locale so that downstream components (AmenitiesGrid,
+        // FeaturesGrid) receive a stable string and translateAmenity() can
+        // build the `accommodations.amenityNames.<key>` i18n lookup as before.
+        // The `name.es` value contains the slug-like catalog name (e.g. 'wifi',
+        // 'pool') used as the i18n key — resolving with locale + es fallback
+        // preserves this behavior while correctly surfacing the translated
+        // catalog name for en/pt locales that have a matching amenityNames entry.
         amenities: (amenitiesArr ?? [])
             .map((a) => {
                 const nestedAmenity = a.amenity as Record<string, unknown> | undefined;
                 return {
                     amenityId: String(a.amenityId || ''),
-                    name: String(a.name || ''),
+                    name: resolveI18nText(
+                        a.name as I18nTextLike | string | null | undefined,
+                        locale
+                    ),
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
                     additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null,
@@ -718,7 +739,10 @@ export function toAccommodationDetailPageProps({
                 const nestedFeature = f.feature as Record<string, unknown> | undefined;
                 return {
                     featureId: String(f.featureId || ''),
-                    name: String(f.name || ''),
+                    name: resolveI18nText(
+                        f.name as I18nTextLike | string | null | undefined,
+                        locale
+                    ),
                     icon: f.icon ? String(f.icon) : null,
                     hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
                     comments: f.comments ? String(f.comments) : null,

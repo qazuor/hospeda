@@ -365,7 +365,9 @@
         "blackout_curtains": "Blackout curtains",
         "baby_crib": "Baby crib",
         "wheelchair_accessible": "Wheelchair accessible",
-        "pet_friendly": "Pet friendly"
+        "pet_friendly": "Pet friendly",
+        "electric_kettle": "Electric kettle",
+        "kitchen_utensils": "Kitchen utensils"
     },
     "list": {
         "searchContext": {
