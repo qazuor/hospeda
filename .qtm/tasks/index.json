@@ -674,8 +674,8 @@
         {
             "specId": "SPEC-176",
             "title": "Web color-system fallback for older browsers (oklch/@supports) + admin browser gate",
-            "status": "in-progress",
-            "progress": "15/16",
+            "status": "completed",
+            "progress": "16/16",
             "path": "SPEC-176-web-color-fallback-old-browsers",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-176-web-color-fallback-old-browsers",
             "branch": "spec/SPEC-176-web-color-fallback-old-browsers",
@@ -685,7 +685,11 @@
             "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
             "taskCount": 16,
             "averageComplexity": 2.1,
-            "note": "15 atomic tasks across 5 phases (avg complexity 2.1). Critical path 11 tasks deep. Phase 0: regression guard scaffold (T-001, RED first). Phase 1+2+3: design-tokens generator extension with culori/formatSRGB (T-002), VARIANT_TOKEN_MAP 42 entries (T-003), emitVariantTokens/dist regen (T-004), codemod 679 sites (T-005), @repo/icons subtle variant fix (T-006). Integration: i18n es/en/pt (T-007), BrowserGateBanner admin gate CSS.supports+sessionStorage (T-008), dark-mode fallback audit (T-009), Playwright visual parity (T-010), CI guard pipeline wiring (T-011). Testing: full suite smoke (T-012), JSDoc+docs (T-013). Cleanup: PR open (T-014), post-merge registry closeout (T-015). Locked decisions: D2=emitVariantTokens, D5=culori, D6=naming --base-aNN/lNN/lmNN, D1=codemod script, D4+D8=admin CSS.supports+sessionStorage, D7=no vite build.target."
+            "note": "15 atomic tasks across 5 phases (avg complexity 2.1). Critical path 11 tasks deep. Phase 0: regression guard scaffold (T-001, RED first). Phase 1+2+3: design-tokens generator extension with culori/formatSRGB (T-002), VARIANT_TOKEN_MAP 42 entries (T-003), emitVariantTokens/dist regen (T-004), codemod 679 sites (T-005), @repo/icons subtle variant fix (T-006). Integration: i18n es/en/pt (T-007), BrowserGateBanner admin gate CSS.supports+sessionStorage (T-008), dark-mode fallback audit (T-009), Playwright visual parity (T-010), CI guard pipeline wiring (T-011). Testing: full suite smoke (T-012), JSDoc+docs (T-013). Cleanup: PR open (T-014), post-merge registry closeout (T-015). Locked decisions: D2=emitVariantTokens, D5=culori, D6=naming --base-aNN/lNN/lmNN, D1=codemod script, D4+D8=admin CSS.supports+sessionStorage, D7=no vite build.target.",
+            "archived": true,
+            "archivedAt": "2026-06-01T04:00:15.000Z",
+            "completedAt": "2026-06-01T04:00:15.000Z",
+            "completionRef": "PR #1346 (merge commit 114925d8a) to staging"
         }
     ],
     "standalone": {
