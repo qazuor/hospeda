@@ -109,10 +109,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <span class="account__header-pattern" aria-hidden="true" />
 
         <div class="account__header-inner">
-            <!-- Avatar with initials fallback -->
+            <!-- Avatar: photo when available, initials fallback otherwise (BETA-32) -->
             <div class="account__avatar" aria-hidden="true">
                 <span class="account__avatar-ring" aria-hidden="true" />
-                <span class="account__avatar-initials">{initials}</span>
+                {user.image ? (
+                    <img src={user.image} alt="" class="account__avatar-img" />
+                ) : (
+                    <span class="account__avatar-initials">{initials}</span>
+                )}
             </div>
 
             <!-- Name + email + small detail row -->
@@ -258,6 +262,16 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     .account__avatar-initials {
         position: relative;
         z-index: 1;
+    }
+
+    /* Avatar photo fills the circle, covering the gradient placeholder. */
+    .account__avatar-img {
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: var(--radius-pill);
     }
 
     .account__user-info {
@@ -456,8 +470,20 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
 
                 const subEl = document.getElementById('stat-subscription');
-                if (subEl && statsData.data?.plan?.name) {
-                    subEl.textContent = statsData.data.plan.name;
+                if (subEl) {
+                    // BETA-32: free-tier users have `plan: null`. The old guard
+                    // (`if plan?.name`) never cleared the shimmer for them, so the
+                    // widget span loaded forever. Always clear on a successful
+                    // fetch — show the plan name, or the "free" label otherwise.
+                    const planName = statsData.data?.plan?.name;
+                    if (planName) {
+                        subEl.textContent = planName;
+                    } else {
+                        const freeLabel = document
+                            .getElementById('stat-subscription-status')
+                            ?.getAttribute('data-label-free');
+                        subEl.textContent = freeLabel ?? 'Gratuito';
+                    }
                     subEl.classList.remove('stat-value--loading');
                 }
 
@@ -483,6 +509,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     revEl.textContent = String(reviewsData.data.totals.total);
                     revEl.classList.remove('stat-value--loading');
                 }
+            }
+
+            // Defensive: a non-2xx response (e.g. 401/500) runs neither the
+            // ok-branches above nor the catch below, which used to leave the
+            // widgets shimmering forever. Clear any remaining loading state so
+            // no stat stays stuck (BETA-32).
+            for (const id of ['stat-favorites', 'stat-reviews', 'stat-subscription']) {
+                document.getElementById(id)?.classList.remove('stat-value--loading');
             }
         } catch (error) {
             console.error('[account] Failed to load stats:', error);

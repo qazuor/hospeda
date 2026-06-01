@@ -38,6 +38,13 @@ declare namespace App {
              * with the top-right UserMenu predicate).
              */
             readonly role: string | null;
+            /**
+             * Avatar URL from the Better Auth session (`users.image`), or null
+             * when the user has no avatar. Forwarded by middleware so SSR
+             * surfaces (header, account dashboard) can render the avatar
+             * instead of falling back to initials (BETA-32).
+             */
+            readonly image: string | null;
         } | null;
 
         /**
