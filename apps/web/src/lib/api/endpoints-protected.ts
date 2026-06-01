@@ -1135,6 +1135,92 @@ export const protectedAccommodationsApi = {
     }
 };
 
+// --- Comments (Protected — SPEC-165) ---
+
+/**
+ * Comment entity returned by the protected create endpoint.
+ * This is the full comment schema (includes moderation state, author object, etc.).
+ * Only a subset is used by the web frontend.
+ */
+export interface CommentProtectedItem {
+    readonly id: string;
+    readonly content: string;
+    readonly createdAt: string;
+    readonly author: {
+        readonly id: string;
+        readonly displayName: string | null;
+    } | null;
+}
+
+/**
+ * Protected comment API endpoints (require an authenticated session).
+ */
+export const protectedCommentsApi = {
+    /**
+     * Post a new comment on a post or event.
+     *
+     * Maps to:
+     *   POST /api/v1/protected/posts/:postId/comments   (entityType === 'POST')
+     *   POST /api/v1/protected/events/:eventId/comments (entityType === 'EVENT')
+     *
+     * Rate-limited to 5 requests/minute per user. Returns 429 with a
+     * `Retry-After` header when the limit is exceeded.
+     *
+     * @param params - Entity type, entity ID, and comment content
+     * @returns The created comment record
+     *
+     * @example
+     * ```ts
+     * const result = await protectedCommentsApi.create({
+     *   entityType: 'POST',
+     *   entityId: post.id,
+     *   content: 'Great article!'
+     * });
+     * if (result.ok) console.log(result.data.id);
+     * ```
+     */
+    create({
+        entityType,
+        entityId,
+        content
+    }: {
+        readonly entityType: 'POST' | 'EVENT';
+        readonly entityId: string;
+        readonly content: string;
+    }): Promise<ApiResult<CommentProtectedItem>> {
+        const segment = entityType === 'EVENT' ? 'events' : 'posts';
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${segment}/${entityId}/comments`,
+            body: { content }
+        });
+    },
+
+    /**
+     * Soft-delete a comment owned by the authenticated user.
+     *
+     * Maps to: DELETE /api/v1/protected/comments/:commentId
+     *
+     * Only the comment author can delete their own comment.
+     * Returns 204/200 on success, 403 if not the owner.
+     *
+     * @param params - Comment ID to delete
+     * @returns Whether the deletion succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await protectedCommentsApi.deleteOwn({ commentId: 'comment-uuid' });
+     * if (result.ok) console.log('Deleted');
+     * ```
+     */
+    deleteOwn({
+        commentId
+    }: {
+        readonly commentId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/comments/${commentId}` });
+    }
+};
+
 // --- User Bookmark Collections (Protected) ---
 
 /** Usage counters for bookmark collections returned by the list endpoint */

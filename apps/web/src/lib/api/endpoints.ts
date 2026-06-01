@@ -984,6 +984,73 @@ export const searchApi = {
     }
 };
 
+// --- Comments (Public — SPEC-165) ---
+
+/**
+ * A single approved comment returned by the public comment thread endpoint.
+ * `createdAt` is a Date (parsed by the API client) — convert to ISO string
+ * before passing to React islands via props.
+ */
+export interface CommentPublicItem {
+    readonly id: string;
+    /** Display name of the comment author. '[Usuario eliminado]' when account was deleted. */
+    readonly authorName: string;
+    readonly content: string;
+    /** ISO 8601 date string as returned by the server. */
+    readonly createdAt: string;
+}
+
+/**
+ * Public comment API endpoints (no authentication required).
+ * Supports both POST and EVENT entity types to enable re-use in T-015.
+ */
+export const commentsApi = {
+    /**
+     * List APPROVED comments for a post or event, oldest-first.
+     *
+     * Maps to:
+     *   GET /api/v1/public/posts/:postId/comments   (entityType === 'POST')
+     *   GET /api/v1/public/events/:eventId/comments (entityType === 'EVENT')
+     *
+     * Returns a paginated list; pass `page` / `pageSize` for subsequent pages.
+     * The initial SSR load uses the defaults (page 1, pageSize 20).
+     *
+     * @param params - entity type, entity ID, pagination, and optional SSR cookie
+     * @returns Paginated list of approved comments
+     *
+     * @example
+     * ```ts
+     * const result = await commentsApi.listByEntity({
+     *   entityType: 'POST',
+     *   entityId: post.id
+     * });
+     * if (result.ok) {
+     *   const comments = result.data.items;
+     * }
+     * ```
+     */
+    listByEntity({
+        entityType,
+        entityId,
+        page,
+        pageSize
+    }: {
+        readonly entityType: 'POST' | 'EVENT';
+        readonly entityId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<CommentPublicItem>>> {
+        const segment = entityType === 'EVENT' ? 'events' : 'posts';
+        const params: Record<string, unknown> = {};
+        if (page !== undefined) params.page = page;
+        if (pageSize !== undefined) params.pageSize = pageSize;
+        return apiClient.getList({
+            path: `${BASE}/${segment}/${entityId}/comments`,
+            params: Object.keys(params).length > 0 ? params : undefined
+        });
+    }
+};
+
 // --- User Bookmarks (Public count — no auth required) ---
 
 /** Public user bookmarks API endpoints (no auth required) */

@@ -15,6 +15,7 @@ import { ShareButtons } from '@/components/ShareButtons.client';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import EventDetailHeader from '@/components/event/EventDetailHeader.astro';
 import EventDetailPricingCard from '@/components/event/EventDetailPricingCard.astro';
+import CommentThread from '@/components/comments/CommentThread.astro';
 import EventDetailLocationCard from '@/components/event/EventDetailLocationCard.astro';
 import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCard.astro';
 import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
@@ -236,6 +237,15 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 		{safeDescriptionHtml && (
 			<div class="event-detail__description" set:html={safeDescriptionHtml} />
 		)}
+
+		<!-- Comment thread (SPEC-165 T-015: AC-30, reuses the post thread component) -->
+		<CommentThread
+			entityType="EVENT"
+			entityId={eventId}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			currentUrl={Astro.url.href}
+		/>
 
 		<!-- Tags row (only when tags exist) -->
 		{tags.length > 0 && (

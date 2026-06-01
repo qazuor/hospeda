@@ -1,7 +1,7 @@
 ---
 specId: SPEC-165
 title: Post and Event Comments System
-status: draft
+status: in-progress
 complexity: high
 owner: qazuor
 created: 2026-05-27
@@ -258,17 +258,20 @@ Entries to add to `packages/seed/src/required/rolePermissions.seed.ts`:
 **i18n**: all user-facing strings in `packages/i18n` locale files for `es`, `en`, `pt`. Keys under `comments.*` namespace.
 
 **Post detail page** (`apps/web/src/pages/blog/[slug].astro` or equivalent):
+
 - Thread section rendered below the post content.
 - Thread displays APPROVED comments, sorted oldest-first, paginated (load-more or infinite scroll — UX detail for implementation).
 - Submit form shown to authenticated users; replaced by "Iniciá sesión para comentar" CTA for guests.
 - Existing `posts.comments` counter in the post header is untouched (still rendered from the integer field).
 
 **Event detail page** (`apps/web/src/pages/events/[slug].astro` or equivalent):
+
 - Same thread component reused (parametrized by `entityType` + `entityId`).
 
 **Empty state**: "Sé el primero en comentar" message when thread has zero approved comments.
 
 **Error states**:
+
 - Submit fails (network/API error): inline error message below the form, form content preserved.
 - Rate limit (429): "Demasiados comentarios, esperá un momento." message.
 - Unauthenticated submit attempt: redirect to login or show login modal (consistent with site convention).
@@ -280,18 +283,21 @@ Entries to add to `packages/seed/src/required/rolePermissions.seed.ts`:
 **Technology**: TanStack Start file-based routing. TanStack Query for server state. Shadcn UI components. TanStack Form + Zod for forms. Tailwind CSS v4.
 
 **EDITOR card H upgrade** (SPEC-155 dependency):
+
 - Replaces the deferred placeholder with a live feed calling `GET /api/v1/admin/comments/recent`.
 - Displays last 10 comments across posts and events.
 - Each item shows: entity type badge (POST/EVENT), content excerpt (truncated), author name, `moderationState` badge, relative timestamp.
 - Gated by `POST_COMMENT_VIEW AND EVENT_COMMENT_VIEW` (card uses `onMissing: 'hide'` pattern from IA config).
 
 **Moderation queue** (`/admin/comments`):
+
 - Full list route with filters: entity type, moderation state, date range, free-text search.
 - Table columns: entity (type + link), content excerpt, author, moderation state, created at, actions.
 - Inline actions: Approve, Reject, Delete (soft), with confirmation dialog for hard-delete.
 - Bulk moderation: select multiple → approve/reject/delete batch (nice-to-have, can be deferred to follow-up).
 
 **Comment detail page** (`/admin/comments/:id`):
+
 - Full comment content.
 - Author info (name, link to user profile).
 - Entity link (to the post or event).

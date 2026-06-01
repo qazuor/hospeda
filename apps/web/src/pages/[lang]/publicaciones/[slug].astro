@@ -20,6 +20,7 @@ import PostSponsorshipBanner from '@/components/post/PostSponsorshipBanner.astro
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import TagChips from '@/components/TagChips.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
@@ -384,6 +385,15 @@ const breadcrumbItems = [
 		<!-- Post body -->
 		<PostContent safeContentHtml={safeContentHtml} />
 
+		<!-- Comment thread (SPEC-165 T-014: AC-27/28/29) -->
+		<CommentThread
+			entityType="POST"
+			entityId={postId}
+			locale={locale}
+			isAuthenticated={isAuthenticated}
+			currentUrl={Astro.url.href}
+		/>
+
 		<!-- Videos (if any) -->
 		{postVideos.length > 0 && (
 			<section class="post-detail__videos" aria-label={t('blog.detail.videosTitle', 'Videos')}>
@@ -459,7 +469,10 @@ const breadcrumbItems = [
 							slug={String(p.slug || '')}
 							title={String(p.title || '')}
 							summary={String(p.summary || p.excerpt || '')}
-							featuredImage={p.featuredImage ? String(p.featuredImage) : null}
+							featuredImage={
+								(p.media as { featuredImage?: { url?: string } } | null | undefined)
+									?.featuredImage?.url ?? null
+							}
 							publishedAt={p.publishedAt ? String(p.publishedAt) : null}
 							lang={locale}
 						/>

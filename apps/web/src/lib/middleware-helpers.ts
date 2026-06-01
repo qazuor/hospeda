@@ -317,6 +317,13 @@ export interface SessionUser {
      * consumers should treat that as the lowest-privilege case.
      */
     readonly role: string | null;
+    /**
+     * Avatar URL from the Better Auth session (`users.image`). `null` when the
+     * user has no avatar. Without this, server-rendered surfaces (header,
+     * account dashboard) cannot show the avatar and fall back to initials
+     * forever (BETA-32).
+     */
+    readonly image: string | null;
 }
 
 /**
@@ -409,6 +416,9 @@ export async function parseSessionUser({
                         // user. Used by AccountLayout to gate the sidebar
                         // "Mis propiedades" link (SPEC-143 Finding #12).
                         role?: string;
+                        // Avatar URL (`users.image`), forwarded so SSR surfaces
+                        // can render the avatar instead of initials (BETA-32).
+                        image?: string;
                     };
                 };
 
@@ -420,7 +430,8 @@ export async function parseSessionUser({
                     id: data.user.id,
                     name: data.user.name || '',
                     email: data.user.email,
-                    role: data.user.role ?? null
+                    role: data.user.role ?? null,
+                    image: typeof data.user.image === 'string' ? data.user.image : null
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });

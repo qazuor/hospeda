@@ -367,6 +367,7 @@
         },
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
+        "bookmark_count_other": "Guardado por {{count}} personas",
         "bookmark_count_zero": "Sé el primero en guardarlo"
     },
     "list": {

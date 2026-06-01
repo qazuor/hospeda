@@ -150,7 +150,11 @@ const bottomEvents = remainingEvents.slice(2, 5);
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-card-gap);
-    overflow: hidden;
+    /* `clip` (not `hidden`) so the section still contains the cards' horizontal
+       reveal travel without creating a scroll container that swallows the
+       IntersectionObserver hit-test — `overflow: hidden` left the
+       `[data-reveal="left"|"right"]` cards stuck at opacity:0 (BETA-35). */
+    overflow: clip;
   }
 
   .events__grid-top > *,

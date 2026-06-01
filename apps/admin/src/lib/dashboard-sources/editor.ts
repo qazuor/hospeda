@@ -791,11 +791,62 @@ registerDataSource('editor.content.health.events', (ctx) => ({
 }));
 
 // ============================================================================
-// NOTE — deferred slots (NO resolver registration)
+// CARD H — Recent comments (SPEC-165 T-016)
 // ============================================================================
-// Card H ('editor.comments.recent'): 🟡 PENDING — comment-listing endpoint
-//   must be verified/built (EDITOR-Q1). Register here once the endpoint lands.
-//
+
+/**
+ * Shape of a single item returned by GET /api/v1/admin/comments/recent.
+ *
+ * The endpoint wraps its payload in `ResponseFactory`, so the full JSON body
+ * is `{ success, data: { data: RecentCommentItem[] } }`.
+ */
+export interface RecentCommentItem {
+    readonly id: string;
+    readonly entityType: 'POST' | 'EVENT';
+    readonly entityId: string;
+    readonly content: string;
+    readonly authorName: string;
+    readonly moderationState: 'APPROVED' | 'REJECTED' | 'PENDING';
+    readonly createdAt: string;
+}
+
+/** fetchApi envelope for the recent-comments endpoint. */
+interface RecentCommentsApiResponse {
+    readonly success: boolean;
+    readonly data?: {
+        readonly data?: ReadonlyArray<RecentCommentItem>;
+    };
+}
+
+/**
+ * EDITOR card H: recent comments feed (top 10, newest first).
+ *
+ * Requires the user to hold POST_COMMENT_VIEW AND EVENT_COMMENT_VIEW — the
+ * `onMissing: 'hide'` on the widget config hides the card when the resolver
+ * returns empty, but the actual AND-gate check is performed inside
+ * `CommentsFeedCard` (the widget renderer reads auth context directly).
+ *
+ * Source ID: `'editor.comments.recent'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/comments/recent?pageSize=10
+ */
+registerDataSource('editor.comments.recent', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.comments.recent', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<RecentCommentsApiResponse>({
+            path: '/api/v1/admin/comments/recent?pageSize=10'
+        });
+        // The endpoint wraps the payload in ResponseFactory's double-data envelope:
+        // fetchApi returns { data: <body>, status } where <body> is
+        // { success, data: { data: RecentCommentItem[] } }.
+        return result.data.data?.data ?? [];
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// NOTE — remaining deferred slots (NO resolver registration)
+// ============================================================================
 // Card C — open rate: 🔴 PHASE 2 (no email-open tracking). Deferred.
 // Card E — views per post: 🔴 PHASE 2 (cross-entity view tracking).
 // Card F — views per event: 🔴 PHASE 2 (cross-entity view tracking).
