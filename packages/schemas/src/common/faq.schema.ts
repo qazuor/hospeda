@@ -90,3 +90,16 @@ export const FaqReorderPayloadSchema = z.object({
     order: z.array(FaqReorderItemSchema).min(1)
 });
 export type FaqReorderPayload = z.infer<typeof FaqReorderPayloadSchema>;
+
+/**
+ * Baseline FAQ category suggestions seeded into the admin category combobox (SPEC-158 baseline).
+ * These cover the four canonical destination FAQ topics; free-text custom categories are still
+ * allowed — this const only pre-populates the combobox suggestions.
+ */
+export const FAQ_BASELINE_CATEGORIES = [
+    'Cómo llegar',
+    'Qué hacer',
+    'Cuándo visitar',
+    'Servicios'
+] as const;
+export type FaqBaselineCategory = (typeof FAQ_BASELINE_CATEGORIES)[number];
