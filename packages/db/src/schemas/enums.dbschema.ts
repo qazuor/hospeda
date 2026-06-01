@@ -28,6 +28,7 @@ import {
     OwnerPromotionDiscountTypeEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
+    PermissionEffectEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
@@ -95,6 +96,11 @@ export const LifecycleStatusPgEnum = pgEnum(
 );
 
 export const PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum));
+
+export const PermissionEffectPgEnum = pgEnum(
+    'permission_effect_enum',
+    enumToTuple(PermissionEffectEnum)
+);
 
 export const PermissionCategoryPgEnum = pgEnum(
     'permission_category_enum',

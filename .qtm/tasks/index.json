@@ -606,13 +606,16 @@
         {
             "specId": "SPEC-170",
             "title": "Per-User Granular Permission Management Panel",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "28/31",
             "path": "SPEC-170-user-permission-management",
             "branch": "spec/SPEC-170-user-permission-management",
             "base": "staging",
             "createdAt": "2026-05-29T00:00:00.000Z",
-            "note": "Draft spec.md written, NOT atomized. Spun off from SPEC-169 D7. Backend per-user permission overrides already exists (user_permission table + PermissionService + actor merge); missing = admin UI grant/revoke (stub at /access/users/:id/permissions) + API endpoints + categorized picker. Includes commented posts section (author-fallback model, _OWN deferred). 6 open questions for owner before implementation. No worktree yet."
+            "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
+            "taskCount": 31,
+            "averageComplexity": 2.6,
+            "note": "31 atomic tasks atomized 2026-05-30. All complexity ≤4 (avg 2.6). Phase breakdown: setup 3 (avg 1.7), core 10 (avg 2.5), integration 10 (avg 2.5), testing 8 (avg 2.9). Critical path 14 tasks deep (T-001→T-031). Two mandatory TDD gates: T-006 (actor.ts 10 precedence cases, write RED first) + T-012 (permission-grouping pure logic). GATE task: T-007 (actor.ts deny-resolution) — no API or UI integration testing is meaningful until this passes. All 6 OQs resolved by owner 2026-05-30. Decisions: pgEnum for effect column, immediate cache invalidation, 400 on SUPER_ADMIN target."
         },
         {
             "specId": "SPEC-161",

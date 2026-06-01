@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { AssignmentResultSchema, RemovalResultSchema } from '../../api/result.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { PermissionEffectEnum } from '../../enums/permission-effect.enum.js';
 import { PermissionEnumSchema } from '../../enums/permission.schema.js';
 import { RoleEnumSchema } from '../../enums/role.schema.js';
 
@@ -39,6 +40,25 @@ export const UsersListResultSchema = z.object({
 export type UsersListResult = z.infer<typeof UsersListResultSchema>;
 
 // ============================================================================
+// PERMISSION EFFECT
+// ============================================================================
+
+/**
+ * Direction of a per-user permission override.
+ *
+ * - `grant`: adds the permission to the user on top of their role.
+ * - `deny`: subtracts a role-granted permission from a single user
+ *   (deny wins over grant at auth resolution; see `actor.ts`).
+ *
+ * Derived from {@link PermissionEffectEnum}, the single source of truth shared
+ * with the `permission_effect_enum` pg enum (`@repo/db`) and the
+ * `user_permission.effect` column (SPEC-170).
+ */
+export const PermissionEffectSchema = z.nativeEnum(PermissionEffectEnum, {
+    error: () => ({ message: 'zodError.enums.permissionEffect.invalid' })
+});
+
+// ============================================================================
 // PERMISSION ASSIGNMENT SCHEMAS
 // ============================================================================
 
@@ -55,12 +75,16 @@ export const RolePermissionManagementInputSchema = z
 
 /**
  * Schema for assigning/removing permissions to/from users
- * Used for user-permission management operations
+ * Used for user-permission management operations.
+ *
+ * `effect` is optional and defaults to `'grant'` for backward compatibility
+ * with callers that only manage additive overrides (SPEC-170).
  */
 export const UserPermissionManagementInputSchema = z
     .object({
         userId: UserIdSchema,
-        permission: PermissionEnumSchema
+        permission: PermissionEnumSchema,
+        effect: PermissionEffectSchema.optional().default(PermissionEffectEnum.GRANT)
     })
     .strict();
 
@@ -146,8 +170,12 @@ export const UsersQueryOutputSchema = UsersListResultSchema;
 // TYPE EXPORTS
 // ============================================================================
 
+export type PermissionEffect = z.infer<typeof PermissionEffectSchema>;
 export type RolePermissionManagementInput = z.infer<typeof RolePermissionManagementInputSchema>;
-export type UserPermissionManagementInput = z.infer<typeof UserPermissionManagementInputSchema>;
+// Use the INPUT type so `effect` is optional for callers (it defaults to `'grant'`
+// at validation time). The service `execute` still receives the parsed OUTPUT shape
+// with `effect` always present. removePermissionFromUser reuses this and ignores effect.
+export type UserPermissionManagementInput = z.input<typeof UserPermissionManagementInputSchema>;
 export type PermissionsByRoleInput = z.infer<typeof PermissionsByRoleInputSchema>;
 export type PermissionsByUserInput = z.infer<typeof PermissionsByUserInputSchema>;
 export type RolesByPermissionInput = z.infer<typeof RolesByPermissionInputSchema>;
