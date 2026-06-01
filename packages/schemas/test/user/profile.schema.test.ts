@@ -207,20 +207,29 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject a phone that is too short (< 5 total digits after +)', () => {
-            // The regex /^\+\d{1,3}\d{4,14}$/ requires 5-17 total digits after +.
-            // +1234 = + followed by 4 digits → below minimum
-            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, phone: '+1234' });
+        it('should reject a phone that is too short', () => {
+            // InternationalPhoneRegex (E.164): + then a 1-9 leading digit and
+            // 1-14 more digits. `+1` has only a leading digit → below minimum.
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, phone: '+1' });
             expect(result.success).toBe(false);
         });
 
-        it('should reject a phone with more than 17 total digits after +', () => {
-            // The regex /^\+\d{1,3}\d{4,14}$/ requires at most 17 total digits after +.
-            // +123456789012345678 = + followed by 18 digits → above maximum
+        it('should reject a phone with more digits than E.164 allows', () => {
+            // InternationalPhoneRegex caps the first group at 15 digits total.
+            // +123456789012345678 = + followed by 18 digits → above maximum.
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
                 phone: '+123456789012345678'
             });
+            expect(result.success).toBe(false);
+        });
+
+        // BETA-34: client and server must validate phone with the SAME regex
+        // (InternationalPhoneRegex). The previous loose client regex
+        // (`/^\+\d{1,3}\d{4,14}$/`) accepted a leading-zero country code that
+        // the server's regex (first digit 1-9) rejects → client-OK / server-400.
+        it('should reject a phone with a leading-zero country code (server-aligned)', () => {
+            const result = ProfileEditSchema.safeParse({ ...VALID_BASE, phone: '+0123456789' });
             expect(result.success).toBe(false);
         });
     });
@@ -285,12 +294,15 @@ describe('ProfileEditSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('accepts valid social network URLs', () => {
+        it('accepts valid social network URLs (on the canonical domains)', () => {
+            // BETA-34: these must use the same canonical domains the server
+            // enforces via SocialNetworkSchema. `twitter.com` (NOT `x.com`),
+            // `youtube.com`, etc.
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
                 facebookUrl: 'https://facebook.com/maria',
                 instagramUrl: 'https://instagram.com/maria',
-                twitterUrl: 'https://x.com/maria',
+                twitterUrl: 'https://twitter.com/maria',
                 linkedinUrl: 'https://linkedin.com/in/maria',
                 youtubeUrl: 'https://youtube.com/@maria'
             });
@@ -301,6 +313,17 @@ describe('ProfileEditSchema', () => {
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
                 facebookUrl: 'maria-on-facebook'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('rejects an off-domain social URL the server would also reject (BETA-34)', () => {
+            // A syntactically valid URL on the wrong domain used to pass the
+            // loose client schema and then 400 on the server. Now the client
+            // regex matches the server (TwitterUrlRegex requires twitter.com).
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                twitterUrl: 'https://x.com/maria'
             });
             expect(result.success).toBe(false);
         });

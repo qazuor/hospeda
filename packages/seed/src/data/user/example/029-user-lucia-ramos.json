@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "San José",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3264",
-        "street": "Entre Ríos",
-        "number": "258",
-        "coordinates": {
-            "lat": "-31.7500",
-            "long": "-58.5500"
-        }
+        "region": "Entre Ríos",
+        "city": "San José",
+        "addressLine1": "Entre Ríos 258",
+        "postalCode": "3264"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en San José, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

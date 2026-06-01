@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Ubajay",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3260",
-        "street": "Moreno",
-        "number": "456",
-        "coordinates": {
-            "lat": "-32.4333",
-            "long": "-58.3167"
-        }
+        "region": "Entre Ríos",
+        "city": "Ubajay",
+        "addressLine1": "Moreno 456",
+        "postalCode": "3260"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

@@ -54,7 +54,9 @@ const FULL_USER: ProfileEditUser = {
     website: 'https://juan.com',
     facebookUrl: 'https://facebook.com/juan',
     instagramUrl: 'https://instagram.com/juan',
-    twitterUrl: 'https://x.com/juan',
+    // BETA-34: must be twitter.com (NOT x.com) — the server's TwitterUrlRegex
+    // only accepts twitter.com, and the client schema now matches it.
+    twitterUrl: 'https://twitter.com/juan',
     linkedinUrl: 'https://linkedin.com/in/juan',
     youtubeUrl: 'https://youtube.com/@juan',
     addressLine1: 'Av. Corrientes 1234',
@@ -118,7 +120,7 @@ describe('ProfileEditForm (SPEC-113 polish)', () => {
                 'https://instagram.com/juan'
             );
             expect((document.getElementById('twitterUrl') as HTMLInputElement).value).toBe(
-                'https://x.com/juan'
+                'https://twitter.com/juan'
             );
             expect((document.getElementById('linkedinUrl') as HTMLInputElement).value).toBe(
                 'https://linkedin.com/in/juan'

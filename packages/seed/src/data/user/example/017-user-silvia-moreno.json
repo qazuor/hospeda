@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Villa Paranacito",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "2840",
-        "street": "Belgrano",
-        "number": "789",
-        "coordinates": {
-            "lat": "-33.7000",
-            "long": "-58.6500"
-        }
+        "region": "Entre Ríos",
+        "city": "Villa Paranacito",
+        "addressLine1": "Belgrano 789",
+        "postalCode": "2840"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

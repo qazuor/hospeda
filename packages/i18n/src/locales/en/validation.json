@@ -951,6 +951,19 @@
                 "max": "[EN] El código postal no puede superar los {{max}} caracteres",
                 "min": "[EN] El código postal debe tener al menos {{min}} caracteres",
                 "required": "[EN] El código postal es obligatorio"
+            },
+            "region": {
+                "min": "The region must be at least {{min}} characters",
+                "max": "The region cannot exceed {{max}} characters",
+                "required": "The region is required"
+            },
+            "addressLine1": {
+                "max": "The address cannot exceed {{max}} characters",
+                "required": "The address is required"
+            },
+            "postalCode": {
+                "max": "The postal code cannot exceed {{max}} characters",
+                "required": "The postal code is required"
             }
         },
         "longitude": {

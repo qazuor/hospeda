@@ -15,17 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Santa Fe",
-        "city": "Rosario",
         "country": "Argentina",
-        "zipCode": "2000",
-        "street": "Córdoba",
-        "number": "1234",
-        "neighborhood": "Centro",
-        "coordinates": {
-            "lat": "-32.9442",
-            "long": "-60.6505"
-        }
+        "region": "Santa Fe",
+        "city": "Rosario",
+        "addressLine1": "Córdoba 1234",
+        "postalCode": "2000"
     },
     "socialNetworks": {
         "instagram": "https://instagram.com/sofia_travel",

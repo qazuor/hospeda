@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Liebig",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3206",
-        "street": "Entre Ríos",
-        "number": "258",
-        "coordinates": {
-            "lat": "-30.8833",
-            "long": "-57.8667"
-        }
+        "region": "Entre Ríos",
+        "city": "Liebig",
+        "addressLine1": "Entre Ríos 258",
+        "postalCode": "3206"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Liebig",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3016",
-        "street": "Urquiza",
-        "number": "567",
-        "coordinates": {
-            "lat": "-31.0500",
-            "long": "-58.6833"
-        }
+        "region": "Entre Ríos",
+        "city": "Liebig",
+        "addressLine1": "Urquiza 567",
+        "postalCode": "3016"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Liebig, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

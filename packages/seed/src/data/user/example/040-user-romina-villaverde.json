@@ -14,16 +14,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Concepción del Uruguay",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3260",
-        "street": "Av. Paysandú",
-        "number": "742",
-        "coordinates": {
-            "lat": "-32.4843",
-            "long": "-58.2310"
-        }
+        "region": "Entre Ríos",
+        "city": "Concepción del Uruguay",
+        "addressLine1": "Av. Paysandú 742",
+        "postalCode": "3260"
     },
     "socialNetworks": {
         "instagram": "https://instagram.com/romi.villaverde",

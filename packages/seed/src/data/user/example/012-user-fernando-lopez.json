@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Concordia",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3200",
-        "street": "San Lorenzo",
-        "number": "654",
-        "coordinates": {
-            "lat": "-31.3933",
-            "long": "-58.0208"
-        }
+        "region": "Entre Ríos",
+        "city": "Concordia",
+        "addressLine1": "San Lorenzo 654",
+        "postalCode": "3200"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

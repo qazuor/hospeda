@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Concepción del Uruguay",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3260",
-        "street": "25 de Mayo",
-        "number": "678",
-        "coordinates": {
-            "lat": "-32.4833",
-            "long": "-58.2333"
-        }
+        "region": "Entre Ríos",
+        "city": "Concepción del Uruguay",
+        "addressLine1": "25 de Mayo 678",
+        "postalCode": "3260"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Concepción del Uruguay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",
