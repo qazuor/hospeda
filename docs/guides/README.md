@@ -11,6 +11,7 @@
 | [Error Handling](error-handling.md) | Error patterns and Result type |
 | [Debugging](debugging.md) | Debugging techniques and tools |
 | [CLI Utilities](cli-utilities.md) | Available CLI scripts and commands |
+| [Managing Billing Plans](managing-billing-plans.md) | Operator guide: create, edit, deactivate, and delete plans from the admin |
 | [Markdown Formatting](markdown-formatting.md) | Documentation formatting standards |
 
 ## Policy Documents

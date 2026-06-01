@@ -1,9 +1,18 @@
+import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
     plugins: [react(), tsconfigPaths()],
+    resolve: {
+        // Map @repo/billing to its TypeScript source so vitest can resolve it
+        // without requiring a dist/ build in the worktree. This mirrors the
+        // tsconfig path alias approach used by other @repo/* packages.
+        alias: {
+            '@repo/billing': path.resolve(__dirname, '../../packages/billing/src/index.ts')
+        }
+    },
     test: {
         globals: true,
         environment: 'jsdom',

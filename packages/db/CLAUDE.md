@@ -657,7 +657,7 @@ For full details, constraint definitions, and verification queries see:
 ## Common Gotchas
 
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
-- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
+- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar. Despite the varchar type, `plan_id` stores the plan **UUID** (`billing_plans.id`), NOT the slug — verified against real data (SPEC-168 D1). Plan mutations therefore target the `id` (UUID), and the slug (`billing_plans.name`) is **immutable** after creation (config/web/entitlements resolve by slug). Plans are now **runtime-editable** from the admin (SPEC-168); the `@repo/billing` config is seed-only.
 - `billing_customers` uses `segment` column, not `category`
 - `numeric()` columns use `mode: 'number'` for runtime JS number coercion (SPEC-056). For monetary values, prefer `integer` storage in centavos (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
