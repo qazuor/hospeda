@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 7,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 30,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -566,7 +566,7 @@
             "id": "T-026",
             "title": "Tests: destination service CRUD (update/remove/adminGetFaqs)",
             "description": "Service tests for destination updateFaq/removeFaq/adminGetFaqs incl. ownership denial. Acceptance: green, covers happy + forbidden + not-found.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-006", "T-007", "T-008"],
             "blocks": [],
@@ -574,21 +574,21 @@
             "tags": ["service-core", "testing", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Tests: reorderFaqs (both) + addFaq order + ownership",
             "description": "Service tests for reorderFaqs on both entities: persistence, foreign-faqId rejection, UPDATE_OWN non-owner forbidden, addFaq assigns max+1. Acceptance: green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-009", "T-010", "T-011", "T-002"],
             "blocks": [],
@@ -596,21 +596,21 @@
             "tags": ["service-core", "testing", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Tests: API integration (destination routes + reorder both)",
             "description": "Integration tests for the 4 destination admin FAQ routes + reorder on both entities. Cover success, 401 (no admin), 403 (host non-owner), 422 (bad payload), 404 (missing parent/faq). Acceptance: green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-018"],
             "blocks": [],
@@ -618,21 +618,21 @@
             "tags": ["api", "testing", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Tests: admin FaqManager component",
             "description": "testing-library tests for FaqManager: add/edit/delete/reorder happy paths, category custom value, drag fires reorder mutation. Acceptance: green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-022", "T-021", "T-024"],
             "blocks": [],
@@ -640,21 +640,21 @@
             "tags": ["admin", "testing", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Tests: public detail respects display_order",
             "description": "Keep Phase 1 destination FAQ integration test green and add assertion that public detail returns faqs ordered by display_order. Acceptance: green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": [],
@@ -662,14 +662,14 @@
             "tags": ["api", "testing", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {

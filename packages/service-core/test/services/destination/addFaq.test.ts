@@ -47,6 +47,8 @@ describe('DestinationService.addFaq', () => {
         vi.spyOn(db, 'DestinationFaqModel').mockImplementation(
             () => faqModelMock as unknown as db.DestinationFaqModel
         );
+        // addFaq now reads the current max displayOrder (SPEC-177) — default to empty.
+        (faqModelMock.findAll as Mock).mockResolvedValue({ items: [] });
     });
 
     it('should add a FAQ successfully (with category persisted)', async () => {
