@@ -324,6 +324,7 @@
         },
         "bookmark_count": "Salvo por {{count}} pessoas",
         "bookmark_count_one": "Salvo por {{count}} pessoa",
+        "bookmark_count_other": "Salvo por {{count}} pessoas",
         "bookmark_count_zero": "Seja o primeiro a salvar"
     },
     "amenityNames": {
