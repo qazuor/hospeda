@@ -606,8 +606,8 @@
         {
             "specId": "SPEC-170",
             "title": "Per-User Granular Permission Management Panel",
-            "status": "in-progress",
-            "progress": "28/31",
+            "status": "completed",
+            "progress": "31/31",
             "path": "SPEC-170-user-permission-management",
             "branch": "spec/SPEC-170-user-permission-management",
             "base": "staging",
@@ -615,6 +615,9 @@
             "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
             "taskCount": 31,
             "averageComplexity": 2.6,
+            "archived": true,
+            "archivedAt": "2026-06-01",
+            "archiveNote": "Shipped via PR #1342 to staging. All 31 tasks complete. E2E in Chrome passed: grant/deny/remove overrides persist + DB effect column verified + deny-resolution confirmed (host-pro effective perms exclude denied accommodation.update.own at /me). actor.ts (role union grants) minus denies working.",
             "note": "31 atomic tasks atomized 2026-05-30. All complexity ≤4 (avg 2.6). Phase breakdown: setup 3 (avg 1.7), core 10 (avg 2.5), integration 10 (avg 2.5), testing 8 (avg 2.9). Critical path 14 tasks deep (T-001→T-031). Two mandatory TDD gates: T-006 (actor.ts 10 precedence cases, write RED first) + T-012 (permission-grouping pure logic). GATE task: T-007 (actor.ts deny-resolution) — no API or UI integration testing is meaningful until this passes. All 6 OQs resolved by owner 2026-05-30. Decisions: pgEnum for effect column, immediate cache invalidation, 400 on SUPER_ADMIN target."
         },
         {
