@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from './audit.schema.js';
+import { IdSchema } from './id.schema.js';
 import { BaseLifecycleFields } from './lifecycle.schema.js';
 
 /**
@@ -69,3 +70,23 @@ export const FaqFields = {
     faq: BaseFaqSchema.optional()
 } as const;
 export type FaqFieldsType = typeof FaqFields;
+
+/**
+ * Single item within a reorder payload: pairs a FAQ id with its new display order.
+ */
+export const FaqReorderItemSchema = z.object({
+    faqId: IdSchema,
+    displayOrder: z.number().int().nonnegative()
+});
+export type FaqReorderItem = z.infer<typeof FaqReorderItemSchema>;
+
+/**
+ * Payload for the PATCH .../faqs/reorder endpoint (SPEC-177).
+ * Carries the new desired display order for a set of FAQs belonging to a parent entity.
+ * Must contain at least one item; the service validates that all faqId values belong to
+ * the requested parent.
+ */
+export const FaqReorderPayloadSchema = z.object({
+    order: z.array(FaqReorderItemSchema).min(1)
+});
+export type FaqReorderPayload = z.infer<typeof FaqReorderPayloadSchema>;
