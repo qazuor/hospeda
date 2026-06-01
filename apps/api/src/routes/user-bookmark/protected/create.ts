@@ -12,8 +12,9 @@ import {
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { enforceFavoritesLimit } from '../../../middlewares/limit-enforcement';
+import { assertFavoritesLimitOrThrow } from '../../../middlewares/limit-enforcement';
 import { gateFavorites } from '../../../middlewares/tourist-entitlements';
+import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -65,7 +66,12 @@ export const createUserBookmarkRoute = createProtectedRoute({
             return { toggled: false, bookmark: null };
         }
 
-        // Bookmark does not exist: create it (toggle on)
+        // Bookmark does not exist: this is a toggle-ON (adding a new favorite).
+        // Enforce the plan's MAX_FAVORITES limit HERE, not as a route middleware,
+        // so that the toggle-OFF branch above is never blocked — a user at their
+        // cap must still be able to remove favorites to free up space (BETA-42).
+        await assertFavoritesLimitOrThrow({ context: ctx as Context<AppBindings>, actor });
+
         const result = await bookmarkService.create(actor, {
             ...input,
             userId: actor.id
@@ -78,16 +84,15 @@ export const createUserBookmarkRoute = createProtectedRoute({
         return { toggled: true, bookmark: result.data };
     },
     options: {
-        // Cascade two SPEC-143 #25 gates:
-        //   1. gateFavorites — entitlement check (SAVE_FAVORITES). Tourist
-        //      plans (free/plus/vip) all include it; HOST / CLIENT_MANAGER
-        //      do NOT. Throws 403 ENTITLEMENT_REQUIRED if missing.
-        //   2. enforceFavoritesLimit — count + plan limit check
-        //      (MAX_FAVORITES: free=3, plus=20, vip=-1 unlimited). Throws
-        //      403 LIMIT_REACHED at cap.
-        // The entitlement gate runs first so a HOST user attempting to
-        // bookmark gets a clean "your plan doesn't support favorites" 403
-        // instead of a confusing LIMIT_REACHED at 0/0.
-        middlewares: [gateFavorites(), enforceFavoritesLimit()]
+        // gateFavorites — entitlement check (SAVE_FAVORITES). Tourist plans
+        // (free/plus/vip) all include it; HOST / CLIENT_MANAGER do NOT. Throws
+        // 403 ENTITLEMENT_REQUIRED if missing.
+        //
+        // The MAX_FAVORITES limit (free=3, plus=20, vip=-1 unlimited) is NOT
+        // enforced as a middleware here: a toggle can either ADD or REMOVE a
+        // favorite, and removing must never be blocked at the cap. The limit is
+        // asserted inside the handler's toggle-ON branch only, via
+        // assertFavoritesLimitOrThrow (BETA-42).
+        middlewares: [gateFavorites()]
     }
 });
