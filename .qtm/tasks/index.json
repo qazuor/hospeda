@@ -634,9 +634,13 @@
         {
             "specId": "SPEC-168",
             "title": "Admin Plan Management — runtime-editable plans on the DB",
-            "status": "in-progress",
-            "progress": "1/23",
-            "path": "SPEC-168-admin-plan-management"
+            "status": "completed",
+            "progress": "23/23",
+            "path": "SPEC-168-admin-plan-management",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:40:38.000Z",
+            "completionRef": "PR #1338 + #1347 merged to staging. Post-merge live verify caught a restore deletedAt no-op bug, fixed in #1347. Staging billing smoke + main promotion pending per owner.",
+            "note": "Drift fix: index previously showed 1/23 in-progress while implementation was 23/23 (task-master per-task tracking was not wired; delivered via #1338 setup→integration + #1347 fix)."
         }
     ],
     "standalone": {
