@@ -162,6 +162,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);
+    // Whether the user has interacted with the guests stepper. The default
+    // value (2 adults, 0 children) is indistinguishable from "untouched", so
+    // without this flag a user who deliberately sets 2 sees the placeholder
+    // again and assumes the value was not saved.
+    const [guestsTouched, setGuestsTouched] = useState(false);
     // Search inputs inside the destination and type panels. Filtered locally
     // against the pre-fetched lists — no extra API calls.
     const [destinationQuery, setDestinationQuery] = useState('');
@@ -222,16 +227,20 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
 
     // Reset the per-panel search query whenever the user closes or switches
     // panels, and autofocus the input on the freshly opened panel so power
-    // users can start typing right away.
+    // users can start typing right away. On mobile the panels render as
+    // bottom-sheets; auto-focusing a text input there pops the virtual
+    // keyboard, which overlaps the option list and blocks selection, so we
+    // only autofocus on desktop popover sizes (>900px).
     useEffect(() => {
+        const isMobileSheet = window.matchMedia('(max-width: 900px)').matches;
         if (activePanel !== 'destination') {
             setDestinationQuery('');
-        } else {
+        } else if (!isMobileSheet) {
             destinationSearchInputRef.current?.focus();
         }
         if (activePanel !== 'type') {
             setTypeQuery('');
-        } else {
+        } else if (!isMobileSheet) {
             typeSearchInputRef.current?.focus();
         }
     }, [activePanel]);
@@ -479,10 +488,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         <span
                             className={cn(
                                 styles.value,
-                                (adults !== 2 || children !== 0) && styles.valueSelected
+                                (guestsTouched || adults !== 2 || children !== 0) &&
+                                    styles.valueSelected
                             )}
                         >
-                            {adults === 2 && children === 0
+                            {!guestsTouched && adults === 2 && children === 0
                                 ? t('home.searchBar.guestsPlaceholder', '¿Cuántas personas son?')
                                 : guestsDisplay}
                         </span>
@@ -795,7 +805,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setAdults((prev) => Math.max(1, prev - 1));
+                                    }}
                                     disabled={adults <= 1}
                                     aria-label={t('search.fewerAdults', 'Fewer adults')}
                                 >
@@ -805,7 +818,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setAdults((prev) => Math.min(10, prev + 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setAdults((prev) => Math.min(10, prev + 1));
+                                    }}
                                     disabled={adults >= 10}
                                     aria-label={t('search.moreAdults', 'More adults')}
                                 >
@@ -822,7 +838,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setChildren((prev) => Math.max(0, prev - 1));
+                                    }}
                                     disabled={children <= 0}
                                     aria-label={t('search.fewerChildren', 'Fewer children')}
                                 >
@@ -832,7 +851,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setChildren((prev) => Math.min(6, prev + 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setChildren((prev) => Math.min(6, prev + 1));
+                                    }}
                                     disabled={children >= 6}
                                     aria-label={t('search.moreChildren', 'More children')}
                                 >
