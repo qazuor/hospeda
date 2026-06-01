@@ -49,6 +49,13 @@
         "confirm": "Tem certeza de que deseja personificar este usuário?",
         "error": "Erro ao personificar usuário. Tente novamente."
     },
+    "browserGate": {
+        "title": "Seu navegador não é compatível com o painel de administração.",
+        "message": "Esta ferramenta requer Chrome 111, Firefox 128, Safari 16.4 ou superior. Atualize seu navegador para continuar.",
+        "upgradeLink": "Baixar Chrome",
+        "contactSupport": "Contatar suporte",
+        "dismiss": "Fechar aviso"
+    },
     "bulk": {
         "itemCount_one": "{{count}} item",
         "itemCount_other": "{{count}} itens"

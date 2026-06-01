@@ -49,6 +49,13 @@
         "confirm": "Are you sure you want to impersonate this user?",
         "error": "Failed to impersonate user. Please try again."
     },
+    "browserGate": {
+        "title": "Your browser is not compatible with the admin panel.",
+        "message": "This tool requires Chrome 111, Firefox 128, Safari 16.4 or higher. Please update your browser to continue.",
+        "upgradeLink": "Download Chrome",
+        "contactSupport": "Contact support",
+        "dismiss": "Close notice"
+    },
     "bulk": {
         "itemCount_one": "{{count}} item",
         "itemCount_other": "{{count}} items"
