@@ -3,7 +3,7 @@ spec-id: SPEC-158
 title: Destinations Rich Content + Structured FAQs
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-05-26T00:00:00Z
 ---
 
@@ -27,6 +27,7 @@ improve SEO (rich content + FAQ rich results) and user value, reusing the
 accommodation pattern verified file-level (engram `#767`).
 
 **Success criteria.**
+
 - All 22 CITY destinations have a markdown `description` of ~2000–3500 chars
   (3–5 paragraphs, attractions narrative embedded) sourced from real web
   research — NO invented data.
@@ -44,6 +45,7 @@ workflow. Spanish-only content (matches the existing single-string `description`
 model and the `es` default market).
 
 **Decisions locked (do not re-litigate).**
+
 - Target = SEED JSON + local DB only. Do NOT push to staging/prod DB.
 - Phase 1 only. Admin/protected FAQ CRUD + editing UI is deferred to Phase 2.
 - Reuse `BaseFaqSchema` (`packages/schemas/src/common/faq.schema.ts`) and the
@@ -58,12 +60,14 @@ model and the `es` default market).
 ### 2. User Stories & Acceptance Criteria (BDD)
 
 **US-1 — Visitor reads a rich destination description.**
+
 - GIVEN a CITY destination with a markdown `description`
 - WHEN a visitor opens `/{lang}/destinos/{...path}`
 - THEN the page renders the markdown as sanitized HTML via `renderContent()`
 - AND headings/paragraphs/lists in the markdown render correctly.
 
 **US-2 — Visitor sees destination FAQs grouped by category.**
+
 - GIVEN a CITY destination with ≥1 FAQ
 - WHEN the visitor opens the destination detail page
 - THEN a FAQ section renders as native `<details>/<summary>` (zero JS)
@@ -71,6 +75,7 @@ model and the `es` default market).
 - AND a destination with zero FAQs renders no FAQ section (no empty shell).
 
 **US-3 — Search engines get FAQPage structured data.**
+
 - GIVEN a destination with ≥1 FAQ
 - WHEN the page is served
 - THEN a single valid `FAQPage` JSON-LD `<script>` is emitted with one
@@ -78,6 +83,7 @@ model and the `es` default market).
 - AND a destination with zero FAQs emits NO `FAQPage` JSON-LD.
 
 **US-4 — Public API returns FAQs in destination detail.**
+
 - GIVEN a destination with FAQs in the DB
 - WHEN `GET` the public destination detail (by path / by slug)
 - THEN the response `data` includes a `faqs` array of `{id, question, answer,
@@ -85,12 +91,14 @@ model and the `es` default market).
 - AND a destination without FAQs returns `faqs: []`.
 
 **US-5 — Seed loads destination FAQs.**
+
 - GIVEN a destination seed JSON with a `faqs: [{question, answer, category}]`
 - WHEN `pnpm db:fresh-dev` runs
 - THEN each FAQ is inserted into `destination_faqs` with its `category`
 - AND re-running the seed is idempotent (ALREADY_EXISTS handled).
 
 **Edge cases (each → a test).**
+
 - Destination with no `faqs` key → empty array, no JSON-LD, no accordion.
 - FAQ `answer` at the 2000-char boundary (BaseFaqSchema max) → valid.
 - FAQ `question` < 10 chars → rejected by schema.
@@ -163,6 +171,7 @@ to `destination.dbschema.ts` relations.
 tables explicitly, add `destination_faqs` to it.
 
 **`DestinationSchema` change** (`packages/schemas/src/entities/destination/destination.schema.ts`):
+
 - Line 58: `description` `.max(2000)` → `.max(8000)` (additive/relaxing → safe per
   schema-compat policy).
 - After `rating` (line 82): add `faqs: z.array(BaseFaqSchema).optional()`.
@@ -187,7 +196,7 @@ list endpoints are Phase 2.
   `AccommodationFaqIdSchema`).
 - NEW `entities/destination/subtypes/destination.faq.schema.ts`: `DestinationFaqSchema
   = BaseFaqSchema.extend({ id: DestinationFaqIdSchema, destinationId: DestinationIdSchema })`
-  + Add/Update/Remove/List input schemas + single/list output schemas (mirror
+  - Add/Update/Remove/List input schemas + single/list output schemas (mirror
   `accommodation.faq.schema.ts`). Update/Remove inputs are defined now for Phase 2
   reuse but only Add/List are wired in Phase 1.
 - `entities/destination/index.ts`: re-export the new subtype.
@@ -195,6 +204,7 @@ list endpoints are Phase 2.
 ### 9. Service (`@repo/service-core`)
 
 Add to `DestinationService` (mirror `AccommodationService`):
+
 - `addFaq(actor, { destinationId, faq })` → insert via the destination FAQ model.
 - `getFaqs(actor, { destinationId })` → list FAQs for a destination.
 Permission checks via `PermissionEnum` only. `updateFaq`/`removeFaq` deferred to
