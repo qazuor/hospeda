@@ -38,6 +38,7 @@ vi.mock('../../src/services/billing/plan/plan.crud.js', () => ({
     getPlanById: vi.fn(),
     hardDeletePlan: vi.fn(),
     listPlans: vi.fn(),
+    restorePlan: vi.fn(),
     softDeletePlan: vi.fn(),
     togglePlanActive: vi.fn(),
     updatePlan: vi.fn()
@@ -297,6 +298,33 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Act
             const result = await service.softDelete('missing-uuid', {});
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(revalidatePaths).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('restore', () => {
+        it('should trigger revalidatePaths when restore succeeds', async () => {
+            // Arrange
+            vi.mocked(crudModule.restorePlan).mockResolvedValue(successResult);
+
+            // Act
+            const result = await service.restore('plan-uuid', {});
+            await new Promise((r) => setTimeout(r, 0));
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(revalidatePaths).toHaveBeenCalledOnce();
+        });
+
+        it('should NOT trigger revalidatePaths when restore fails', async () => {
+            // Arrange
+            vi.mocked(crudModule.restorePlan).mockResolvedValue(failureResult);
+
+            // Act
+            const result = await service.restore('missing-uuid', {});
 
             // Assert
             expect(result.success).toBe(false);

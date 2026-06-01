@@ -393,14 +393,17 @@ export const adminSoftDeletePlanRoute = createAdminRoute({
 
 /**
  * POST /api/v1/admin/billing/plans/:id/restore
- * Restore a soft-deleted billing plan by toggling it back to active.
+ * Restore a soft-deleted billing plan: clears deletedAt and sets active = true.
+ *
+ * Returns 422 if the plan is not currently soft-deleted (VALIDATION_ERROR guard).
+ * Returns 404 if the plan does not exist at all.
  */
 export const adminRestorePlanRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/restore',
     summary: 'Restore soft-deleted billing plan (admin)',
     description:
-        'Restores a previously soft-deleted billing plan by clearing deletedAt and re-enabling it.',
+        'Restores a previously soft-deleted billing plan by clearing deletedAt and re-enabling it (active = true). Returns 422 if the plan is not currently soft-deleted.',
     tags: ['Billing', 'Plans'],
     requiredPermissions: [PermissionEnum.BILLING_MANAGE],
     requestParams: {
@@ -419,8 +422,8 @@ export const adminRestorePlanRoute = createAdminRoute({
             'Admin restoring soft-deleted billing plan'
         );
 
-        // Restore is implemented as toggling active=true on a soft-deleted plan
-        const result = await planService.toggleActive(id, true, { actorId: actor.id });
+        // Delegates to restorePlan which clears deletedAt + sets active=true atomically.
+        const result = await planService.restore(id, { actorId: actor.id });
 
         if (!result.success || !result.data) {
             const status = mapServiceErrorToStatus(result.error?.code);

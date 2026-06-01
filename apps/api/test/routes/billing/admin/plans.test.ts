@@ -27,6 +27,7 @@ const {
     mockPlanUpdate,
     mockPlanToggleActive,
     mockPlanSoftDelete,
+    mockPlanRestore,
     mockPlanHardDelete,
     mockCreateAdminRoute,
     mockCreateAdminListRoute
@@ -37,6 +38,7 @@ const {
     mockPlanUpdate: vi.fn(),
     mockPlanToggleActive: vi.fn(),
     mockPlanSoftDelete: vi.fn(),
+    mockPlanRestore: vi.fn(),
     mockPlanHardDelete: vi.fn(),
     mockCreateAdminRoute: vi.fn(),
     mockCreateAdminListRoute: vi.fn()
@@ -51,6 +53,7 @@ vi.mock('../../../../src/services/plan.service', () => ({
         update: mockPlanUpdate,
         toggleActive: mockPlanToggleActive,
         softDelete: mockPlanSoftDelete,
+        restore: mockPlanRestore,
         hardDelete: mockPlanHardDelete
     }))
 }));
@@ -614,33 +617,68 @@ describe('T-010: adminSoftDeletePlanRoute handler', () => {
 });
 
 // ---------------------------------------------------------------------------
-// T-010: Handler — restore (via toggleActive)
+// T-010: Handler — restore (via planService.restore — clears deletedAt)
 // ---------------------------------------------------------------------------
 
 describe('T-010: adminRestorePlanRoute handler', () => {
     beforeEach(() => {
+        mockPlanRestore.mockReset();
         mockPlanToggleActive.mockReset();
         vi.mocked(auditLog).mockClear();
     });
 
-    it('should restore a soft-deleted plan by toggling active=true', async () => {
+    it('should restore a soft-deleted plan by calling planService.restore (not toggleActive)', async () => {
         // Arrange
         const config = findRouteCall(mockCreateAdminRoute, 'post', '/{id}/restore');
         const handler = config?.handler as (c: unknown, params: unknown) => Promise<unknown>;
 
         const restored = { ...SAMPLE_PLAN, isActive: true };
-        mockPlanToggleActive.mockResolvedValue({ success: true, data: restored });
+        mockPlanRestore.mockResolvedValue({ success: true, data: restored });
 
         // Act
         const result = await handler(createMockContext(), { id: SAMPLE_PLAN.id });
 
-        // Assert — T-010: soft-delete then restore
+        // Assert — T-010: restore calls planService.restore (which clears deletedAt + sets active=true)
         expect(result).toEqual(expect.objectContaining({ isActive: true }));
-        expect(mockPlanToggleActive).toHaveBeenCalledWith(
+        expect(mockPlanRestore).toHaveBeenCalledWith(
             SAMPLE_PLAN.id,
-            true,
             expect.objectContaining({ actorId: 'actor-00000000-0000-0000-0000-000000000001' })
         );
+        // toggleActive must NOT be called by the restore route
+        expect(mockPlanToggleActive).not.toHaveBeenCalled();
+    });
+
+    it('should return 422 when plan is not soft-deleted (VALIDATION_ERROR guard)', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'post', '/{id}/restore');
+        const handler = config?.handler as (c: unknown, params: unknown) => Promise<unknown>;
+
+        mockPlanRestore.mockResolvedValue({
+            success: false,
+            error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Plan is not soft-deleted and cannot be restored'
+            }
+        });
+
+        // Act + Assert — VALIDATION_ERROR maps to 422
+        await expect(handler(createMockContext(), { id: SAMPLE_PLAN.id })).rejects.toThrow();
+    });
+
+    it('should return 404 when plan does not exist', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'post', '/{id}/restore');
+        const handler = config?.handler as (c: unknown, params: unknown) => Promise<unknown>;
+
+        mockPlanRestore.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Plan not found' }
+        });
+
+        // Act + Assert — NOT_FOUND maps to 404
+        await expect(
+            handler(createMockContext(), { id: '00000000-0000-0000-0000-000000000099' })
+        ).rejects.toThrow();
     });
 });
 

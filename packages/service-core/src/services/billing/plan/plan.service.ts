@@ -24,6 +24,7 @@ import {
     getPlanById,
     hardDeletePlan,
     listPlans,
+    restorePlan,
     softDeletePlan,
     togglePlanActive,
     updatePlan
@@ -240,6 +241,27 @@ export class PlanService {
         const result = await softDeletePlan(id, options, ctx);
         if (result.success) {
             this.triggerPricingRevalidation(`plan soft-deleted: ${id}`);
+        }
+        return result;
+    }
+
+    /**
+     * Restores a soft-deleted billing plan by clearing `deletedAt` and setting `active = true`.
+     *
+     * Returns VALIDATION_ERROR if the plan is not currently soft-deleted.
+     * On success, triggers a best-effort cache revalidation of the public pricing pages
+     * so that the restored plan immediately reappears on the site.
+     *
+     * @param id - UUID of the plan to restore
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Restored plan or error (NOT_FOUND | VALIDATION_ERROR | INTERNAL_ERROR)
+     */
+    async restore(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
+        const result = await restorePlan(id, options, ctx);
+        if (result.success) {
+            this.triggerPricingRevalidation(`plan restored: ${id}`);
         }
         return result;
     }

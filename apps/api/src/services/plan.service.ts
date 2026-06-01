@@ -10,6 +10,7 @@ export {
     hardDeletePlan,
     listPlans,
     mapDbToPlan,
+    restorePlan,
     softDeletePlan,
     togglePlanActive,
     updatePlan,
