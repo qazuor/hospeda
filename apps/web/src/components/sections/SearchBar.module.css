@@ -32,7 +32,7 @@
 }
 
 .col:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.05);
+    background: var(--brand-primary-a05);
 }
 
 .col:focus-visible {
@@ -45,7 +45,7 @@
 }
 
 .colActive {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
+    background: var(--brand-primary-a08);
 }
 
 .icon {
@@ -105,7 +105,7 @@
 }
 
 .button:hover {
-    background: oklch(from var(--brand-primary) calc(l * 0.9) c h);
+    background: var(--brand-primary-l90);
 }
 
 .button:focus-visible {
@@ -128,8 +128,7 @@
     background: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 8px 30px oklch(from var(--core-foreground) l c h / 0.1), 0 2px 8px
-        oklch(from var(--core-foreground) l c h / 0.06);
+    box-shadow: 0 8px 30px var(--core-foreground-a10), 0 2px 8px var(--core-foreground-a05);
     padding: 8px 0;
     min-width: 260px;
     max-height: 360px;
@@ -248,8 +247,8 @@
 /* react-day-picker v9 overrides via classNames prop */
 .calendarRoot {
     --rdp-accent-color: var(--brand-primary);
-    --rdp-accent-background-color: oklch(from var(--brand-primary) l c h / 0.12);
-    --rdp-range_middle-background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    --rdp-accent-background-color: var(--brand-primary-a12);
+    --rdp-range_middle-background-color: var(--brand-primary-a08);
     --rdp-range_start-color: var(--primary-foreground);
     --rdp-range_end-color: var(--primary-foreground);
     --rdp-range_start-background: var(--brand-primary);
@@ -296,7 +295,7 @@
 }
 
 .calendarNav button:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
+    background: var(--brand-primary-a08);
     color: var(--brand-primary);
 }
 
@@ -371,7 +370,7 @@
 .stepperButton:hover:not(:disabled) {
     border-color: var(--brand-primary);
     color: var(--brand-primary);
-    background: oklch(from var(--brand-primary) l c h / 0.05);
+    background: var(--brand-primary-a05);
 }
 
 .stepperButton:disabled {
@@ -465,7 +464,7 @@
         inset: 0;
         /* Above the sticky header (--z-nav: 50) and below the panel (100). */
         z-index: 95;
-        background: oklch(from var(--core-foreground) l c h / 0.5);
+        background: var(--core-foreground-a50);
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
         border: none;
@@ -543,7 +542,7 @@
         min-height: 36px;
         border-radius: 50%;
         border: none;
-        background: oklch(from var(--core-foreground) l c h / 0.06);
+        background: var(--core-foreground-a05);
         color: var(--core-foreground);
         cursor: pointer;
         transition: background 0.15s ease;
@@ -551,7 +550,7 @@
     }
 
     .panelClose:hover {
-        background: oklch(from var(--core-foreground) l c h / 0.12);
+        background: var(--core-foreground-a12);
     }
 
     .panelClose:focus-visible {

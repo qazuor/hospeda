@@ -293,8 +293,8 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		inset: 0;
 		background: linear-gradient(
 			to bottom,
-			oklch(from var(--core-foreground) l c h / 0) 30%,
-			oklch(from var(--core-foreground) l c h / 0.55) 100%
+			transparent 30%,
+			var(--core-foreground-a55) 100%
 		);
 		pointer-events: none;
 	}
@@ -303,8 +303,8 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 	.dest-card--carousel .dest-card__gradient {
 		background: linear-gradient(
 			to bottom,
-			oklch(from var(--core-foreground) l c h / 0) 20%,
-			oklch(from var(--core-foreground) l c h / 0.75) 100%
+			transparent 20%,
+			var(--core-foreground-a75) 100%
 		);
 	}
 
@@ -378,7 +378,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		font-weight: 600;
 		font-size: 13px;
 		line-height: 1.4;
-		color: oklch(from var(--primary-foreground) l c h / 0.85);
+		color: var(--primary-foreground-a85);
 		margin: 0;
 	}
 
@@ -387,7 +387,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		font-weight: 400;
 		font-size: 13px;
 		line-height: 1.5;
-		color: oklch(from var(--primary-foreground) l c h / 0.75);
+		color: var(--primary-foreground-a75);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		display: -webkit-box;
@@ -420,7 +420,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		background-color: var(--brand-primary-a12);
 		color: var(--brand-primary);
 		border-radius: 9999px;
 		font-family: var(--font-sans);
@@ -435,7 +435,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 		display: inline-flex;
 		align-items: center;
 		gap: 4px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 		border-radius: 9999px;
 		font-family: var(--font-sans);
@@ -488,9 +488,9 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 	.dest-card__attraction {
 		display: inline-flex;
 		align-items: center;
-		border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+		border: 1px solid var(--brand-primary-a25);
 		border-radius: 9999px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		background-color: var(--brand-primary-a08);
 		color: var(--brand-primary);
 		font-family: var(--font-sans);
 		font-weight: 500;

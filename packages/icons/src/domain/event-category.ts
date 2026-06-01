@@ -141,9 +141,11 @@ export function getEventCategoryColorScheme({
         };
     }
 
+    // SPEC-176 T-006: precomputed a15/a30 tokens provide Chrome-109-safe sRGB
+    // fallbacks for badge bg and border without regressing modern browsers.
     return {
-        bg: `oklch(from var(--${cssToken}) l c h / 0.15)`,
+        bg: `var(--${cssToken}-a15)`,
         text: `var(--${cssToken})`,
-        border: `oklch(from var(--${cssToken}) l c h / 0.3)`
+        border: `var(--${cssToken}-a30)`
     };
 }

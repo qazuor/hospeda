@@ -414,7 +414,7 @@
     transform: translate(-50%, calc(-100% - 2px));
     box-shadow: 0 4px 10px oklch(0 0 0 / 0.18), 0 10px 24px oklch(0 0 0 / 0.14);
     background-color: var(--core-card, #fff);
-    border-color: oklch(from var(--brand-accent) l c h / 0.4);
+    border-color: var(--brand-accent-a40);
 }
 
 /* ----- Cluster icon sizing override -----

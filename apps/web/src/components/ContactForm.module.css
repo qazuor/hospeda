@@ -51,7 +51,7 @@
 .textarea {
     width: 100%;
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    border: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.15));
+    border: 1px solid var(--border, var(--core-foreground-a15));
     border-radius: var(--radius-button);
     font-family: var(--font-sans);
     font-size: var(--text-body);
@@ -72,7 +72,7 @@
 .textarea:focus {
     outline: none;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.18);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
 }
 
 .input.inputError,
@@ -84,7 +84,7 @@
 .input.inputError:focus,
 .select.inputError:focus,
 .textarea.inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.18);
+    box-shadow: 0 0 0 3px var(--destructive-a18);
 }
 
 .select {
@@ -134,7 +134,7 @@
     transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
         box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
     align-self: stretch;
-    box-shadow: 0 4px 12px -4px oklch(from var(--brand-accent) l c h / 0.5);
+    box-shadow: 0 4px 12px -4px var(--brand-accent-a50);
 }
 
 @media (min-width: 640px) {
@@ -145,9 +145,9 @@
 }
 
 .submit:hover:not(:disabled) {
-    background-color: oklch(from var(--brand-accent) calc(l - 0.04) c h);
+    background-color: var(--brand-accent-lm04);
     transform: translateY(-1px);
-    box-shadow: 0 8px 18px -4px oklch(from var(--brand-accent) l c h / 0.55);
+    box-shadow: 0 8px 18px -4px var(--brand-accent-a55);
 }
 
 .submit:focus-visible {
@@ -169,7 +169,7 @@
     background-color: var(--core-card);
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-card);
-    border: 1px solid oklch(from var(--brand-accent) l c h / 0.2);
+    border: 1px solid var(--brand-accent-a20);
 }
 
 .successIcon {
@@ -199,7 +199,7 @@
 
 .formError {
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    background-color: oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.1);
+    background-color: var(--destructive-a10);
     border: 1px solid var(--destructive, oklch(0.6 0.22 25));
     border-radius: var(--radius-button);
     font-family: var(--font-sans);

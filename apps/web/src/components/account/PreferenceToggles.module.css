@@ -20,8 +20,8 @@
 }
 
 .errorWrap {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
-    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card);
     padding: var(--space-5, 20px);
     color: var(--destructive, oklch(0.6 0.2 25));
@@ -157,7 +157,7 @@
 
 .select:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .select:disabled {

@@ -31,7 +31,7 @@
     transform: translateY(-50%);
     height: 0.375rem;
     width: 100%;
-    background: oklch(from var(--core-foreground) l c h / 0.12);
+    background: var(--core-foreground-a12);
     border-radius: var(--radius-pill);
     pointer-events: none;
 }
@@ -111,12 +111,11 @@
 
 .dualRangeInput:hover::-webkit-slider-thumb {
     transform: scale(1.12);
-    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.35);
+    box-shadow: 0 2px 8px var(--brand-accent-a35);
 }
 
 .dualRangeInput:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.25), 0 1px 4px
-        oklch(0 0 0 / 0.2);
+    box-shadow: 0 0 0 3px var(--brand-primary-a25), 0 1px 4px oklch(0 0 0 / 0.2);
 }
 
 /* Z-order matters when the two thumbs sit at the same position: the one
@@ -149,7 +148,7 @@
 
 /* "Sin límite" hint when one bound is at its extreme (filter not applied). */
 .unboundedLabel {
-    color: oklch(from var(--core-muted-foreground) l c h / 0.6);
+    color: var(--core-muted-foreground-a60);
     font-style: italic;
     font-weight: 500;
 }

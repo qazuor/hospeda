@@ -17,7 +17,7 @@
     width: 17.5rem;
     max-width: calc(100vw - 16px);
     border-radius: var(--radius-card);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border: 1px solid var(--brand-primary-a20);
     background-color: var(--core-card);
     box-shadow: var(--shadow-card);
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -53,21 +53,21 @@
     width: 0.75rem;
     height: 0.75rem;
     transform: translateX(-50%) rotate(45deg);
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    background-color: var(--brand-primary-a05);
     pointer-events: none;
 }
 
 .popover[data-placement="bottom"] .arrow {
     top: -0.375rem;
-    border-top: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
-    border-left: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-top: 1px solid var(--brand-primary-a20);
+    border-left: 1px solid var(--brand-primary-a20);
 }
 
 .popover[data-placement="top"] .arrow {
     bottom: -0.375rem;
     background-color: var(--core-card);
-    border-bottom: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
-    border-right: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border-bottom: 1px solid var(--brand-primary-a20);
+    border-right: 1px solid var(--brand-primary-a20);
 }
 
 /* ---- Close button ---- */
@@ -91,7 +91,7 @@
 }
 
 .closeButton:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
 }
 
 .closeButton:focus-visible {
@@ -107,8 +107,8 @@
     gap: 0.625rem;
     padding: 0.875rem 1rem;
     padding-right: 2.5rem; /* room for close button */
-    border-bottom: 1px solid oklch(from var(--brand-primary) l c h / 0.2);
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    border-bottom: 1px solid var(--brand-primary-a20);
+    background-color: var(--brand-primary-a05);
     /* Match the parent popover's top corners since we cannot use overflow:hidden
        (the arrow lives outside the content box). */
     border-top-left-radius: var(--radius-card);
@@ -123,7 +123,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-pill);
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     color: var(--brand-primary);
 }
 
@@ -181,7 +181,7 @@
     justify-content: center;
     padding: 0.5rem 0.75rem;
     border-radius: var(--radius-button);
-    border: 1.5px solid oklch(from var(--brand-primary) l c h / 0.2);
+    border: 1.5px solid var(--brand-primary-a20);
     background: transparent;
     color: var(--brand-primary);
     font-size: 0.8125rem;
@@ -194,7 +194,7 @@
 
 .registerButton:hover {
     border-color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    background-color: var(--brand-primary-a05);
     transform: translateY(-1px);
 }
 

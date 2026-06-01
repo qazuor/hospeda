@@ -421,8 +421,8 @@ const faqJsonLd = {
 		line-height: 1.5;
 		margin: 0 0 var(--space-6);
 		padding: var(--space-4) var(--space-5);
-		background-color: oklch(from var(--brand-accent) l c h / 0.14);
-		border: 1px solid oklch(from var(--brand-accent) l c h / 0.35);
+		background-color: var(--brand-accent-a15);
+		border: 1px solid var(--brand-accent-a35);
 		border-left: 4px solid var(--brand-accent);
 		border-radius: var(--radius-button);
 		max-width: 56ch;
@@ -450,8 +450,8 @@ const faqJsonLd = {
 		line-height: 1.5;
 		margin: 0 0 var(--space-6);
 		padding: var(--space-4) var(--space-5);
-		background-color: oklch(from var(--core-foreground) l c h / 0.06);
-		border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+		background-color: var(--core-foreground-a05);
+		border: 1px solid var(--core-foreground-a20);
 		border-left: 4px solid var(--core-muted-foreground);
 		border-radius: var(--radius-button);
 		max-width: 56ch;
@@ -518,8 +518,8 @@ const faqJsonLd = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 30% 30%,
-			oklch(from var(--brand-primary) l c h / 0.18),
-			oklch(from var(--brand-accent) l c h / 0.08) 60%,
+			var(--brand-primary-a20),
+			var(--brand-accent-a08) 60%,
 			transparent 75%
 		);
 		filter: blur(2px);
@@ -639,13 +639,13 @@ const faqJsonLd = {
 		width: 56px;
 		height: 56px;
 		border-radius: var(--radius-md);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		margin-bottom: var(--space-4);
 	}
 
 	.publicar-benefit-card:nth-child(2) .publicar-benefit-card__icon {
-		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
 
@@ -712,7 +712,7 @@ const faqJsonLd = {
 		font-family: var(--font-heading);
 		font-size: clamp(2rem, 4vw, 3rem);
 		font-weight: 700;
-		color: oklch(from var(--brand-primary) l c h / 0.2);
+		color: var(--brand-primary-a20);
 		display: block;
 		margin-bottom: var(--space-3);
 	}
@@ -779,7 +779,7 @@ const faqJsonLd = {
 		padding: 0 var(--space-container-x);
 	}
 
-	.publicar-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+	.publicar-cta__tagline { color: var(--brand-accent-a80); }
 
 	.publicar-cta__title {
 		color: #fff;

@@ -32,11 +32,11 @@
 .stepperBtn:hover:not(:disabled) {
     border-color: var(--brand-accent);
     color: var(--brand-accent);
-    background-color: oklch(from var(--brand-accent) l c h / 0.06);
+    background-color: var(--brand-accent-a05);
 }
 
 .stepperBtn:active:not(:disabled) {
-    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+    background-color: var(--brand-accent-a12);
 }
 
 .stepperBtnDisabled {

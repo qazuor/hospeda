@@ -321,7 +321,7 @@ const faqJsonLd = {
 		width: 56px;
 		height: 56px;
 		border-radius: var(--radius-md);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		margin-bottom: var(--space-4);
 	}
@@ -353,7 +353,7 @@ const faqJsonLd = {
 		font-family: var(--font-heading);
 		font-size: clamp(2rem, 4vw, 3rem);
 		font-weight: 700;
-		color: oklch(from var(--brand-primary) l c h / 0.2);
+		color: var(--brand-primary-a20);
 		display: block;
 		margin-bottom: var(--space-3);
 	}
@@ -437,7 +437,7 @@ const faqJsonLd = {
 		padding: 0 var(--space-container-x);
 	}
 
-	.owners-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+	.owners-cta__tagline { color: var(--brand-accent-a80); }
 
 	.owners-cta__title {
 		color: var(--surface-dark-foreground);
@@ -447,7 +447,7 @@ const faqJsonLd = {
 	.owners-cta__desc {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: oklch(from var(--surface-dark-foreground) l c h / 0.75);
+		color: var(--surface-dark-foreground-a75);
 		max-width: 55ch;
 		margin: 0 auto var(--space-6);
 		line-height: 1.6;
@@ -496,7 +496,7 @@ const faqJsonLd = {
 		left: 8%;
 		width: 10px;
 		height: 10px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+		background-color: var(--brand-primary-a25);
 	}
 
 	.owners-benefits__dot--2 {
@@ -504,7 +504,7 @@ const faqJsonLd = {
 		right: 12%;
 		width: 14px;
 		height: 14px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 
 	.owners-benefits__dot--3 {
@@ -512,7 +512,7 @@ const faqJsonLd = {
 		left: 18%;
 		width: 8px;
 		height: 8px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.3);
+		background-color: var(--brand-primary-a30);
 	}
 
 	.owners-benefits__dot--4 {
@@ -520,7 +520,7 @@ const faqJsonLd = {
 		right: 22%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+		background-color: var(--brand-accent-a20);
 	}
 
 	.owners-benefits__container {
@@ -604,8 +604,8 @@ const faqJsonLd = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 50% 50%,
-			oklch(from var(--brand-accent) l c h / 0.22),
-			oklch(from var(--brand-primary) l c h / 0.12) 55%,
+			var(--brand-accent-a20),
+			var(--brand-primary-a12) 55%,
 			transparent 75%
 		);
 		filter: blur(4px);

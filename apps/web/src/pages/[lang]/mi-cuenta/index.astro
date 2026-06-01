@@ -160,12 +160,12 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         position: relative;
         margin-bottom: var(--space-8, 2rem);
         border-radius: var(--radius-card);
-        border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+        border: 1px solid var(--core-foreground-a08);
         background-color: var(--core-card);
         background-image: linear-gradient(
             135deg,
-            oklch(from var(--brand-primary) l c h / 0.06) 0%,
-            oklch(from var(--brand-accent) l c h / 0.04) 100%
+            var(--brand-primary-a05) 0%,
+            var(--brand-accent-a05) 100%
         );
         box-shadow: var(--shadow-card);
         overflow: hidden;
@@ -182,7 +182,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         border-radius: var(--radius-pill);
         background: radial-gradient(
             closest-side,
-            oklch(from var(--brand-primary) l c h / 0.18),
+            var(--brand-primary-a20),
             transparent 70%
         );
         pointer-events: none;
@@ -198,7 +198,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         height: 10rem;
         background-image: radial-gradient(
             circle,
-            oklch(from var(--brand-accent) l c h / 0.18) 1px,
+            var(--brand-accent-a20) 1px,
             transparent 1.5px
         );
         background-size: 12px 12px;
@@ -237,13 +237,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         background: linear-gradient(
             135deg,
             var(--brand-primary),
-            oklch(from var(--brand-primary) calc(l - 0.12) c h)
+            var(--brand-primary-lm12)
         );
         color: var(--core-card);
         font-size: 2rem;
         font-weight: 700;
         font-family: var(--font-heading);
-        box-shadow: 0 12px 24px oklch(from var(--brand-primary) l c h / 0.25);
+        box-shadow: 0 12px 24px var(--brand-primary-a25);
     }
 
     /* Outer ring around the avatar to lift it visually off the surface. */
@@ -251,7 +251,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         position: absolute;
         inset: -6px;
         border-radius: var(--radius-pill);
-        border: 2px solid oklch(from var(--brand-primary) l c h / 0.2);
+        border: 2px solid var(--brand-primary-a20);
         pointer-events: none;
     }
 
@@ -308,7 +308,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         font-weight: 600;
         color: var(--brand-primary);
         background-color: var(--core-card);
-        border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
+        border: 1px solid var(--brand-primary-a30);
         border-radius: var(--radius-button);
         text-decoration: none;
         transition:
@@ -322,7 +322,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         background-color: var(--brand-primary);
         color: var(--core-card);
         transform: translateY(-1px);
-        box-shadow: 0 8px 16px oklch(from var(--brand-primary) l c h / 0.25);
+        box-shadow: 0 8px 16px var(--brand-primary-a25);
     }
 
     .account__header-cta:focus-visible {

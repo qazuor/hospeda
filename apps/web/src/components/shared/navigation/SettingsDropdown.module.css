@@ -22,12 +22,12 @@
 .triggerHero,
 .triggerScrolled {
     color: var(--core-foreground);
-    border-color: oklch(from var(--core-foreground) l c h / 0.15);
+    border-color: var(--core-foreground-a15);
 }
 
 .triggerHero:hover,
 .triggerScrolled:hover {
-    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    background-color: var(--core-foreground-a05);
 }
 
 .trigger:focus-visible {
@@ -106,7 +106,7 @@
 }
 
 .signInLink:hover {
-    background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+    background-color: var(--brand-primary-lm05);
 }
 
 .signInLink:focus-visible {

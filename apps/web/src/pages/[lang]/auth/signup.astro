@@ -115,8 +115,8 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
         border-radius: 50%;
         background: radial-gradient(
             circle at 40% 40%,
-            oklch(from var(--brand-accent) l c h / 0.16),
-            oklch(from var(--brand-primary) l c h / 0.06) 55%,
+            var(--brand-accent-a15),
+            var(--brand-primary-a05) 55%,
             transparent 75%
         );
         filter: blur(4px);
@@ -162,21 +162,21 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
         left: 10%;
         width: 10px;
         height: 10px;
-        background-color: oklch(from var(--brand-primary) l c h / 0.28);
+        background-color: var(--brand-primary-a30);
     }
     .signup-deco__dot--2 {
         top: 22%;
         left: 22%;
         width: 7px;
         height: 7px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.32);
+        background-color: var(--brand-accent-a30);
     }
     .signup-deco__dot--3 {
         bottom: 26%;
         right: 14%;
         width: 11px;
         height: 11px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.25);
+        background-color: var(--brand-accent-a25);
     }
 
     @media (max-width: 700px) {
@@ -224,7 +224,7 @@ const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
     }
 
     .auth-page__link:hover {
-        color: oklch(from var(--brand-primary) calc(l * 0.85) c h);
+        color: var(--brand-primary-l85);
     }
 
     .auth-page__link:focus-visible {

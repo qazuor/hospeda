@@ -1,0 +1,721 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-176",
+    "title": "Web color-system fallback for older browsers (oklch/@supports) + admin browser gate",
+    "created": "2026-05-30T00:00:00.000Z",
+    "phaseBreakdown": {
+        "setup": ["T-001", "T-001B"],
+        "core": ["T-002", "T-003", "T-004", "T-005", "T-006"],
+        "integration": ["T-007", "T-008", "T-009", "T-010", "T-011"],
+        "testing": ["T-012", "T-013"],
+        "cleanup": ["T-014", "T-015"]
+    },
+    "parallelTracks": {
+        "trackA": [
+            "T-001",
+            "T-001B",
+            "T-002",
+            "T-003",
+            "T-004",
+            "T-005",
+            "T-006",
+            "T-007",
+            "T-009"
+        ],
+        "trackB": ["T-010", "T-011"],
+        "mergePoint": "T-012"
+    },
+    "criticalPath": [
+        "T-001",
+        "T-001B",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007",
+        "T-009",
+        "T-012",
+        "T-013",
+        "T-014"
+    ],
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Write failing regression guards (RED — guard before fix)",
+            "description": "Per CLAUDE.md bug-fix rule: regression guards land FIRST.\n\nCreate TWO guards:\n\n**Guard 1 — Vitest unit test (RED):**\nCreate `packages/design-tokens/src/generators/variant-token-coverage.test.ts`.\nThe test imports `buildCSS()` from `generate-css.ts` and `VARIANT_TOKEN_MAP` from `variant-tokens.ts` (these files do not yet contain variant logic — the test will FAIL because VARIANT_TOKEN_MAP will be empty and no variant tokens will be in CSS output).\n\nThree `it` blocks:\n1. 'every variant token has a non-oklch sRGB :root declaration' — for each entry in VARIANT_TOKEN_MAP, regex-assert `--{name}: rgb(` appears in generated CSS outside `@supports`.\n2. 'every variant token has an oklch declaration inside @supports' — extract the `@supports (color: oklch(from white l c h))` block from the CSS; assert each `--{name}:` with `oklch(from var(` appears inside it.\n3. 'no variant token name collides with existing palette or theme tokens' — assert the generated names are unique against all non-variant token names.\n\nStart with VARIANT_TOKEN_MAP as an empty array — all three tests PASS trivially. Mark TODO comment: 'SPEC-176: populate VARIANT_TOKEN_MAP in T-002 to make guard meaningful'.\n\n**Guard 2 — CI lint script (scaffold):**\nCreate `apps/web/scripts/check-css-relative-colors.cjs`.\nThe script walks `apps/web/src/` for `.astro`, `.css`, `.tsx`, `.ts` files, strips block comments, scans for `oklch(from`, and exits 1 if ANY match is found (zero allowlist for now — the web source CURRENTLY has 679 violations, so this script will fail hard until T-006 completes. That is intentional: it runs in CI AFTER the codemod lands, not before).\n\nAdd the script invocation to `apps/web/package.json` under a `'check:relative-colors'` script (but do NOT wire to CI in turbo.json yet — that happens in T-013).\n\nAcceptance criteria:\n- `pnpm test` in packages/design-tokens: the coverage test file exists and all 3 `it` blocks run (trivially pass with empty map)\n- `node apps/web/scripts/check-css-relative-colors.cjs` exits 1 (correctly detects the 679 violations in current source)\n- Script prints a summary: 'Found N oklch(from occurrences in M files. Fix: run codemod-relative-colors.mjs'\n- No typecheck errors introduced\n\nFiles affected:\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (new)\n- `apps/web/scripts/check-css-relative-colors.cjs` (new)\n- `apps/web/package.json` (add script entry)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-001B", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Create variant-token-coverage.test.ts with 3 it blocks (trivially green with empty map)",
+                    "completed": true
+                },
+                {
+                    "title": "Create check-css-relative-colors.cjs with directory walker + oklch(from scan",
+                    "completed": true
+                },
+                {
+                    "title": "Add check:relative-colors script to apps/web/package.json",
+                    "completed": true
+                },
+                {
+                    "title": "Verify script exits 1 on current source (679 violations detected)",
+                    "completed": true
+                }
+            ],
+            "tags": [
+                "SPEC-176",
+                "phase-0",
+                "testing",
+                "guard",
+                "test-first",
+                "web",
+                "design-tokens"
+            ],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-001B",
+            "title": "Fix alien token-count baseline in design-tokens (restore green)",
+            "description": "Restore design-tokens test suite to GREEN by correcting 6 hardcoded token-count assertions that drifted due to ALIEN commits (sponsors/amenities/auth/post-categories icon+color SSOT work) that were merged before SPEC-176 and grew the theme records without updating the counts.\n\nThe 6 failing tests and their corrections:\n- `packages/design-tokens/src/themes/web.test.ts` — webLight count: 155 → 208\n- `packages/design-tokens/src/index.test.ts` — webLight count: 155 → 208\n- `packages/design-tokens/src/themes/admin.test.ts` — adminLight count: 39 → 92\n- `packages/design-tokens/src/generators/generate-css.test.ts` — 3 failures:\n  - :root total count: 305 → 358\n  - admin count: 39 → 92\n  - full-output snapshot regression in `__snapshots__/generate-css.test.ts.snap`\n\nWhat to do:\n1. Update the 4 hardcoded numeric count asserts in the 3 test files to their real current values (208, 208, 92, 358, 92).\n2. Regenerate the generate-css snapshot by running `pnpm --filter @repo/design-tokens test -- --update-snapshots` (or the project-equivalent snapshot-update command). Commit the updated `.snap` file.\n3. Do NOT change any source files or theme definitions — only the test asserts and the snapshot file change.\n\nNote explicitly in the commit message that the count drift is ALIEN debt from prior sponsor/amenity/auth SSOT commits, so the SPEC-176 PR description can call it out. T-004 (emitVariantTokens, adds 42 variant tokens) will shift these counts again and re-regenerate the snapshot later — that is expected.\n\nAcceptance criteria:\n- `pnpm --filter @repo/design-tokens test` exits 0 (0 failures, all 6 previously-red tests now GREEN)\n- `pnpm typecheck` clean in packages/design-tokens\n- No source or theme files changed — only test assert values and the `.snap` file\n- Commit message references 'alien baseline drift' and SPEC-176",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Update webLight count assert in web.test.ts: 155 → 208",
+                    "completed": true
+                },
+                {
+                    "title": "Update webLight count assert in index.test.ts: 155 → 208",
+                    "completed": true
+                },
+                {
+                    "title": "Update adminLight count assert in admin.test.ts: 39 → 92",
+                    "completed": true
+                },
+                {
+                    "title": "Update :root total and admin count asserts in generate-css.test.ts: 305→358, 39→92",
+                    "completed": true
+                },
+                {
+                    "title": "Regenerate generate-css snapshot (--update-snapshots) and commit updated .snap",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/design-tokens test — 0 failures",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-0", "testing", "baseline-fix", "design-tokens"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add culori devDependency and implement formatSRGB() in design-tokens",
+            "description": "Install `culori` as a devDependency on `packages/design-tokens` and implement the `formatSRGB()` converter function.\n\n**Step 1 — Install:**\nAdd `culori` to `packages/design-tokens/package.json` under `devDependencies`. This is a build-time-only dependency. It is NOT added to any consumer package.\n\n**Step 2 — Implement formatSRGB() in `packages/design-tokens/src/tokens/colors.ts`:**\nAdd immediately after the existing `formatOKLCH()` function:\n\n```ts\n/**\n * Convert an OKLCH value to a CSS `rgb(R G B)` string via sRGB gamut-mapped\n * conversion using culori's CSS Color Level 4 clampChroma algorithm.\n * Used at build time by the design-tokens generator (SPEC-176).\n * Components are rounded to integers after gamut mapping.\n *\n * @param value - OKLCH triple {l, c, h} to convert.\n * @returns CSS `rgb(R G B)` string with space-separated integer components (no alpha — caller appends / ALPHA).\n */\nexport function formatSRGB(value: OKLCH): string {\n    // culori import is dynamic to avoid bundling at consumer sites\n    const { oklch, formatRgb, clampChroma } = require('culori');\n    const mapped = clampChroma({ mode: 'oklch', l: value.l, c: value.c, h: value.h }, 'oklch', 'p3');\n    const rgb = formatRgb(mapped);\n    // formatRgb returns 'rgb(R, G, B)' — normalize to space-syntax CSS\n    return rgb.replace(/,/g, '').replace('rgb(', 'rgb(');\n}\n```\n\nNote: use `require('culori')` inside the function body (CJS interop) or an ESM dynamic import if the generator runs under `tsx`. Match whichever module resolution pattern `generate-css.ts` already uses.\n\n**Step 3 — Unit test for formatSRGB:**\nAdd a describe block to the coverage test file from T-001:\n- Test `formatSRGB({ l: 0.63, c: 0.19, h: 259 })` returns a string matching `/^rgb\\(\\d+ \\d+ \\d+\\)$/`\n- Test a known in-gamut value (e.g. `{l: 0.5, c: 0.0, h: 0}` → mid-gray) returns approximately `rgb(128 128 128)`\n- Test a high-chroma out-of-gamut value does NOT return negative component values (gamut mapping correctly clamps)\n\nAcceptance criteria:\n- `pnpm build:css` in packages/design-tokens succeeds (no errors importing culori)\n- New formatSRGB unit tests pass\n- formatSRGB output is a valid CSS rgb() string with space-separated integers\n- culori is NOT in the production dependency list of any other package\n\nFiles affected:\n- `packages/design-tokens/package.json` (devDependencies)\n- `packages/design-tokens/src/tokens/colors.ts` (add formatSRGB)\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (add formatSRGB unit tests)\n\nAC mapping: PDR Rule 5 (deterministic derivation from canonical token values).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001B"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Add culori to packages/design-tokens devDependencies and pnpm install",
+                    "completed": true
+                },
+                {
+                    "title": "Implement formatSRGB() in colors.ts with JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 unit tests for formatSRGB in variant-token-coverage.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Verify pnpm build:css succeeds",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling", "culori"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Define VARIANT_TOKEN_MAP with all 138 entries and Zod schema",
+            "description": "Derive and codify the complete VARIANT_TOKEN_MAP constant and its Zod schema.\n\n**Step 1 — Derive the 42 entries:**\nRun the census script at `/tmp/beta44-oklch-census2.mjs` (or re-derive from the audit data in spec.md §2) to extract the exact 42 `(base, transform, replaces)` triplets. The census confirms:\n- ~27 alpha-only entries: base tokens × distinct alpha values\n- ~15 lightness-math entries (both `calc(l * N)` multiply and `calc(l - N)` subtract families)\n\nNaming convention (D6 — locked):\n- Alpha: `--{base}-a{NN}` where NN is the alpha percentage (0.15 → `a15`, 0.05 → `a05`)\n- Lightness multiply: `--{base}-l{NN}` where NN = factor × 100 (0.85 → `l85`)\n- Lightness subtract: `--{base}-lm{NN}` where NN = offset × 100 (0.20 → `lm20`)\n- Combined: `--{base}-l85-a15`\n\n**Step 2 — Create `packages/design-tokens/src/generators/variant-tokens.ts`:**\n```ts\nimport type { VariantTokenEntry } from './variant-token-schema.ts';\n\nexport const VARIANT_TOKEN_MAP: ReadonlyArray<VariantTokenEntry> = [\n    // Alpha family — 625 usages normalized to ~27 (base x alpha) pairs\n    { name: 'brand-primary-a15', base: 'brand-primary', family: 'alpha', param: 0.15, replaces: 'oklch(from var(--brand-primary) l c h / 0.15)' },\n    { name: 'brand-primary-a30', base: 'brand-primary', family: 'alpha', param: 0.30, replaces: 'oklch(from var(--brand-primary) l c h / 0.3)' },\n    // ... all 42 entries derived from census\n    // Lightness-multiply family\n    { name: 'brand-primary-l85', base: 'brand-primary', family: 'lightness-multiply', param: 0.85, replaces: 'oklch(from var(--brand-primary) calc(l * 0.85) c h)' },\n    // Lightness-subtract family\n    { name: 'core-background-lm20', base: 'core-background', family: 'lightness-subtract', param: 0.20, replaces: 'oklch(from var(--core-background) calc(l - 0.2) c h)' },\n    // ...\n] as const;\n```\n\n**Step 3 — Create `packages/design-tokens/src/generators/variant-token-schema.ts`:**\nThe Zod schema from tech-analysis §4 exactly. The schema validates:\n- name: matches `/^[a-z][a-z0-9-]*$/`\n- base: same regex\n- family: `z.enum(['alpha', 'lightness-multiply', 'lightness-subtract'])`\n- param: `z.number().finite()`\n- replaces: non-empty string\n- Two refinements: no duplicate names, no duplicate replaces strings\n\n**Step 4 — Wire schema validation into coverage test:**\nAdd an `it` block: 'VARIANT_TOKEN_MAP passes Zod schema validation' — parse the full map through `VariantTokenMapSchema` and assert no errors.\n\nAcceptance criteria:\n- 42 entries in VARIANT_TOKEN_MAP (exact count verified by a test assertion)\n- All names follow D6 convention (regex check in tests)\n- VariantTokenMapSchema.parse(VARIANT_TOKEN_MAP) throws for any duplicate name or replaces string\n- No TypeScript errors\n- Coverage test: Zod validation `it` block passes GREEN\n\nFiles affected:\n- `packages/design-tokens/src/generators/variant-tokens.ts` (new)\n- `packages/design-tokens/src/generators/variant-token-schema.ts` (new)\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (add Zod validation test)\n\nAC mapping: PDR Rule 5 (deterministic derivation), PDR Story 1 AC1 (all elements render with brand colors).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Run census script / re-derive exact 138 (base, transform, replaces) triplets from real CSS",
+                    "completed": true
+                },
+                {
+                    "title": "Create variant-token-schema.ts with Zod schema + two refinements + lightness-add family",
+                    "completed": true
+                },
+                {
+                    "title": "Create variant-tokens.ts + variant-tokens-alpha.ts with all 138 VARIANT_TOKEN_MAP entries",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation test + 138-entry count assertion + D6 naming + family breakdown to coverage test",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extend generate-css.ts with emitVariantTokens() and regenerate dist/tokens.css",
+            "description": "Add the CSS emission functions to the design-tokens generator and produce the updated `dist/tokens.css`.\n\n**Step 1 — Add `emitVariantTokens()` to `packages/design-tokens/src/generators/generate-css.ts`:**\n\nThe function emits a SINGLE :root block (sRGB fallbacks for ALL 42 tokens), then a SINGLE @supports block with the oklch overrides for all 42 tokens:\n\n```ts\n/* SPEC-176: 42 variant tokens — sRGB fallback + @supports oklch override. */\n:root {\n    --brand-primary-a15: rgb(78 100 210 / 0.15);\n    /* ... 41 more ... */\n}\n@supports (color: oklch(from white l c h)) {\n    :root {\n        --brand-primary-a15: oklch(from var(--brand-primary) l c h / 0.15);\n        /* ... 41 more ... */\n    }\n}\n```\n\nFor each entry:\n- Alpha family: sRGB = `rgb({formatSRGB(baseOklch)} / {param})`\n- Lightness-multiply: compute `{l: base.l * param, c: base.c, h: base.h}`, then `formatSRGB()`, no alpha suffix\n- Lightness-subtract: compute `{l: Math.max(0, base.l - param), c: base.c, h: base.h}`, then `formatSRGB()`\n\nThe `baseOklchValues` record is derived from the existing `webLight` theme map filtered to OKLCH-typed tokens.\n\n**Step 2 — Integrate into `buildCSS()`:**\nAppend the variant tokens section at the end of the :root section (after palette, before theme overrides).\n\n**Step 3 — Run the generator:**\n```bash\ncd packages/design-tokens && pnpm build:css\n```\nInspect `dist/tokens.css` to verify:\n- The 42 `--{name}: rgb(...)` declarations appear in `:root` BEFORE the @supports block\n- The @supports block exists with all 42 oklch redefinitions\n- No undefined token references (all bases are present in webLight)\n\n**Step 4 — Make coverage test GREEN:**\nWith the 42 entries now in VARIANT_TOKEN_MAP and the generator emitting them, the three coverage `it` blocks from T-001 will now be meaningful assertions. Run `pnpm test` in packages/design-tokens — all tests must pass.\n\nAcceptance criteria:\n- `dist/tokens.css` contains exactly 42 sRGB fallback declarations + 42 oklch @supports declarations\n- All three coverage test `it` blocks pass GREEN (T-001 tests now meaningful)\n- No existing tests broken (no token name collisions with existing palette/theme tokens)\n- `generate-css.ts` stays under 500 lines; VARIANT_TOKEN_MAP lives in `variant-tokens.ts` (imported)\n\nFiles affected:\n- `packages/design-tokens/src/generators/generate-css.ts` (add emitVariantTokens, integrate into buildCSS)\n- `packages/design-tokens/dist/tokens.css` (regenerated artifact)\n\nAC mapping: PDR Rule 5, Story 2 AC2 (modern browser resolves via @supports).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Implement emitVariantTokens() with sRGB + @supports dual-block logic",
+                    "completed": true
+                },
+                {
+                    "title": "Derive baseOklchValues record from webLight theme map",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate into buildCSS() and run pnpm build:css",
+                    "completed": true
+                },
+                {
+                    "title": "Inspect dist/tokens.css — verify 42+42 declarations",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm all coverage test it blocks are GREEN",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-1", "design-tokens", "build-tooling"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write and run codemod to swap 679 call-sites from inline oklch to var(--token)",
+            "description": "Create and execute the codemod script that replaces all 679 inline `oklch(from var(--...))` expressions in web CSS with `var(--token)` references.\n\n**Step 1 — Create `packages/design-tokens/scripts/codemod-relative-colors.mjs`:**\n(Kept in design-tokens since it references VARIANT_TOKEN_MAP)\n\nLogic:\n1. Dynamically import VARIANT_TOKEN_MAP from `../src/generators/variant-tokens.ts` (use tsx/esm interop)\n2. Collect all target CSS/Astro/TSX files under `apps/web/src/` matching `.css`, `.astro`, `.tsx`\n3. For each file, build the replacement table from VARIANT_TOKEN_MAP `replaces` → `var(--{name})`\n4. Apply ALL replacements (loop through all 42 entries with `String.replaceAll`)\n5. Write file back only if changed (avoid unnecessary dirty state)\n6. After substitution, scan each file for any remaining `oklch(from var(` patterns\n7. Write `packages/design-tokens/scripts/codemod-report.md` listing unmatched occurrences with file:line references\n\n**Step 2 — Run the codemod:**\n```bash\nnode --loader tsx packages/design-tokens/scripts/codemod-relative-colors.mjs\n```\n\n**Step 3 — Analyze codemod-report.md:**\nThe ~49 lightness-math cases (and any edge cases) will appear in the report. For each:\n- If a clean token exists in VARIANT_TOKEN_MAP: verify the substitution happened (likely the replaces string was slightly different — fix the VARIANT_TOKEN_MAP entry in T-003 and re-run)\n- If no token covers it: add a new entry to VARIANT_TOKEN_MAP, regenerate CSS (T-004), re-run codemod\n- If it's a genuinely non-tokenizable expression: inline a static sRGB hex approximation with a TODO comment (per tech-analysis §14 — acceptable transition approach)\n\n**Step 4 — Generalize components.css:539 existing @supports block:**\nDelete the hand-crafted `@supports` block at `apps/web/src/styles/components.css:539`. Verify that `--core-card-a95` token from VARIANT_TOKEN_MAP covers the `.navbar--scrolled` background-color usage.\n\nAcceptance criteria:\n- `codemod-report.md` exists and lists all unresolved usages\n- Zero `oklch(from var(` patterns remain in ANY web CSS/Astro/TSX file EXCEPT inside the generated `dist/tokens.css`\n- The existing @supports block at components.css:539 is deleted and replaced by the token reference\n- `pnpm check` (Biome lint) passes on all modified files\n- Files in report are manually resolved (added to map or hex-inlined with TODO)\n\nFiles affected:\n- `packages/design-tokens/scripts/codemod-relative-colors.mjs` (new)\n- `apps/web/src/styles/components.css` (679 replacements + @supports block deletion)\n- `apps/web/src/styles/global.css` (1 replacement: outline-color at line 29)\n- Potentially other `.astro`/`.tsx` files in apps/web/src/ if any contain inline usages\n\nAC mapping: PDR Story 1 AC1 AC3 AC4 (all pages render with brand colors on Chrome 109), Rule 1 (sRGB fallback for old browsers).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create codemod-relative-colors.mjs with VARIANT_TOKEN_MAP import + replaceAll loop",
+                    "completed": true
+                },
+                {
+                    "title": "Implement unmatched-case scanner + codemod-report.md writer",
+                    "completed": true
+                },
+                {
+                    "title": "Run codemod against apps/web/src/",
+                    "completed": true
+                },
+                {
+                    "title": "Analyze codemod-report.md and resolve all unmatched cases",
+                    "completed": true
+                },
+                {
+                    "title": "Delete components.css:539 hand-crafted @supports block, verify --core-card-a95 covers it",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm check — no Biome errors on modified files",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-2", "web", "codemod", "css"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix @repo/icons subtle variant to emit var(--token) instead of raw oklch string",
+            "description": "Update the 6 domain files in `packages/icons/src/domain/` so the `subtle` variant emits a CSS custom property reference (`var(--base-aNN)`) rather than an inline `oklch(from var(--token) l c h / 0.15)` string.\n\n**Step 1 — Create `alphaTokenName()` helper in `packages/icons/src/`:**\nCreate `packages/icons/src/oklch-color-helper.ts`:\n\n```ts\n/**\n * Constructs the variant token CSS custom property name for a base token + alpha value.\n * Follows the SPEC-176 naming convention: --{base}-a{NN}.\n * Example: alphaTokenName('brand-primary', 0.15) -> 'var(--brand-primary-a15)'\n *\n * @param base - Base token name without dashes (e.g. 'brand-primary')\n * @param alpha - Alpha value as decimal (0.15, 0.30)\n * @returns CSS var() reference string for use as inline style value\n */\nexport function alphaTokenName(base: string, alpha: number): string {\n    const nn = String(Math.round(alpha * 100)).padStart(2, '0');\n    return `var(--${base}-a${nn})`;\n}\n```\n\n**Step 2 — Update all 6 affected domain files:**\nFor each of the 6 domain files (accommodation, destination, event, post, user, service — verify exact filenames from `packages/icons/src/domain/`):\n\nIn the `getXxxColorScheme()` function, the `subtle` variant currently emits:\n```ts\nbg: `oklch(from var(--${token}) l c h / 0.15)`,\nborder: `oklch(from var(--${token}) l c h / 0.3)`,\n```\n\nChange to:\n```ts\nbg: alphaTokenName(token, 0.15),\nborder: alphaTokenName(token, 0.30),\n```\n\nThe `contrast` variant (admin-only, Chrome 111+ floor) is intentionally left unchanged. Add a code comment:\n```ts\n// contrast variant uses raw oklch relative-color — admin-only, Chrome 111+ floor (SPEC-176 intentional).\n```\n\n**Step 3 — Update icon tests:**\nIf the domain files have tests asserting the old oklch string output, update them to assert the new `var(--token-aNN)` output.\n\nAcceptance criteria:\n- All 6 domain files emit `var(--{base}-aNN)` for the subtle bg and border properties\n- `pnpm typecheck` passes in packages/icons\n- All existing icon tests pass (updated expected values)\n- The contrast variant is unchanged and documented\n- On a modern browser (CSS var resolves via @supports oklch); on Chrome 109 (CSS var resolves to sRGB fallback at :root)\n\nFiles affected:\n- `packages/icons/src/oklch-color-helper.ts` (new)\n- `packages/icons/src/domain/*.ts` (6 files, subtle variant change)\n- Icon test files if they assert color values\n\nAC mapping: PDR Story 4 AC1 AC2 AC3 (badge has visible background on Chrome 109; modern browser parity).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Create oklch-color-helper.ts with alphaTokenName() helper",
+                    "completed": false
+                },
+                {
+                    "title": "Update subtle variant in all 6 domain files to use alphaTokenName()",
+                    "completed": false
+                },
+                {
+                    "title": "Add contrast variant doc comment (intentionally unchanged)",
+                    "completed": false
+                },
+                {
+                    "title": "Update icon tests to assert var(--token) output",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-176", "phase-3", "icons", "shared-package"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add i18n keys for admin browser gate banner (es/en/pt)",
+            "description": "Add the localization keys for the BrowserGateBanner component to all three locale files.\n\n**Files to update:**\n- `packages/i18n/src/locales/es/admin.json`\n- `packages/i18n/src/locales/en/admin.json`\n- `packages/i18n/src/locales/pt/admin.json`\n\nKeys to add (nested under the existing `admin` namespace):\n\n```json\n{\n  \"browserGate\": {\n    \"title\": \"Tu navegador no es compatible con el panel de administración.\",\n    \"message\": \"Esta herramienta requiere Chrome 111, Firefox 128, Safari 16.4 o superior. Por favor, actualizá tu navegador para continuar.\",\n    \"upgradeLink\": \"Descargar Chrome\",\n    \"contactSupport\": \"Contactar soporte\",\n    \"dismiss\": \"Cerrar aviso\"\n  }\n}\n```\n\n(en and pt equivalents per PDR §5 proposed copy)\n\nThe support contact URL for `contactSupport` links to `soporte@hospeda.com.ar` (mailto) — if a different URL is provided by the product owner, substitute. For now use the mailto as a reasonable default matching the PDR §11 open question.\n\nVerify the i18n package exports these keys correctly:\n- Run `pnpm typecheck` in packages/i18n\n- If the project uses a typed i18n system, ensure the new keys appear in the type definitions\n\nAcceptance criteria:\n- All 5 keys added in all 3 locales (es/en/pt)\n- es copy is grammatically correct Rioplatense Spanish (per PDR Rule 4)\n- `pnpm typecheck` clean in packages/i18n\n- No hardcoded strings will appear in BrowserGateBanner (T-008 uses these keys)\n\nFiles affected:\n- `packages/i18n/src/locales/es/admin.json`\n- `packages/i18n/src/locales/en/admin.json`\n- `packages/i18n/src/locales/pt/admin.json`\n\nAC mapping: PDR Story 3 AC6 AC7 (banner in correct locale), Rule 4 (i18n parity).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Add browserGate keys to es/admin.json with Rioplatense Spanish copy",
+                    "completed": false
+                },
+                {
+                    "title": "Add browserGate keys to en/admin.json",
+                    "completed": false
+                },
+                {
+                    "title": "Add browserGate keys to pt/admin.json",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck in packages/i18n",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-176", "phase-4", "admin", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create BrowserGateBanner component and mount in admin root",
+            "description": "Implement the admin browser-gate banner React component and wire it into the root layout.\n\n**Step 1 — Create `apps/admin/src/components/BrowserGateBanner.tsx`:**\n\nKey implementation details (D4 + D8 locked decisions):\n- Detection uses CSS.supports() for TWO probes (NOT UA sniffing per PDR Rule 3):\n  ```ts\n  const supported =\n      typeof CSS !== 'undefined' &&\n      CSS.supports('color', 'oklch(from white l c h)') &&\n      CSS.supports('color', 'color-mix(in srgb, red 50%, blue)');\n  ```\n- Dismissibility: SESSION-dismissible via sessionStorage (not localStorage per D8)\n  - On mount: check `sessionStorage.getItem('browserGateDismissed')` — if truthy, skip render\n  - Dismiss button stores `sessionStorage.setItem('browserGateDismissed', '1')`\n- Detection runs in `useEffect` (client-side only; SSR safe)\n- Banner is `null` if browser is supported or session-dismissed\n- Uses `role=\"alert\"` and `aria-live=\"polite\"` per PDR §5 accessibility requirements\n- The dismiss button has `aria-label` from `t('admin.browserGate.dismiss')`\n- Uses INLINE STYLES for critical colors (not Tailwind) so the banner is legible on Chrome 109 where Tailwind oklch may break:\n  ```tsx\n  style={{ backgroundColor: '#fef3c7', borderColor: '#d97706', color: '#78350f' }}\n  ```\n  Tailwind classes serve as progressive enhancement for modern browsers\n- Two CTAs: 'Descargar Chrome' → `https://www.google.com/chrome/` (new tab), 'Contactar soporte' → `mailto:soporte@hospeda.com.ar` (or configured URL)\n- Uses `useTranslations()` hook from `@repo/i18n` for all copy\n\n**Step 2 — Mount in `apps/admin/src/routes/__root.tsx`:**\nAdd `<BrowserGateBanner />` as the FIRST child inside the root component body, before the main layout structure. Named export only (no default export).\n\n**Step 3 — Write component unit test:**\nCreate `apps/admin/src/components/__tests__/BrowserGateBanner.test.tsx`:\n- Test: when CSS.supports returns false for both probes, banner renders with role='alert'\n- Test: when CSS.supports returns true, banner renders null\n- Test: when sessionStorage has 'browserGateDismissed'='1', banner renders null even with unsupported browser\n- Test: clicking dismiss button sets sessionStorage and removes banner\n- Mock CSS.supports via vitest `vi.stubGlobal`\n\nAcceptance criteria:\n- Banner appears on unsupported browser (CSS.supports=false), disappears on supported browser\n- Session-dismissible: dismiss click sets sessionStorage flag, banner gone; page reload restores it\n- All 4 unit tests pass\n- `pnpm typecheck` clean in apps/admin\n- No UA string parsing anywhere in the component\n- CTA links have correct href + target='_blank' + rel='noopener noreferrer'\n\nFiles affected:\n- `apps/admin/src/components/BrowserGateBanner.tsx` (new)\n- `apps/admin/src/components/__tests__/BrowserGateBanner.test.tsx` (new)\n- `apps/admin/src/routes/__root.tsx` (mount banner)\n\nAC mapping: PDR Story 3 all ACs, Rule 2, Rule 3, Rule 4, §5 (dismissibility, accessibility, copy).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Create BrowserGateBanner.tsx with CSS.supports dual-probe + sessionStorage dismiss",
+                    "completed": false
+                },
+                {
+                    "title": "Apply inline styles for critical colors (banner legibility on Chrome 109)",
+                    "completed": false
+                },
+                {
+                    "title": "Add role='alert' + aria-live + accessible close button label",
+                    "completed": false
+                },
+                {
+                    "title": "Mount <BrowserGateBanner /> in __root.tsx as first child",
+                    "completed": false
+                },
+                {
+                    "title": "Write 4-test unit test suite in BrowserGateBanner.test.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck clean in apps/admin",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-176", "phase-4", "admin", "react", "browser-gate", "i18n", "a11y"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Verify dark-mode token fallback correctness",
+            "description": "Validate that the dark-mode base token overrides (`[data-theme='dark']`) produce correct sRGB fallbacks on old browsers — that variant tokens resolve to dark-mode values in both the fallback and modern paths.\n\n**Context:**\nThe design-token generator emits variant tokens relative to the LIGHT theme base token values (what `webLight` resolves). In dark mode the base tokens are overridden via `[data-theme='dark'] { --brand-primary: oklch(0.7 0.2 260); }`. Since the VARIANT tokens reference `oklch(from var(--brand-primary) ...)` inside @supports, they automatically inherit the dark-mode override on modern browsers.\n\nOn Chrome 109 (sRGB fallback path):\n- The sRGB fallback `:root { --brand-primary-a15: rgb(78 100 210 / 0.15); }` uses the LIGHT-mode sRGB value\n- BUT the dark-mode override of the BASE token does NOT cascade to the VARIANT token's :root declaration\n- This means dark-mode users on Chrome 109 get LIGHT-mode variant colors — a known limitation\n\n**What this task does:**\n1. Read `apps/web/src/styles/global.css` and `css-var-themes.css` to confirm which base tokens have dark-mode overrides and whether those overrides affect variant token resolution\n2. Enumerate how many variant tokens have base tokens with dark-mode overrides (likely: --brand-primary, --brand-accent, --core-background, --core-card, etc.)\n3. Decide: is the light-mode fallback for dark-mode users on Chrome 109 acceptable, or must dark-mode sRGB fallbacks also be generated?\n\n**If dark-mode fallbacks are needed (adds ~15 extra entries):**\nExtend VARIANT_TOKEN_MAP to include a `darkModeOklch` optional field and extend `emitVariantTokens()` to also emit a `[data-theme='dark'] { :root { } }` block with the dark-mode sRGB values.\n\n**If acceptable degradation:**\nDocument explicitly in code comments that dark-mode on Chrome 109 uses light-mode variant colors (not a security or functionality issue; purely cosmetic).\n\nWrite a test that asserts the dark-mode degradation behavior is documented:\n```ts\nit('dark-mode on Chrome 109 uses light-mode sRGB fallback — documented intentional degradation', () => {\n    // This test exists to document the behavior, not to fix it.\n    // On Chrome 109 [data-theme='dark'] overrides the BASE token but not the :root VARIANT token.\n    // See SPEC-176 tech-analysis §14 (future improvement).\n    expect(true).toBe(true); // Intentional no-op — documentation anchor\n});\n```\n\nAcceptance criteria:\n- PDR Edge Case 3 (dark mode on old browser) behavior is explicitly understood and documented\n- If dark-mode fallbacks are generated: emitVariantTokens() emits additional [data-theme='dark'] block; coverage test asserts its presence\n- If documented degradation: code comment + test documentation anchor exists\n- Decision recorded in code comment in generate-css.ts\n\nFiles affected:\n- `packages/design-tokens/src/generators/generate-css.ts` (possibly extend emitVariantTokens)\n- `packages/design-tokens/src/generators/variant-token-coverage.test.ts` (add dark-mode test)\n\nAC mapping: PDR Story 1 AC5 (dark mode fallback respect), Edge Case 3.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Audit dark-mode base token overrides in global.css + css-var-themes.css",
+                    "completed": false
+                },
+                {
+                    "title": "Enumerate variant tokens whose base has dark-mode overrides",
+                    "completed": false
+                },
+                {
+                    "title": "Decide: generate dark-mode sRGB fallbacks OR document acceptable degradation",
+                    "completed": false
+                },
+                {
+                    "title": "Implement decision (emit dark-mode block or add doc comment + test anchor)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-176", "phase-1", "design-tokens", "dark-mode", "edge-case"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Run Playwright visual parity check post-codemod (verify zero regression on modern browser)",
+            "description": "Run the existing Playwright visual snapshot suite to confirm the codemod introduced zero visual regression on modern browsers.\n\n**Context:**\nThe Playwright visual baseline suite is at `apps/web/tests/visual-snapshots/capture-baseline.visual.ts` (from SPEC-153 Phase 0). It covers 8 pages × 4 viewports × 2 themes = 64 baseline PNGs.\n\n**Step 1 — Run WITHOUT --update-snapshots:**\n```bash\ncd apps/web && npx playwright test --config=playwright-visual.config.ts\n```\nExpected: all 64 snapshots pass with zero pixel diff (the modern browser uses @supports path = identical oklch values).\n\n**Step 2 — Investigate any diffs:**\nIf diffs appear:\n- Check which token changed\n- Compare the sRGB fallback in dist/tokens.css vs the original oklch value\n- Determine if it's a gamut-boundary issue (high-chroma token: --destructive, --brand-accent)\n- Adjust gamut mapping strategy if needed (culori clampChroma should handle this correctly)\n\n**Step 3 — Update baselines ONLY if diffs are intentional:**\nIf a color difference is a verified gamut-mapping result (i.e. the sRGB approximation is visually close but not pixel-identical due to P3 gamut), and the design team approves it, run with `--update-snapshots` and commit the new baselines with an explicit comment.\n\nAcceptance criteria:\n- Playwright test run completes against a local dev server serving the post-codemod web build\n- Zero unexpected pixel diffs (either 0 diff or documented intentional baseline updates)\n- PDR Story 2 verified: modern browser sees zero visual difference\n- If any token produces a diff > 0: root cause documented and either fixed or baseline updated with approval\n\nFiles affected:\n- `apps/web/tests/visual-snapshots/*.png` (potentially updated baselines)\n- `apps/web/tests/visual-snapshots/capture-baseline.visual.ts` (no code change — run only)\n\nAC mapping: PDR Story 2 all ACs (zero visual regression), Rule 1 (fallback colors are visually equivalent), §9 success metrics (regression rate = 0).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Start local apps/web dev server with post-codemod build",
+                    "completed": true
+                },
+                {
+                    "title": "Run Playwright visual suite without --update-snapshots",
+                    "completed": true
+                },
+                {
+                    "title": "Investigate any diffs — identify gamut-boundary tokens",
+                    "completed": true
+                },
+                {
+                    "title": "Either fix gamut mapping or update baselines with documented approval",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-5", "web", "playwright", "visual-regression", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-01T03:30:00.000Z"
+            },
+            "completionNote": "Re-framed: SPEC-153 pre-codemod baselines do not exist in repo and the codemod was already applied, so a historical pixel-diff was impossible. Per owner decision, did NOT commit screenshots. Instead verified the REAL AC (Story 1/2 parity) via Playwright + canvas: for 8 representative tokens (brand-primary, brand-accent, destructive, success, core-foreground, accommodation-type-hotel, user-role-admin, warning) painted the Chrome-109 :root sRGB fallback vs the modern @supports oklch path to actual sRGB pixels (alpha composited over white). Max channel delta = 3/255 (~1.2%, on warning-a35 gamut boundary); most 0-1. Visually equivalent — zero perceptible regression. Complements the permanent gamut-fidelity test (ΔE≤0.02 at token level). No PNGs committed (owner directive)."
+        },
+        {
+            "id": "T-011",
+            "title": "Add check-css-relative-colors.cjs to turbo.json CI pipeline",
+            "description": "Wire the CI guard script from T-001 into the TurboRepo CI pipeline so it runs on every PR after the codemod is complete (T-005).\n\n**Step 1 — Update `apps/web/package.json`:**\nEnsure the `'check:relative-colors'` script added in T-001 is correct and covers all relevant extensions.\n\n**Step 2 — Update `turbo.json` (root):**\nAdd the guard script as a task in the `apps/web` pipeline under the lint/check phase:\n```json\n\"check:relative-colors\": {\n    \"cache\": false,\n    \"inputs\": [\"src/**/*.css\", \"src/**/*.astro\", \"src/**/*.tsx\", \"src/**/*.ts\"],\n    \"outputs\": []\n}\n```\nAlternatively, add it as a step in the existing lint task dependency chain so it runs when `pnpm lint` runs for apps/web.\n\n**Step 3 — Verify the script passes on post-codemod source:**\nAfter T-005 is complete, run the script:\n```bash\nnode apps/web/scripts/check-css-relative-colors.cjs\n```\nExpected: exits 0 (zero `oklch(from` occurrences in web source files).\n\n**Step 4 — Verify the script correctly fails on a regression:**\nTemporarily add `oklch(from var(--brand-primary) l c h / 0.1)` to a CSS file, run the script, verify exit 1, then revert.\n\nAcceptance criteria:\n- `node apps/web/scripts/check-css-relative-colors.cjs` exits 0 on post-codemod source\n- The script is wired to run in CI (turbo.json or npm script chain)\n- The script exits 1 and reports the file + line if any `oklch(from` appears in web source\n- PDR Edge Case 6 (guard false-positive prevention) verified: the allowlist correctly exempts `dist/tokens.css` (a generated artifact, not in src/)\n\nFiles affected:\n- `turbo.json` (add pipeline entry for check:relative-colors)\n- `apps/web/package.json` (verify/update script)\n\nAC mapping: PDR §9 success metrics (CI guard catches new violations), Edge Case 6 (no false positives on token definition file).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add check:relative-colors task to turbo.json pipeline",
+                    "completed": true
+                },
+                {
+                    "title": "Verify script exits 0 on post-codemod web source",
+                    "completed": true
+                },
+                {
+                    "title": "Verify script exits 1 on a temporarily-introduced oklch(from regression",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm dist/tokens.css (generated) is not in scan scope (no false positive)",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-5", "ci", "guard", "web"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-01T03:30:00.000Z"
+            },
+            "completionNote": "Guard wired into apps/web `lint` script (chained after biome+check-tokens). Upgraded to count-pinned ALLOWLIST of 16 runtime-dynamic residuals; @supports conditions excluded from scan. 2 real residuals fixed to transparent (DestinationCard gradients, components.css hover shadow — alpha 0). Verified: exit 0 current, exit 1 on injected regression, exit 1 on stale entry. Commit 24578e07d."
+        },
+        {
+            "id": "T-012",
+            "title": "Run full test suite and integration smoke — all GREEN",
+            "description": "Final integration check: all unit tests, the coverage guard, and a local smoke of the critical paths pass before opening a PR.\n\n**Step 1 — Run full test suites:**\n```bash\npnpm test  # root — all packages + apps\n```\nExpected passing:\n- `packages/design-tokens`: variant-token-coverage.test.ts (all 3+ it blocks GREEN)\n- `packages/icons`: domain file tests (var(--token) assertions)\n- `apps/admin`: BrowserGateBanner.test.tsx (4 tests)\n- All pre-existing tests (no regressions introduced)\n\n**Step 2 — Typecheck all affected packages:**\n```bash\npnpm typecheck\n```\nAffected packages: design-tokens, icons, i18n, apps/admin, apps/web.\n\n**Step 3 — Run CI guard locally:**\n```bash\nnode apps/web/scripts/check-css-relative-colors.cjs\n```\nExpected: exits 0.\n\n**Step 4 — Local smoke of critical paths:**\n```bash\npnpm dev:web  # or equivalent\n```\n- Navigate to `/es/auth/signin/` — verify GradientButton has a visible background\n- Navigate to a page with entity badges — verify badges are visible\n- Toggle dark mode — verify colors are reasonable\n- Open admin — verify BrowserGateBanner does NOT appear on modern browser (Chrome 119+)\n\n**Step 5 — Admin banner smoke (requires DevTools override):**\nIn Chrome DevTools, override `CSS.supports` to return false for the oklch probe:\n```js\nObject.defineProperty(CSS, 'supports', { value: () => false });\n```\nReload admin — banner should appear. Dismiss it — banner hides. Reload page — banner reappears (sessionStorage cleared on DevTools navigation to different origin... confirm behavior).\n\nAcceptance criteria:\n- `pnpm test` passes with 90%+ coverage on new code\n- `pnpm typecheck` exits 0\n- CI guard exits 0\n- Manual smoke: login button visible, badges visible, admin banner behavior correct\n\nFiles affected: none (test-run only)\n\nAC mapping: PDR Story 1 (web renders with brand colors), Story 2 (no regression), Story 3 (admin banner fires correctly), §9 success metrics.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm test — all suites GREEN",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck — 0 errors",
+                    "completed": true
+                },
+                {
+                    "title": "Run CI guard — exits 0",
+                    "completed": true
+                },
+                {
+                    "title": "Local smoke: /es/auth/signin/ GradientButton visible",
+                    "completed": true
+                },
+                {
+                    "title": "Local smoke: admin banner via CSS.supports override in DevTools",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-5", "testing", "smoke", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-01T03:35:00.000Z"
+            },
+            "completionNote": "Full affected-suite smoke GREEN: guard exit 0 (16 allowlisted residuals, 0 new); design-tokens 375/375 + typecheck; icons 38/38 + typecheck; i18n typecheck; admin BrowserGateBanner 5/5 + typecheck; web typecheck clean (the prior @repo/media astro-sync baseline-red cleared once @repo/media dist was built). Visual parity confirmed in T-010."
+        },
+        {
+            "id": "T-013",
+            "title": "Wire CI gate, add JSDoc, and update package documentation",
+            "description": "Final integration: confirm the turbo.json CI wiring runs correctly end-to-end, and add all required documentation to new/modified code.\n\n**Step 1 — Verify CI pipeline integration (from T-011):**\nConfirm turbo.json correctly sequences `check:relative-colors` after `build` (since dist/tokens.css must exist before the guard runs its allowlist logic). If the guard scans only src/ (not dist/), ordering is less critical — verify and document.\n\n**Step 2 — Add JSDoc to all new exported functions and constants (per CLAUDE.md):**\n\nFunctions requiring JSDoc:\n- `formatSRGB()` in `packages/design-tokens/src/tokens/colors.ts` — include gamut-mapping note, link to CSS Color 4 spec, SPEC-176 reference\n- `emitVariantTokens()` in `generate-css.ts` — describe dual-declaration pattern, SPEC-176 reference\n- `VARIANT_TOKEN_MAP` constant — explain `replaces` field and codemod relationship\n- `alphaTokenName()` in `packages/icons/src/oklch-color-helper.ts` — describe naming convention\n- `check-css-relative-colors.cjs` header — explain allowlist, allowed location for `oklch(from`\n\n**Step 3 — Add architecture comments in web CSS:**\nAt the top of `apps/web/src/styles/global.css`:\n```css\n/*\n * SPEC-176: Variant tokens (sRGB fallback + @supports oklch override) are generated\n * by @repo/design-tokens and live in dist/tokens.css (imported via @repo/design-tokens).\n * Do NOT add oklch(from var(...)) inline in this file — use the precomputed var(--token) references.\n */\n```\n\n**Step 4 — Update generate-css.ts file header:**\nAdd the variant token block to the documented output layout description in the file's header comment.\n\nAcceptance criteria:\n- All new exported functions have comprehensive JSDoc\n- VARIANT_TOKEN_MAP has JSDoc explaining `replaces` field and codemod relationship\n- Architecture comment added to global.css header\n- generate-css.ts file header updated with variant token block description\n- `pnpm lint` clean on all modified files\n\nFiles affected:\n- `packages/design-tokens/src/tokens/colors.ts` (JSDoc formatSRGB)\n- `packages/design-tokens/src/generators/generate-css.ts` (JSDoc emitVariantTokens + header update)\n- `packages/design-tokens/src/generators/variant-tokens.ts` (JSDoc VARIANT_TOKEN_MAP)\n- `packages/icons/src/oklch-color-helper.ts` (JSDoc alphaTokenName)\n- `apps/web/scripts/check-css-relative-colors.cjs` (file header comment)\n- `apps/web/src/styles/global.css` (architecture comment at top)\n\nAC mapping: PDR §15 documentation requirements.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Add JSDoc to formatSRGB(), emitVariantTokens(), VARIANT_TOKEN_MAP, alphaTokenName()",
+                    "completed": true
+                },
+                {
+                    "title": "Add script file header comment to check-css-relative-colors.cjs",
+                    "completed": true
+                },
+                {
+                    "title": "Add architecture comment to global.css header",
+                    "completed": true
+                },
+                {
+                    "title": "Update generate-css.ts file header with variant token section description",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm lint — clean",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-5", "docs", "jsdoc"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-01T03:35:00.000Z"
+            },
+            "completionNote": "global.css header got the SPEC-176 architecture comment (no inline oklch(from); use precomputed var(--token-aNN); guard wired into pnpm lint). Other doc targets already satisfied: VARIANT_TOKEN_MAP, formatSRGB (in srgb.ts not colors.ts — stale ref), emitVariantTokens, resolve-base-oklch, and the guard header all carry full JSDoc from their implementing commits. State refs to colors.ts/oklch-color-helper.ts/alphaTokenName were stale — those files/symbols never existed in the real implementation."
+        },
+        {
+            "id": "T-014",
+            "title": "Commit and open PR to staging — SPEC-176 implementation",
+            "description": "Stage all SPEC-176 changes, commit following conventional commits, and open a PR targeting `staging`.\n\n**Commit strategy (per CLAUDE.md — atomic, files staged individually):**\n\nSuggest 4 atomic commits in this order:\n1. `fix(design-tokens): add culori devDep + formatSRGB() + VARIANT_TOKEN_MAP + emitVariantTokens (SPEC-176)`\n   Files: packages/design-tokens/package.json, colors.ts, variant-tokens.ts, variant-token-schema.ts, generate-css.ts, dist/tokens.css\n\n2. `fix(web): codemod 679 oklch(from) call-sites to var(--token) (SPEC-176)`\n   Files: apps/web/src/styles/components.css, global.css, any other changed web src files\n\n3. `fix(icons): subtle variant emits var(--token) instead of raw oklch string (SPEC-176)`\n   Files: packages/icons/src/oklch-color-helper.ts, packages/icons/src/domain/*.ts\n\n4. `fix(admin): browser gate banner for pre-Chrome-111 browsers + i18n + CI guard (SPEC-176)`\n   Files: packages/i18n locales, apps/admin/src/components/BrowserGateBanner.tsx, __root.tsx, apps/web/scripts/check-css-relative-colors.cjs, turbo.json\n\n**Before committing:**\n- Verify `git status` shows ONLY SPEC-176 related files\n- Run `pnpm check` (Biome lint+format) on all changed files\n- Run `pnpm typecheck` — 0 errors\n- Run `pnpm test` — all suites GREEN\n\n**Open PR:**\n```bash\ngh pr create --base staging --title 'fix(web): CSS color-system fallback for Chrome 109-118 + admin browser gate (SPEC-176)' --body \"...\"\n```\n\nPR body must reference:\n- Linear BETA-44 (root cause, Marta's login)\n- 679 call-site swap count\n- 42 variant tokens generated\n- Browser support: Chrome 109+ (web), Chrome 111+ (admin with gate)\n- Testing: variant-token-coverage tests, BrowserGateBanner tests, Playwright parity\n- Manual smoke: login button visible, badges visible, admin banner behavior\n\nAcceptance criteria:\n- All 4 commits are atomic and follow conventional commits format\n- No `git add .` or `git add -A` used (files staged individually per CLAUDE.md)\n- PR opens successfully targeting staging\n- No AI attribution or co-authorship lines in commits\n- CI runs on the PR (even if some pre-existing CI is red from unrelated issues, SPEC-176 changes must not introduce NEW failures)\n\nFiles affected: all SPEC-176 modified files (staged individually)\n\nAC mapping: PDR §12 Approval (ready for review), §9 success metrics.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Run final pnpm check + typecheck + test",
+                    "completed": true
+                },
+                {
+                    "title": "Stage and commit 4 atomic commits (files staged individually)",
+                    "completed": true
+                },
+                {
+                    "title": "Open PR to staging with SPEC-176 description + BETA-44 reference",
+                    "completed": true
+                },
+                {
+                    "title": "Verify CI kicks off on PR",
+                    "completed": true
+                }
+            ],
+            "tags": ["SPEC-176", "phase-5", "git", "pr"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-01T03:55:00.000Z"
+            },
+            "completionNote": "PR #1346 ready-for-review (out of draft) to staging. Title 'feat(SPEC-176): web color-system fallback for Chrome 109-118 + admin browser gate (14/16)'. Did NOT use the 4-atomic-commit suggestion verbatim (work landed across many focused commits per phase, which is cleaner). CI runs on every push; currently red ENTIRELY from pre-existing baseline (verified job-by-job): Lint admin#lint biome-ignore-no-effect (files identical to staging), Build Node20/Astro infra, Guards SPEC-161 cast, Security 37 vulns. Web lint fixed via turbo lint dependsOn ^build (commit 83da3d5ce). origin/staging CI is also failure for the same reasons → merge is human admin-override per project policy. T-015 (registry closeout + BETA-44) is post-merge."
+        },
+        {
+            "id": "T-015",
+            "title": "Post-merge: update index files and close BETA-44",
+            "description": "After the PR is merged to staging: update the project registry files and close the Linear issue.\n\n**Step 1 — Update `.qtm/specs/index.json`:**\nFlip SPEC-176 `status` → `completed`, add `completedAt` ISO timestamp, add `completionRef: 'PR #<N> (commit <sha>)'`.\n\n**Step 2 — Update `.qtm/tasks/index.json`:**\nFlip SPEC-176 entry `status` → `completed`, update `progress` to `15/15`, add `completedAt` and `completionRef`. (Per CLAUDE.md Index Sync Rules — both indexes must be flipped in the same change.)\n\n**Step 3 — Update Engram:**\n- `mem_save` with `topic_key: spec/SPEC-176/completed`: PR ref, merge commit, completion date, files affected, BETA-44 closure.\n\n**Step 4 — Close Linear BETA-44:**\nMark Linear BETA-44 as done with a comment linking to the PR and noting the root cause (679 inline oklch(from) usages in Chrome 119+ CSS on a Chrome 109 browser) and the fix (42 variant tokens with sRGB fallbacks + @supports override + 679-site codemod + admin gate).\n\n**Step 5 — Notify BETA-44 reporter:**\nPost a comment on BETA-44 asking 'Marta' to retest login on Chrome 109, linking to the staging deployment.\n\nAcceptance criteria:\n- Both index files updated and committed\n- Engram has spec/SPEC-176/completed observation\n- Linear BETA-44 is closed\n- Reporter notified\n\nFiles affected:\n- `.qtm/specs/index.json`\n- `.qtm/tasks/index.json`\n\nAC mapping: PDR §9 (BETA-44 closeable), §12 approval closeout.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update specs/index.json: SPEC-176 status→completed + completionRef",
+                    "completed": false
+                },
+                {
+                    "title": "Update tasks/index.json: SPEC-176 status→completed + progress 15/15 + completionRef",
+                    "completed": false
+                },
+                {
+                    "title": "mem_save spec/SPEC-176/completed to engram",
+                    "completed": false
+                },
+                {
+                    "title": "Close Linear BETA-44 with root cause summary and PR link",
+                    "completed": false
+                },
+                {
+                    "title": "Notify reporter (Marta) to retest on Chrome 109",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-176", "phase-closeout", "registry", "linear"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

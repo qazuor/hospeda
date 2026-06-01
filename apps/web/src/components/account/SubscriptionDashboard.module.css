@@ -55,33 +55,33 @@
 }
 
 .badgeActive {
-    background-color: oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.15);
+    background-color: var(--success-a15);
     color: var(--success, oklch(0.55 0.18 145));
-    border: 1px solid oklch(from var(--success, oklch(0.55 0.18 145)) l c h / 0.3);
+    border: 1px solid var(--success-a30);
 }
 
 .badgeTrial {
-    background-color: oklch(from var(--brand-accent) l c h / 0.15);
+    background-color: var(--brand-accent-a15);
     color: var(--brand-accent);
-    border: 1px solid oklch(from var(--brand-accent) l c h / 0.3);
+    border: 1px solid var(--brand-accent-a30);
 }
 
 .badgeCancelled {
-    background-color: oklch(from var(--core-muted-foreground) l c h / 0.12);
+    background-color: var(--core-muted-foreground-a12);
     color: var(--core-muted-foreground);
-    border: 1px solid oklch(from var(--core-muted-foreground) l c h / 0.25);
+    border: 1px solid var(--core-muted-foreground-a25);
 }
 
 .badgeExpired {
-    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.12);
+    background-color: var(--destructive-a12);
     color: var(--destructive, oklch(0.55 0.22 25));
-    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+    border: 1px solid var(--destructive-a25);
 }
 
 .badgePastDue {
-    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.12);
+    background-color: var(--destructive-a12);
     color: var(--destructive, oklch(0.55 0.22 25));
-    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+    border: 1px solid var(--destructive-a25);
 }
 
 .badgePending {
@@ -91,9 +91,9 @@
 }
 
 .badgePaused {
-    background-color: oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.12);
+    background-color: var(--brand-accent-a12);
     color: var(--brand-accent, oklch(0.7 0.16 60));
-    border: 1px solid oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.25);
+    border: 1px solid var(--brand-accent-a25);
 }
 
 /* ── Meta row (billing date + payment method) ──────────────────────────────── */
@@ -453,8 +453,8 @@
 /* ── Error state ───────────────────────────────────────────────────────────── */
 
 .errorContainer {
-    background-color: oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.06);
-    border: 1px solid oklch(from var(--destructive, oklch(0.55 0.22 25)) l c h / 0.25);
+    background-color: var(--destructive-a05);
+    border: 1px solid var(--destructive-a25);
     border-radius: var(--radius-card, 24px);
     padding: var(--space-6, 24px);
     display: flex;

@@ -10,8 +10,8 @@
 .limitBanner {
     margin-bottom: var(--space-4, 16px);
     padding: var(--space-3, 12px) var(--space-4, 16px);
-    background-color: oklch(from var(--brand-accent) l c h / 0.12);
-    border: 1px solid oklch(from var(--brand-accent) l c h / 0.35);
+    background-color: var(--brand-accent-a12);
+    border: 1px solid var(--brand-accent-a35);
     border-radius: var(--radius-button, 8px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
@@ -83,7 +83,7 @@
 .input:focus,
 .textarea:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .input.inputError {
@@ -91,7 +91,7 @@
 }
 
 .input.inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--destructive-a15);
 }
 
 .textarea {
@@ -224,8 +224,8 @@
 .iconBtnSelected {
     border-color: var(--brand-primary);
     color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
-    box-shadow: 0 0 0 2px oklch(from var(--brand-primary) l c h / 0.2);
+    background-color: var(--brand-primary-a08);
+    box-shadow: 0 0 0 2px var(--brand-primary-a20);
 }
 
 /* "Sin ícono" button: slightly wider to fit the label text */

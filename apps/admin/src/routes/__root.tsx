@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from 'react';
 import type * as React from 'react';
 
+import { BrowserGateBanner } from '@/components/BrowserGateBanner';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { validatedConfig } from '@/config/ia/validate';
 import { env, validateAdminEnv } from '@/env';
@@ -296,6 +297,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </head>
             <body>
                 <DocumentTitle />
+                {/*
+                 * SPEC-176 T-008 — Browser-gate banner. First visible child of
+                 * the body so it sits above ALL admin content (including the
+                 * signin/forbidden routes, which live outside AppLayout and are
+                 * equally broken on Chrome <111). Self-styled (inline) so it
+                 * renders legibly even when the panel's oklch CSS is broken.
+                 */}
+                <BrowserGateBanner />
                 <QZPayProvider billing={billing}>
                     <QZPayThemeProvider theme={adminQzpayTheme}>
                         <QueryClientProvider client={queryClient}>

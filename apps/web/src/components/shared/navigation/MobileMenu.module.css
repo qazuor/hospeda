@@ -23,7 +23,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.875rem 1.25rem;
-    border-bottom: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-bottom: 1px solid var(--border-a60);
 }
 
 .logoLink {
@@ -75,7 +75,7 @@
     align-items: center;
     padding-block: 0.75rem;
     padding-inline: 0.5rem;
-    border-bottom: 1px solid oklch(from var(--border) l c h / 0.35);
+    border-bottom: 1px solid var(--border-a35);
     font-family: var(--font-heading);
     font-weight: 500;
     font-size: 1rem;
@@ -99,7 +99,7 @@
 
 .footer {
     padding: 1rem 1.25rem 1.25rem;
-    border-top: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-top: 1px solid var(--border-a60);
 }
 
 .searchLink {
@@ -133,7 +133,7 @@
 /* Auth section */
 .authSection {
     padding: 1rem 1.25rem;
-    border-top: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-top: 1px solid var(--border-a60);
 }
 
 .authButton {
@@ -173,15 +173,15 @@
     min-height: 44px;
     padding: 0.75rem 1rem;
     border-radius: var(--radius-button);
-    background-color: oklch(from var(--core-foreground) l c h / 0.04);
-    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    background-color: var(--core-foreground-a05);
+    border: 1px solid var(--border-a50);
     cursor: pointer;
     font-family: var(--font-sans);
     transition: background-color 0.2s ease;
 }
 
 .userRow:hover {
-    background-color: oklch(from var(--core-foreground) l c h / 0.07);
+    background-color: var(--core-foreground-a08);
 }
 
 .userRow:focus-visible {
@@ -255,7 +255,7 @@
 }
 
 .accountLink:hover {
-    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    background-color: var(--core-foreground-a05);
     color: var(--brand-primary);
 }
 
@@ -283,7 +283,7 @@
 }
 
 .signOutButton:hover {
-    background-color: oklch(from var(--destructive) l c h / 0.08);
+    background-color: var(--destructive-a08);
 }
 
 .signOutButton:focus-visible {
@@ -302,7 +302,7 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 0.875rem 1.25rem;
-    border-top: 1px solid oklch(from var(--border) l c h / 0.6);
+    border-top: 1px solid var(--border-a60);
 }
 
 .preferencesGroup {

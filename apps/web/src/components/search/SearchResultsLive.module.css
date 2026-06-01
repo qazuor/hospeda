@@ -27,7 +27,7 @@
 .input:focus {
     outline: none;
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .btn {

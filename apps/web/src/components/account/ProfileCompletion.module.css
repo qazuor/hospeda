@@ -35,15 +35,11 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-pill);
-    background: linear-gradient(
-        135deg,
-        oklch(from var(--brand-primary) l c h / 0.18),
-        oklch(from var(--brand-accent) l c h / 0.18)
-    );
+    background: linear-gradient(135deg, var(--brand-primary-a20), var(--brand-accent-a20));
     color: var(--brand-primary);
     font-size: 1.125rem;
     font-weight: 700;
-    box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.2);
+    box-shadow: 0 4px 12px var(--brand-primary-a20);
 }
 
 .heading {
@@ -69,7 +65,7 @@
 .card {
     position: relative;
     background-color: var(--core-card);
-    border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+    border: 1px solid var(--core-foreground-a08);
     border-radius: var(--radius-card);
     padding: var(--space-6, 24px);
     box-shadow: var(--shadow-card);
@@ -137,7 +133,7 @@
 .input:focus,
 .select:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .inputError {
@@ -145,7 +141,7 @@
 }
 
 .inputError:focus {
-    box-shadow: 0 0 0 3px oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--destructive-a15);
 }
 
 /* ── Birth date input + popover ──────────────────────────────────────────
@@ -275,9 +271,9 @@
 }
 
 .feedbackBannerError {
-    background-color: oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.1);
+    background-color: var(--destructive-a10);
     color: var(--destructive, oklch(0.6 0.2 25));
-    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.2 25)) l c h / 0.25);
+    border: 1px solid var(--destructive-a25);
 }
 
 /* ── Submit row ──────────────────────────────────────────────────────────── */
@@ -471,7 +467,7 @@
 
 .textarea:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
 }
 
 .textarea.inputError {

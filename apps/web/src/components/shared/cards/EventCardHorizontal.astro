@@ -96,7 +96,7 @@ const locationLabel = data.location
 const dateBlockStyle = `background-color: ${categoryColors.text}; color: var(--primary-foreground);`;
 
 /** Inline style for the image placeholder gradient. */
-const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, oklch(from var(--core-card) calc(l - 0.03) c h) 100%);`;
+const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, var(--core-card-lm03) 100%);`;
 ---
 
 <article class="event-card-h">
@@ -225,7 +225,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         position: relative;
         background-color: var(--core-card);
         border-radius: var(--radius-card);
-        border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+        border: 1px solid var(--brand-primary-a15);
         box-shadow: var(--shadow-card);
         overflow: hidden;
         transition:
@@ -341,7 +341,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-size: 1.875rem;
         line-height: 1;
         letter-spacing: 0.05em;
-        color: oklch(from var(--primary-foreground) l c h / 0.3);
+        color: var(--primary-foreground-a30);
         user-select: none;
         flex-shrink: 0;
         margin-left: -0.125rem;
@@ -365,7 +365,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     .event-card-h__time {
         font-family: var(--font-sans);
         font-size: var(--text-caption);
-        color: oklch(from var(--primary-foreground) l c h / 0.8);
+        color: var(--primary-foreground-a80);
         line-height: 1;
     }
 
@@ -439,7 +439,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         color: var(--brand-primary);
-        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        background-color: var(--brand-primary-a10);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.6rem;
         width: fit-content;
@@ -455,7 +455,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         color: var(--core-muted-foreground);
-        background-color: oklch(from var(--core-foreground) l c h / 0.06);
+        background-color: var(--core-foreground-a05);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.6rem;
         width: fit-content;
@@ -491,7 +491,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     }
 
     .event-card-h:hover .event-card-h__cta {
-        background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+        background-color: var(--brand-primary-lm05);
         transform: rotate(-45deg);
     }
 

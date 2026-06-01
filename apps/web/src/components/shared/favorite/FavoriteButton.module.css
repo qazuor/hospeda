@@ -58,14 +58,14 @@
 /* --- Pressed / favorited state --- */
 .button[aria-pressed="true"] {
     color: var(--destructive);
-    border-color: oklch(from var(--destructive) l c h / 0.35);
-    background-color: oklch(from var(--destructive) l c h / 0.08);
+    border-color: var(--destructive-a35);
+    background-color: var(--destructive-a08);
 }
 
 .button[aria-pressed="true"]:hover {
-    color: oklch(from var(--destructive) calc(l * 0.85) c h);
-    border-color: oklch(from var(--destructive) l c h / 0.5);
-    background-color: oklch(from var(--destructive) l c h / 0.12);
+    color: var(--destructive-l85);
+    border-color: var(--destructive-a50);
+    background-color: var(--destructive-a12);
 }
 
 /* --- Variant: compact --- */
@@ -84,7 +84,7 @@
     padding-inline: 0.625rem;
     gap: 0.375rem;
     border-radius: var(--radius-pill);
-    background-color: oklch(from var(--core-card) l c h / 0.92);
+    background-color: var(--core-card-a90);
 }
 
 /* --- Hover preview: filled heart overlay ---
@@ -137,7 +137,7 @@
 
 /* When favorited, tint the count to match the heart color */
 .button[aria-pressed="true"] .countPill {
-    color: oklch(from var(--destructive) l c h / 0.8);
+    color: var(--destructive-a80);
 }
 
 /* --- Pending state (API request in-flight) --- */

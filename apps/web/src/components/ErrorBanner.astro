@@ -108,21 +108,21 @@ const ariaRole = variant === 'info' ? 'status' : 'alert';
 
     /* ---------- Error (red / destructive) ---------- */
     .error-banner--error {
-        background-color: oklch(from var(--destructive) l c h / 0.08);
+        background-color: var(--destructive-a08);
         color: var(--destructive);
         border-color: var(--destructive);
     }
 
     /* ---------- Warning (yellow) ---------- */
     .error-banner--warning {
-        background-color: oklch(from var(--warning) l c h / 0.1);
+        background-color: var(--warning-a10);
         color: var(--warning-foreground);
         border-color: var(--warning);
     }
 
     /* ---------- Info (blue / primary) ---------- */
     .error-banner--info {
-        background-color: oklch(from var(--info) l c h / 0.08);
+        background-color: var(--info-a08);
         color: var(--info);
         border-color: var(--info);
     }

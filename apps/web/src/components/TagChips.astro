@@ -90,7 +90,7 @@ const { chips, ariaLabel } = Astro.props;
         white-space: nowrap;
         padding: 6px 16px;
         border-radius: var(--radius-pill, 9999px);
-        border: 1px solid var(--border, oklch(from var(--brand-primary) l c h / 0.25));
+        border: 1px solid var(--border, var(--brand-primary-a25));
         background-color: var(--core-card);
         color: var(--core-foreground);
         font-family: var(--font-sans);
@@ -112,7 +112,7 @@ const { chips, ariaLabel } = Astro.props;
         background-color: var(--brand-accent);
         color: var(--accent-foreground, #fff);
         border-color: var(--brand-accent);
-        box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.3);
+        box-shadow: 0 2px 8px var(--brand-accent-a30);
     }
 
     .tag-chips__chip:focus-visible {

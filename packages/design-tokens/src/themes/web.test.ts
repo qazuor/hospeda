@@ -31,13 +31,13 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 155 web :root tokens', () => {
-        // 142 was the Phase 0 extractor count for tokens.light in the seed
-        // manifest; +3 for the --text-sm / --text-h6 / --text-body-md tokens
-        // that web usages referenced but were never defined; +10 for the
-        // per-accommodation-type tokens (--accommodation-type-*) added by the
-        // layered color model. Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(155);
+    it('declares all 208 web :root tokens', () => {
+        // 155 was the prior count (accommodation-type tokens + base). Count grew
+        // to 208 after the SSOT icon+color passes added event-category (8),
+        // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
+        // and sponsor-type (3) token families. Adding or removing entries should
+        // be intentional.
+        expect(Object.keys(webLight)).toHaveLength(208); // post-SSOT sponsors/amenities/auth/post-categories
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {

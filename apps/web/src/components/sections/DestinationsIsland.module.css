@@ -182,7 +182,7 @@
     /* M-15: scale instead of height shift — no layout reflow, no height jump */
     transform: scale(1.06);
     border-color: var(--core-muted-foreground);
-    box-shadow: 0 8px 32px -4px oklch(from var(--core-foreground) l c h / 0.45);
+    box-shadow: 0 8px 32px -4px var(--core-foreground-a45);
 }
 
 .cardBlurred {
@@ -492,8 +492,8 @@
 }
 
 .ctaButton:hover {
-    background-color: oklch(from var(--surface-dark) calc(l + 0.05) c h);
-    box-shadow: 0 4px 16px oklch(from var(--surface-dark) l c h / 0.4);
+    background-color: var(--surface-dark-lp05);
+    box-shadow: 0 4px 16px var(--surface-dark-a40);
     transform: translateY(-1px);
 }
 

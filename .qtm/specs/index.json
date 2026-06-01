@@ -2023,6 +2023,23 @@
                 "ux"
             ],
             "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
+        },
+        {
+            "specId": "SPEC-176",
+            "title": "Web color-system fallback for older browsers (oklch/@supports) + admin browser gate",
+            "type": "fix",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-176-web-color-fallback-old-browsers",
+            "created": "2026-05-30T00:00:00.000Z",
+            "branch": "spec/SPEC-176-web-color-fallback-old-browsers",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-176-web-color-fallback-old-browsers",
+            "firstAllocatedViaEngramProtocol": true,
+            "driver": "Linear BETA-44",
+            "archived": false,
+            "tags": ["web", "css", "oklch", "browser-support", "color-tokens", "admin", "beta-44"],
+            "note": "Driver BETA-44. Web color system uses oklch(from var()) relative syntax (679 uses/132 files, real floor Chrome 119) -> breaks Chrome 109 cosmetically (login button unstyled). Approach: centralize 42 variant computations into intermediate tokens with sRGB fallback + @supports oklch override; swap 679 call-sites to var(); generalize existing @supports at components.css:539; @repo/icons JS fallback for 5 dynamic badge cases; admin browser-gate banner <Chrome111 (Tailwind v4 hard floor, no fallback). JS proven clean both apps. Seed spec.md written; NOT atomized; impl NOT started. Full analysis engram worktree/linear-issues/beta-44."
         }
     ]
 }

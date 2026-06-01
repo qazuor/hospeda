@@ -179,8 +179,8 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
         border-radius: 50%;
         background: radial-gradient(
             circle at 50% 50%,
-            oklch(from var(--brand-primary) l c h / 0.16),
-            oklch(from var(--brand-accent) l c h / 0.06) 55%,
+            var(--brand-primary-a15),
+            var(--brand-accent-a05) 55%,
             transparent 75%
         );
         filter: blur(4px);
@@ -226,14 +226,14 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
         right: 14%;
         width: 12px;
         height: 12px;
-        background-color: oklch(from var(--brand-primary) l c h / 0.28);
+        background-color: var(--brand-primary-a30);
     }
     .signin-deco__dot--2 {
         bottom: 28%;
         left: 12%;
         width: 9px;
         height: 9px;
-        background-color: oklch(from var(--brand-accent) l c h / 0.3);
+        background-color: var(--brand-accent-a30);
     }
 
     @media (max-width: 700px) {
@@ -286,7 +286,7 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
     }
 
     .auth-page__link:hover {
-        color: oklch(from var(--brand-primary) calc(l * 0.85) c h);
+        color: var(--brand-primary-l85);
     }
 
     .auth-page__link:focus-visible {
