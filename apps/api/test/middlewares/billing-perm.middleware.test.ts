@@ -181,7 +181,7 @@ describe('billingPermMiddleware', () => {
             // /admin/billing/* would assert the 403 there. Verified by
             // SPEC-164 boundary in rolePermissions.seed.test.ts (T-006).
             expect(next).toHaveBeenCalled();
-            const actor = ctx.get('actor') as { permissions: string[] };
+            const actor = ctx.get('actor') as { permissions: readonly string[] };
             expect(actor.permissions).not.toContain(PermissionEnum.BILLING_READ_ALL);
         });
     });

@@ -9,3 +9,6 @@ export * from './http-field.factory.js';
 export * from './http-schema.factory.js';
 export * from './openapi-metadata.factory.js';
 export * from './type-export.factory.js';
+
+// Permission catalog grouping (SPEC-170)
+export * from './permission-grouping.js';

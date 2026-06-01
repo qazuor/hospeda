@@ -8,11 +8,21 @@
  * when no translation is provided.
  */
 
-import type { PlanDefinition } from '@repo/billing';
 import { ENTITLEMENT_DEFINITIONS as DEFINITIONS } from '@repo/billing';
 
 type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
 type Translator = (key: string, fallback?: string) => string;
+
+/**
+ * Minimal plan shape required by i18n helpers. Accepts both the static
+ * `PlanDefinition` from @repo/billing and the runtime `PublicPlanData` from
+ * @/lib/billing/fetch-plans — both provide slug, name, and description.
+ */
+interface PlanLike {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+}
 
 const ENTITLEMENT_BY_KEY: Map<string, (typeof DEFINITIONS)[number]> = new Map(
     DEFINITIONS.map((def) => [def.key as string, def])
@@ -24,7 +34,7 @@ const ENTITLEMENT_BY_KEY: Map<string, (typeof DEFINITIONS)[number]> = new Map(
  * Tries `billing.plan.<slug>.name`. Falls back to the English `plan.name` from
  * the billing config so missing translations never produce an empty card.
  */
-export function getPlanName(input: { plan: PlanDefinition; t: Translator }): string {
+export function getPlanName(input: { plan: PlanLike; t: Translator }): string {
     const { plan, t } = input;
     return t(`billing.plan.${plan.slug}.name`, plan.name);
 }
@@ -35,7 +45,7 @@ export function getPlanName(input: { plan: PlanDefinition; t: Translator }): str
  * Tries `billing.plan.<slug>.description`. Falls back to the English
  * description from the billing config.
  */
-export function getPlanDescription(input: { plan: PlanDefinition; t: Translator }): string {
+export function getPlanDescription(input: { plan: PlanLike; t: Translator }): string {
     const { plan, t } = input;
     return t(`billing.plan.${plan.slug}.description`, plan.description);
 }

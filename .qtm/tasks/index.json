@@ -606,13 +606,16 @@
         {
             "specId": "SPEC-170",
             "title": "Per-User Granular Permission Management Panel",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "28/31",
             "path": "SPEC-170-user-permission-management",
             "branch": "spec/SPEC-170-user-permission-management",
             "base": "staging",
             "createdAt": "2026-05-29T00:00:00.000Z",
-            "note": "Draft spec.md written, NOT atomized. Spun off from SPEC-169 D7. Backend per-user permission overrides already exists (user_permission table + PermissionService + actor merge); missing = admin UI grant/revoke (stub at /access/users/:id/permissions) + API endpoints + categorized picker. Includes commented posts section (author-fallback model, _OWN deferred). 6 open questions for owner before implementation. No worktree yet."
+            "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
+            "taskCount": 31,
+            "averageComplexity": 2.6,
+            "note": "31 atomic tasks atomized 2026-05-30. All complexity ≤4 (avg 2.6). Phase breakdown: setup 3 (avg 1.7), core 10 (avg 2.5), integration 10 (avg 2.5), testing 8 (avg 2.9). Critical path 14 tasks deep (T-001→T-031). Two mandatory TDD gates: T-006 (actor.ts 10 precedence cases, write RED first) + T-012 (permission-grouping pure logic). GATE task: T-007 (actor.ts deny-resolution) — no API or UI integration testing is meaningful until this passes. All 6 OQs resolved by owner 2026-05-30. Decisions: pgEnum for effect column, immediate cache invalidation, 400 on SUPER_ADMIN target."
         },
         {
             "specId": "SPEC-161",
@@ -631,25 +634,13 @@
         {
             "specId": "SPEC-168",
             "title": "Admin Plan Management — runtime-editable plans on the DB",
-            "status": "pending",
-            "progress": "0/23",
-            "path": "SPEC-168-admin-plan-management"
-        },
-        {
-            "specId": "SPEC-172",
-            "title": "Accommodation amenities & features — chips with junction tables",
-            "status": "in-progress",
-            "progress": "9/30",
-            "path": "SPEC-172-accommodation-amenities-features-chips",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-172-accommodation-amenities-features-chips",
-            "branch": "spec/SPEC-172-accommodation-amenities-features-chips",
-            "base": "staging",
-            "createdAt": "2026-05-30T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
-            "taskCount": 30,
-            "averageComplexity": 2.7,
-            "prStrategy": "4-prs-in-order",
-            "note": "30 atomic tasks across 4 PRs (PR1 write-path 9 tasks, PR2 i18n catalog 8 tasks, PR3 admin chips UI 5 tasks, PR4 web read paths 8 tasks). All complexity <=4 (avg 2.3). Critical path 17 tasks deep. PR1 start task: T-001 (no deps). Binding decisions: AC-1.x through AC-4.x in spec.md §3. Key risk R-2: migration must copy existing name string into all 3 i18n locales before dropping column."
+            "status": "completed",
+            "progress": "23/23",
+            "path": "SPEC-168-admin-plan-management",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:40:38.000Z",
+            "completionRef": "PR #1338 + #1347 merged to staging. Post-merge live verify caught a restore deletedAt no-op bug, fixed in #1347. Staging billing smoke + main promotion pending per owner.",
+            "note": "Drift fix: index previously showed 1/23 in-progress while implementation was 23/23 (task-master per-task tracking was not wired; delivered via #1338 setup→integration + #1347 fix)."
         }
     ],
     "standalone": {

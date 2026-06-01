@@ -2,7 +2,7 @@
 id: SPEC-168
 slug: admin-plan-management
 title: Admin Plan Management — runtime-editable plans on the DB
-status: draft
+status: completed
 priority: P2
 complexity: large
 created: 2026-05-28
@@ -24,7 +24,7 @@ branch: null
 > BaseModel` in `packages/db`. That premise no longer holds — see "Current state" below.
 > SPEC-168 keeps the correct qzpay-backed architecture and absorbs the broader scope that
 > SPEC-093 carried.
-
+>
 > **Related beta feedback**: [BETA-58](https://linear.app/hospeda-beta/issue/BETA-58) — "Reubicar configuracion de planes fuera de packages/billing/src/config". SPEC-168 resolves this: after seeding, the DB is the source of truth for plans, so `packages/billing/src/config/plans.config.ts` is read only once (to seed) and is no longer the live config location. Inherited from SPEC-093 on consolidation.
 
 ## Origin
@@ -44,6 +44,7 @@ and everything is editable from the admin. This mirrors the billing-settings
 model (config = initial values, DB = runtime).
 
 Consequences:
+
 - The page header "Los planes se gestionan desde el código fuente" is WRONG and
   must be corrected.
 - The Editar / Eliminar / Desactivar / Crear buttons SHOULD work (write to DB).
@@ -228,18 +229,43 @@ Consequences:
   Hard-delete is allowed ONLY when no subscription references the plan UUID (referential
   guard). UI hides hard-delete when references exist.
 
-## Open Questions (remaining — implementation-detail, do not block schema/routes)
+## Open Questions — RESOLVED 2026-05-31
 
-1. **QZPay sync / read-through.** After writing `billing_plans` + `billing_prices`, does
-   checkout re-read storage immediately, or is there an in-process plan cache to bust?
-   Confirm `storage.plans.update` + price write is seen by the next checkout with no extra
-   step (the SPEC-143 note about a 300s in-memory cache not being write-invalidated is a
-   lead to check).
-2. **Seed re-run policy.** Current seed skips existing slugs (safe) but drifts DB from
-   config silently after runtime edits. Acceptable as-is, or emit a config-vs-DB
-   divergence warning/report on re-seed?
-3. **Limits/entitlements editing granularity.** Inline with the plan (smoke decision
-   implies yes) vs separate sub-resources.
+1. **QZPay sync / read-through — RESOLVED: read-through, nothing to bust.**
+   The QZPay billing instance is a process-lifetime singleton
+   (`apps/api/src/middlewares/billing.ts:54-63`) but the Drizzle storage adapter it wraps
+   is stateless (`packages/db/src/billing/drizzle-adapter.ts`). The checkout path reads the
+   plan and price live from the DB at request time: `subscription-checkout.service.ts`
+   `resolvePlanBySlug` (≈:177) → `billing.plans.list()` → `findMonthlyPrice(plan.prices)`
+   (≈:380). So an admin write to `billing_plans` + `billing_prices` is visible to the very
+   next checkout with **no invalidation step**. Two caveats: (a) the external
+   `@qazuor/qzpay-drizzle` package could in theory hold an internal plan cache — not
+   verifiable from this repo, but no Hospeda-layer evidence of one; (b) the SPEC-143 "300s
+   cache" note refers to a *different* concern — the 5-minute **entitlement** cache in
+   `apps/api/src/middlewares/entitlement.ts:123` (keyed by `billingCustomerId`), NOT plan
+   prices. Consequence: after an admin edits a plan's **limits/entitlements**, a logged-in
+   user's access-control checks may lag up to 5 min. This is preexisting behavior (not
+   introduced by SPEC-168); the checkout *price* path is unaffected and fully read-through.
+2. **Seed re-run policy — RESOLVED: accept silent skip-by-slug (option A).**
+   T-018 already implemented config-vs-DB divergence detection for **plan fields**
+   (`packages/seed/src/required/billingPlans.seed.ts` `ensurePlan` ≈:167-178): a diverged
+   plan is warned per-field and the DB is NOT overwritten (admin edits win). The only
+   remaining gap is **prices** — `ensurePrice` skips on `(planId, currency, interval,
+   intervalCount)` existence without comparing `unitAmount`, so a runtime-edited price is
+   silently kept. **Decision (2026-05-31): keep the silent skip for prices.** The admin UI
+   is the intended price-mutation path, so a config-vs-DB price divergence after an edit is
+   *expected*, not an error; warning on it would be routine noise. Extending the warning to
+   prices (the `detectPriceDivergences` parallel, ~1-2h) is deferred as an optional
+   follow-up, only worthwhile if full seed-time observability of accidental corruption is
+   later needed.
+3. **Limits/entitlements editing granularity — RESOLVED: inline, as built.**
+   Limits and entitlements are edited inline in a single plan form
+   (`apps/admin/src/features/billing-plans/components/PlanDialog.tsx`) submitted as one
+   `PUT`; `limits` travels as `{ key, value }[]` in the UI and is converted to
+   `Record<string, number>` in `hooks.ts` (`toApiLimits`) before the call. The schemas
+   (`packages/schemas/src/api/billing/billing-plan.schema.ts`, `z.record(z.string(),
+   z.number())`) and the service (`plan.crud.ts` `updatePlan` writes entitlements + limits
+   in the same `UPDATE`) are aligned. No separate sub-resources. Matches the smoke decision.
 
 ## Known bug to fix (found during this analysis)
 

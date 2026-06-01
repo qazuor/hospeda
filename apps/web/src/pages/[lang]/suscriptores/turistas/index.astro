@@ -5,11 +5,16 @@
  * page-specific copy, metadata, and JSON-LD live here, the card UI itself
  * is shared with /suscriptores/planes/.
  *
- * Reads pricing directly from @repo/billing config (single source of truth).
+ * Fetches pricing from the public API at runtime (SSR) so that operator
+ * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
+ * Cache-Control: s-maxage=300, stale-while-revalidate=60 lets Cloudflare
+ * serve cached HTML for up to 5 minutes while revalidating in the background.
+ * T-017 will add a Cloudflare cache purge on plan save to force immediate
+ * refresh after an admin edit.
  *
  * @route /{lang}/suscriptores/turistas/
- * @rendering SSG (prerender=true) — billing config lives in code; price changes
- *   ship via deploy and SSG regenerates automatically.
+ * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
+ *   time; Cache-Control: s-maxage=300, stale-while-revalidate=60.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -20,24 +25,33 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { ALL_PLANS } from '@repo/billing';
+import {
+	fetchPublicPlans,
+	filterPlansByCategory,
+	PRICING_CACHE_MAX_AGE_SECONDS,
+	PRICING_CACHE_SWR_SECONDS,
+} from '@/lib/billing/fetch-plans';
 import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
-import type { GetStaticPaths } from 'astro';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
+export const prerender = false;
 
 const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(locale);
 
-// Read tourist plans straight from the billing config. Same source the rest
-// of the system reads from (checkout, entitlements, admin viewer).
-const touristPlans = ALL_PLANS.filter((plan) => plan.category === 'tourist' && plan.isActive)
-	.slice()
-	.sort((a, b) => a.sortOrder - b.sortOrder);
+// Set Cache-Control so Cloudflare caches the rendered HTML at the CDN edge.
+// s-maxage=300: serve from cache for up to 5 minutes.
+// stale-while-revalidate=60: revalidate in the background while serving stale.
+// T-017 adds a targeted purge on plan save for immediate invalidation.
+Astro.response.headers.set(
+	'Cache-Control',
+	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
+);
+
+// Fetch active plans from the public API endpoint at runtime.
+const fetchResult = await fetchPublicPlans();
+const touristPlans = fetchResult.ok
+	? filterPlansByCategory(fetchResult.plans, 'tourist')
+	: [];
 
 const intlLocale = getIntlLocale(locale);
 const highlightedSlug = touristPlans[1]?.slug ?? 'tourist-plus';

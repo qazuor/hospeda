@@ -1352,6 +1352,9 @@
         "permission": {
             "invalid": "El permiso no es válido"
         },
+        "permissionEffect": {
+            "invalid": "El efecto del permiso no es válido"
+        },
         "postCategory": {
             "invalid": "El post category no es válido"
         },
