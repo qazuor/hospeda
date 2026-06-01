@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 30,
+        "completed": 31,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -676,7 +676,7 @@
             "id": "T-031",
             "title": "Docs: document admin FAQ management",
             "description": "Add an admin FAQ note (apps/admin notes + apps/web/CLAUDE.md FAQ ordering note). Update SPEC-158 reference to mark Phase 2 done. Acceptance: docs reflect the new UI + order behavior.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024"],
             "blocks": ["T-032"],
@@ -684,14 +684,14 @@
             "tags": ["docs", "phase-docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
