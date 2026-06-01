@@ -634,8 +634,8 @@
         {
             "specId": "SPEC-168",
             "title": "Admin Plan Management — runtime-editable plans on the DB",
-            "status": "pending",
-            "progress": "0/23",
+            "status": "in-progress",
+            "progress": "1/23",
             "path": "SPEC-168-admin-plan-management"
         }
     ],
