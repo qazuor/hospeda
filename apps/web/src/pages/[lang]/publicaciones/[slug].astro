@@ -459,7 +459,10 @@ const breadcrumbItems = [
 							slug={String(p.slug || '')}
 							title={String(p.title || '')}
 							summary={String(p.summary || p.excerpt || '')}
-							featuredImage={p.featuredImage ? String(p.featuredImage) : null}
+							featuredImage={
+								(p.media as { featuredImage?: { url?: string } } | null | undefined)
+									?.featuredImage?.url ?? null
+							}
 							publishedAt={p.publishedAt ? String(p.publishedAt) : null}
 							lang={locale}
 						/>
