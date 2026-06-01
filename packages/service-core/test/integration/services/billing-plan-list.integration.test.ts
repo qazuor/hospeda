@@ -18,7 +18,11 @@
 import { sql } from '@repo/db';
 import type { AdminBillingPlanResponse } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { listPlans } from '../../../src/services/billing/plan/plan.crud';
+import {
+    listPlans,
+    restorePlan,
+    softDeletePlan
+} from '../../../src/services/billing/plan/plan.crud';
 import type { ServiceContext } from '../../../src/types';
 import {
     closeServiceTestPool,
@@ -166,6 +170,92 @@ describe('SPEC-168 — listPlans admin list (real DB)', () => {
             });
         }
     );
+
+    // -------------------------------------------------------------------------
+    // SPEC-168 bug regression — restore MUST clear deletedAt (not just toggle active)
+    // -------------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'restore: after soft-delete + restore, DB row has deletedAt=null and active=true',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const planId = await seedPlan(tx, {
+                    slug: 'spec168-restore-bug',
+                    category: 'owner',
+                    sortOrder: 1
+                });
+
+                const ctx: ServiceContext = { tx };
+
+                // Step 1: soft-delete the plan — sets deletedAt + active=false
+                const deleteResult = await softDeletePlan(planId, {}, ctx);
+                expect(deleteResult.success).toBe(true);
+
+                // Verify it is soft-deleted in DB
+                const afterDeleteRows = await tx.execute<{
+                    deleted_at: string | null;
+                    active: boolean;
+                }>(sql`SELECT deleted_at, active FROM billing_plans WHERE id = ${planId}`);
+                const afterDeleteRow = afterDeleteRows.rows?.[0];
+                expect(afterDeleteRow?.deleted_at).not.toBeNull();
+                expect(afterDeleteRow?.active).toBe(false);
+
+                // Step 2: restore — must clear deletedAt AND set active=true
+                const restoreResult = await restorePlan(planId, {}, ctx);
+                expect(restoreResult.success).toBe(true);
+                if (!restoreResult.success) throw new Error('expected success');
+
+                // Critical assertion: deletedAt must be NULL after restore (the actual bug)
+                const afterRestoreRows = await tx.execute<{
+                    deleted_at: string | null;
+                    active: boolean;
+                }>(sql`SELECT deleted_at, active FROM billing_plans WHERE id = ${planId}`);
+                const afterRestoreRow = afterRestoreRows.rows?.[0];
+                expect(afterRestoreRow?.deleted_at).toBeNull();
+                expect(afterRestoreRow?.active).toBe(true);
+
+                // The returned DTO must reflect the restored state
+                expect(restoreResult.data.isActive).toBe(true);
+
+                // The plan must now appear in the default list (deletedAt IS NULL)
+                const listResult = await listPlans({ pageSize: 100 }, ctx);
+                expect(listResult.success).toBe(true);
+                if (!listResult.success) throw new Error('expected success');
+                const ids = listResult.data.items.map((i) => i.id);
+                expect(ids).toContain(planId);
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        'restore: returns VALIDATION_ERROR when plan is not soft-deleted',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const planId = await seedPlan(tx, {
+                    slug: 'spec168-restore-guard',
+                    category: 'owner',
+                    sortOrder: 1
+                });
+
+                // Plan exists and is NOT soft-deleted — restore must be rejected
+                const ctx: ServiceContext = { tx };
+                const result = await restorePlan(planId, {}, ctx);
+                expect(result.success).toBe(false);
+                if (result.success) throw new Error('expected failure');
+                expect(result.error.code).toBe('VALIDATION_ERROR');
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)('restore: returns NOT_FOUND for a non-existent plan UUID', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const ctx: ServiceContext = { tx };
+            const result = await restorePlan('00000000-dead-4000-8000-000000000000', {}, ctx);
+            expect(result.success).toBe(false);
+            if (result.success) throw new Error('expected failure');
+            expect(result.error.code).toBe('NOT_FOUND');
+        });
+    });
 
     it.skipIf(!dbAvailable)(
         'activeSubscriptionCount counts only active/trialing non-deleted subscriptions',

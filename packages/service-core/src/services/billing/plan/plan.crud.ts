@@ -779,6 +779,105 @@ export async function softDeletePlan(
 }
 
 // ---------------------------------------------------------------------------
+// Restore (undo soft-delete)
+// ---------------------------------------------------------------------------
+
+/**
+ * Restores a soft-deleted billing plan by clearing `deletedAt` and setting `active = true`.
+ *
+ * Semantics:
+ * - If the plan does not exist at all → NOT_FOUND error.
+ * - If the plan is NOT soft-deleted (`deletedAt == null`) → VALIDATION_ERROR (invalid state).
+ * - If soft-deleted → sets `deletedAt = null` and `active = true`, emits audit log,
+ *   returns the restored plan.
+ *
+ * Uses `getPlanByIdInternal` (no soft-delete filter) so soft-deleted plans are found.
+ * Wraps the mutation in a transaction and emits an audit log entry with action
+ * `plan_restored`, recording `{ active: true, deletedAt: null }` as changes and the
+ * previous `{ active, deletedAt }` as previous values.
+ *
+ * @param id - UUID of the plan to restore
+ * @param options - Optional settings
+ * @param options.actorId - Optional actor for audit log
+ * @param ctx - Optional query context carrying a transaction client
+ * @returns Restored plan response or error (NOT_FOUND | VALIDATION_ERROR | INTERNAL_ERROR)
+ *
+ * @example
+ * ```ts
+ * const result = await restorePlan('550e8400-e29b-41d4-a716-446655440000', { actorId: 'admin-uuid' });
+ * if (result.success) {
+ *   console.log(result.data.isActive); // true
+ * }
+ * ```
+ */
+export async function restorePlan(
+    id: string,
+    options: { readonly actorId?: string } = {},
+    ctx?: QueryContext
+) {
+    try {
+        const actorId = options.actorId ?? null;
+
+        const doRestore = async (db: DrizzleClient) => {
+            // getPlanByIdInternal has no soft-delete filter — finds deleted rows too.
+            const existingPlan = await getPlanByIdInternal(id, db);
+            if (!existingPlan) {
+                return {
+                    success: false as const,
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'Plan not found' }
+                };
+            }
+
+            if (existingPlan.deletedAt == null) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message: 'Plan is not soft-deleted and cannot be restored'
+                    }
+                };
+            }
+
+            const [updated] = await db
+                .update(billingPlans)
+                .set({ active: true, deletedAt: null })
+                .where(eq(billingPlans.id, id))
+                .returning();
+
+            if (!updated) {
+                throw new Error('Plan restore returned no row');
+            }
+
+            await insertPlanAuditLog(db, {
+                action: 'plan_restored',
+                planId: id,
+                actorId,
+                changes: { active: true, deletedAt: null },
+                previousValues: {
+                    active: existingPlan.active,
+                    deletedAt: existingPlan.deletedAt?.toISOString() ?? null
+                },
+                livemode: existingPlan.livemode ?? false
+            });
+
+            const priceRows = await db
+                .select()
+                .from(billingPrices)
+                .where(and(eq(billingPrices.planId, id), eq(billingPrices.active, true)));
+
+            return { success: true as const, data: mapDbToPlan(updated, priceRows) };
+        };
+
+        return ctx?.tx ? await doRestore(ctx.tx) : await withTransaction(doRestore);
+    } catch (_error) {
+        return {
+            success: false as const,
+            error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'Failed to restore plan' }
+        };
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Hard-delete (with referential guard)
 // ---------------------------------------------------------------------------
 
