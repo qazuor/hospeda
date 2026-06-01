@@ -22,12 +22,14 @@ introducing a single generic admin FAQ manager reused by both entities.
 **Motivation.** SPEC-158 Phase 1 shipped destination FAQs as **seed-only + public read + `FAQPage`
 JSON-LD**, and its "Decisions locked" explicitly deferred *"Admin/protected FAQ CRUD + editing UI"* to
 Phase 2. Today:
+
 - **Accommodation** has a full FAQ backend (`addFaq`/`updateFaq`/`removeFaq`/`getFaqs`/`adminGetFaqs`
   in `accommodation.service.ts` + 4 admin routes) but **no admin UI**.
 - **Destination** has only `addFaq` + `getFaqs` in `destination.service.ts`, **zero admin routes**, no UI.
 - **Neither** `destination_faqs` nor `accommodation_faqs` has a column to persist display order.
 
 **Success criteria.**
+
 - An admin can manage (CRUD + reorder) FAQs for any destination and any accommodation from a dedicated
   "FAQs" sub-tab.
 - A HOST can manage FAQs only on accommodations they own (server-enforced); a non-owner is forbidden.
@@ -37,6 +39,7 @@ Phase 2. Today:
 **Target users.** Platform admins (all entities) and hosts (their own accommodations).
 
 **Decisions locked (do not re-litigate).**
+
 - **Edit model = granular per-item.** Add/edit/delete each fire their own request
   (`POST`/`PUT`/`DELETE /{id}/faqs[/:faqId]`); reorder is a dedicated `PATCH /{id}/faqs/reorder`.
 - **Category = suggested enum + free text.** Combobox preloaded with the SPEC-158 baseline
@@ -54,23 +57,27 @@ Phase 2. Today:
 ### 2. User Stories & Acceptance Criteria (BDD)
 
 **US-1 — Admin adds a FAQ to a destination.**
+
 - GIVEN an admin on a destination's "FAQs" sub-tab
 - WHEN they fill question + answer + category and submit "Add FAQ"
 - THEN a `POST /api/v1/admin/destinations/:id/faqs` creates the FAQ with `display_order = max+1`
 - AND the new row appears at the end of the list without a full page reload.
 
 **US-2 — Admin edits an existing FAQ.**
+
 - GIVEN a destination/accommodation FAQ row in edit mode
 - WHEN the admin changes question/answer/category and saves
 - THEN a `PUT /.../faqs/:faqId` persists the change
 - AND validation errors (question/answer length per `BaseFaqSchema`) are shown inline and block save.
 
 **US-3 — Admin deletes a FAQ.**
+
 - GIVEN a FAQ row
 - WHEN the admin clicks delete and confirms
 - THEN a `DELETE /.../faqs/:faqId` soft-deletes it and it disappears from the list.
 
 **US-4 — Admin reorders FAQs by drag-and-drop.**
+
 - GIVEN ≥2 FAQs on a parent
 - WHEN the admin drags a FAQ to a new position
 - THEN a `PATCH /.../faqs/reorder` persists the new `display_order` for the affected rows
@@ -78,11 +85,13 @@ Phase 2. Today:
 - AND an unknown/foreign `faqId` in the payload is rejected (validation/ownership error).
 
 **US-5 — Host scope is enforced server-side.**
+
 - GIVEN a HOST with `ACCOMMODATION_UPDATE_OWN`
 - WHEN they manage FAQs on an accommodation they own → succeeds
 - AND on an accommodation they do NOT own → the service returns a forbidden error (no mutation).
 
 **US-6 — Public detail respects FAQ order.**
+
 - GIVEN a destination/accommodation with FAQs having `display_order`
 - WHEN the public detail endpoint returns the entity
 - THEN `faqs` come back ordered by `display_order ASC NULLS LAST, created_at ASC`
@@ -164,7 +173,9 @@ Errors: `401` (no admin-panel access), `403` (host non-owner via service), `404`
 - **Destination** `destination.service.ts`: add `updateFaq`, `removeFaq`, `adminGetFaqs` mirroring
   `accommodation.service.ts` (~2080–2237).
 - **Both**: add `reorderFaqs(actor, { <parent>Id, order })` — `_canUpdate` gate, validate each faqId
-  belongs to parent, apply order in a transaction, write audit entry.
+  belongs to parent, apply order in a transaction. (No audit entry: FAQ mutations in this codebase
+  do not write audit logs — `addFaq`/`updateFaq`/`removeFaq` don't either; audit infra is
+  billing-only. Reorder matches that parity rather than introducing a new audit path.)
 - `addFaq` (both): assign `displayOrder = max+1` at create.
 - Read order in `getFaqs`/`adminGetFaqs` + `findWithRelations` faqs load:
   `display_order ASC NULLS LAST, created_at ASC`.
