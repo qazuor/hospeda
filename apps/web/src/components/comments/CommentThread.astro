@@ -31,6 +31,8 @@ interface Props {
     readonly isAuthenticated: boolean;
     /** Full current URL (e.g. Astro.url.href) — used to build the returnUrl for sign-in. */
     readonly currentUrl: string;
+    /** Display name of the current user — author of optimistically appended comments. */
+    readonly currentUserName?: string | null;
 }
 
 const {
@@ -39,6 +41,7 @@ const {
     locale,
     isAuthenticated,
     currentUrl,
+    currentUserName,
 } = Astro.props;
 
 // Build sign-in URL with returnUrl so unauthenticated users land back here after login.
@@ -75,5 +78,6 @@ try {
     locale={locale}
     isAuthenticated={isAuthenticated}
     signinUrl={signinUrl}
+    currentUserName={currentUserName}
     client:visible
 />

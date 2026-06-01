@@ -245,6 +245,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			locale={locale}
 			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
+			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Tags row (only when tags exist) -->
