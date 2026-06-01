@@ -2,7 +2,7 @@
 id: SPEC-168
 slug: admin-plan-management
 title: Admin Plan Management — runtime-editable plans on the DB
-status: draft
+status: completed
 priority: P2
 complexity: large
 created: 2026-05-28
