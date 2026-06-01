@@ -1,0 +1,802 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-172",
+    "title": "Accommodation amenities & features — complete write path, i18n catalog, admin chips UI",
+    "created": "2026-05-30T00:00:00.000Z",
+    "summary": {
+        "totalTasks": 30,
+        "byPR": {
+            "PR1": 9,
+            "PR2": 8,
+            "PR3": 5,
+            "PR4": 8
+        },
+        "averageComplexity": 2.7,
+        "criticalPath": [
+            "T-001",
+            "T-002",
+            "T-003",
+            "T-011",
+            "T-012",
+            "T-013",
+            "T-022",
+            "T-023",
+            "T-025",
+            "T-026"
+        ],
+        "parallelTracks": {
+            "PR1-A": ["T-001", "T-002"],
+            "PR1-B": ["T-003"],
+            "PR1-C": ["T-004"],
+            "PR2-A": ["T-010", "T-011", "T-012"],
+            "PR2-B": ["T-013"],
+            "PR3-A": ["T-018", "T-019"],
+            "PR3-B": ["T-020"],
+            "PR4-A": ["T-025", "T-026"],
+            "PR4-B": ["T-027", "T-028"]
+        },
+        "phases": {
+            "setup": ["T-001", "T-010"],
+            "core": [
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-018",
+                "T-019",
+                "T-025",
+                "T-026"
+            ],
+            "integration": ["T-006", "T-007", "T-015", "T-016", "T-020", "T-021", "T-022", "T-027"],
+            "testing": ["T-008", "T-009", "T-017", "T-023", "T-024", "T-028", "T-029"],
+            "cleanup": ["T-030"]
+        }
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add amenityIds and featureIds to accommodation CRUD schemas",
+            "description": "Add optional `amenityIds: z.string().uuid().array().optional()` and `featureIds: z.string().uuid().array().optional()` to both `AccommodationCreateInputSchema` and `AccommodationUpdateInputSchema`.\n\nFiles:\n- `packages/schemas/src/entities/accommodation/accommodation.crud.schema.ts` (lines 25-73)\n\nSemantics contract (document in JSDoc):\n- Absent field (`undefined`) = 'do not touch junctions' (on update only; on create treated as empty)\n- `[]` empty array = 'remove all junctions'\n- `[id1, id2]` = 'set exactly this set'\n\nTest requirements:\n- Test file: `packages/schemas/test/entities/accommodation/accommodation.crud.schema.test.ts`\n- Assert: create schema accepts valid UUID arrays, accepts absent fields, accepts empty arrays\n- Assert: rejects non-UUID strings in the arrays\n- Assert: update schema same behavior\n- Assert: absent amenityIds/featureIds does not cause schema parse failure\n\nAC: AC-1.1, AC-1.2, AC-1.3",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [],
+            "tags": ["schemas", "zod", "PR1", "backend"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement transactional amenity junction sync in AccommodationService",
+            "description": "Add private helper `syncAmenityJunction(tx, accommodationId, amenityIds)` to `AccommodationService` and call it from `create` and `update` methods.\n\nFiles:\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n\nSync logic:\n- On CREATE: if `amenityIds` provided (including empty), insert rows into `r_accommodation_amenity` for each ID within the same DB transaction. Validate each ID against the `amenity` catalog — any unknown ID rolls back the entire transaction with a typed `VALIDATION_ERROR` (not a generic DB error).\n- On UPDATE: apply delete-absent / insert-added diff:\n  1. Fetch current `amenityId` set for this accommodation\n  2. Compute `toDelete = current − submitted`, `toInsert = submitted − current`\n  3. DELETE rows where amenityId IN toDelete\n  4. INSERT rows for toInsert (validate IDs against catalog before inserting)\n  5. Existing rows (intersection) are untouched\n  6. Unknown IDs in toInsert roll back the transaction\n- If `amenityIds` is `undefined` on update, skip sync entirely (do not touch junctions)\n\nDB schemas to import:\n- `packages/db/src/schemas/accommodation/r_accommodation_amenity.dbschema.ts`\n- `packages/db/src/schemas/accommodation/amenity.dbschema.ts` (for catalog validation)\n\nTest requirements: covered by T-008 (pure service unit tests with real DB or mock). Write test stubs here if not using T-008 separately.\n\nAC: AC-1.4, AC-1.5",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Write syncAmenityJunction private helper", "completed": true },
+                { "title": "Wire into service.create", "completed": true },
+                { "title": "Wire into service.update with undefined guard", "completed": true },
+                { "title": "Catalog validation query (bulk IN check)", "completed": true }
+            ],
+            "tags": ["service-core", "backend", "PR1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Implement transactional feature junction sync in AccommodationService",
+            "description": "Add private helper `syncFeatureJunction(tx, accommodationId, featureIds)` to `AccommodationService` and call it from `create` and `update` methods. Mirrors AC-1.4/AC-1.5 but targets `r_accommodation_feature`.\n\nFiles:\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n\nSync logic identical to T-002 but for features:\n- On CREATE: insert into `r_accommodation_feature` within the same DB transaction; unknown featureId rolls back\n- On UPDATE: delete-absent / insert-added diff against `r_accommodation_feature`; unknown IDs roll back\n- `featureIds` absent on update = skip feature sync\n\nDB schemas:\n- `packages/db/src/schemas/accommodation/r_accommodation_feature.dbschema.ts`\n- `packages/db/src/schemas/accommodation/feature.dbschema.ts` (catalog validation)\n\nCan be implemented in the same file edit as T-002 (both helpers in one pass) or sequentially. Keep separate task ID to track AC coverage independently.\n\nTest requirements: covered by T-008.\n\nAC: AC-1.6",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Write syncFeatureJunction private helper", "completed": true },
+                { "title": "Wire into service.create", "completed": true },
+                { "title": "Wire into service.update with undefined guard", "completed": true }
+            ],
+            "tags": ["service-core", "backend", "PR1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Delete standalone addFeatureToAccommodation and removeFeatureFromAccommodation route files",
+            "description": "Remove the two standalone protected feature endpoints that are replaced by the junction-sync write path added in T-002/T-003.\n\nFiles to DELETE:\n- `apps/api/src/routes/feature/protected/addFeatureToAccommodation.ts`\n- `apps/api/src/routes/feature/protected/removeFeatureFromAccommodation.ts`\n\nAlso update any route registration file that imports and mounts these handlers:\n- Locate the router file that registers these routes (likely `apps/api/src/routes/feature/index.ts` or similar) and remove the import + `.route()` / `.use()` calls for these two handlers.\n\nVerify no other file references these two modules after deletion (run typecheck — any lingering import becomes a compile error that must be fixed).\n\nTest requirements:\n- Confirm via `pnpm typecheck` that no import references remain\n- Confirm the API router still boots (no runtime registration error) — checked by running the full API test suite\n- If integration tests existed for these routes, delete or update them to reflect removal\n\nAC: AC-1.7",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Delete addFeatureToAccommodation.ts", "completed": true },
+                { "title": "Delete removeFeatureFromAccommodation.ts", "completed": true },
+                { "title": "Remove imports from router registration", "completed": true },
+                { "title": "Verify typecheck clean", "completed": true }
+            ],
+            "tags": ["api", "backend", "cleanup", "PR1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update accommodation API routes to pass amenityIds/featureIds to service",
+            "description": "Update the accommodation create and update API route handlers to extract `amenityIds` and `featureIds` from the validated request body and pass them down to the service layer.\n\nFiles likely affected:\n- `apps/api/src/routes/accommodation/protected/create.ts` (or admin equivalent)\n- `apps/api/src/routes/accommodation/admin/update.ts` (or equivalent update handler)\n- Any route using the `AccommodationCreateInputSchema` or `AccommodationUpdateInputSchema` for body parsing\n\nPattern: route handlers are thin; body is already validated by the schema middleware. Just ensure the typed body's `amenityIds` and `featureIds` fields flow through to `accommodationService.create(...)` and `.update(...)` calls.\n\nTest requirements:\n- These are integration-layer tests — write alongside implementation\n- Test file: `apps/api/test/routes/accommodation/` (existing test dir)\n- Assert: POST create with body `{ ...fields, amenityIds: ['uuid1'] }` returns 201 and the response includes the amenities relation\n- Assert: PUT/PATCH update with `amenityIds: []` clears junctions\n- Assert: PUT/PATCH update with `amenityIds` absent leaves junctions unchanged\n\nAC: AC-1.4, AC-1.5, AC-1.6 (API surface)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["api", "backend", "PR1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add admin accommodation API route for create/update with junction fields",
+            "description": "Ensure the admin-tier accommodation create/update routes also pass `amenityIds`/`featureIds` through to the service. Admin routes may use different handler files than protected routes.\n\nFiles to check and update:\n- `apps/api/src/routes/accommodation/admin/` directory — update all create/update handlers\n- The admin routes use `AccommodationCreateInputSchema` / `AccommodationUpdateInputSchema` from `@repo/schemas`; after T-001 these schemas already accept the new fields — only ensure the handlers don't strip them before calling the service.\n\nNote: if the admin and protected routes share the same service call path (same handler module), this task may be trivially satisfied by T-005. Verify and mark as no-op with comment if so.\n\nTest requirements:\n- Admin route integration test: assert admin create with `amenityIds` returns junction data\n- Test file: `apps/api/test/routes/accommodation/admin/` (existing or new)\n\nAC: AC-1.4, AC-1.5, AC-1.6 (admin API surface)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["api", "backend", "admin", "PR1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write service-level unit tests for junction sync (PR1 quality gate)",
+            "description": "Write the unit/integration tests that constitute the PR1 quality gate for junction sync behavior. These tests exercise the service directly with a test database (following repo Test-Informed Development: pure service logic → test alongside or first).\n\nTest file:\n- `packages/service-core/test/services/accommodation/accommodation-junction-sync.test.ts` (NEW)\n\nTest cases required per AC-1.8:\n1. CREATE with valid `amenityIds` — assert junction rows exist in `r_accommodation_amenity` after create\n2. CREATE with valid `featureIds` — assert junction rows exist in `r_accommodation_feature` after create\n3. CREATE with unknown `amenityId` — assert entire transaction rolled back (accommodation row does not exist), error type is VALIDATION_ERROR\n4. UPDATE that adds one amenity + removes another — assert diff applied: removed ID gone, added ID present, untouched ID unchanged\n5. UPDATE with unknown `featureId` — assert rollback, typed error\n6. UPDATE with absent `amenityIds` — assert existing junctions unchanged\n7. UPDATE with `amenityIds: []` — assert all amenity junctions removed\n\nFollows AAA pattern. Uses real test DB (pattern from SPEC-080 service integration tests) OR mocks the Drizzle transaction if project test infra uses mocking approach.\n\nAC: AC-1.8",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "CREATE valid amenityIds test", "completed": true },
+                { "title": "CREATE valid featureIds test", "completed": true },
+                { "title": "CREATE unknown amenityId rollback test", "completed": true },
+                { "title": "UPDATE diff (add+remove) amenity test", "completed": true },
+                { "title": "UPDATE unknown featureId rollback test", "completed": true },
+                { "title": "UPDATE absent amenityIds no-op test", "completed": true },
+                { "title": "UPDATE empty amenityIds clears all test", "completed": true }
+            ],
+            "tags": ["testing", "service-core", "PR1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "PR1 quality gate — typecheck, lint, test run",
+            "description": "Run the full PR1 quality gate before opening the PR. All issues must be resolved, not suppressed.\n\nChecks:\n1. `pnpm typecheck` — must pass clean across all packages and apps touching PR1 changes (`packages/schemas`, `packages/service-core`, `apps/api`)\n2. `pnpm lint` (Biome) — must pass with zero errors. Common gotchas: `useDefaultParameterLast`, `noExplicitAny`, `useExhaustiveDependencies`\n3. `pnpm test` — all tests in affected packages must pass. Target: all T-007 tests green + all previously passing tests still green\n\nFiles to verify compile:\n- `packages/schemas/src/entities/accommodation/accommodation.crud.schema.ts`\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n- `apps/api/src/routes/accommodation/protected/create.ts` + update handler\n- Confirm deleted files no longer referenced anywhere\n\nThis is a gate task — do not open PR1 until this passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-005", "T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "quality-gate", "PR1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Open PR1 to staging",
+            "description": "Open the PR1 pull request targeting `staging` branch once T-008 quality gate passes.\n\nPR title: `feat(service-core): accommodation amenities/features write path + remove standalone feature endpoints`\n\nPR body must reference:\n- AC-1.1 through AC-1.8 (all addressed)\n- Deleted files: `addFeatureToAccommodation.ts`, `removeFeatureFromAccommodation.ts`\n- Service contract documentation: absent vs empty array semantics\n- No breaking changes to existing read paths\n\nBranch: `spec/SPEC-172-accommodation-amenities-features-chips` → `staging`\n\nAC: all PR1 ACs shipped",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["PR1", "workflow"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": "2026-05-30T00:00:00.000Z",
+                "completed": "2026-05-30T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Remove phantom fields from AccommodationWithFeaturesSchema",
+            "description": "Remove the three phantom fields `isOptional`, `additionalCost`, and `additionalCostPercent` from `AccommodationWithFeaturesSchema` ONLY. These fields have no backing columns in `r_accommodation_feature`.\n\nFiles:\n- `packages/schemas/src/entities/accommodation/accommodation.relations.schema.ts` (lines 130-140)\n\nPrecise change:\n- In `AccommodationWithFeaturesSchema` (the features variant), DELETE the three field definitions\n- In `AccommodationWithAmenitiesSchema` (lines 153-163), KEEP all three fields — they ARE backed by real columns in `r_accommodation_amenity`\n- Add a JSDoc comment on `AccommodationWithFeaturesSchema` explaining why these fields are absent (backed by DB columns in amenity junction but not in feature junction)\n\nAlso:\n- `r_accommodation_feature` columns `hostReWriteName` and `comments` remain in the Drizzle schema and model but are NOT added to `AccommodationWithFeaturesSchema` (per Q-2 decision)\n\nTest requirements:\n- Test file: `packages/schemas/test/entities/accommodation/accommodation.relations.schema.test.ts`\n- Assert: `AccommodationWithFeaturesSchema` does NOT have `isOptional`, `additionalCost`, `additionalCostPercent` keys (use `z.ZodObject.shape` to introspect)\n- Assert: `AccommodationWithAmenitiesSchema` STILL HAS these three fields\n- Assert: valid feature data without those fields parses successfully\n\nAC: AC-2.1, AC-2.2",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011", "T-017"],
+            "subtasks": [],
+            "tags": ["schemas", "zod", "PR2", "backend"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Migrate amenity catalog DB schema: name/description → nameI18n/descriptionI18n JSONB",
+            "description": "Migrate the `amenity` table's plain-text `name` and `description` columns to JSONB i18n columns.\n\nFiles:\n- `packages/db/src/schemas/accommodation/amenity.dbschema.ts`\n  - Replace `name: text('name').notNull()` with `nameI18n: jsonb('name_i18n').notNull()`\n  - Replace `description: text('description')` with `descriptionI18n: jsonb('description_i18n')`\n  - JSONB TypeScript type annotation: `{ es: string; en: string; pt: string }`\n\nMigration strategy:\n- Run `pnpm db:generate` to produce a Drizzle migration file under `packages/db/drizzle/`\n- The generated migration must: add `name_i18n` JSONB column, copy existing `name` value into all three locales (`{es: name, en: name, pt: name}`), then drop old `name` column. Same for `description` → `description_i18n`.\n- Review the generated SQL before committing — ensure the data-copy step is present\n- After migration: run `packages/db/scripts/apply-postgres-extras.sh` (triggers/search_index are invisible to Drizzle — required per project CLAUDE.md)\n\nTest requirements:\n- Test file: `packages/db/test/schemas/amenity.dbschema.test.ts`\n- Assert TypeScript shape: `nameI18n` is typed as `{ es: string; en: string; pt: string }` not `string`\n- Assert: column exists in schema object (Drizzle schema introspection)\n\nAC: AC-2.3, AC-2.9",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012", "T-013", "T-015"],
+            "subtasks": [
+                { "title": "Update amenity.dbschema.ts column definitions", "completed": false },
+                { "title": "Run pnpm db:generate and review SQL", "completed": false },
+                { "title": "Verify data-copy step in migration", "completed": false }
+            ],
+            "tags": ["database", "schemas", "i18n", "PR2"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Migrate feature catalog DB schema: name/description → nameI18n/descriptionI18n JSONB",
+            "description": "Same JSONB migration as T-011 but for the `feature` table. Can be done in the same Drizzle migration file as T-011 or a separate one — prefer combining into one migration for atomicity.\n\nFiles:\n- `packages/db/src/schemas/accommodation/feature.dbschema.ts`\n  - Replace `name: text('name').notNull()` with `nameI18n: jsonb('name_i18n').notNull()`\n  - Replace `description: text('description')` with `descriptionI18n: jsonb('description_i18n')`\n\nMigration:\n- Same approach as T-011: generate, review, confirm data-copy step present\n- Combine with T-011's migration if possible (run `pnpm db:generate` once after both schema file changes)\n\nTest requirements:\n- Test file: `packages/db/test/schemas/feature.dbschema.test.ts`\n- Same assertions as T-011 but for feature\n\nAC: AC-2.4, AC-2.9",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013", "T-015"],
+            "subtasks": [],
+            "tags": ["database", "schemas", "i18n", "PR2"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Update amenity and feature Zod schemas for i18n shape",
+            "description": "Update the Zod entity schemas for amenity and feature to validate the JSONB i18n shape and remove the old plain-string fields.\n\nFiles:\n- `packages/schemas/src/entities/amenity/amenity.schema.ts` (lines 34-47)\n  - Remove `name: z.string()` and `description: z.string().optional()`\n  - Add `nameI18n: z.object({ es: z.string(), en: z.string(), pt: z.string() })`\n  - Add `descriptionI18n: z.object({ es: z.string(), en: z.string(), pt: z.string() }).optional()`\n- `packages/schemas/src/entities/feature/feature.schema.ts`\n  - Same changes as above for feature schema\n\nAlso check and update any derived/extended schemas that include amenity or feature fields (e.g., response schemas, list schemas). Ensure the export surface remains compatible — no default exports, only named.\n\nTest requirements:\n- Test file: `packages/schemas/test/entities/amenity/amenity.schema.test.ts`\n- Assert: schema parses valid `{ nameI18n: { es: 'Wifi', en: 'Wifi', pt: 'Wifi' }, ... }` successfully\n- Assert: schema rejects `{ name: 'Wifi', ... }` (old shape)\n- Assert: `nameI18n` with only `es` provided fails (all three locales required)\n- Same assertions for feature schema in `packages/schemas/test/entities/feature/feature.schema.test.ts`\n\nAC: AC-2.5",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": ["T-014", "T-015", "T-016"],
+            "subtasks": [
+                { "title": "Update amenity.schema.ts", "completed": false },
+                { "title": "Update feature.schema.ts", "completed": false },
+                { "title": "Check for downstream schema consumers", "completed": false }
+            ],
+            "tags": ["schemas", "zod", "i18n", "PR2"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update seed data for amenity and feature i18n fields",
+            "description": "Update seed files so every amenity and feature row carries all three locale strings in `nameI18n` and `descriptionI18n`.\n\nFiles:\n- `packages/seed/src/` — locate all amenity and feature seed data files (likely `packages/seed/src/entities/amenity.seed.ts` and `packages/seed/src/entities/feature.seed.ts` or similar)\n- Replace `{ name: 'Wifi', description: '...' }` with `{ nameI18n: { es: 'Wifi', en: 'Wifi', pt: 'Wifi' }, descriptionI18n: { es: '...', en: '...', pt: '...' } }`\n- Strategy per R-2 risk: copy existing string into all three locales as baseline — operators can improve translations later\n- The seed script must compile without TypeScript errors after T-013's schema changes\n\nTest requirements:\n- The seed file itself compiles (verified by `pnpm typecheck` on `packages/seed`)\n- Optionally: run `pnpm db:seed` in dev and verify amenity rows have i18n JSONB columns populated\n- Test file: `packages/seed/test/entities/amenity.seed.test.ts` if it exists — assert i18n shape\n\nAC: AC-2.6",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Update amenity seed data", "completed": false },
+                { "title": "Update feature seed data", "completed": false },
+                { "title": "Verify TypeScript compilation", "completed": false }
+            ],
+            "tags": ["seed", "i18n", "database", "PR2"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update public catalog list endpoints to return i18n fields",
+            "description": "Update the public catalog read endpoints to return `nameI18n` and `descriptionI18n` instead of the old `name`/`description` fields.\n\nFiles:\n- `apps/api/src/routes/amenity/public/list.ts` — verify response type uses updated Zod schema; if it uses a `select` object with explicit column names, update to include `name_i18n`/`description_i18n`\n- `apps/api/src/routes/feature/public/list.ts` — same update\n- Cache TTL (300 s) is NOT changed\n\nNote: if these routes use `ResponseFactory` and the schema from `@repo/schemas`, after T-013's schema update the response type should auto-propagate. Verify no explicit field selection strips the new columns.\n\nTest requirements:\n- Integration test: `apps/api/test/routes/amenity/public/list.test.ts`\n- Assert: GET `/api/v1/public/amenities` returns `nameI18n: { es, en, pt }` shape\n- Assert: old `name` field is NOT in the response\n- Assert: 300 s cache header present (unchanged)\n- Same for feature list endpoint\n\nAC: AC-2.7",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013"],
+            "blocks": ["T-016", "T-017"],
+            "subtasks": [],
+            "tags": ["api", "backend", "i18n", "PR2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Verify existing accommodation read paths return updated i18n relation objects",
+            "description": "Audit all accommodation read paths that include `amenities[]` or `features[]` in their response and confirm they continue to work with the updated i18n shape. No consumer should receive bare IDs.\n\nFiles to audit:\n- `apps/api/src/routes/accommodation/public/getById.ts` (or equivalent)\n- `apps/api/src/routes/accommodation/admin/getById.ts`\n- `apps/api/src/routes/accommodation/protected/getById.ts`\n- Any route that uses `AccommodationWithRelationsSchema` or passes relations via Drizzle `with: { amenities: true, features: true }` clauses\n\nAction: run `pnpm typecheck` — if the relation includes inline fields selected from the join, the TypeScript type will surface breaking changes from the column rename. Fix any explicit column selections that still reference the old `name`/`description` fields.\n\nTest requirements:\n- Test file: `apps/api/test/routes/accommodation/public/getById.test.ts` (existing)\n- Assert: accommodation detail response includes `amenities[0].nameI18n` (not `amenities[0].name`)\n- Assert: `features[0].nameI18n` present\n\nAC: AC-2.8",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Audit all accommodation getById routes", "completed": false },
+                { "title": "Fix any explicit column selections", "completed": false },
+                { "title": "Verify typecheck clean", "completed": false }
+            ],
+            "tags": ["api", "backend", "i18n", "PR2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "PR2 quality gate — typecheck, lint, test run, migration review",
+            "description": "Run the full PR2 quality gate before opening the PR.\n\nChecks:\n1. `pnpm typecheck` — must pass clean across `packages/db`, `packages/schemas`, `packages/seed`, `apps/api`\n2. `pnpm lint` (Biome) — zero errors\n3. `pnpm test` — all affected test suites green (T-010 schema tests, T-011/T-012 DB schema tests, T-013 Zod schema tests, T-014 seed compile, T-015/T-016 API integration tests)\n4. Migration review: visually confirm the generated Drizzle migration SQL contains the data-copy step (`UPDATE amenity SET name_i18n = jsonb_build_object('es', name, 'en', name, 'pt', name)` or equivalent) before the column drop\n5. R-3 risk check: confirm `search_index` trigger references updated JSONB path OR document that the trigger update is deferred to PR4 with explicit ordering dependency noted\n\nThis is a gate task — do not open PR2 until this passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-014", "T-015", "T-016"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "typecheck clean", "completed": false },
+                { "title": "lint clean", "completed": false },
+                { "title": "all tests green", "completed": false },
+                { "title": "migration SQL data-copy verified", "completed": false },
+                { "title": "search_index R-3 risk assessed", "completed": false }
+            ],
+            "tags": ["testing", "quality-gate", "PR2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create MultiSelectChipsField admin component",
+            "description": "Create the `MultiSelectChipsField` component in the admin accommodation form's field family.\n\nFiles (NEW):\n- `apps/admin/src/features/accommodations/components/MultiSelectChipsField.tsx`\n\nComponent contract:\n- Props: `{ fetchUrl: string; value: string[]; onChange: (ids: string[]) => void; label: string; placeholder?: string }`\n- Fetches catalog on mount via `GET fetchUrl` using TanStack Query with 5-minute `staleTime` (client-side cache)\n- Renders a searchable multi-select chip list\n- Display name: use `nameI18n.es` from the catalog item, fallback to `nameI18n.en` if `es` is absent (AC-3.2)\n- Loading state: render a skeleton (use existing Shadcn `Skeleton` component)\n- Error state: inline error message, no crash (AC-3.7)\n- Empty catalog: render empty-state message, not a blank area (AC-3.8)\n- Chip toggling: clicking a selected chip deselects it; clicking an unselected chip selects it\n- Search: filter visible chips by `nameI18n.es` (case-insensitive substring match)\n\nStyle: Tailwind CSS utility classes (admin app convention — NOT CSS modules)\n\nTest requirements (alongside implementation):\n- Test file: `apps/admin/src/features/accommodations/components/MultiSelectChipsField.test.tsx`\n- Assert: renders skeleton while fetch in flight (mock TanStack Query loading state)\n- Assert: renders chips with `es` locale names after successful fetch\n- Assert: renders error message on fetch failure, component does not crash\n- Assert: renders empty-state message when catalog returns zero items\n- Assert: clicking chip toggles selection and calls `onChange` with updated array\n- Assert: search input filters visible chips\n\nAC: AC-3.1, AC-3.2, AC-3.7, AC-3.8",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                { "title": "Component scaffold with props type", "completed": false },
+                { "title": "TanStack Query fetch with 5-min staleTime", "completed": false },
+                { "title": "Loading skeleton state", "completed": false },
+                { "title": "Error state (no crash)", "completed": false },
+                { "title": "Empty state message", "completed": false },
+                { "title": "Chip list rendering with es locale", "completed": false },
+                { "title": "Search filter input", "completed": false },
+                { "title": "Toggle selection + onChange", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "PR3"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Wire MultiSelectChipsField into accommodation edit form for amenities and features",
+            "description": "Integrate `MultiSelectChipsField` into the admin accommodation edit form for both amenities and features.\n\nFiles:\n- `apps/admin/src/features/accommodations/` — locate the main edit form component (likely `AccommodationForm.tsx` or `EditAccommodationPage.tsx`)\n- Add two `MultiSelectChipsField` instances:\n  1. Amenities field: `fetchUrl=\"/api/v1/public/amenities\"`, field name `amenityIds`, label 'Amenidades'\n  2. Features field: `fetchUrl=\"/api/v1/public/features\"`, field name `featureIds`, label 'Características'\n- The form uses TanStack Form with Zod validation — wire the chips fields into the form's `field` API pattern (same as other fields in the form)\n- Pre-population: read initial values from the accommodation detail endpoint's `amenities[]` array (extract `.id` from each relation object) and pass as initial `value` to the field (AC-3.4)\n\nTest requirements:\n- Test file: `apps/admin/src/features/accommodations/components/AccommodationForm.test.tsx` (existing or new)\n- Assert: form pre-populates amenity chips from existing accommodation data\n- Assert: submitting the form with changed chips sends `amenityIds` and `featureIds` in request body\n\nAC: AC-3.3, AC-3.4",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Locate edit form component", "completed": false },
+                { "title": "Add amenities MultiSelectChipsField", "completed": false },
+                { "title": "Add features MultiSelectChipsField", "completed": false },
+                { "title": "Pre-populate from relation data", "completed": false },
+                { "title": "Wire TanStack Form field API", "completed": false }
+            ],
+            "tags": ["admin", "frontend", "PR3"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Rewrite quality-score 'services' signal to use amenities.length",
+            "description": "Replace the `countTruthyKeys` call in the `'services'` signal with a direct check on `amenities.length` from the junction-backed array.\n\nFiles:\n- `apps/admin/src/features/accommodations/config/score-signals.ts` (lines 198-225)\n\nCurrent (to REMOVE): signal evaluates `countTruthyKeys(values, ['hasWifi','hasAirConditioning','hasParking','hasPool','hasKitchen','hasPetFriendly','hasGym','hasBreakfast'])`\n\nReplacement logic:\n```typescript\n// Full credit: 3+ amenities selected\n// Partial credit: 1-2 amenities selected  \n// No credit: 0 amenities\nconst count = values.amenities?.length ?? 0;\nif (count >= 3) return FULL_CREDIT;       // whatever full-credit constant/value the engine uses\nif (count >= 1) return PARTIAL_CREDIT;    // partial credit constant/value\nreturn 0;\n```\n\nPreserve the existing signal structure — only change the evaluation function body. The signal `id: 'services'` stays the same.\n\nDo NOT modify:\n- `apps/admin/src/components/quality-score/compute-score.ts`\n- `apps/admin/src/components/quality-score/AccommodationQualityScore.tsx`\n\nTest requirements:\n- Test file: `apps/admin/src/features/accommodations/config/score-signals.test.ts`\n- Assert: signal returns full credit for `amenities.length >= 3`\n- Assert: signal returns partial credit for `amenities.length === 1` and `=== 2`\n- Assert: signal returns 0 for `amenities.length === 0` (empty array)\n- Assert: signal returns 0 for `amenities` undefined\n- Assert: `compute-score.ts` and `AccommodationQualityScore.tsx` are NOT modified (diff check in test or comment)\n\nAC: AC-3.5, AC-3.6",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "tags": ["admin", "frontend", "quality-score", "PR3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "PR3 quality gate — typecheck, lint, test run",
+            "description": "Run the full PR3 quality gate before opening the PR.\n\nChecks:\n1. `pnpm typecheck` across `apps/admin` — zero errors in changed files\n2. `pnpm lint` (Biome) across `apps/admin`:\n   - `useExhaustiveDependencies`: TanStack Query hooks must list all deps\n   - `noExplicitAny`: no `any` in chip catalog type\n   - `useDefaultParameterLast`: check prop defaults in `MultiSelectChipsField`\n3. `pnpm test` — all admin tests green:\n   - `MultiSelectChipsField.test.tsx` (T-018 tests)\n   - `AccommodationForm.test.tsx` pre-populate tests (T-019)\n   - `score-signals.test.ts` services signal tests (T-020)\n\nThis is a gate task — do not open PR3 until this passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["testing", "quality-gate", "PR3"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Open PR3 to staging",
+            "description": "Open the PR3 pull request targeting `staging` branch once T-021 quality gate passes.\n\nPR title: `feat(admin): MultiSelectChipsField for amenities/features + quality-score services signal rewrite`\n\nPR body must reference:\n- AC-3.1 through AC-3.8 (all addressed)\n- Note: depends on PR2 having landed in `staging` (catalog endpoints must return `nameI18n` shape)\n- No breaking changes to existing form fields or quality score engine\n\nAC: all PR3 ACs shipped",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["PR3", "workflow"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Audit and update web components reading amenity data from junction arrays",
+            "description": "Audit all web components and pages that read accommodation amenity data and update them to source from `amenities[]` junction array (objects with `nameI18n`) rather than any virtual boolean or plain-string derivation.\n\nFiles to audit (search for `hasWifi`, `hasPool`, `hasParking`, `allowsPets`, and direct `.name` access on amenity objects):\n- `apps/web/src/components/accommodation/` — card components, detail components\n- `apps/web/src/pages/accommodations/` — list and detail pages\n- `apps/web/src/components/` — any shared component using accommodation amenity data\n\nFor each affected component:\n- Replace virtual boolean reads (`accommodation.hasWifi`) with junction reads (`accommodation.amenities.some(a => a.slug === 'wifi')`)\n- Replace plain `.name` reads with `nameI18n.es` (falling back to `nameI18n.en`)\n- The virtual quick-amenity resolver (`quick-amenity-resolver.ts`) on the API side is NOT changed (documented in spec Q-5)\n\nTest requirements:\n- For each updated component, write or update a vitest test:\n  - Test file: `apps/web/src/components/accommodation/*.test.tsx` (or `.test.astro` equivalent)\n  - Assert: component renders correct amenity names from `nameI18n.es`\n  - Assert: component does not crash when `amenities` array is empty\n\nAC: AC-4.1",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-024", "T-029"],
+            "subtasks": [
+                {
+                    "title": "Search codebase for virtual boolean amenity reads",
+                    "completed": false
+                },
+                { "title": "Update accommodation card component", "completed": false },
+                { "title": "Update accommodation detail component", "completed": false },
+                { "title": "Update list page amenity display", "completed": false }
+            ],
+            "tags": ["web", "frontend", "PR4"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Update search_index materialized view and triggers for JSONB amenity text",
+            "description": "Update the `search_index` materialized view definition and its supporting triggers to source amenity and feature text from the junction tables using the JSONB `nameI18n->>'es'` path.\n\nFiles:\n- `packages/db/scripts/apply-postgres-extras.sh` — this script applies the materialized view and triggers that are invisible to Drizzle\n- The SQL definitions for the view and triggers (likely in `packages/db/scripts/` or `packages/db/src/triggers/`)\n\nChanges required:\n- In the trigger/view that builds `search_index` text content: replace any reference to the old plain-text `amenity.name` or `feature.name` columns with `amenity.name_i18n->>'es'` and `feature.name_i18n->>'es'`\n- Remove any boolean column references in the trigger if any existed (per AC-4.2 — confirmed: spec says 'No boolean column reference remains')\n- After editing: run the script to apply changes to the dev DB\n\nR-3 risk mitigation: this task ships in PR4 which comes after PR2 (where the column rename happened). By PR4, the old `name` column no longer exists — the trigger MUST use `name_i18n`. Confirm the script applies cleanly.\n\nTest requirements:\n- Test file: `packages/db/test/triggers/search-index.test.ts` (existing or new)\n- Assert: after inserting an accommodation with amenities (via junction), `search_index` entry includes the amenity `nameI18n.es` string in the searchable text\n- Assert: `SELECT to_tsvector(...)` from `search_index` for a known accommodation includes 'wifi' (or equivalent amenity slug text)\n\nAC: AC-4.2",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Locate trigger/view SQL definitions", "completed": false },
+                { "title": "Replace name column refs with name_i18n->>'es'", "completed": false },
+                { "title": "Update apply-postgres-extras.sh", "completed": false },
+                { "title": "Apply and verify on dev DB", "completed": false }
+            ],
+            "tags": ["database", "web", "search", "PR4"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Update vitest fixtures to insert junction rows for amenity/feature test data",
+            "description": "Update all vitest test fixtures and seed helpers used in web-layer tests to insert rows into `r_accommodation_amenity` / `r_accommodation_feature` instead of relying on any other amenity setup approach (e.g., virtual booleans or direct plain-text inserts).\n\nFiles:\n- `apps/web/` and `packages/` — search for test fixture helpers that set up accommodation test data with amenities/features\n- Common locations: `test/fixtures/`, `test/helpers/`, `test/setup/` directories\n- Also check `packages/seed/src/` for any test-specific seed helpers (per CLAUDE.md: `pnpm db:seed:test-users` pattern)\n\nFor each fixture helper:\n- Replace any `{ name: 'Wifi' }` style amenity inserts with `{ nameI18n: { es: 'Wifi', en: 'Wifi', pt: 'Wifi' } }`\n- Ensure fixture inserts rows into the `r_accommodation_amenity` junction table (not just the accommodation table)\n- Use the correct FK relationship: `accommodationId` → `amenityId`\n\nTest requirements:\n- The updated fixtures compile without TypeScript errors\n- Tests that use these fixtures continue to pass (verified in T-029 quality gate)\n\nAC: AC-4.3",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Find all amenity-related test fixtures", "completed": false },
+                { "title": "Update to junction-table insert pattern", "completed": false },
+                { "title": "Update nameI18n shape in fixtures", "completed": false }
+            ],
+            "tags": ["testing", "web", "PR4"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Update AccommodationWithFeaturesSchema read paths in web layer",
+            "description": "Propagate the PR2 schema cleanup (phantom fields removed from `AccommodationWithFeaturesSchema`) through all web-layer consumers that may have TypeScript types or runtime access to those phantom fields.\n\nFiles:\n- `apps/web/src/` — search for any code accessing `.isOptional`, `.additionalCost`, or `.additionalCostPercent` on feature objects from accommodation responses\n- These fields were phantom (no DB backing) so there should be no runtime data, but TypeScript may have inferred them from the old schema shape\n- Fix any compile errors surfaced by `pnpm typecheck` that reference these removed fields\n\nNote: `AccommodationWithAmenitiesSchema` still has these fields (they're real columns) — do NOT remove them from amenity reads.\n\nTest requirements:\n- `pnpm typecheck` passes clean in `apps/web`\n- No new test file needed beyond typecheck verification\n\nAC: AC-4.4",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "schemas", "PR4"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Update accommodation list page web component for junction amenity display",
+            "description": "Update the accommodation list/search page in the web app to display amenity chips/icons sourced from the `amenities[]` junction array. This is the primary consumer-facing change in PR4.\n\nFiles:\n- `apps/web/src/pages/accommodations/` — list page(s)\n- `apps/web/src/components/accommodation/AccommodationCard.astro` (or equivalent) — the card component displayed in lists\n\nChanges:\n- Render amenity badges/chips from `amenities` array, showing `nameI18n.es` text (or icons mapped from slug)\n- Handle case where `amenities` is empty or undefined gracefully\n- Web styling uses vanilla CSS / CSS Modules (NOT Tailwind) per CLAUDE.md convention\n\nTest requirements:\n- Test file: `apps/web/src/components/accommodation/AccommodationCard.test.ts` (or `.astro` equivalent)\n- Assert: card renders amenity names from `nameI18n.es`\n- Assert: card renders gracefully with empty `amenities: []`\n\nAC: AC-4.1 (web display)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "frontend", "PR4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Update accommodation detail page web component for junction amenity display",
+            "description": "Update the accommodation detail page in the web app to display full amenity and feature lists sourced from junction arrays.\n\nFiles:\n- `apps/web/src/pages/accommodations/[slug].astro` (or equivalent detail page)\n- `apps/web/src/components/accommodation/AccommodationAmenities.astro` (or equivalent amenities section component)\n\nChanges:\n- Render the amenities section from `amenities[]` array, showing `nameI18n.es` for each\n- Render the features section from `features[]` array, showing `nameI18n.es` for each\n- Handle empty arrays gracefully (no section rendered or 'No amenities listed' message)\n- Web styling: vanilla CSS / CSS Modules\n\nTest requirements:\n- Test file alongside component\n- Assert: renders all amenities from junction array\n- Assert: renders all features from junction array\n- Assert: handles empty arrays without crash\n\nAC: AC-4.1 (detail page)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [],
+            "tags": ["web", "frontend", "PR4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "PR4 quality gate — full typecheck, lint, test run across all packages",
+            "description": "Run the full PR4 quality gate — the most comprehensive gate since it validates the entire spec end-to-end.\n\nChecks:\n1. `pnpm typecheck` across ALL packages and apps — must pass clean (AC-4.4)\n2. `pnpm lint` (Biome) — zero errors in all changed files\n3. `pnpm test` — all test suites green:\n   - Web component tests (T-023, T-027, T-028)\n   - Fixture tests (T-025)\n   - Search index trigger test (T-024)\n   - TypeScript compilation of fixture updates\n4. Regression check: all previously passing tests from PR1/PR2/PR3 still pass\n5. Manual smoke (optional but recommended): run `pnpm db:fresh-dev` + `pnpm db:seed` and verify:\n   - Accommodation create/update with amenityIds via API\n   - Admin form chips pre-populate and submit correctly\n   - Web detail page shows junction-sourced amenity names\n\nThis is the final gate — do not open PR4 until this passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-024", "T-025", "T-026", "T-027", "T-028"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                { "title": "Full typecheck across all workspaces", "completed": false },
+                { "title": "Full lint pass", "completed": false },
+                { "title": "Full test suite green", "completed": false },
+                { "title": "Regression check PR1/PR2/PR3 tests", "completed": false }
+            ],
+            "tags": ["testing", "quality-gate", "PR4"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Open PR4 to staging and close out SPEC-172",
+            "description": "Open the PR4 pull request targeting `staging` branch once T-029 quality gate passes.\n\nPR title: `feat(web): accommodation amenities/features web read paths + search_index trigger update`\n\nPR body must reference:\n- AC-4.1 through AC-4.4 (all addressed)\n- Closes SPEC-172\n- Note dependency on PR1/PR2/PR3 having landed in `staging`\n- Confirm `search_index` trigger updated for JSONB column names\n\nAfter PR4 merges:\n- Update `.claude/specs/index.json`: SPEC-172 status → `completed`\n- Update `.claude/tasks/index.json`: SPEC-172 entry status → `completed`, progress → `30/30`\n\nAC: all PR4 ACs shipped, full SPEC-172 delivery confirmed",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["PR4", "workflow", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-05-30T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

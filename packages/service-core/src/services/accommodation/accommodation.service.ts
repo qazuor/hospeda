@@ -2,7 +2,11 @@ import {
     AccommodationFaqModel,
     AccommodationIaDataModel,
     AccommodationModel,
+    AmenityModel,
     DestinationModel,
+    FeatureModel,
+    RAccommodationAmenityModel,
+    RAccommodationFeatureModel,
     UserModel,
     accommodations,
     sql
@@ -93,6 +97,7 @@ import {
     flattenAccommodationJoinRelationsList,
     generateSlug
 } from './accommodation.helpers';
+import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -270,6 +275,30 @@ export class AccommodationService extends BaseCrudService<
     private readonly _publishDeps: AccommodationPublishDeps | null;
 
     /**
+     * Junction model for `r_accommodation_amenity`. Used by the SPEC-172 transactional
+     * sync helpers to insert/delete amenity associations alongside create/update.
+     */
+    private readonly _rAmenityModel: RAccommodationAmenityModel;
+
+    /**
+     * Junction model for `r_accommodation_feature`. Used by the SPEC-172 transactional
+     * sync helpers to insert/delete feature associations alongside create/update.
+     */
+    private readonly _rFeatureModel: RAccommodationFeatureModel;
+
+    /**
+     * Catalog model for `amenities`. Used to validate that all supplied amenity IDs
+     * exist before any junction rows are written.
+     */
+    private readonly _amenityModel: AmenityModel;
+
+    /**
+     * Catalog model for `features`. Used to validate that all supplied feature IDs
+     * exist before any junction rows are written.
+     */
+    private readonly _featureCatalogModel: FeatureModel;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
@@ -277,13 +306,21 @@ export class AccommodationService extends BaseCrudService<
      * @param userModel - Optional UserModel instance (for testing/mocking).
      * @param publishDeps - Optional billing dependencies required by `publish()`.
      *   Required only when calling `publish()`; other methods do not need them.
+     * @param rAmenityModel - Optional junction model for `r_accommodation_amenity` (for testing/mocking).
+     * @param rFeatureModel - Optional junction model for `r_accommodation_feature` (for testing/mocking).
+     * @param amenityModel - Optional catalog model for `amenities` (for testing/mocking).
+     * @param featureCatalogModel - Optional catalog model for `features` (for testing/mocking).
      */
     constructor(
         ctx: ServiceConfig,
         model?: AccommodationModel,
         mediaProvider?: ImageProvider | null,
         userModel?: UserModel,
-        publishDeps?: AccommodationPublishDeps | null
+        publishDeps?: AccommodationPublishDeps | null,
+        rAmenityModel?: RAccommodationAmenityModel,
+        rFeatureModel?: RAccommodationFeatureModel,
+        amenityModel?: AmenityModel,
+        featureCatalogModel?: FeatureModel
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -299,6 +336,10 @@ export class AccommodationService extends BaseCrudService<
         this.mediaProvider = mediaProvider ?? null;
         this._userModel = userModel ?? new UserModel();
         this._publishDeps = publishDeps ?? null;
+        this._rAmenityModel = rAmenityModel ?? new RAccommodationAmenityModel();
+        this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
+        this._amenityModel = amenityModel ?? new AmenityModel();
+        this._featureCatalogModel = featureCatalogModel ?? new FeatureModel();
     }
 
     /**
@@ -635,11 +676,16 @@ export class AccommodationService extends BaseCrudService<
      * @inheritdoc
      * Generates a unique slug for the accommodation before it is created.
      * This hook ensures that every accommodation has a URL-friendly and unique identifier.
+     *
+     * SPEC-172: also strips `amenityIds`/`featureIds` from the payload (they are
+     * write-only junction sync inputs, not columns in the `accommodations` table)
+     * and stores them in `ctx.hookState` so `_afterCreate` can execute the
+     * transactional sync after the accommodation row is inserted.
      */
     protected async _beforeCreate(
         data: AccommodationCreateInput,
         _actor: Actor,
-        ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
         // SPEC-143 #29: a service-suspended owner is "not selling", so they
         // cannot create new accommodations while the subscription is paused.
@@ -655,6 +701,16 @@ export class AccommodationService extends BaseCrudService<
         }
 
         await this._assertDestinationIsCity(data.destinationId);
+
+        // SPEC-172: capture junction sync inputs in hookState.
+        // amenityIds / featureIds are write-only — they do not map to any column in
+        // the `accommodations` table. Drizzle ignores unknown fields on insert,
+        // so no DB error occurs, but the _afterCreate hook needs them from hookState.
+        if (ctx.hookState) {
+            // Store as-is so `_afterCreate` can distinguish undefined (no-op) from [] (clear all).
+            ctx.hookState.pendingAmenityIds = data.amenityIds;
+            ctx.hookState.pendingFeatureIds = data.featureIds;
+        }
 
         // Only generate a slug if one is not already provided
         if (!data.slug) {
@@ -709,8 +765,42 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
-        ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
+        // SPEC-172: sync amenity/feature junctions transactionally.
+        // pendingAmenityIds/pendingFeatureIds were captured by _beforeCreate.
+        // undefined → skip (no-op contract); defined → sync inside the same ctx.tx.
+        if (ctx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncAmenityJunction({
+                accommodationId: entity.id,
+                amenityIds: ctx.hookState.pendingAmenityIds,
+                junctionModel: this._rAmenityModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+        if (ctx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncFeatureJunction({
+                accommodationId: entity.id,
+                featureIds: ctx.hookState.pendingFeatureIds,
+                junctionModel: this._rFeatureModel,
+                featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx);
         }
@@ -747,10 +837,14 @@ export class AccommodationService extends BaseCrudService<
      * The `_afterUpdate` hook is idempotent: it only assigns HOST role if the user does not
      * already hold a privileged role, so repeated ACTIVE-state updates are safe no-ops.
      *
+     * SPEC-172: also strips `amenityIds`/`featureIds` from the returned payload (they are
+     * write-only junction sync inputs, not columns in the `accommodations` table) and stores
+     * them in `ctx.hookState` for `_afterUpdate` to execute the transactional sync.
+     *
      * @param data - The normalized update payload.
      * @param _actor - The actor performing the update.
      * @param ctx - Service execution context carrying transaction and hookState.
-     * @returns The update data unchanged (this hook only writes to hookState as a side effect).
+     * @returns The update data with junction sync fields removed (this hook also writes to hookState as a side effect).
      */
     protected async _beforeUpdate(
         data: AccommodationUpdateInput,
@@ -769,6 +863,17 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.previousLifecycleState =
                 typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
         }
+
+        // SPEC-172: capture junction sync inputs in hookState.
+        // amenityIds / featureIds are write-only — they do not map to any column in
+        // the `accommodations` table. Drizzle ignores unknown fields on update,
+        // so no DB error occurs, but the _afterUpdate hook needs them from hookState.
+        if (ctx.hookState) {
+            // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
+            ctx.hookState.pendingAmenityIds = data.amenityIds;
+            ctx.hookState.pendingFeatureIds = data.featureIds;
+        }
+
         return data as Partial<Accommodation>;
     }
 
@@ -785,6 +890,9 @@ export class AccommodationService extends BaseCrudService<
      * because this is a system-level side effect that should not depend on the actor's
      * permissions.
      *
+     * SPEC-172: also syncs amenity/feature junctions when `pendingAmenityIds` or
+     * `pendingFeatureIds` are present in `ctx.hookState` (set by `_beforeUpdate`).
+     *
      * @param entity - The updated accommodation entity.
      * @param _actor - The actor performing the update.
      * @param ctx - Service execution context carrying transaction and hookState.
@@ -795,6 +903,40 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
+        // SPEC-172: sync amenity/feature junctions transactionally.
+        // pendingAmenityIds/pendingFeatureIds were captured by _beforeUpdate.
+        // undefined → skip (no-op contract); defined → sync inside the same ctx.tx.
+        if (ctx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call update() from within withServiceTransaction'
+                );
+            }
+            await syncAmenityJunction({
+                accommodationId: entity.id,
+                amenityIds: ctx.hookState.pendingAmenityIds,
+                junctionModel: this._rAmenityModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+        if (ctx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call update() from within withServiceTransaction'
+                );
+            }
+            await syncFeatureJunction({
+                accommodationId: entity.id,
+                featureIds: ctx.hookState.pendingFeatureIds,
+                junctionModel: this._rFeatureModel,
+                featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
             : undefined;
@@ -966,9 +1108,65 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Creates a new accommodation, wrapping the operation in a database transaction
+     * when `amenityIds` or `featureIds` are present in the input (SPEC-172).
+     *
+     * When junction sync fields are absent, delegates directly to `super.create()`
+     * which behaves exactly as before — this override is a transparent pass-through
+     * for callers that do not supply junction data.
+     *
+     * When junction sync fields ARE present, a `withServiceTransaction` boundary is
+     * opened so that:
+     * - The accommodation row insert
+     * - The amenity junction inserts (via `_afterCreate` → `syncAmenityJunction`)
+     * - The feature junction inserts (via `_afterCreate` → `syncFeatureJunction`)
+     *
+     * all commit or roll back atomically. An unknown catalog ID in either list causes
+     * the whole transaction to roll back with `VALIDATION_ERROR`.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - Create input, optionally including `amenityIds` and `featureIds`.
+     * @param ctx - Optional service context. When provided with a transaction, the
+     *   operation participates in the existing transaction instead of opening a new one.
+     */
+    public override async create(
+        actor: Actor,
+        data: AccommodationCreateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        const { amenityIds, featureIds } = data as {
+            amenityIds?: readonly string[];
+            featureIds?: readonly string[];
+        };
+        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+
+        if (!needsJunctionSync) {
+            return super.create(actor, data, ctx);
+        }
+
+        // Junction sync requested — ensure everything runs in a single transaction.
+        // If the caller already provides ctx.tx, use it (no new boundary needed).
+        if (ctx?.tx) {
+            return super.create(actor, data, ctx);
+        }
+
+        return withServiceTransaction(
+            async (txCtx) => {
+                return super.create(actor, data, txCtx);
+            },
+            ctx,
+            { timeoutMs: 10_000 }
+        );
+    }
+
+    /**
      * Intercepts updates that transition the accommodation to `ACTIVE` and routes
      * them through `publish()` so the trial-subscription orchestration runs
      * atomically with the lifecycleState flip and the owner role promotion.
+     *
+     * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
+     * wraps the full update + junction sync in a `withServiceTransaction` boundary so
+     * the accommodation update and the junction mutations are fully atomic.
      *
      * Behaviour matrix:
      * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
@@ -1006,6 +1204,25 @@ export class AccommodationService extends BaseCrudService<
                 return this.publish(actor, id, ctx);
             }
         }
+
+        // SPEC-172: if junction sync fields are present and no external tx exists,
+        // open a transaction so accommodation update + junction sync are atomic.
+        const { amenityIds, featureIds } = data as {
+            amenityIds?: readonly string[];
+            featureIds?: readonly string[];
+        };
+        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+
+        if (needsJunctionSync && !ctx?.tx) {
+            return withServiceTransaction(
+                async (txCtx) => {
+                    return super.update(actor, id, data, txCtx);
+                },
+                ctx,
+                { timeoutMs: 10_000 }
+            );
+        }
+
         return super.update(actor, id, data, ctx);
     }
 
