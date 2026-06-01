@@ -124,7 +124,7 @@ decidió completar post-beta con tráfico real informando prioridades.
   `deleted_at` columns nullable, no British `cancelled_at`, 0 filas con
   status='cancelled'. Bajo push-only policy aplica vía `drizzle-kit push`.
 - [x] Decidir qué hacer con los 49 gaps de `gaps-state.json`: triage doc
-  creado en `.claude/tasks/SPEC-044-addon-purchase-schema-cleanup/triage-decision.md`.
+  creado en `.qtm/tasks/SPEC-044-addon-purchase-schema-cleanup/triage-decision.md`.
   - Phase 3 race conditions (4 tasks): VERIFIED DONE — ya implementadas
     en código y cubiertas por tests existentes (commits `a912bba3`).
   - 45 tasks restantes: deferred-post-beta con justificación phase-by-phase.
@@ -160,7 +160,7 @@ Esfuerzo estimado: ~3h
 
 ### 9. Ejecutar staging runbook MercadoPago
 
-Seguir `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos.
+Seguir `.qtm/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos.
 
 #### Preconditions
 
@@ -199,7 +199,7 @@ Seguir `.claude/specs/SPEC-091-mvp-blockers/staging-runbook.md`. No saltar pasos
   validación service-level y proyección `cityDestination` en el response.
 - [x] Los cards y JSON-LD ahora leen city de `cityDestination.name` (derivado
   vía transforms en el web app), no de `location.city`.
-- Track de implementación: `.claude/specs/SPEC-095-destination-relationship-cleanup/spec.md`
+- Track de implementación: `.qtm/specs/SPEC-095-destination-relationship-cleanup/spec.md`
 
 #### `amenityIds` no está en `AccommodationCreateInput` (post-beta)
 
@@ -218,7 +218,7 @@ ningún endpoint que los exponga. Implementarlo requiere:
 
 Diferido post-beta: el alojamiento se publica sin amenities asociadas hasta
 que se cierre este gap. Tracker:
-`.claude/specs/SPEC-094-accommodation-amenities-sync/spec.md` (status: draft,
+`.qtm/specs/SPEC-094-accommodation-amenities-sync/spec.md` (status: draft,
 sin tasks generadas — se atomizan cuando arranque la ventana post-beta).
 
 ### 12. Pricing page hardcoded vs billing config ✅ DONE (2026-04-26)

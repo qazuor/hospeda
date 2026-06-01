@@ -193,7 +193,7 @@ Older code referenced unprefixed variable names (e.g. `CRON_SECRET`, `DATABASE_U
 
 - **All new code must use `HOSPEDA_*` names exclusively.** No exceptions for env reads in source.
 - **No runtime aliasing.** The repo does not maintain a code-level fallback table that maps old names to new ones at runtime. If you find legacy references, treat them as bugs and migrate them.
-- **SPEC-035 cleanup.** The renaming was driven by the SPEC-035 effort. If you encounter a variable name not present in any registry, consult `.claude/specs/SPEC-035-env-vars-cleanup/spec.md` for the historical mapping from old names to new ones.
+- **SPEC-035 cleanup.** The renaming was driven by the SPEC-035 effort. If you encounter a variable name not present in any registry, consult `.qtm/specs/SPEC-035-env-vars-cleanup/spec.md` for the historical mapping from old names to new ones.
 - **Platform exceptions only.** `NODE_ENV`, `CI`, `VERCEL`, `VERCEL_GIT_COMMIT_SHA` keep their platform-defined names — the project does not control them. Document the reason at any call site that reads them.
 
 If you migrate an old call site, update the registry and the relevant app's `.env.example` and `.env.test` in the same change.

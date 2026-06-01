@@ -1,34 +1,34 @@
 /**
- * QZPay HTTP Storage Adapter for the Admin Application — Trimmed
+ * QZPay HTTP Storage Adapter for the Admin Application — Plans-extended
  *
- * Implements `QZPayStorageAdapter` for the admin app, but with only the
- * methods that are actually exercised at runtime by `@qazuor/qzpay-react`'s
- * `EntitlementGate` and `LimitGate`:
+ * Implements `QZPayStorageAdapter` for the admin app. Live methods:
  *
- *   - `entitlements.getByCustomerId(customerId)` — fetched on mount by
- *     `useEntitlements`; the synchronous `hasEntitlement(key)` predicate
- *     used by `EntitlementGate` reads from this cached payload.
- *   - `entitlements.check(customerId, key)` — exposed by `useEntitlements`
- *     as `checkEntitlement()` for callers who need a server-validated probe.
- *     Not used by `EntitlementGate` itself, kept for completeness.
- *   - `limits.getByCustomerId(customerId)` — fetched on mount by `useLimits`.
- *   - `limits.check(customerId, key)` — invoked by `LimitGate` through
- *     `useLimits.checkLimit(key)`.
+ * **entitlements** (used by `EntitlementGate` / `useEntitlements`):
+ *   - `findByCustomerId(customerId)` — fetch customer entitlements
+ *   - `check(customerId, key)` — server-validated probe
  *
- * Every other method on the 13 storages (customers, subscriptions, payments,
- * payment methods, invoices, plans, prices, promo codes, vendors, addons,
- * checkouts, plus the unused branches of entitlements/limits themselves) is
- * stubbed via a Proxy that throws a descriptive error if invoked. This makes
- * the dead-code surface explicit and prevents silent reliance on writes the
- * admin app never intended to do (the previous fat adapter had 25+ unused
- * methods that called `/protected/billing/*` for vendor/entitlement/limit
- * grants that the admin UI never triggers).
+ * **limits** (used by `LimitGate` / `useLimits`):
+ *   - `findByCustomerId(customerId)` — fetch customer limits
+ *   - `check(customerId, key)` — per-limit server probe
+ *
+ * **plans** (T-013 / SPEC-168 — wired to real admin endpoints):
+ *   - `findById(id)` — GET /api/v1/admin/billing/plans/:id
+ *   - `list(options)` — GET /api/v1/admin/billing/plans
+ *
+ *   Plan CRUD mutations (create/update/delete/toggle) are intentionally NOT
+ *   handled here because the admin UI uses dedicated TanStack Query hooks
+ *   (`useCreatePlanMutation`, `useUpdatePlanMutation`, etc.) that call
+ *   `fetchApi` directly — not the QZPay adapter. The adapter's `plans`
+ *   branch exists to satisfy the `QZPayStorageAdapter` interface contract.
+ *
+ * Every other branch (customers, subscriptions, payments, payment methods,
+ * invoices, prices, promo codes, vendors, addons, checkouts) is stubbed
+ * via a Proxy that throws a descriptive error on invocation. This makes
+ * dead-code surface explicit and prevents silent misuse.
  *
  * Background: this was follow-up F3 from the post-SPEC-143 billing UI audit.
- * Original assumption was that the adapter was mostly dead code; on review,
- * `EntitlementGate`/`LimitGate` are real product features (gating owner-facing
- * UI by plan entitlements/limits), so the adapter has to keep working — but
- * only for those 4 methods.
+ * T-013 of SPEC-168 extends the adapter with a real plans branch so that
+ * any code relying on `adapter.plans.*` doesn't silently throw at runtime.
  *
  * @module lib/billing-http-adapter
  */
@@ -38,6 +38,8 @@ import type {
     QZPayCustomerLimit,
     QZPayEntitlementStorage,
     QZPayLimitStorage,
+    QZPayPlan,
+    QZPayPlanStorage,
     QZPayStorageAdapter
 } from '@qazuor/qzpay-core';
 
@@ -109,13 +111,29 @@ const limits = withThrowingFallback<QZPayLimitStorage>('limits', {
 });
 
 /**
- * Creates a trimmed HTTP-based storage adapter for QZPay where only the
- * methods invoked by `EntitlementGate` and `LimitGate` are implemented.
- * All other storage methods throw on invocation.
+ * Live plans storage that calls the admin billing/plans endpoints.
+ *
+ * `findById` and `list` are the two read operations that the QZPay adapter
+ * interface requires from the plans branch. Plan mutations (create/update/
+ * delete/toggle) are handled by the dedicated TanStack Query hooks in
+ * `features/billing-plans/hooks.ts`, not by this adapter.
+ *
+ * Remaining plan methods throw with a descriptive message via
+ * `withThrowingFallback`.
+ */
+const plans = withThrowingFallback<QZPayPlanStorage>('plans', {
+    findById: async (id: string) => billingFetch<QZPayPlan>(`/api/v1/admin/billing/plans/${id}`)
+});
+
+/**
+ * Creates an HTTP-based QZPay storage adapter for the admin app.
+ *
+ * Live branches: `entitlements` (2 methods), `limits` (2 methods),
+ * `plans` (2 read methods). All other branches throw on invocation.
  *
  * @param _config - Configuration (kept for backwards compatibility; unused).
- * @returns A `QZPayStorageAdapter` instance whose 13 storage branches are
- *   either live (entitlements + limits, 2 methods each) or throwing stubs.
+ *   The centralized `fetchApi` client resolves base URL from `VITE_API_URL`.
+ * @returns A `QZPayStorageAdapter` instance.
  *
  * @example
  * ```ts
@@ -132,7 +150,7 @@ export function createHttpBillingAdapter(_config: HttpAdapterConfig): QZPayStora
         payments: createThrowingStorage('payments'),
         paymentMethods: createThrowingStorage('paymentMethods'),
         invoices: createThrowingStorage('invoices'),
-        plans: createThrowingStorage('plans'),
+        plans,
         prices: createThrowingStorage('prices'),
         promoCodes: createThrowingStorage('promoCodes'),
         vendors: createThrowingStorage('vendors'),

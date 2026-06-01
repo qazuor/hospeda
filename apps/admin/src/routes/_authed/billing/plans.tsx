@@ -2,27 +2,37 @@
  * Billing Plans Management Page
  *
  * Manages subscription plans for owners, complexes, and tourists.
- * Supports viewing plan details, entitlements, limits, and pricing.
+ * Supports creating, editing, toggling active state, and soft-deleting plans.
+ * All write operations hit the live admin API endpoints via TanStack Query
+ * mutations; the `id` (UUID) is the mutation identifier per SPEC-168 D1.
  */
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { DataTable } from '@/components/table/DataTable';
 import type { DataTableColumn } from '@/components/table/DataTable';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
     type CreatePlanPayload,
-    type PlanDefinition,
+    HardDeleteConfirmDialog,
+    type ParsedPlanRecord,
     PlanDialog,
+    SoftDeleteConfirmDialog,
     getPlanColumns,
     useCreatePlanMutation,
     useDeletePlanMutation,
+    useHardDeletePlanMutation,
     usePlansQuery,
+    useRestorePlanMutation,
     useTogglePlanActiveMutation,
     useUpdatePlanMutation
 } from '@/features/billing-plans';
+import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
-import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { ALL_PLANS } from '@repo/billing';
+import { getFriendlyErrorInfo, isApiError, reportError } from '@/lib/errors';
+import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 
@@ -35,30 +45,34 @@ type PlanCategory = 'all' | 'owner' | 'complex' | 'tourist';
 
 function BillingPlansPage() {
     const { t } = useTranslations();
+    const { addToast } = useToast();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [categoryFilter, setCategoryFilter] = useState<PlanCategory>('all');
+    const [includeDeleted, setIncludeDeleted] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
-    // Plans are read-only; editingPlan stays null but kept for PlanDialog props compat.
-    const [editingPlan] = useState<PlanDefinition | null>(null);
+    const [editingPlan, setEditingPlan] = useState<ParsedPlanRecord | null>(null);
+    // Plan pending a soft-delete confirmation (shows subscriber impact).
+    const [planToSoftDelete, setPlanToSoftDelete] = useState<ParsedPlanRecord | null>(null);
+    // Plan pending a permanent-delete confirmation.
+    const [planToHardDelete, setPlanToHardDelete] = useState<ParsedPlanRecord | null>(null);
 
-    // Fetch plans from API
-    // NOTE: Currently using static data from @repo/billing as fallback
-    // until qzpay-hono billing API routes are implemented
+    // Fetch plans from the DB-backed API endpoint
     const { data, isLoading, error } = usePlansQuery({
         page,
-        limit: pageSize,
-        category: categoryFilter
+        pageSize,
+        category: categoryFilter,
+        includeDeleted
     });
 
     const toggleActiveMutation = useTogglePlanActiveMutation();
     const deleteMutation = useDeletePlanMutation();
+    const restoreMutation = useRestorePlanMutation();
+    const hardDeleteMutation = useHardDeletePlanMutation();
     const createMutation = useCreatePlanMutation();
     const updateMutation = useUpdatePlanMutation();
 
-    // Report query errors to Sentry once per occurrence (the transform layer
-    // also reports its own ApiError, but plain network/HTTP errors only land
-    // here).
+    // Report query errors to Sentry once per occurrence
     useEffect(() => {
         if (error) {
             reportError({
@@ -71,51 +85,47 @@ function BillingPlansPage() {
 
     const friendlyError = error ? getFriendlyErrorInfo(error) : null;
 
-    // Use API data if available, otherwise fall back to static config
-    const hasApiData = Array.isArray(data?.items) && data.items.length > 0;
-    // TYPE-WORKAROUND: API returns ParsedPlanRecord[] which is structurally
-    // compatible with PlanDefinition at runtime but exposes different branded
-    // types for entitlements/limits. Branded mismatches are a TS-only concern;
-    // fallback to ALL_PLANS protects on shape divergence at the array level.
-    const plans = hasApiData ? (data.items as unknown as PlanDefinition[]) : ALL_PLANS;
-    const total = hasApiData
-        ? ((data?.pagination?.total as number | undefined) ?? plans.length)
-        : ALL_PLANS.length;
+    const plans = Array.isArray(data?.items) ? data.items : [];
+    const total = (data?.pagination?.total as number | undefined) ?? plans.length;
 
-    // When using static fallback, never show loading state
-    const effectiveLoading = hasApiData ? isLoading : false;
-
-    // Apply client-side filtering if using static data
-    const filteredPlans = hasApiData
-        ? plans
-        : (ALL_PLANS as readonly PlanDefinition[]).filter((plan: PlanDefinition) => {
-              if (categoryFilter === 'all') return true;
-              return plan.category === categoryFilter;
-          });
-
-    // Plan write operations are intentionally disabled.
-    // Plans are managed as code in packages/billing/src/config/plans.config.ts
-    // (single source of truth). See ADR-020. Create/edit/delete are stubs that
-    // surface a clear message instead of hitting nonexistent endpoints.
+    /**
+     * Opens the dialog in create mode (no editing plan).
+     */
     const handleCreateNew = () => {
-        alert(t('admin-billing.plans.apiRequired'));
+        setEditingPlan(null);
+        setDialogOpen(true);
     };
 
-    const handleEdit = (_plan: PlanDefinition) => {
-        alert(t('admin-billing.plans.apiRequired'));
+    /**
+     * Opens the dialog in edit mode with the given plan pre-filled.
+     * Uses the plan's `id` (UUID) as the mutation identifier (D1).
+     */
+    const handleEdit = (plan: ParsedPlanRecord) => {
+        setEditingPlan(plan);
+        setDialogOpen(true);
     };
 
-    const handleSubmit = async (_payload: CreatePlanPayload) => {
-        // No-op. Dialog never opens for write operations.
-        alert(t('admin-billing.plans.apiRequired'));
-    };
-
-    const handleToggleActive = (id: string, isActive: boolean) => {
-        if (!hasApiData) {
-            alert(t('admin-billing.plans.apiRequired'));
-            return;
+    /**
+     * Handles dialog form submission — dispatches create or update mutation
+     * depending on whether `editingPlan` is set.
+     *
+     * @param payload - Form payload from PlanDialog.
+     */
+    const handleSubmit = async (payload: CreatePlanPayload) => {
+        if (editingPlan) {
+            // Update: use id (UUID) as the mutation identifier per D1.
+            // slug is stripped from the payload (immutable after creation).
+            const { slug: _slug, ...updateFields } = payload;
+            await updateMutation.mutateAsync({ id: editingPlan.id, ...updateFields });
+        } else {
+            await createMutation.mutateAsync(payload);
         }
+    };
 
+    /**
+     * Toggles active state for a plan by UUID (D1: id-based mutations).
+     */
+    const handleToggleActive = (id: string, isActive: boolean) => {
         const message = isActive
             ? t('admin-billing.plans.confirmActivate')
             : t('admin-billing.plans.confirmDeactivate');
@@ -124,23 +134,113 @@ function BillingPlansPage() {
         }
     };
 
-    const handleDelete = (id: string) => {
-        if (!hasApiData) {
-            alert(t('admin-billing.plans.apiRequired'));
-            return;
-        }
+    /**
+     * Opens the soft-delete confirmation dialog for the given plan. The dialog
+     * surfaces the plan's live subscriber count before the destructive action.
+     */
+    const handleDelete = (plan: ParsedPlanRecord) => {
+        setPlanToSoftDelete(plan);
+    };
 
-        if (confirm(t('admin-billing.plans.confirmDelete'))) {
-            deleteMutation.mutate(id);
-        }
+    /**
+     * Confirms the pending soft-delete (D1: id-based mutations).
+     */
+    const confirmSoftDelete = () => {
+        if (!planToSoftDelete) return;
+        deleteMutation.mutate(planToSoftDelete.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastDeletedTitle'),
+                    message: t('admin-billing.plans.toastDeletedMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message:
+                        mutationError instanceof Error
+                            ? mutationError.message
+                            : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+        setPlanToSoftDelete(null);
+    };
+
+    /**
+     * Restores a soft-deleted plan by UUID.
+     */
+    const handleRestore = (plan: ParsedPlanRecord) => {
+        restoreMutation.mutate(plan.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastRestoredTitle'),
+                    message: t('admin-billing.plans.toastRestoredMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message:
+                        mutationError instanceof Error
+                            ? mutationError.message
+                            : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+    };
+
+    /**
+     * Opens the permanent-delete confirmation dialog for a soft-deleted plan.
+     */
+    const handleHardDelete = (plan: ParsedPlanRecord) => {
+        setPlanToHardDelete(plan);
+    };
+
+    /**
+     * Confirms the pending permanent-delete. A 409 from the API (plan still
+     * referenced by subscriptions) is mapped to a specific "blocked" toast.
+     */
+    const confirmHardDelete = () => {
+        if (!planToHardDelete) return;
+        hardDeleteMutation.mutate(planToHardDelete.id, {
+            onSuccess: () => {
+                addToast({
+                    title: t('admin-billing.plans.toastHardDeletedTitle'),
+                    message: t('admin-billing.plans.toastHardDeletedMessage'),
+                    variant: 'success'
+                });
+            },
+            onError: (mutationError) => {
+                const blocked = isApiError(mutationError) && mutationError.status === 409;
+                addToast({
+                    title: t('admin-billing.plans.toastErrorTitle'),
+                    message: blocked
+                        ? t('admin-billing.plans.hardDeleteBlocked')
+                        : mutationError instanceof Error
+                          ? mutationError.message
+                          : t('admin-billing.plans.toastErrorMessage'),
+                    variant: 'error'
+                });
+            }
+        });
+        setPlanToHardDelete(null);
     };
 
     const columns = getPlanColumns({
         onEdit: handleEdit,
         onToggleActive: handleToggleActive,
         onDelete: handleDelete,
+        onRestore: handleRestore,
+        onHardDelete: handleHardDelete,
         isTogglingActive: toggleActiveMutation.isPending,
         isDeleting: deleteMutation.isPending,
+        isRestoring: restoreMutation.isPending,
+        isHardDeleting: hardDeleteMutation.isPending,
         t: t as (key: string) => string
     });
 
@@ -148,14 +248,7 @@ function BillingPlansPage() {
         return (
             <SidebarPageLayout>
                 <div className="space-y-6">
-                    <div>
-                        <h1 className="mb-2 font-bold text-2xl">
-                            {t('admin-billing.plans.title')}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {t('admin-billing.plans.description')}
-                        </p>
-                    </div>
+                    <PageHeader onCreateNew={handleCreateNew} />
 
                     <Card>
                         <CardContent className="py-8">
@@ -166,26 +259,9 @@ function BillingPlansPage() {
                                 <p className="mt-1 text-destructive text-sm">
                                     {friendlyError?.description ?? ''}
                                 </p>
-                                <p className="mt-4 text-muted-foreground text-sm">
-                                    {t('admin-billing.plans.staticFallback')}
-                                </p>
                             </div>
                         </CardContent>
                     </Card>
-
-                    <PlansTable
-                        plans={filteredPlans}
-                        total={filteredPlans.length}
-                        page={page}
-                        pageSize={pageSize}
-                        columns={columns}
-                        isLoading={false}
-                        categoryFilter={categoryFilter}
-                        onPageChange={setPage}
-                        onPageSizeChange={setPageSize}
-                        onCategoryFilterChange={setCategoryFilter}
-                        onCreateNew={handleCreateNew}
-                    />
 
                     <PlanDialog
                         open={dialogOpen}
@@ -202,38 +278,21 @@ function BillingPlansPage() {
     return (
         <SidebarPageLayout>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="mb-2 font-bold text-2xl">
-                            {t('admin-billing.plans.title')}
-                        </h1>
-                        <p className="text-muted-foreground">
-                            {t('admin-billing.plans.description')}
-                        </p>
-                    </div>
-                </div>
-
-                <Card className="border-warning/30 bg-warning/10">
-                    <CardContent className="py-4">
-                        <p className="text-foreground text-sm">
-                            <strong>{t('admin-billing.plans.noteLabel')}</strong>{' '}
-                            {t('admin-billing.plans.apiUnavailable')}
-                        </p>
-                    </CardContent>
-                </Card>
+                <PageHeader onCreateNew={handleCreateNew} />
 
                 <PlansTable
-                    plans={filteredPlans}
-                    total={hasApiData ? total : filteredPlans.length}
+                    plans={plans}
+                    total={total}
                     page={page}
                     pageSize={pageSize}
                     columns={columns}
-                    isLoading={effectiveLoading}
+                    isLoading={isLoading}
                     categoryFilter={categoryFilter}
+                    includeDeleted={includeDeleted}
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                     onCategoryFilterChange={setCategoryFilter}
-                    onCreateNew={handleCreateNew}
+                    onIncludeDeletedChange={setIncludeDeleted}
                 />
 
                 <PlanDialog
@@ -243,23 +302,63 @@ function BillingPlansPage() {
                     onSubmit={handleSubmit}
                     isSubmitting={createMutation.isPending || updateMutation.isPending}
                 />
+
+                <SoftDeleteConfirmDialog
+                    plan={planToSoftDelete}
+                    onCancel={() => setPlanToSoftDelete(null)}
+                    onConfirm={confirmSoftDelete}
+                />
+
+                <HardDeleteConfirmDialog
+                    plan={planToHardDelete}
+                    onCancel={() => setPlanToHardDelete(null)}
+                    onConfirm={confirmHardDelete}
+                />
             </div>
         </SidebarPageLayout>
     );
 }
 
+interface PageHeaderProps {
+    onCreateNew: () => void;
+}
+
+/**
+ * Page header with title, description, and "Create New Plan" button.
+ */
+function PageHeader({ onCreateNew }: PageHeaderProps) {
+    const { t } = useTranslations();
+
+    return (
+        <div className="flex items-center justify-between">
+            <div>
+                <h1 className="mb-2 font-bold text-2xl">{t('admin-billing.plans.title')}</h1>
+                <p className="text-muted-foreground">{t('admin-billing.plans.description')}</p>
+            </div>
+            <Button
+                onClick={onCreateNew}
+                size="sm"
+            >
+                <AddIcon className="mr-2 h-4 w-4" />
+                {t('admin-billing.plans.createPlan')}
+            </Button>
+        </div>
+    );
+}
+
 interface PlansTableProps {
-    plans: readonly PlanDefinition[];
+    plans: readonly ParsedPlanRecord[];
     total: number;
     page: number;
     pageSize: number;
-    columns: ReadonlyArray<DataTableColumn<PlanDefinition>>;
+    columns: ReadonlyArray<DataTableColumn<ParsedPlanRecord>>;
     isLoading: boolean;
     categoryFilter: PlanCategory;
+    includeDeleted: boolean;
     onPageChange: (page: number) => void;
     onPageSizeChange: (pageSize: number) => void;
     onCategoryFilterChange: (filter: PlanCategory) => void;
-    onCreateNew?: () => void;
+    onIncludeDeletedChange: (value: boolean) => void;
 }
 
 function PlansTable({
@@ -270,28 +369,40 @@ function PlansTable({
     columns,
     isLoading,
     categoryFilter,
+    includeDeleted,
     onPageChange,
     onPageSizeChange,
-    onCategoryFilterChange
+    onCategoryFilterChange,
+    onIncludeDeletedChange
 }: PlansTableProps) {
     const { t } = useTranslations();
 
     return (
         <div className="space-y-4">
-            {/* Filters — Create button intentionally omitted: plans are read-only */}
-            <div className="flex items-center justify-between gap-4">
-                <div className="flex gap-2">
-                    <select
-                        aria-label={t('admin-billing.plans.allCategories')}
-                        className="rounded-md border px-3 py-2 text-sm"
-                        value={categoryFilter}
-                        onChange={(e) => onCategoryFilterChange(e.target.value as PlanCategory)}
-                    >
-                        <option value="all">{t('admin-billing.plans.allCategories')}</option>
-                        <option value="owner">{t('admin-billing.plans.categoryOwner')}</option>
-                        <option value="complex">{t('admin-billing.plans.categoryComplex')}</option>
-                        <option value="tourist">{t('admin-billing.plans.categoryTourist')}</option>
-                    </select>
+            {/* Category filter + show-deleted toggle */}
+            <div className="flex items-center gap-4">
+                <select
+                    aria-label={t('admin-billing.plans.allCategories')}
+                    className="rounded-md border px-3 py-2 text-sm"
+                    value={categoryFilter}
+                    onChange={(e) => onCategoryFilterChange(e.target.value as PlanCategory)}
+                >
+                    <option value="all">{t('admin-billing.plans.allCategories')}</option>
+                    <option value="owner">{t('admin-billing.plans.categoryOwner')}</option>
+                    <option value="complex">{t('admin-billing.plans.categoryComplex')}</option>
+                    <option value="tourist">{t('admin-billing.plans.categoryTourist')}</option>
+                </select>
+
+                <div className="flex items-center gap-2 text-sm">
+                    <Switch
+                        id="plans-show-deleted"
+                        checked={includeDeleted}
+                        onCheckedChange={onIncludeDeletedChange}
+                        aria-label={t('admin-billing.plans.showDeleted')}
+                    />
+                    <Label htmlFor="plans-show-deleted">
+                        {t('admin-billing.plans.showDeleted')}
+                    </Label>
                 </div>
             </div>
 
@@ -300,7 +411,7 @@ function PlansTable({
                 columns={columns}
                 data={plans}
                 total={total}
-                rowId={(row) => row.slug}
+                rowId={(row) => row.id}
                 loading={isLoading}
                 page={page}
                 pageSize={pageSize}

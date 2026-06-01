@@ -1,0 +1,83 @@
+{
+    "$comment": "Worktree skill config for the hospeda monorepo, consumed by the worktree skill (~/.claude/skills/worktree). Placeholders {api}/{admin}/{web}/{slug}/{dbname} are filled per-worktree at creation time. DB credentials here are the shared dev-local ones (already in docker-compose.yml/.env.test), not production secrets.",
+    "taskMaster": {
+        "dir": ".qtm"
+    },
+    "baseBranch": "staging",
+    "protectedBranches": ["main", "staging"],
+    "worktree": {
+        "pathPattern": "../hospeda-{slug}",
+        "branchPattern": "{type}/{slug}"
+    },
+    "setup": {
+        "envCopyScript": "./scripts/copy-env-to-worktree.sh",
+        "install": "pnpm install",
+        "build": "pnpm build"
+    },
+    "servers": [
+        {
+            "name": "api",
+            "defaultPort": 3001,
+            "portMethod": "env",
+            "portEnvVar": "API_PORT",
+            "startCmd": "pnpm --filter hospeda-api dev",
+            "healthPath": "/health"
+        },
+        {
+            "name": "admin",
+            "defaultPort": 3000,
+            "portMethod": "flag",
+            "startCmd": "pnpm --filter admin exec vite dev --port {port}"
+        },
+        {
+            "name": "web",
+            "defaultPort": 4321,
+            "portMethod": "flag",
+            "startCmd": "pnpm --filter hospeda-web exec astro dev --port {port}"
+        }
+    ],
+    "portEnvWrites": [
+        {
+            "file": "apps/api/.env.local",
+            "vars": {
+                "HOSPEDA_API_URL": "http://localhost:{api}",
+                "HOSPEDA_SITE_URL": "http://localhost:{web}",
+                "HOSPEDA_ADMIN_URL": "http://localhost:{admin}",
+                "API_CORS_ORIGINS": "http://localhost:{admin},http://localhost:{web}",
+                "HOSPEDA_BETTER_AUTH_URL": "http://localhost:{api}/api/auth"
+            }
+        },
+        {
+            "file": "apps/web/.env.local",
+            "vars": {
+                "HOSPEDA_API_URL": "http://localhost:{api}",
+                "HOSPEDA_SITE_URL": "http://localhost:{web}"
+            }
+        },
+        {
+            "file": "apps/admin/.env.local",
+            "vars": {
+                "VITE_API_URL": "http://localhost:{api}",
+                "HOSPEDA_API_URL": "http://localhost:{api}",
+                "VITE_BETTER_AUTH_URL": "http://localhost:{api}/api/auth",
+                "VITE_SITE_URL": "http://localhost:{web}"
+            }
+        }
+    ],
+    "db": {
+        "mode": "template",
+        "docker": true,
+        "container": "hospeda-postgres",
+        "user": "hospeda_user",
+        "password": "hospeda_pass",
+        "host": "localhost",
+        "port": 5436,
+        "templateDb": "hospeda_template",
+        "dbNamePattern": "worktree_{slug}",
+        "connStringEnvVar": "HOSPEDA_DATABASE_URL",
+        "connStringFile": "apps/api/.env.local",
+        "connStringTemplate": "postgresql://hospeda_user:hospeda_pass@localhost:5436/{dbname}",
+        "freshCmd": "pnpm db:fresh-dev",
+        "applyExtrasCmd": "pnpm db:apply-extras"
+    }
+}

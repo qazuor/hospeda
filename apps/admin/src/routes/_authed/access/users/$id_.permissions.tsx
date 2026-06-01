@@ -12,6 +12,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSiblingPageShell } from '@/features/users/components/UserSiblingPageShell';
+import { PermissionOverridesCard } from '@/features/users/components/permissions/PermissionOverridesCard';
 import { useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
@@ -124,43 +125,8 @@ function PermissionsBody({ userId }: { readonly userId: string }) {
                 </CardContent>
             </Card>
 
-            {/* Direct permission overrides (placeholder) */}
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
-                            <ShieldIcon className="h-5 w-5 text-warning" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-lg">
-                                {t('admin-pages.access.users.permissions.directOverrides')}
-                            </CardTitle>
-                            <p className="text-muted-foreground text-sm">
-                                {t('admin-pages.access.users.permissions.directOverridesDesc')}
-                            </p>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                        <ShieldIcon className="mb-4 h-12 w-12 text-muted-foreground opacity-50" />
-                        <p className="mb-1 text-muted-foreground text-sm">
-                            {t('admin-pages.access.users.permissions.noDirectOverrides')}
-                        </p>
-                        <p className="text-muted-foreground text-xs">
-                            {t('admin-pages.access.users.permissions.noDirectOverridesDesc')}
-                        </p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Feature note */}
-            <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
-                <p className="text-foreground text-sm">
-                    <strong>{t('admin-pages.access.users.permissions.futureFeature')}</strong>{' '}
-                    {t('admin-pages.access.users.permissions.futureFeatureDesc')}
-                </p>
-            </div>
+            {/* Direct permission overrides (SPEC-170): live grant/deny management. */}
+            <PermissionOverridesCard userId={userId} />
         </div>
     );
 }
