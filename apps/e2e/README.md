@@ -337,8 +337,8 @@ Validates `sitemap.xml` and `robots.txt`:
 
 ## Related
 
-- `.claude/specs/SPEC-092-e2e-test-suite/spec.md` — full spec
-- `.claude/tasks/SPEC-092-e2e-test-suite/TODOs.md` — task tracker
+- `.qtm/specs/SPEC-092-e2e-test-suite/spec.md` — full spec
+- `.qtm/tasks/SPEC-092-e2e-test-suite/TODOs.md` — task tracker
 - `.github/workflows/e2e-pr.yml` — PR CI
 - `.github/workflows/e2e-nightly.yml` — nightly CI
 - `docs/deployment/first-time-setup.md` § 1.5.b/1.7.b/1.7.c — Cloudinary E2E folder, MP test accounts, ngrok manual staging path

@@ -205,6 +205,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_PERMISSIONS_MANAGE,
 
+        // PERMISSION: granular per-user permission management (SPEC-170).
+        // Seeded explicitly to SUPER_ADMIN so the panel's gate (canViewPermissions /
+        // canAssignPermissions / canRevokePermissions) is satisfied by a real grant
+        // rather than relying on the all-permissions short-circuit. SUPER_ADMIN-only
+        // by design — managing per-user overrides is a self-escalation-risk operation.
+        PermissionEnum.PERMISSION_VIEW,
+        PermissionEnum.PERMISSION_ASSIGN,
+        PermissionEnum.PERMISSION_REVOKE,
+
         // LOGGING & ERROR TRACKING: All permissions
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
@@ -589,7 +598,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     // NOT tightened in SPEC-169. The role is currently unused, so owner-scoping it now would be
     // untestable churn. These grants are explicitly allow-listed in the AC-6 audit test
     // (packages/seed/test/role-permission-audit.test.ts) and tracked in
-    // .claude/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
+    // .qtm/specs/SPEC-169-role-permission-own-scoping/debt-items.md. Revisit when the role is
     // activated (likely alongside the per-user permission panel, SPEC-170).
     [RoleEnum.CLIENT_MANAGER]: [
         // USER: Client management permissions

@@ -91,6 +91,8 @@ export * from './owner-promotion-discount-type.schema.js';
 export * from './payment-status.enum.js';
 export * from './payment-status.schema.js';
 
+export * from './permission-effect.enum.js';
+
 export * from './permission.enum.js';
 export * from './permission.schema.js';
 

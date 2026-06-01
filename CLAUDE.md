@@ -159,11 +159,11 @@ Any PR that touches the billing surface (checkout, webhooks, cron, refund, admin
 
 Workflow:
 
-1. Before opening the PR, identify which sections of [`.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) the change exercises.
-2. Run those sections against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`. Use [`.claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) to pick the right card + cardholder combo per sub-flow.
+1. Before opening the PR, identify which sections of [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) the change exercises.
+2. Run those sections against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`. Use [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) to pick the right card + cardholder combo per sub-flow.
 3. File the sign-off entry inside the relevant section of the checklist (date, executor, PR number, result, notes).
 4. Reference the sign-off in the PR description so reviewers can verify it.
-5. For PRs that change the **billing CORE** (start-paid route, webhook handlers, dunning/exchange-rate crons, refund flow, admin billing ops), the prod smoke ([`.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](.claude/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)) MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
+5. For PRs that change the **billing CORE** (start-paid route, webhook handlers, dunning/exchange-rate crons, refund flow, admin billing ops), the prod smoke ([`.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)) MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
 
 Failed smokes block merge. Notes-only passes (smoke surfaces a known documented bug from an engram entry) can merge but the bug entry must be linked from the PR.
 
@@ -383,7 +383,7 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 
 ### Workflow
 
-1. **New feature/change** → Use `/spec` to generate a formal specification in `.claude/specs/`
+1. **New feature/change** → Use `/spec` to generate a formal specification in `.qtm/specs/`
 2. **Spec approved** → Use `/task-master:task-from-spec` to generate tasks
 3. **Working on tasks** → Use `/task-master:next-task` to pick the next available task
 4. **Task completed** → Quality gate (`/task-master:quality-gate`) before marking done
@@ -403,8 +403,8 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 
 There are TWO index files that must stay in sync:
 
-- `.claude/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
-- `.claude/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
+- `.qtm/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
+- `.qtm/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
 
 The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
 
@@ -418,14 +418,14 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
    - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
 2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
 3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
-4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.claude/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
-5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .claude/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
+4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.qtm/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
+5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .qtm/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
 
 ### Spec Files Location
 
-- Specifications: `.claude/specs/SPEC-NNN-slug/spec.md`
-- Task state: `.claude/tasks/SPEC-NNN-slug/state.json`
-- Progress: `.claude/tasks/SPEC-NNN-slug/progress.md`
+- Specifications: `.qtm/specs/SPEC-NNN-slug/spec.md`
+- Task state: `.qtm/tasks/SPEC-NNN-slug/state.json`
+- Progress: `.qtm/tasks/SPEC-NNN-slug/progress.md`
 
 ## Important Notes
 
@@ -467,7 +467,7 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 
 ## Spec Workflow + Worktrees
 
-Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.claude/specs/SPEC-NNN-slug/`):
+Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.qtm/specs/SPEC-NNN-slug/`):
 
 1. **Por default crear worktree, sin preguntar** (la política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para specs formales — el usuario eligió default-on para este caso).
 2. **Nombre**: `spec-<NNN>-<slug>` (ej: `spec-098-vps-migration`).
