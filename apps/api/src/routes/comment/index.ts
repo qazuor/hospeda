@@ -3,4 +3,5 @@
  * routers. Post/event-scoped comment routes live under the post/event entity
  * dirs; this dir holds only routes addressed by comment id.
  */
+export { adminCommentRoutes } from './admin/index.js';
 export { protectedCommentRoutes } from './protected/index.js';

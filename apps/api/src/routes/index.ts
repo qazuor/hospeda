@@ -21,7 +21,7 @@ import {
     protectedAttractionRoutes,
     publicAttractionRoutes
 } from './attraction';
-import { protectedCommentRoutes } from './comment';
+import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -298,6 +298,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Assignment: POST /posts/:postId/tags, DELETE /posts/:postId/tags/:tagId
         // Registered after /posts/tags to avoid conflict but fine — assignment paths have /:postId/ prefix
         app.route('/api/v1/admin/posts', adminPostTagAssignmentRoutes);
+
+        // Cross-entity comments (POST + EVENT) — SPEC-165
+        app.route('/api/v1/admin/comments', adminCommentRoutes);
 
         // Supporting entities
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
