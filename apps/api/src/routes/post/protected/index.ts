@@ -3,6 +3,7 @@
  * Routes that require authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { protectedPostCommentRoutes } from '../comments/protected/index.js';
 import { protectedCreatePostRoute } from './create';
 import { protectedLikePostRoute } from './like';
 import { protectedPatchPostRoute } from './patch';
@@ -29,5 +30,8 @@ app.route('/', protectedLikePostRoute);
 
 // DELETE /:id/like - Unlike post
 app.route('/', protectedUnlikePostRoute);
+
+// POST /:postId/comments - Create comment (SPEC-165)
+app.route('/', protectedPostCommentRoutes);
 
 export { app as protectedPostRoutes };

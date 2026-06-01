@@ -606,8 +606,8 @@
         {
             "specId": "SPEC-170",
             "title": "Per-User Granular Permission Management Panel",
-            "status": "in-progress",
-            "progress": "28/31",
+            "status": "completed",
+            "progress": "31/31",
             "path": "SPEC-170-user-permission-management",
             "branch": "spec/SPEC-170-user-permission-management",
             "base": "staging",
@@ -615,6 +615,9 @@
             "tasksAtomizedAt": "2026-05-30T00:00:00.000Z",
             "taskCount": 31,
             "averageComplexity": 2.6,
+            "archived": true,
+            "archivedAt": "2026-06-01",
+            "archiveNote": "Shipped via PR #1342 to staging. All 31 tasks complete. E2E in Chrome passed: grant/deny/remove overrides persist + DB effect column verified + deny-resolution confirmed (host-pro effective perms exclude denied accommodation.update.own at /me). actor.ts (role union grants) minus denies working.",
             "note": "31 atomic tasks atomized 2026-05-30. All complexity ≤4 (avg 2.6). Phase breakdown: setup 3 (avg 1.7), core 10 (avg 2.5), integration 10 (avg 2.5), testing 8 (avg 2.9). Critical path 14 tasks deep (T-001→T-031). Two mandatory TDD gates: T-006 (actor.ts 10 precedence cases, write RED first) + T-012 (permission-grouping pure logic). GATE task: T-007 (actor.ts deny-resolution) — no API or UI integration testing is meaningful until this passes. All 6 OQs resolved by owner 2026-05-30. Decisions: pgEnum for effect column, immediate cache invalidation, 400 on SUPER_ADMIN target."
         },
         {
@@ -641,6 +644,18 @@
             "archivedAt": "2026-06-01T00:40:38.000Z",
             "completionRef": "PR #1338 + #1347 merged to staging. Post-merge live verify caught a restore deletedAt no-op bug, fixed in #1347. Staging billing smoke + main promotion pending per owner.",
             "note": "Drift fix: index previously showed 1/23 in-progress while implementation was 23/23 (task-master per-task tracking was not wired; delivered via #1338 setup→integration + #1347 fix)."
+        },
+        {
+            "specId": "SPEC-165",
+            "title": "Post and Event Comments System",
+            "status": "in-progress",
+            "progress": "13/18",
+            "path": "SPEC-165-post-event-comments-system",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-165-post-event-comments-system",
+            "branch": "spec/SPEC-165-post-event-comments-system",
+            "base": "staging",
+            "createdAt": "2026-05-30T00:00:00.000Z",
+            "note": "Backend complete (T-001..013) in PR #1349 → staging. 13/18. Frontend T-014..018 remain (new branch from staging after merge)."
         }
     ],
     "standalone": {

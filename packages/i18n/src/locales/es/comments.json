@@ -1,0 +1,37 @@
+{
+    "thread": {
+        "header": "Comentarios",
+        "empty": "Sé el primero en comentar"
+    },
+    "form": {
+        "placeholder": "Escribí tu comentario...",
+        "submit": "Comentar",
+        "submitting": "Enviando...",
+        "errorNetwork": "No se pudo enviar tu comentario. Intentá de nuevo.",
+        "errorRateLimit": "Demasiados comentarios, esperá un momento.",
+        "errorAuthCta": "Iniciá sesión para comentar",
+        "charCount": "{{count}}/{{max}}"
+    },
+    "moderation": {
+        "approved": "Aprobado",
+        "rejected": "Rechazado",
+        "pending": "Pendiente"
+    },
+    "actions": {
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "delete": "Eliminar",
+        "restore": "Restaurar",
+        "hardDelete": "Eliminar definitivamente"
+    },
+    "homeCard": {
+        "title": "Comentarios recientes",
+        "empty": "No hay comentarios recientes"
+    },
+    "list": {
+        "filters": {
+            "entityType": "Tipo de entidad",
+            "moderationState": "Estado de moderación"
+        }
+    }
+}
