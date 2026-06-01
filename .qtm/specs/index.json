@@ -2070,7 +2070,7 @@
         {
             "specId": "SPEC-178",
             "title": "Versioned DB Migration Strategy Overhaul",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "high",
             "path": "SPEC-178-versioned-db-migration-strategy",
             "created": "2026-06-01T00:00:00.000Z"

@@ -3,7 +3,7 @@ spec-id: SPEC-178
 title: Versioned DB Migration Strategy Overhaul
 type: infrastructure
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-01T00:00:00Z
 references:
   - ADR-017 (PostgreSQL-specific features via manual migrations — partially superseded)
