@@ -84,14 +84,19 @@ export async function signupUser(
     } = {},
     config?: ApiHelperConfig
 ): Promise<CreatedUser> {
-    const { apiBaseUrl } = resolveBaseUrls(config);
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
     const email = options.email ?? randomEmail();
     const password = options.password ?? randomPassword();
     const name = options.name ?? 'E2E Test User';
 
+    // Better Auth enforces CSRF via the Origin header on state-changing auth
+    // routes. The web base URL is in the API's trustedOrigins on every stack
+    // (e2e launcher sets API_CORS_ORIGINS to the web+admin URLs; dev/staging
+    // include it too), so sending it is accepted everywhere. Omitting it is
+    // rejected with MISSING_OR_NULL_ORIGIN when the API enforces origin.
     const response = await fetch(`${apiBaseUrl}/api/auth/sign-up/email`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', origin: webBaseUrl },
         body: JSON.stringify({ email, password, name })
     });
     if (!response.ok) {
