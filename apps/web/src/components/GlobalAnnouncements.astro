@@ -47,6 +47,8 @@ const dismissAriaLabel =
         : locale === 'pt'
           ? 'Fechar comunicado'
           : 'Cerrar anuncio';
+
+const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 {active.length > 0 && (
@@ -133,7 +135,7 @@ const dismissAriaLabel =
     }
 </style>
 
-<script is:inline>
+<script is:inline nonce={cspNonce}>
     (function setupGlobalAnnouncements() {
         const COOKIE_NAME = 'hospeda_ann_dismissed';
         const root = document.querySelector('[data-testid="global-announcements"]');

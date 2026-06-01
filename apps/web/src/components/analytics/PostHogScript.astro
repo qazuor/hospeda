@@ -52,7 +52,7 @@ const shouldRender = !isDev && posthogKey.length > 0;
 
 // Build the snippet body as a plain string and inject it via `set:html`.
 // We CANNOT use the JSX expression form `<script>{\`...\`}</script>` here:
-// inside an Astro `<script is:inline define:vars={...}>`, Astro wraps the
+// inside an Astro inline `define:vars` script element, Astro wraps the
 // element children in an IIFE that prepends the var declarations. JSX
 // expression braces in that wrapped body are emitted literally, so the
 // snippet ends up parsed as `{ \`...\` }` — a JS block containing a
