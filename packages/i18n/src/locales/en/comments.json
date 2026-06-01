@@ -1,0 +1,37 @@
+{
+    "thread": {
+        "header": "Comments",
+        "empty": "Be the first to comment"
+    },
+    "form": {
+        "placeholder": "Write your comment...",
+        "submit": "Comment",
+        "submitting": "Sending...",
+        "errorNetwork": "Your comment couldn't be sent. Please try again.",
+        "errorRateLimit": "Too many comments, please wait a moment.",
+        "errorAuthCta": "Sign in to comment",
+        "charCount": "{{count}}/{{max}}"
+    },
+    "moderation": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "pending": "Pending"
+    },
+    "actions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "delete": "Delete",
+        "restore": "Restore",
+        "hardDelete": "Delete permanently"
+    },
+    "homeCard": {
+        "title": "Recent comments",
+        "empty": "No recent comments"
+    },
+    "list": {
+        "filters": {
+            "entityType": "Entity type",
+            "moderationState": "Moderation state"
+        }
+    }
+}
