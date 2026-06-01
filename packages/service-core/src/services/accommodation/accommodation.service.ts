@@ -9,8 +9,10 @@ import {
     RAccommodationFeatureModel,
     UserModel,
     accommodations,
-    sql
+    sql,
+    withTransaction
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import {
@@ -30,6 +32,8 @@ import {
     type AccommodationFaqListOutput,
     type AccommodationFaqRemoveInput,
     AccommodationFaqRemoveInputSchema,
+    type AccommodationFaqReorderInput,
+    AccommodationFaqReorderInputSchema,
     type AccommodationFaqSingleOutput,
     type AccommodationFaqUpdateInput,
     AccommodationFaqUpdateInputSchema,
@@ -2039,6 +2043,10 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Adds a FAQ to an accommodation.
+     *
+     * Assigns `displayOrder = max(current displayOrder) + 1` so new FAQs always
+     * appear at the end of the ordered list. When no FAQs exist yet, starts at 0.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId and faq
      * @param ctx - Optional service context for transaction propagation
@@ -2060,9 +2068,19 @@ export class AccommodationService extends BaseCrudService<
                 }
                 await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
+                // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
+                const existing = await faqModel.findAll(
+                    { accommodationId: validated.accommodationId, deletedAt: null },
+                    { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.displayOrder ?? -1;
+                const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
                 const faqToCreate = {
                     ...validated.faq,
-                    accommodationId: validated.accommodationId as AccommodationIdType
+                    accommodationId: validated.accommodationId as AccommodationIdType,
+                    displayOrder: nextOrder
                 };
                 const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
                 return { faq: createdFaq };
@@ -2224,6 +2242,80 @@ export class AccommodationService extends BaseCrudService<
                 // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
                 const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as AccommodationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Reorders FAQs on an accommodation (SPEC-177 T-010).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as addFaq/updateFaq).
+     * 2. Load all active FAQs for the accommodation.
+     * 3. Validate that every `faqId` in `order` belongs to this accommodation
+     *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
+     * 4. Apply each `displayOrder` in a single transaction.
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing accommodationId and the ordered array of { faqId, displayOrder }
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async reorderFaqs(
+        actor: Actor,
+        data: AccommodationFaqReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderFaqs',
+            input: { ...data, actor },
+            schema: AccommodationFaqReorderInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const faqModel = new AccommodationFaqModel();
+                // Load all active FAQs for this accommodation to validate ownership.
+                const { items: existingFaqs } = await faqModel.findAll(
+                    { accommodationId: validated.accommodationId, deletedAt: null },
+                    { pageSize: 200 },
+                    undefined,
+                    ctx?.tx
+                );
+                const existingIds = new Set(existingFaqs.map((f) => f.id));
+
+                // Reject any faqId that doesn't belong to this accommodation.
+                const unknownIds = validated.order
+                    .map((item) => item.faqId)
+                    .filter((id) => !existingIds.has(id));
+                if (unknownIds.length > 0) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Unknown or foreign faqId(s) for this accommodation: ${unknownIds.join(', ')}`
+                    );
+                }
+
+                // Apply all displayOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (const item of validated.order) {
+                        await faqModel.update(
+                            { id: item.faqId },
+                            { displayOrder: item.displayOrder },
+                            tx
+                        );
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                return { success: true };
             }
         });
     }

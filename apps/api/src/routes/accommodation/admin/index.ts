@@ -15,6 +15,7 @@ import { adminListAccommodationsRoute } from './list';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminRemoveFaqRoute } from './removeFaq';
+import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
 import { adminRestoreAccommodationRoute } from './restore';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
@@ -56,6 +57,10 @@ app.route('/', adminHardDeleteAccommodationRoute);
 
 // POST /:id/restore - Restore accommodation
 app.route('/', adminRestoreAccommodationRoute);
+
+// PATCH /:id/faqs/reorder - Reorder FAQs for an accommodation
+// Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param
+app.route('/', adminReorderAccommodationFaqsRoute);
 
 // GET /:id/faqs - Get accommodation FAQs
 app.route('/', adminGetFaqsRoute);

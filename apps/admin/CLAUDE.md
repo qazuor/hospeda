@@ -569,6 +569,28 @@ export function Button({ variant, size, className, ...props }) {
 - `@radix-ui/*` - Unstyled UI primitives
 - `tailwindcss` - Utility-first CSS
 
+## FAQ Management (SPEC-177, Phase 2 of SPEC-158)
+
+Destinations and accommodations expose an admin **"FAQs" sub-tab** to create, edit, delete and
+**reorder** their structured FAQs. The UI is a single generic, reusable component:
+
+- `components/faqs/FaqManager.tsx` + `SortableFaqRow.tsx` + `FaqCategoryCombobox.tsx`. Props:
+  `{ entityType: 'destinations' | 'accommodations', parentId }`.
+- Data via the generic `features/faqs/hooks/useFaqs(entityType, parentId)` (TanStack Query):
+  list + create/update/delete/reorder mutations hitting
+  `/api/v1/admin/{entityType}/:id/faqs[/:faqId | /reorder]`.
+- **Granular per-item CRUD**: each row saves on its own (PUT), deletes on its own (DELETE), and
+  "Add FAQ" POSTs — there is no bulk form-array save.
+- **Reorder** is drag-and-drop (dnd-kit, copied from `GalleryField` + `SortableGalleryItem`) and
+  persists via `PATCH .../faqs/reorder`. Order is stored in the nullable `display_order` column;
+  reads return FAQs ordered by `display_order ASC NULLS LAST, created_at ASC` (so the public
+  destination/accommodation pages reflect the admin order).
+- **Category** is a free string with `FAQ_BASELINE_CATEGORIES` (from `@repo/schemas`) offered as
+  `<datalist>` suggestions. **Answer** is plain text (no markdown).
+- **Permissions** are enforced server-side by the service `_canUpdate` gate (destinations need
+  `DESTINATION_UPDATE`; accommodations allow `UPDATE_ANY` or `UPDATE_OWN` + ownership, so owning
+  hosts can manage their own accommodation FAQs). The routes themselves only require admin-panel access.
+
 ## Common Gotchas
 
 ### Fresh `pnpm install` requires a workspace build before `pnpm dev`

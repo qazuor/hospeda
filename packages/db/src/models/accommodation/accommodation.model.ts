@@ -975,9 +975,25 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             }
             if (Object.keys(withObj).length > 0) {
                 const db = this.getClient(tx);
+                // Build the final `with` config: if `faqs` was requested, apply
+                // display_order ASC NULLS LAST, created_at ASC ordering (SPEC-177 T-012).
+                // biome-ignore lint/suspicious/noExplicitAny: Drizzle relational orderBy callback fields type is inferred at runtime; we use `any` solely for the config object shape
+                const withConfig: Record<string, any> = { ...withObj };
+                if (withObj.faqs) {
+                    withConfig.faqs = {
+                        where: (
+                            fields: { deletedAt: AnyColumn },
+                            { isNull }: { isNull: (col: AnyColumn) => unknown }
+                        ) => isNull(fields.deletedAt),
+                        orderBy: (fields: { displayOrder: AnyColumn; createdAt: AnyColumn }) => [
+                            sql`${fields.displayOrder} ASC NULLS LAST`,
+                            asc(fields.createdAt)
+                        ]
+                    };
+                }
                 const result = await db.query.accommodations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
-                    with: withObj
+                    with: withConfig
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 // DRIZZLE-LIMITATION: findFirst with relations returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.

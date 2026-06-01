@@ -1,6 +1,6 @@
 import type { AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
@@ -15,6 +15,8 @@ export const accommodationFaqs = pgTable(
         question: text('question').notNull(),
         answer: text('answer').notNull(),
         category: text('category'),
+        /** Display order for FAQ items within an accommodation; backfilled from created_at on migration. */
+        displayOrder: integer('display_order'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

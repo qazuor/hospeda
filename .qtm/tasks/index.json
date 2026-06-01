@@ -710,6 +710,13 @@
             "archivedAt": "2026-06-01T04:00:15.000Z",
             "completedAt": "2026-06-01T04:00:15.000Z",
             "completionRef": "PR #1346 (merge commit 114925d8a) to staging"
+        },
+        {
+            "specId": "SPEC-177",
+            "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
+            "status": "in-progress",
+            "progress": "31/32",
+            "path": "SPEC-177-admin-faq-management"
         }
     ],
     "standalone": {

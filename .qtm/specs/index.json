@@ -2058,6 +2058,14 @@
             "completionRef": "PR #1346 (merge commit 114925d8a) to staging",
             "archivedAt": "2026-06-01T04:00:15.000Z",
             "archiveNote": "SPEC-176 shipped to staging via PR #1346 (16/16). Fixed BETA-44 (Chrome 109 invisible login button): oklch(from var()) relative-color syntax broke pre-Chrome-119. Delivered 254 variant tokens (sRGB :root fallback + @supports oklch override), 658-site codemod, 126 domain alpha tokens + 2-level resolver, dark-mode sRGB block, admin BrowserGateBanner (CSS.supports + i18n es/en/pt), count-pinned CI guard, visual parity <=3/255. Linear BETA-44 closed Done. Marta retest pending staging->prod promotion."
+        },
+        {
+            "specId": "SPEC-177",
+            "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-177-admin-faq-management",
+            "created": "2026-06-01T00:00:00.000Z"
         }
     ]
 }

@@ -3,6 +3,7 @@ import { SuccessSchema } from '../../../api/result.schema.js';
 import {
     BaseFaqSchema,
     FaqCreatePayloadSchema,
+    FaqReorderPayloadSchema,
     FaqUpdatePayloadSchema
 } from '../../../common/faq.schema.js';
 import { AccommodationFaqIdSchema, AccommodationIdSchema } from '../../../common/id.schema.js';
@@ -70,3 +71,18 @@ export const AccommodationFaqListOutputSchema = z.object({
 export type AccommodationFaqListOutput = z.infer<typeof AccommodationFaqListOutputSchema>;
 
 export const AccommodationFaqRemoveOutputSchema = SuccessSchema;
+
+// ----------------------------------------------------------------------------
+// Reorder Input Schema (SPEC-177)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for reordering FAQs on an accommodation (SPEC-177).
+ * Mirrors the shape of AccommodationFaqAddInputSchema — parent id + payload.
+ * The service validates that all faqId values belong to the given accommodation.
+ */
+export const AccommodationFaqReorderInputSchema = z.object({
+    accommodationId: AccommodationIdSchema,
+    order: FaqReorderPayloadSchema.shape.order
+});
+export type AccommodationFaqReorderInput = z.infer<typeof AccommodationFaqReorderInputSchema>;

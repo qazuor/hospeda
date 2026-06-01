@@ -1058,5 +1058,39 @@
             "downloadLatestInvoice": "Descargar última factura",
             "noLatestInvoice": "Todavía no tenés facturas disponibles para descargar."
         }
+    },
+    "faqs": {
+        "title": "Preguntas frecuentes",
+        "addTitle": "Nueva pregunta frecuente",
+        "empty": "No hay preguntas frecuentes todavía. Agregá la primera.",
+        "fields": {
+            "question": "Pregunta",
+            "answer": "Respuesta",
+            "category": "Categoría",
+            "categoryPlaceholder": "Ej: Cómo llegar, Qué hacer…"
+        },
+        "actions": {
+            "add": "Agregar FAQ",
+            "edit": "Editar",
+            "save": "Guardar",
+            "cancel": "Cancelar",
+            "delete": "Eliminar",
+            "confirmDelete": "¿Confirmar?"
+        },
+        "errors": {
+            "loadFailed": "No se pudieron cargar las preguntas frecuentes.",
+            "createFailed": "No se pudo crear la pregunta. Intentá de nuevo.",
+            "updateFailed": "No se pudo actualizar la pregunta. Intentá de nuevo.",
+            "deleteFailed": "No se pudo eliminar la pregunta. Intentá de nuevo.",
+            "reorderFailed": "No se pudo guardar el nuevo orden. Intentá de nuevo."
+        },
+        "dnd": {
+            "dragHandle": "Arrastrar para reordenar",
+            "instructions": "Para reordenar con teclado: Espacio para tomar, Flechas para mover, Espacio/Enter para soltar, Escape para cancelar.",
+            "onDragStart": "Tomaste la pregunta número {{position}}.",
+            "onDragOver": "Moviste la pregunta de la posición {{from}} a la {{to}}.",
+            "onDragEnd": "La pregunta quedó en la posición {{position}}.",
+            "onDragCancel": "Reordenamiento cancelado. La pregunta volvió a la posición {{position}}."
+        }
     }
 }

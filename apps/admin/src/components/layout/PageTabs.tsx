@@ -105,7 +105,13 @@ export const accommodationTabs: TabConfig[] = [
     { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'amenities', label: 'Amenidades', labelKey: 'admin-tabs.amenities', href: '/amenities' },
     { id: 'reviews', label: 'Reseñas', labelKey: 'admin-tabs.reviews', href: '/reviews' },
-    { id: 'pricing', label: 'Precios', labelKey: 'admin-tabs.pricing', href: '/pricing' }
+    { id: 'pricing', label: 'Precios', labelKey: 'admin-tabs.pricing', href: '/pricing' },
+    {
+        id: 'faqs',
+        label: 'Preguntas frecuentes',
+        labelKey: 'admin-tabs.faqs',
+        href: '/faqs'
+    }
 ];
 
 export const destinationTabs: TabConfig[] = [
@@ -122,7 +128,13 @@ export const destinationTabs: TabConfig[] = [
         labelKey: 'admin-tabs.accommodations',
         href: '/accommodations'
     },
-    { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' }
+    { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' },
+    {
+        id: 'faqs',
+        label: 'Preguntas frecuentes',
+        labelKey: 'admin-tabs.faqs',
+        href: '/faqs'
+    }
 ];
 
 export const userTabs: TabConfig[] = [
