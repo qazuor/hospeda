@@ -210,6 +210,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 const withConfig: Record<string, any> = { ...withObj };
                 if (withObj.faqs) {
                     withConfig.faqs = {
+                        where: (
+                            fields: { deletedAt: AnyColumn },
+                            { isNull }: { isNull: (col: AnyColumn) => unknown }
+                        ) => isNull(fields.deletedAt),
                         orderBy: (fields: { displayOrder: AnyColumn; createdAt: AnyColumn }) => [
                             sql`${fields.displayOrder} ASC NULLS LAST`,
                             asc(fields.createdAt)
