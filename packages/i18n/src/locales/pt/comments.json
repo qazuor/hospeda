@@ -29,9 +29,58 @@
         "empty": "Não há comentários recentes"
     },
     "list": {
+        "loading": "Carregando comentários…",
+        "error": "Erro ao carregar os comentários. Tente novamente.",
+        "empty": "Ainda não há comentários.",
+        "emptyFiltered": "Nenhum comentário corresponde aos filtros.",
+        "clearFilters": "Limpar filtros",
+        "pagination": "Página {{page}} de {{totalPages}} · {{total}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "prevPage": "Anterior",
+        "nextPage": "Próximo",
         "filters": {
             "entityType": "Tipo de entidade",
-            "moderationState": "Estado de moderação"
+            "moderationState": "Estado de moderação",
+            "search": "Buscar",
+            "searchPlaceholder": "Conteúdo, autor…",
+            "all": "Todos",
+            "entityTypePost": "Post",
+            "entityTypeEvent": "Evento",
+            "includeDeleted": "Incluir excluídos"
         }
+    },
+    "detail": {
+        "title": "Detalhe do comentário",
+        "backToList": "← Voltar para comentários",
+        "backToListShort": "Voltar para a lista",
+        "loading": "Carregando comentário…",
+        "error": "Erro ao carregar o comentário. Tente novamente.",
+        "notFound": "Comentário não encontrado.",
+        "contentHeading": "Conteúdo do comentário",
+        "authorHeading": "Autor",
+        "authorName": "Nome:",
+        "deletedUserNote": "(Conta excluída — sem link disponível)",
+        "entityHeading": "Entidade comentada",
+        "entityType": "Tipo:",
+        "entityId": "ID:",
+        "metadataHeading": "Metadados",
+        "state": "Estado:",
+        "createdAt": "Criado:",
+        "updatedAt": "Atualizado:",
+        "deletedAt": "Excluído:",
+        "hardDeleteTitle": "Excluir comentário definitivamente",
+        "hardDeleteDescription": "Esta ação não pode ser desfeita. O comentário será excluído permanentemente do banco de dados.",
+        "hardDeleteCancel": "Cancelar"
+    },
+    "table": {
+        "ariaLabel": "Tabela de comentários",
+        "colEntityType": "Tipo / Entidade",
+        "colContent": "Conteúdo",
+        "colAuthor": "Autor",
+        "colState": "Estado",
+        "colCreatedAt": "Criado",
+        "colActions": "Ações",
+        "viewDetail": "Ver detalhe"
     }
 }

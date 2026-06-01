@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { useCommentsList } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -36,7 +37,7 @@ const EMPTY_FILTERS: CommentsFiltersValue = {
 
 /** Comment moderation queue page. */
 function CommentsQueuePage() {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const [page, setPage] = useState(1);
     const [filters, setFilters] = useState<CommentsFiltersValue>(EMPTY_FILTERS);
 
@@ -67,7 +68,9 @@ function CommentsQueuePage() {
                     <h1 className="font-bold text-2xl">{t('comments.thread.header')}</h1>
                     {pagination && (
                         <span className="text-muted-foreground text-sm">
-                            {pagination.total} resultado{pagination.total !== 1 ? 's' : ''}
+                            {tPlural('comments.list.results', pagination.total, {
+                                count: pagination.total
+                            })}
                         </span>
                     )}
                 </div>
@@ -83,7 +86,9 @@ function CommentsQueuePage() {
 
                 {/* Loading */}
                 {isLoading && (
-                    <p className="text-muted-foreground text-sm">Cargando comentarios…</p>
+                    <p className="text-muted-foreground text-sm">
+                        {t('comments.list.loading' as TranslationKey)}
+                    </p>
                 )}
 
                 {/* Error */}
@@ -92,7 +97,7 @@ function CommentsQueuePage() {
                         className="text-destructive text-sm"
                         role="alert"
                     >
-                        Error al cargar los comentarios. Intentá de nuevo.
+                        {t('comments.list.error' as TranslationKey)}
                     </p>
                 )}
 
@@ -101,8 +106,8 @@ function CommentsQueuePage() {
                     <div className="flex flex-col items-center justify-center gap-3 py-16 text-center text-muted-foreground">
                         <p>
                             {isFiltered
-                                ? 'No hay comentarios que coincidan con los filtros.'
-                                : 'Todavía no hay comentarios.'}
+                                ? t('comments.list.emptyFiltered' as TranslationKey)
+                                : t('comments.list.empty' as TranslationKey)}
                         </p>
                         {isFiltered && (
                             <Button
@@ -112,7 +117,7 @@ function CommentsQueuePage() {
                                     setPage(1);
                                 }}
                             >
-                                Limpiar filtros
+                                {t('comments.list.clearFilters' as TranslationKey)}
                             </Button>
                         )}
                     </div>
@@ -125,8 +130,11 @@ function CommentsQueuePage() {
                 {pagination && pagination.totalPages > 1 && (
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                            Página {pagination.page} de {pagination.totalPages} · {pagination.total}{' '}
-                            resultados
+                            {t('comments.list.pagination' as TranslationKey, {
+                                page: pagination.page,
+                                totalPages: pagination.totalPages,
+                                total: pagination.total
+                            })}
                         </span>
                         <div className="flex gap-2">
                             <Button
@@ -135,7 +143,7 @@ function CommentsQueuePage() {
                                 disabled={pagination.page <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                             >
-                                Anterior
+                                {t('comments.list.prevPage' as TranslationKey)}
                             </Button>
                             <Button
                                 variant="outline"
@@ -143,7 +151,7 @@ function CommentsQueuePage() {
                                 disabled={pagination.page >= pagination.totalPages}
                                 onClick={() => setPage((p) => p + 1)}
                             >
-                                Siguiente
+                                {t('comments.list.nextPage' as TranslationKey)}
                             </Button>
                         </div>
                     </div>

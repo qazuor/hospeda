@@ -14,6 +14,7 @@ import { ModerationStateBadge } from '@/components/comments/ModerationStateBadge
 import { Button } from '@/components/ui/button';
 import { useModerateComment, useSoftDeleteComment } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import type { EntityCommentAdminItem } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 
@@ -57,16 +58,28 @@ export function CommentsTable({ items }: CommentsTableProps) {
         <div className="overflow-x-auto rounded-lg border bg-card">
             <table
                 className="w-full text-sm"
-                aria-label="Tabla de comentarios"
+                aria-label={t('comments.table.ariaLabel' as TranslationKey)}
             >
                 <thead className="bg-muted/50 text-left">
                     <tr>
-                        <th className="px-4 py-3 font-medium">Tipo / Entidad</th>
-                        <th className="px-4 py-3 font-medium">Contenido</th>
-                        <th className="px-4 py-3 font-medium">Autor</th>
-                        <th className="px-4 py-3 font-medium">Estado</th>
-                        <th className="px-4 py-3 font-medium">Creado</th>
-                        <th className="px-4 py-3 font-medium">Acciones</th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colEntityType' as TranslationKey)}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colContent' as TranslationKey)}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colAuthor' as TranslationKey)}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colState' as TranslationKey)}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colCreatedAt' as TranslationKey)}
+                        </th>
+                        <th className="px-4 py-3 font-medium">
+                            {t('comments.table.colActions' as TranslationKey)}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -87,7 +100,7 @@ export function CommentsTable({ items }: CommentsTableProps) {
                                         params={{ commentId: item.id }}
                                         className="text-primary text-xs hover:underline"
                                     >
-                                        Ver detalle
+                                        {t('comments.table.viewDetail' as TranslationKey)}
                                     </Link>
                                 </div>
                             </td>

@@ -24,6 +24,7 @@ import {
     useSoftDeleteComment
 } from '@/hooks/use-comment-moderation';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import type { EntityCommentAdminItem } from '@repo/schemas';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -136,7 +137,7 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
             {/* Full content */}
             <Card className="p-4">
                 <h2 className="mb-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    Contenido del comentario
+                    {t('comments.detail.contentHeading' as TranslationKey)}
                 </h2>
                 <p className="whitespace-pre-wrap text-base">{comment.content}</p>
             </Card>
@@ -144,11 +145,13 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
             {/* Author info */}
             <Card className="p-4">
                 <h2 className="mb-3 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    Autor
+                    {t('comments.detail.authorHeading' as TranslationKey)}
                 </h2>
                 <div className="space-y-1 text-sm">
                     <div>
-                        <span className="font-medium">Nombre: </span>
+                        <span className="font-medium">
+                            {t('comments.detail.authorName' as TranslationKey)}{' '}
+                        </span>
                         {comment.authorId ? (
                             <Link
                                 to="/access/users/$id"
@@ -164,7 +167,7 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
                     </div>
                     {!comment.authorId && (
                         <p className="text-muted-foreground text-xs">
-                            (Cuenta eliminada — sin enlace disponible)
+                            {t('comments.detail.deletedUserNote' as TranslationKey)}
                         </p>
                     )}
                 </div>
@@ -173,15 +176,19 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
             {/* Entity info */}
             <Card className="p-4">
                 <h2 className="mb-3 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    Entidad comentada
+                    {t('comments.detail.entityHeading' as TranslationKey)}
                 </h2>
                 <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">Tipo:</span>
+                        <span className="font-medium">
+                            {t('comments.detail.entityType' as TranslationKey)}
+                        </span>
                         <Badge variant="secondary">{comment.entityType}</Badge>
                     </div>
                     <div>
-                        <span className="font-medium">ID: </span>
+                        <span className="font-medium">
+                            {t('comments.detail.entityId' as TranslationKey)}{' '}
+                        </span>
                         {comment.entityType === 'POST' ? (
                             <Link
                                 to="/posts/$id"
@@ -210,28 +217,36 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
             {/* Metadata */}
             <Card className="p-4">
                 <h2 className="mb-3 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    Metadatos
+                    {t('comments.detail.metadataHeading' as TranslationKey)}
                 </h2>
                 <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">Estado:</span>
+                        <span className="font-medium">
+                            {t('comments.detail.state' as TranslationKey)}
+                        </span>
                         <ModerationStateBadge state={comment.moderationState} />
                     </div>
                     <div>
-                        <span className="font-medium">Creado: </span>
+                        <span className="font-medium">
+                            {t('comments.detail.createdAt' as TranslationKey)}{' '}
+                        </span>
                         <span className="text-muted-foreground">
                             {formatDate(comment.createdAt)}
                         </span>
                     </div>
                     <div>
-                        <span className="font-medium">Actualizado: </span>
+                        <span className="font-medium">
+                            {t('comments.detail.updatedAt' as TranslationKey)}{' '}
+                        </span>
                         <span className="text-muted-foreground">
                             {formatDate(comment.updatedAt)}
                         </span>
                     </div>
                     {isDeleted && (
                         <div>
-                            <span className="font-medium text-destructive">Eliminado: </span>
+                            <span className="font-medium text-destructive">
+                                {t('comments.detail.deletedAt' as TranslationKey)}{' '}
+                            </span>
                             <span className="text-muted-foreground">
                                 {formatDate(comment.deletedAt)}
                             </span>
@@ -244,9 +259,9 @@ export function CommentDetailPanel({ comment }: CommentDetailPanelProps) {
             <DeleteConfirmDialog
                 open={hardDeleteOpen}
                 onOpenChange={setHardDeleteOpen}
-                title="Eliminar comentario definitivamente"
-                description="Esta acción no se puede deshacer. El comentario será eliminado de forma permanente de la base de datos."
-                cancelLabel="Cancelar"
+                title={t('comments.detail.hardDeleteTitle' as TranslationKey)}
+                description={t('comments.detail.hardDeleteDescription' as TranslationKey)}
+                cancelLabel={t('comments.detail.hardDeleteCancel' as TranslationKey)}
                 confirmLabel={t('comments.actions.hardDelete')}
                 onConfirm={handleHardDelete}
             />
