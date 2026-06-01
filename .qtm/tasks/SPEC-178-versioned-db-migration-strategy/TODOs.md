@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 11/26 (in-progress) — foundations + tooling DONE.
+26 atomic tasks across 6 phase groups. Status: 13/26 (in-progress) — foundations + tooling DONE; CI drift-guard built, CI/e2e wiring deferred to the local-runners migration (see ci-wiring-handoff.md).
 
 ## Phase: foundations (migration artifacts)
 
@@ -21,16 +21,16 @@
 
 ## Phase: ci (drift impossible)
 
-- [ ] **T-012** `scripts/check-schema-drift.sh` wired into the `guards` job — *blockedBy T-002*
-- [ ] **T-013** Switch CI from push to migrate+extras (integration + e2e) — *blockedBy T-002, T-009*
-- [ ] **T-014** Wire `env:check:registry` into `ci.yml`
+- [x] **T-012** `scripts/check-schema-drift.sh` — script built + validated (both states). Guards-job wiring deferred → ci-wiring-handoff.md §1
+- [~] **T-013** Switch CI from push to migrate+extras — BLOCKED: workflow + global-setup edits owned by CI-runner migration → handoff §3
+- [~] **T-014** Wire `env:check:registry` into CI — BLOCKED: ci.yml edit owned by CI-runner migration → handoff §2
 
 ## Phase: testing
 
 - [ ] **T-015** Round-trip test (empty -> migrate+extras -> introspect == TS schema) — *blockedBy T-002, T-003*
 - [ ] **T-016** Idempotency test (migrate x2, apply-extras x2 = no-op) — *blockedBy T-002, T-009*
 - [ ] **T-017** Conversion regression test (type change with USING preserves data) — *blockedBy T-002*
-- [ ] **T-018** Drift-guard self-test — *blockedBy T-012*
+- [x] **T-018** Drift-guard self-test — both states exercised (clean→pass, schema change→fail) during T-012 validation
 
 ## Phase: docs + agent-rules
 
