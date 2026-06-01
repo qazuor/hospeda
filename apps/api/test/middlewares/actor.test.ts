@@ -18,10 +18,10 @@ import { actorMiddleware } from '../../src/middlewares/actor';
 import { createGuestActor } from '../../src/utils/actor';
 import { apiLogger } from '../../src/utils/logger';
 import { getPermissionsForRole } from '../../src/utils/role-permissions-cache';
-import { getUserPermissions } from '../../src/utils/user-permissions-cache';
+import { getUserPermissionsWithEffect } from '../../src/utils/user-permissions-cache';
 
 const mockGetPermissionsForRole = vi.mocked(getPermissionsForRole);
-const mockGetUserPermissions = vi.mocked(getUserPermissions);
+const mockGetUserPermissionsWithEffect = vi.mocked(getUserPermissionsWithEffect);
 const mockCreateGuestActor = vi.mocked(createGuestActor);
 const _mockApiLogger = vi.mocked(apiLogger);
 
@@ -66,7 +66,7 @@ describe('Actor Middleware', () => {
         vi.clearAllMocks();
 
         mockGetPermissionsForRole.mockResolvedValue([]);
-        mockGetUserPermissions.mockResolvedValue([]);
+        mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [], denies: [] });
 
         mockCreateGuestActor.mockReturnValue({
             id: '00000000-0000-4000-8000-000000000000',
@@ -97,7 +97,10 @@ describe('Actor Middleware', () => {
             const authUser = createAuthUser({ role: 'USER' });
 
             mockGetPermissionsForRole.mockResolvedValue([PermissionEnum.ACCESS_API_PUBLIC]);
-            mockGetUserPermissions.mockResolvedValue([PermissionEnum.USER_UPDATE_PROFILE]);
+            mockGetUserPermissionsWithEffect.mockResolvedValue({
+                grants: [PermissionEnum.USER_UPDATE_PROFILE],
+                denies: []
+            });
 
             const app = createTestApp(authUser);
             app.get('/test', (c) => {
@@ -118,7 +121,7 @@ describe('Actor Middleware', () => {
                 ])
             );
             expect(mockGetPermissionsForRole).toHaveBeenCalledWith(RoleEnum.USER);
-            expect(mockGetUserPermissions).toHaveBeenCalledWith({
+            expect(mockGetUserPermissionsWithEffect).toHaveBeenCalledWith({
                 userId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
             });
         });
@@ -144,13 +147,13 @@ describe('Actor Middleware', () => {
             expect(data.actor.permissions).toEqual(Object.values(PermissionEnum));
             // SUPER_ADMIN should NOT trigger a DB lookup
             expect(mockGetPermissionsForRole).not.toHaveBeenCalled();
-            expect(mockGetUserPermissions).not.toHaveBeenCalled();
+            expect(mockGetUserPermissionsWithEffect).not.toHaveBeenCalled();
         });
 
         it('should use empty permissions when no role or user permissions found', async () => {
             const authUser = createAuthUser();
             mockGetPermissionsForRole.mockResolvedValue([]);
-            mockGetUserPermissions.mockResolvedValue([]);
+            mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [], denies: [] });
 
             const app = createTestApp(authUser);
             app.get('/test', (c) => {

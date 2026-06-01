@@ -6,7 +6,12 @@ import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import { getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
-import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
+import {
+    ensureDefaultPromoCodes,
+    initializeRevalidationService,
+    setPermissionChangeAuditEmitter,
+    setUserPermissionsCacheInvalidator
+} from '@repo/service-core';
 import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
@@ -19,12 +24,16 @@ import {
     getBullMQConnection,
     getNewsletterDeliveryService
 } from './services/newsletter/delivery-factory';
+import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
-import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
+import {
+    destroyUserPermissionsCache,
+    invalidateUserPermissionsCache
+} from './utils/user-permissions-cache';
 import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
@@ -98,6 +107,15 @@ const startServer = async (): Promise<void> => {
             });
             apiLogger.info('ISR revalidation service initialized');
         }
+
+        // SPEC-170: wire per-user permission-override side-effects into
+        // @repo/service-core. The service cannot import the API's in-memory
+        // permission cache or audit logger (package may not depend on an app),
+        // so the API registers them here at startup (mirrors the revalidation init).
+        setUserPermissionsCacheInvalidator(invalidateUserPermissionsCache);
+        setPermissionChangeAuditEmitter((payload) =>
+            auditLog({ auditEvent: AuditEventType.PERMISSION_CHANGE, ...payload })
+        );
 
         const app = initApp();
 

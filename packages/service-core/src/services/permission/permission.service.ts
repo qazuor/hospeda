@@ -1,13 +1,16 @@
+import { UserModel } from '@repo/db';
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
 import type { RolePermissionAssignment, UserIdType, UserPermissionAssignment } from '@repo/schemas';
 import {
     type PermissionAssignmentOutput,
+    PermissionEffectEnum,
     type PermissionRemovalOutput,
     type PermissionsByRoleInput,
     PermissionsByRoleInputSchema,
     type PermissionsByUserInput,
     PermissionsByUserInputSchema,
     type PermissionsQueryOutput,
+    RoleEnum,
     type RolePermissionManagementInput,
     RolePermissionManagementInputSchema,
     type RolesByPermissionInput,
@@ -16,6 +19,7 @@ import {
     ServiceErrorCode,
     type UserPermissionManagementInput,
     UserPermissionManagementInputSchema,
+    type UserPermissionOverridesResponse,
     type UsersByPermissionInput,
     UsersByPermissionInputSchema,
     type UsersQueryOutput
@@ -30,6 +34,10 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
+import {
+    emitPermissionChangeAudit,
+    invalidateUserPermissionsOverrides
+} from './permission.effects';
 import {
     canAssignPermissions,
     canRevokePermissions,
@@ -47,22 +55,27 @@ export class PermissionService extends BaseService {
     protected readonly logger: ServiceLogger;
     private readonly rolePermissionModel: RRolePermissionModel;
     private readonly userPermissionModel: RUserPermissionModel;
+    private readonly userModel: UserModel;
 
     /**
      * @param ctx Service context (must include logger)
-     * @param models Object with rolePermissionModel and userPermissionModel
+     * @param models Object with rolePermissionModel, userPermissionModel, and
+     *   optionally userModel (defaults to the shared singleton; used to resolve
+     *   the target user's role for the SUPER_ADMIN override guard — SPEC-170).
      */
     constructor(
         ctx: ServiceConfig,
         models: {
             rolePermissionModel: RRolePermissionModel;
             userPermissionModel: RUserPermissionModel;
+            userModel?: UserModel;
         }
     ) {
         super(ctx, PermissionService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.rolePermissionModel = models.rolePermissionModel;
         this.userPermissionModel = models.userPermissionModel;
+        this.userModel = models.userModel ?? new UserModel();
     }
 
     /**
@@ -146,7 +159,7 @@ export class PermissionService extends BaseService {
             input: { actor, ...input },
             schema: UserPermissionManagementInputSchema,
             ctx,
-            execute: async ({ userId, permission }, actor) => {
+            execute: async ({ userId, permission, effect }, actor) => {
                 if (!canAssignPermissions(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
@@ -154,9 +167,44 @@ export class PermissionService extends BaseService {
                     );
                 }
                 const user = userId as UserIdType;
-                const exists = await this.userPermissionModel.findOne({ userId: user, permission });
-                if (exists) return { assigned: false };
-                await this.userPermissionModel.create({ userId: user, permission });
+
+                // SUPER_ADMIN guard: a super short-circuits to all permissions at
+                // auth resolution, so any override (grant or deny) would be silent
+                // orphan data. Fail loud with a 400 instead of persisting a no-op.
+                const targetUser = await this.userModel.findById(user);
+                if (targetUser?.role === RoleEnum.SUPER_ADMIN) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'cannot assign overrides to a SUPER_ADMIN'
+                    );
+                }
+
+                // Upsert on the composite PK (userId, permission): one row per pair,
+                // so changing direction (grant↔deny) updates the existing row in place.
+                // Not a single atomic statement (findOne + update/create), which is fine
+                // for low-frequency admin-only mutations; the PK still forbids duplicates.
+                const existing = await this.userPermissionModel.findOne({
+                    userId: user,
+                    permission
+                });
+                if (existing && existing.effect === effect) {
+                    return { assigned: false };
+                }
+                if (existing) {
+                    await this.userPermissionModel.update({ userId: user, permission }, { effect });
+                } else {
+                    await this.userPermissionModel.create({ userId: user, permission, effect });
+                }
+
+                invalidateUserPermissionsOverrides({ userId: user });
+                emitPermissionChangeAudit({
+                    actorId: actor.id,
+                    targetUserId: user,
+                    changeType: 'permission_grant',
+                    oldValue: existing ? existing.effect : 'none',
+                    newValue: `${permission}:${effect}`
+                });
+
                 return { assigned: true };
             }
         });
@@ -187,9 +235,22 @@ export class PermissionService extends BaseService {
                     );
                 }
                 const user = userId as UserIdType;
-                const exists = await this.userPermissionModel.findOne({ userId: user, permission });
-                if (!exists) return { removed: false };
+                const existing = await this.userPermissionModel.findOne({
+                    userId: user,
+                    permission
+                });
+                if (!existing) return { removed: false };
                 await this.userPermissionModel.hardDelete({ userId: user, permission });
+
+                invalidateUserPermissionsOverrides({ userId: user });
+                emitPermissionChangeAudit({
+                    actorId: actor.id,
+                    targetUserId: user,
+                    changeType: 'permission_revoke',
+                    oldValue: `${permission}:${existing.effect}`,
+                    newValue: 'none'
+                });
+
                 return { removed: true };
             }
         });
@@ -254,6 +315,59 @@ export class PermissionService extends BaseService {
                 const { items } = await this.userPermissionModel.findAll({ userId: user });
                 const permissions = items.map((a: UserPermissionAssignment) => a.permission);
                 return { permissions };
+            }
+        });
+    }
+
+    /**
+     * Gets a user's per-user permission overrides split by effect, alongside the
+     * permissions the user inherits from their role — the full picture the admin
+     * panel renders (SPEC-170).
+     *
+     * @param actor The actor performing the action (needs PERMISSION_VIEW)
+     * @param input { userId }
+     * @param ctx - Optional service context carrying transaction and hookState.
+     * @returns ServiceOutput<UserPermissionOverridesResponse>
+     */
+    public async getPermissionOverridesForUser(
+        actor: Actor,
+        input: PermissionsByUserInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UserPermissionOverridesResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPermissionOverridesForUser',
+            input: { actor, ...input },
+            schema: PermissionsByUserInputSchema,
+            ctx,
+            execute: async ({ userId }, actor) => {
+                if (!canViewPermissions(actor)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'You do not have permission to view permissions.'
+                    );
+                }
+                const user = userId as UserIdType;
+
+                // The role is required to compute `fromRole`; a missing user is a 404.
+                const targetUser = await this.userModel.findById(user);
+                if (!targetUser) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found.');
+                }
+
+                const { items } = await this.userPermissionModel.findAll({ userId: user });
+                const grantOverrides = items
+                    .filter((row) => row.effect === PermissionEffectEnum.GRANT)
+                    .map((row) => row.permission);
+                const denyOverrides = items
+                    .filter((row) => row.effect === PermissionEffectEnum.DENY)
+                    .map((row) => row.permission);
+
+                const { items: roleRows } = await this.rolePermissionModel.findAll({
+                    role: targetUser.role
+                });
+                const fromRole = roleRows.map((row: RolePermissionAssignment) => row.permission);
+
+                return { fromRole, grantOverrides, denyOverrides };
             }
         });
     }

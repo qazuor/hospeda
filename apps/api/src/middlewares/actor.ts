@@ -18,7 +18,7 @@ import { createGuestActor } from '../utils/actor';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { getPermissionsForRole } from '../utils/role-permissions-cache';
-import { getUserPermissions } from '../utils/user-permissions-cache';
+import { getUserPermissionsWithEffect } from '../utils/user-permissions-cache';
 
 /**
  * Schema for validating mock actor permissions.
@@ -164,13 +164,21 @@ export const actorMiddleware = (): MiddlewareHandler => {
                     // Resolve permissions from role_permission table (cached)
                     const rolePermissions = await getPermissionsForRole(userRole);
 
-                    // Also merge any user-specific permissions from user_permission table (cached)
-                    const userPermissions = await getUserPermissions({ userId: user.id });
+                    // Merge per-user overrides from user_permission (cached), split by
+                    // effect. Effective set = (role ∪ grants) \ denies, with deny winning
+                    // over grant (SPEC-170). SUPER_ADMIN never reaches this branch, so
+                    // denies can never strip a super (handled by the short-circuit above).
+                    const userOverrides = await getUserPermissionsWithEffect({ userId: user.id });
 
-                    // Combine role-based and user-specific permissions (deduplicated)
-                    const allPermissions = [
-                        ...new Set([...rolePermissions, ...userPermissions])
-                    ] as PermissionEnum[];
+                    const effectivePermissions = new Set<PermissionEnum>([
+                        ...rolePermissions,
+                        ...userOverrides.grants
+                    ]);
+                    for (const deniedPermission of userOverrides.denies) {
+                        effectivePermissions.delete(deniedPermission);
+                    }
+
+                    const allPermissions = Array.from(effectivePermissions);
 
                     actor = {
                         id: user.id,

@@ -229,11 +229,11 @@ from the seed and the system breaks without them.
 
 ## Related documents
 
-- [`polling-fallback-design.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/polling-fallback-design.md)
+- [`polling-fallback-design.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/polling-fallback-design.md)
   — Architecture for the polling cron + rationale for the storage
   primitives in qzpay-core/drizzle.
-- [`staging-smoke-checklist.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md)
+- [`staging-smoke-checklist.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md)
   — Section-by-section smoke runbook.
-- [`staging-smoke-2026-05-21-findings.md`](../../.claude/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-2026-05-21-findings.md)
+- [`staging-smoke-2026-05-21-findings.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-2026-05-21-findings.md)
   — Findings ledger; Findings #15-#19 narrate the saga that produced
   this workaround set.

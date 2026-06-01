@@ -152,7 +152,7 @@ describe('requireBillingAccess', () => {
     //
     // Full in-browser direct-URL degradation (browser address bar → SSR render
     // → redirect response) is validated by the manual / staging smoke test
-    // documented in .claude/specs/SPEC-164-admin-billing-super-only/spec.md §8.
+    // documented in .qtm/specs/SPEC-164-admin-billing-super-only/spec.md §8.
     // -------------------------------------------------------------------------
 
     describe('AC-8: redirect fires before component renders (control-flow never returns)', () => {

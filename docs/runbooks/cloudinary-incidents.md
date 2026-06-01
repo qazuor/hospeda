@@ -397,5 +397,5 @@ If the incident is customer-facing, post an update to the Hospeda status page (T
 | Env var registry                     | `packages/config/src/env-registry.hospeda.ts` (lines ~400-440)      |
 | Production cleanup gate              | `HOSPEDA_ALLOW_PROD_CLEANUP` (T-009)                                |
 | Soft-delete model                    | `packages/db/docs/guides/soft-delete.md`                            |
-| Spec                                 | `.claude/specs/SPEC-078-cloudinary-image-management/spec.md`        |
+| Spec                                 | `.qtm/specs/SPEC-078-cloudinary-image-management/spec.md`        |
 | Hardening tasks                      | T-007 (provider hardening), T-009 (SSRF + prod gate), T-035 (p-retry), T-051 (preview warn), T-052 (`/health/media` + cron), T-054 (CI isolation) |

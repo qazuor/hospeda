@@ -550,6 +550,7 @@
         "zodError.enums.ownerPromotionDiscountType.invalid",
         "zodError.enums.paymentStatus.invalid",
         "zodError.enums.permission.invalid",
+        "zodError.enums.permissionEffect.invalid",
         "zodError.enums.postCategory.invalid",
         "zodError.enums.preferredContact.invalid",
         "zodError.enums.priceCurrency.invalid",

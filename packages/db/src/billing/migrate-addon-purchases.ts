@@ -32,7 +32,7 @@ import { getDb } from '../client.ts';
 import { billingAddonPurchases } from '../schemas/index.ts';
 import type { DrizzleClient } from '../types.ts';
 import { createBillingAdapter } from './drizzle-adapter.ts';
-import { billingSubscriptions } from './schemas.ts';
+import { billingPlans, billingSubscriptions } from './schemas.ts';
 
 /**
  * Logger for migration operations
@@ -153,20 +153,45 @@ async function getBasePlanLimit(
     subscriptionId: string,
     limitKey: string
 ): Promise<number | null> {
-    // Fetch the subscription's plan_id to resolve the canonical plan slug
-    const rows = await db
+    // Fetch the subscription's plan_id (a UUID per D1 — billing_subscriptions.plan_id
+    // stores the billing_plans.id UUID, not the slug).
+    const subRows = await db
         .select({ planId: billingSubscriptions.planId })
         .from(billingSubscriptions)
         .where(sql`${billingSubscriptions.id} = ${subscriptionId}`)
         .limit(1);
 
-    const row = rows[0];
-    if (!row?.planId) {
+    const subRow = subRows[0];
+    if (!subRow?.planId) {
         return null;
     }
 
-    // plan_id in billing_subscriptions is the QZPay plan's external ID / slug
-    const canonicalPlan: PlanDefinition | undefined = ALL_PLANS.find((p) => p.slug === row.planId);
+    // Resolve the plan's slug by looking up the billing_plans row by UUID.
+    // billing_plans.name stores the slug (per the mapDbToPlan convention in
+    // packages/service-core/src/services/billing/plan/plan.crud.ts).
+    // This fixes the original bug where plan_id (UUID) was compared against
+    // ALL_PLANS.slug — that lookup always returned undefined because UUIDs
+    // do not match slug strings.
+    const planRows = await db
+        .select({ slug: billingPlans.name, metadata: billingPlans.metadata })
+        .from(billingPlans)
+        .where(sql`${billingPlans.id} = ${subRow.planId}`)
+        .limit(1);
+
+    const planRow = planRows[0];
+    if (!planRow) {
+        return null;
+    }
+
+    // Prefer the explicit slug stored in metadata (written by ensurePlan/createPlan),
+    // fall back to name which is also the slug per the billing_plans.name convention.
+    const metadata = (planRow.metadata ?? {}) as Record<string, unknown>;
+    const slug =
+        typeof metadata.slug === 'string' && metadata.slug.length > 0
+            ? metadata.slug
+            : planRow.slug;
+
+    const canonicalPlan: PlanDefinition | undefined = ALL_PLANS.find((p) => p.slug === slug);
 
     if (!canonicalPlan) {
         return null;
