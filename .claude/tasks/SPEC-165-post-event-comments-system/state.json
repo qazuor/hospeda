@@ -454,64 +454,66 @@
             "id": "T-014",
             "title": "Web comment thread component (Astro + React island) for post detail page",
             "description": "Create the comment thread infrastructure for the post detail page (apps/web/src/pages/blog/[slug].astro or equivalent). Work: (1) CommentThread.astro — static container that renders the thread section below post content; fetches initial comments via SSR from GET /api/v1/public/posts/:postId/comments; shows skeleton placeholder while loading. (2) CommentList.tsx (React island, client:visible) — renders APPROVED comments sorted oldest-first with optimistic update after submit; shows empty state ('Sé el primero en comentar') when zero comments (AC-30 equivalent for posts). (3) CommentSubmitForm.tsx (React island, client:visible) — authenticated users see submit form; guests see login CTA (AC-29); on submit calls POST /protected/posts/:postId/comments; inline error on network failure (form content preserved); rate-limit 429 shows 'Demasiados comentarios' message (AC-28). Styling: CSS Modules (*.module.css). i18n: all strings via comments.* keys from T-013. Key files: apps/web/src/components/comments/CommentThread.astro, CommentList.tsx, CommentList.module.css, CommentSubmitForm.tsx, CommentSubmitForm.module.css. Acceptance: AC-27, AC-28, AC-29.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-008", "T-009", "T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Create CommentThread.astro with SSR initial fetch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create CommentList.tsx React island with optimistic update + empty state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create CommentSubmitForm.tsx with auth CTA, error states, rate-limit feedback",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add CSS Modules for both React components", "completed": false },
-                { "title": "Wire i18n strings from comments.* namespace", "completed": false }
+                { "title": "Add CSS Modules for both React components", "completed": true },
+                { "title": "Wire i18n strings from comments.* namespace", "completed": true }
             ],
             "tags": ["web", "frontend", "react"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "implementationNote": "Implemented as a SINGLE island CommentThreadIsland.client.tsx (list+form together → trivial optimistic update, no cross-island state) + CommentThread.astro SSR container (parametrized by entityType/entityId so T-015 reuses it) + CommentThreadIsland.module.css. Added commentsApi.listByEntity to endpoints.ts and protectedCommentsApi.create/deleteOwn to endpoints-protected.ts. Mounted in publicaciones/[slug].astro after <PostContent/>. 25/25 component tests (renders, empty state, guest CTA, authed form, submit success, 429 rate-limit, network-error input preservation). createdAt passed as ISO string (Date doesn't survive island prop serialization). DEFERRED: own-comment delete button — public GET exposes only authorName (string), not authorId, so client cannot identify own comments; not an AC-27/28/29 requirement. biome + typecheck clean, AC-27/28/29 met.",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Web comment thread on event detail page (reuse thread component)",
             "description": "Wire the CommentThread component (built in T-014) into the event detail page (apps/web/src/pages/events/[slug].astro or equivalent). The component must be parametrized by entityType ('EVENT') and entityId. SSR initial fetch uses GET /api/v1/public/events/:eventId/comments. Submit form calls POST /protected/events/:eventId/comments (EVENT_COMMENT_CREATE gate). No counter update needed for events (AC-26 — events table has no comments field). Empty state: same 'Sé el primero en comentar' message (AC-30 — for events). Verify the thread component accepts both POST and EVENT entity types without code duplication. Key files: apps/web/src/pages/events/[slug].astro (or equivalent event detail page), apps/web/src/components/comments/CommentThread.astro (parametrize if needed). Acceptance: AC-30 (empty state for event with zero comments), AC-26 (no event table modification on submit).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Parametrize CommentThread.astro to accept entityType + entityId props",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire CommentThread into event detail page with entityType='EVENT'",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify submit form calls /protected/events/:eventId/comments endpoint",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "implementationNote": "CommentThread.astro was already built parametrized (entityType/entityId) in T-014. T-015 = mounted it in apps/web/src/pages/[lang]/eventos/[slug].astro with entityType='EVENT', entityId={eventId}, after the description block. The island selects the EVENT public/protected endpoints by entityType (same code path tested in T-014). AC-30 (empty state) handled by the shared island; AC-26 (no events-table counter) verified in the backend e2e. biome + web typecheck clean.",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
