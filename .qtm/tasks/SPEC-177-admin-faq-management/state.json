@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 20,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -280,7 +280,7 @@
             "id": "T-013",
             "title": "API: destination/admin getFaqs route",
             "description": "Create apps/api/src/routes/destination/admin/getFaqs.ts copying accommodation/admin/getFaqs.ts, swap to Destination schemas + destinationService.adminGetFaqs. Acceptance: route compiles + registered (T-018).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-018", "T-028"],
@@ -288,21 +288,21 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "API: destination/admin addFaq route",
             "description": "Create apps/api/src/routes/destination/admin/addFaq.ts copying accommodation pattern. requestBody FaqCreatePayloadSchema. Acceptance: route compiles + registered.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-018", "T-028"],
@@ -310,21 +310,21 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "API: destination/admin updateFaq route",
             "description": "Create apps/api/src/routes/destination/admin/updateFaq.ts. PUT /{id}/faqs/{faqId}, requestBody FaqUpdatePayloadSchema. Acceptance: route compiles + registered.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-018", "T-028"],
@@ -332,21 +332,21 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "API: destination/admin removeFaq route",
             "description": "Create apps/api/src/routes/destination/admin/removeFaq.ts. DELETE /{id}/faqs/{faqId}. Acceptance: route compiles + registered.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-018", "T-028"],
@@ -354,21 +354,21 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "API: reorderFaqs route for destination + accommodation",
             "description": "Create reorderFaqs.ts in both destination/admin and accommodation/admin. PATCH /{id}/faqs/reorder, requestBody FaqReorderPayloadSchema, calls *Service.reorderFaqs. Acceptance: routes compile + registered.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-018", "T-028"],
@@ -376,21 +376,21 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "API: register new FAQ routes in both admin index.ts",
             "description": "Register destination FAQ routes (get/add/update/remove/reorder) in destination/admin/index.ts and the reorder route in accommodation/admin/index.ts (follow accommodation index ~61-70). Acceptance: routes reachable, app boots.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-017"],
             "blocks": ["T-028"],
@@ -398,14 +398,14 @@
             "tags": ["api", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
