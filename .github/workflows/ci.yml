@@ -1,5 +1,14 @@
 name: CI
 
+# Dynamic runs-on strategy (SPEC-179):
+#   - pull_request events from the same repo (non-draft) → self-hosted runner
+#     on the owner's laptop (labels: self-hosted, linux, x64, leo-laptop).
+#     These events consume ZERO GitHub-hosted minutes (private-repo quota saving).
+#   - push to main/staging, workflow_call, fork PRs, and draft PRs → ubuntu-latest
+#     (GitHub-hosted) so the validated baseline is always reachable even if the
+#     laptop is offline.
+# See docs/guides/self-hosted-runner.md for setup and operational details.
+
 on:
   push:
     branches:
@@ -9,6 +18,11 @@ on:
     branches:
       - main
       - staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   workflow_call:
 
 # Cancel in-progress runs for the same PR when a new push arrives.
@@ -16,6 +30,9 @@ on:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 # Shared env values used by every job. Secrets are injected per job (jobs
 # that don't need them simply ignore the missing values).
@@ -64,7 +81,12 @@ jobs:
   # ------------------------------------------------------------------
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -82,7 +104,12 @@ jobs:
   # ------------------------------------------------------------------
   security:
     name: Security
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -107,7 +134,12 @@ jobs:
   # ------------------------------------------------------------------
   guards:
     name: Guards
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -155,7 +187,12 @@ jobs:
   # ------------------------------------------------------------------
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -183,7 +220,12 @@ jobs:
   # ------------------------------------------------------------------
   typecheck:
     name: Typecheck
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 15
     needs: build
     steps:
@@ -206,7 +248,12 @@ jobs:
   # ------------------------------------------------------------------
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
     # instead of rebuilding. Observed shard runtime on PR #1060 was
     # 13-15 min (vitest startup + jsdom init per file still dominates,
@@ -292,7 +339,12 @@ jobs:
   # ------------------------------------------------------------------
   test-integration:
     name: Integration Tests
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 20
     needs: build
 
@@ -331,7 +383,12 @@ jobs:
   # ------------------------------------------------------------------
   coverage-check:
     name: Coverage Threshold
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     timeout-minutes: 10
     needs: test-unit
     # Coverage artifacts only exist on main pushes (see test-unit job).
@@ -452,7 +509,12 @@ jobs:
   # ------------------------------------------------------------------
   ci-pass:
     name: CI Pass
-    runs-on: ubuntu-latest
+    runs-on: >-
+      ${{ (github.event_name == 'pull_request'
+           && github.event.pull_request.draft == false
+           && github.event.pull_request.head.repo.full_name == github.repository)
+          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
+          || 'ubuntu-latest' }}
     if: always()
     needs:
       - lint
