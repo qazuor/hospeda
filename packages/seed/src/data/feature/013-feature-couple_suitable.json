@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "013-feature-couple_suitable",
-    "name": "Apto para parejas",
+    "name": {
+        "es": "Apto para parejas",
+        "en": "Apto para parejas",
+        "pt": "Apto para parejas"
+    },
     "slug": "couple_suitable",
-    "description": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
+    "description": {
+        "es": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
+        "en": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales",
+        "pt": "Ambiente romántico e íntimo, perfecto para parejas que buscan privacidad y experiencias especiales"
+    },
     "icon": "CouplesFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "046-feature-transfer_service",
-    "name": "Servicio de traslado",
+    "name": {
+        "es": "Servicio de traslado",
+        "en": "Servicio de traslado",
+        "pt": "Servicio de traslado"
+    },
     "slug": "transfer_service",
-    "description": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
+    "description": {
+        "es": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
+        "en": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento",
+        "pt": "Transporte privado desde y hacia aeropuertos, terminales o puntos de interés coordinado por el alojamiento"
+    },
     "icon": "TransferServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,

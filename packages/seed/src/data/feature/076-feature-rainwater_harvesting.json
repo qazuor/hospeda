@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "076-feature-rainwater_harvesting",
-    "name": "Captación de agua de lluvia",
+    "name": {
+        "es": "Captación de agua de lluvia",
+        "en": "Captación de agua de lluvia",
+        "pt": "Captación de agua de lluvia"
+    },
     "slug": "rainwater_harvesting",
-    "description": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
+    "description": {
+        "es": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
+        "en": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad",
+        "pt": "Sistema de recolección y aprovechamiento de agua pluvial para uso sustentable en la propiedad"
+    },
     "icon": "RainwaterHarvestingIcon",
     "isBuiltin": true,
     "isFeatured": false,

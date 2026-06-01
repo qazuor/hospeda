@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "052-feature-educational_farm",
-    "name": "Granja educativa",
+    "name": {
+        "es": "Granja educativa",
+        "en": "Granja educativa",
+        "pt": "Granja educativa"
+    },
     "slug": "educational_farm",
-    "description": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
+    "description": {
+        "es": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
+        "en": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural",
+        "pt": "Espacio didáctico donde los huéspedes pueden aprender sobre agricultura, ganadería y vida rural"
+    },
     "icon": "AnimalPenIcon",
     "isBuiltin": true,
     "isFeatured": false,

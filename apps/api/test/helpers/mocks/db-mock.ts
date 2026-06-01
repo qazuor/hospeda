@@ -322,6 +322,33 @@ export function createDbMock() {
             }
         },
 
+        // Mock CronRunModel (SPEC-161). Required so initApp() can construct the
+        // cron service during route-test bootstrap; the methods are only exercised
+        // by cron unit tests, so empty defaults are sufficient here.
+        CronRunModel: class MockCronRunModel {
+            async listRuns(_filters?: unknown, _opts?: unknown) {
+                return { items: [], total: 0 };
+            }
+            async getLatestRunPerJob() {
+                return [];
+            }
+            async getRecentFailures(_limit?: number) {
+                return [];
+            }
+            async purgeOlderThan(_date: unknown) {
+                return 0;
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters?: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown) {
+                return { id: 'cron_run_mock_id', createdAt: new Date() };
+            }
+        },
+
         // Mock UserBookmarkModel
         UserBookmarkModel: class MockUserBookmarkModel {
             async findById(_id: string) {

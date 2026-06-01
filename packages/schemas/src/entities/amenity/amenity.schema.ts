@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { i18nText } from '../../common/i18n.schema.js';
 import { AccommodationIdSchema, AmenityIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { PriceSchema } from '../../common/price.schema.js';
@@ -31,20 +32,9 @@ export const AmenitySchema = z.object({
         })
         .nullish(),
 
-    name: z
-        .string({
-            message: 'zodError.amenity.name.required'
-        })
-        .min(2, { message: 'zodError.amenity.name.min' })
-        .max(100, { message: 'zodError.amenity.name.max' }),
+    name: i18nText({ min: 2, max: 100 }),
 
-    description: z
-        .string({
-            message: 'zodError.amenity.description.required'
-        })
-        .min(10, { message: 'zodError.amenity.description.min' })
-        .max(500, { message: 'zodError.amenity.description.max' })
-        .nullish(),
+    description: i18nText({ min: 10, max: 500 }).nullish(),
 
     icon: z
         .string({

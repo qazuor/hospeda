@@ -8,6 +8,7 @@ import {
 import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { resolveI18nText } from '@/utils/i18n-text';
 import { EditIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
@@ -40,12 +41,25 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.name'),
         accessorKey: 'name',
         enableSorting: true,
-        columnType: ColumnType.ENTITY,
+        columnType: ColumnType.WIDGET,
         entityOptions: {
             entityType: EntityType.AMENITY,
             color: BadgeColor.CYAN
         },
-        linkHandler: (row) => ({ to: `/content/accommodation-amenities/${row.id}` })
+        linkHandler: (row) => ({ to: `/content/accommodation-amenities/${row.id}` }),
+        widgetRenderer: (row) => {
+            const displayName = resolveI18nText(row.name);
+            return createElement(
+                Link,
+                {
+                    to: '/content/accommodation-amenities/$id' as never,
+                    params: { id: row.id } as never,
+                    className:
+                        'inline-flex max-w-xs items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-sm ring-1 ring-inset bg-cyan-50 text-cyan-700 ring-cyan-700/20 hover:bg-cyan-100 dark:bg-cyan-900/20 dark:text-cyan-400 dark:ring-cyan-400/30 dark:hover:bg-cyan-900/30 truncate'
+                } as never,
+                displayName
+            );
+        }
     },
     {
         id: 'slug',
@@ -67,7 +81,17 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         header: t('admin-entities.columns.description'),
         accessorKey: 'description',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => {
+            const text = resolveI18nText(row.description);
+            if (!text) return createElement('span', { className: 'text-muted-foreground' }, '—');
+            const truncated = text.length > 80 ? `${text.slice(0, 80)}…` : text;
+            return createElement(
+                'span',
+                { className: 'text-sm text-foreground', title: text },
+                truncated
+            );
+        }
     },
     {
         id: 'icon',
@@ -93,7 +117,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         widgetRenderer: (row) =>
             createElement(InlineFeaturedCell<Partial<Amenity>>, {
                 entityId: row.id,
-                entityName: row.name,
+                entityName: resolveI18nText(row.name),
                 entityLabelKey: 'admin-entities.entities.amenity.singular',
                 checked: row.isFeatured ?? false,
                 permission: PermissionEnum.AMENITY_FEATURED_TOGGLE,
@@ -124,7 +148,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         widgetRenderer: (row) =>
             createElement(InlineStateSelectCell<Partial<Amenity>>, {
                 entityId: row.id,
-                entityName: row.name,
+                entityName: resolveI18nText(row.name),
                 entityLabelKey: 'admin-entities.entities.amenity.singular',
                 field: 'lifecycleState',
                 currentValue: row.lifecycleState,
@@ -167,7 +191,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
                 ),
                 createElement(DeleteRowButton, {
                     entityId: row.id,
-                    entityName: row.name,
+                    entityName: resolveI18nText(row.name),
                     entityLabel: t('admin-entities.entities.amenity.singular'),
                     permission: PermissionEnum.AMENITY_DELETE,
                     useDeleteMutation: useDeleteAmenityMutation,

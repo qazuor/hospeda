@@ -44,3 +44,7 @@ export type { ImageFieldProps, ImageValue } from './ImageField';
 
 export { GalleryField } from './GalleryField';
 export type { GalleryFieldProps, GalleryImage } from './GalleryField';
+
+// Internationalized (i18n) Text Fields
+export { I18nTextField } from './I18nTextField';
+export type { I18nTextFieldProps } from './I18nTextField';

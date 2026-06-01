@@ -51,4 +51,7 @@ export * from './visibility.schema.js';
 // Query helpers
 export { queryBooleanParam, queryDateParam, queryNumberParam } from './query-helpers.js';
 
+// Shared i18n text schema (I18nTextSchema, i18nText factory, I18nText type)
+export * from './i18n.schema.js';
+
 // Migration completed ✅

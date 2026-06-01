@@ -19,12 +19,12 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
     fields: [
         {
             id: 'name',
-            type: FieldTypeEnum.TEXT,
+            type: FieldTypeEnum.I18N_TEXT,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: 'Nombre',
-            description: 'Nombre de la característica',
-            placeholder: 'Ej: Vista al Mar, Jacuzzi Privado',
+            description: 'Nombre de la característica en cada idioma (ES / EN / PT)',
+            placeholder: 'Ej: Vista al Mar',
             permissions: {
                 view: [PermissionEnum.FEATURE_CREATE],
                 edit: [PermissionEnum.FEATURE_UPDATE]
@@ -54,11 +54,11 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         },
         {
             id: 'description',
-            type: FieldTypeEnum.TEXTAREA,
+            type: FieldTypeEnum.I18N_TEXTAREA,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Descripción',
-            description: 'Descripción detallada de la característica',
+            description: 'Descripción de la característica en cada idioma (ES / EN / PT)',
             placeholder: 'Describe qué incluye esta característica',
             permissions: {
                 view: [PermissionEnum.FEATURE_CREATE],

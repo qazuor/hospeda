@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { i18nText } from '../../common/i18n.schema.js';
 import { FeatureIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { FeatureSchema } from './feature.schema.js';
@@ -25,12 +26,7 @@ import { FeatureSchema } from './feature.schema.js';
 export const FeatureCreateInputSchema = z
     .object({
         // Required fields
-        name: z
-            .string({
-                message: 'zodError.feature.name.required'
-            })
-            .min(2, { message: 'zodError.feature.name.min' })
-            .max(100, { message: 'zodError.feature.name.max' }),
+        name: i18nText({ min: 2, max: 100 }),
 
         // Optional fields
         slug: z
@@ -44,13 +40,7 @@ export const FeatureCreateInputSchema = z
             })
             .optional(),
 
-        description: z
-            .string({
-                message: 'zodError.feature.description.required'
-            })
-            .min(10, { message: 'zodError.feature.description.min' })
-            .max(500, { message: 'zodError.feature.description.max' })
-            .optional(),
+        description: i18nText({ min: 10, max: 500 }).optional(),
 
         icon: z
             .string({

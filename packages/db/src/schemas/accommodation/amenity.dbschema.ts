@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/schemas';
+import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
     boolean,
@@ -19,8 +19,8 @@ export const amenities = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
-        name: text('name').notNull(),
-        description: text('description'),
+        name: jsonb('name').$type<I18nText>().notNull(),
+        description: jsonb('description').$type<I18nText>(),
         icon: text('icon'),
         isBuiltin: boolean('is_builtin').notNull().default(false),
         isFeatured: boolean('is_featured').notNull().default(false),

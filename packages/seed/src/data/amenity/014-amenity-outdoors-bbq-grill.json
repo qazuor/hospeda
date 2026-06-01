@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "014-amenity-outdoors-bbq-grill",
-    "name": "bbq_grill",
+    "name": {
+        "es": "bbq_grill",
+        "en": "bbq_grill",
+        "pt": "bbq_grill"
+    },
     "slug": "bbq_grill",
-    "description": "Parrilla para barbacoa",
+    "description": {
+        "es": "Parrilla para barbacoa",
+        "en": "Parrilla para barbacoa",
+        "pt": "Parrilla para barbacoa"
+    },
     "type": "OUTDOORS",
     "icon": "BbqGrillIcon",
     "isBuiltin": false,

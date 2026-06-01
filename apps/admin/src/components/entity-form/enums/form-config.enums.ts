@@ -56,7 +56,11 @@ export enum FieldTypeEnum {
     JSON = 'JSON',
     FILE = 'FILE',
     COMPUTED = 'COMPUTED',
-    SECTION = 'SECTION'
+    SECTION = 'SECTION',
+    /** Localized text input — renders one text input per locale (es/en/pt) */
+    I18N_TEXT = 'I18N_TEXT',
+    /** Localized textarea input — renders one textarea per locale (es/en/pt) */
+    I18N_TEXTAREA = 'I18N_TEXTAREA'
 }
 
 /**

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "029-feature-minimum_stay_required",
-    "name": "Estancia mínima requerida",
+    "name": {
+        "es": "Estancia mínima requerida",
+        "en": "Estancia mínima requerida",
+        "pt": "Estancia mínima requerida"
+    },
     "slug": "minimum_stay_required",
-    "description": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia",
+    "description": {
+        "es": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia",
+        "en": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia",
+        "pt": "Política de reserva que establece una cantidad mínima de noches de alojamiento para garantizar mejor experiencia"
+    },
     "icon": "MinimumStayIcon",
     "isBuiltin": true,
     "isFeatured": false,

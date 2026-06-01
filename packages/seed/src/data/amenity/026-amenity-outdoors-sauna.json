@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "026-amenity-outdoors-sauna",
-    "name": "sauna",
+    "name": {
+        "es": "sauna",
+        "en": "sauna",
+        "pt": "sauna"
+    },
     "slug": "sauna",
-    "description": "Sauna disponible",
+    "description": {
+        "es": "Sauna disponible",
+        "en": "Sauna disponible",
+        "pt": "Sauna disponible"
+    },
     "type": "OUTDOORS",
     "icon": "SaunaIcon",
     "isBuiltin": false,

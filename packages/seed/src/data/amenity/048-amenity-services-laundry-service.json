@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "048-amenity-services-laundry-service",
-    "name": "laundry_service",
+    "name": {
+        "es": "laundry_service",
+        "en": "laundry_service",
+        "pt": "laundry_service"
+    },
     "slug": "laundry_service",
-    "description": "Servicio de lavandería",
+    "description": {
+        "es": "Servicio de lavandería",
+        "en": "Servicio de lavandería",
+        "pt": "Servicio de lavandería"
+    },
     "type": "SERVICES",
     "icon": "LaundryServiceIcon",
     "isBuiltin": false,

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "076-amenity-kitchen-water-dispenser",
-    "name": "water_dispenser",
+    "name": {
+        "es": "water_dispenser",
+        "en": "water_dispenser",
+        "pt": "water_dispenser"
+    },
     "slug": "water_dispenser",
-    "description": "Dispenser de agua fría/caliente",
+    "description": {
+        "es": "Dispenser de agua fría/caliente",
+        "en": "Dispenser de agua fría/caliente",
+        "pt": "Dispenser de agua fría/caliente"
+    },
     "type": "KITCHEN",
     "icon": "WaterDispenserIcon",
     "isBuiltin": false,

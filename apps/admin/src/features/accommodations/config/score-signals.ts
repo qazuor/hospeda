@@ -34,14 +34,6 @@ function readPath(source: Record<string, unknown>, path: string): unknown {
     return current;
 }
 
-function countTruthyKeys(source: Record<string, unknown>, keys: readonly string[]): number {
-    let count = 0;
-    for (const key of keys) {
-        if (source[key] === true) count++;
-    }
-    return count;
-}
-
 /**
  * Quality signals for accommodation (spec §4.9).
  *
@@ -193,7 +185,11 @@ export function createAccommodationSignals({
             }
         },
         // ----------------------------------------------------------------
-        // Services / amenities filled
+        // Services / amenities filled (SPEC-172 PR3)
+        // Counts selected amenities from the chip field value.
+        // Uses entity.amenityIds (the write-path field) if present, otherwise
+        // falls back to entity.amenities[].id (the read-path relation array).
+        // ≥3 → done; ≥1 → partial with progress = count/3.
         // ----------------------------------------------------------------
         {
             id: 'services',
@@ -201,24 +197,25 @@ export function createAccommodationSignals({
             weight: 8,
             sectionId: 'amenities',
             check: (entity) => {
-                const amenityFlags = [
-                    'hasWifi',
-                    'hasAirConditioning',
-                    'hasParking',
-                    'hasPool',
-                    'hasKitchen',
-                    'hasPetFriendly',
-                    'hasGym',
-                    'hasBreakfast'
-                ] as const;
-                const filled = countTruthyKeys(entity, amenityFlags);
-                if (filled >= 3) return { status: 'done' };
+                // Prefer the chip field value (amenityIds) over the relation array
+                const amenityIds = entity.amenityIds;
+                const amenitiesRelation = entity.amenities;
+
+                let count = 0;
+                if (Array.isArray(amenityIds)) {
+                    count = amenityIds.length;
+                } else if (Array.isArray(amenitiesRelation)) {
+                    count = amenitiesRelation.length;
+                }
+
+                const target = 3;
+                if (count >= target) return { status: 'done' };
                 return {
                     status: 'pending',
-                    progress: filled / 3,
+                    progress: count / target,
                     hint: {
                         key: 'admin-entities.qualityScore.signals.services.hint',
-                        params: { current: filled, target: 3 }
+                        params: { current: count, target }
                     }
                 };
             }

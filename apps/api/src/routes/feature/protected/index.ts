@@ -1,12 +1,14 @@
 /**
  * Protected feature routes
  * Routes that require authentication
+ *
+ * Note (SPEC-172): the standalone "add/remove feature to accommodation" endpoints
+ * have been removed. Feature associations are now managed via the accommodation
+ * create/update endpoints using the `featureIds` array field.
  */
 import { createRouter } from '../../../utils/create-app';
-import { protectedAddFeatureToAccommodationRoute } from './addFeatureToAccommodation';
 import { protectedCreateFeatureRoute } from './create';
 import { protectedPatchFeatureRoute } from './patch';
-import { protectedRemoveFeatureFromAccommodationRoute } from './removeFeatureFromAccommodation';
 import { protectedSoftDeleteFeatureRoute } from './softDelete';
 import { protectedUpdateFeatureRoute } from './update';
 
@@ -23,11 +25,5 @@ app.route('/', protectedPatchFeatureRoute);
 
 // DELETE /:id - Soft delete feature
 app.route('/', protectedSoftDeleteFeatureRoute);
-
-// POST /accommodation/:accommodationId - Add feature to accommodation
-app.route('/', protectedAddFeatureToAccommodationRoute);
-
-// DELETE /accommodation/:accommodationId/:featureId - Remove feature from accommodation
-app.route('/', protectedRemoveFeatureFromAccommodationRoute);
 
 export { app as protectedFeatureRoutes };

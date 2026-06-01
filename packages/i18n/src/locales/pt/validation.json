@@ -122,6 +122,12 @@
         "summary": {
             "max": "[PT] El resumen no puede superar los {{max}} caracteres",
             "min": "[PT] El resumen debe tener al menos {{min}} caracteres"
+        },
+        "amenityIds": {
+            "invalidUuid": "[PT] El ID de servicio debe ser un UUID válido"
+        },
+        "featureIds": {
+            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
         }
     },
     "accommodationAmenity": {
@@ -1345,6 +1351,9 @@
         },
         "permission": {
             "invalid": "[PT] El permiso no es válido"
+        },
+        "permissionEffect": {
+            "invalid": "O efeito da permissão é inválido"
         },
         "postCategory": {
             "invalid": "[PT] El post category no es válido"

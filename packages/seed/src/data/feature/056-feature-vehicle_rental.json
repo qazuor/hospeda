@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "056-feature-vehicle_rental",
-    "name": "Alquiler de vehículos",
+    "name": {
+        "es": "Alquiler de vehículos",
+        "en": "Alquiler de vehículos",
+        "pt": "Alquiler de vehículos"
+    },
     "slug": "vehicle_rental",
-    "description": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
+    "description": {
+        "es": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
+        "en": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona",
+        "pt": "Servicio de renta de automóviles, bicicletas, motos o vehículos todo terreno para explorar la zona"
+    },
     "icon": "TransferServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,

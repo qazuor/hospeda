@@ -17,11 +17,31 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { PlanDefinition } from '@repo/billing';
+
+/**
+ * Minimal plan shape required by this component. Decoupled from PlanDefinition
+ * so the component works with both the static @repo/billing config and the
+ * runtime endpoint response (PublicPlanData from @/lib/billing/fetch-plans).
+ * The `limits` field from PlanDefinition is intentionally excluded because this
+ * component does not render limits — only entitlements are shown as feature bullets.
+ */
+export interface PricingPlan {
+	readonly slug: string;
+	readonly name: string;
+	readonly description: string;
+	readonly monthlyPriceArs: number;
+	readonly annualPriceArs: number | null;
+	readonly hasTrial: boolean;
+	readonly trialDays: number;
+	readonly sortOrder: number;
+	readonly isActive: boolean;
+	/** Entitlement keys (string values matching EntitlementKey). */
+	readonly entitlements: readonly string[];
+}
 
 interface Props {
 	readonly locale: SupportedLocale;
-	readonly plans: ReadonlyArray<PlanDefinition>;
+	readonly plans: ReadonlyArray<PricingPlan>;
 	readonly highlightedSlug: string;
 	readonly intlLocale: string;
 	/** Section heading text (rendered sr-only as h2 for accessibility). */
@@ -82,7 +102,7 @@ const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
  * annual price is greater than 12 monthly cycles (saving would be
  * negative — bad config, hide the label).
  */
-function computeAnnualSavingPercent(plan: PlanDefinition): number | null {
+function computeAnnualSavingPercent(plan: PricingPlan): number | null {
 	if (plan.annualPriceArs === null || plan.annualPriceArs <= 0) return null;
 	if (plan.monthlyPriceArs <= 0) return null;
 	const yearAtMonthly = plan.monthlyPriceArs * 12;
@@ -99,9 +119,9 @@ function computeAnnualSavingPercent(plan: PlanDefinition): number | null {
  * with 4) without losing information — users can still see the upgrade story.
  */
 function computeAddedEntitlements(input: {
-	plan: PlanDefinition;
-	previous: PlanDefinition | undefined;
-}): ReadonlyArray<PlanDefinition['entitlements'][number]> {
+	plan: PricingPlan;
+	previous: PricingPlan | undefined;
+}): ReadonlyArray<string> {
 	const { plan, previous } = input;
 	if (!previous) return plan.entitlements;
 	const previousSet = new Set<string>(previous.entitlements as ReadonlyArray<string>);

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "044-amenity-general-appliances-water-heater",
-    "name": "water_heater",
+    "name": {
+        "es": "water_heater",
+        "en": "water_heater",
+        "pt": "water_heater"
+    },
     "slug": "water_heater",
-    "description": "Caldera / Termotanque",
+    "description": {
+        "es": "Caldera / Termotanque",
+        "en": "Caldera / Termotanque",
+        "pt": "Caldera / Termotanque"
+    },
     "type": "GENERAL_APPLIANCES",
     "icon": "HeatingIcon",
     "isBuiltin": false,
