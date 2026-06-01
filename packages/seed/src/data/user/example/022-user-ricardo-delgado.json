@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Colón",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3280",
-        "street": "Paysandú",
-        "number": "123",
-        "coordinates": {
-            "lat": "-32.2208",
-            "long": "-58.1431"
-        }
+        "region": "Entre Ríos",
+        "city": "Colón",
+        "addressLine1": "Paysandú 123",
+        "postalCode": "3280"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Federación",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3206",
-        "street": "Entre Ríos",
-        "number": "741",
-        "coordinates": {
-            "lat": "-30.9833",
-            "long": "-57.9000"
-        }
+        "region": "Entre Ríos",
+        "city": "Federación",
+        "addressLine1": "Entre Ríos 741",
+        "postalCode": "3206"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

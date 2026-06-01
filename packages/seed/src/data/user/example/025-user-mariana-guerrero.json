@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Gualeguaychú",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "2840",
-        "street": "Entre Ríos",
-        "number": "321",
-        "coordinates": {
-            "lat": "-33.0167",
-            "long": "-58.5167"
-        }
+        "region": "Entre Ríos",
+        "city": "Gualeguaychú",
+        "addressLine1": "Entre Ríos 321",
+        "postalCode": "2840"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Gualeguaychú, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Concordia",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3200",
-        "street": "Entre Ríos",
-        "number": "456",
-        "coordinates": {
-            "lat": "-31.3933",
-            "long": "-58.0208"
-        }
+        "region": "Entre Ríos",
+        "city": "Concordia",
+        "addressLine1": "Entre Ríos 456",
+        "postalCode": "3200"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Concordia, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

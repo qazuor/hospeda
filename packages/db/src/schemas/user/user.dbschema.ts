@@ -1,8 +1,8 @@
 import type {
     AdminInfoType,
     ContactInfo,
-    FullLocationType,
     SocialNetwork,
+    UserLocationType,
     UserProfile,
     UserSettings
 } from '@repo/schemas';
@@ -92,7 +92,7 @@ export const users = pgTable(
         lastName: text('last_name'),
         birthDate: timestamp('birth_date', { withTimezone: true }),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
-        location: jsonb('location').$type<FullLocationType>(),
+        location: jsonb('location').$type<UserLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         role: RolePgEnum('role').notNull().default('USER'),
         profile: jsonb('profile').$type<UserProfile>(),

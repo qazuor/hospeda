@@ -15,17 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Colón",
         "country": "Argentina",
-        "zipCode": "3280",
-        "street": "12 de Abril",
-        "number": "1234",
-        "neighborhood": "Centro",
-        "coordinates": {
-            "lat": "-32.2208",
-            "long": "-58.1431"
-        }
+        "region": "Entre Ríos",
+        "city": "Colón",
+        "addressLine1": "12 de Abril 1234",
+        "postalCode": "3280"
     },
     "socialNetworks": {
         "facebook": "https://facebook.com/alojamientos.ana",

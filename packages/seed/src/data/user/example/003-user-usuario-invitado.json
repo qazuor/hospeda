@@ -14,16 +14,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Paraná",
         "country": "Argentina",
-        "zipCode": "3100",
-        "street": "San Martín",
-        "number": "123",
-        "coordinates": {
-            "lat": "-31.7333",
-            "long": "-60.5333"
-        }
+        "region": "Entre Ríos",
+        "city": "Paraná",
+        "addressLine1": "San Martín 123",
+        "postalCode": "3100"
     },
     "profile": {
         "bio": "Usuario invitado del sistema",

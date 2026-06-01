@@ -147,16 +147,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Paraná",
         "country": "Argentina",
-        "zipCode": "3100",
-        "street": "Av. Urquiza",
-        "number": "1234",
-        "coordinates": {
-            "lat": "-31.7333",
-            "long": "-60.5333"
-        }
+        "region": "Entre Ríos",
+        "city": "Paraná",
+        "addressLine1": "Av. Urquiza 1234",
+        "postalCode": "3100"
     },
     "socialNetworks": {
         "linkedin": "https://linkedin.com/in/superadmin-hospeda"
