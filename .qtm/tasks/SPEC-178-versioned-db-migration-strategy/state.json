@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 19,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 3.0
     },
@@ -123,8 +123,8 @@
         {
             "id": "T-007",
             "title": "Rewrite migrate-production.sh: real migrate + extras + abort-on-fail",
-            "description": "Rewrite scripts/migrate-production.sh: backup (keep pg_dump) -> real `drizzle-kit migrate` (not push) -> apply-extras -> verify. Abort with a non-zero exit on ANY failure (kill the exit-0-on-error masking). Remove the dead `drizzle-kit check` no-op. Acceptance: a failing migration aborts non-zero and prints the backup-restore instructions; a clean migration applies migrate+extras in order.",
-            "status": "pending",
+            "description": "Rewrite scripts/migrate-production.sh: backup (keep pg_dump) -> real `drizzle-kit migrate` (not push) -> apply-extras -> verify. Abort with a non-zero exit on ANY failure (kill the exit-0-on-error masking). Remove the dead `drizzle-kit check` no-op. Acceptance: a failing migration aborts non-zero and prints the backup-restore instructions; a clean migration applies migrate+extras in order. DONE: rewrote migrate-production.sh — removed the dead --dry-run/drizzle-kit-check no-op; step 5 = pnpm --filter @repo/db db:migrate (real migrate), step 6 = pnpm db:apply-extras; both use `if !` to abort non-zero; backup + rollback instructions preserved. Typecheck/biome clean (bash).",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-005"],
             "blocks": [],
@@ -141,8 +141,8 @@
         {
             "id": "T-008",
             "title": "Add hops db-migrate --target command (migrate + extras, no push)",
-            "description": "New server-tools command `hops db-migrate --target=staging|prod`: applies the versioned carril (drizzle-kit migrate + apply-extras), target-aware, backup-before on prod, real abort-on-fail. Separate from seeding. Register in the COMMANDS array (scripts/server-tools/src/index.ts). Acceptance: `hops db-migrate --target=staging` migrates + applies extras; fails non-zero on error; prod path takes a backup first.",
-            "status": "pending",
+            "description": "New server-tools command `hops db-migrate --target=staging|prod`: applies the versioned carril (drizzle-kit migrate + apply-extras), target-aware, backup-before on prod, real abort-on-fail. Separate from seeding. Register in the COMMANDS array (scripts/server-tools/src/index.ts). Acceptance: `hops db-migrate --target=staging` migrates + applies extras; fails non-zero on error; prod path takes a backup first. DONE: new scripts/server-tools/src/commands/db-migrate.ts (registered in index.ts before db-seed) + shared scripts/server-tools/src/lib/migrate-core.ts (buildDbDependencies, runDbMigrate, runApplyExtras, runResetSql, runMigrateSequence). pull/build/backup(pg_dump->R2,GPG-optional,min-size)/migrate/apply-extras; die on any failure; target-aware. REVIEW FIX: backup now runs BEFORE reset (agent had it after = backing up an empty DB); 4 comments/warnings realigned. Typecheck: 0 new errors; biome clean.",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-005"],
             "blocks": ["T-010", "T-011"],
@@ -177,8 +177,8 @@
         {
             "id": "T-010",
             "title": "Split hops db-seed: keep data flags, add --migrate, swap push->migrate",
-            "description": "Update scripts/server-tools/src/commands/db-seed.ts: keep --reset/--required/--example data behavior; change the internal schema step from push to delegate to db-migrate; add a --migrate flag to run db-migrate first. Ensure staging and prod use the identical process via --target. Acceptance: `hops db-seed --target=staging --migrate` runs migrate then seed; without --migrate it only seeds; no `drizzle-kit push` is invoked against the VPS anywhere.",
-            "status": "pending",
+            "description": "Update scripts/server-tools/src/commands/db-seed.ts: keep --reset/--required/--example data behavior; change the internal schema step from push to delegate to db-migrate; add a --migrate flag to run db-migrate first. Ensure staging and prod use the identical process via --target. Acceptance: `hops db-seed --target=staging --migrate` runs migrate then seed; without --migrate it only seeds; no `drizzle-kit push` is invoked against the VPS anywhere. DONE: removed runDbPush (drizzle-kit push) entirely; replaced --no-push/push with --migrate (OFF by default) which calls runMigrateSequence (no reset, no backup) before seeding; --reset/--required/--example unchanged; HELP + summary updated. Only comments mentioning push remain (documenting its removal). Typecheck/biome clean.",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-005", "T-008"],
             "blocks": ["T-024"],
@@ -195,8 +195,8 @@
         {
             "id": "T-011",
             "title": "Fold reset (DROP SCHEMA + DROP USER + extensions) into hops db-migrate --reset",
-            "description": "Add a --reset path to hops db-migrate that runs the T-006 artifacts via hops psql: DROP SCHEMA public CASCADE; CREATE SCHEMA public; DROP USER IF EXISTS gh_refresh; CREATE EXTENSION preflight; then migrate + extras. Prod requires the existing typed confirmation. Acceptance: `hops db-migrate --target=staging --reset` rebuilds the schema from zero (extensions present, no gh_refresh) in one sanctioned command.",
-            "status": "pending",
+            "description": "Add a --reset path to hops db-migrate that runs the T-006 artifacts via hops psql: DROP SCHEMA public CASCADE; CREATE SCHEMA public; DROP USER IF EXISTS gh_refresh; CREATE EXTENSION preflight; then migrate + extras. Prod requires the existing typed confirmation. Acceptance: `hops db-migrate --target=staging --reset` rebuilds the schema from zero (extensions present, no gh_refresh) in one sanctioned command. DONE: --reset in db-migrate runs runResetSql (000-reset-schema.sql then 001-extensions.sql) via docker exec psql against the postgres container (same mechanism as psql.ts, Unix socket, superuser). Order BACKUP -> reset -> migrate -> apply-extras. Prod --reset ALWAYS requires typed confirmation even with --yes. Typecheck/biome clean.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-024"],

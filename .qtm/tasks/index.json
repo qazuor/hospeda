@@ -722,7 +722,7 @@
             "specId": "SPEC-178",
             "title": "Versioned DB Migration Strategy Overhaul",
             "status": "in-progress",
-            "progress": "7/26",
+            "progress": "11/26",
             "path": "SPEC-178-versioned-db-migration-strategy"
         }
     ],

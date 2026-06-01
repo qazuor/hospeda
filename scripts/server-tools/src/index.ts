@@ -19,6 +19,7 @@ import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
+import { dbMigrate } from './commands/db-migrate.ts';
 import { dbRestore } from './commands/db-restore.ts';
 import { dbSeed } from './commands/db-seed.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
@@ -122,6 +123,12 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'db-restore',
         summary: 'Pick an R2 backup and restore it into the Postgres container (destructive).',
         run: dbRestore
+    },
+    {
+        name: 'db-migrate',
+        summary:
+            'Apply versioned Drizzle migrations (drizzle-kit migrate) + extras against the target DB.',
+        run: dbMigrate
     },
     {
         name: 'db-seed',

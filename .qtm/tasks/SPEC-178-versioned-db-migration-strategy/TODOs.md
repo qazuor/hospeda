@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 7/26 (in-progress) — foundations phase DONE.
+26 atomic tasks across 6 phase groups. Status: 11/26 (in-progress) — foundations + tooling DONE.
 
 ## Phase: foundations (migration artifacts)
 
@@ -13,11 +13,11 @@
 
 ## Phase: tooling (hops + scripts)
 
-- [ ] **T-007** Rewrite `migrate-production.sh` (real migrate + extras + abort-on-fail) — *blockedBy T-005*
-- [ ] **T-008** Add `hops db-migrate --target` (migrate + extras, no push) — *blockedBy T-005*
+- [x] **T-007** Rewrite `migrate-production.sh` (real migrate + extras + abort-on-fail) — dead drizzle-kit-check removed
+- [x] **T-008** Add `hops db-migrate --target` (migrate + extras, no push) — + shared `migrate-core.ts`; review caught backup-after-reset bug
 - [x] **T-009** Update apply-postgres-extras to read `migrations/extras/` (NNN sort) — done in the foundations close-out (required by `manual/` removal)
-- [ ] **T-010** Split `hops db-seed` (keep data flags, add `--migrate`, swap push->migrate) — *blockedBy T-005, T-008*
-- [ ] **T-011** Fold reset (DROP SCHEMA + DROP USER + extensions) into `hops db-migrate --reset` — *blockedBy T-006, T-008*
+- [x] **T-010** Split `hops db-seed` (keep data flags, add `--migrate`, swap push->migrate) — runDbPush removed
+- [x] **T-011** Fold reset (DROP SCHEMA + DROP USER + extensions) into `hops db-migrate --reset` — backup→reset→migrate order
 
 ## Phase: ci (drift impossible)
 
