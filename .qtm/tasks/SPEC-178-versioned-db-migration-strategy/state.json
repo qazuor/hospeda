@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 11,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 16,
         "blocked": 2,
         "averageComplexity": 3.0
     },
@@ -267,8 +267,8 @@
         {
             "id": "T-015",
             "title": "Round-trip migration test (the anti-drift keystone)",
-            "description": "Test: empty DB -> apply ALL migrations + extras -> introspect -> assert the live schema matches the TS schema (drizzle introspection diff is empty). Catches any extra that drifted from the schema. Acceptance: passes on a correct tree; fails if an extra or migration diverges from the TS schema.",
-            "status": "pending",
+            "description": "Test: empty DB -> apply ALL migrations + extras -> introspect -> assert the live schema matches the TS schema (drizzle introspection diff is empty). Catches any extra that drifted from the schema. Acceptance: passes on a correct tree; fails if an extra or migration diverges from the TS schema. DONE: packages/db/test/migrations/t015-round-trip.sh (bash harness, ephemeral postgres:15-alpine). RE-RUN VERIFIED 10/10: 82 base tables, search_index matview, 3 trigger functions, and drizzle-kit generate emits nothing (live schema == TS schema). Container cleaned up.",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [],
@@ -285,8 +285,8 @@
         {
             "id": "T-016",
             "title": "Idempotency test (migrate x2, apply-extras x2 = no-op)",
-            "description": "Test: running migrate twice and apply-extras twice leaves the schema unchanged on the second run (no errors, no diffs). Acceptance: second application is a clean no-op for both carriles.",
-            "status": "pending",
+            "description": "Test: running migrate twice and apply-extras twice leaves the schema unchanged on the second run (no errors, no diffs). Acceptance: second application is a clean no-op for both carriles. DONE: packages/db/test/migrations/t016-idempotency.sh — 7/7 passed; fingerprint identical after both passes (tables=82 indexes=402 constraints=966 matviews=1 triggers=65); both db:migrate and both apply-extras runs exit 0.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-009"],
             "blocks": [],
@@ -303,8 +303,8 @@
         {
             "id": "T-017",
             "title": "Conversion regression test (type change with USING preserves data)",
-            "description": "Test a representative column type conversion (e.g. text->jsonb i18n, reproducing the SPEC-172 class of bug) applied as a hand-edited migration with USING: seed old-format rows, run the migration, assert data preserved + correctly reshaped. Guards future data conversions. Acceptance: data survives the conversion; a missing USING would fail the test.",
-            "status": "pending",
+            "description": "Test a representative column type conversion (e.g. text->jsonb i18n, reproducing the SPEC-172 class of bug) applied as a hand-edited migration with USING: seed old-format rows, run the migration, assert data preserved + correctly reshaped. Guards future data conversions. Acceptance: data survives the conversion; a missing USING would fail the test. DONE: packages/db/test/migrations/t017-conversion-regression.sh — 13/13 passed; reproduces the SPEC-172 name text->jsonb class: naive ALTER (no USING) FAILS with 'cannot be cast automatically to type jsonb'; the USING jsonb_build_object cast succeeds and all 3 rows survive + reshape to {es,en,pt} jsonb (verified via name ? 'es' AND ? 'en' AND ? 'pt').",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": [],

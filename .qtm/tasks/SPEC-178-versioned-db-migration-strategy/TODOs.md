@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 13/26 (in-progress) — foundations + tooling DONE; CI drift-guard built, CI/e2e wiring deferred to the local-runners migration (see ci-wiring-handoff.md).
+26 atomic tasks across 6 phase groups. Status: 16/26 (in-progress) — foundations + tooling + testing DONE; CI drift-guard built (wiring deferred); docs + validation remain.
 
 ## Phase: foundations (migration artifacts)
 
@@ -27,9 +27,9 @@
 
 ## Phase: testing
 
-- [ ] **T-015** Round-trip test (empty -> migrate+extras -> introspect == TS schema) — *blockedBy T-002, T-003*
-- [ ] **T-016** Idempotency test (migrate x2, apply-extras x2 = no-op) — *blockedBy T-002, T-009*
-- [ ] **T-017** Conversion regression test (type change with USING preserves data) — *blockedBy T-002*
+- [x] **T-015** Round-trip test — `t015-round-trip.sh`, re-run verified 10/10 (82 tables, matview, drift-clean)
+- [x] **T-016** Idempotency test — `t016-idempotency.sh`, 7/7 (fingerprint identical, both passes exit 0)
+- [x] **T-017** Conversion regression — `t017-conversion-regression.sh`, 13/13 (naive cast fails, USING preserves data)
 - [x] **T-018** Drift-guard self-test — both states exercised (clean→pass, schema change→fail) during T-012 validation
 
 ## Phase: docs + agent-rules
