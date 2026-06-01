@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 14,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -412,7 +412,7 @@
             "id": "T-019",
             "title": "Admin: generic FaqManager + SortableFaqRow component",
             "description": "Create apps/admin/src/components/faqs/FaqManager.tsx + SortableFaqRow.tsx, parameterized by { entityType, parentId, apiBasePath }. Per-item inline CRUD rows, field.handleChange(newArray) style, Zod safeParse, Shadcn + Tailwind. Acceptance: renders list + add/edit/delete UI.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 6,
             "blockedBy": [],
             "blocks": ["T-022", "T-023", "T-024", "T-029"],
@@ -420,21 +420,21 @@
             "tags": ["admin", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Admin: useFaqs TanStack Query hook (list/create/update/delete/reorder)",
             "description": "Generic hook keyed by entityType + parentId hitting /api/v1/admin/{entity}/:id/faqs[...]. Mutations invalidate the list query. Acceptance: hooks typed, fetch via fetchApi.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": [],
             "blocks": ["T-019", "T-029"],
@@ -442,21 +442,21 @@
             "tags": ["admin", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Admin: category combobox (baseline suggestions + free text)",
             "description": "Combobox seeded from FAQ_BASELINE_CATEGORIES but allowing custom value, used in FaqManager rows. Acceptance: pick baseline or type custom; value persists as string.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-029"],
@@ -464,21 +464,21 @@
             "tags": ["admin", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Admin: drag-to-reorder wiring (DndContext/SortableContext)",
             "description": "Wire DndContext + SortableContext in FaqManager copying GalleryField + SortableGalleryItem (useSortable, GripVerticalIcon, prefers-reduced-motion, keyboard a11y). On drop call the reorder mutation. Acceptance: drag reorders + persists.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-019", "T-020"],
             "blocks": ["T-029"],
@@ -486,21 +486,21 @@
             "tags": ["admin", "dnd", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Admin: add FAQs tab to destinationTabs + accommodationTabs",
             "description": "Add a faqs tab entry to both tab arrays in apps/admin/src/components/layout/PageTabs.tsx. Acceptance: tab visible on both entity view/edit shells.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": ["T-024"],
@@ -508,21 +508,21 @@
             "tags": ["admin", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Admin: $id_.faqs.tsx routes for destinations + accommodations",
             "description": "Create routes/_authed/{destinations,accommodations}/$id_.faqs.tsx wrapping FaqManager in DestinationSubTabLayout / AccommodationSubTabLayout. Acceptance: navigable, manager mounted with correct parentId.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-023"],
             "blocks": ["T-029"],
@@ -530,21 +530,21 @@
             "tags": ["admin", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Admin: i18n keys es/en/pt for FAQ manager",
             "description": "Add labels (add/edit/delete/reorder/category/answer/empty/errors) in es/en/pt. Restart admin dev after JSON edits (SSR cache gotcha). Acceptance: no [MISSING] keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
@@ -552,14 +552,14 @@
             "tags": ["admin", "i18n", "phase-integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
             }
         },
         {
