@@ -21,6 +21,7 @@ import {
     protectedAttractionRoutes,
     publicAttractionRoutes
 } from './attraction';
+import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -244,6 +245,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
         app.route('/api/v1/protected/posts', protectedPostRoutes);
+        app.route('/api/v1/protected/comments', protectedCommentRoutes);
         app.route('/api/v1/protected/amenities', protectedAmenityRoutes);
         app.route('/api/v1/protected/features', protectedFeatureRoutes);
         app.route('/api/v1/protected/attractions', protectedAttractionRoutes);
@@ -296,6 +298,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Assignment: POST /posts/:postId/tags, DELETE /posts/:postId/tags/:tagId
         // Registered after /posts/tags to avoid conflict but fine — assignment paths have /:postId/ prefix
         app.route('/api/v1/admin/posts', adminPostTagAssignmentRoutes);
+
+        // Cross-entity comments (POST + EVENT) — SPEC-165
+        app.route('/api/v1/admin/comments', adminCommentRoutes);
 
         // Supporting entities
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);

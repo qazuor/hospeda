@@ -24,6 +24,7 @@ export const namespaces = [
     'auth-ui',
     'billing',
     'blog',
+    'comments',
     'destinations',
     'events',
     'home',
@@ -130,6 +131,7 @@ import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
 import blogEs from './locales/es/blog.json';
+import commentsEs from './locales/es/comments.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
 import conversationsEs from './locales/es/conversations.json';
@@ -178,6 +180,7 @@ import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
 import blogEn from './locales/en/blog.json';
+import commentsEn from './locales/en/comments.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
 import conversationsEn from './locales/en/conversations.json';
@@ -226,6 +229,7 @@ import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
 import blogPt from './locales/pt/blog.json';
+import commentsPt from './locales/pt/comments.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
 import conversationsPt from './locales/pt/conversations.json';
@@ -267,6 +271,7 @@ const rawTranslations = {
         billing: billingEs,
         benefits: benefitsEs,
         blog: blogEs,
+        comments: commentsEs,
         common: commonEs,
         contact: contactEs,
         destinations: destinationEs,
@@ -315,6 +320,7 @@ const rawTranslations = {
         billing: billingEn,
         benefits: benefitsEn,
         blog: blogEn,
+        comments: commentsEn,
         common: commonEn,
         contact: contactEn,
         destinations: destinationEn,
@@ -363,6 +369,7 @@ const rawTranslations = {
         billing: billingPt,
         benefits: benefitsPt,
         blog: blogPt,
+        comments: commentsPt,
         common: commonPt,
         contact: contactPt,
         destinations: destinationPt,

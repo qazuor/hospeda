@@ -7,6 +7,7 @@ export * from './amenity/index.js';
 export * from './attraction/index.js';
 export * from './destination/index.js';
 export * from './destinationReview/index.js';
+export * from './entityComment/index.js';
 export * from './event/index.js';
 export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';

@@ -1835,14 +1835,17 @@
             "title": "Post and Event Comments System",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-165-post-event-comments-system",
             "created": "2026-05-27T00:00:00.000Z",
             "extractedFrom": "SPEC-155",
             "archived": false,
             "extractionReason": "Phase-1 scout 2026-05-27: no post_comments or event_comments table exists; posts has only an integer comments counter. EDITOR dashboard card H renders a deferred placeholder until this spec ships.",
             "enables": ["SPEC-155 EDITOR card H (Comentarios)"],
-            "tags": ["comments", "editor", "backend", "phase-2"]
+            "tags": ["comments", "editor", "backend", "phase-2"],
+            "startedAt": "2026-05-30T00:00:00.000Z",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-165-post-event-comments-system",
+            "branch": "spec/SPEC-165-post-event-comments-system"
         },
         {
             "specId": "SPEC-166",

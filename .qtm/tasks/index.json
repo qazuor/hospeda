@@ -641,6 +641,18 @@
             "archivedAt": "2026-06-01T00:40:38.000Z",
             "completionRef": "PR #1338 + #1347 merged to staging. Post-merge live verify caught a restore deletedAt no-op bug, fixed in #1347. Staging billing smoke + main promotion pending per owner.",
             "note": "Drift fix: index previously showed 1/23 in-progress while implementation was 23/23 (task-master per-task tracking was not wired; delivered via #1338 setup→integration + #1347 fix)."
+        },
+        {
+            "specId": "SPEC-165",
+            "title": "Post and Event Comments System",
+            "status": "in-progress",
+            "progress": "13/18",
+            "path": "SPEC-165-post-event-comments-system",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-165-post-event-comments-system",
+            "branch": "spec/SPEC-165-post-event-comments-system",
+            "base": "staging",
+            "createdAt": "2026-05-30T00:00:00.000Z",
+            "note": "Backend complete (T-001..013) in PR #1349 → staging. 13/18. Frontend T-014..018 remain (new branch from staging after merge)."
         }
     ],
     "standalone": {

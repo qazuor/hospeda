@@ -3,6 +3,7 @@
  * Routes that don't require authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { publicEventCommentRoutes } from '../comments/public/index.js';
 import { publicGetEventsByAuthorRoute } from './getByAuthor';
 import { publicGetEventByIdRoute } from './getById';
 import { publicGetEventsByLocationRoute } from './getByLocation';
@@ -37,5 +38,8 @@ app.route('/', publicGetEventsByLocationRoute);
 
 // GET /organizer/:organizerId - Get events by organizer
 app.route('/', publicGetEventsByOrganizerRoute);
+
+// GET /:eventId/comments - Public comment thread (SPEC-165)
+app.route('/', publicEventCommentRoutes);
 
 export { app as publicEventRoutes };
