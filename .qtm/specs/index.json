@@ -126,7 +126,8 @@
             "priority": "P1",
             "created": "2026-03-16T00:00:00.000Z",
             "completedAt": "2026-05-17T18:30:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "dependsOn": ["SPEC-042", "SPEC-045"],
             "followUpSpec": "SPEC-142",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-046-impl",
@@ -1504,6 +1505,8 @@
         },
         {
             "specId": "SPEC-153",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "title": "Admin Design Tokens — Shared Brand Tokens for Admin/Web",
             "type": "feature",
             "complexity": "high",
@@ -1560,6 +1563,8 @@
         },
         {
             "specId": "SPEC-155",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "title": "Admin Dashboards V1 — Per-Role Widget Configuration",
             "type": "feature",
             "complexity": "medium",
@@ -1668,6 +1673,8 @@
         },
         {
             "specId": "SPEC-157",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "title": "Web SEO Polish — Audit Backlog Remediation",
             "type": "fix",
             "complexity": "high",
@@ -1764,6 +1771,8 @@
         },
         {
             "specId": "SPEC-161",
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "title": "Cron Run History",
             "type": "feature",
             "complexity": "medium",
@@ -1831,7 +1840,8 @@
             "branch": "spec/SPEC-164-admin-billing-super-only",
             "extractedFrom": "SPEC-155",
             "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-01T00:00:00Z",
             "openQuestions": "RESOLVED — OQ-1 = WIDE (revoke billing-six + sponsorship/promotion _ANY + POST_SPONSORSHIP_MANAGE); OQ-2 = explicit beforeLoad guards (Option B) on the 14 admin billing pages"
         },
         {
