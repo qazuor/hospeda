@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "063-feature-rural_activities_stay",
-    "name": "Estancia con actividades rurales",
+    "name": {
+        "es": "Estancia con actividades rurales",
+        "en": "Estancia con actividades rurales",
+        "pt": "Estancia con actividades rurales"
+    },
     "slug": "rural_activities_stay",
-    "description": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
+    "description": {
+        "es": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
+        "en": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas",
+        "pt": "Experiencia completa de vida rural con participación en actividades agrícolas y ganaderas"
+    },
     "icon": "RuralActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -20,7 +20,7 @@ describe('AmenityService.setFeaturedStatus', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: 'Test Amenity',
+        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         isFeatured: false
     });

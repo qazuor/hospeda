@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "002-amenity-climate-control-air-conditioning",
-    "name": "air_conditioning",
+    "name": {
+        "es": "air_conditioning",
+        "en": "air_conditioning",
+        "pt": "air_conditioning"
+    },
     "slug": "air_conditioning",
-    "description": "Aire acondicionado",
+    "description": {
+        "es": "Aire acondicionado",
+        "en": "Aire acondicionado",
+        "pt": "Aire acondicionado"
+    },
     "type": "CLIMATE_CONTROL",
     "icon": "AirConditioningIcon",
     "isBuiltin": false,

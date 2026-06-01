@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "037-amenity-accessibility-wheelchair-accessible",
-    "name": "wheelchair_accessible",
+    "name": {
+        "es": "wheelchair_accessible",
+        "en": "wheelchair_accessible",
+        "pt": "wheelchair_accessible"
+    },
     "slug": "wheelchair_accessible",
-    "description": "Acceso para personas con movilidad reducida",
+    "description": {
+        "es": "Acceso para personas con movilidad reducida",
+        "en": "Acceso para personas con movilidad reducida",
+        "pt": "Acceso para personas con movilidad reducida"
+    },
     "type": "ACCESSIBILITY",
     "icon": "AccessibilityFriendlyIcon",
     "isBuiltin": false,

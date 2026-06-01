@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "066-feature-animal_corral",
-    "name": "Corral de animales",
+    "name": {
+        "es": "Corral de animales",
+        "en": "Corral de animales",
+        "pt": "Corral de animales"
+    },
     "slug": "animal_corral",
-    "description": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo",
+    "description": {
+        "es": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo",
+        "en": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo",
+        "pt": "Instalaciones para el cuidado y exhibición de animales de granja en ambiente seguro y educativo"
+    },
     "icon": "AnimalPenIcon",
     "isBuiltin": true,
     "isFeatured": false,

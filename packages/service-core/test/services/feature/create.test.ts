@@ -14,9 +14,13 @@ import {
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const input = {
-    name: 'Test Feature',
+    name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
     icon: '⭐',
-    description: 'A test feature',
+    description: {
+        es: 'A test feature desc ok',
+        en: 'A test feature desc ok',
+        pt: 'A test feature desc ok'
+    },
     isFeatured: false
 };
 const createdFeature = FeatureFactoryBuilder.create({ ...input });
@@ -52,7 +56,8 @@ describe('FeatureService.create', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.create(actor, { ...input, name: '' });
+        // empty es locale violates min:2
+        const result = await service.create(actor, { ...input, name: { es: '', en: '', pt: '' } });
         expectValidationError(result);
     });
 
@@ -73,11 +78,11 @@ describe('FeatureService.create', () => {
             ...createdFeature,
             slug: 'test-feature-2'
         });
-        // First creation
+        // First creation — slug is derived from name.es
         const result1 = await service.create(actor, input);
         expectSuccess(result1);
         expect(result1.data?.slug).toBe('test-feature');
-        // Second creation with same name
+        // Second creation with same name — slug gets a suffix
         const result2 = await service.create(actor, input);
         expectSuccess(result2);
         expect(result2.data?.slug).toMatch(/^test-feature(-\d+)?$/);
@@ -91,7 +96,10 @@ describe('FeatureService.create', () => {
             icon: undefined,
             description: undefined
         });
-        const minimalInput = { name: 'Minimal Feature', isFeatured: false };
+        const minimalInput = {
+            name: { es: 'Minimal Feature', en: 'Minimal Feature', pt: 'Minimal Feature' },
+            isFeatured: false
+        };
         const result = await service.create(actor, minimalInput);
         expectSuccess(result);
         expect(result.data?.icon).toBeUndefined();
@@ -99,6 +107,7 @@ describe('FeatureService.create', () => {
     });
 
     it('should reject null for required fields', async () => {
+        // name is required — passing null triggers validation error
         // @ts-expect-error
         const result = await service.create(actor, { ...input, name: null });
         expectValidationError(result);

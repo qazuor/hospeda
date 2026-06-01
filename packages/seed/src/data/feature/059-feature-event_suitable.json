@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "059-feature-event_suitable",
-    "name": "Apto para eventos",
+    "name": {
+        "es": "Apto para eventos",
+        "en": "Apto para eventos",
+        "pt": "Apto para eventos"
+    },
     "slug": "event_suitable",
-    "description": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
+    "description": {
+        "es": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
+        "en": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales",
+        "pt": "Instalaciones y servicios apropiados para realizar celebraciones, conferencias o eventos sociales"
+    },
     "icon": "OrganizedActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,

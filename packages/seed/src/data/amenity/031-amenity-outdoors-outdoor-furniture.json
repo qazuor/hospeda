@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "031-amenity-outdoors-outdoor-furniture",
-    "name": "outdoor_furniture",
+    "name": {
+        "es": "outdoor_furniture",
+        "en": "outdoor_furniture",
+        "pt": "outdoor_furniture"
+    },
     "slug": "outdoor_furniture",
-    "description": "Mesa y sillas de exterior",
+    "description": {
+        "es": "Mesa y sillas de exterior",
+        "en": "Mesa y sillas de exterior",
+        "pt": "Mesa y sillas de exterior"
+    },
     "type": "OUTDOORS",
     "icon": "OutdoorFurnitureIcon",
     "isBuiltin": false,

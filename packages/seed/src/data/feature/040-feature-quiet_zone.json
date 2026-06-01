@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "040-feature-quiet_zone",
-    "name": "Zona de silencio",
+    "name": {
+        "es": "Zona de silencio",
+        "en": "Zona de silencio",
+        "pt": "Zona de silencio"
+    },
     "slug": "quiet_zone",
-    "description": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
+    "description": {
+        "es": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
+        "en": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio",
+        "pt": "Área específicamente designada para descanso y relajación donde se mantiene absoluto silencio"
+    },
     "icon": "QuietZoneIcon",
     "isBuiltin": true,
     "isFeatured": false,

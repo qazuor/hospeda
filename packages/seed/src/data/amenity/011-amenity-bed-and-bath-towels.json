@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "011-amenity-bed-and-bath-towels",
-    "name": "towels",
+    "name": {
+        "es": "towels",
+        "en": "towels",
+        "pt": "towels"
+    },
     "slug": "towels",
-    "description": "Toallas incluidas",
+    "description": {
+        "es": "Toallas incluidas",
+        "en": "Toallas incluidas",
+        "pt": "Toallas incluidas"
+    },
     "type": "BED_AND_BATH",
     "icon": "TowelsIcon",
     "isBuiltin": false,

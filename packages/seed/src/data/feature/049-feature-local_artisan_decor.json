@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "049-feature-local_artisan_decor",
-    "name": "Decoración local artesanal",
+    "name": {
+        "es": "Decoración local artesanal",
+        "en": "Decoración local artesanal",
+        "pt": "Decoración local artesanal"
+    },
     "slug": "local_artisan_decor",
-    "description": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
+    "description": {
+        "es": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
+        "en": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales",
+        "pt": "Ambientación con arte y artesanías tradicionales de la región creadas por artistas locales"
+    },
     "icon": "LocalCraftsIcon",
     "isBuiltin": true,
     "isFeatured": false,

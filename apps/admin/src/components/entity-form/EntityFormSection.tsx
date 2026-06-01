@@ -11,6 +11,7 @@ import {
     EventOrganizerSelectField,
     EventSelectField,
     GalleryField,
+    I18nTextField,
     ImageField,
     PostSponsorshipSelectField,
     RichTextField,
@@ -30,6 +31,7 @@ import {
 } from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
+import type { I18nText } from '@repo/schemas';
 
 /**
  * Per-field upload/delete handlers for media fields (e.g., GalleryField).
@@ -458,6 +460,60 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                     {t('admin-entities.fields.fileUploadNotImplemented')}
                                 </div>
                             </div>
+                        );
+
+                    case FieldTypeEnum.I18N_TEXT:
+                        return (
+                            <I18nTextField
+                                config={field}
+                                value={fieldValue as Partial<I18nText> | null | undefined}
+                                onChange={(v) => onFieldChange(field.id, v)}
+                                onBlur={() => onFieldBlur(field.id)}
+                                hasError={hasError}
+                                errorMessage={fieldError}
+                                localeErrors={{
+                                    es: readValue(errors, `${field.id}.es`) as string | undefined,
+                                    en: readValue(errors, `${field.id}.en`) as string | undefined,
+                                    pt: readValue(errors, `${field.id}.pt`) as string | undefined
+                                }}
+                                disabled={disabled}
+                                required={field.required}
+                                className={field.className}
+                                multiline={false}
+                                maxLength={
+                                    (field.typeConfig as { maxLength?: number } | undefined)
+                                        ?.maxLength
+                                }
+                            />
+                        );
+
+                    case FieldTypeEnum.I18N_TEXTAREA:
+                        return (
+                            <I18nTextField
+                                config={field}
+                                value={fieldValue as Partial<I18nText> | null | undefined}
+                                onChange={(v) => onFieldChange(field.id, v)}
+                                onBlur={() => onFieldBlur(field.id)}
+                                hasError={hasError}
+                                errorMessage={fieldError}
+                                localeErrors={{
+                                    es: readValue(errors, `${field.id}.es`) as string | undefined,
+                                    en: readValue(errors, `${field.id}.en`) as string | undefined,
+                                    pt: readValue(errors, `${field.id}.pt`) as string | undefined
+                                }}
+                                disabled={disabled}
+                                required={field.required}
+                                className={field.className}
+                                multiline={true}
+                                rows={
+                                    (field.typeConfig as { minRows?: number } | undefined)
+                                        ?.minRows ?? 2
+                                }
+                                maxLength={
+                                    (field.typeConfig as { maxLength?: number } | undefined)
+                                        ?.maxLength
+                                }
+                            />
                         );
 
                     default:

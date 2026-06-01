@@ -13,7 +13,9 @@ describe('FeatureService.list', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const feature = FeatureFactoryBuilder.create({ name: 'Test Feature' });
+    const feature = FeatureFactoryBuilder.create({
+        name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' }
+    });
     const paginated = { items: [feature], total: 1 };
 
     beforeEach(() => {

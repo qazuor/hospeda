@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "001-amenity-connectivity-wifi",
-    "name": "wifi",
+    "name": {
+        "es": "wifi",
+        "en": "wifi",
+        "pt": "wifi"
+    },
     "slug": "wifi",
-    "description": "Conexión Wi-Fi",
+    "description": {
+        "es": "Conexión Wi-Fi",
+        "en": "Conexión Wi-Fi",
+        "pt": "Conexión Wi-Fi"
+    },
     "type": "CONNECTIVITY",
     "icon": "WifiIcon",
     "isBuiltin": false,

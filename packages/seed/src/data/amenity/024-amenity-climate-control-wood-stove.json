@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "024-amenity-climate-control-wood-stove",
-    "name": "wood_stove",
+    "name": {
+        "es": "wood_stove",
+        "en": "wood_stove",
+        "pt": "wood_stove"
+    },
     "slug": "wood_stove",
-    "description": "Estufa a leña",
+    "description": {
+        "es": "Estufa a leña",
+        "en": "Estufa a leña",
+        "pt": "Estufa a leña"
+    },
     "type": "CLIMATE_CONTROL",
     "icon": "FireplaceIcon",
     "isBuiltin": false,

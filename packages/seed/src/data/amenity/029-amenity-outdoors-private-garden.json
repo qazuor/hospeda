@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "029-amenity-outdoors-private-garden",
-    "name": "private_garden",
+    "name": {
+        "es": "private_garden",
+        "en": "private_garden",
+        "pt": "private_garden"
+    },
     "slug": "private_garden",
-    "description": "Jardín privado",
+    "description": {
+        "es": "Jardín privado",
+        "en": "Jardín privado",
+        "pt": "Jardín privado"
+    },
     "type": "OUTDOORS",
     "icon": "PrivateGardenIcon",
     "isBuiltin": false,

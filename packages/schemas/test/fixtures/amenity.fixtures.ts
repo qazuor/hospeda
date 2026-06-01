@@ -14,30 +14,36 @@ import {
  */
 
 /**
- * Create amenity-specific entity fields
+ * Create amenity-specific entity fields.
+ * name and description are I18nText objects ({es, en, pt}).
+ * All locales default to the same Spanish value as a placeholder.
  */
-const createAmenityEntityFields = () => ({
-    slug: faker.lorem.slug(3),
-    name: faker.lorem.words({ min: 2, max: 5 }).slice(0, 100),
-    description: faker.lorem.paragraph().slice(0, 500),
-    icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
-    type: faker.helpers.arrayElement([
-        'CLIMATE_CONTROL',
-        'CONNECTIVITY',
-        'ENTERTAINMENT',
-        'KITCHEN',
-        'BED_AND_BATH',
-        'OUTDOORS',
-        'ACCESSIBILITY',
-        'SERVICES',
-        'SAFETY',
-        'FAMILY_FRIENDLY',
-        'WORK_FRIENDLY',
-        'GENERAL_APPLIANCES'
-    ] as AmenitiesTypeEnum[]),
-    isBuiltin: faker.datatype.boolean(),
-    isFeatured: faker.datatype.boolean()
-});
+const createAmenityEntityFields = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 5 }).slice(0, 100);
+    const descEs = faker.lorem.paragraph().slice(0, 490);
+    return {
+        slug: faker.lorem.slug(3),
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        description: { es: descEs, en: descEs, pt: descEs },
+        icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
+        type: faker.helpers.arrayElement([
+            'CLIMATE_CONTROL',
+            'CONNECTIVITY',
+            'ENTERTAINMENT',
+            'KITCHEN',
+            'BED_AND_BATH',
+            'OUTDOORS',
+            'ACCESSIBILITY',
+            'SERVICES',
+            'SAFETY',
+            'FAMILY_FRIENDLY',
+            'WORK_FRIENDLY',
+            'GENERAL_APPLIANCES'
+        ] as AmenitiesTypeEnum[]),
+        isBuiltin: faker.datatype.boolean(),
+        isFeatured: faker.datatype.boolean()
+    };
+};
 
 export const createValidAmenity = () => ({
     ...createBaseIdFields(),
@@ -47,44 +53,50 @@ export const createValidAmenity = () => ({
     ...createBaseAdminFields()
 });
 
-export const createMinimalAmenity = () => ({
-    id: faker.string.uuid(),
-    slug: faker.lorem.slug(3),
-    name: faker.lorem.words({ min: 2, max: 3 }),
-    type: 'CLIMATE_CONTROL' as AmenitiesTypeEnum,
-    lifecycleState: 'ACTIVE',
-    createdAt: faker.date.past(),
-    updatedAt: faker.date.recent(),
-    createdById: faker.string.uuid(),
-    updatedById: faker.string.uuid()
-});
+export const createMinimalAmenity = () => {
+    const nameEs = faker.lorem.words({ min: 2, max: 3 });
+    return {
+        id: faker.string.uuid(),
+        slug: faker.lorem.slug(3),
+        name: { es: nameEs, en: nameEs, pt: nameEs },
+        type: 'CLIMATE_CONTROL' as AmenitiesTypeEnum,
+        lifecycleState: 'ACTIVE',
+        createdAt: faker.date.past(),
+        updatedAt: faker.date.recent(),
+        createdById: faker.string.uuid(),
+        updatedById: faker.string.uuid()
+    };
+};
 
-export const createComplexAmenity = () => ({
-    ...createValidAmenity(),
-    description: faker.lorem.paragraphs(2),
-    icon: 'wifi-icon',
-    isBuiltin: true,
-    isFeatured: true,
-    // Additional metadata
-    metadata: {
-        source: 'admin_panel',
-        lastReviewed: faker.date.recent().toISOString()
-    }
-});
+export const createComplexAmenity = () => {
+    const descEs = faker.lorem.sentence().slice(0, 490);
+    return {
+        ...createValidAmenity(),
+        description: { es: descEs, en: descEs, pt: descEs },
+        icon: 'wifi-icon',
+        isBuiltin: true,
+        isFeatured: true,
+        // Additional metadata
+        metadata: {
+            source: 'admin_panel',
+            lastReviewed: faker.date.recent().toISOString()
+        }
+    };
+};
 
 export const createAmenityEdgeCases = () => [
     // Minimum length strings
     {
         ...createMinimalAmenity(),
         slug: 'abc', // minimum 3 chars
-        name: 'Wi' // minimum 2 chars
+        name: { es: 'Wi', en: 'Wi', pt: 'Wi' } // minimum 2 chars per locale
     },
     // Maximum length strings
     {
         ...createMinimalAmenity(),
         slug: 'a'.repeat(100), // maximum 100 chars
-        name: 'A'.repeat(100), // maximum 100 chars
-        description: 'D'.repeat(500) // maximum 500 chars
+        name: { es: 'A'.repeat(100), en: 'A'.repeat(100), pt: 'A'.repeat(100) }, // maximum 100 chars
+        description: { es: 'D'.repeat(500), en: 'D'.repeat(500), pt: 'D'.repeat(500) } // maximum 500 chars
     },
     // All optional fields present
     {
@@ -118,12 +130,20 @@ export const createAmenityWithInvalidFields = () => [
         ...createMinimalAmenity(),
         slug: 'Invalid Slug With Spaces'
     },
-    // Too long strings
+    // Too long strings — name/description are I18nText objects; each locale must violate max
     {
         ...createMinimalAmenity(),
         slug: createTooLongString(101),
-        name: createTooLongString(101),
-        description: createTooLongString(501)
+        name: {
+            es: createTooLongString(101),
+            en: createTooLongString(101),
+            pt: createTooLongString(101)
+        },
+        description: {
+            es: createTooLongString(501),
+            en: createTooLongString(501),
+            pt: createTooLongString(501)
+        }
     },
     // Invalid category
     {

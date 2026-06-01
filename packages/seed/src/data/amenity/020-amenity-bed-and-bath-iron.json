@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "020-amenity-bed-and-bath-iron",
-    "name": "iron",
+    "name": {
+        "es": "iron",
+        "en": "iron",
+        "pt": "iron"
+    },
     "slug": "iron",
-    "description": "Plancha de ropa",
+    "description": {
+        "es": "Plancha de ropa",
+        "en": "Plancha de ropa",
+        "pt": "Plancha de ropa"
+    },
     "type": "BED_AND_BATH",
     "icon": "ShirtIcon",
     "isBuiltin": false,

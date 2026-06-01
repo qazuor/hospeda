@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "049-amenity-services-24h-reception",
-    "name": "24h_reception",
+    "name": {
+        "es": "24h_reception",
+        "en": "24h_reception",
+        "pt": "24h_reception"
+    },
     "slug": "24h_reception",
-    "description": "Recepción 24h",
+    "description": {
+        "es": "Recepción 24h",
+        "en": "Recepción 24h",
+        "pt": "Recepción 24h"
+    },
     "type": "SERVICES",
     "icon": "Reception24hIcon",
     "isBuiltin": false,

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "075-amenity-connectivity-international-adapters",
-    "name": "international_adapters",
+    "name": {
+        "es": "international_adapters",
+        "en": "international_adapters",
+        "pt": "international_adapters"
+    },
     "slug": "international_adapters",
-    "description": "Adaptadores internacionales",
+    "description": {
+        "es": "Adaptadores internacionales",
+        "en": "Adaptadores internacionales",
+        "pt": "Adaptadores internacionales"
+    },
     "type": "CONNECTIVITY",
     "icon": "InternationalAdaptersIcon",
     "isBuiltin": false,

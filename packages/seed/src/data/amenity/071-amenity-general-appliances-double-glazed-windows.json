@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "071-amenity-general-appliances-double-glazed-windows",
-    "name": "double_glazed_windows",
+    "name": {
+        "es": "double_glazed_windows",
+        "en": "double_glazed_windows",
+        "pt": "double_glazed_windows"
+    },
     "slug": "double_glazed_windows",
-    "description": "Ventanas con doble vidrio",
+    "description": {
+        "es": "Ventanas con doble vidrio",
+        "en": "Ventanas con doble vidrio",
+        "pt": "Ventanas con doble vidrio"
+    },
     "type": "GENERAL_APPLIANCES",
     "icon": "DoubleGlazingIcon",
     "isBuiltin": false,

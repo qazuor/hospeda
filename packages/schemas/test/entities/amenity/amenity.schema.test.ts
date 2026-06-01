@@ -79,9 +79,10 @@ describe('AmenitySchema', () => {
         });
 
         it('should validate optional fields when present', () => {
+            const descVal = 'This is a detailed description of the amenity for testing';
             const amenityWithOptionals = {
                 ...createMinimalAmenity(),
-                description: 'This is a detailed description of the amenity',
+                description: { es: descVal, en: descVal, pt: descVal },
                 icon: 'wifi-icon',
                 isBuiltin: true,
                 isFeatured: true
@@ -90,7 +91,7 @@ describe('AmenitySchema', () => {
             expect(() => AmenitySchema.parse(amenityWithOptionals)).not.toThrow();
 
             const result = AmenitySchema.parse(amenityWithOptionals);
-            expect(result.description).toBe(amenityWithOptionals.description);
+            expect(result.description).toEqual(amenityWithOptionals.description);
             expect(result.icon).toBe(amenityWithOptionals.icon);
             expect(result.isBuiltin).toBe(amenityWithOptionals.isBuiltin);
             expect(result.isFeatured).toBe(amenityWithOptionals.isFeatured);
@@ -259,10 +260,12 @@ describe('AmenitySchema', () => {
         });
 
         it('should validate description length limits', () => {
+            const shortDesc = 'Short description ok';
+            const maxDesc = 'A'.repeat(500);
             const validDescriptions = [
                 undefined, // optional
-                'Short description',
-                'A'.repeat(500) // max length
+                { es: shortDesc, en: shortDesc, pt: shortDesc },
+                { es: maxDesc, en: maxDesc, pt: maxDesc } // max length per locale
             ];
 
             validDescriptions.forEach((description, index) => {
@@ -277,10 +280,11 @@ describe('AmenitySchema', () => {
                 ).not.toThrow();
             });
 
-            // Test invalid description (too long)
+            // Test invalid description (too long per locale)
+            const tooLong = 'A'.repeat(501);
             const tooLongDescription = {
                 ...createMinimalAmenity(),
-                description: 'A'.repeat(501)
+                description: { es: tooLong, en: tooLong, pt: tooLong }
             };
 
             expect(() => AmenitySchema.parse(tooLongDescription)).toThrow(ZodError);
@@ -376,7 +380,11 @@ describe('AmenitySchema', () => {
             // Type checks
             expect(typeof result.id).toBe('string');
             expect(typeof result.slug).toBe('string');
-            expect(typeof result.name).toBe('string');
+            // name is now an I18nText object with es/en/pt locale keys
+            expect(typeof result.name).toBe('object');
+            expect(typeof result.name.es).toBe('string');
+            expect(typeof result.name.en).toBe('string');
+            expect(typeof result.name.pt).toBe('string');
             expect(typeof result.type).toBe('string');
             expect(typeof result.lifecycleState).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);
@@ -384,7 +392,9 @@ describe('AmenitySchema', () => {
 
             // Optional fields type checks
             if (result.description) {
-                expect(typeof result.description).toBe('string');
+                // description is now an I18nText object with es/en/pt locale keys
+                expect(typeof result.description).toBe('object');
+                expect(typeof result.description.es).toBe('string');
             }
             if (result.icon) {
                 expect(typeof result.icon).toBe('string');

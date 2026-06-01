@@ -30,8 +30,9 @@ export const seedFeatures = createSeedFactory({
 
     // Custom entity info for better logging
     getEntityInfo: (item, _context) => {
-        const feature = item as { name: string; type?: string };
+        const feature = item as { name: { es: string } | string; type?: string };
+        const displayName = typeof feature.name === 'object' ? feature.name.es : feature.name;
         const typeInfo = feature.type ? ` (${feature.type})` : '';
-        return `"${feature.name}"${typeInfo}`;
+        return `"${displayName}"${typeInfo}`;
     }
 });

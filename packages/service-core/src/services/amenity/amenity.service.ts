@@ -1,4 +1,10 @@
-import { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
+import {
+    AccommodationModel,
+    AmenityModel,
+    RAccommodationAmenityModel,
+    escapeLikePattern,
+    sql
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationAmenityRelation,
@@ -472,6 +478,9 @@ export class AmenityService extends BaseCrudRelatedService<
     /**
      * Executes a search for amenities based on the provided parameters and actor.
      *
+     * The `name` filter is a plain text search term applied against the Spanish
+     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     *
      * @param params - The search parameters (filters, pagination, sorting).
      * @param _actor - The actor performing the search.
      * @returns An object containing the search results, page, pageSize, and total count.
@@ -490,14 +499,25 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            name,
             ...filterParams
         } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        // name is a plain text search term; the DB column is now JSONB.
+        // Do NOT pass it to buildWhereClause — use additionalConditions instead
+        // to query the Spanish locale via name->>'es' ILIKE %term%.
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+        return this.model.findAll(filterParams, { page, pageSize }, additionalConditions);
     }
 
     /**
      * Searches for amenities with accommodation counts.
      * Uses a single batch COUNT query instead of N+1 individual queries.
+     *
+     * The `name` filter is a plain text search term applied against the Spanish
+     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     *
      * @param actor - The actor performing the action
      * @param params - The search parameters
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -518,10 +538,20 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            name,
             ...filterParams
         } = params;
 
-        const result = await this.model.findAll(filterParams, { page, pageSize });
+        // name is a plain text search term; the DB column is now JSONB.
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+
+        const result = await this.model.findAll(
+            filterParams,
+            { page, pageSize },
+            additionalConditions
+        );
 
         // Batch fetch accommodation counts in a single query instead of N+1
         const amenityIds = result.items.map((amenity) => amenity.id as string);
@@ -548,6 +578,9 @@ export class AmenityService extends BaseCrudRelatedService<
     /**
      * Executes a count of amenities based on the provided parameters and actor.
      *
+     * The `name` filter is a plain text search term applied against the Spanish
+     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     *
      * @param params - The search parameters (filters).
      * @param _actor - The actor performing the count.
      * @returns An object containing the count of amenities.
@@ -562,15 +595,20 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            name,
             ...filterParams
         } = params;
-        const count = await this.model.count(filterParams);
+        // name is a plain text search term; the DB column is now JSONB.
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+        const count = await this.model.count(filterParams, { additionalConditions });
         return { count };
     }
 
     /**
      * Lifecycle hook: normalizes input and generates slug before creating an amenity.
-     * If slug is not provided, generates a unique slug from the name.
+     * If slug is not provided, generates a unique slug from the Spanish locale of the name.
      */
     protected async _beforeCreate(
         data: z.infer<typeof AmenityCreateInputSchema>,
@@ -588,7 +626,8 @@ export class AmenityService extends BaseCrudRelatedService<
 
     /**
      * Lifecycle hook: normalizes input and updates slug if name changes.
-     * If name is updated and slug is not provided, regenerates slug from new name.
+     * If name is updated and slug is not provided, regenerates slug from the
+     * Spanish locale of the new name (compared against the existing entity).
      */
     protected async _beforeUpdate(
         data: z.infer<typeof AmenityUpdateInputSchema>,
@@ -604,7 +643,9 @@ export class AmenityService extends BaseCrudRelatedService<
                 const found = await this.model.findById(data.id as AmenityId);
                 entity = found ?? undefined;
             }
-            if (!entity || (entity && data.name !== entity.name)) {
+            // Compare by the canonical locale (es) to detect a real name change
+            const nameChanged = !entity || data.name.es !== entity.name.es;
+            if (nameChanged) {
                 slug = await generateAmenitySlug(data.name, this.model);
             }
         }

@@ -13,8 +13,12 @@ import {
 } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
-const feature = FeatureFactoryBuilder.create({ name: 'Test Feature' });
-const updateInput = { name: 'Updated Feature' };
+const feature = FeatureFactoryBuilder.create({
+    name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' }
+});
+const updateInput = {
+    name: { es: 'Updated Feature', en: 'Updated Feature', pt: 'Updated Feature' }
+};
 
 describe('FeatureService.update', () => {
     let service: FeatureService;
@@ -48,7 +52,11 @@ describe('FeatureService.update', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        const result = await service.update(actor, feature.id, { ...updateInput, name: '' });
+        // empty es locale violates min:2
+        const result = await service.update(actor, feature.id, {
+            ...updateInput,
+            name: { es: '', en: '', pt: '' }
+        });
         expectValidationError(result);
     });
 
@@ -66,17 +74,22 @@ describe('FeatureService.update', () => {
     });
 
     it('should allow partial update (only description)', async () => {
+        const newDescription = {
+            es: 'Nueva descripción suficientemente larga',
+            en: 'New description with enough characters',
+            pt: 'Nova descrição com caracteres suficientes'
+        };
         featureModelMock.findById.mockResolvedValue(feature);
         featureModelMock.update.mockResolvedValue({
             ...feature,
-            description: 'New description with enough characters'
+            description: newDescription
         });
         const result = await service.update(actor, feature.id, {
-            description: 'New description with enough characters'
+            description: newDescription
         });
         expectSuccess(result);
-        expect(result.data?.description).toBe('New description with enough characters');
-        expect(result.data?.name).toBe(feature.name);
+        expect(result.data?.description).toEqual(newDescription);
+        expect(result.data?.name).toEqual(feature.name);
     });
 
     it('should reject null for required fields', async () => {
@@ -91,7 +104,7 @@ describe('FeatureService.update', () => {
         featureModelMock.update.mockResolvedValue({ ...feature });
         const result = await service.update(actor, feature.id, {});
         expectSuccess(result);
-        expect(result.data?.name).toBe(feature.name);
+        expect(result.data?.name).toEqual(feature.name);
     });
 
     it('should update isFeatured only', async () => {
@@ -102,7 +115,7 @@ describe('FeatureService.update', () => {
         expect(result.data?.isFeatured).toBe(true);
     });
 
-    it('should generate a unique slug if name is duplicated', async () => {
+    it('should generate a unique slug if name (es locale) changes', async () => {
         featureModelMock.findById.mockResolvedValue(feature);
         featureModelMock.findOne
             .mockResolvedValueOnce(null) // first slug is unique
@@ -112,21 +125,21 @@ describe('FeatureService.update', () => {
         featureModelMock.update.mockResolvedValueOnce({
             ...feature,
             ...updateInput,
-            slug: 'test-feature'
+            slug: 'updated-feature'
         });
         featureModelMock.update.mockResolvedValueOnce({
             ...feature,
             ...updateInput,
-            slug: 'test-feature-2'
+            slug: 'updated-feature-2'
         });
-        // First update
+        // First update — slug derived from name.es
         const result1 = await service.update(actor, feature.id, updateInput);
         expectSuccess(result1);
-        expect(result1.data?.slug).toBe('test-feature');
-        // Second update with same name
+        expect(result1.data?.slug).toBe('updated-feature');
+        // Second update with same name — slug gets a suffix
         const result2 = await service.update(actor, feature.id, updateInput);
         expectSuccess(result2);
-        expect(result2.data?.slug).toMatch(/^test-feature(-\d+)?$/);
+        expect(result2.data?.slug).toMatch(/^updated-feature(-\d+)?$/);
         expect(result2.data?.slug).not.toBe(result1.data?.slug);
     });
 });

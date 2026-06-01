@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "072-feature-bilingual_services",
-    "name": "Servicios bilingües",
+    "name": {
+        "es": "Servicios bilingües",
+        "en": "Servicios bilingües",
+        "pt": "Servicios bilingües"
+    },
     "slug": "bilingual_services",
-    "description": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
+    "description": {
+        "es": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
+        "en": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
+        "pt": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales"
+    },
     "icon": "BilingualServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,

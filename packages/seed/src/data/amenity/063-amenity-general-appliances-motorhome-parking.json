@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "063-amenity-general-appliances-motorhome-parking",
-    "name": "motorhome_parking",
+    "name": {
+        "es": "motorhome_parking",
+        "en": "motorhome_parking",
+        "pt": "motorhome_parking"
+    },
     "slug": "motorhome_parking",
-    "description": "Estacionamiento para motorhome",
+    "description": {
+        "es": "Estacionamiento para motorhome",
+        "en": "Estacionamiento para motorhome",
+        "pt": "Estacionamiento para motorhome"
+    },
     "type": "GENERAL_APPLIANCES",
     "icon": "MotorhomeParkingIcon",
     "isBuiltin": false,

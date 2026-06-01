@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "031-feature-room_rental",
-    "name": "Alquiler por habitación",
+    "name": {
+        "es": "Alquiler por habitación",
+        "en": "Alquiler por habitación",
+        "pt": "Alquiler por habitación"
+    },
     "slug": "room_rental",
-    "description": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
+    "description": {
+        "es": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
+        "en": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes",
+        "pt": "Modalidad de hospedaje donde se alquilan habitaciones individuales compartiendo algunas áreas comunes"
+    },
     "icon": "RoomRentalIcon",
     "isBuiltin": true,
     "isFeatured": false,

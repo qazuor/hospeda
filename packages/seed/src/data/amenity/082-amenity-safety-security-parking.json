@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "082-amenity-safety-security-parking",
-    "name": "security_parking",
+    "name": {
+        "es": "security_parking",
+        "en": "security_parking",
+        "pt": "security_parking"
+    },
     "slug": "security_parking",
-    "description": "Estacionamiento vigilado",
+    "description": {
+        "es": "Estacionamiento vigilado",
+        "en": "Estacionamiento vigilado",
+        "pt": "Estacionamiento vigilado"
+    },
     "type": "SAFETY",
     "icon": "SecureParkingIcon",
     "isBuiltin": false,

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "006-feature-central_area",
-    "name": "Zona céntrica",
+    "name": {
+        "es": "Zona céntrica",
+        "en": "Zona céntrica",
+        "pt": "Zona céntrica"
+    },
     "slug": "central_area",
-    "description": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
+    "description": {
+        "es": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
+        "en": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales",
+        "pt": "Posición estratégica en el centro de la ciudad o pueblo, con fácil acceso a servicios, comercios y atracciones principales"
+    },
     "icon": "CentralAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

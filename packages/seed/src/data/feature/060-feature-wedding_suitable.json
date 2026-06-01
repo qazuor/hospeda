@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "060-feature-wedding_suitable",
-    "name": "Apto para bodas",
+    "name": {
+        "es": "Apto para bodas",
+        "en": "Apto para bodas",
+        "pt": "Apto para bodas"
+    },
     "slug": "wedding_suitable",
-    "description": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
+    "description": {
+        "es": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
+        "en": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales",
+        "pt": "Espacios románticos y servicios especializados para ceremonias y celebraciones matrimoniales"
+    },
     "icon": "CouplesFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,
