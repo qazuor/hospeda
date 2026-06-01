@@ -444,9 +444,32 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
         const billingEnabled = c.get('billingEnabled');
 
         if (!billingEnabled) {
-            // Billing not enabled - set empty entitlements
-            c.set('userEntitlements', new Set<EntitlementKey>());
-            c.set('userLimits', new Map<LimitKey, number>());
+            // Billing not enabled (e.g. the payment provider is unconfigured in
+            // this environment). This must NOT strip entitlements from
+            // authenticated users: a free feature like saving favorites cannot
+            // depend on whether the payment integration is wired up. Grant the
+            // same role-appropriate defaults as the no-customer branch below
+            // (HOST → owner-basico draft defaults, other authenticated users →
+            // tourist-free). Guests get nothing. Staff are already handled by the
+            // bypass above. Paid-plan upgrades cannot be resolved while billing is
+            // off, so those users fall back to the free baseline until it is
+            // configured. (BETA-42: billing-off locked every user out of favorites.)
+            const actor = c.get('actor');
+
+            if (!actor || isGuestActor(actor) || !actor.id) {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                c.set('userLimits', new Map<LimitKey, number>());
+                c.set('billingLoadFailed', false);
+                await next();
+                return;
+            }
+
+            const fallback =
+                (actor.role as RoleEnum | undefined) === RoleEnum.HOST
+                    ? buildHostDraftDefaultsResult()
+                    : buildDefaultEntitlementsResult();
+            c.set('userEntitlements', fallback.entitlements);
+            c.set('userLimits', fallback.limits);
             c.set('billingLoadFailed', false);
             await next();
             return;

@@ -22,12 +22,14 @@ import { LimitKey } from '@repo/billing';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
+    type Actor,
     OwnerPromotionService,
     ServiceError,
     UserBookmarkService
 } from '@repo/service-core';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { AppMiddleware } from '../types';
+import type { AppBindings, AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
@@ -446,6 +448,84 @@ export function enforcePromotionLimit(): AppMiddleware {
  * );
  * ```
  */
+/**
+ * Asserts the authenticated actor has not reached their MAX_FAVORITES limit,
+ * throwing a 403 LIMIT_REACHED ServiceError when they have. Also emits the
+ * `X-Usage-Warning` header at the warning/critical thresholds.
+ *
+ * Extracted from {@link enforceFavoritesLimit} so the bookmark toggle route can
+ * invoke it imperatively from its CREATE branch ONLY. A toggle that REMOVES an
+ * existing favorite must never be blocked by the limit — otherwise a user
+ * sitting at their cap cannot even un-favorite to free up space (BETA-42).
+ *
+ * @param params.context - Hono request context carrying the loaded user limits.
+ * @param params.actor - The authenticated actor.
+ */
+export async function assertFavoritesLimitOrThrow(params: {
+    readonly context: Context<AppBindings>;
+    readonly actor: Actor;
+}): Promise<void> {
+    const { context: c, actor } = params;
+
+    // Get current favorites (bookmarks) count from UserBookmarkService
+    let currentCount = 0;
+    try {
+        const bookmarkService = new UserBookmarkService({ logger: apiLogger });
+        const countResult = await bookmarkService.countBookmarksForUser(actor, {
+            userId: actor.id
+        });
+
+        if (countResult.data) {
+            currentCount = countResult.data.count;
+        } else if (countResult.error) {
+            apiLogger.warn(
+                `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
+            );
+        }
+    } catch (countError) {
+        apiLogger.warn(
+            `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
+        );
+        // Continue with 0 count - don't block user on service failure
+    }
+
+    // Check limit
+    const limitCheck = checkLimit({
+        context: c,
+        limitKey: LimitKey.MAX_FAVORITES,
+        currentCount
+    });
+
+    // Calculate threshold and usage percentage
+    const threshold = calculateThreshold(currentCount, limitCheck.maxAllowed);
+    const usagePercent = calculateUsagePercent(currentCount, limitCheck.maxAllowed);
+
+    // Add X-Usage-Warning header if at warning or critical threshold
+    if (threshold === 'warning' || threshold === 'critical') {
+        c.header(
+            'X-Usage-Warning',
+            `limitKey=${LimitKey.MAX_FAVORITES};usage=${currentCount};max=${limitCheck.maxAllowed};threshold=${threshold}`
+        );
+    }
+
+    if (!limitCheck.allowed) {
+        apiLogger.warn(
+            `Favorites limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.LIMIT_REACHED,
+            limitCheck.upgradeMessage ?? 'Favorites limit reached',
+            buildLimitReachedDetails({
+                limitKey: LimitKey.MAX_FAVORITES,
+                currentCount: limitCheck.currentCount,
+                maxAllowed: limitCheck.maxAllowed,
+                usagePercent
+            })
+        );
+    }
+}
+
 export function enforceFavoritesLimit(): AppMiddleware {
     return async (c, next) => {
         try {
@@ -458,63 +538,7 @@ export function enforceFavoritesLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current favorites (bookmarks) count from UserBookmarkService
-            let currentCount = 0;
-            try {
-                const bookmarkService = new UserBookmarkService({ logger: apiLogger });
-                const countResult = await bookmarkService.countBookmarksForUser(actor, {
-                    userId: actor.id
-                });
-
-                if (countResult.data) {
-                    currentCount = countResult.data.count;
-                } else if (countResult.error) {
-                    apiLogger.warn(
-                        `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
-                    );
-                }
-            } catch (countError) {
-                apiLogger.warn(
-                    `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
-                );
-                // Continue with 0 count - don't block user on service failure
-            }
-
-            // Check limit
-            const limitCheck = checkLimit({
-                context: c,
-                limitKey: LimitKey.MAX_FAVORITES,
-                currentCount
-            });
-
-            // Calculate threshold and usage percentage
-            const threshold = calculateThreshold(currentCount, limitCheck.maxAllowed);
-            const usagePercent = calculateUsagePercent(currentCount, limitCheck.maxAllowed);
-
-            // Add X-Usage-Warning header if at warning or critical threshold
-            if (threshold === 'warning' || threshold === 'critical') {
-                c.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_FAVORITES};usage=${currentCount};max=${limitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!limitCheck.allowed) {
-                apiLogger.warn(
-                    `Favorites limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
-                );
-
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    limitCheck.upgradeMessage ?? 'Favorites limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_FAVORITES,
-                        currentCount: limitCheck.currentCount,
-                        maxAllowed: limitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
+            await assertFavoritesLimitOrThrow({ context: c, actor });
 
             // Limit OK - proceed
             await next();

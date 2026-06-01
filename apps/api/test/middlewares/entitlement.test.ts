@@ -97,34 +97,117 @@ describe('entitlementMiddleware', () => {
     });
 
     describe('when billing is not enabled', () => {
-        it('should set empty entitlements and limits', async () => {
+        // BETA-42: when the payment provider is unconfigured, billing is
+        // disabled. This must NOT strip entitlements from authenticated users —
+        // a free feature like saving favorites cannot depend on the payment
+        // integration being wired up. Authenticated users get their
+        // role-appropriate defaults (tourist-free baseline; HOST → owner-basico
+        // draft), mirroring the no-customer branch. Only guests /
+        // unauthenticated requests get empty entitlements.
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectActor = (actor: {
+            id: string;
+            role: RoleEnum;
+            permissions: string[];
+            email: string;
+        }) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                c.set('actor', actor as unknown as InjectedActor);
+                return next();
+            });
+
+        it('should set empty entitlements when there is no actor (unauthenticated)', async () => {
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                return next();
+            });
             app.use(entitlementMiddleware());
-            app.get('/test', (c) => {
-                const entitlements = c.get('userEntitlements');
-                const limits = c.get('userLimits');
-                return c.json({
-                    entitlementsCount: entitlements.size,
-                    limitsCount: limits.size
-                });
-            });
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
 
-            // Mock context without billing enabled
-            const _mockGet = vi.fn((key: string) => {
-                if (key === 'billingEnabled') return false;
-                if (key === 'billingCustomerId') return null;
-                return undefined;
-            });
-
-            const res = await app.request('/test', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
+            const res = await app.request('/test');
             const data = await res.json();
             expect(data.entitlementsCount).toBe(0);
             expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set empty entitlements for a GUEST actor', async () => {
+            injectActor({
+                id: '00000000-0000-4000-8000-000000000000',
+                role: RoleEnum.GUEST,
+                permissions: [],
+                email: ''
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should grant tourist-free defaults to an authenticated USER even when billing is disabled (BETA-42)', async () => {
+            injectActor({
+                id: 'user-billing-off',
+                role: RoleEnum.USER,
+                permissions: [],
+                email: 'user@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // The crux of BETA-42: saving favorites must work with billing off.
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            // HOST-only entitlements must NOT leak to a USER actor.
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should grant owner-basico defaults to a HOST actor when billing is disabled (BETA-42)', async () => {
+            injectActor({
+                id: 'host-billing-off',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
         });
     });
 
