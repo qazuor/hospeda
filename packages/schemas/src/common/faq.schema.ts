@@ -35,7 +35,14 @@ export const BaseFaqSchema = z.object({
         })
         .min(2, { message: 'zodError.common.faq.category.min' })
         .max(100, { message: 'zodError.common.faq.category.max' })
-        .nullish()
+        .nullish(),
+
+    /**
+     * Display order for this FAQ within its parent entity. Nullable because the column
+     * was added additively (SPEC-177); existing rows are backfilled by migration.
+     * Non-negative integer; lower values appear first.
+     */
+    displayOrder: z.number().int().nonnegative().nullish()
 });
 export type BaseFaqType = z.infer<typeof BaseFaqSchema>;
 
