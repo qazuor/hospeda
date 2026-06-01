@@ -356,6 +356,8 @@ export function ToastViewport({ locale = 'es' }: ToastViewportProps) {
             // so `window.__t.addToast(...)` from DevTools updates the visible
             // toasts. Without this the console import resolves to a separate
             // module instance and toasts are added to a phantom store.
+            // TYPE-WORKAROUND: `window` has no `__t` property in its DOM type; we attach
+            // the store instance here in dev only so DevTools can call `window.__t.addToast`.
             (window as unknown as { __t: typeof toastStore }).__t = toastStore;
         }
     }, []);
