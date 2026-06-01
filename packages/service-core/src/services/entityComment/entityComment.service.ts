@@ -6,12 +6,14 @@ import {
     type EntityComment,
     type EntityCommentAdminSearch,
     EntityCommentAdminSearchSchema,
+    type EntityCommentRecentItem,
     EntityTypeEnum,
     EntityTypeEnumSchema,
     ModerateEntityCommentInputSchema,
     ModerationStatusEnum,
     ModerationStatusEnumSchema,
     PublicCommentThreadQuerySchema,
+    RecentCommentsQuerySchema,
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
@@ -19,6 +21,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import {
     type Actor,
+    type AdminSearchExecuteParams,
     type PaginatedListOutput,
     type ServiceConfig,
     type ServiceContext,
@@ -30,6 +33,7 @@ import {
     assertCommentEntityType,
     checkCanCreateComment,
     checkCanListComments,
+    checkCanListRecentComments,
     checkCanModerateComment,
     checkCanViewComment
 } from './entityComment.permissions';
@@ -55,6 +59,29 @@ const ModerateCommentInputSchema = ModerateEntityCommentInputSchema.extend({
 const EntityCommentServiceUpdateSchema = z
     .object({ moderationState: ModerationStatusEnumSchema.optional() })
     .strict();
+
+/** A comment row with its (optional) loaded author relation. */
+type CommentWithAuthor = EntityComment & {
+    author?: { displayName?: string | null } | null;
+};
+
+/**
+ * Flattens a comment (with its loaded author relation) into the fixed
+ * recent-feed item shape (SPEC-165 §5.4, AC-18). Falls back to a deleted-user
+ * placeholder when the author is missing, matching the public/admin mappers.
+ */
+const toRecentItem = (comment: EntityComment): EntityCommentRecentItem => {
+    const author = (comment as CommentWithAuthor).author ?? null;
+    return {
+        id: comment.id,
+        entityType: comment.entityType,
+        entityId: comment.entityId,
+        content: comment.content,
+        authorName: author?.displayName ?? '[Usuario eliminado]',
+        moderationState: comment.moderationState,
+        createdAt: comment.createdAt
+    };
+};
 
 /**
  * Service for polymorphic post/event comments (SPEC-165).
@@ -575,5 +602,69 @@ export class EntityCommentService extends BaseCrudService<
     ): Promise<CountResponse> {
         const count = await this.model.count(this._buildAdminWhere(params), { tx: ctx?.tx });
         return { count };
+    }
+
+    // ========================================================================
+    // RECENT FEED — cross-entity flat list of the newest comments (AC-18)
+    // ========================================================================
+
+    /**
+     * Returns the most recent comments across POST and EVENT entities as a flat,
+     * fixed-shape list ordered by `createdAt` DESC and capped at `pageSize`
+     * (default 10, max 50 — no deeper pagination). All moderation states are
+     * included; soft-deleted comments are excluded (SPEC-165 §5.4, AC-18).
+     *
+     * Gated by {@link checkCanListRecentComments}: the actor must hold BOTH
+     * `POST_COMMENT_VIEW` and `EVENT_COMMENT_VIEW` (defense in depth — the admin
+     * route also enforces this via `requiredPermissions`).
+     *
+     * @param actor - The requesting actor.
+     * @param input - `{ pageSize? }` (coerced/capped by `RecentCommentsQuerySchema`).
+     * @param ctx - Optional service context.
+     * @returns A flat list of recent-feed items.
+     */
+    public async listRecent(
+        actor: Actor,
+        input: { pageSize?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<EntityCommentRecentItem[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listRecent',
+            input: { ...input, actor },
+            schema: RecentCommentsQuerySchema,
+            ctx,
+            execute: async (validated, validActor, execCtx) => {
+                checkCanListRecentComments(validActor);
+                const result = await this.model.findAllWithRelations(
+                    { author: true },
+                    { deletedAt: null },
+                    {
+                        page: 1,
+                        pageSize: validated.pageSize,
+                        sortBy: 'createdAt',
+                        sortOrder: 'desc'
+                    },
+                    undefined,
+                    execCtx?.tx
+                );
+                return result.items.map(toRecentItem);
+            }
+        });
+    }
+
+    /**
+     * Override of the base admin-search executor (AC-17).
+     *
+     * The base `adminList` injects `where.lifecycleState = status` for any
+     * `?status` other than the default `'all'`, but `entity_comments` has no
+     * `lifecycleState` column. Drop that key here before delegating so a stray
+     * status filter can never produce an invalid WHERE clause. Everything else
+     * (author relation loading, pagination, search) is preserved by `super`.
+     */
+    protected async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<EntityComment>> {
+        const { lifecycleState: _lifecycleState, ...where } = params.where;
+        return super._executeAdminSearch({ ...params, where });
     }
 }

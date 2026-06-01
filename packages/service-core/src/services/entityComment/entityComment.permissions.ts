@@ -123,3 +123,25 @@ export function checkCanListComments(actor: Actor): void {
         );
     }
 }
+
+/**
+ * Recent-feed gate: the actor must hold BOTH comment `_VIEW` permissions
+ * (POST and EVENT). The recent feed merges both entity types into a single flat
+ * list with no per-row filtering, so partial visibility is not offered — full
+ * cross-entity read access is required (SPEC-165 AC-18). The admin route also
+ * enforces this via `requiredPermissions`; this check is defense in depth.
+ *
+ * @throws {ServiceError} FORBIDDEN if the actor lacks either view permission.
+ */
+export function checkCanListRecentComments(actor: Actor): void {
+    assertActor(actor);
+    const hasBothViews =
+        actor.permissions.includes(PermissionEnum.POST_COMMENT_VIEW) &&
+        actor.permissions.includes(PermissionEnum.EVENT_COMMENT_VIEW);
+    if (!hasBothViews) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to list recent comments.'
+        );
+    }
+}
