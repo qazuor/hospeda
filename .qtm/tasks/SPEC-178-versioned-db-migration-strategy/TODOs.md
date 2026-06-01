@@ -1,11 +1,11 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 1/26 (in-progress).
+26 atomic tasks across 6 phase groups. Status: 2/26 (in-progress).
 
 ## Phase: foundations (migration artifacts)
 
 - [x] **T-001** Adopt drizzle-kit generate+migrate config; commit the journal — un-gitignored `migrations/meta/`, config confirmed
-- [ ] **T-002** Generate the 0000 baseline (full schema incl. 29 billing tables) — *blockedBy T-001*
+- [x] **T-002** Generate the 0000 baseline (full schema incl. 29 billing tables) — `0000_baseline.sql` + journal; validated clean apply (82 tables, 32 billing, 45 enums, exit 0) on ephemeral PG
 - [ ] **T-003** Build `migrations/extras/` — consolidate 21 cat-A extras (`NNN-name.kind.sql`) — *blockedBy T-001*
 - [ ] **T-004** Delete 8 obsolete B/C/D + gh_refresh role + dead `verify-gh-refresh.mjs` — *blockedBy T-003*
 - [ ] **T-005** Fix `db:migrate` alias to real `drizzle-kit migrate` — *blockedBy T-002*

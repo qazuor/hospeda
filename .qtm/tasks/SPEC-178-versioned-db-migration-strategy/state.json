@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 26,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 3.0
     },
@@ -24,21 +24,29 @@
             "tags": ["db", "drizzle", "config", "phase-foundations"],
             "phase": "foundations",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": "2026-06-01T00:00:00.000Z", "completed": "2026-06-01T00:00:00.000Z" }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Generate the 0000 baseline migration (full schema incl. 29 billing tables)",
-            "description": "Run pnpm db:generate to emit migrations/0000_baseline.sql capturing the entire current TS schema, including all 29 billing tables (24 from @qazuor/qzpay-drizzle via src/billing/schemas.ts + 5 repo-owned src/schemas/billing/). Acceptance: 0000_*.sql created, journal entry added, applies cleanly via `drizzle-kit migrate` on an empty DB, FK ordering resolved, no text->jsonb cast needed (types correct from the start).",
-            "status": "pending",
+            "description": "Run pnpm db:generate to emit migrations/0000_baseline.sql capturing the entire current TS schema, including all 29 billing tables (24 from @qazuor/qzpay-drizzle via src/billing/schemas.ts + 5 repo-owned src/schemas/billing/). Acceptance: 0000_*.sql created, journal entry added, applies cleanly via `drizzle-kit migrate` on an empty DB, FK ordering resolved, no text->jsonb cast needed (types correct from the start). DONE: generated 0000_baseline.sql (1934 lines) + meta/_journal.json + 0000_snapshot.json via offline `drizzle-kit generate --name baseline` (no DB needed). VALIDATED on an ephemeral postgres:15-alpine (port 55432): CREATE EXTENSION (uuid-ossp/pgcrypto/unaccent) preflight then apply -> ON_ERROR_STOP exit 0, 82 base tables, 32 billing tables, 45 enums, zero errors. Confirms FK ordering, billing inclusion (OQ4), and the extensions-preflight requirement (OQ2/T-006: gen_random_uuid needs pgcrypto BEFORE migrate).",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-012", "T-015", "T-017"],
             "subtasks": [],
             "tags": ["db", "drizzle", "migration", "baseline", "billing", "phase-foundations"],
             "phase": "foundations",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
         },
         {
             "id": "T-003",
@@ -52,7 +60,11 @@
             "tags": ["db", "extras", "postgres", "consolidation", "phase-foundations"],
             "phase": "foundations",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -66,7 +78,11 @@
             "tags": ["db", "cleanup", "gh-refresh", "phase-foundations"],
             "phase": "foundations",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -80,7 +96,11 @@
             "tags": ["db", "scripts", "phase-foundations"],
             "phase": "foundations",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -94,7 +114,11 @@
             "tags": ["db", "postgres", "extensions", "reset", "phase-foundations"],
             "phase": "foundations",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -108,7 +132,11 @@
             "tags": ["scripts", "vps", "prod", "phase-tooling"],
             "phase": "tooling",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -122,7 +150,11 @@
             "tags": ["hops", "server-tools", "vps", "phase-tooling"],
             "phase": "tooling",
             "qualityGate": { "lint": true, "typecheck": true, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -136,7 +168,11 @@
             "tags": ["db", "scripts", "extras", "phase-tooling"],
             "phase": "tooling",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -150,7 +186,11 @@
             "tags": ["hops", "server-tools", "seed", "phase-tooling"],
             "phase": "tooling",
             "qualityGate": { "lint": true, "typecheck": true, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -164,7 +204,11 @@
             "tags": ["hops", "server-tools", "reset", "phase-tooling"],
             "phase": "tooling",
             "qualityGate": { "lint": true, "typecheck": true, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -178,7 +222,11 @@
             "tags": ["ci", "drift", "guards", "phase-ci"],
             "phase": "ci",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -192,7 +240,11 @@
             "tags": ["ci", "testing", "e2e", "phase-ci"],
             "phase": "ci",
             "qualityGate": { "lint": null, "typecheck": null, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -206,7 +258,11 @@
             "tags": ["ci", "env", "guards", "phase-ci"],
             "phase": "ci",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -220,7 +276,11 @@
             "tags": ["testing", "drift", "integration", "phase-testing"],
             "phase": "testing",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -234,7 +294,11 @@
             "tags": ["testing", "idempotency", "phase-testing"],
             "phase": "testing",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -248,7 +312,11 @@
             "tags": ["testing", "regression", "conversion", "phase-testing"],
             "phase": "testing",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -262,7 +330,11 @@
             "tags": ["testing", "ci", "drift", "phase-testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -276,7 +348,11 @@
             "tags": ["docs", "claude-md", "phase-docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -290,7 +366,11 @@
             "tags": ["docs", "claude-md", "phase-docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -304,7 +384,11 @@
             "tags": ["docs", "adr", "phase-docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -318,7 +402,11 @@
             "tags": ["docs", "guides", "phase-docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -332,7 +420,11 @@
             "tags": ["docs", "agents", "claude-md", "phase-docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -346,7 +438,11 @@
             "tags": ["vps", "staging", "validation", "phase-validation"],
             "phase": "validation",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -360,7 +456,11 @@
             "tags": ["vps", "prod", "validation", "phase-validation"],
             "phase": "validation",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -374,7 +474,11 @@
             "tags": ["cleanup", "close-out", "phase-validation"],
             "phase": "validation",
             "qualityGate": { "lint": true, "typecheck": true, "tests": true },
-            "timestamps": { "created": "2026-06-01T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ]
 }
