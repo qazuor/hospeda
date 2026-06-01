@@ -40,12 +40,87 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { forceVerifyEmail, setUserRole } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:3000';
+const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
+
+interface BrowserCookie {
+    name: string;
+    value: string;
+    domain: string;
+    path: string;
+}
+
+/**
+ * Creates a verified SUPER_ADMIN and returns its session cookies as
+ * Playwright cookie objects.
+ *
+ * Better Auth is configured with `requireEmailVerification: true`, so sign-up
+ * does NOT issue a session cookie. The working flow is: sign-up → verify email
+ * (direct SQL) → promote role → sign-in (which DOES issue the session cookie).
+ * State-changing auth routes enforce CSRF via the Origin header, so both
+ * requests send a trusted Origin (the web base URL is in trustedOrigins).
+ */
+async function createAdminSession(): Promise<{
+    userId: string;
+    cookies: BrowserCookie[];
+}> {
+    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const email = `e2e-spec172-${suffix}@hospeda-test.local`;
+    const password = `Test-${suffix}-Aa1!`;
+    const authHeaders = { 'content-type': 'application/json', origin: WEB_URL };
+
+    const signupRes = await fetch(`${API_URL}/api/auth/sign-up/email`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ email, password, name: 'SPEC172 Admin' })
+    });
+    if (!signupRes.ok) {
+        throw new Error(`sign-up failed: ${signupRes.status} — ${await signupRes.text()}`);
+    }
+    const signupData = (await signupRes.json()) as { user?: { id?: string } };
+    const userId = signupData.user?.id;
+    if (!userId) {
+        throw new Error('sign-up response missing user id');
+    }
+
+    await forceVerifyEmail(userId);
+    await setUserRole(userId, 'SUPER_ADMIN');
+
+    const signinRes = await fetch(`${API_URL}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ email, password })
+    });
+    if (!signinRes.ok) {
+        throw new Error(`sign-in failed: ${signinRes.status} — ${await signinRes.text()}`);
+    }
+
+    // undici exposes each Set-Cookie separately via getSetCookie(); take the
+    // `name=value` head of every better-auth cookie and attach it to localhost.
+    const setCookies = signinRes.headers.getSetCookie();
+    const cookies = setCookies
+        .map((raw) => raw.split(';')[0]?.trim() ?? '')
+        .filter((head) => head.startsWith('better-auth') && head.includes('='))
+        .map((head) => {
+            const eqIdx = head.indexOf('=');
+            return {
+                name: head.slice(0, eqIdx).trim(),
+                value: head.slice(eqIdx + 1).trim(),
+                domain: 'localhost',
+                path: '/'
+            };
+        });
+    if (cookies.length === 0) {
+        throw new Error('sign-in did not return a better-auth session cookie');
+    }
+
+    return { userId, cookies };
+}
 
 /** EntitySelectField trigger id for the amenities field (config id `amenityIds`). */
 const AMENITY_COMBOBOX_ID = 'field-amenityIds';
@@ -106,27 +181,13 @@ test.describe('SPEC-172: amenity & feature chips smoke @p1 @admin @spec172 @chip
             return; // narrows the type; test.skip already aborted above
         }
 
-        // ── Arrange: a SUPER_ADMIN actor (createUser verifies + promotes) ──
-        const superAdmin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
-        userIdsToCleanup.push(superAdmin.id);
+        // ── Arrange: a verified SUPER_ADMIN session ───────────────────────
+        const { userId, cookies } = await createAdminSession();
+        userIdsToCleanup.push(userId);
 
-        // Inject the API session cookie(s) into the browser context so the
-        // admin app (same localhost host) recognises the actor.
-        await page.context().addCookies(
-            superAdmin.sessionCookie
-                .split(';')
-                .map((pair) => pair.trim())
-                .filter((pair) => pair.includes('='))
-                .map((pair) => {
-                    const eqIdx = pair.indexOf('=');
-                    return {
-                        name: pair.slice(0, eqIdx).trim(),
-                        value: pair.slice(eqIdx + 1).trim(),
-                        domain: 'localhost',
-                        path: '/'
-                    };
-                })
-        );
+        // Inject the session cookie(s) so the admin app (same localhost host)
+        // recognises the actor.
+        await page.context().addCookies(cookies);
 
         // ── Act: open the edit page and expand the amenities section ───────
         // The edit form is a SectionAccordion; the amenities section is not
