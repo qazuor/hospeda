@@ -1,6 +1,7 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import {
     AccommodationSelectField,
+    AmenitySelectField,
     CheckboxField,
     CoordinatesField,
     CurrencyField,
@@ -10,6 +11,7 @@ import {
     EventLocationSelectField,
     EventOrganizerSelectField,
     EventSelectField,
+    FeatureSelectField,
     GalleryField,
     I18nTextField,
     ImageField,
@@ -296,6 +298,22 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                     case FieldTypeEnum.EVENT_ORGANIZER_SELECT:
                         return (
                             <EventOrganizerSelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.AMENITY_SELECT:
+                        return (
+                            <AmenitySelectField
+                                {...fieldProps}
+                                value={fieldValue as string | string[]}
+                            />
+                        );
+
+                    case FieldTypeEnum.FEATURE_SELECT:
+                        return (
+                            <FeatureSelectField
                                 {...fieldProps}
                                 value={fieldValue as string | string[]}
                             />
