@@ -639,7 +639,7 @@
             "specId": "SPEC-176",
             "title": "Web color-system fallback for older browsers (oklch/@supports) + admin browser gate",
             "status": "in-progress",
-            "progress": "6/16",
+            "progress": "7/16",
             "path": "SPEC-176-web-color-fallback-old-browsers",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-176-web-color-fallback-old-browsers",
             "branch": "spec/SPEC-176-web-color-fallback-old-browsers",
