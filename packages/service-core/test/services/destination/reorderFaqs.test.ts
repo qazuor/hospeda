@@ -66,9 +66,9 @@ describe('DestinationService.reorderFaqs', () => {
             () => faqModelMock as unknown as db.DestinationFaqModel
         );
         // withTransaction: execute callback immediately with a no-op tx
-        vi.spyOn(db, 'withTransaction').mockImplementation(
-            async (fn: (tx: unknown) => Promise<unknown>) => fn({})
-        );
+        vi.spyOn(db, 'withTransaction').mockImplementation(((
+            fn: (tx: unknown) => Promise<unknown>
+        ) => fn({})) as unknown as typeof db.withTransaction);
     });
 
     it('should reorder FAQs successfully and call update for each item', async () => {
