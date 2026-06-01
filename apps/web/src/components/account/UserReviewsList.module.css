@@ -189,11 +189,7 @@
     background-color: var(--core-card);
     border: 1px dashed var(--brand-primary-a25);
     border-radius: var(--radius-card);
-    background-image: radial-gradient(
-        circle at 50% 0%,
-        var(--brand-primary-a05),
-        transparent 60%
-    );
+    background-image: radial-gradient(circle at 50% 0%, var(--brand-primary-a05), transparent 60%);
 }
 
 .emptyIcon {
@@ -204,11 +200,7 @@
     height: 4rem;
     margin-bottom: var(--space-4);
     border-radius: var(--radius-pill);
-    background: linear-gradient(
-        135deg,
-        var(--brand-primary-a15),
-        var(--brand-accent-a15)
-    );
+    background: linear-gradient(135deg, var(--brand-primary-a15), var(--brand-accent-a15));
     color: var(--brand-primary);
     box-shadow: 0 8px 18px var(--brand-primary-a20);
 }

@@ -35,11 +35,7 @@
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-pill);
-    background: linear-gradient(
-        135deg,
-        var(--brand-primary-a20),
-        var(--brand-accent-a20)
-    );
+    background: linear-gradient(135deg, var(--brand-primary-a20), var(--brand-accent-a20));
     color: var(--brand-primary);
     font-size: 1.125rem;
     font-weight: 700;

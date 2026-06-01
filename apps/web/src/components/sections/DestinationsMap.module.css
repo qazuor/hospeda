@@ -108,8 +108,7 @@
     height: 30px;
     background-color: var(--brand-accent);
     border: 4px solid var(--core-card);
-    box-shadow: 0 0 0 6px var(--brand-accent-a30), 0 6px 20px
-        var(--brand-accent-a70);
+    box-shadow: 0 0 0 6px var(--brand-accent-a30), 0 6px 20px var(--brand-accent-a70);
     opacity: 1;
 }
 
@@ -287,8 +286,7 @@
     background-color: var(--brand-accent);
     border: 3px solid var(--core-card);
     opacity: 1;
-    box-shadow: 0 0 0 5px var(--brand-accent-a30), 0 5px 14px
-        var(--brand-accent-a55);
+    box-shadow: 0 0 0 5px var(--brand-accent-a30), 0 5px 14px var(--brand-accent-a55);
 }
 
 .secondaryDotActive::before {

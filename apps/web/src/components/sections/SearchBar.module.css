@@ -128,8 +128,7 @@
     background: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 8px 30px var(--core-foreground-a10), 0 2px 8px
-        var(--core-foreground-a05);
+    box-shadow: 0 8px 30px var(--core-foreground-a10), 0 2px 8px var(--core-foreground-a05);
     padding: 8px 0;
     min-width: 260px;
     max-height: 360px;

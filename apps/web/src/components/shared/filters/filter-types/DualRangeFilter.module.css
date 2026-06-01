@@ -115,8 +115,7 @@
 }
 
 .dualRangeInput:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px var(--brand-primary-a25), 0 1px 4px
-        oklch(0 0 0 / 0.2);
+    box-shadow: 0 0 0 3px var(--brand-primary-a25), 0 1px 4px oklch(0 0 0 / 0.2);
 }
 
 /* Z-order matters when the two thumbs sit at the same position: the one
