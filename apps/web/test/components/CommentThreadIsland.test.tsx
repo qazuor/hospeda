@@ -27,6 +27,10 @@ vi.mock('../../src/lib/i18n', () => ({
     })
 }));
 
+vi.mock('../../src/lib/env', () => ({
+    getApiUrl: () => 'http://localhost:3001'
+}));
+
 vi.mock('../../src/components/comments/CommentThreadIsland.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_target, prop) => String(prop)

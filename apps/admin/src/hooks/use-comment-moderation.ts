@@ -218,8 +218,11 @@ export function useModerateComment() {
             moderationState
         }: { id: string; moderationState: 'APPROVED' | 'REJECTED' }) =>
             moderateCommentRequest(id, moderationState),
-        onSuccess: () => {
+        onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.lists() });
+            queryClient.invalidateQueries({
+                queryKey: commentModerationQueryKeys.detail(variables.id)
+            });
         }
     });
 }
@@ -233,8 +236,9 @@ export function useSoftDeleteComment() {
 
     return useMutation({
         mutationFn: (id: string) => softDeleteCommentRequest(id),
-        onSuccess: () => {
+        onSuccess: (_data, id) => {
             queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.detail(id) });
         }
     });
 }
@@ -249,8 +253,9 @@ export function useHardDeleteComment() {
 
     return useMutation({
         mutationFn: (id: string) => hardDeleteCommentRequest(id),
-        onSuccess: () => {
+        onSuccess: (_data, id) => {
             queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.detail(id) });
         }
     });
 }
@@ -264,8 +269,9 @@ export function useRestoreComment() {
 
     return useMutation({
         mutationFn: (id: string) => restoreCommentRequest(id),
-        onSuccess: () => {
+        onSuccess: (_data, id) => {
             queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: commentModerationQueryKeys.detail(id) });
         }
     });
 }

@@ -8,14 +8,11 @@
  * Hydration directive: client:visible (lazy, below the fold).
  */
 
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { type FormEvent, useState } from 'react';
 import styles from './CommentThreadIsland.module.css';
-
-// API base URL — must be absolute: the web (host A) and API (host B) live on
-// different origins in dev (port 4321 vs 3001) and in production.
-const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 /** Maximum allowed comment length (mirrors COMMENT_CONTENT_MAX_LENGTH from @repo/schemas). */
 const COMMENT_CONTENT_MAX_LENGTH = 2000;
@@ -79,7 +76,9 @@ function formatDate(iso: string, locale: SupportedLocale): string {
  */
 function buildCreateUrl(entityType: 'POST' | 'EVENT', entityId: string): string {
     const segment = entityType === 'EVENT' ? 'events' : 'posts';
-    return `${API_BASE}/api/v1/protected/${segment}/${entityId}/comments`;
+    // getApiUrl() resolves PUBLIC_API_URL (client) / HOSPEDA_API_URL (server),
+    // validates it, and strips the trailing slash. Never read import.meta.env directly.
+    return `${getApiUrl()}/api/v1/protected/${segment}/${entityId}/comments`;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
