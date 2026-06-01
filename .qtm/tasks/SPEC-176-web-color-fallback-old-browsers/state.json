@@ -638,26 +638,26 @@
             "id": "T-014",
             "title": "Commit and open PR to staging — SPEC-176 implementation",
             "description": "Stage all SPEC-176 changes, commit following conventional commits, and open a PR targeting `staging`.\n\n**Commit strategy (per CLAUDE.md — atomic, files staged individually):**\n\nSuggest 4 atomic commits in this order:\n1. `fix(design-tokens): add culori devDep + formatSRGB() + VARIANT_TOKEN_MAP + emitVariantTokens (SPEC-176)`\n   Files: packages/design-tokens/package.json, colors.ts, variant-tokens.ts, variant-token-schema.ts, generate-css.ts, dist/tokens.css\n\n2. `fix(web): codemod 679 oklch(from) call-sites to var(--token) (SPEC-176)`\n   Files: apps/web/src/styles/components.css, global.css, any other changed web src files\n\n3. `fix(icons): subtle variant emits var(--token) instead of raw oklch string (SPEC-176)`\n   Files: packages/icons/src/oklch-color-helper.ts, packages/icons/src/domain/*.ts\n\n4. `fix(admin): browser gate banner for pre-Chrome-111 browsers + i18n + CI guard (SPEC-176)`\n   Files: packages/i18n locales, apps/admin/src/components/BrowserGateBanner.tsx, __root.tsx, apps/web/scripts/check-css-relative-colors.cjs, turbo.json\n\n**Before committing:**\n- Verify `git status` shows ONLY SPEC-176 related files\n- Run `pnpm check` (Biome lint+format) on all changed files\n- Run `pnpm typecheck` — 0 errors\n- Run `pnpm test` — all suites GREEN\n\n**Open PR:**\n```bash\ngh pr create --base staging --title 'fix(web): CSS color-system fallback for Chrome 109-118 + admin browser gate (SPEC-176)' --body \"...\"\n```\n\nPR body must reference:\n- Linear BETA-44 (root cause, Marta's login)\n- 679 call-site swap count\n- 42 variant tokens generated\n- Browser support: Chrome 109+ (web), Chrome 111+ (admin with gate)\n- Testing: variant-token-coverage tests, BrowserGateBanner tests, Playwright parity\n- Manual smoke: login button visible, badges visible, admin banner behavior\n\nAcceptance criteria:\n- All 4 commits are atomic and follow conventional commits format\n- No `git add .` or `git add -A` used (files staged individually per CLAUDE.md)\n- PR opens successfully targeting staging\n- No AI attribution or co-authorship lines in commits\n- CI runs on the PR (even if some pre-existing CI is red from unrelated issues, SPEC-176 changes must not introduce NEW failures)\n\nFiles affected: all SPEC-176 modified files (staged individually)\n\nAC mapping: PDR §12 Approval (ready for review), §9 success metrics.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Run final pnpm check + typecheck + test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Stage and commit 4 atomic commits (files staged individually)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Open PR to staging with SPEC-176 description + BETA-44 reference",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify CI kicks off on PR",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-176", "phase-5", "git", "pr"],
@@ -670,8 +670,9 @@
             "timestamps": {
                 "created": "2026-05-30T00:00:00.000Z",
                 "started": null,
-                "completed": null
-            }
+                "completed": "2026-06-01T03:55:00.000Z"
+            },
+            "completionNote": "PR #1346 ready-for-review (out of draft) to staging. Title 'feat(SPEC-176): web color-system fallback for Chrome 109-118 + admin browser gate (14/16)'. Did NOT use the 4-atomic-commit suggestion verbatim (work landed across many focused commits per phase, which is cleaner). CI runs on every push; currently red ENTIRELY from pre-existing baseline (verified job-by-job): Lint admin#lint biome-ignore-no-effect (files identical to staging), Build Node20/Astro infra, Guards SPEC-161 cast, Security 37 vulns. Web lint fixed via turbo lint dependsOn ^build (commit 83da3d5ce). origin/staging CI is also failure for the same reasons → merge is human admin-override per project policy. T-015 (registry closeout + BETA-44) is post-merge."
         },
         {
             "id": "T-015",
