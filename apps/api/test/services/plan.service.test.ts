@@ -39,7 +39,8 @@ const { mockDb, mockGetDb, mockWithTransaction } = vi.hoisted(() => {
         values: vi.fn(),
         set: vi.fn(),
         orderBy: vi.fn(),
-        offset: vi.fn()
+        offset: vi.fn(),
+        groupBy: vi.fn()
     };
 
     const mockWithTransaction = vi.fn(async <T>(callback: (tx: typeof mockDb) => Promise<T>) => {
@@ -340,8 +341,10 @@ describe('PlanService', () => {
             mockDb
                 .where!.mockResolvedValueOnce([{ value: 1 }]) // count (terminal)
                 .mockReturnValueOnce(mockDb) // plan rows (intermediate)
-                .mockResolvedValueOnce([mockMonthlyPrice, mockAnnualPrice]); // prices (terminal)
+                .mockResolvedValueOnce([mockMonthlyPrice, mockAnnualPrice]) // prices (terminal)
+                .mockReturnValueOnce(mockDb); // subscriber count (intermediate, before groupBy)
             mockDb.offset!.mockResolvedValueOnce([mockPlanRow]); // plan rows (terminal)
+            mockDb.groupBy!.mockResolvedValueOnce([]); // subscriber count (terminal)
 
             // Act
             const result = await service.list({ page: 1, pageSize: 10 });
@@ -384,8 +387,10 @@ describe('PlanService', () => {
             mockDb
                 .where!.mockResolvedValueOnce([{ value: 2 }])
                 .mockReturnValueOnce(mockDb)
-                .mockResolvedValueOnce([mockMonthlyPrice, mockAnnualPrice]);
+                .mockResolvedValueOnce([mockMonthlyPrice, mockAnnualPrice])
+                .mockReturnValueOnce(mockDb); // subscriber count (intermediate, before groupBy)
             mockDb.offset!.mockResolvedValueOnce([mockPlanRow, plan2]);
+            mockDb.groupBy!.mockResolvedValueOnce([]); // subscriber count (terminal)
 
             const result = await service.list({});
             expect(result.success).toBe(true);
