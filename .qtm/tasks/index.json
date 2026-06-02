@@ -714,9 +714,11 @@
         {
             "specId": "SPEC-177",
             "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
-            "status": "in-progress",
-            "progress": "31/32",
-            "path": "SPEC-177-admin-faq-management"
+            "status": "completed",
+            "progress": "32/32",
+            "path": "SPEC-177-admin-faq-management",
+            "archived": true,
+            "archivedAt": "2026-06-02T07:22:56Z"
         },
         {
             "specId": "SPEC-178",

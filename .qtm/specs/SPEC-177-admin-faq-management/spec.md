@@ -3,7 +3,7 @@ spec-id: SPEC-177
 title: Admin FAQ Management UI (Phase 2 of SPEC-158)
 type: feature
 complexity: high
-status: draft
+status: completed
 created: 2026-06-01T00:00:00Z
 references:
   - SPEC-158 (Phase 1 — destination FAQs seed + public read + JSON-LD)

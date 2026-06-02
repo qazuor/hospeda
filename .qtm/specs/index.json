@@ -2062,10 +2062,14 @@
         {
             "specId": "SPEC-177",
             "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-177-admin-faq-management",
-            "created": "2026-06-01T00:00:00.000Z"
+            "created": "2026-06-01T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-02T07:22:56Z",
+            "completedAt": "2026-06-02T07:22:56Z",
+            "completionRef": "fix/SPEC-177-faq-hook-envelope — T-032 browser smoke caught+fixed a useFaqs response-envelope crash (faqs not iterable); all gates green"
         },
         {
             "specId": "SPEC-178",
