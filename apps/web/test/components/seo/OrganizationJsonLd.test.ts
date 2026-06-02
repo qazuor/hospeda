@@ -116,8 +116,11 @@ describe('ORGANIZATION_INFO constant', () => {
         );
     });
 
-    it('has the confirmed telephone (no stray 9)', () => {
-        expect(ORGANIZATION_INFO.telephone).toBe('+543442453797');
+    it('has the AR mobile telephone with country+mobile prefix (549)', () => {
+        // Commit 9727ae935 (fix: use AR mobile WhatsApp number) intentionally added
+        // the mobile 9 prefix: +549 is the correct E.164 form for AR mobile numbers
+        // on WhatsApp. +543442... was the landline form and is now wrong.
+        expect(ORGANIZATION_INFO.telephone).toBe('+5493442453797');
     });
 
     it('has the public contact email', () => {

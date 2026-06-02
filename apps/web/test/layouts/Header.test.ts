@@ -101,12 +101,15 @@ describe('Header.astro — Publicar CTA', () => {
 // ─── Search icon ─────────────────────────────────────────────────────────────
 
 describe('Header.astro — search icon', () => {
-    it('renders a search icon link', () => {
-        expect(src).toContain('SearchIcon');
+    // Commit c4b9da5cc (chore: remove non-functional search icon from header) intentionally
+    // removed the SearchIcon, its /busqueda/ link, and the nav.search i18n key because the
+    // route was not yet functional. These tests now assert the element is absent.
+    it('does not render a search icon link (removed as non-functional)', () => {
+        expect(src).not.toContain('SearchIcon');
     });
 
-    it('links search icon to /busqueda/', () => {
-        expect(src).toContain('buildUrl({ locale, path: "busqueda" })');
+    it('does not link to /busqueda/ from the header (search icon removed)', () => {
+        expect(src).not.toContain('buildUrl({ locale, path: "busqueda" })');
     });
 });
 
@@ -184,8 +187,9 @@ describe('Header.astro — accessibility', () => {
         expect(src).toContain('nav.openMenu');
     });
 
-    it('search icon has ariaLabel', () => {
-        expect(src).toContain('nav.search');
+    it('search icon is absent (removed by c4b9da5cc — nav.search key no longer in header)', () => {
+        // The search icon and its nav.search ariaLabel were removed alongside the element.
+        expect(src).not.toContain('nav.search');
     });
 });
 
@@ -211,7 +215,9 @@ describe('Header.astro — hero and scroll behavior', () => {
 
 describe('Header.astro — styling', () => {
     it('uses CSS custom properties for colors (no hardcoded colors)', () => {
-        expect(src).toContain('var(--core-card)');
+        // SPEC-176 commit cd468c2cb replaced bare var(--core-card) with alpha-variant tokens
+        // e.g. var(--core-card-a85) / var(--core-card-a95). Test matches the alpha token prefix.
+        expect(src).toContain('var(--core-card-a');
         expect(src).toContain('var(--brand-primary)');
     });
 

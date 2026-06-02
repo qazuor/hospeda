@@ -27,7 +27,11 @@ vi.mock('../../../src/components/account/UserReviewsList.module.css', () => ({
 
 vi.mock('../../../src/lib/i18n', () => {
     const t = (key: string, fallback?: string): string => fallback ?? key;
-    const translations = { t } as const;
+    // tPlural was added in commit b138f3cbb ("fix(web,i18n): show review title
+    // and pluralise the totals line"). Returns a simple string with the count.
+    const tPlural = (key: string, count: number, _params?: Record<string, unknown>): string =>
+        `${count} ${key}`;
+    const translations = { t, tPlural } as const;
     return { createTranslations: () => translations };
 });
 

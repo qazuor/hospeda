@@ -159,8 +159,11 @@ describe('FavoriteButton — guest render', () => {
             />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toBeInTheDocument();
+        // Assert — the component now renders two FavoriteIcon elements: the
+        // visible "regular" icon and a hidden "fill" icon used for the CSS
+        // hover preview effect (icon stack pattern, commit 35b93bca1). Use
+        // getAllByTestId and check at least one icon is present.
+        expect(screen.getAllByTestId('favorite-icon').length).toBeGreaterThanOrEqual(1);
     });
 
     it('has aria-pressed=false when not favorited', () => {
@@ -222,8 +225,11 @@ describe('FavoriteButton — authenticated not favorited', () => {
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toHaveAttribute('data-weight', 'regular');
+        // Assert — when not favorited the component renders two icons (CSS hover
+        // stack, commit 35b93bca1): the first visible icon has weight="regular"
+        // and the second hidden icon has weight="fill" for the hover preview.
+        const icons = screen.getAllByTestId('favorite-icon');
+        expect(icons[0]).toHaveAttribute('data-weight', 'regular');
     });
 });
 
@@ -248,8 +254,10 @@ describe('FavoriteButton — authenticated favorited', () => {
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: true })} />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toHaveAttribute('data-weight', 'fill');
+        // Assert — when favorited only one icon renders (no hover-preview layer
+        // because the button is already in the "filled" state, commit 35b93bca1).
+        const icons = screen.getAllByTestId('favorite-icon');
+        expect(icons[0]).toHaveAttribute('data-weight', 'fill');
     });
 });
 
