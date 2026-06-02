@@ -197,7 +197,7 @@ code {
  * against the river header. The active nav item is exempt (it sits on a white
  * pill and keeps the default river duotone).
  */
-.icon-river-header path[opacity='0.2'] {
+.icon-river-header path[opacity="0.2"] {
     fill: #fff;
     opacity: 0.7;
 }
