@@ -2081,10 +2081,13 @@
         {
             "specId": "SPEC-178",
             "title": "Versioned DB Migration Strategy Overhaul",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-178-versioned-db-migration-strategy",
-            "created": "2026-06-01T00:00:00.000Z"
+            "created": "2026-06-01T00:00:00.000Z",
+            "completed": "2026-06-02T19:30:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-02T19:30:00.000Z"
         },
         {
             "specId": "SPEC-179",

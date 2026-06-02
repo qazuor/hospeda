@@ -731,9 +731,12 @@
         {
             "specId": "SPEC-178",
             "title": "Versioned DB Migration Strategy Overhaul",
-            "status": "in-progress",
-            "progress": "23/26",
-            "path": "SPEC-178-versioned-db-migration-strategy"
+            "status": "completed",
+            "progress": "25/26",
+            "path": "SPEC-178-versioned-db-migration-strategy",
+            "archived": true,
+            "archivedAt": "2026-06-02T19:30:00.000Z",
+            "archiveNote": "Strategy + tooling + tests + docs delivered; PRs #1372/#1373/#1367 merged. T-024 staging reset+rebuild+seed executed & verified 2026-06-02 (3847 rows, 0 errors, app live). T-025 (prod reset) DEFERRED as a post-spec operational step — run via the validated hops db-migrate --reset / db-seed flow when ready."
         },
         {
             "specId": "SPEC-181",
