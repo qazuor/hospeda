@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { i18nText } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
@@ -73,7 +74,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 amenityId: z.string().uuid(),
-                name: z.string(),
+                name: i18nText({ min: 2, max: 100 }),
                 icon: z.string().nullable(),
                 isOptional: z.boolean(),
                 additionalCost: z.number().nullable()
@@ -85,7 +86,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 featureId: z.string().uuid(),
-                name: z.string(),
+                name: i18nText({ min: 2, max: 100 }),
                 icon: z.string().nullable(),
                 hostReWriteName: z.string().nullable(),
                 comments: z.string().nullable()

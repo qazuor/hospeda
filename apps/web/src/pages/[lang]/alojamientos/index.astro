@@ -31,6 +31,7 @@ import { buildUrl } from '@/lib/urls';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -260,11 +261,11 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 }));
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
-	label: { es: a.name, en: a.name }
+	label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') }
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 	key: f.id,
-	label: { es: f.name, en: f.name }
+	label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') }
 }));
 
 // When types are active the API already filters by type, so `total` is the
@@ -397,7 +398,7 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: a.name, icon: a.icon ?? undefined })),
+		options: amenities.map((a) => ({ value: a.id, label: resolveI18nText(a.name, locale), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
 		// Each `value` is the URL boolean param name that the backend resolves
@@ -414,7 +415,7 @@ const filterGroups: FilterGroup[] = [
 		id: 'features',
 		label: t('accommodations.sidebar.features', 'Características'),
 		type: 'icon-chips',
-		options: features.map((f) => ({ value: f.id, label: f.name, icon: f.icon ?? undefined })),
+		options: features.map((f) => ({ value: f.id, label: resolveI18nText(f.name, locale), icon: f.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
@@ -653,7 +654,7 @@ if (amenitiesParam) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
 			activeFilterChips.push({
-				label: a.name,
+				label: resolveI18nText(a.name, locale),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
@@ -664,7 +665,7 @@ if (featuresParam) {
 		const f = features.find((x) => x.id === id);
 		if (f) {
 			activeFilterChips.push({
-				label: f.name,
+				label: resolveI18nText(f.name, locale),
 				removeUrl: urlWithoutListValue('features', id),
 			});
 		}
