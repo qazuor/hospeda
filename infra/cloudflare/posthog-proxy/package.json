@@ -1,0 +1,17 @@
+{
+    "name": "@repo/posthog-proxy-worker",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Cloudflare Worker that reverse-proxies PostHog ingestion under a first-party /ingest path (SPEC-181).",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "deploy": "wrangler deploy"
+    },
+    "devDependencies": {
+        "vitest": "^3.1.3"
+    }
+}

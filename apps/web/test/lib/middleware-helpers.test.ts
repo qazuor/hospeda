@@ -259,7 +259,7 @@ describe('buildCspHeader', () => {
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
-    it('should allow PostHog Cloud (US) hosts in script-src, connect-src, and img-src (SPEC-140)', () => {
+    it('should NOT include external PostHog hosts — analytics is proxied first-party via /ingest (SPEC-181)', () => {
         // Arrange
         const header = buildCspHeader({ nonce: 'x' });
 
@@ -269,15 +269,18 @@ describe('buildCspHeader', () => {
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
 
-        // script-src and connect-src need BOTH the ingestion host and the
-        // assets host (PostHog loads sub-bundles from us-assets).
-        expect(scriptSrc).toContain('https://us.i.posthog.com');
-        expect(scriptSrc).toContain('https://us-assets.i.posthog.com');
-        expect(connectSrc).toContain('https://us.i.posthog.com');
-        expect(connectSrc).toContain('https://us-assets.i.posthog.com');
+        // SPEC-181: PostHog ingestion + assets go through the same-origin /ingest
+        // proxy (covered by 'self'). The external hosts must NOT appear in any
+        // directive, or ad-blockers regain a host to block. Replaces the SPEC-140
+        // allowlist; guards against accidental re-introduction.
+        expect(scriptSrc).not.toContain('us.i.posthog.com');
+        expect(scriptSrc).not.toContain('us-assets.i.posthog.com');
+        expect(connectSrc).not.toContain('us.i.posthog.com');
+        expect(connectSrc).not.toContain('us-assets.i.posthog.com');
+        expect(imgSrc).not.toContain('us.i.posthog.com');
 
-        // img-src only needs the ingestion host (1x1 pixel fallback origin).
-        expect(imgSrc).toContain('https://us.i.posthog.com');
+        // script-src stays on strict-dynamic with the request nonce.
+        expect(scriptSrc).toContain("'nonce-x' 'strict-dynamic'");
     });
 
     it('should not include report-uri when not provided', () => {
