@@ -2,27 +2,27 @@ import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vite
 import worker, { resolveUpstream } from './worker.js';
 
 describe('resolveUpstream (path rewriting)', () => {
-    it('routes /ingest/e/ to the ingestion host and flags it no-cache', () => {
-        const result = resolveUpstream(new URL('https://hospeda.com.ar/ingest/e/?v=2&ip=1'));
+    it('routes /api/relay/e/ to the ingestion host and flags it no-cache', () => {
+        const result = resolveUpstream(new URL('https://hospeda.com.ar/api/relay/e/?v=2&ip=1'));
         expect(result.upstreamUrl).toBe('https://us.i.posthog.com/e/?v=2&ip=1');
         expect(result.isIngestion).toBe(true);
     });
 
-    it('routes /ingest/decide/ and /ingest/flags/ to the ingestion host', () => {
-        expect(resolveUpstream(new URL('https://h/ingest/decide/')).upstreamUrl).toBe(
+    it('routes /api/relay/decide/ and /api/relay/flags/ to the ingestion host', () => {
+        expect(resolveUpstream(new URL('https://h/api/relay/decide/')).upstreamUrl).toBe(
             'https://us.i.posthog.com/decide/'
         );
-        expect(resolveUpstream(new URL('https://h/ingest/flags/')).isIngestion).toBe(true);
+        expect(resolveUpstream(new URL('https://h/api/relay/flags/')).isIngestion).toBe(true);
     });
 
-    it('routes /ingest/static/* to the assets host and does NOT flag it as ingestion', () => {
-        const result = resolveUpstream(new URL('https://hospeda.com.ar/ingest/static/array.js'));
+    it('routes /api/relay/static/* to the assets host and does NOT flag it as ingestion', () => {
+        const result = resolveUpstream(new URL('https://hospeda.com.ar/api/relay/static/array.js'));
         expect(result.upstreamUrl).toBe('https://us-assets.i.posthog.com/static/array.js');
         expect(result.isIngestion).toBe(false);
     });
 
-    it('maps the bare /ingest prefix to the ingestion host root', () => {
-        expect(resolveUpstream(new URL('https://h/ingest')).upstreamUrl).toBe(
+    it('maps the bare /api/relay prefix to the ingestion host root', () => {
+        expect(resolveUpstream(new URL('https://h/api/relay')).upstreamUrl).toBe(
             'https://us.i.posthog.com/'
         );
     });
@@ -44,8 +44,8 @@ describe('worker.fetch (forwarding behavior)', () => {
         vi.restoreAllMocks();
     });
 
-    it('forwards POST /ingest/e/ to us.i.posthog.com with no-store + real client IP', async () => {
-        const request = new Request('https://hospeda.com.ar/ingest/e/', {
+    it('forwards POST /api/relay/e/ to us.i.posthog.com with no-store + real client IP', async () => {
+        const request = new Request('https://hospeda.com.ar/api/relay/e/', {
             method: 'POST',
             headers: {
                 'cf-connecting-ip': '203.0.113.7',
@@ -68,8 +68,8 @@ describe('worker.fetch (forwarding behavior)', () => {
         expect(response.headers.get('Cache-Control')).toBe('no-store');
     });
 
-    it('forwards GET /ingest/static/array.js to the assets host without forcing no-store', async () => {
-        const request = new Request('https://hospeda.com.ar/ingest/static/array.js', {
+    it('forwards GET /api/relay/static/array.js to the assets host without forcing no-store', async () => {
+        const request = new Request('https://hospeda.com.ar/api/relay/static/array.js', {
             headers: { 'cf-connecting-ip': '203.0.113.7' }
         });
 
@@ -82,7 +82,7 @@ describe('worker.fetch (forwarding behavior)', () => {
     });
 
     it('does not set X-Forwarded-For when cf-connecting-ip is absent', async () => {
-        const request = new Request('https://hospeda.com.ar/ingest/decide/', { method: 'POST' });
+        const request = new Request('https://hospeda.com.ar/api/relay/decide/', { method: 'POST' });
 
         await worker.fetch(request);
 
@@ -90,7 +90,7 @@ describe('worker.fetch (forwarding behavior)', () => {
         expect(init.headers.get('X-Forwarded-For')).toBeNull();
     });
 
-    it('rejects a path without the /ingest prefix with 404 and never calls upstream', async () => {
+    it('rejects a path without the /api/relay prefix with 404 and never calls upstream', async () => {
         const request = new Request('https://hospeda.com.ar/other/path');
 
         const response = await worker.fetch(request);

@@ -497,7 +497,7 @@ export function buildCspHeader({
     const oauthAvatarHosts =
         'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
 
-    // SPEC-181: PostHog analytics is proxied first-party under `/ingest/*` (a
+    // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
     // Cloudflare Worker forwards to PostHog Cloud US — see
     // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
     // `'self'` already covers script/connect/img for PostHog — no external

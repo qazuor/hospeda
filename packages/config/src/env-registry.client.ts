@@ -183,20 +183,20 @@ export const CLIENT_WEB_ENV_VARS = [
     {
         name: 'PUBLIC_POSTHOG_HOST',
         description:
-            'PostHog ingestion endpoint for the web app. RECOMMENDED: the first-party reverse proxy `https://hospeda.com.ar/ingest` (SPEC-181) so ad-blockers cannot intercept analytics. Falls back to US Cloud direct (`https://us.i.posthog.com`) when unset. Changing this REQUIRES a matching CSP update in apps/web/src/lib/middleware-helpers.ts (same deploy).',
+            'PostHog ingestion endpoint for the web app. RECOMMENDED: the first-party reverse proxy `https://hospeda.com.ar/api/relay` (SPEC-181) so ad-blockers cannot intercept analytics. Falls back to US Cloud direct (`https://us.i.posthog.com`) when unset. Changing this REQUIRES a matching CSP update in apps/web/src/lib/middleware-helpers.ts (same deploy).',
         descriptionEs:
-            'Endpoint de ingestión de PostHog para la app web. RECOMENDADO: el reverse proxy first-party `https://hospeda.com.ar/ingest` (SPEC-181) para que los ad-blockers no intercepten analytics. Fallback a US Cloud directo (`https://us.i.posthog.com`) si no se setea. Cambiarlo REQUIERE actualizar el CSP en apps/web/src/lib/middleware-helpers.ts (mismo deploy).',
+            'Endpoint de ingestión de PostHog para la app web. RECOMENDADO: el reverse proxy first-party `https://hospeda.com.ar/api/relay` (SPEC-181) para que los ad-blockers no intercepten analytics. Fallback a US Cloud directo (`https://us.i.posthog.com`) si no se setea. Cambiarlo REQUIERE actualizar el CSP en apps/web/src/lib/middleware-helpers.ts (mismo deploy).',
         type: 'url',
         required: false,
         secret: false,
         defaultValue: 'https://us.i.posthog.com',
-        exampleValue: 'https://hospeda.com.ar/ingest',
+        exampleValue: 'https://hospeda.com.ar/api/relay',
         apps: ['web'],
         category: 'client-web',
         howToObtain:
-            'Set to the first-party proxy `https://hospeda.com.ar/ingest` (staging: `https://staging.hospeda.com.ar/ingest`) once the Cloudflare Worker in infra/cloudflare/posthog-proxy/ is deployed. DEPLOY ORDER MATTERS: the Worker must be live AND the CSP in middleware-helpers.ts must drop the external PostHog hosts in the SAME deploy, or PostHog breaks silently. Falls back to `https://us.i.posthog.com` (US Cloud, Hospeda org, decided 2026-05-17) if unset. For EU Cloud use `https://eu.i.posthog.com`.',
+            'Set to the first-party proxy `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) once the Cloudflare Worker in infra/cloudflare/posthog-proxy/ is deployed. DEPLOY ORDER MATTERS: the Worker must be live AND the CSP in middleware-helpers.ts must drop the external PostHog hosts in the SAME deploy, or PostHog breaks silently. Falls back to `https://us.i.posthog.com` (US Cloud, Hospeda org, decided 2026-05-17) if unset. For EU Cloud use `https://eu.i.posthog.com`.',
         howToObtainEs:
-            'Seteá el proxy first-party `https://hospeda.com.ar/ingest` (staging: `https://staging.hospeda.com.ar/ingest`) una vez deployado el Cloudflare Worker en infra/cloudflare/posthog-proxy/. EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo Y el CSP en middleware-helpers.ts debe sacar los hosts externos de PostHog en el MISMO deploy, o PostHog se rompe silenciosamente. Fallback a `https://us.i.posthog.com` (US Cloud, org Hospeda, decidido 2026-05-17) si no se setea. Para EU Cloud usá `https://eu.i.posthog.com`.'
+            'Seteá el proxy first-party `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) una vez deployado el Cloudflare Worker en infra/cloudflare/posthog-proxy/. EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo Y el CSP en middleware-helpers.ts debe sacar los hosts externos de PostHog en el MISMO deploy, o PostHog se rompe silenciosamente. Fallback a `https://us.i.posthog.com` (US Cloud, org Hospeda, decidido 2026-05-17) si no se setea. Para EU Cloud usá `https://eu.i.posthog.com`.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 

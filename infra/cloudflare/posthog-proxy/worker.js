@@ -2,9 +2,9 @@
  * PostHog reverse-proxy Cloudflare Worker (SPEC-181).
  *
  * Proxies PostHog ingestion + static assets under a first-party path
- * (`/ingest/*`) on the site origin so ad-blockers cannot intercept analytics.
+ * (`/api/relay/*`) on the site origin so ad-blockers cannot intercept analytics.
  *
- * Routing (after stripping the `/ingest` prefix):
+ * Routing (after stripping the `/api/relay` prefix):
  *  - `/static/*`            -> https://us-assets.i.posthog.com   (SDK assets, e.g. array.js)
  *  - everything else        -> https://us.i.posthog.com          (ingestion, decide, flags)
  *
@@ -21,8 +21,8 @@
  * `PUBLIC_POSTHOG_HOST` and the web CSP are flipped to the proxy origin.
  */
 
-/** Path prefix the Cloudflare route binds to (e.g. `hospeda.com.ar/ingest/*`). */
-const PROXY_PREFIX = '/ingest';
+/** Path prefix the Cloudflare route binds to (e.g. `hospeda.com.ar/api/relay/*`). */
+const PROXY_PREFIX = '/api/relay';
 
 /** PostHog Cloud (US) upstream hosts. */
 const INGESTION_HOST = 'https://us.i.posthog.com';
@@ -34,7 +34,7 @@ const NO_CACHE_PREFIXES = ['/e/', '/decide/', '/flags/'];
 /**
  * Resolves the upstream URL for an incoming proxied request.
  *
- * @param {URL} url - The incoming request URL (path includes the `/ingest` prefix).
+ * @param {URL} url - The incoming request URL (path includes the `/api/relay` prefix).
  * @returns {{ upstreamUrl: string, isIngestion: boolean }}
  */
 function resolveUpstream(url) {
@@ -60,7 +60,7 @@ export default {
     async fetch(request) {
         const url = new URL(request.url);
 
-        // Only proxy the `/ingest` path this Worker's route binds to. Anything else
+        // Only proxy the `/api/relay` path this Worker's route binds to. Anything else
         // (possible if the Worker is ever bound to a broader route, or called
         // directly outside the Cloudflare route filter) is rejected rather than
         // silently forwarded to PostHog.

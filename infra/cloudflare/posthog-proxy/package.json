@@ -3,7 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "description": "Cloudflare Worker that reverse-proxies PostHog ingestion under a first-party /ingest path (SPEC-181).",
+    "description": "Cloudflare Worker that reverse-proxies PostHog ingestion under a first-party /api/relay path (SPEC-181).",
     "scripts": {
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
