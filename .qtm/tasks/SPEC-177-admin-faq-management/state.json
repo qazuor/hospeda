@@ -5,9 +5,9 @@
     "created": "2026-06-01T00:00:00.000Z",
     "summary": {
         "total": 32,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -698,7 +698,7 @@
             "id": "T-032",
             "title": "Cleanup: full verification + close spec",
             "description": "db:fresh-dev + apply-postgres-extras.sh; run service + API + admin suites (≥90% new code); local browser smoke (both entities CRUD + reorder, public order); host-scope check. Flip spec status to completed + sync indexes. Acceptance: all green, spec archived.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-026", "T-027", "T-028", "T-029", "T-030", "T-031"],
             "blocks": [],
@@ -706,14 +706,14 @@
             "tags": ["cleanup", "phase-cleanup"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-01T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T07:22:56Z",
+                "completed": "2026-06-02T07:22:56Z"
             }
         }
     ]

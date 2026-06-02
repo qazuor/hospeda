@@ -56,9 +56,9 @@ export function useFaqList(entityType: FaqEntityType, parentId: string) {
             const response = await fetchApi<unknown>({
                 path: faqEndpoint(entityType, parentId)
             });
-            // API returns { success: true, data: FaqItem[] }
-            const body = response.data as { data?: FaqItem[] };
-            return (body.data ?? []) as FaqItem[];
+            // API returns { success: true, data: { faqs: FaqItem[] } }
+            const body = response.data as { data?: { faqs?: FaqItem[] } };
+            return body.data?.faqs ?? [];
         },
         enabled: Boolean(parentId),
         staleTime: 2 * 60 * 1000
@@ -81,8 +81,8 @@ export function useFaqCreate(entityType: FaqEntityType, parentId: string) {
                 method: 'POST',
                 body: payload
             });
-            const body = response.data as { data?: FaqItem };
-            return body.data as FaqItem;
+            const body = response.data as { data?: { faq?: FaqItem } };
+            return body.data?.faq as FaqItem;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -114,8 +114,8 @@ export function useFaqUpdate(entityType: FaqEntityType, parentId: string) {
                 method: 'PUT',
                 body: payload
             });
-            const body = response.data as { data?: FaqItem };
-            return body.data as FaqItem;
+            const body = response.data as { data?: { faq?: FaqItem } };
+            return body.data?.faq as FaqItem;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
