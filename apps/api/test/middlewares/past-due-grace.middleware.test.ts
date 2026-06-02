@@ -10,8 +10,44 @@
  * @module test/middlewares/past-due-grace.middleware
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Deterministic clock
+// ---------------------------------------------------------------------------
+
+/**
+ * Milliseconds in one day. Mirrors `ONE_DAY_MS` in the middleware so that
+ * `currentPeriodEnd` offsets in the expired-grace tests map 1:1 to the
+ * middleware's `daysOverdue` computation.
+ */
+const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+
+/**
+ * Grace window honored by qzpay-core (must match `QZPAY_GRACE_WINDOW_DAYS` in
+ * the middleware). The middleware computes:
+ *   daysOverdue = max(0, ceil((now - currentPeriodEnd) / 1d) - QZPAY_GRACE_WINDOW_DAYS)
+ */
+const QZPAY_GRACE_WINDOW_DAYS = 7;
+
+/**
+ * Fixed "now" for all tests. The expired-grace branch of the middleware reads
+ * `Date.now()`, so we pin the system clock to make `daysOverdue` deterministic
+ * instead of relative to the wall clock at test run time.
+ */
+const FIXED_NOW = new Date('2026-06-01T00:00:00.000Z');
+
+/**
+ * Builds a `currentPeriodEnd` that lands the requested number of days past the
+ * grace window, so the middleware reports exactly `daysOverdue` overdue days.
+ *
+ * @param daysOverdue - Desired `daysOverdue` value the middleware should report
+ * @returns A `Date` set `daysOverdue + QZPAY_GRACE_WINDOW_DAYS` days before `FIXED_NOW`
+ */
+function periodEndForOverdue(daysOverdue: number): Date {
+    return new Date(FIXED_NOW.getTime() - (daysOverdue + QZPAY_GRACE_WINDOW_DAYS) * ONE_DAY_MS);
+}
 
 // ---------------------------------------------------------------------------
 // Module mocks - must be declared before any imports from the mocked modules
@@ -56,6 +92,7 @@ interface MockSubscription {
     isPastDue: Mock;
     isInGracePeriod: Mock;
     daysRemainingInGrace: Mock;
+    currentPeriodEnd?: Date;
 }
 
 /**
@@ -106,15 +143,22 @@ function createMockSubscription(
         isPastDue?: boolean;
         isInGracePeriod?: boolean;
         daysRemainingInGrace?: number | null;
+        currentPeriodEnd?: Date;
     } = {}
 ): MockSubscription {
-    const { isPastDue = false, isInGracePeriod = false, daysRemainingInGrace = null } = overrides;
+    const {
+        isPastDue = false,
+        isInGracePeriod = false,
+        daysRemainingInGrace = null,
+        currentPeriodEnd
+    } = overrides;
 
     return {
         id: 'sub_abc123',
         isPastDue: vi.fn().mockReturnValue(isPastDue),
         isInGracePeriod: vi.fn().mockReturnValue(isInGracePeriod),
-        daysRemainingInGrace: vi.fn().mockReturnValue(daysRemainingInGrace)
+        daysRemainingInGrace: vi.fn().mockReturnValue(daysRemainingInGrace),
+        currentPeriodEnd
     };
 }
 
@@ -143,6 +187,14 @@ describe('pastDueGraceMiddleware', () => {
     beforeEach(() => {
         next = vi.fn().mockResolvedValue(undefined);
         vi.clearAllMocks();
+        // Pin the clock so the expired-grace `daysOverdue` calc (which reads
+        // Date.now()) is deterministic rather than relative to the wall clock.
+        vi.useFakeTimers();
+        vi.setSystemTime(FIXED_NOW);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     // -----------------------------------------------------------------------
@@ -336,11 +388,12 @@ describe('pastDueGraceMiddleware', () => {
 
     describe('when subscription is past due and grace period has expired', () => {
         it('should return 402 with GRACE_PERIOD_EXPIRED error', async () => {
-            // Arrange
+            // Arrange — cycle ended 8 days ago, so daysOverdue = 8 - 7 (grace) = 1
             const pastDueSub = createMockSubscription({
                 isPastDue: true,
                 isInGracePeriod: false,
-                daysRemainingInGrace: -1
+                daysRemainingInGrace: -1,
+                currentPeriodEnd: periodEndForOverdue(1)
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext();
@@ -361,7 +414,7 @@ describe('pastDueGraceMiddleware', () => {
             expect(body.error).toBe('GRACE_PERIOD_EXPIRED');
             expect(body).toHaveProperty('message');
             expect(body).toHaveProperty('daysOverdue');
-            // daysOverdue = Math.abs(-1) = 1
+            // daysOverdue computed from currentPeriodEnd: ceil(8d) - 7d grace = 1
             expect(body.daysOverdue).toBe(1);
         });
 
@@ -643,7 +696,8 @@ describe('pastDueGraceMiddleware', () => {
             const sub1 = createMockSubscription({
                 isPastDue: true,
                 isInGracePeriod: false,
-                daysRemainingInGrace: -1
+                daysRemainingInGrace: -1,
+                currentPeriodEnd: periodEndForOverdue(1)
             });
             const sub2 = createMockSubscription({
                 isPastDue: true,
@@ -665,7 +719,7 @@ describe('pastDueGraceMiddleware', () => {
                 number
             ];
             expect(status).toBe(402);
-            expect(body.daysOverdue).toBe(1); // Math.abs(-1)
+            expect(body.daysOverdue).toBe(1); // ceil(8d) - 7d grace = 1
         });
     });
 
@@ -679,7 +733,8 @@ describe('pastDueGraceMiddleware', () => {
             const pastDueSub = createMockSubscription({
                 isPastDue: true,
                 isInGracePeriod: false,
-                daysRemainingInGrace: -3
+                daysRemainingInGrace: -3,
+                currentPeriodEnd: periodEndForOverdue(3)
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext();
@@ -695,7 +750,7 @@ describe('pastDueGraceMiddleware', () => {
             expect(body).toMatchObject({
                 error: 'GRACE_PERIOD_EXPIRED',
                 message: expect.any(String),
-                daysOverdue: 3 // Math.abs(-3)
+                daysOverdue: 3 // ceil(10d) - 7d grace = 3
             });
         });
     });
