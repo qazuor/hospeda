@@ -62,8 +62,13 @@ describe('DetailHeader.astro — type badge unification', () => {
         });
 
         it('applies status-pill colours from getBadgeStatusColor via inline style', () => {
-            expect(src).toContain('featuredColors');
+            // Commit d4112990c (refactor: unify "Destacado" badge look) replaced the
+            // featuredColors variable + detail-header__status-pill span with a shared
+            // <span class="featured-badge"> component. Only the "new" pill retains
+            // the getBadgeStatusColor-derived inline style via newColors.
             expect(src).toContain('newColors');
+            // The "featured" badge now uses the shared featured-badge class, not inline colors.
+            expect(src).toContain('featured-badge');
         });
 
         it('does not render an inline `<span class="detail-header__type-badge">`', () => {

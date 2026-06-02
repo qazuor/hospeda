@@ -271,8 +271,11 @@ describe('toArticleCardProps', () => {
     });
 
     it('should handle missing author', () => {
+        // Commit 7cf5dc1f8 ("fix(web): blog meta icons, sand badge, and author
+        // fallback") deliberately changed the empty-author fallback from '' to
+        // 'Equipo Hospeda' so the byline is never blank in the UI.
         const result = toArticleCardProps({ item: {} });
-        expect(result.authorName).toBe('');
+        expect(result.authorName).toBe('Equipo Hospeda');
     });
 
     it('featuredImage should carry caption from API media', () => {
