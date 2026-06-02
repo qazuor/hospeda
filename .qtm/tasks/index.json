@@ -580,14 +580,18 @@
         {
             "specId": "SPEC-158",
             "title": "Destinations Rich Content + Structured FAQs",
-            "status": "in-progress",
-            "progress": "39/42",
+            "status": "completed",
+            "progress": "42/42",
             "path": "SPEC-158-destinations-content-faqs",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-158-destinations-content-faqs",
             "branch": "spec/SPEC-158-destinations-content-faqs",
             "base": "staging",
             "createdAt": "2026-05-26T00:00:00.000Z",
-            "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only. | PR #1269 open to staging. 39/42 done; T-008 (local db push) + T-013 (CI integ) + T-041 e2e gated."
+            "completedAt": "2026-06-02T07:22:56Z",
+            "archived": true,
+            "archivedAt": "2026-06-02T07:22:56Z",
+            "completionRef": "PR #1269 + #1276 (Phase 1); gates verified in close-out session 2026-06-02",
+            "note": "42 atomic tasks across 6 phases (avg complexity 2.6). 22 content tasks (1/city, web-researched, delegated by batch). Phase 1 only: schema+db+service+public API+web+seed; admin CRUD/UI deferred to Phase 2. Target = seed JSON + local DB only. | PR #1269 + #1276 merged to staging. All 42 tasks completed at close-out 2026-06-02."
         },
         {
             "specId": "SPEC-164",
@@ -682,14 +686,18 @@
         {
             "specId": "SPEC-165",
             "title": "Post and Event Comments System",
-            "status": "in-progress",
-            "progress": "13/18",
+            "status": "completed",
+            "progress": "18/18",
             "path": "SPEC-165-post-event-comments-system",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-165-post-event-comments-system",
             "branch": "spec/SPEC-165-post-event-comments-system",
             "base": "staging",
             "createdAt": "2026-05-30T00:00:00.000Z",
-            "note": "Backend complete (T-001..013) in PR #1349 → staging. 13/18. Frontend T-014..018 remain (new branch from staging after merge)."
+            "completedAt": "2026-06-02T07:22:56Z",
+            "archived": true,
+            "archivedAt": "2026-06-02T07:22:56Z",
+            "completionRef": "PR #1349 (backend) + #1368 (frontend follow-ups); e2e verified in close-out session 2026-06-02",
+            "note": "Backend complete (T-001..013) in PR #1349 → staging. Frontend T-014..018 in PR #1368 → staging. All 18 tasks completed. E2E 21/21 + 1 intentional skip."
         },
         {
             "specId": "SPEC-176",
@@ -714,9 +722,18 @@
         {
             "specId": "SPEC-177",
             "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
+            "status": "completed",
+            "progress": "32/32",
+            "path": "SPEC-177-admin-faq-management",
+            "archived": true,
+            "archivedAt": "2026-06-02T07:22:56Z"
+        },
+        {
+            "specId": "SPEC-178",
+            "title": "Versioned DB Migration Strategy Overhaul",
             "status": "in-progress",
-            "progress": "31/32",
-            "path": "SPEC-177-admin-faq-management"
+            "progress": "23/26",
+            "path": "SPEC-178-versioned-db-migration-strategy"
         },
         {
             "specId": "SPEC-181",

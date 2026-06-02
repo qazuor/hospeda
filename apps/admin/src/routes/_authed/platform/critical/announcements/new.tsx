@@ -22,6 +22,9 @@ import { useMemo } from 'react';
 
 export const Route = createFileRoute('/_authed/platform/critical/announcements/new')({
     beforeLoad: ({ context }) => {
+        // TYPE-WORKAROUND: TanStack Router types `beforeLoad` context as a generic
+        // `Record<string, unknown>`; the `_authed` layout injects `AuthState` at runtime
+        // but the type system doesn't propagate it to child route guards automatically.
         const authState = context as unknown as AuthState;
         const canWrite = authState.permissions?.includes(PermissionEnum.MAINTENANCE_MODE_WRITE);
         if (!canWrite) {

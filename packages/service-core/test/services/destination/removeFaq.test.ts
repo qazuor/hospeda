@@ -34,7 +34,7 @@ describe('DestinationService.removeFaq', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         model = createModelMock();
-        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'hardDelete']);
+        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'softDelete']);
         service = new DestinationService(
             { logger: mockLogger },
             model as unknown as DestinationModel
@@ -60,7 +60,7 @@ describe('DestinationService.removeFaq', () => {
     it('should remove a FAQ successfully', async () => {
         (model.findById as Mock).mockResolvedValue(entity);
         (faqModelMock.findById as Mock).mockResolvedValue(faq);
-        (faqModelMock.hardDelete as Mock).mockResolvedValue(1);
+        (faqModelMock.softDelete as Mock).mockResolvedValue(1);
         vi.spyOn(permissionHelpers, 'checkCanUpdateDestination').mockImplementation(() => {});
 
         const result = await service.removeFaq(actor, input);
@@ -69,7 +69,7 @@ describe('DestinationService.removeFaq', () => {
         expect(result.data).toEqual({ success: true });
         expect(model.findById).toHaveBeenCalledWith(entity.id, undefined);
         expect(faqModelMock.findById).toHaveBeenCalledWith(faqId, undefined);
-        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faqId }, undefined);
+        expect(faqModelMock.softDelete).toHaveBeenCalledWith({ id: faqId }, undefined);
     });
 
     it('should return NOT_FOUND if destination does not exist', async () => {
@@ -89,7 +89,7 @@ describe('DestinationService.removeFaq', () => {
         const result = await service.removeFaq(actor, input);
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
-        expect(faqModelMock.hardDelete).not.toHaveBeenCalled();
+        expect(faqModelMock.softDelete).not.toHaveBeenCalled();
     });
 
     it('should return NOT_FOUND if FAQ belongs to a different destination', async () => {
@@ -103,7 +103,7 @@ describe('DestinationService.removeFaq', () => {
         const result = await service.removeFaq(actor, input);
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
-        expect(faqModelMock.hardDelete).not.toHaveBeenCalled();
+        expect(faqModelMock.softDelete).not.toHaveBeenCalled();
     });
 
     it('should return FORBIDDEN if actor lacks DESTINATION_UPDATE', async () => {
@@ -115,13 +115,13 @@ describe('DestinationService.removeFaq', () => {
         const result = await service.removeFaq(actor, input);
 
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-        expect(faqModelMock.hardDelete).not.toHaveBeenCalled();
+        expect(faqModelMock.softDelete).not.toHaveBeenCalled();
     });
 
-    it('should return INTERNAL_ERROR when hardDelete throws', async () => {
+    it('should return INTERNAL_ERROR when softDelete throws', async () => {
         (model.findById as Mock).mockResolvedValue(entity);
         (faqModelMock.findById as Mock).mockResolvedValue(faq);
-        (faqModelMock.hardDelete as Mock).mockRejectedValue(new Error('DB error'));
+        (faqModelMock.softDelete as Mock).mockRejectedValue(new Error('DB error'));
         vi.spyOn(permissionHelpers, 'checkCanUpdateDestination').mockImplementation(() => {});
 
         const result = await service.removeFaq(actor, input);

@@ -1,5 +1,10 @@
 # ADR-017: PostgreSQL-Specific Features via Manual Migrations
 
+> **See also**: [ADR-029](ADR-029-versioned-migration-strategy.md) supersedes the migration
+> strategy note in this file (the 2026-04-18 "no drizzle-kit migrate" note). The repo now uses
+> versioned `drizzle-kit migrate` + a dedicated `extras/` directory. ADR-017 remains the
+> reference for *which* objects are Drizzle-invisible and *why* they need an extras script.
+
 ## Status
 
 Accepted (revised 2026-04-18)

@@ -626,6 +626,9 @@ export async function updatePlan(
                 action: 'plan_updated',
                 planId: id,
                 actorId,
+                // TYPE-WORKAROUND: `diff.changed` is `Record<string, DiffChangedField>` but
+                // `insertPlanAuditLog` accepts `Record<string, unknown>`; TypeScript won't
+                // implicitly widen a generic Record value type even though it is safe here.
                 changes: diff.changed as unknown as Record<string, unknown>,
                 previousValues: beforeSnapshot,
                 livemode: existingPlan.livemode ?? false

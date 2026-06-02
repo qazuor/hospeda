@@ -145,11 +145,15 @@ const onBeforeSubscriptionCancel: NonNullable<
     // Gap 1: stash the pre-cancel status so the after-hook can record it as
     // previousStatus in the audit event. currentStatus may be null if the row
     // was not found (unlikely — qzpay will error next), but store it anyway.
+    // TYPE-WORKAROUND: qzpay-hono's `ctx` is an opaque Hono context type with no
+    // index signature; we use it as a cross-hook property bag to pass state from
+    // onBefore to onAfter, which the library supports at runtime but not in types.
     (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_PREVIOUS_STATUS] = currentStatus;
 
     // Gap 2: stash the admin-supplied reason so the after-hook can include it
     // in the audit metadata. The reason is passed by qzpay-hono from the
     // request body string, so it may be undefined when omitted.
+    // TYPE-WORKAROUND: same opaque ctx property-bag pattern as Gap 1 above.
     (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_REASON] =
         typeof reason === 'string' ? reason : undefined;
 
@@ -300,9 +304,11 @@ const onAfterSubscriptionCancel: NonNullable<
         );
 
     // Gap 1: recover the pre-cancel status stashed by onBeforeSubscriptionCancel.
+    // TYPE-WORKAROUND: same opaque ctx property-bag pattern as the before-hook.
     const previousStatus = (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_PREVIOUS_STATUS];
 
     // Gap 2: recover the admin-supplied reason stashed by onBeforeSubscriptionCancel.
+    // TYPE-WORKAROUND: same opaque ctx property-bag pattern as the before-hook.
     const cancelReason = (ctx as unknown as Record<string, unknown>)[CTX_CANCEL_REASON];
 
     // Audit log entry — keeps the lifecycle event trail in sync with the

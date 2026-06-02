@@ -1251,7 +1251,10 @@ export function ChecklistWidget({ widget }: ChecklistWidgetProps) {
         if (fetchedData != null) {
             return Array.isArray(fetchedData)
                 ? (fetchedData as ReadonlyArray<ChecklistEntity>)
-                : ([fetchedData] as unknown as ReadonlyArray<ChecklistEntity>);
+                : // TYPE-WORKAROUND: when the resolver returns a single object (not an array),
+                  // wrapping it in an array literal produces `unknown[]` because fetchedData
+                  // is typed as `unknown`; the cast narrows to the expected element type.
+                  ([fetchedData] as unknown as ReadonlyArray<ChecklistEntity>);
         }
         if (configEntities != null && configEntities.length > 0) {
             return configEntities;

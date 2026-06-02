@@ -1,0 +1,12 @@
+{
+  "specId": "SPEC-178",
+  "title": "Versioned DB Migration Strategy Overhaul",
+  "type": "infrastructure",
+  "complexity": "high",
+  "status": "in-progress",
+  "created": "2026-06-01T00:00:00Z",
+  "approved": null,
+  "completed": null,
+  "planFileRef": null,
+  "tags": ["db-migration", "drizzle", "drizzle-kit", "migrate", "push", "extras", "ci", "drift-detection", "hops", "server-tools", "seed", "reset", "infrastructure", "agent-instructions", "claude-md", "adr"]
+}

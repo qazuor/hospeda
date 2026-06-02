@@ -3,8 +3,10 @@ spec-id: SPEC-158
 title: Destinations Rich Content + Structured FAQs
 type: feature
 complexity: high
-status: in-progress
+status: completed
 created: 2026-05-26T00:00:00Z
+completedAt: 2026-06-02T07:22:56Z
+completionRef: "PR #1269 + #1276 (Phase 1); gates verified in close-out session 2026-06-02"
 ---
 
 # SPEC-158 — Destinations Rich Content + Structured FAQs

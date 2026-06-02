@@ -6,23 +6,31 @@
  */
 import { mockPaginatedResponse } from '../mocks/handlers';
 
-/** Single valid promo code */
+/**
+ * Single valid promo code.
+ *
+ * Field names match the `PromoCode` interface introduced in commit 3af9c5601
+ * ("fix(billing): consolidate promo-code contract and support full rich model").
+ * Old names (discountValue, usedCount, validUntil, applicablePlans, isActive,
+ * requiresFirstPurchase, minimumAmount) were replaced with the canonical
+ * API-response shape.
+ */
 export const mockPromoCode = {
     id: 'promo-uuid-001',
     code: 'WELCOME20',
     description: 'Welcome discount for new users',
     type: 'percentage',
-    discountValue: 20,
+    value: 20,
     maxUses: 100,
     maxUsesPerUser: 1,
-    usedCount: 12,
+    timesRedeemed: 12,
     validFrom: '2024-01-01T00:00:00.000Z',
-    validUntil: '2024-12-31T23:59:59.000Z',
-    applicablePlans: ['owner', 'complex'],
+    expiresAt: '2024-12-31T23:59:59.000Z',
+    validPlans: ['owner-plan-uuid', 'complex-plan-uuid'],
     isStackable: false,
-    isActive: true,
-    requiresFirstPurchase: true,
-    minimumAmount: null,
+    active: true,
+    newCustomersOnly: true,
+    minAmount: null,
     status: 'active',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z'
@@ -37,17 +45,17 @@ export const mockPromoCodeList = [
         code: 'FLAT5000',
         description: 'Fixed discount on any plan',
         type: 'fixed',
-        discountValue: 500000,
+        value: 500000,
         maxUses: 50,
         maxUsesPerUser: 1,
-        usedCount: 50,
+        timesRedeemed: 50,
         validFrom: '2024-01-01T00:00:00.000Z',
-        validUntil: '2024-06-30T23:59:59.000Z',
-        applicablePlans: ['owner', 'complex', 'tourist'],
+        expiresAt: '2024-06-30T23:59:59.000Z',
+        validPlans: ['owner-plan-uuid', 'complex-plan-uuid', 'tourist-plan-uuid'],
         isStackable: false,
-        isActive: false,
-        requiresFirstPurchase: false,
-        minimumAmount: 1000000,
+        active: false,
+        newCustomersOnly: false,
+        minAmount: 1000000,
         status: 'expired'
     },
     {
@@ -56,17 +64,17 @@ export const mockPromoCodeList = [
         code: 'SUMMER15',
         description: 'Summer season discount',
         type: 'percentage',
-        discountValue: 15,
+        value: 15,
         maxUses: null,
         maxUsesPerUser: 2,
-        usedCount: 35,
+        timesRedeemed: 35,
         validFrom: '2024-12-01T00:00:00.000Z',
-        validUntil: null,
-        applicablePlans: ['owner'],
+        expiresAt: null,
+        validPlans: ['owner-plan-uuid'],
         isStackable: true,
-        isActive: true,
-        requiresFirstPurchase: false,
-        minimumAmount: null,
+        active: true,
+        newCustomersOnly: false,
+        minAmount: null,
         status: 'active'
     }
 ] as const;

@@ -36,9 +36,34 @@ vi.mock('@/components/ui/ToastProvider', () => ({
     ToastProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
-/** Mock @repo/billing (used by plans page for ALL_PLANS fallback) */
+/**
+ * Mock @repo/billing.
+ *
+ * ALL_PLANS: used by plans page fallback.
+ * EntitlementKey / LimitKey: imported directly by billing/owner-promotions.tsx
+ * after commit ec93f7a03 ("fix(admin): audit broken entitlement gates").
+ * Without them the Proxy guard throws at render time.
+ */
 vi.mock('@repo/billing', () => ({
-    ALL_PLANS: []
+    ALL_PLANS: [],
+    EntitlementKey: {
+        CREATE_PROMOTIONS: 'CREATE_PROMOTIONS',
+        VIEW_ANALYTICS: 'VIEW_ANALYTICS',
+        FEATURED_LISTING: 'FEATURED_LISTING',
+        PRIORITY_SUPPORT: 'PRIORITY_SUPPORT',
+        API_ACCESS: 'API_ACCESS',
+        BULK_UPLOAD: 'BULK_UPLOAD',
+        CUSTOM_DOMAIN: 'CUSTOM_DOMAIN',
+        REMOVE_BRANDING: 'REMOVE_BRANDING',
+        ADVANCED_FILTERS: 'ADVANCED_FILTERS'
+    },
+    LimitKey: {
+        MAX_LISTINGS: 'MAX_LISTINGS',
+        MAX_PHOTOS_PER_LISTING: 'MAX_PHOTOS_PER_LISTING',
+        MAX_PROMOTIONS: 'MAX_PROMOTIONS',
+        MAX_FEATURED_LISTINGS: 'MAX_FEATURED_LISTINGS',
+        MAX_TEAM_MEMBERS: 'MAX_TEAM_MEMBERS'
+    }
 }));
 
 /** Mock @repo/i18n (used by settings page for formatDate) */
@@ -54,7 +79,14 @@ vi.mock('@/lib/format-helpers', () => ({
     formatDateWithSeconds: () => '01/01 00:00:00'
 }));
 
-/** Mock @tanstack/react-form (used by settings page) */
+/**
+ * Mock @tanstack/react-form (used by settings page).
+ *
+ * `Subscribe` was added to BillingSettingsPage in commit a611c8946
+ * ("fix(admin): enable billing settings save via form.Subscribe dirty-tracking").
+ * Without it, `form.Subscribe` is undefined and React throws "Element type is
+ * invalid" at render time.
+ */
 vi.mock('@tanstack/react-form', () => ({
     useForm: () => ({
         Field: ({ children }: { children: (field: Record<string, unknown>) => React.ReactNode }) =>
@@ -63,6 +95,12 @@ vi.mock('@tanstack/react-form', () => ({
                 handleChange: vi.fn(),
                 handleBlur: vi.fn()
             }),
+        Subscribe: ({
+            children
+        }: {
+            selector: (state: Record<string, unknown>) => unknown;
+            children: (value: unknown) => React.ReactNode;
+        }) => children(false),
         handleSubmit: vi.fn(),
         reset: vi.fn(),
         setFieldValue: vi.fn(),
@@ -84,6 +122,12 @@ vi.mock('@/features/billing-plans', () => ({
     useDeletePlanMutation: () => ({ mutate: vi.fn(), isPending: false }),
     useCreatePlanMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
     useUpdatePlanMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    // Added in commit 307073fa6 ("feat(admin): surface subscriber impact + restore/hard-delete")
+    useRestorePlanMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    useHardDeletePlanMutation: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    useSubscriberImpactQuery: () => ({ data: null, isLoading: false }),
+    SoftDeleteConfirmDialog: () => <div data-testid="soft-delete-confirm-dialog" />,
+    HardDeleteConfirmDialog: () => <div data-testid="hard-delete-confirm-dialog" />,
     getPlanColumns: () => [],
     PlanDialog: () => <div data-testid="plan-dialog" />
 }));
@@ -104,7 +148,10 @@ vi.mock('@/features/billing-subscriptions/hooks', () => ({
     useSubscriptionsQuery: () => ({ data: { items: [] }, isLoading: false, isError: false }),
     useCancelSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
     useChangePlanMutation: () => ({ mutate: vi.fn(), isPending: false }),
-    useExtendTrialMutation: () => ({ mutate: vi.fn(), isPending: false })
+    useExtendTrialMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    // Added in commit 3bcc5d786 ("feat(admin): subscription pause/resume UI")
+    usePauseSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false }),
+    useResumeSubscriptionMutation: () => ({ mutate: vi.fn(), isPending: false })
 }));
 
 vi.mock('@/features/billing-subscriptions/types', () => ({}));

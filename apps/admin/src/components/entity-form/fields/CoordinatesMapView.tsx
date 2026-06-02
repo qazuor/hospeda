@@ -111,7 +111,10 @@ export function CoordinatesMapView({
 
         // Defensive — if a previous instance left state on this div, clear it
         // before init so Leaflet does not throw "already initialized".
+        // TYPE-WORKAROUND: Leaflet sets `_leaflet_id` on the DOM node at runtime but
+        // `HTMLDivElement` has no such property in its type; the cast reads/clears it safely.
         if ((node as unknown as { _leaflet_id?: number })._leaflet_id !== undefined) {
+            // TYPE-WORKAROUND: same Leaflet sentinel property on HTMLDivElement — write path.
             (node as unknown as { _leaflet_id?: number })._leaflet_id = undefined;
         }
 
@@ -137,7 +140,9 @@ export function CoordinatesMapView({
             mapRef.current = null;
             markerRef.current = null;
             // Belt-and-suspenders cleanup of Leaflet's sentinel.
+            // TYPE-WORKAROUND: Leaflet `_leaflet_id` sentinel on HTMLDivElement — same pattern as mount.
             if ((node as unknown as { _leaflet_id?: number })._leaflet_id !== undefined) {
+                // TYPE-WORKAROUND: Leaflet `_leaflet_id` sentinel on HTMLDivElement — write path.
                 (node as unknown as { _leaflet_id?: number })._leaflet_id = undefined;
             }
         };

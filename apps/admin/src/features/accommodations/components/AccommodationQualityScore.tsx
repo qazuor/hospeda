@@ -42,6 +42,9 @@ export const AccommodationQualityScore = React.memo(function AccommodationQualit
     // The engine is pure so recomputation is cheap (~10 signals per pass).
     // Selecting `state.values` triggers a re-render only when the values
     // identity changes, which TanStack Form does after each mutation.
+    // TYPE-WORKAROUND: `ReactFormApi` (the EntityFormContext type alias) doesn't expose
+    // `.store` in its public type even though the runtime `FormApi` from `useForm` always
+    // has it; casting to a structural shape that matches what `useStore` accepts.
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 

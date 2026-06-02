@@ -199,6 +199,8 @@ const itemListEntries = sortedCards.map((card) => ({
 	url: new URL(buildUrl({ locale, path: `destinos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
 	name: card.name,
 }));
+
+const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 <DefaultLayout
@@ -647,7 +649,7 @@ const itemListEntries = sortedCards.map((card) => ({
 	}
 </style>
 
-<script is:inline>
+<script is:inline nonce={cspNonce}>
 	/**
 	 * Client-side attractions filter for /destinos.
 	 *
