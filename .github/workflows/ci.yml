@@ -259,15 +259,17 @@ jobs:
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
-    # instead of rebuilding. Observed shard runtime on PR #1060 was
-    # 13-15 min (vitest startup + jsdom init per file still dominates,
-    # the build was never the only cost). Bumping the cap from 15 to
-    # 20 min absorbs the 1-2 min margin shards 1 and 2 needed without
-    # ceding the win T-032 delivered (the band-aid was 30 min). If a
-    # shard hits 20 min, look at uneven shard distribution first — the
-    # other shards landing in 13 min suggests test file slicing, not a
-    # systemic regression.
-    timeout-minutes: 20
+    # instead of rebuilding. Originally calibrated at 13-15 min/shard (PR
+    # #1060), capped at 20. The suite has since grown substantially
+    # (SPEC-165 comments, SPEC-170 permission panel, SPEC-177 FAQ, plus the
+    # baseline-recovery additions), pushing every shard to ~18-20 min — so
+    # shards 1 and 3 began hitting the 20 min cap and getting cancelled on
+    # ubuntu-latest. Raised to 30 to absorb the growth (and the slower
+    # self-hosted leo-laptop used on PRs). vitest --shard slices by file
+    # hash, not by duration, so shards are inherently uneven; if this keeps
+    # creeping, rebalance the heaviest files (admin component + userEvent
+    # suites) rather than just raising the cap again.
+    timeout-minutes: 30
     needs: build
     strategy:
       fail-fast: false
