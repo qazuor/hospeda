@@ -82,7 +82,13 @@ export function useFaqCreate(entityType: FaqEntityType, parentId: string) {
                 body: payload
             });
             const body = response.data as { data?: { faq?: FaqItem } };
-            return body.data?.faq as FaqItem;
+            const faq = body.data?.faq;
+            if (!faq) {
+                throw new Error(
+                    'FAQ mutation response did not include the expected data.faq payload'
+                );
+            }
+            return faq;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
@@ -115,7 +121,13 @@ export function useFaqUpdate(entityType: FaqEntityType, parentId: string) {
                 body: payload
             });
             const body = response.data as { data?: { faq?: FaqItem } };
-            return body.data?.faq as FaqItem;
+            const faq = body.data?.faq;
+            if (!faq) {
+                throw new Error(
+                    'FAQ mutation response did not include the expected data.faq payload'
+                );
+            }
+            return faq;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({
