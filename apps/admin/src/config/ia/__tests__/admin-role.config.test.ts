@@ -45,16 +45,22 @@ const EXPECTED_ADMIN_MAIN_MENU = [
 // ============================================================================
 
 describe('ADMIN role IA config (SPEC-164 T-004)', () => {
-    // ── 1. comercial absent from mainMenu ────────────────────────────────────
+    // ── 1. comercial present in mainMenu (SPEC-156 T-026 re-added it) ────────
+    //
+    // SPEC-164 T-004/AC-4 originally removed 'comercial' from the ADMIN nav to
+    // hide the billing section. SPEC-156 T-026 (commit e12e4cacb) deliberately
+    // re-added it, fixing a config drift: ADMIN has access to all 7 top-level
+    // sections including 'comercial' (which covers more than billing). The
+    // test below reflects the current intended state.
 
-    it('mainMenu does NOT include "comercial" (AC-4)', () => {
-        expect(adminRole.mainMenu).not.toContain('comercial');
+    it('mainMenu includes "comercial" (SPEC-156 T-026 restored all 7 sections)', () => {
+        expect(adminRole.mainMenu).toContain('comercial');
     });
 
-    // ── 2. comercial absent from mobile.bottomNav ────────────────────────────
+    // ── 2. comercial present in mobile.bottomNav (same SPEC-156 T-026 change) ─
 
-    it('mobile.bottomNav does NOT include "comercial" (AC-4)', () => {
-        expect(adminRole.mobile?.bottomNav).not.toContain('comercial');
+    it('mobile.bottomNav includes "comercial" (SPEC-156 T-026 restored all 7 sections)', () => {
+        expect(adminRole.mobile?.bottomNav).toContain('comercial');
     });
 
     // ── 3. Expected sections are still present ───────────────────────────────
