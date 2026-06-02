@@ -417,18 +417,22 @@ Given DEV_COOKIE_DOMAIN=.hospeda.local is set in apps/api/.env.local
 
 ---
 
-## 8. Design decisions — flagged for owner approval before implementation
+## 8. Design decisions
 
-The following points have meaningful tradeoffs. Implementation MUST NOT begin on these items
-until the owner makes a call:
+All decisions resolved by owner on 2026-06-02. Implementation may proceed on all phases.
 
-| # | Question | Options | Recommendation |
-|---|----------|---------|----------------|
-| D1 | Permission for staff host-creation | A. `USER_CREATE` (exists) B. New `HOST_ONBOARD = 'host.onboard'` | A (YAGNI — add dedicated perm when roles diverge) |
-| D2 | Staff host-creation UI placement | A. Dedicated `/users/create-host` route B. Modal on users list C. Modal on accommodations list | B (lowest friction — staff already on users list) |
-| D3 | Host CTA "has published accommodation" check | A. Extra API call B. Derive from `role === 'HOST'` | B (role=HOST implies ≥1 published; simpler) |
-| D4 | Dev-local cookie workaround | A. `*.hospeda.local` + `/etc/hosts` B. Document "log in separately" | A (realistic) — but owner may prefer B |
-| D5 | `callbackUrl` param name | A. `callbackUrl` B. `returnUrl` (already used in web-internal flows) C. `redirect` (used in admin guard search) | A (`callbackUrl` — semantically distinct from same-app `returnUrl`) |
+| # | Question | Decision | Rationale |
+|---|----------|----------|-----------|
+| D1 | Permission for staff host-creation | **RESOLVED: `USER_CREATE`** (existing `user.create` permission) | YAGNI — the existing permission is sufficient; a dedicated `HOST_ONBOARD` permission can be carved out later if role-permission models diverge. No new enum value introduced. |
+| D2 | Staff host-creation UI placement | **RESOLVED: Modal on the admin users list** | Lowest friction — staff are already on the users list when managing users; a modal avoids an extra route and keeps context. |
+| D3 | Host CTA "has published accommodation" check | **RESOLVED: Derive from `role === 'HOST'`** | `role=HOST` implies ≥1 published accommodation by the host-on-publish model. No extra API call needed. Simpler and consistent with the data model. |
+| D4 | Dev-local cookie workaround | **RESOLVED: `*.hospeda.local` + `/etc/hosts` recipe** | Provides a realistic test environment mirroring production cross-subdomain cookie behavior. Recipe must be documented and the `DEV_COOKIE_DOMAIN` env var wired into `apps/api/src/lib/auth.ts`. |
+| D5 | `callbackUrl` param name | **RESOLVED: `callbackUrl`** | Semantically distinct from the same-app `returnUrl` (web-internal post-login destination). Using `callbackUrl` makes the external-redirect intent explicit and consistent with web's existing usage. |
+
+### Revision history
+
+- 2026-06-02: Spec authored; D1–D5 flagged as open, owner approval required.
+- 2026-06-02: D1–D5 all resolved by owner. Implementation unblocked on all phases.
 
 ---
 
@@ -469,5 +473,5 @@ deleted signup page).
 | Question | Status |
 |----------|--------|
 | Should `callbackUrl` be preserved through the OAuth flow? (see §9) | Needs Phase 1 investigation |
-| If `HOST_ONBOARD` permission is added (D1-B), which roles get it seeded? | Depends on D1 decision |
+| `HOST_ONBOARD` permission — D1 resolved as `USER_CREATE` so this is moot. | CLOSED (D1 → `USER_CREATE`) |
 | Should the admin `auth/index.tsx` catch-all redirect to web auth or 404? | Resolve in Phase 2 |

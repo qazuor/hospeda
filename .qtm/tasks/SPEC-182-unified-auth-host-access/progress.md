@@ -1,6 +1,6 @@
 # SPEC-182 — Unified Authentication + Host-Mode Access Model — Progress
 
-**Status**: in-progress (0/22)
+**Status**: in-progress (3/22)
 **Created**: 2026-06-02
 **Linear**: BETA-52, BETA-57
 
@@ -10,9 +10,9 @@
 |---|---|---|
 | phase-1-web-auth (callbackUrl + allowlist) | T-001, T-002, T-003, T-004 | 0/4 |
 | phase-2-admin-auth (guard redirect + page removal) | T-005, T-006, T-007, T-008, T-009 | 0/5 |
-| phase-3-staff-host-creation (endpoint migration + UI) | T-010, T-011, T-012, T-013 | 0/4 |
-| phase-4-host-mode-toggle (web CTA three-state) | T-014, T-015, T-016 | 0/3 |
-| phase-5-dev-local-cookie (cross-subdomain workaround) | T-017, T-018 | 0/2 |
+| phase-3-staff-host-creation (endpoint migration + UI) | T-010 ✓, T-011, T-012, T-013 | 1/4 |
+| phase-4-host-mode-toggle (web CTA three-state) | T-014 ✓, T-015, T-016 | 1/3 |
+| phase-5-dev-local-cookie (cross-subdomain workaround) | T-017 ✓, T-018 | 1/2 |
 | phase-6-closeout (tests + docs + smoke + indexes) | T-019, T-020, T-021, T-022 | 0/4 |
 
 ## Critical Path
@@ -24,11 +24,17 @@ T-010 → T-011 → T-012 → T-013 → T-019
 T-014 → T-015 → T-016 → T-019
 T-017 → T-018 → T-019
 
-## Owner Decisions Required (BLOCKERS — must resolve before implementation)
+## Owner Decisions — ALL RESOLVED (2026-06-02)
 
-- **T-010**: D1 (USER_CREATE vs HOST_ONBOARD permission) + D2 (UI placement for staff host-creation)
-- **T-014**: D3 (host CTA check: role vs API call) + D5 (callbackUrl vs returnUrl param name)
-- **T-017**: D4 (dev-local cookie: *.hospeda.local recipe vs document-only)
+| # | Decision | Resolution |
+|---|----------|-----------|
+| D1 | Permission for staff host-creation | `USER_CREATE` (existing permission) |
+| D2 | Staff host-creation UI placement | Modal on the admin users list |
+| D3 | Host CTA "has published accommodation" check | Derive from `role === 'HOST'` (no extra API call) |
+| D4 | Dev-local cookie workaround | `*.hospeda.local` + `/etc/hosts` recipe |
+| D5 | `callbackUrl` param name | `callbackUrl` |
+
+Implementation is unblocked on all phases.
 
 ## Owner Actions Required (non-automatable)
 
