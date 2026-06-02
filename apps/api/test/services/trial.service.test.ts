@@ -33,7 +33,13 @@ const { mockWithServiceTransaction, mockDbForTrial } = vi.hoisted(() => {
         where: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValue([]),
         insert: vi.fn().mockReturnThis(),
-        values: vi.fn().mockResolvedValue(undefined)
+        values: vi.fn().mockResolvedValue(undefined),
+        // db.update(billingSubscriptions).set({ trialConvertedAt }).where(...) since
+        // ddc12e085 (stamp trial_converted_at when the cron cancels a trial). Without
+        // these, db.update() throws, the per-subscription catch swallows it, and
+        // blockedCount stays 0.
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis()
     };
     return { mockWithServiceTransaction: withSvcTx, mockDbForTrial: dbMock };
 });

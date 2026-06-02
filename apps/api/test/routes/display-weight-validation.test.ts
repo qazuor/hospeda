@@ -27,8 +27,10 @@ import { validateApiEnv } from '../../src/utils/env';
 
 describe('displayWeight HTTP schema validation (US-06)', () => {
     describe('AmenityCreateHttpSchema', () => {
+        // name is an i18nText object ({ es, en, pt } all required) since
+        // 4aa8ff2e3 (feat(schemas): i18n catalog name/description).
         const baseInput = {
-            name: 'Test Amenity',
+            name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
             slug: 'test-amenity',
             type: 'GENERAL_APPLIANCES'
         };
@@ -119,8 +121,10 @@ describe('displayWeight HTTP schema validation (US-06)', () => {
     });
 
     describe('FeatureCreateHttpSchema', () => {
+        // name is an i18nText object ({ es, en, pt } all required) since
+        // 4aa8ff2e3 (feat(schemas): i18n catalog name/description).
         const baseInput = {
-            name: 'Test Feature',
+            name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
             slug: 'test-feature'
         };
 
