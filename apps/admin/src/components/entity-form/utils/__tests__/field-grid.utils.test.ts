@@ -15,7 +15,10 @@ describe('getFieldColSpanClass', () => {
             FieldTypeEnum.GALLERY,
             FieldTypeEnum.IMAGE,
             FieldTypeEnum.FILE,
-            FieldTypeEnum.JSON
+            FieldTypeEnum.JSON,
+            // Added in commit f572ecdea: catalog chip selects need full width for chip wrapping.
+            FieldTypeEnum.AMENITY_SELECT,
+            FieldTypeEnum.FEATURE_SELECT
         ];
 
         for (const type of fullWidthTypes) {
@@ -43,8 +46,6 @@ describe('getFieldColSpanClass', () => {
             FieldTypeEnum.ACCOMMODATION_SELECT,
             FieldTypeEnum.EVENT_SELECT,
             FieldTypeEnum.ENTITY_SELECT,
-            FieldTypeEnum.AMENITY_SELECT,
-            FieldTypeEnum.FEATURE_SELECT,
             FieldTypeEnum.TAG_SELECT
         ];
 

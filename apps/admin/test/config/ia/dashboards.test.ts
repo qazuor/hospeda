@@ -83,12 +83,20 @@ describe('schema validation', () => {
 // ---------------------------------------------------------------------------
 
 describe('card counts (AC-4)', () => {
-    it('hostDashboard should have exactly 7 stub widgets', () => {
-        expect(dashboards.hostDashboard?.widgets).toHaveLength(7);
+    /**
+     * hostDashboard grew from 7 to 10 widgets through SPEC-155 additions
+     * (commits c94502f99 → 06b73c15c). The source comment now reads "// 10".
+     */
+    it('hostDashboard should have exactly 10 stub widgets', () => {
+        expect(dashboards.hostDashboard?.widgets).toHaveLength(10);
     });
 
-    it('editorDashboard should have exactly 8 stub widgets', () => {
-        expect(dashboards.editorDashboard?.widgets).toHaveLength(8);
+    /**
+     * editorDashboard grew from 8 to 11 widgets through SPEC-155 additions
+     * and the live recent-comments card (commit 06b73c15c). Source: "// 11".
+     */
+    it('editorDashboard should have exactly 11 stub widgets', () => {
+        expect(dashboards.editorDashboard?.widgets).toHaveLength(11);
     });
 
     it('adminBaseDashboard should have exactly 7 stub widgets (cards A–G)', () => {

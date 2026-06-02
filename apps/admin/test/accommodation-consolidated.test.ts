@@ -28,7 +28,8 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(config).toBeDefined();
             expect(config.sections).toHaveLength(7); // Todas las secciones consolidadas
             expect(config.metadata).toBeDefined();
-            expect(config.metadata?.title).toBe('Accommodation');
+            // mockT returns the i18n key verbatim; the real translated value is 'Accommodation'
+            expect(config.metadata?.title).toBe('admin-entities.entities.accommodation.singular');
         });
 
         it('should have basic-info section with correct structure', () => {
@@ -40,7 +41,7 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(basicInfoSection.id).toBe('basic-info');
             expect(basicInfoSection.modes).toEqual(['view', 'edit', 'create']);
-            expect(basicInfoSection.fields).toHaveLength(7); // name, description, richDescription, type, isFeatured, destinationId, ownerId
+            expect(basicInfoSection.fields).toHaveLength(8); // name, summary, description, richDescription, type, isFeatured, destinationId, ownerId
         });
 
         it('should have all required fields in basic-info section', () => {
@@ -72,7 +73,7 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(viewSections[0].id).toBe('basic-info');
 
             // All fields must be present in view mode
-            expect(viewSections[0].fields).toHaveLength(7);
+            expect(viewSections[0].fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for edit mode', () => {
@@ -86,7 +87,7 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(editSections[0].id).toBe('basic-info');
 
             // All fields must be present in edit mode
-            expect(editSections[0].fields).toHaveLength(7);
+            expect(editSections[0].fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for create mode', () => {
@@ -102,7 +103,7 @@ describe('AccommodationConsolidatedConfig', () => {
             // isFeatured must not be present in create mode
             const fieldIds = createSections[0].fields.map((field) => field.id);
             expect(fieldIds).not.toContain('isFeatured');
-            expect(createSections[0].fields).toHaveLength(6);
+            expect(createSections[0].fields).toHaveLength(7);
         });
     });
 
