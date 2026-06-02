@@ -717,6 +717,22 @@
             "status": "in-progress",
             "progress": "31/32",
             "path": "SPEC-177-admin-faq-management"
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "status": "in-progress",
+            "progress": "0/11",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-181-posthog-reverse-proxy",
+            "branch": "spec/SPEC-181-posthog-reverse-proxy",
+            "base": "staging",
+            "driver": "Linear BETA-77",
+            "createdAt": "2026-06-02T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
+            "taskCount": 11,
+            "averageComplexity": 2.5,
+            "note": "11 tasks across 4 phases (avg complexity 2.5). phase-worker: T-001..T-004 (Worker script + wrangler.toml + README + unit test). phase-app: T-005..T-007 (CSP removal + env-registry update + CSP regression test). phase-docs: T-008..T-009 (proxy guide + SPEC-140 ref update). phase-verify: T-010..T-011 (owner ops: CF Worker deploy + Coolify env set + smoke). T-010 and T-011 are manual owner actions, not automatable. Critical coupling: T-010 (Worker live) must precede T-011 (env var + redeploy)."
         }
     ],
     "standalone": {

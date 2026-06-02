@@ -2066,6 +2066,24 @@
             "complexity": "high",
             "path": "SPEC-177-admin-faq-management",
             "created": "2026-06-01T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "type": "fix",
+            "complexity": "low-medium",
+            "status": "in-progress",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "priority": "P2",
+            "created": "2026-06-02T00:00:00.000Z",
+            "linear": "BETA-77",
+            "branch": "spec/SPEC-181-posthog-reverse-proxy",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-181-posthog-reverse-proxy",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": false,
+            "tags": ["posthog", "analytics", "cloudflare-worker", "csp", "web", "infra", "reverse-proxy", "first-party", "ad-blocker", "env-registry"],
+            "note": "Driver BETA-77. Web PostHog sends events directly to us.i.posthog.com — blocked by ad-blockers (est. 25-35% desktop loss in Argentina). Solution: Cloudflare Worker proxying /ingest/* on hospeda.com.ar to PostHog Cloud US. Web-only (admin out of scope). CRITICAL coupling: CSP in middleware-helpers.ts hardcodes the PostHog external hosts; removing them and changing PUBLIC_POSTHOG_HOST must be atomic with the Worker already live. 11 tasks across 4 phases: phase-worker (Worker + wrangler + test), phase-app (CSP + env-registry + CSP regression test), phase-docs, phase-verify (owner ops + smoke). T-010/T-011 are owner-only manual actions."
         }
     ]
 }
