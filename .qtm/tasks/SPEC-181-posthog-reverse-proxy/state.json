@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 11,
-        "pending": 11,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -16,7 +16,7 @@
             "id": "T-001",
             "title": "Author Cloudflare Worker script (posthog-proxy/worker.js)",
             "description": "Create infra/cloudflare/posthog-proxy/worker.js using the official PostHog Cloudflare Worker template (~50 lines, no deps). Worker must: strip /ingest prefix, route /static/* to us-assets.i.posthog.com and all other paths to us.i.posthog.com, forward X-Forwarded-For with real client IP, set Cache-Control: no-store on ingestion endpoints (/e/, /decide/, /flags/), return upstream response unmodified. Acceptance: worker.js correctly rewrites paths, no npm deps, code compiles (wrangler validate or manual review).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002", "T-004"],
@@ -30,15 +30,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
             }
         },
         {
             "id": "T-002",
             "title": "Add wrangler.toml for posthog-proxy Worker",
             "description": "Create infra/cloudflare/posthog-proxy/wrangler.toml with name=posthog-proxy, compatibility_date, and route placeholder (hospeda.com.ar/ingest/*). Mark routes as a placeholder — actual route binding is done in the Cloudflare dashboard by the owner. Acceptance: wrangler.toml is valid, wrangler dev starts without errors.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
@@ -52,15 +52,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
             }
         },
         {
             "id": "T-003",
             "title": "Write Worker README with deploy instructions + CSP coupling gotcha",
             "description": "Create infra/cloudflare/posthog-proxy/README.md documenting: (1) what the Worker does, (2) deploy steps (wrangler deploy, set CF route in dashboard), (3) CRITICAL: Worker MUST be deployed and route verified BEFORE setting PUBLIC_POSTHOG_HOST in Coolify — reversing order breaks PostHog init, (4) how to verify (curl + DevTools), (5) staging vs prod route config. Acceptance: README covers all operator steps, CSP coupling gotcha is prominently called out.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-010"],
@@ -74,15 +74,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
             }
         },
         {
             "id": "T-004",
             "title": "Write Worker unit test (path rewriting + no-cache headers)",
             "description": "Write a Vitest test (or wrangler worker-test-env test) in infra/cloudflare/posthog-proxy/worker.test.js verifying: (a) /ingest/e/ → upstream us.i.posthog.com/e/ with Cache-Control: no-store, (b) /ingest/decide/ → us.i.posthog.com/decide/ with Cache-Control: no-store, (c) /ingest/static/array.js → us-assets.i.posthog.com/static/array.js (no cache restriction), (d) X-Forwarded-For header is set from the real client IP. Acceptance: tests pass, coverage of the path-routing logic ≥90%.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-010"],
@@ -96,8 +96,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
             }
         },
         {

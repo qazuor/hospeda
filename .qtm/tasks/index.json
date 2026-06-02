@@ -739,7 +739,7 @@
             "specId": "SPEC-181",
             "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
             "status": "in-progress",
-            "progress": "0/11",
+            "progress": "4/11",
             "path": "SPEC-181-posthog-reverse-proxy",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-181-posthog-reverse-proxy",
             "branch": "spec/SPEC-181-posthog-reverse-proxy",

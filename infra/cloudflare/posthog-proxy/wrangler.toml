@@ -1,0 +1,23 @@
+# Cloudflare Worker config for the PostHog reverse proxy (SPEC-181).
+#
+# Deploy is a manual OWNER action (T-010): `wrangler deploy` from this directory.
+# See README.md for the deploy order and the CSP coupling gotcha.
+
+name = "posthog-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Routes are bound at deploy time (owner action). One Worker serves the
+# first-party ingestion path on both production and staging origins:
+#   - hospeda.com.ar/ingest/*
+#   - staging.hospeda.com.ar/ingest/*
+# Uncomment + set the zone when deploying via wrangler, or configure the routes
+# in the Cloudflare dashboard.
+#
+# [[routes]]
+# pattern = "hospeda.com.ar/ingest/*"
+# zone_name = "hospeda.com.ar"
+#
+# [[routes]]
+# pattern = "staging.hospeda.com.ar/ingest/*"
+# zone_name = "hospeda.com.ar"
