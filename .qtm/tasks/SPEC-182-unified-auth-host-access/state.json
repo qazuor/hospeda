@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 22,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -212,9 +212,9 @@
         },
         {
             "id": "T-010",
-            "title": "[OWNER DECISION] Confirm permission for staff host-creation (D1 + D2)",
-            "description": "OWNER DECISION REQUIRED before implementation. Present D1 (USER_CREATE vs HOST_ONBOARD) and D2 (UI placement: /users/create-host route vs modal on users list vs modal on accommodations list). Recommendation: D1=USER_CREATE (YAGNI), D2=modal on users list. Owner confirms or overrides. Record decision in spec §8 and engram. Acceptance: owner has made explicit calls on both D1 and D2; implementation tasks T-011/T-012/T-013 can start.",
-            "status": "pending",
+            "title": "[RESOLVED] Confirm permission for staff host-creation (D1 + D2)",
+            "description": "RESOLVED 2026-06-02. D1=USER_CREATE (existing permission, YAGNI). D2=modal on the admin users list (lowest friction). Spec §8 updated. T-011/T-012/T-013 are unblocked.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-012", "T-013"],
@@ -229,13 +229,13 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-02T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Migrate signup-as-host endpoint from Origin-check to permission-check",
-            "description": "In apps/api/src/routes/auth/signup-as-host.ts: remove the Origin header guard and move the endpoint from createPublicRoute to an authenticated route (createProtectedRoute or a dedicated admin route). Gate with PermissionEnum.USER_CREATE (or HOST_ONBOARD per T-010 decision). The session is validated by the route factory middleware — no manual session check needed. Remove the route from apps/api/src/routes/auth/index.ts if the path changes; add it to the correct admin route index. Update the response schema if needed. Acceptance: authenticated user with USER_CREATE can create a host; unauthenticated 401; authenticated without permission 403; typecheck clean.",
+            "description": "In apps/api/src/routes/auth/signup-as-host.ts: remove the Origin header guard and move the endpoint from createPublicRoute to an authenticated route (createProtectedRoute or a dedicated admin route). Gate with PermissionEnum.USER_CREATE (D1 resolved: use USER_CREATE, not HOST_ONBOARD). The session is validated by the route factory middleware — no manual session check needed. Remove the route from apps/api/src/routes/auth/index.ts if the path changes; add it to the correct admin route index. Update the response schema if needed. Acceptance: authenticated user with USER_CREATE can create a host; unauthenticated 401; authenticated without permission 403; typecheck clean.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-010"],
@@ -257,7 +257,7 @@
         {
             "id": "T-012",
             "title": "Add in-panel staff 'Create host account' UI action (admin)",
-            "description": "Per T-010 decision (recommended: modal on users list). Add a 'Create host account' button to the admin users list page (or wherever D2 places it). The modal/form has name + email + password fields and calls the migrated endpoint (T-011). On success, show a toast and refresh the users list. On error, show the API error message. Requires the user to have USER_CREATE permission (the button is hidden or disabled otherwise). Acceptance: staff can create a host account in-panel; tourists/hosts without USER_CREATE do not see the button; typecheck clean.",
+            "description": "D2 resolved: modal on the admin users list page. Add a 'Create host account' button to the admin users list. The modal/form has name + email + password fields and calls the migrated endpoint (T-011). On success, show a toast and refresh the users list. On error, show the API error message. Requires the user to have USER_CREATE permission (the button is hidden or disabled otherwise). Acceptance: staff can create a host account in-panel; tourists/hosts without USER_CREATE do not see the button; typecheck clean.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-011"],
@@ -300,9 +300,9 @@
         },
         {
             "id": "T-014",
-            "title": "[OWNER DECISION] Confirm D3 (host CTA check) and D5 (callbackUrl param name)",
-            "description": "OWNER DECISION REQUIRED. D3: host-mode CTA derives from role=HOST (no extra API call) vs. checking has-published-accommodation explicitly. Recommendation: role=HOST implies ≥1 published — no extra call. D5: callbackUrl vs returnUrl param name on web signin. Recommendation: callbackUrl (semantically distinct). Owner confirms or overrides. Record in spec §8 and engram. Acceptance: owner has made explicit calls on D3 and D5; T-015/T-016 can proceed.",
-            "status": "pending",
+            "title": "[RESOLVED] Confirm D3 (host CTA check) and D5 (callbackUrl param name)",
+            "description": "RESOLVED 2026-06-02. D3=derive from role=HOST (no extra API call; role=HOST implies ≥1 published accommodation by model). D5=callbackUrl (semantically distinct from same-app returnUrl; consistent with web's existing usage). Spec §8 updated. T-015/T-016 are unblocked.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-015", "T-016"],
@@ -317,13 +317,13 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-02T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Wire UserMenu.client.tsx hostMode item to admin URL for role=HOST",
-            "description": "In apps/web/src/components/shared/navigation/UserMenu.client.tsx: the 'hostMode' i18n key (es/en/pt) and the STAFF_DISCRIMINATOR_PERMISSION logic already exist. Add a three-state CTA based on /auth/me response: (1) unauthenticated/tourist → href=/{locale}/publicar/, (2) role=HOST → href=env.VITE_ADMIN_URL (or HOSPEDA_ADMIN_URL from PUBLIC_ADMIN_URL), (3) staff with access.apiAdmin → href=env.VITE_ADMIN_URL with 'Panel de administración' label. The 'Modo anfitrión' label is already i18n'd. Derive host state from role per T-014 D3 decision. Acceptance: host user sees 'Modo anfitrión' linking to admin; staff sees 'Panel de administración'; tourist sees 'Publicar alojamiento'; typecheck clean.",
+            "description": "In apps/web/src/components/shared/navigation/UserMenu.client.tsx: the 'hostMode' i18n key (es/en/pt) and the STAFF_DISCRIMINATOR_PERMISSION logic already exist. Add a three-state CTA based on /auth/me response: (1) unauthenticated/tourist → href=/{locale}/publicar/, (2) role=HOST → href=env.VITE_ADMIN_URL (or HOSPEDA_ADMIN_URL from PUBLIC_ADMIN_URL), (3) staff with access.apiAdmin → href=env.VITE_ADMIN_URL with 'Panel de administración' label. The 'Modo anfitrión' label is already i18n'd. D3 resolved: derive host state from role===HOST — no extra API call needed. Acceptance: host user sees 'Modo anfitrión' linking to admin; staff sees 'Panel de administración'; tourist sees 'Publicar alojamiento'; typecheck clean.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-014"],
@@ -345,7 +345,7 @@
         {
             "id": "T-016",
             "title": "Extend HostLandingCta + mobile nav CTA for host-mode three-state logic",
-            "description": "In apps/web/src/components/sections/HostLandingCta.client.tsx: extend existing unauthenticated/authenticated branches to add the role=HOST case (CTA → admin URL). In apps/web/src/components/shared/navigation/MobileMenuIsland.astro (and desktop nav CTA if applicable): apply the same three-state logic. Per T-014 D3: role=HOST → admin URL; role=USER or unauthenticated → /{locale}/publicar/. Use PUBLIC_ADMIN_URL (or an existing env var) as the admin URL. Acceptance: all three CTA surfaces adapt correctly per user state; typecheck clean; no regression on existing tourist flow.",
+            "description": "In apps/web/src/components/sections/HostLandingCta.client.tsx: extend existing unauthenticated/authenticated branches to add the role=HOST case (CTA → admin URL). In apps/web/src/components/shared/navigation/MobileMenuIsland.astro (and desktop nav CTA if applicable): apply the same three-state logic. D3 resolved: role===HOST → admin URL (no extra API call); role=USER or unauthenticated → /{locale}/publicar/. Use PUBLIC_ADMIN_URL (or an existing env var) as the admin URL. Acceptance: all three CTA surfaces adapt correctly per user state; typecheck clean; no regression on existing tourist flow.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-015"],
@@ -366,9 +366,9 @@
         },
         {
             "id": "T-017",
-            "title": "[OWNER DECISION] Confirm dev-local cookie approach (D4)",
-            "description": "OWNER DECISION REQUIRED. D4: (A) *.hospeda.local + /etc/hosts + DEV_COOKIE_DOMAIN env var in apps/api — realistic but requires per-developer setup, OR (B) Document 'log in to admin separately in local dev' as the accepted workaround. Recommendation: A. If owner chooses A, T-018 implements it. If owner chooses B, T-018 becomes a docs-only task. Acceptance: owner has made an explicit call on D4; T-018 can proceed.",
-            "status": "pending",
+            "title": "[RESOLVED] Confirm dev-local cookie approach (D4)",
+            "description": "RESOLVED 2026-06-02. D4=*.hospeda.local + /etc/hosts recipe (option A). T-018 must implement the DEV_COOKIE_DOMAIN env var in apps/api/src/lib/auth.ts and document the /etc/hosts setup in docs/guides/auth-local-dev.md. Spec §8 updated.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-018"],
@@ -383,13 +383,13 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-02T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
-            "title": "Implement or document dev-local cross-subdomain cookie workaround",
-            "description": "Per T-017 decision. If D4=A: (1) In apps/api/src/lib/auth.ts, add DEV_COOKIE_DOMAIN support: if process.env.DEV_COOKIE_DOMAIN is set, use it as crossSubDomainCookies.domain regardless of NODE_ENV. Register DEV_COOKIE_DOMAIN in packages/config/src/env-registry.*.ts as a dev-only, non-secret var. Update apps/api/.env.example. (2) Create docs/guides/auth-local-dev.md with /etc/hosts setup, DEV_COOKIE_DOMAIN config, and verification steps. If D4=B: only docs/guides/auth-local-dev.md documenting the separate-login workaround. Acceptance: workaround is usable (D4=A: tested with local hosts + cookie) or documented (D4=B); typecheck clean.",
+            "title": "Implement dev-local cross-subdomain cookie workaround (*.hospeda.local recipe)",
+            "description": "D4 resolved: implement option A (*.hospeda.local + /etc/hosts). (1) In apps/api/src/lib/auth.ts: add DEV_COOKIE_DOMAIN support — if process.env.DEV_COOKIE_DOMAIN is set, use it as crossSubDomainCookies.domain regardless of NODE_ENV. Register DEV_COOKIE_DOMAIN in packages/config/src/env-registry.*.ts as a dev-only, non-secret var. Update apps/api/.env.example. (2) Create docs/guides/auth-local-dev.md with /etc/hosts setup (web.hospeda.local + admin.hospeda.local → 127.0.0.1), DEV_COOKIE_DOMAIN config, and verification steps. Acceptance: developer can sign in at http://web.hospeda.local:4321 and navigate to http://admin.hospeda.local:3000 with the same session cookie; typecheck clean.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-017"],
