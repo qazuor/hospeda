@@ -113,10 +113,17 @@ jobs:
         # reference (alphanumeric, hyphen, underscore, slash, dot).  An empty
         # input falls back to the workflow's own ref (typically the default branch
         # when triggered from the Actions UI without specifying a branch).
+        #
+        # NOTE: the GitHub-context values are passed via `env:` (NOT interpolated
+        # directly into the shell) so they are never parsed as shell — this avoids
+        # the run-shell-injection class flagged by SAST. The grep allow-list is the
+        # value sanitiser; the env indirection is the injection-safety boundary.
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          GH_REF: ${{ github.ref }}
         run: |
-          INPUT_BRANCH="${{ inputs.branch }}"
           if [ -z "$INPUT_BRANCH" ]; then
-            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+            echo "ref=$GH_REF" >> "$GITHUB_OUTPUT"
           elif echo "$INPUT_BRANCH" | grep -qP '^[a-zA-Z0-9._/\-]+$'; then
             echo "ref=$INPUT_BRANCH" >> "$GITHUB_OUTPUT"
           else
