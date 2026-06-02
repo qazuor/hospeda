@@ -1,0 +1,500 @@
+{
+    "version": "1.0",
+    "title": "Unified Authentication + Host-Mode Access Model",
+    "specRef": "SPEC-182-unified-auth-host-access",
+    "created": "2026-06-02T00:00:00.000Z",
+    "summary": {
+        "total": 22,
+        "pending": 22,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add callbackUrl param support to web signin page (server-side redirect)",
+            "description": "In apps/web/src/pages/[lang]/auth/signin.astro: read the ?callbackUrl query param in server-side Astro code. After a successful sign-in, if callbackUrl is present and passes the allowlist check (T-002), redirect to callbackUrl instead of the default returnUrl destination. If callbackUrl is absent or fails allowlist, use existing returnUrl logic unchanged. The redirect must happen in server-side Astro.redirect() — NOT in client JS. Acceptance: signin with ?callbackUrl=https://admin.hospeda.com.ar redirects there post-signin; signin without ?callbackUrl behaves identically to today.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["web", "auth", "signin", "callbackUrl", "phase-1"],
+            "phase": "phase-1-web-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement callbackUrl allowlist validator (server-side, no open-redirect)",
+            "description": "Create a pure function validateCallbackUrl(url: string, env: { siteUrl: string; adminUrl: string; nodeEnv: string }): string | null in apps/web/src/lib/auth-callback.ts (or middleware-helpers.ts). Returns the URL if allowed, null otherwise. Allowlist rules: (1) hospeda.com.ar and any subdomain (regex ^https?://([a-z0-9-]+\\.)?hospeda\\.com\\.ar); (2) HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL exact origins; (3) *.hospeda.local + localhost in development. MUST NOT allow arbitrary domains. Acceptance: unit tests cover allowed/blocked cases; open-redirect with evil.example.com returns null.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-001", "T-003"],
+            "subtasks": [],
+            "tags": ["web", "auth", "security", "callbackUrl", "allowlist", "phase-1"],
+            "phase": "phase-1-web-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add buildAdminLoginRedirect helper in web middleware-helpers.ts",
+            "description": "In apps/web/src/lib/middleware-helpers.ts, add an exported function buildAdminLoginRedirect({ siteUrl, locale, adminUrl }: { siteUrl: string; locale: SupportedLocale; adminUrl: string }): string that returns a URL of the form /{locale}/auth/signin/?callbackUrl={encodeURIComponent(adminUrl)}. This is the URL the admin guard will redirect unauthenticated users to. Note: this function lives in the web app but is also referenced conceptually by the admin guard (which builds the equivalent URL from its env vars — see T-005). Acceptance: unit test covers the URL shape and encoding; existing buildLoginRedirect is unchanged.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["web", "auth", "helper", "phase-1"],
+            "phase": "phase-1-web-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Unit tests: callbackUrl allowlist + buildAdminLoginRedirect",
+            "description": "Write Vitest unit tests for validateCallbackUrl (T-002) and buildAdminLoginRedirect (T-003). Coverage: (a) allowed origins pass (hospeda.com.ar, admin.hospeda.com.ar, staging.hospeda.com.ar, SITE_URL, ADMIN_URL), (b) blocked origins return null (evil.com, evil.hospeda.com.ar.evil.com, javascript:, //, data:), (c) relative URLs return null, (d) buildAdminLoginRedirect encodes the callbackUrl correctly, (e) existing returnUrl behavior in signin is not regressed. Acceptance: all tests green, coverage ≥90% on the two functions.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["web", "auth", "testing", "phase-1"],
+            "phase": "phase-1-web-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update admin /_authed.tsx redirect-signin to point to web auth URL",
+            "description": "In apps/admin/src/routes/_authed.tsx, change the 'redirect-signin' case from `throw redirect({ to: '/auth/signin', search: decision.search })` to an external redirect: build the URL {VITE_SITE_URL}/{locale}/auth/signin?callbackUrl={encodeURIComponent(location.pathname + location.search)} and throw redirect({ href: webSigninUrl }). Use env.VITE_SITE_URL for the web origin. The admin's own env.VITE_ADMIN_URL (or window.location.origin) is the callbackUrl value so the web signin knows where to send the user after auth. Acceptance: unauthenticated request to any admin route redirects to web signin with correct callbackUrl; typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [],
+            "tags": ["admin", "auth", "guard", "redirect", "phase-2"],
+            "phase": "phase-2-admin-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Delete apps/admin/src/routes/auth/signup.tsx",
+            "description": "Remove the logged-out host signup page from admin. This closes BETA-57: the OAuth signup path that created role=USER instead of HOST no longer exists. Before deleting: check for any import references to this file in the admin app (routes manifest, auth.tsx, etc.) and remove them. Acceptance: file is gone, typecheck passes, no dangling imports, routes tree does not 404 on any currently-linked page (the signup link from signin.tsx is also going away in T-007).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["admin", "auth", "cleanup", "beta-57", "phase-2"],
+            "phase": "phase-2-admin-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Delete apps/admin/src/routes/auth/signin.tsx",
+            "description": "Remove the admin-own signin page. This is now replaced by the web auth redirect (T-005). Before deleting: check the header-user.tsx (window.location.href = '/auth/signin') and callback.tsx (router.navigate to /auth/signin) references — update them to redirect to web signin URL or remove if unreachable. Also check auth.tsx (the route layout) for any direct link to /auth/signin and update. Acceptance: file gone, all former references updated, typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008", "T-019"],
+            "subtasks": [],
+            "tags": ["admin", "auth", "cleanup", "phase-2"],
+            "phase": "phase-2-admin-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update admin auth/index.tsx + auth/callback.tsx for removed signin/signup routes",
+            "description": "Review apps/admin/src/routes/auth/index.tsx: if it redirects to /auth/signin, update the redirect to the web signin URL. If it is a layout, ensure it does not reference the deleted pages. Review apps/admin/src/routes/auth/callback.tsx: after OAuth code exchange, if it redirects to /auth/signin on failure (unauthenticated), update to redirect to web signin URL. On success it redirects to /dashboard — keep that unchanged. Acceptance: auth index and callback handle the missing pages gracefully; typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["admin", "auth", "cleanup", "phase-2"],
+            "phase": "phase-2-admin-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Extend authed-guard unit tests to cover web-auth redirect shape",
+            "description": "In the existing authed-guard.test.ts (or create one if absent), add/extend tests for the 'redirect-signin' case to verify that the decision carries the correct pathname for use by the caller in building the web auth URL. Also add an integration-level test (or snapshot) for the _authed.tsx handler: given authState.isAuthenticated=false, verify the redirect href matches the expected web signin URL pattern (including callbackUrl encoding). Acceptance: tests green, existing guard tests preserved.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["admin", "auth", "testing", "phase-2"],
+            "phase": "phase-2-admin-auth",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "[OWNER DECISION] Confirm permission for staff host-creation (D1 + D2)",
+            "description": "OWNER DECISION REQUIRED before implementation. Present D1 (USER_CREATE vs HOST_ONBOARD) and D2 (UI placement: /users/create-host route vs modal on users list vs modal on accommodations list). Recommendation: D1=USER_CREATE (YAGNI), D2=modal on users list. Owner confirms or overrides. Record decision in spec §8 and engram. Acceptance: owner has made explicit calls on both D1 and D2; implementation tasks T-011/T-012/T-013 can start.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "host-creation", "decision", "owner-action", "phase-3"],
+            "phase": "phase-3-staff-host-creation",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Migrate signup-as-host endpoint from Origin-check to permission-check",
+            "description": "In apps/api/src/routes/auth/signup-as-host.ts: remove the Origin header guard and move the endpoint from createPublicRoute to an authenticated route (createProtectedRoute or a dedicated admin route). Gate with PermissionEnum.USER_CREATE (or HOST_ONBOARD per T-010 decision). The session is validated by the route factory middleware — no manual session check needed. Remove the route from apps/api/src/routes/auth/index.ts if the path changes; add it to the correct admin route index. Update the response schema if needed. Acceptance: authenticated user with USER_CREATE can create a host; unauthenticated 401; authenticated without permission 403; typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012", "T-019"],
+            "subtasks": [],
+            "tags": ["api", "auth", "signup-as-host", "permissions", "phase-3"],
+            "phase": "phase-3-staff-host-creation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add in-panel staff 'Create host account' UI action (admin)",
+            "description": "Per T-010 decision (recommended: modal on users list). Add a 'Create host account' button to the admin users list page (or wherever D2 places it). The modal/form has name + email + password fields and calls the migrated endpoint (T-011). On success, show a toast and refresh the users list. On error, show the API error message. Requires the user to have USER_CREATE permission (the button is hidden or disabled otherwise). Acceptance: staff can create a host account in-panel; tourists/hosts without USER_CREATE do not see the button; typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["admin", "host-creation", "ui", "phase-3"],
+            "phase": "phase-3-staff-host-creation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Tests: staff host-creation endpoint permission matrix",
+            "description": "Write Vitest integration tests for the migrated signup-as-host endpoint (T-011): (a) authenticated user with USER_CREATE → 200 + role=HOST in response, (b) unauthenticated → 401, (c) authenticated without USER_CREATE → 403, (d) missing fields → 400 (Zod validation), (e) duplicate email → appropriate error from Better Auth. Use the project's standard mock-actor auth pattern. Acceptance: all 5 cases covered, tests green.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["api", "auth", "testing", "phase-3"],
+            "phase": "phase-3-staff-host-creation",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "[OWNER DECISION] Confirm D3 (host CTA check) and D5 (callbackUrl param name)",
+            "description": "OWNER DECISION REQUIRED. D3: host-mode CTA derives from role=HOST (no extra API call) vs. checking has-published-accommodation explicitly. Recommendation: role=HOST implies ≥1 published — no extra call. D5: callbackUrl vs returnUrl param name on web signin. Recommendation: callbackUrl (semantically distinct). Owner confirms or overrides. Record in spec §8 and engram. Acceptance: owner has made explicit calls on D3 and D5; T-015/T-016 can proceed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [],
+            "tags": ["web", "host-mode", "decision", "owner-action", "phase-4"],
+            "phase": "phase-4-host-mode-toggle",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Wire UserMenu.client.tsx hostMode item to admin URL for role=HOST",
+            "description": "In apps/web/src/components/shared/navigation/UserMenu.client.tsx: the 'hostMode' i18n key (es/en/pt) and the STAFF_DISCRIMINATOR_PERMISSION logic already exist. Add a three-state CTA based on /auth/me response: (1) unauthenticated/tourist → href=/{locale}/publicar/, (2) role=HOST → href=env.VITE_ADMIN_URL (or HOSPEDA_ADMIN_URL from PUBLIC_ADMIN_URL), (3) staff with access.apiAdmin → href=env.VITE_ADMIN_URL with 'Panel de administración' label. The 'Modo anfitrión' label is already i18n'd. Derive host state from role per T-014 D3 decision. Acceptance: host user sees 'Modo anfitrión' linking to admin; staff sees 'Panel de administración'; tourist sees 'Publicar alojamiento'; typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "tags": ["web", "host-mode", "navigation", "phase-4"],
+            "phase": "phase-4-host-mode-toggle",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Extend HostLandingCta + mobile nav CTA for host-mode three-state logic",
+            "description": "In apps/web/src/components/sections/HostLandingCta.client.tsx: extend existing unauthenticated/authenticated branches to add the role=HOST case (CTA → admin URL). In apps/web/src/components/shared/navigation/MobileMenuIsland.astro (and desktop nav CTA if applicable): apply the same three-state logic. Per T-014 D3: role=HOST → admin URL; role=USER or unauthenticated → /{locale}/publicar/. Use PUBLIC_ADMIN_URL (or an existing env var) as the admin URL. Acceptance: all three CTA surfaces adapt correctly per user state; typecheck clean; no regression on existing tourist flow.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["web", "host-mode", "navigation", "phase-4"],
+            "phase": "phase-4-host-mode-toggle",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "[OWNER DECISION] Confirm dev-local cookie approach (D4)",
+            "description": "OWNER DECISION REQUIRED. D4: (A) *.hospeda.local + /etc/hosts + DEV_COOKIE_DOMAIN env var in apps/api — realistic but requires per-developer setup, OR (B) Document 'log in to admin separately in local dev' as the accepted workaround. Recommendation: A. If owner chooses A, T-018 implements it. If owner chooses B, T-018 becomes a docs-only task. Acceptance: owner has made an explicit call on D4; T-018 can proceed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["dev-local", "cookie", "decision", "owner-action", "phase-5"],
+            "phase": "phase-5-dev-local-cookie",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement or document dev-local cross-subdomain cookie workaround",
+            "description": "Per T-017 decision. If D4=A: (1) In apps/api/src/lib/auth.ts, add DEV_COOKIE_DOMAIN support: if process.env.DEV_COOKIE_DOMAIN is set, use it as crossSubDomainCookies.domain regardless of NODE_ENV. Register DEV_COOKIE_DOMAIN in packages/config/src/env-registry.*.ts as a dev-only, non-secret var. Update apps/api/.env.example. (2) Create docs/guides/auth-local-dev.md with /etc/hosts setup, DEV_COOKIE_DOMAIN config, and verification steps. If D4=B: only docs/guides/auth-local-dev.md documenting the separate-login workaround. Acceptance: workaround is usable (D4=A: tested with local hosts + cookie) or documented (D4=B); typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["api", "auth", "dev-local", "cookie", "docs", "phase-5"],
+            "phase": "phase-5-dev-local-cookie",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Full test suite pass + typecheck clean across all changed packages",
+            "description": "Run the full test suite for all changed packages: apps/web (vitest), apps/admin (vitest), apps/api (vitest), packages/schemas. Fix any regressions introduced by SPEC-182 changes. Confirm pnpm typecheck passes with zero errors on all changed packages. Run pnpm lint / biome check — fix any lint issues. Acceptance: all tests green, typecheck clean, lint clean across web/admin/api/schemas.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-006", "T-007", "T-009", "T-011", "T-013", "T-016", "T-018"],
+            "blocks": ["T-020"],
+            "subtasks": [],
+            "tags": ["testing", "typecheck", "lint", "phase-6"],
+            "phase": "phase-6-closeout",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write docs/guides/auth-architecture.md — unified auth reference",
+            "description": "Create docs/guides/auth-architecture.md documenting: (1) the unified auth model (web is the single auth surface, admin consumes the shared cookie), (2) the role matrix table (unauthenticated / tourist / host / staff / change-password), (3) cross-subdomain cookie setup (production: Better Auth crossSubDomainCookies; dev-local: T-018 workaround), (4) how HOST role is earned (action-triggered on first publish, not declared at signup), (5) staff host-creation back-office action, (6) the cross-app coupling risk (admin auth depends on web — runbook note), (7) references to SPEC-169 (owner-scoping) and SPEC-182. Acceptance: doc is complete, accurate, and covers all operator and developer scenarios.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "tags": ["docs", "auth", "phase-6"],
+            "phase": "phase-6-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "[OWNER ACTION] Manual smoke — web→admin round-trip per role",
+            "description": "OPERATOR ONLY — not automatable in CI. Using a staging or local environment (with dev-local cookie if D4=A), verify the round-trip for each role: (1) UNAUTH: visit admin → lands on web signin with ?callbackUrl=admin-url → sign in → lands on admin dashboard. (2) TOURIST: admin guard → tourist funnel (/{locale}/publicar/?from=admin). (3) HOST: web signin → admin → 'Modo anfitrión' badge + owner-scoped accommodations. (4) STAFF: web signin → admin → full access. (5) STAFF creates host account via in-panel action → new host can sign in on web → access admin with 'Modo anfitrión'. Acceptance: all 5 flows verified; no session cookie issues; BETA-52 and BETA-57 confirmed closed.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["smoke", "auth", "owner-action", "phase-6"],
+            "phase": "phase-6-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Flip spec + task indexes to completed and open PR",
+            "description": "After T-021 passes: (1) Update .qtm/specs/index.json: SPEC-182 status → completed, archived: true, archivedAt: <ISO date>. (2) Update .qtm/tasks/index.json: SPEC-182 epic status → completed, progress → 22/22, archived: true. (3) Update spec.md frontmatter: status → completed. (4) Open PR to staging targeting branch spec/SPEC-182-unified-auth-host-access. Validate JSON parses (python3 -c 'import json; json.load(open(...))') before committing. Stage and commit each index file individually (never git add -A). Acceptance: both index.json files are valid JSON, spec.md updated, PR open to staging, CI green.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["closeout", "indexes", "pr", "phase-6"],
+            "phase": "phase-6-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
