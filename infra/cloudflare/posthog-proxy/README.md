@@ -44,16 +44,17 @@ Requires the `wrangler` CLI (`npm i -g wrangler`) and Cloudflare auth
 (`wrangler login`). `wrangler` is intentionally **not** a repo dependency — it is
 a one-off operator tool run from your machine or the VPS.
 
+`wrangler.toml` defines two environments; the route is bound automatically per env:
+
 ```bash
 cd infra/cloudflare/posthog-proxy
-wrangler deploy
+
+# Staging first (Worker named posthog-proxy-staging, route staging.hospeda.com.ar/ingest/*)
+wrangler deploy --env staging
+
+# Production later, once staging is verified (route hospeda.com.ar/ingest/*)
+wrangler deploy --env production
 ```
-
-Then bind the routes (uncomment them in `wrangler.toml` and re-deploy, or add them
-in the Cloudflare dashboard → Workers → Routes). One Worker serves both origins:
-
-- `hospeda.com.ar/ingest/*`
-- `staging.hospeda.com.ar/ingest/*`
 
 ## Verify
 
