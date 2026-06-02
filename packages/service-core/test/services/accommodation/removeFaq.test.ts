@@ -56,7 +56,7 @@ describe('AccommodationService.removeFaq', () => {
             search: vi.fn(),
             create: vi.fn()
         } as unknown as Mocked<AccommodationModel>;
-        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'hardDelete']);
+        faqModelMock = createModelMock(['create', 'findById', 'update', 'findAll', 'softDelete']);
         service = createServiceTestInstance(AccommodationService, modelMock);
         actor = new ActorFactoryBuilder().host().build();
         accommodation = new AccommodationFactoryBuilder().public().build();
@@ -78,14 +78,14 @@ describe('AccommodationService.removeFaq', () => {
     it('should remove a FAQ successfully', async () => {
         modelMock.findById.mockResolvedValue(accommodation);
         faqModelMock.findById.mockResolvedValue(faq);
-        faqModelMock.hardDelete.mockResolvedValue(1);
+        faqModelMock.softDelete.mockResolvedValue(1);
         vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
         const result = await service.removeFaq(actor, input);
         expectSuccess(result);
         expect(result.data).toEqual({ success: true });
         expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
         expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
-        expect(faqModelMock.hardDelete).toHaveBeenCalledWith({ id: faq.id as any }, undefined);
+        expect(faqModelMock.softDelete).toHaveBeenCalledWith({ id: faq.id as any }, undefined);
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {
