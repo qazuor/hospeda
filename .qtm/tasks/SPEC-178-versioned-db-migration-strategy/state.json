@@ -7,8 +7,8 @@
         "total": 26,
         "pending": 3,
         "inProgress": 0,
-        "completed": 21,
-        "blocked": 2,
+        "completed": 23,
+        "blocked": 0,
         "averageComplexity": 3.0
     },
     "tasks": [
@@ -231,8 +231,8 @@
         {
             "id": "T-013",
             "title": "Switch CI from push to migrate+extras (integration + e2e)",
-            "description": "Change packages/db/test/integration/global-setup.ts (and service-core's) + e2e-pr.yml/e2e-nightly.yml from `db:push` to `drizzle-kit migrate` + apply-extras, so CI exercises the exact prod path. Acceptance: integration + e2e suites build the schema via migrate (not push); a broken migration fails CI. BLOCKED/DEFERRED: edits target .github/workflows/e2e-*.yml + the integration global-setups, which the parallel CI->local-runners migration owns. Exact wiring documented in ci-wiring-handoff.md §3; apply once the new CI lands. No SPEC-178 artifact change needed.",
-            "status": "blocked",
+            "description": "Change packages/db/test/integration/global-setup.ts (and service-core's) + e2e-pr.yml/e2e-nightly.yml from `db:push` to `drizzle-kit migrate` + apply-extras, so CI exercises the exact prod path. Acceptance: integration + e2e suites build the schema via migrate (not push); a broken migration fails CI. BLOCKED/DEFERRED: edits target .github/workflows/e2e-*.yml + the integration global-setups, which the parallel CI->local-runners migration owns. DONE 2026-06-02 (CI migrated to self-hosted runners, so wiring landed in feat/SPEC-178-ci-wiring): e2e-pr.yml + e2e-local.self-hosted.yml switched db:push -> db:migrate with apply-extras REORDERED to run AFTER migrate (was before); db + service-core integration global-setups switched to drizzle-kit migrate (extensions -> migrate -> apply-extras). Validated: db integration suite 57/57 green via the migrate global-setup. Bonus fix: newsletter.test.ts read the deleted manual/0024 file at module load (ENOENT) -> removed the obsolete 0024 seed-test block.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-009"],
             "blocks": [],
@@ -249,8 +249,8 @@
         {
             "id": "T-014",
             "title": "Wire env:check:registry into ci.yml (it's documented as a gate but isn't in CI)",
-            "description": "Add `pnpm env:check:registry` (or its bash entry) as a step in the guards job of ci.yml so the documented 'CI gate' is actually enforced. Acceptance: a registry/schema mismatch fails CI. BLOCKED/DEFERRED: edit targets .github/workflows/ci.yml (guards job), owned by the parallel CI->local-runners migration. One-line step documented in ci-wiring-handoff.md §2; apply in the new CI.",
-            "status": "blocked",
+            "description": "Add `pnpm env:check:registry` (or its bash entry) as a step in the guards job of ci.yml so the documented 'CI gate' is actually enforced. Acceptance: a registry/schema mismatch fails CI. BLOCKED/DEFERRED: edit targets .github/workflows/ci.yml (guards job), owned by the parallel CI->local-runners migration. DONE 2026-06-02: added both `bash scripts/check-schema-drift.sh` (T-012 drift-guard wiring) and `pnpm env:check:registry` (this task) as steps in the guards job of ci.yml.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
