@@ -47,7 +47,8 @@ vi.mock('@/hooks/use-translations', () => ({
                 'admin-tabs.gallery': 'Gallery',
                 'admin-tabs.amenities': 'Amenities',
                 'admin-tabs.reviews': 'Reviews',
-                'admin-tabs.pricing': 'Pricing'
+                'admin-tabs.pricing': 'Pricing',
+                'admin-nav.tabs.pageSections': 'Page sections'
             };
             return translations[key] || key;
         }
@@ -243,39 +244,41 @@ describe('PageTabs', () => {
         it('should apply custom className to container', () => {
             const tabs: TabConfig[] = [{ id: 'test', label: 'Test', href: '' }];
 
-            render(
+            const { container } = render(
                 <PageTabs
                     tabs={tabs}
                     className="custom-class"
                 />
             );
 
-            // The className is applied to the div with role="tablist"
-            expect(screen.getByRole('tablist')).toHaveClass('custom-class');
+            // className is applied to the outer scrollable wrapper div, not the tablist
+            expect(container.firstElementChild).toHaveClass('custom-class');
         });
     });
 
     describe('pre-defined tab configurations', () => {
         it('should export accommodationTabs', () => {
             expect(accommodationTabs).toBeDefined();
-            expect(accommodationTabs).toHaveLength(5);
+            expect(accommodationTabs).toHaveLength(6);
             expect(accommodationTabs.map((t) => t.id)).toEqual([
                 'overview',
                 'gallery',
                 'amenities',
                 'reviews',
-                'pricing'
+                'pricing',
+                'faqs'
             ]);
         });
 
         it('should export destinationTabs', () => {
             expect(destinationTabs).toBeDefined();
-            expect(destinationTabs).toHaveLength(4);
+            expect(destinationTabs).toHaveLength(5);
             expect(destinationTabs.map((t) => t.id)).toEqual([
                 'overview',
                 'attractions',
                 'accommodations',
-                'events'
+                'events',
+                'faqs'
             ]);
         });
 
