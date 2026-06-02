@@ -132,13 +132,13 @@ jobs:
       - name: Build apps
         run: pnpm exec turbo run build --filter=hospeda-api --filter=hospeda-admin --filter=hospeda-web
 
-      - name: Apply Postgres extras
-        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
-
-      - name: Push Drizzle schema to E2E database
-        run: pnpm --filter @repo/db db:push
+      - name: Apply versioned Drizzle migrations to E2E database
+        run: pnpm --filter @repo/db db:migrate
         env:
           HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
+
+      - name: Apply Postgres extras
+        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
 
       - name: Seed E2E database
         run: pnpm --filter hospeda-e2e e2e:seed

@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 21/26 (in-progress) — foundations + tooling + testing + docs DONE; CI wiring (T-013/14) deferred to local-runners migration; only the real staging/prod reset execution (T-024/025/026) remains.
+26 atomic tasks across 6 phase groups. Status: 23/26 (in-progress) — foundations + tooling + testing + docs + CI wiring DONE; only the real staging/prod reset execution (T-024/025/026) remains.
 
 ## Phase: foundations (migration artifacts)
 
@@ -21,9 +21,9 @@
 
 ## Phase: ci (drift impossible)
 
-- [x] **T-012** `scripts/check-schema-drift.sh` — script built + validated (both states). Guards-job wiring deferred → ci-wiring-handoff.md §1
-- [~] **T-013** Switch CI from push to migrate+extras — BLOCKED: workflow + global-setup edits owned by CI-runner migration → handoff §3
-- [~] **T-014** Wire `env:check:registry` into CI — BLOCKED: ci.yml edit owned by CI-runner migration → handoff §2
+- [x] **T-012** `scripts/check-schema-drift.sh` — script built + validated; guards-job wiring landed (drift-guard step in ci.yml)
+- [x] **T-013** Switch CI from push to migrate+extras — e2e (x2) + global-setups (x2) → migrate; integration suite 57/57 green; fixed newsletter.test.ts 0024 regression
+- [x] **T-014** Wire `env:check:registry` into CI — added to the guards job of ci.yml
 
 ## Phase: testing
 

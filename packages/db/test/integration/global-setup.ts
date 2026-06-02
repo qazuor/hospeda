@@ -6,7 +6,7 @@
  *   1. Verify PostgreSQL is reachable (with retries for Docker startup).
  *   2. Drop and recreate the ephemeral `hospeda_integration_test` database.
  *   3. Install required PostgreSQL extensions on the test DB.
- *   4. Push the Drizzle schema via `drizzle-kit push`.
+ *   4. Apply versioned migrations via `drizzle-kit migrate` (SPEC-178).
  *   5. Apply triggers/views/CHECK constraints via `apply-postgres-extras.sh`
  *      (non-fatal — core tx tests do not need them).
  *   6. Export the connection string via `process.env.HOSPEDA_TEST_DATABASE_URL`
@@ -84,27 +84,25 @@ export async function setup(): Promise<void> {
     await testPool.query('CREATE EXTENSION IF NOT EXISTS "unaccent"');
     await testPool.end();
 
-    // 4. Push the Drizzle schema. The package's own `drizzle-kit` script wraps
+    // 4. Apply the versioned Drizzle migrations (NOT push — SPEC-178: CI must
+    //    exercise the same versioned carril as the VPS). The package's own
+    //    `drizzle-kit` script wraps
     //    `tsx node_modules/drizzle-kit/bin.cjs`, so call pnpm to keep behaviour
     //    consistent with the project's existing scripts.
     //    execFileSync (no shell) avoids any injection vector even though args
     //    are static here.
     const pkgDir = resolve(__dirname, '../..');
     try {
-        execFileSync(
-            'pnpm',
-            ['run', 'drizzle-kit', 'push', '--force', '--config', 'drizzle.config.ts'],
-            {
-                cwd: pkgDir,
-                env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
-                stdio: 'pipe',
-                timeout: 120_000
-            }
-        );
+        execFileSync('pnpm', ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'], {
+            cwd: pkgDir,
+            env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
+            stdio: 'pipe',
+            timeout: 120_000
+        });
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         throw new Error(
-            `[integration-setup] drizzle-kit push failed.\n  Error: ${msg}\n  Hint: Check that packages/db/drizzle.config.ts is valid.`
+            `[integration-setup] drizzle-kit migrate failed.\n  Error: ${msg}\n  Hint: Check that packages/db/drizzle.config.ts is valid and migrations under packages/db/src/migrations/ apply cleanly.`
         );
     }
 

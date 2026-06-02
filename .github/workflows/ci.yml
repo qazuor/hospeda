@@ -175,6 +175,10 @@ jobs:
         run: npx tsx scripts/extract-zod-keys.ts --verify
       - name: Verify i18n locale parity (SPEC-096 T-065)
         run: pnpm --filter @repo/i18n check-locales
+      - name: Check schema drift (SPEC-178)
+        run: bash scripts/check-schema-drift.sh
+      - name: Env registry parity (SPEC-035)
+        run: pnpm env:check:registry
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
