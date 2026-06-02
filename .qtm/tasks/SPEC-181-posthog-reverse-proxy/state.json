@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 11,
-        "pending": 7,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -104,7 +104,7 @@
             "id": "T-005",
             "title": "Update CSP in middleware-helpers.ts — remove hardcoded PostHog hosts",
             "description": "In apps/web/src/lib/middleware-helpers.ts (around lines 508, 529-530): remove 'https://us.i.posthog.com' and 'https://us-assets.i.posthog.com' from script-src, connect-src, and img-src. Update the comment block (lines 500-505) to document the proxy approach (Worker on /ingest/*; same-origin so 'self' covers it). The proxy path is same-origin for both hospeda.com.ar (prod) and staging.hospeda.com.ar — no new host entries needed. Acceptance: the four external PostHog host strings are absent from the CSP output, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-007", "T-011"],
@@ -118,15 +118,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
             }
         },
         {
             "id": "T-006",
             "title": "Update env-registry PUBLIC_POSTHOG_HOST description + .env.example",
             "description": "In packages/config/src/env-registry.client.ts (lines 184-200): update description, descriptionEs, defaultValue, exampleValue, howToObtain, howToObtainEs to reflect that the recommended value is https://hospeda.com.ar/ingest (the Worker route) and that changing this var requires an atomic CSP update in middleware-helpers.ts. In apps/web/.env.example (line 46): update the commented-out PUBLIC_POSTHOG_HOST example to show https://hospeda.com.ar/ingest. Acceptance: registry updated, example clear, env:check:registry CI gate still passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -140,15 +140,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
             }
         },
         {
             "id": "T-007",
             "title": "CSP regression test — PostHog external hosts absent from directives",
             "description": "Add a test in apps/web/test/ (or extend apps/web/test/lib/middleware-helpers.test.ts if it exists) that calls buildCspHeader (or the function that builds the CSP directive string) and asserts that 'us.i.posthog.com' and 'us-assets.i.posthog.com' do NOT appear in any directive. This is a regression guard to prevent re-introduction of the external hosts. Acceptance: test passes green, fails if either external host is added back.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-011"],
@@ -162,8 +162,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
             }
         },
         {
