@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 11,
-        "pending": 4,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -170,7 +170,7 @@
             "id": "T-008",
             "title": "Write docs/guides/posthog-proxy.md",
             "description": "Create docs/guides/posthog-proxy.md documenting: (1) why the proxy exists (ad-blocker loss, BETA-77), (2) architecture diagram (browser → CF Worker → PostHog Cloud), (3) the CSP coupling rule (Worker before env var before CSP change, atomicity), (4) deployment checklist (Worker deploy, CF route, Coolify env, verify), (5) troubleshooting (events 404 = Worker not deployed; CSP violations = old hosts still in directives). Acceptance: doc complete, all operator steps covered.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -184,15 +184,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:20:00Z",
+                "completed": "2026-06-02T08:20:00Z"
             }
         },
         {
             "id": "T-009",
             "title": "Update SPEC-140 reference in docs to note SPEC-181 proxy followup",
             "description": "In apps/web/src/components/analytics/PostHogScript.astro (or wherever SPEC-140 is referenced in docs), add a note that SPEC-181 introduced the reverse proxy and that PUBLIC_POSTHOG_HOST now points to hospeda.com.ar/ingest. Update any docs/guides/ that reference the direct PostHog host. Acceptance: no stale references to the old direct-host setup in docs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011"],
@@ -206,8 +206,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-02T08:20:00Z",
+                "completed": "2026-06-02T08:20:00Z"
             }
         },
         {
