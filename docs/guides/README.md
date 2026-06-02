@@ -12,6 +12,7 @@
 | [Debugging](debugging.md) | Debugging techniques and tools |
 | [CLI Utilities](cli-utilities.md) | Available CLI scripts and commands |
 | [Managing Billing Plans](managing-billing-plans.md) | Operator guide: create, edit, deactivate, and delete plans from the admin |
+| [Self-Hosted Runner](self-hosted-runner.md) | Register and operate the PR CI runner on the owner's laptop (SPEC-179) |
 | [Markdown Formatting](markdown-formatting.md) | Documentation formatting standards |
 
 ## Policy Documents
