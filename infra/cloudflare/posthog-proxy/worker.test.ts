@@ -62,6 +62,8 @@ describe('worker.fetch (forwarding behavior)', () => {
         expect(init.method).toBe('POST');
         expect(init.headers.get('X-Forwarded-For')).toBe('203.0.113.7');
         expect(init.headers.get('Cache-Control')).toBe('no-store');
+        // inbound Host header is dropped so the upstream URL host is used
+        expect(init.headers.get('host')).toBeNull();
         // no-store also enforced on the response returned to the browser
         expect(response.headers.get('Cache-Control')).toBe('no-store');
     });
@@ -86,5 +88,14 @@ describe('worker.fetch (forwarding behavior)', () => {
 
         const [, init] = fetchMock.mock.calls[0];
         expect(init.headers.get('X-Forwarded-For')).toBeNull();
+    });
+
+    it('rejects a path without the /ingest prefix with 404 and never calls upstream', async () => {
+        const request = new Request('https://hospeda.com.ar/other/path');
+
+        const response = await worker.fetch(request);
+
+        expect(response.status).toBe(404);
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 });

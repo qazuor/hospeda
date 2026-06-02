@@ -59,12 +59,23 @@ export default {
      */
     async fetch(request) {
         const url = new URL(request.url);
+
+        // Only proxy the `/ingest` path this Worker's route binds to. Anything else
+        // (possible if the Worker is ever bound to a broader route, or called
+        // directly outside the Cloudflare route filter) is rejected rather than
+        // silently forwarded to PostHog.
+        if (url.pathname !== PROXY_PREFIX && !url.pathname.startsWith(`${PROXY_PREFIX}/`)) {
+            return new Response('Not found', { status: 404 });
+        }
+
         const { upstreamUrl, isIngestion } = resolveUpstream(url);
 
         const headers = new Headers(request.headers);
         // Drop the inbound Host header so undici/Workers sets it from the upstream URL.
         headers.delete('host');
 
+        // cf-connecting-ip is set by Cloudflare infra (not user-controlled), so it is
+        // safe to overwrite X-Forwarded-For with it — no client spoofing risk.
         const clientIp = request.headers.get('cf-connecting-ip');
         if (clientIp) {
             headers.set('X-Forwarded-For', clientIp);
