@@ -289,6 +289,14 @@
                 "emailSearch": {
                     "max": "Search term cannot exceed {{max}} characters"
                 }
+            },
+            "entityComment": {
+                "authorId": {
+                    "uuid": "Author ID must be a valid UUID"
+                },
+                "entityId": {
+                    "uuid": "Entity ID must be a valid UUID"
+                }
             }
         }
     },
@@ -525,6 +533,9 @@
             "subscriptionId": {
                 "invalidType": "[EN] El subscription id tiene un tipo de dato inválido",
                 "min": "[EN] El subscription id debe tener al menos {{min}} caracteres"
+            },
+            "checkoutUrl": {
+                "invalid": "Checkout URL is not valid"
             }
         },
         "promoCode": {
@@ -541,20 +552,23 @@
                 },
                 "customerId": {
                     "invalidType": "[EN] El customer id tiene un tipo de dato inválido",
-                    "min": "[EN] El customer id debe tener al menos {{min}} caracteres"
+                    "min": "[EN] El customer id debe tener al menos {{min}} caracteres",
+                    "invalid": "Customer ID is not valid"
                 }
             },
             "create": {
                 "code": {
                     "invalidType": "[EN] El código tiene un tipo de dato inválido",
                     "max": "[EN] El código no puede superar los {{max}} caracteres",
-                    "min": "[EN] El código debe tener al menos {{min}} caracteres"
+                    "min": "[EN] El código debe tener al menos {{min}} caracteres",
+                    "format": "Promo code format is not valid (uppercase letters, numbers and hyphens only)"
                 },
                 "discountValue": {
                     "int": "[EN] El discount value debe ser un número entero",
                     "invalidType": "[EN] El discount value tiene un tipo de dato inválido",
                     "max": "[EN] El discount value no puede superar los {{max}} caracteres",
-                    "positive": "[EN] El discount value debe ser un número positivo"
+                    "positive": "[EN] El discount value debe ser un número positivo",
+                    "percentageMax": "Percentage discount cannot exceed 100%"
                 },
                 "expiryDate": {
                     "invalid": "[EN] El expiry date no es válido",
@@ -574,6 +588,29 @@
                         "invalidType": "[EN] El item tiene un tipo de dato inválido",
                         "min": "[EN] El item debe tener al menos {{min}} caracteres"
                     }
+                },
+                "description": {
+                    "invalidType": "Description has an invalid data type",
+                    "max": "Description cannot exceed {{max}} characters"
+                },
+                "isActive": {
+                    "invalidType": "Active flag has an invalid data type"
+                },
+                "isStackable": {
+                    "invalidType": "Stackable flag has an invalid data type"
+                },
+                "maxUsesPerUser": {
+                    "int": "Max uses per user must be an integer",
+                    "invalidType": "Max uses per user has an invalid data type",
+                    "positive": "Max uses per user must be a positive number"
+                },
+                "minAmount": {
+                    "int": "Minimum amount must be an integer",
+                    "invalidType": "Minimum amount has an invalid data type",
+                    "positive": "Minimum amount must be a positive number"
+                },
+                "validFrom": {
+                    "invalid": "Valid-from date is not valid"
                 }
             },
             "discountType": {
@@ -587,11 +624,35 @@
                 },
                 "planId": {
                     "invalidType": "[EN] El ID del plan tiene un tipo de dato inválido",
-                    "min": "[EN] El ID del plan debe tener al menos {{min}} caracteres"
+                    "min": "[EN] El ID del plan debe tener al menos {{min}} caracteres",
+                    "invalid": "Plan ID is not valid"
                 },
                 "userId": {
                     "invalidType": "[EN] El ID del usuario tiene un tipo de dato inválido",
-                    "min": "[EN] El ID del usuario debe tener al menos {{min}} caracteres"
+                    "min": "[EN] El ID del usuario debe tener al menos {{min}} caracteres",
+                    "invalid": "User ID is not valid"
+                },
+                "amount": {
+                    "int": "Amount must be an integer",
+                    "invalidType": "Amount has an invalid data type",
+                    "positive": "Amount must be a positive number"
+                }
+            },
+            "update": {
+                "description": {
+                    "invalidType": "Description has an invalid data type",
+                    "max": "Description cannot exceed {{max}} characters"
+                },
+                "expiryDate": {
+                    "invalid": "Expiry date is not valid"
+                },
+                "isActive": {
+                    "invalidType": "Active flag has an invalid data type"
+                },
+                "maxUses": {
+                    "int": "Max uses must be an integer",
+                    "invalidType": "Max uses has an invalid data type",
+                    "positive": "Max uses must be a positive number"
                 }
             }
         },
@@ -716,6 +777,152 @@
                     "max": "[EN] El plan slug no puede superar los {{max}} caracteres",
                     "min": "[EN] El plan slug debe tener al menos {{min}} caracteres"
                 }
+            }
+        },
+        "plan": {
+            "category": {
+                "invalid": "Plan category is not valid"
+            },
+            "create": {
+                "annualPriceArs": {
+                    "int": "Annual price in ARS must be an integer",
+                    "invalidType": "Annual price in ARS has an invalid data type",
+                    "min": "Annual price in ARS must be at least {{min}}"
+                },
+                "description": {
+                    "invalidType": "Description has an invalid data type",
+                    "max": "Description cannot exceed {{max}} characters"
+                },
+                "hasTrial": {
+                    "invalidType": "Trial flag has an invalid data type"
+                },
+                "isActive": {
+                    "invalidType": "Active flag has an invalid data type"
+                },
+                "isDefault": {
+                    "invalidType": "Default flag has an invalid data type"
+                },
+                "monthlyPriceArs": {
+                    "int": "Monthly price in ARS must be an integer",
+                    "invalidType": "Monthly price in ARS has an invalid data type",
+                    "min": "Monthly price in ARS must be at least {{min}}"
+                },
+                "monthlyPriceUsdRef": {
+                    "invalidType": "Monthly USD reference price has an invalid data type",
+                    "min": "Monthly USD reference price must be at least {{min}}"
+                },
+                "name": {
+                    "invalidType": "Plan name has an invalid data type",
+                    "max": "Plan name cannot exceed {{max}} characters",
+                    "min": "Plan name must be at least {{min}} characters"
+                },
+                "slug": {
+                    "format": "Slug format is not valid (lowercase letters, numbers and hyphens only)",
+                    "invalidType": "Slug has an invalid data type",
+                    "max": "Slug cannot exceed {{max}} characters",
+                    "min": "Slug must be at least {{min}} characters"
+                },
+                "sortOrder": {
+                    "int": "Sort order must be an integer",
+                    "invalidType": "Sort order has an invalid data type",
+                    "min": "Sort order must be at least {{min}}"
+                },
+                "trialDays": {
+                    "int": "Trial days must be an integer",
+                    "invalidType": "Trial days have an invalid data type",
+                    "min": "Trial days must be at least {{min}}",
+                    "requiredWhenTrial": "Trial days are required when the plan has a trial period"
+                }
+            },
+            "entitlements": {
+                "invalidType": "Plan entitlements have an invalid data type",
+                "item": {
+                    "invalidType": "Plan entitlement item has an invalid data type",
+                    "min": "Plan entitlement item must be at least {{min}} characters"
+                },
+                "max": "Plan entitlements cannot exceed {{max}} items"
+            },
+            "limits": {
+                "key": {
+                    "invalidType": "Limit key has an invalid data type",
+                    "min": "Limit key must be at least {{min}} characters"
+                },
+                "value": {
+                    "int": "Limit value must be an integer",
+                    "invalidType": "Limit value has an invalid data type",
+                    "min": "Limit value must be at least {{min}}"
+                }
+            },
+            "update": {
+                "annualPriceArs": {
+                    "int": "Annual price in ARS must be an integer",
+                    "invalidType": "Annual price in ARS has an invalid data type",
+                    "min": "Annual price in ARS must be at least {{min}}"
+                },
+                "description": {
+                    "invalidType": "Description has an invalid data type",
+                    "max": "Description cannot exceed {{max}} characters"
+                },
+                "hasTrial": {
+                    "invalidType": "Trial flag has an invalid data type"
+                },
+                "isActive": {
+                    "invalidType": "Active flag has an invalid data type"
+                },
+                "isDefault": {
+                    "invalidType": "Default flag has an invalid data type"
+                },
+                "monthlyPriceArs": {
+                    "int": "Monthly price in ARS must be an integer",
+                    "invalidType": "Monthly price in ARS has an invalid data type",
+                    "min": "Monthly price in ARS must be at least {{min}}"
+                },
+                "monthlyPriceUsdRef": {
+                    "invalidType": "Monthly USD reference price has an invalid data type",
+                    "min": "Monthly USD reference price must be at least {{min}}"
+                },
+                "name": {
+                    "invalidType": "Plan name has an invalid data type",
+                    "max": "Plan name cannot exceed {{max}} characters",
+                    "min": "Plan name must be at least {{min}} characters"
+                },
+                "sortOrder": {
+                    "int": "Sort order must be an integer",
+                    "invalidType": "Sort order has an invalid data type",
+                    "min": "Sort order must be at least {{min}}"
+                },
+                "trialDays": {
+                    "int": "Trial days must be an integer",
+                    "invalidType": "Trial days have an invalid data type",
+                    "min": "Trial days must be at least {{min}}"
+                }
+            }
+        },
+        "startPaid": {
+            "billingInterval": {
+                "invalid": "Billing interval is not valid"
+            },
+            "checkoutUrl": {
+                "invalid": "Checkout URL is not valid",
+                "invalidType": "Checkout URL has an invalid data type"
+            },
+            "expiresAt": {
+                "invalid": "Expiry date is not valid",
+                "invalidType": "Expiry date has an invalid data type"
+            },
+            "localSubscriptionId": {
+                "invalid": "Local subscription ID is not valid",
+                "invalidType": "Local subscription ID has an invalid data type"
+            },
+            "planSlug": {
+                "invalidType": "Plan slug has an invalid data type",
+                "max": "Plan slug cannot exceed {{max}} characters",
+                "min": "Plan slug must be at least {{min}} characters"
+            },
+            "promoCode": {
+                "invalidType": "Promo code has an invalid data type",
+                "max": "Promo code cannot exceed {{max}} characters",
+                "min": "Promo code must be at least {{min}} characters"
             }
         }
     },
@@ -1167,6 +1374,12 @@
         },
         "uuid": {
             "invalid": "[EN] El uuid no es válido"
+        },
+        "options": {
+            "limit": {
+                "max": "Limit cannot exceed {{max}} items",
+                "min": "Limit must be at least {{min}}"
+            }
         }
     },
     "contact": {
@@ -1430,6 +1643,9 @@
         },
         "newsletterSubscriberStatus": {
             "invalid": "Invalid subscriber status"
+        },
+        "newsletterContentType": {
+            "invalid": "Newsletter content type is not valid"
         }
     },
     "event": {
@@ -2869,7 +3085,9 @@
             },
             "success": {
                 "required": "[EN] El resultado exitoso es obligatorio"
-            }
+            },
+            "min": "Password must be at least {{min}} characters",
+            "required": "Password is required"
         },
         "passwordChange": {
             "currentPassword": {
@@ -2917,6 +3135,9 @@
             },
             "website": {
                 "url": "[EN] El sitio web no es válido"
+            },
+            "birthDate": {
+                "format": "Birth date format is not valid"
             }
         },
         "setPermissions": {
@@ -2949,6 +3170,23 @@
         },
         "status": {
             "invalid": "[EN] El estado no es válido"
+        },
+        "acceptedTerms": {
+            "required": "You must accept the terms and conditions"
+        },
+        "bio": {
+            "max": "Bio cannot exceed {{max}} characters",
+            "min": "Bio must be at least {{min}} characters"
+        },
+        "imageUrl": {
+            "url": "Image URL is not valid"
+        },
+        "occupation": {
+            "max": "Occupation cannot exceed {{max}} characters",
+            "min": "Occupation must be at least {{min}} characters"
+        },
+        "website": {
+            "url": "Website URL is not valid"
         }
     },
     "userBookmark": {
@@ -3084,7 +3322,41 @@
             },
             "token": {
                 "required": "Token is required"
+            },
+            "preferences": {
+                "atLeastOne": "At least one content preference must be selected"
             }
+        }
+    },
+    "entityComment": {
+        "authorId": {
+            "invalidUuid": "Author ID must be a valid UUID",
+            "required": "Author ID is required"
+        },
+        "content": {
+            "max": "Comment content cannot exceed {{max}} characters",
+            "min": "Comment content must be at least {{min}} characters",
+            "required": "Comment content is required"
+        },
+        "entityId": {
+            "invalidUuid": "Entity ID must be a valid UUID",
+            "required": "Entity ID is required"
+        },
+        "eventId": {
+            "invalidUuid": "Event ID must be a valid UUID"
+        },
+        "moderationState": {
+            "invalid": "Moderation state is not valid"
+        },
+        "page": {
+            "positive": "Page must be a positive number"
+        },
+        "pageSize": {
+            "max": "Page size cannot exceed {{max}} items",
+            "positive": "Page size must be a positive number"
+        },
+        "postId": {
+            "invalidUuid": "Post ID must be a valid UUID"
         }
     }
 }
