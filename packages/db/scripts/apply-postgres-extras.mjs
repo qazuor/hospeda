@@ -7,8 +7,11 @@
 // or when you want consistent behavior across local dev and CI without
 // requiring the postgres client tools to be installed.
 //
-// Applies every *.sql file under packages/db/src/migrations/manual/ in
-// lexical order, skipping *_down.sql reversal scripts.
+// Applies every *.sql file under packages/db/src/migrations/extras/ in
+// lexical order (NNN-name.kind.sql), skipping *_down.sql reversal scripts.
+// These are the idempotent Drizzle-invisible extras (matview, triggers,
+// CHECK constraints, special indexes) that run AFTER drizzle-kit migrate
+// (SPEC-178: the legacy manual/ dir was consolidated into extras/).
 //
 // Usage:
 //   HOSPEDA_DATABASE_URL='postgresql://...' node packages/db/scripts/apply-postgres-extras.mjs
@@ -23,7 +26,7 @@ import pkg from 'pg';
 const { Client } = pkg;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MANUAL_DIR = resolve(__dirname, '..', 'src', 'migrations', 'manual');
+const EXTRAS_DIR = resolve(__dirname, '..', 'src', 'migrations', 'extras');
 const API_ENV_LOCAL = resolve(__dirname, '..', '..', '..', 'apps', 'api', '.env.local');
 
 /**
@@ -62,12 +65,12 @@ async function main() {
         process.exit(1);
     }
 
-    const files = readdirSync(MANUAL_DIR)
+    const files = readdirSync(EXTRAS_DIR)
         .filter((f) => f.endsWith('.sql') && !f.endsWith('_down.sql'))
         .sort();
 
     if (files.length === 0) {
-        console.error(`ERROR: No SQL files found in ${MANUAL_DIR}`);
+        console.error(`ERROR: No SQL files found in ${EXTRAS_DIR}`);
         process.exit(1);
     }
 
@@ -83,7 +86,7 @@ async function main() {
     let ok = 0;
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const path = join(MANUAL_DIR, file);
+        const path = join(EXTRAS_DIR, file);
         const sql = readFileSync(path, 'utf8');
         process.stdout.write(`[${i + 1}/${files.length}] ${file} ... `);
         try {

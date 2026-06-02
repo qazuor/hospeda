@@ -42,6 +42,7 @@ import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
+import { runMigrateSequence } from '../lib/migrate-core.ts';
 import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
 import { runner } from '../lib/runner.ts';
@@ -53,36 +54,23 @@ hops db-seed [--target=prod|staging]
              [--no-reset] [--no-required] [--no-example]
              [--clean-images]
              [--no-build]
-             [--no-push] [--no-apply-extras]
+             [--migrate] [--no-apply-extras]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
-Default behaviour:
-  --reset, --required, --example, --build, --push, --apply-extras are
-  ON. --clean-images is OFF. The default invocation:
+Default behaviour (schema-sync is NOT included by default — run \`hops
+db-migrate\` separately first, or pass \`--migrate\` to include it):
+  --reset, --required, --example, --build are ON. --clean-images,
+  --migrate are OFF. The default invocation:
     1. (optional) git pull \$HOPS_REPO_ROOT
     2. pnpm turbo run build --filter=@repo/seed^...   (turbo-cached)
-    3. pnpm --filter @repo/db db:push                  (drizzle-kit push)
-    4. pnpm db:apply-extras                            (triggers / extras)
-    5. pnpm --filter @repo/seed seed --reset --required --example
+    3. pnpm --filter @repo/seed seed --reset --required --example
 
   Step 2 is required because the seed's workspace deps (@repo/db,
   @repo/billing, etc.) export from \`./dist/index.js\`. Without it,
   the seed crashes with ERR_MODULE_NOT_FOUND on the first import.
   Turbo caches outputs, so subsequent runs are ~1-2s.
-
-  Steps 3 and 4 mirror the local \`pnpm db:fresh-dev\` workflow.
-  Step 3 syncs the schema (\`drizzle-kit push\`) so any new columns
-  introduced since the previous seed are present before the data is
-  loaded. Step 4 applies hospeda-side Postgres extras that Drizzle
-  cannot declare (triggers like \`set_updated_at\`, the search_index
-  materialized view, JSONB CHECK constraints on
-  \`billing_addon_purchases\`). Skipping either of them leaves the
-  database in a state where some queries succeed and others fail —
-  see hospeda smoke 2026-05-21 Finding #2 (a missing
-  \`billing_subscriptions.scheduled_plan_change\` column took the
-  entitlement-load middleware offline silently).
 
   NODE_ENV is set to 'production' for --target=prod (billing seeds
   use livemode: true) and 'development' for --target=staging.
@@ -90,7 +78,21 @@ Default behaviour:
   Cloudinary assets under hospeda/<env>/seed/ are preserved by
   default. Pass \`--clean-images\` to opt into remote deletion.
 
+With --migrate:
+  Before seeding, runs the full migration sequence:
+    a. pnpm --filter @repo/db db:migrate   (drizzle-kit migrate, NOT push)
+    b. pnpm db:apply-extras                (triggers / extras)
+  This is equivalent to running \`hops db-migrate --no-backup --no-pull\`
+  before seeding. Use this when you want schema + data in one step.
+  The schema sync uses the VERSIONED migration carril — never push.
+
 Flags:
+  --migrate           Run drizzle-kit migrate + apply-extras before seeding.
+                      Off by default — assumes the schema is already in sync
+                      (e.g. \`hops db-migrate\` was run first).
+  --no-apply-extras   When used with --migrate: skip the Postgres extras after
+                      migrate. Without --migrate, this flag has no effect.
+                      The default ON behaviour is idempotent.
   --no-reset          Skip the database reset step (population only).
                       May fail on UNIQUE violations if rows already exist.
   --no-required       Skip the --required step (rare; tests / partial seeds).
@@ -105,16 +107,6 @@ Flags:
                       workspace deps' dist/ outputs are already up to
                       date (e.g. CI just built them). Without it, the
                       seed will likely crash with ERR_MODULE_NOT_FOUND.
-  --no-push           Skip \`drizzle-kit push\`. Only use when the schema
-                      is already known to be in sync with the deployed
-                      code (e.g. you just ran a previous \`db-seed\` and
-                      no schema changes landed since). The default ON
-                      behaviour is safe-by-default — it is a no-op when
-                      the schema is already current.
-  --no-apply-extras   Skip the Postgres extras script. Only use when
-                      the triggers / matviews / JSONB CHECK constraints
-                      are known current. The default ON behaviour is
-                      safe-by-default — the script is idempotent.
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -130,6 +122,7 @@ Unattended examples:
   hops db-seed --target=staging --no-pull --yes
   hops db-seed --target=prod --pull --yes
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
+  hops db-seed --target=staging --migrate --no-pull --yes      # migrate + seed
 
 Required environment variables (in scripts/server-tools/.env.local):
   HOPS_<TARGET>_POSTGRES_UUID         Coolify Postgres service UUID for the target.
@@ -153,6 +146,13 @@ Notes:
   --example pass loads Faker-generated content with the well-known
   admin@hospeda.com credentials. Read packages/seed/CLAUDE.md before
   using against any environment that holds real data.
+
+  Schema sync is intentionally NOT included by default. The recommended
+  workflow is:
+    hops db-migrate --target=<env> [options]
+    hops db-seed    --target=<env> [options]
+  Or combined with --migrate:
+    hops db-seed    --target=<env> --migrate [options]
 `.trim();
 
 export interface ParsedArgs {
@@ -161,7 +161,12 @@ export interface ParsedArgs {
     readonly example: boolean;
     readonly cleanImages: boolean;
     readonly build: boolean;
-    readonly push: boolean;
+    /**
+     * When true, run drizzle-kit migrate + apply-extras before seeding.
+     * Replaces the old `push` flag which used `drizzle-kit push` (DEV-ONLY).
+     * Default: false — assumes the schema is already in sync.
+     */
+    readonly migrate: boolean;
     readonly applyExtras: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
@@ -182,7 +187,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         example: !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
         build: !args.includes('--no-build'),
-        push: !args.includes('--no-push'),
+        migrate: args.includes('--migrate'),
         applyExtras: !args.includes('--no-apply-extras'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
@@ -211,8 +216,10 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     (parsed.example ? on : off).push('example');
     (parsed.cleanImages ? on : off).push('clean-images');
     (parsed.build ? on : off).push('build');
-    (parsed.push ? on : off).push('push');
-    (parsed.applyExtras ? on : off).push('apply-extras');
+    (parsed.migrate ? on : off).push('migrate');
+    if (parsed.migrate) {
+        (parsed.applyExtras ? on : off).push('apply-extras');
+    }
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
@@ -294,62 +301,9 @@ async function buildSeedDependencies(repoRoot: string): Promise<void> {
     log.ok('Dependencies built.');
 }
 
-/**
- * Sync the Postgres schema with the deployed Drizzle definitions via
- * \`pnpm --filter @repo/db db:push\`. This is the same step the local
- * \`pnpm db:fresh-dev\` workflow runs after \`docker compose up\` and
- * before \`pnpm db:seed\`. Without it, columns added to the schema since
- * the previous seed are absent, every query that enumerates them blows
- * up, and the silent-fallback middleware patterns hide the breakage.
- *
- * Why we shell out via pnpm rather than calling drizzle-kit directly:
- * the package's \`db:push\` script already resolves the correct config
- * file path and respects the workspace tsconfig — keeping the
- * invocation consistent between local dev and the VPS toolkit avoids
- * drift the next time the package layout changes.
- */
-async function runDbPush(params: {
-    readonly repoRoot: string;
-    readonly databaseUrl: string;
-}): Promise<void> {
-    log.info('Syncing schema (pnpm --filter @repo/db db:push)...');
-    const result = await runner.run(['pnpm', '--filter', '@repo/db', 'db:push'], {
-        cwd: params.repoRoot,
-        inherit: true,
-        env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
-    });
-    if (result.exitCode !== 0) {
-        die(
-            `db:push failed (exit ${result.exitCode}). The schema is out of sync with the deployed code and the seed cannot run safely. Inspect the output above; if you intentionally want to seed against the existing (stale) schema, pass --no-push.`
-        );
-    }
-    log.ok('Schema synced.');
-}
-
-/**
- * Apply hospeda-side Postgres extras (triggers, materialized views,
- * JSONB CHECK constraints) that Drizzle cannot declare in its schema.
- * The script lives at \`packages/db/scripts/apply-postgres-extras.sh\`
- * and is idempotent — safe to run repeatedly. See CLAUDE.md's "Common
- * Gotchas" section for the full list of what it covers.
- */
-async function runApplyExtras(params: {
-    readonly repoRoot: string;
-    readonly databaseUrl: string;
-}): Promise<void> {
-    log.info('Applying Postgres extras (pnpm db:apply-extras)...');
-    const result = await runner.run(['pnpm', 'db:apply-extras'], {
-        cwd: params.repoRoot,
-        inherit: true,
-        env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
-    });
-    if (result.exitCode !== 0) {
-        die(
-            `db:apply-extras failed (exit ${result.exitCode}). The schema is current but Postgres-side triggers / matviews / CHECK constraints did not apply. Inspect the output above; if you intentionally want to seed without them, pass --no-apply-extras.`
-        );
-    }
-    log.ok('Postgres extras applied.');
-}
+// runApplyExtras and runDbMigrate are imported from migrate-core.ts.
+// runDbPush (drizzle-kit push) has been removed — push is DEV-ONLY and must
+// never run on staging or prod. Use `hops db-migrate` or `--migrate` instead.
 
 async function runSeed(params: {
     readonly repoRoot: string;
@@ -476,24 +430,25 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
-    // ── Schema sync ──────────────────────────────────────────────────
-    // Drizzle's push reconciles the database with the deployed schema.
-    // Without this step columns added since the previous seed are
-    // missing and every query that enumerates them fails silently in
-    // middleware paths — see hospeda smoke 2026-05-21 Finding #2.
-    if (parsed.push) {
-        await runDbPush({ repoRoot, databaseUrl });
+    // ── Optional migrate step ────────────────────────────────────────
+    // When --migrate is passed, run drizzle-kit migrate (VERSIONED carril,
+    // NOT push) + apply-extras before seeding. This is the correct schema
+    // sync path for staging/prod. Without --migrate, db-seed assumes the
+    // schema is already in sync (run `hops db-migrate` first if needed).
+    if (parsed.migrate) {
+        log.info('Running migrate sequence before seed (--migrate)...');
+        await runMigrateSequence({
+            repoRoot,
+            databaseUrl,
+            target,
+            reset: false, // db-seed --migrate never resets; use db-migrate --reset for that
+            applyExtras: parsed.applyExtras,
+            backup: undefined // no pre-migrate backup from within db-seed
+        });
     } else {
-        log.hint('Skipping db:push (--no-push).');
-    }
-
-    // ── Apply Postgres extras ────────────────────────────────────────
-    // Idempotent script that adds triggers, matviews, and JSONB CHECK
-    // constraints Drizzle cannot declare. Safe to run repeatedly.
-    if (parsed.applyExtras) {
-        await runApplyExtras({ repoRoot, databaseUrl });
-    } else {
-        log.hint('Skipping db:apply-extras (--no-apply-extras).');
+        log.hint(
+            'Skipping schema migration (--migrate not passed). Run `hops db-migrate` first if the schema is out of sync.'
+        );
     }
 
     // ── Seed ─────────────────────────────────────────────────────────
@@ -505,5 +460,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
     await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv, nodeEnv });
 
     log.ok(`db-seed completed against ${target}.`);
-    log.hint('Verify with `hops db-counts`.');
+    log.hint(
+        'Verify with `hops db-counts`. If schema was not migrated, run `hops db-migrate` first.'
+    );
 }

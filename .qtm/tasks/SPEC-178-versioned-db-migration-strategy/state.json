@@ -1,0 +1,484 @@
+{
+    "version": "1.0",
+    "title": "Versioned DB Migration Strategy Overhaul",
+    "specRef": "SPEC-178-versioned-db-migration-strategy",
+    "created": "2026-06-01T00:00:00.000Z",
+    "summary": {
+        "total": 26,
+        "pending": 3,
+        "inProgress": 0,
+        "completed": 21,
+        "blocked": 2,
+        "averageComplexity": 3.0
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Adopt drizzle-kit generate+migrate config; commit the journal",
+            "description": "Un-gitignore packages/db/src/migrations/meta/ so the journal is tracked. Confirm drizzle.config.ts out dir + both schema sources (./src/schemas + ./src/billing/schemas.ts). Verify `drizzle-kit generate` runs offline against the journal snapshot. Acceptance: meta/_journal.json committed; generate produces a diff vs an empty journal; no DB connection required for generate. DONE: removed `**/migrations/meta/` + `**/drizzle/meta/` from .gitignore (journal now trackable, verified via git check-ignore); drizzle.config.ts confirmed unchanged (out=./src/migrations, two schema sources). Journal file itself lands in T-002 (first generate).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [],
+            "tags": ["db", "drizzle", "config", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate the 0000 baseline migration (full schema incl. 29 billing tables)",
+            "description": "Run pnpm db:generate to emit migrations/0000_baseline.sql capturing the entire current TS schema, including all 29 billing tables (24 from @qazuor/qzpay-drizzle via src/billing/schemas.ts + 5 repo-owned src/schemas/billing/). Acceptance: 0000_*.sql created, journal entry added, applies cleanly via `drizzle-kit migrate` on an empty DB, FK ordering resolved, no text->jsonb cast needed (types correct from the start). DONE: generated 0000_baseline.sql (1934 lines) + meta/_journal.json + 0000_snapshot.json via offline `drizzle-kit generate --name baseline` (no DB needed). VALIDATED on an ephemeral postgres:15-alpine (port 55432): CREATE EXTENSION (uuid-ossp/pgcrypto/unaccent) preflight then apply -> ON_ERROR_STOP exit 0, 82 base tables, 32 billing tables, 45 enums, zero errors. Confirms FK ordering, billing inclusion (OQ4), and the extensions-preflight requirement (OQ2/T-006: gen_random_uuid needs pgcrypto BEFORE migrate).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-012", "T-015", "T-017"],
+            "subtasks": [],
+            "tags": ["db", "drizzle", "migration", "baseline", "billing", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Build migrations/extras/ — consolidate the 21 category-A extras (NNN-name.kind.sql)",
+            "description": "Create packages/db/src/migrations/extras/ and move the 21 surviving category-A files there, consolidating evolutionary chains: search_index (manual 0001-0004 + 0030 -> one matview file with the final definition), delete_entity_bookmarks (0006/0014/0018 -> one final enum-cast version), set_updated_at trigger (0005), billing CHECKs (0007/0008/0010), media shape CHECKs (0011 A-part + 0012), conversation partial indexes (0015), messages length CHECK (0016), bookmark indexes (0019/0020), newsletter partial indexes (0022/0023). Name each NNN-name.kind.sql (3-digit prefix for lexical ordering). All idempotent (CREATE OR REPLACE / IF NOT EXISTS). Acceptance: ~14 consolidated files; apply cleanly + idempotently after migrate on an empty DB. DONE: 9 consolidated files in packages/db/src/migrations/extras/ (001-search-index.matview, 002-set-updated-at.trigger, 003-delete-entity-bookmarks.trigger, 004-billing.constraints, 005-media.constraints, 006-conversation.indexes, 007-messages.constraints, 008-bookmark.indexes, 009-newsletter.indexes). manual/ left intact (T-004 deletes). VALIDATED on ephemeral postgres:15-alpine: baseline + all 9 extras apply exit 0; idempotency re-apply exit 0; objects: 1 search_index matview, 3 functions (set_updated_at/delete_entity_bookmarks/refresh_search_index), 15 CHECK constraints. Note: 0011's DROP-NOT-NULL excluded (already nullable in baseline); 0018's UUID-cast version of delete_entity_bookmarks is canonical (the TEXT version crashed hard-deletes).",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-009", "T-015", "T-016"],
+            "subtasks": [],
+            "tags": ["db", "extras", "postgres", "consolidation", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": "2026-06-01T00:00:00.000Z",
+                "completed": "2026-06-01T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Delete obsolete migrations: 8 B/C/D files + gh_refresh role + dead script",
+            "description": "Delete the 8 one-time B/C/D manual files made obsolete by the reset (0013, 0017, 0024, 0027, 0028, 0029 + the C/D portions of 0011/0025/0026), the gh_refresh role file (0021), and the dead packages/db/scripts/verify-gh-refresh.mjs. gh_refresh is VERIFIED obsolete (Vercel+Neon-era GitHub Action; matview refresh is now the in-process node-cron job). Acceptance: files removed; git history preserves them; no remaining reference to gh_refresh or the deleted files in code/scripts. DONE: git rm'd the ENTIRE manual/ dir (cat-A already consolidated into extras/ in T-003, B/C/D obsolete on a fresh DB) + verify-gh-refresh.mjs; also switched apply-postgres-extras.mjs to read extras/ (adelanta T-009 core, so manual/ removal does not break apply-extras). Validated end-to-end: gh_refresh role absent after reset.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["db", "cleanup", "gh-refresh", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Fix the db:migrate alias to a real drizzle-kit migrate",
+            "description": "In packages/db/package.json change db:migrate from `drizzle-kit push` to a real `drizzle-kit migrate`. Keep db:push as the dev-only push command. db:fresh-dev stays on push (disposable local DB). Update db:regenerate accordingly. Acceptance: `pnpm --filter @repo/db db:migrate` applies versioned migrations; db:push still pushes; db:fresh-dev still works end-to-end locally. DONE: packages/db/package.json db:migrate -> `drizzle-kit migrate` (was push); db:push unchanged; db:regenerate still chains generate+migrate (now real migrate). Validated: `db:migrate` against an ephemeral PG applied the 0000 baseline from the journal -> 'migrations applied successfully!', 82 tables.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-007", "T-008", "T-010", "T-019", "T-020", "T-022"],
+            "subtasks": [],
+            "tags": ["db", "scripts", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create the extensions preflight + reset SQL artifacts",
+            "description": "Author the reset SQL used by the VPS rebuild: (a) a CREATE EXTENSION IF NOT EXISTS preflight for uuid-ossp, pgcrypto, unaccent (VERIFIED: no VPS flow re-creates them, schema needs gen_random_uuid()); (b) the reset block `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` + `DROP USER IF EXISTS gh_refresh` (cluster-wide role survives DROP SCHEMA). Acceptance: SQL artifacts exist (e.g. packages/db/scripts/reset/) and run cleanly as superuser; extensions present after preflight. DONE: packages/db/scripts/reset/000-reset-schema.sql (DROP SCHEMA CASCADE + CREATE + GRANTs + DROP USER gh_refresh) and 001-extensions.sql (CREATE EXTENSION IF NOT EXISTS uuid-ossp/pgcrypto/unaccent). Validated end-to-end: reset -> extensions -> migrate -> apply-extras all exit 0; without 001 migrate would fail on gen_random_uuid().",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["db", "postgres", "extensions", "reset", "phase-foundations"],
+            "phase": "foundations",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Rewrite migrate-production.sh: real migrate + extras + abort-on-fail",
+            "description": "Rewrite scripts/migrate-production.sh: backup (keep pg_dump) -> real `drizzle-kit migrate` (not push) -> apply-extras -> verify. Abort with a non-zero exit on ANY failure (kill the exit-0-on-error masking). Remove the dead `drizzle-kit check` no-op. Acceptance: a failing migration aborts non-zero and prints the backup-restore instructions; a clean migration applies migrate+extras in order. DONE: rewrote migrate-production.sh — removed the dead --dry-run/drizzle-kit-check no-op; step 5 = pnpm --filter @repo/db db:migrate (real migrate), step 6 = pnpm db:apply-extras; both use `if !` to abort non-zero; backup + rollback instructions preserved. Typecheck/biome clean (bash).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["scripts", "vps", "prod", "phase-tooling"],
+            "phase": "tooling",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add hops db-migrate --target command (migrate + extras, no push)",
+            "description": "New server-tools command `hops db-migrate --target=staging|prod`: applies the versioned carril (drizzle-kit migrate + apply-extras), target-aware, backup-before on prod, real abort-on-fail. Separate from seeding. Register in the COMMANDS array (scripts/server-tools/src/index.ts). Acceptance: `hops db-migrate --target=staging` migrates + applies extras; fails non-zero on error; prod path takes a backup first. DONE: new scripts/server-tools/src/commands/db-migrate.ts (registered in index.ts before db-seed) + shared scripts/server-tools/src/lib/migrate-core.ts (buildDbDependencies, runDbMigrate, runApplyExtras, runResetSql, runMigrateSequence). pull/build/backup(pg_dump->R2,GPG-optional,min-size)/migrate/apply-extras; die on any failure; target-aware. REVIEW FIX: backup now runs BEFORE reset (agent had it after = backing up an empty DB); 4 comments/warnings realigned. Typecheck: 0 new errors; biome clean.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [],
+            "tags": ["hops", "server-tools", "vps", "phase-tooling"],
+            "phase": "tooling",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update apply-postgres-extras to read migrations/extras/ (NNN sort)",
+            "description": "Point packages/db/scripts/apply-postgres-extras.mjs at the new migrations/extras/ dir, sorting by the NNN- prefix lexically (drop the old manual/ path). Keep idempotent re-apply semantics. Acceptance: apply-extras iterates the consolidated extras in numeric order and is a no-op on a second run. DONE (brought forward into the foundations close-out, since vaciar manual/ required it): apply-postgres-extras.mjs EXTRAS_DIR now points at src/migrations/extras; the legacy manual/ path is gone. Validated: applies all 9 extras in NNN order (exit 0); idempotency confirmed in T-003's ephemeral run.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013", "T-016"],
+            "subtasks": [],
+            "tags": ["db", "scripts", "extras", "phase-tooling"],
+            "phase": "tooling",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Split hops db-seed: keep data flags, add --migrate, swap push->migrate",
+            "description": "Update scripts/server-tools/src/commands/db-seed.ts: keep --reset/--required/--example data behavior; change the internal schema step from push to delegate to db-migrate; add a --migrate flag to run db-migrate first. Ensure staging and prod use the identical process via --target. Acceptance: `hops db-seed --target=staging --migrate` runs migrate then seed; without --migrate it only seeds; no `drizzle-kit push` is invoked against the VPS anywhere. DONE: removed runDbPush (drizzle-kit push) entirely; replaced --no-push/push with --migrate (OFF by default) which calls runMigrateSequence (no reset, no backup) before seeding; --reset/--required/--example unchanged; HELP + summary updated. Only comments mentioning push remain (documenting its removal). Typecheck/biome clean.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-008"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["hops", "server-tools", "seed", "phase-tooling"],
+            "phase": "tooling",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Fold reset (DROP SCHEMA + DROP USER + extensions) into hops db-migrate --reset",
+            "description": "Add a --reset path to hops db-migrate that runs the T-006 artifacts via hops psql: DROP SCHEMA public CASCADE; CREATE SCHEMA public; DROP USER IF EXISTS gh_refresh; CREATE EXTENSION preflight; then migrate + extras. Prod requires the existing typed confirmation. Acceptance: `hops db-migrate --target=staging --reset` rebuilds the schema from zero (extensions present, no gh_refresh) in one sanctioned command. DONE: --reset in db-migrate runs runResetSql (000-reset-schema.sql then 001-extensions.sql) via docker exec psql against the postgres container (same mechanism as psql.ts, Unix socket, superuser). Order BACKUP -> reset -> migrate -> apply-extras. Prod --reset ALWAYS requires typed confirmation even with --yes. Typecheck/biome clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["hops", "server-tools", "reset", "phase-tooling"],
+            "phase": "tooling",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Schema-drift CI guard (scripts/check-schema-drift.sh) wired into guards job",
+            "description": "New scripts/check-schema-drift.sh: run `drizzle-kit generate` (offline, diffs vs journal snapshot, no DB) and FAIL if it produces a non-empty `git diff` of migrations/ (schema changed without a committed migration). Tame the non-interactive rename-prompt behavior. Wire as a step in the `guards` job of .github/workflows/ci.yml, mirroring the existing bash guard pattern. Acceptance: clean tree passes; a tree with an un-migrated schema change fails with an actionable `run pnpm db:generate` message. DONE (script): scripts/check-schema-drift.sh — runs drizzle-kit generate offline, fails on non-empty git status under migrations/, reverts throwaway files. VALIDATED both states: clean tree -> exit 0 'no drift'; injected a probe column -> exit 1, detected 0001_drift_check.sql + meta, tree left clean. WIRING into the guards job is DEFERRED (CI is being migrated to local runners; wiring documented in ci-wiring-handoff.md to avoid conflict + thrown-away work).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["ci", "drift", "guards", "phase-ci"],
+            "phase": "ci",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Switch CI from push to migrate+extras (integration + e2e)",
+            "description": "Change packages/db/test/integration/global-setup.ts (and service-core's) + e2e-pr.yml/e2e-nightly.yml from `db:push` to `drizzle-kit migrate` + apply-extras, so CI exercises the exact prod path. Acceptance: integration + e2e suites build the schema via migrate (not push); a broken migration fails CI. BLOCKED/DEFERRED: edits target .github/workflows/e2e-*.yml + the integration global-setups, which the parallel CI->local-runners migration owns. Exact wiring documented in ci-wiring-handoff.md §3; apply once the new CI lands. No SPEC-178 artifact change needed.",
+            "status": "blocked",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "testing", "e2e", "phase-ci"],
+            "phase": "ci",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Wire env:check:registry into ci.yml (it's documented as a gate but isn't in CI)",
+            "description": "Add `pnpm env:check:registry` (or its bash entry) as a step in the guards job of ci.yml so the documented 'CI gate' is actually enforced. Acceptance: a registry/schema mismatch fails CI. BLOCKED/DEFERRED: edit targets .github/workflows/ci.yml (guards job), owned by the parallel CI->local-runners migration. One-line step documented in ci-wiring-handoff.md §2; apply in the new CI.",
+            "status": "blocked",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "env", "guards", "phase-ci"],
+            "phase": "ci",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Round-trip migration test (the anti-drift keystone)",
+            "description": "Test: empty DB -> apply ALL migrations + extras -> introspect -> assert the live schema matches the TS schema (drizzle introspection diff is empty). Catches any extra that drifted from the schema. Acceptance: passes on a correct tree; fails if an extra or migration diverges from the TS schema. DONE: packages/db/test/migrations/t015-round-trip.sh (bash harness, ephemeral postgres:15-alpine). RE-RUN VERIFIED 10/10: 82 base tables, search_index matview, 3 trigger functions, and drizzle-kit generate emits nothing (live schema == TS schema). Container cleaned up.",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "drift", "integration", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Idempotency test (migrate x2, apply-extras x2 = no-op)",
+            "description": "Test: running migrate twice and apply-extras twice leaves the schema unchanged on the second run (no errors, no diffs). Acceptance: second application is a clean no-op for both carriles. DONE: packages/db/test/migrations/t016-idempotency.sh — 7/7 passed; fingerprint identical after both passes (tables=82 indexes=402 constraints=966 matviews=1 triggers=65); both db:migrate and both apply-extras runs exit 0.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "idempotency", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Conversion regression test (type change with USING preserves data)",
+            "description": "Test a representative column type conversion (e.g. text->jsonb i18n, reproducing the SPEC-172 class of bug) applied as a hand-edited migration with USING: seed old-format rows, run the migration, assert data preserved + correctly reshaped. Guards future data conversions. Acceptance: data survives the conversion; a missing USING would fail the test. DONE: packages/db/test/migrations/t017-conversion-regression.sh — 13/13 passed; reproduces the SPEC-172 name text->jsonb class: naive ALTER (no USING) FAILS with 'cannot be cast automatically to type jsonb'; the USING jsonb_build_object cast succeeds and all 3 rows survive + reshape to {es,en,pt} jsonb (verified via name ? 'es' AND ? 'en' AND ? 'pt').",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "regression", "conversion", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Drift-guard self-test (uncommitted schema change fails the guard)",
+            "description": "Test/CI-fixture proving check-schema-drift.sh fails when a schema change has no committed migration, and passes otherwise. Acceptance: the guard's two states (pass/fail) are both exercised. DONE: validated alongside T-012 — clean tree -> exit 0; an injected probe column (driftProbeColumn on accommodation_faq) -> exit 1 with the actionable message, then reverted. Both states exercised; the guard leaves the tree clean either way.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "ci", "drift", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Rewrite packages/db/CLAUDE.md (two carriles + golden rule + dev-vs-VPS)",
+            "description": "Rewrite the Migrations + Common Gotchas sections: the two carriles (migrations/ vs migrations/extras/), the golden routing rule, the dev-vs-VPS table, push is dev-only, db:generate is mandatory before a schema PR, the NNN-name.kind.sql extras convention, apply-extras after migrate. Acceptance: the doc matches the new reality; no stale `db:migrate = apply migrations` claim. DONE: rewrote Migrations + PostgreSQL Extras + Common Gotchas in packages/db/CLAUDE.md — two-carril model, golden rule table, dev-vs-VPS table, 5-step agent protocol, migrations/extras/ NNN convention, extensions preflight; removed the stale db:migrate=push NOTE.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-009"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["docs", "claude-md", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Fix root CLAUDE.md (db:migrate line + push-not-enough gotcha)",
+            "description": "Correct the misleading `db:migrate` = 'Apply migrations' quick-command line and the 'drizzle-kit push is not enough' gotcha to point at the new generate+migrate flow and the two carriles. Acceptance: root CLAUDE.md is consistent with packages/db/CLAUDE.md. DONE: corrected the db:migrate quick-command line (real migrate) and replaced the 'push is not enough' gotcha with bullets covering the two carriles, push-dev-only, and generate-before-PR; links to packages/db/CLAUDE.md.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "claude-md", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "New ADR: versioned migrations + two-carril model + reset rationale",
+            "description": "Author an ADR (supersedes the relevant parts of ADR-017) recording the decision to adopt versioned drizzle-kit generate+migrate as the single source of truth, the two-carril model, push-dev-only, the reset-to-zero rationale, and the drift-guard. Cross-link from ADR-017. Acceptance: ADR added under docs/decisions/ and referenced from ADR-017. DONE: docs/decisions/ADR-029-versioned-migration-strategy.md (versioned carril as SSOT, two-carril model, push-dev-only, reset-to-zero rationale, drift guard, dev-vs-VPS table, 5-step protocol); supersedes the push-only note in ADR-017; cross-reference block added at the top of ADR-017.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "adr", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Rewrite docs/guides/migrations.md (currently out of sync)",
+            "description": "The existing guide describes an aspirational migrate flow that was never used. Rewrite it to the actual new flow: dev push/fresh-dev, generate-before-PR, migrate on the VPS, extras carril, hops db-migrate. Acceptance: the guide matches the implemented reality and the CLAUDE.md docs. DONE: rewrote docs/guides/migrations.md as the canonical how-to — golden rule, dev push loop, generate-before-PR, USING conversion example, extras NNN convention, hops db-migrate + reset flow, the 3 shell tests, and a common-mistakes table (incl. 'never push a VPS').",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "guides", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "'Rules for agents touching the schema' protocol + db-drizzle-engineer surfacing",
+            "description": "Add the explicit copy-pasteable 5-step protocol to packages/db/CLAUDE.md AND surface it to the db-drizzle-engineer sub-agent (frontmatter skills / prompt), so delegated agents follow it: iterate in dev with push; generate before close; hand-edit USING for conversions; never push the VPS; CI blocks a missing migration. Acceptance: protocol present in CLAUDE.md and referenced in the db-drizzle-engineer agent definition. DONE: the agent file .claude/agents/db-drizzle-engineer.md exists; added a 'Two-Carril Migration Protocol' section (5-step protocol + golden rule + dev-vs-VPS table) after its Migration Workflow step. Self-contained because sub-agents don't inherit skill context.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "agents", "claude-md", "phase-docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Execute staging reset + rebuild + verify seed completes",
+            "description": "Run `hops db-migrate --target=staging --reset` then `hops db-seed --target=staging`. Verify the schema is rebuilt from zero (correct types, no name/display_order failures), extras applied, and the seed completes — resolving the 2026-06-01 stuck staging seed. Acceptance: staging API healthy, seed green, search_index refreshes, no gh_refresh role present.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["vps", "staging", "validation", "phase-validation"],
+            "phase": "validation",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Execute prod reset + rebuild (after staging soak, typed confirmation)",
+            "description": "After staging soak, run the same reset+rebuild on prod via hops db-migrate --target=prod --reset (typed confirmation) + db-seed. Backup taken first. Acceptance: prod schema rebuilt deterministically from the versioned carril; prod API healthy.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["vps", "prod", "validation", "phase-validation"],
+            "phase": "validation",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Close-out: green verify + index sync (specs + tasks)",
+            "description": "Run lint+typecheck+test green on the branch; flip specs/index.json + tasks/index.json for SPEC-178 to completed/archived in sync (per the Index Sync Rules); engram session summary. Acceptance: both indexes agree; CI green; spec status completed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-024", "T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["cleanup", "close-out", "phase-validation"],
+            "phase": "validation",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

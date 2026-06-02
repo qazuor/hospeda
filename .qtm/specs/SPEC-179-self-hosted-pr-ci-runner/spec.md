@@ -31,6 +31,7 @@ quota. Moving PR CI to a self-hosted runner therefore removes PR CI from the bil
 completely — it is not "cheaper", it is "off the meter".
 
 **Non-goals.**
+
 - NOT moving any deploy/release to self-hosted (there are none in Actions — deploys live in Coolify;
   the `deploy:*` npm scripts `process.exit(2)`).
 - NOT running self-hosted CI for public repos (this repo is private; the policy is private-only).
@@ -53,6 +54,7 @@ Repo: `qazuor/hospeda`, **private**, default branch `main`, `allow_forking: true
 | `validate-docs.yml` | PR/push on `.claude/**` paths | validate-documentation | Light |
 
 **Key facts:**
+
 - All jobs use `ubuntu-latest`. No job is on self-hosted today.
 - **No job has an explicit `permissions:` block** → all inherit repo defaults (too broad).
 - Only `ci.yml` has workflow-level `concurrency` (cancels PR runs, not push runs).
@@ -80,16 +82,19 @@ Repo: `qazuor/hospeda`, **private**, default branch `main`, `allow_forking: true
 ### 4. Functional requirements
 
 #### 4.1 PR CI on self-hosted
+
 - Every `ci.yml` job, when triggered by a `pull_request` event, runs on `[self-hosted, linux, x64, leo-laptop]`.
 - The same job, when triggered by `push` to `main`/`staging` (or `workflow_call`), runs on `ubuntu-latest`.
 - Implemented via a per-job dynamic `runs-on` expression so the file stays single and existing logic is untouched.
 
 #### 4.2 Draft + event hygiene
+
 - PR jobs must NOT run on draft PRs: `if: github.event.pull_request.draft == false` guard at the
   self-hosted path.
 - `pull_request` types restricted to `opened`, `synchronize`, `reopened`, `ready_for_review`.
 
 #### 4.3 On-demand local E2E gate (new workflow)
+
 - New file `.github/workflows/e2e-local.self-hosted.yml`, **`workflow_dispatch` only**, runs on
   `[self-hosted, linux, x64, leo-laptop]`.
 - Inputs: `branch` (default: current), `scope` (`p0` | `full`, default `p0`).
@@ -98,6 +103,7 @@ Repo: `qazuor/hospeda`, **private**, default branch `main`, `allow_forking: true
 - Triggerable via the Actions UI "Run workflow" button or `gh workflow run`.
 
 #### 4.4 Security
+
 - Add `permissions: contents: read` as the workflow-level default; elevate per-job only where strictly
   needed (none identified today).
 - Fork guard: because `allow_forking: true`, the self-hosted path must only run for **same-repo** PRs:
@@ -105,6 +111,7 @@ Repo: `qazuor/hospeda`, **private**, default branch `main`, `allow_forking: true
   fall back to `ubuntu-latest` or are skipped. Never use `pull_request_target` for these jobs.
 
 #### 4.5 Concurrency / serialization
+
 - Workflow-level concurrency group serializes self-hosted PR work so only one heavy run executes at a
   time on the laptop. `cancel-in-progress: true` for PR events (newer push supersedes older). The single
   registered runner is the hard backstop on parallelism (D6).

@@ -3,14 +3,17 @@
 # migrate-production.sh
 #
 # Production database migration script for the Hospeda platform.
-# Performs a safe database migration using Drizzle ORM (drizzle-kit push)
-# with pre-migration backup and verification.
+# Performs a safe database migration using the VERSIONED Drizzle migration
+# carril (drizzle-kit migrate) with a pre-migration pg_dump backup.
+#
+# IMPORTANT: This script uses `pnpm --filter @repo/db db:migrate`
+# (drizzle-kit migrate). It does NOT use `drizzle-kit push`, which is a
+# dev-only tool and must NEVER run on staging or production.
 #
 # Usage:
 #   ./scripts/migrate-production.sh [OPTIONS]
 #
 # Options:
-#   --dry-run       Show current schema status without applying changes
 #   --skip-backup   Skip the pg_dump backup step before migrating
 #   -h, --help      Show this help message
 #
@@ -20,9 +23,17 @@
 # The script will:
 #   1. Validate environment and dependencies
 #   2. Create a timestamped pg_dump backup (unless --skip-backup)
-#   3. Run drizzle-kit push to synchronize the database schema
-#   4. Verify migration success
-#   5. Print a summary with backup location and duration
+#   3. Run `pnpm --filter @repo/db db:migrate`  (drizzle-kit migrate)
+#   4. Run `pnpm db:apply-extras`               (triggers / matviews / extras)
+#   5. Verify connection and print a summary
+#
+# On failure at any step the script exits non-zero. If a backup was taken,
+# rollback instructions are printed.
+#
+# NOTE: On a fully managed VPS the preferred workflow is `hops db-migrate`
+# which handles target resolution, backup upload to R2, and confirmation
+# prompts automatically. This script exists as a portable fallback for
+# CI/CD pipelines and emergency manual runs.
 # =============================================================================
 
 set -euo pipefail
@@ -38,7 +49,6 @@ BACKUP_FILE="${BACKUP_DIR}/hospeda_backup_${TIMESTAMP}.sql.gz"
 
 # -- Flags --------------------------------------------------------------------
 
-DRY_RUN=false
 SKIP_BACKUP=false
 
 # -- Functions ----------------------------------------------------------------
@@ -47,6 +57,7 @@ print_header() {
     echo ""
     echo "=============================================="
     echo "  Hospeda - Production Database Migration"
+    echo "  (drizzle-kit migrate — versioned carril)"
     echo "=============================================="
     echo ""
 }
@@ -55,12 +66,13 @@ print_usage() {
     echo "Usage: $0 [OPTIONS]"
     echo ""
     echo "Options:"
-    echo "  --dry-run       Show current schema status without applying changes"
     echo "  --skip-backup   Skip the pg_dump backup step before migrating"
     echo "  -h, --help      Show this help message"
     echo ""
     echo "Environment:"
     echo "  HOSPEDA_DATABASE_URL  Required. PostgreSQL connection string."
+    echo ""
+    echo "IMPORTANT: Uses drizzle-kit migrate (versioned), NOT drizzle-kit push."
 }
 
 log_info() {
@@ -89,10 +101,6 @@ get_db_name() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --dry-run)
-            DRY_RUN=true
-            shift
-            ;;
         --skip-backup)
             SKIP_BACKUP=true
             shift
@@ -149,39 +157,13 @@ log_info "Checking migrations directory..."
 
 if [[ -d "${MIGRATIONS_DIR}" ]]; then
     SQL_COUNT=$(find "${MIGRATIONS_DIR}" -maxdepth 1 -name '*.sql' -type f | wc -l)
-    log_info "Migration files found in packages/db/src/migrations/: ${SQL_COUNT} SQL files"
+    log_info "Migration SQL files found in packages/db/src/migrations/: ${SQL_COUNT} SQL files"
 else
     log_warn "Migrations directory not found at ${MIGRATIONS_DIR}"
     SQL_COUNT=0
 fi
 
-# 4. Dry-run mode: show status and exit
-if [[ "${DRY_RUN}" == true ]]; then
-    echo ""
-    log_info "=== DRY RUN MODE ==="
-    log_info "Database: ${DB_NAME}"
-    log_info "Migration SQL files on disk: ${SQL_COUNT}"
-    log_info ""
-    log_info "Running schema check (no changes will be applied)..."
-    echo ""
-
-    # Use drizzle-kit push with --strict to show what would change without applying.
-    # Note: drizzle-kit push does not have a native dry-run flag,
-    # so we use the check command if available, otherwise just report status.
-    cd "${REPO_ROOT}"
-    if pnpm --filter @repo/db drizzle-kit check --config drizzle.config.ts 2>/dev/null; then
-        log_success "Schema check completed."
-    else
-        log_info "Schema check command not available. Use 'pnpm db:studio' to inspect the current state."
-    fi
-
-    echo ""
-    log_info "No changes were applied (dry-run mode)."
-    log_info "Remove --dry-run to apply migrations."
-    exit 0
-fi
-
-# 5. Create backup
+# 4. Create backup
 if [[ "${SKIP_BACKUP}" == true ]]; then
     log_warn "Skipping database backup (--skip-backup flag set)"
 else
@@ -201,18 +183,15 @@ else
     fi
 fi
 
-# 6. Run migration
+# 5. Run migration (drizzle-kit migrate — versioned carril, NOT push)
 echo ""
-log_info "Running database migration..."
+log_info "Running versioned database migration (drizzle-kit migrate)..."
 log_info "Command: pnpm --filter @repo/db db:migrate"
 echo ""
 
 cd "${REPO_ROOT}"
 
-if pnpm --filter @repo/db db:migrate; then
-    echo ""
-    log_success "Migration completed successfully."
-else
+if ! pnpm --filter @repo/db db:migrate; then
     MIGRATION_EXIT_CODE=$?
     echo ""
     log_error "Migration FAILED (exit code: ${MIGRATION_EXIT_CODE})"
@@ -245,8 +224,36 @@ else
     exit "${MIGRATION_EXIT_CODE}"
 fi
 
+echo ""
+log_success "drizzle-kit migrate completed successfully."
+
+# 6. Apply Postgres extras (triggers, matviews, JSONB CHECK constraints)
+echo ""
+log_info "Applying Postgres extras (pnpm db:apply-extras)..."
+log_info "Command: pnpm db:apply-extras"
+echo ""
+
+if ! pnpm db:apply-extras; then
+    EXTRAS_EXIT_CODE=$?
+    echo ""
+    log_error "db:apply-extras FAILED (exit code: ${EXTRAS_EXIT_CODE})"
+    log_error "Triggers, materialized views and JSONB CHECK constraints are not in sync."
+    log_error "The schema was migrated but extras are missing. Investigate the output above."
+
+    if [[ "${SKIP_BACKUP}" == false ]] && [[ -f "${BACKUP_FILE}" ]]; then
+        log_error ""
+        log_error "Backup is available for rollback if needed:"
+        log_error "  gunzip -c ${BACKUP_FILE} | psql \"\${HOSPEDA_DATABASE_URL}\""
+    fi
+
+    exit "${EXTRAS_EXIT_CODE}"
+fi
+
+echo ""
+log_success "Postgres extras applied."
+
 # 7. Post-migration verification
-log_info "Verifying migration..."
+log_info "Verifying database connection..."
 
 if psql "${HOSPEDA_DATABASE_URL}" -c "SELECT 1;" &>/dev/null; then
     log_success "Database connection verified after migration."
@@ -269,7 +276,7 @@ echo "  Migration files:   ${SQL_COUNT} SQL files on disk"
 
 if [[ "${SKIP_BACKUP}" == false ]] && [[ -f "${BACKUP_FILE}" ]]; then
     echo "  Backup location:   ${BACKUP_FILE}"
-    echo "  Backup size:       ${BACKUP_SIZE}"
+    echo "  Backup size:       ${BACKUP_SIZE:-unknown}"
 else
     echo "  Backup:            skipped"
 fi
