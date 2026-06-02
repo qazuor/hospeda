@@ -108,7 +108,7 @@
         "overrides": {
             "react": "19.1.1",
             "react-dom": "19.1.1",
-            "devalue": ">=5.6.3",
+            "devalue": ">=5.8.1",
             "seroval": ">=1.4.1",
             "tar": ">=7.5.11",
             "tar-fs": ">=3.1.1",
@@ -160,7 +160,7 @@
         },
         "publicHoistPattern": ["react", "react-dom", "*react*"],
         "auditConfig": {
-            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5"]
+            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5", "GHSA-5xrq-8626-4rwp"]
         }
     },
     "lint-staged": {
