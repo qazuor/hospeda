@@ -104,12 +104,17 @@ jobs:
   # ------------------------------------------------------------------
   security:
     name: Security
-    runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    # Pinned to GitHub-hosted (NOT the dynamic self-hosted strategy the other
+    # jobs use). This job runs `semgrep/semgrep-action@v1`, a Docker container
+    # action that executes as root and runs git on the mounted workspace,
+    # leaving `.git/objects` + `.git/HEAD` root-owned. On the self-hosted
+    # leo-laptop runner all jobs share one `_work/hospeda/hospeda`, so that
+    # root-owned `.git` then breaks `actions/checkout` ("insufficient permission
+    # for adding an object to .git/objects") for every subsequent job and run.
+    # On hosted each job gets a disposable isolated VM, so the docker action
+    # cannot contaminate leo-laptop's checkout. (semgrep-action@v1 is also
+    # archived since 2024-04 — migrating to the semgrep CLI is tracked separately.)
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
