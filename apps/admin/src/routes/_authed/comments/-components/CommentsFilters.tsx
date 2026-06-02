@@ -7,6 +7,7 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 
 /** Shape of the filter state managed by the parent page. */
 export interface CommentsFiltersValue {
@@ -40,7 +41,7 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                     htmlFor="filter-entity-type"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('comments.list.filters.entityType')}
+                    {t('comments.list.filters.entityType' as TranslationKey)}
                 </label>
                 <select
                     id="filter-entity-type"
@@ -50,9 +51,13 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                         onChange({ ...value, entityType: e.target.value as 'POST' | 'EVENT' | '' })
                     }
                 >
-                    <option value="">Todos</option>
-                    <option value="POST">Post</option>
-                    <option value="EVENT">Evento</option>
+                    <option value="">{t('comments.list.filters.all' as TranslationKey)}</option>
+                    <option value="POST">
+                        {t('comments.list.filters.entityTypePost' as TranslationKey)}
+                    </option>
+                    <option value="EVENT">
+                        {t('comments.list.filters.entityTypeEvent' as TranslationKey)}
+                    </option>
                 </select>
             </div>
 
@@ -62,7 +67,7 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                     htmlFor="filter-moderation-state"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('comments.list.filters.moderationState')}
+                    {t('comments.list.filters.moderationState' as TranslationKey)}
                 </label>
                 <select
                     id="filter-moderation-state"
@@ -79,7 +84,7 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                         })
                     }
                 >
-                    <option value="">Todos</option>
+                    <option value="">{t('comments.list.filters.all' as TranslationKey)}</option>
                     <option value="APPROVED">{t('comments.moderation.approved')}</option>
                     <option value="REJECTED">{t('comments.moderation.rejected')}</option>
                     <option value="PENDING">{t('comments.moderation.pending')}</option>
@@ -92,13 +97,13 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                     htmlFor="filter-search"
                     className="text-muted-foreground text-xs"
                 >
-                    Buscar
+                    {t('comments.list.filters.search' as TranslationKey)}
                 </label>
                 <input
                     id="filter-search"
                     type="search"
                     className="rounded-md border bg-background px-3 py-1.5 text-sm"
-                    placeholder="Contenido, autor…"
+                    placeholder={t('comments.list.filters.searchPlaceholder' as TranslationKey)}
                     value={value.search}
                     onChange={(e) => onChange({ ...value, search: e.target.value })}
                 />
@@ -117,7 +122,7 @@ export function CommentsFilters({ value, onChange }: CommentsFiltersProps) {
                     htmlFor="filter-include-deleted"
                     className="cursor-pointer text-muted-foreground text-sm"
                 >
-                    Incluir eliminados
+                    {t('comments.list.filters.includeDeleted' as TranslationKey)}
                 </label>
             </div>
         </div>

@@ -392,6 +392,7 @@ const breadcrumbItems = [
 			locale={locale}
 			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
+			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Videos (if any) -->

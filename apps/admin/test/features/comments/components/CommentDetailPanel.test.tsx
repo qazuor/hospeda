@@ -143,17 +143,18 @@ describe('CommentDetailPanel', () => {
         it('displays the moderationState badge', () => {
             render(<CommentDetailPanel comment={baseComment} />);
             // ModerationStateBadge renders, check it's present by testid or text
-            expect(screen.getByText('Estado:')).toBeInTheDocument();
+            // useTranslations is mocked globally — labels render as their i18n key strings
+            expect(screen.getByText('comments.detail.state')).toBeInTheDocument();
         });
 
         it('displays createdAt date', () => {
             render(<CommentDetailPanel comment={baseComment} />);
-            expect(screen.getByText('Creado:')).toBeInTheDocument();
+            expect(screen.getByText('comments.detail.createdAt')).toBeInTheDocument();
         });
 
         it('displays updatedAt date', () => {
             render(<CommentDetailPanel comment={baseComment} />);
-            expect(screen.getByText('Actualizado:')).toBeInTheDocument();
+            expect(screen.getByText('comments.detail.updatedAt')).toBeInTheDocument();
         });
 
         it('shows the deleted date when comment is soft-deleted', () => {
@@ -162,7 +163,7 @@ describe('CommentDetailPanel', () => {
                 deletedAt: new Date('2025-06-02T00:00:00Z')
             };
             render(<CommentDetailPanel comment={comment} />);
-            expect(screen.getByText('Eliminado:')).toBeInTheDocument();
+            expect(screen.getByText('comments.detail.deletedAt')).toBeInTheDocument();
         });
     });
 

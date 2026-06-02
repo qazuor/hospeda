@@ -1,26 +1,43 @@
-name: E2E (PR)
+name: E2E (Local / Self-Hosted)
 
-# SPEC-092 T-039: PR-time E2E suite. Runs P0 only with mocked external
-# services. Target wall-clock: < 6 minutes.
+# SPEC-179 D4: On-demand E2E gate that runs entirely on the owner's laptop
+# (self-hosted runner), consuming zero GitHub-hosted Actions minutes.
 #
-# When this workflow fails, the PR cannot merge. Failures are usually
-# regressions in cross-app behavior; check the uploaded HTML report and
-# Playwright trace for first-retry forensics.
+# Usage:
+#   gh workflow run e2e-local.self-hosted.yml -f branch=feat/my-branch -f scope=p0
+#
+# Or via the Actions UI: Actions → "E2E (Local / Self-Hosted)" → Run workflow.
+#
+# Requires Docker running on the laptop (for postgres/redis/mailpit service
+# containers). See docs/guides/self-hosted-runner.md for runner setup.
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to check out (leave empty to use the default branch)'
+        type: string
+        default: ''
+      scope:
+        description: 'E2E scope: p0 (smoke) or full (P0 + P1 + Resilience)'
+        type: choice
+        options:
+          - p0
+          - full
+        default: p0
+
+permissions:
+  contents: read
 
 concurrency:
-  group: e2e-pr-${{ github.ref }}
-  cancel-in-progress: true
+  group: e2e-local-self-hosted
+  cancel-in-progress: false
 
 jobs:
-  e2e-p0:
-    name: E2E P0 Suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+  e2e-local:
+    name: E2E Local (${{ inputs.scope }})
+    runs-on: [self-hosted, linux, x64, leo-laptop]
+    timeout-minutes: 60
 
     services:
       postgres:
@@ -63,7 +80,6 @@ jobs:
           --health-retries 10
 
     env:
-      # Apps point to E2E DB on :5433 (different from CI integration DB on :5436)
       HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_REDIS_URL: redis://localhost:6380
@@ -75,29 +91,48 @@ jobs:
       HOSPEDA_MAILER_HOST: localhost
       HOSPEDA_MAILER_PORT: '1025'
 
-      # MercadoPago: PR mode uses simulated webhook only (no real sandbox calls).
-      # The webhook secret signs the simulated POST; the access_token is a stub.
-      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-pr-stub-access-token
-      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: TEST-pr-stub-public-key
+      # MercadoPago: local mode uses simulated webhook only (no real sandbox calls).
+      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-local-stub-access-token
+      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: TEST-local-stub-public-key
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
 
-      # Cloudinary: optional in PR (tests tagged @cloudinary skip when absent)
+      # Cloudinary: optional (tests tagged @cloudinary skip when absent)
       HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
       HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
       HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
 
-      # Playwright tuning
-      E2E_MODE: pr
+      E2E_MODE: local
 
     steps:
+      - name: Resolve checkout ref
+        id: ref
+        shell: bash
+        # inputs.branch comes from workflow_dispatch (collaborator-only), but we
+        # still sanitize it: only allow characters valid in a git branch/tag/SHA
+        # reference (alphanumeric, hyphen, underscore, slash, dot).  An empty
+        # input falls back to the workflow's own ref (typically the default branch
+        # when triggered from the Actions UI without specifying a branch).
+        run: |
+          INPUT_BRANCH="${{ inputs.branch }}"
+          if [ -z "$INPUT_BRANCH" ]; then
+            echo "ref=${{ github.ref }}" >> "$GITHUB_OUTPUT"
+          elif echo "$INPUT_BRANCH" | grep -qP '^[a-zA-Z0-9._/\-]+$'; then
+            echo "ref=$INPUT_BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Invalid branch name: '$INPUT_BRANCH'. Only alphanumeric, hyphen, underscore, dot, and slash characters are allowed."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '20'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -144,7 +179,14 @@ jobs:
         run: pnpm --filter hospeda-e2e e2e:seed
 
       - name: Run E2E P0 suite
+        if: inputs.scope == 'p0'
         run: pnpm --filter hospeda-e2e e2e:test:p0
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Run E2E full suite (P0 + P1 + Resilience)
+        if: inputs.scope == 'full'
+        run: pnpm --filter hospeda-e2e e2e:test
         env:
           PLAYWRIGHT_HTML_OPEN: never
 
@@ -152,7 +194,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-pr-${{ github.run_id }}
+          name: playwright-report-local-${{ github.run_id }}
           path: apps/e2e/playwright-report/
           retention-days: 14
 
@@ -160,6 +202,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-pr-${{ github.run_id }}
+          name: playwright-traces-local-${{ github.run_id }}
           path: apps/e2e/test-results/
           retention-days: 7

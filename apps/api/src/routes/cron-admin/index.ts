@@ -15,7 +15,7 @@
 import { type CronCategory, CronJobsAdminListSchema, PermissionEnum } from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
 import { CronExpressionParser } from 'cron-parser';
-import cronstrue from 'cronstrue/i18n';
+import cronstrue from 'cronstrue/i18n.js';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { recordCronRun } from '../../cron/record-run';

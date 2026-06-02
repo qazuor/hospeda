@@ -93,6 +93,9 @@ export class CronRunService extends BaseService {
             // biome-ignore lint/suspicious/noExplicitAny: db Partial<row> vs schema type bridge
         } as any);
 
+        // TYPE-WORKAROUND: CronRunModel uses its own local `CronRun = $inferSelect` while
+        // this service returns the @repo/schemas CronRun; the shapes are structurally
+        // identical but TypeScript treats them as distinct nominal types.
         return created as unknown as CronRun;
     }
 
@@ -117,6 +120,7 @@ export class CronRunService extends BaseService {
             execute: async (validated) => {
                 checkCanViewCronRuns(actor);
                 const result = await this.model.listRuns(validated.filter);
+                // TYPE-WORKAROUND: same DB-model vs @repo/schemas CronRun nominal mismatch as recordRun.
                 return result as unknown as { items: CronRun[]; total: number };
             }
         });
@@ -143,6 +147,7 @@ export class CronRunService extends BaseService {
             execute: async (validated) => {
                 checkCanViewCronRuns(actor);
                 const run = await this.model.findById(validated.id);
+                // TYPE-WORKAROUND: same DB-model vs @repo/schemas CronRun nominal mismatch as recordRun.
                 return (run as unknown as CronRun | null) ?? null;
             }
         });
@@ -174,6 +179,7 @@ export class CronRunService extends BaseService {
                     this.model.getLatestRunPerJob(),
                     this.model.getRecentFailures(limit)
                 ]);
+                // TYPE-WORKAROUND: same DB-model vs @repo/schemas CronRun nominal mismatch as recordRun (×2).
                 const lastRuns = lastRunsRaw as unknown as CronRun[];
                 const recentFailures = recentFailuresRaw as unknown as CronRun[];
                 const failingJobsCount = lastRuns.filter((r) => r.status !== 'success').length;

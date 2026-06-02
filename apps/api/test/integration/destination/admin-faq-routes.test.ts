@@ -119,7 +119,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE',
                 moderationState: 'APPROVED',
-                location: { lat: -32.48, lng: -58.23 }
+                location: { coordinates: { lat: '-32.48', long: '-58.23' } }
             })
             .returning({ id: destinations.id });
 
@@ -174,7 +174,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE',
                 moderationState: 'APPROVED',
-                location: { lat: -32.48, lng: -58.23 }
+                location: { coordinates: { lat: '-32.48', long: '-58.23' } }
             })
             .returning({ id: destinations.id });
 

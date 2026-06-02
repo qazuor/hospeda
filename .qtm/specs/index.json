@@ -2074,6 +2074,14 @@
             "complexity": "high",
             "path": "SPEC-178-versioned-db-migration-strategy",
             "created": "2026-06-01T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "status": "approved",
+            "complexity": "medium",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "created": "2026-06-01T00:00:00.000Z"
         }
     ]
 }

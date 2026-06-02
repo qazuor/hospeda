@@ -90,6 +90,9 @@ router.get('/', async (c) => {
         // render "Hotel X" + a working link without a second round trip.
         // The service intentionally returns raw rows so admin tooling stays
         // cheap; the inbox view is where the human-friendly fields belong.
+        // TYPE-WORKAROUND: `listForGuest` returns a generic item type that doesn't
+        // surface `accommodationId`; the runtime shape always carries it. Widening
+        // through unknown to add the field to the type without losing other keys.
         const itemsRaw = (result.data.items ?? []) as unknown as Array<{
             accommodationId: string;
             [k: string]: unknown;

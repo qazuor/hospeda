@@ -12,7 +12,9 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { CommentDetailPanel } from '@/components/comments/CommentDetailPanel';
 import { Button } from '@/components/ui/button';
 import { useComment } from '@/hooks/use-comment-moderation';
+import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
@@ -24,6 +26,7 @@ export const Route = createFileRoute('/_authed/comments/$commentId')({
 
 /** Comment detail page. */
 function CommentDetailPage() {
+    const { t } = useTranslations();
     const { commentId } = Route.useParams();
     const { data: comment, isLoading, error } = useComment(commentId);
 
@@ -39,14 +42,20 @@ function CommentDetailPage() {
                             variant="outline"
                             size="sm"
                         >
-                            ← Volver a comentarios
+                            {t('comments.detail.backToList' as TranslationKey)}
                         </Button>
                     </Link>
-                    <h1 className="font-bold text-2xl">Detalle del comentario</h1>
+                    <h1 className="font-bold text-2xl">
+                        {t('comments.detail.title' as TranslationKey)}
+                    </h1>
                 </div>
 
                 {/* Loading */}
-                {isLoading && <p className="text-muted-foreground text-sm">Cargando comentario…</p>}
+                {isLoading && (
+                    <p className="text-muted-foreground text-sm">
+                        {t('comments.detail.loading' as TranslationKey)}
+                    </p>
+                )}
 
                 {/* Error */}
                 {error && (
@@ -54,20 +63,20 @@ function CommentDetailPage() {
                         className="text-destructive text-sm"
                         role="alert"
                     >
-                        Error al cargar el comentario. Intentá de nuevo.
+                        {t('comments.detail.error' as TranslationKey)}
                     </p>
                 )}
 
                 {/* Not found */}
                 {!isLoading && !error && !comment && (
                     <div className="py-16 text-center text-muted-foreground">
-                        <p>Comentario no encontrado.</p>
+                        <p>{t('comments.detail.notFound' as TranslationKey)}</p>
                         <Link to="/comments">
                             <Button
                                 variant="outline"
                                 className="mt-4"
                             >
-                                Volver a la lista
+                                {t('comments.detail.backToListShort' as TranslationKey)}
                             </Button>
                         </Link>
                     </div>
