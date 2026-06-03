@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -390,7 +390,7 @@
             "id": "T-018",
             "title": "Implement dev-local cross-subdomain cookie workaround (*.hospeda.local recipe)",
             "description": "D4 resolved: implement option A (*.hospeda.local + /etc/hosts). (1) In apps/api/src/lib/auth.ts: add DEV_COOKIE_DOMAIN support — if process.env.DEV_COOKIE_DOMAIN is set, use it as crossSubDomainCookies.domain regardless of NODE_ENV. Register DEV_COOKIE_DOMAIN in packages/config/src/env-registry.*.ts as a dev-only, non-secret var. Update apps/api/.env.example. (2) Create docs/guides/auth-local-dev.md with /etc/hosts setup (web.hospeda.local + admin.hospeda.local → 127.0.0.1), DEV_COOKIE_DOMAIN config, and verification steps. Acceptance: developer can sign in at http://web.hospeda.local:4321 and navigate to http://admin.hospeda.local:3000 with the same session cookie; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-019"],
@@ -400,12 +400,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T17:31:49Z",
+                "completed": "2026-06-03T17:39:05Z"
             }
         },
         {
