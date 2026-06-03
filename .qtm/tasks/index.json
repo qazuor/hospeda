@@ -174,6 +174,21 @@
             "linearIssues": ["BETA-58"],
             "note": "tasks pending atomization",
             "archived": false
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "in-progress",
+            "progress": "0/20",
+            "path": "SPEC-175-admin-whats-new",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
+            "branch": "spec/SPEC-175-admin-whats-new",
+            "base": "staging",
+            "createdAt": "2026-05-29T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-03T23:01:57.000Z",
+            "taskCount": 20,
+            "averageComplexity": 2.3,
+            "note": "20 tasks across 8 phases (avg 2.3). schemas: T-001/T-002. service: T-003 (Q2). api: T-004..T-007 (Q1 in T-007). admin-core: T-008..T-010. admin-ui: T-011..T-014 (TBD-1 in T-011, Q3 in T-012, Q2-icon in T-013, D17 seam in T-014). dashboard: T-015..T-017 (Q4/Q5 in T-015). ops: T-018 (TBD-2 guard). testing: T-019/T-020. Cross-spec D17: welcome tour (SPEC-174) suppresses auto-modal — wired by whichever ships second."
         }
     ],
     "standalone": {

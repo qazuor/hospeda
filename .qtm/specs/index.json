@@ -452,7 +452,7 @@
             "title": "Admin What's New / Release Notes Dialog",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-175-admin-whats-new",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-175-admin-whats-new",
