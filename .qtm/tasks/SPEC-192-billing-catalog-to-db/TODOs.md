@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 17/37 tasks (46%)
+## Progress: 21/37 tasks (57%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -130,22 +130,22 @@
 
 #### FR-4 Plan Reader Cutover (runs sequentially after T-017/T-020)
 
-- [ ] **T-020** (complexity: 2) — Add getBySlug/getByName method to PlanService (enables FR-4 plan cutover)
+- [x] **T-020** (complexity: 2) — Add getBySlug/getByName method to PlanService (enables FR-4 plan cutover)
   - Add `getBySlug(slug)` to PlanService querying billing_plans.name; return Result<PlanRow>; unit tests
   - Blocked by: T-017
   - Blocks: T-022, T-023, T-024, T-025
 
-- [ ] **T-022** (complexity: 2) — Cut over public listPlans.ts route from ALL_PLANS config to PlanService (FR-4)
+- [x] **T-022** (complexity: 2) — Cut over public listPlans.ts route from ALL_PLANS config to PlanService (FR-4)
   - `apps/api/src/routes/billing/public/listPlans.ts` → PlanService.list(); parity regression test
   - Blocked by: T-020
   - Blocks: T-023
 
-- [ ] **T-023** (complexity: 2) — Cut over protected subscription.ts and stats.ts routes from getPlanBySlug to PlanService (FR-4)
+- [x] **T-023** (complexity: 2) — Cut over protected subscription.ts and stats.ts routes from getPlanBySlug to PlanService (FR-4)
   - Both protected routes; parity regression test
   - Blocked by: T-022
   - Blocks: T-024
 
-- [ ] **T-024** (complexity: 3) — Cut over entitlement.ts middleware plan lookup from getPlanBySlug to PlanService (FR-4)
+- [x] **T-024** (complexity: 3) — Cut over entitlement.ts middleware plan lookup from getPlanBySlug to PlanService (FR-4)
   - Only the plan-lookup portion; keep getDefaultEntitlements/getUnlimitedEntitlements in code; parity test
   - Blocked by: T-023
   - Blocks: T-025

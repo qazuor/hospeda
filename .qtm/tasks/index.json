@@ -174,7 +174,7 @@
             "specId": "SPEC-192",
             "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "status": "in-progress",
-            "progress": "17/37",
+            "progress": "21/37",
             "path": "SPEC-192-billing-catalog-to-db",
             "parent": "SPEC-193",
             "branch": "spec/SPEC-192-billing-catalog-to-db",

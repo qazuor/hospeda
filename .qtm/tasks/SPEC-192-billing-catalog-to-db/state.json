@@ -684,35 +684,35 @@
             "id": "T-020",
             "title": "Add getBySlug/getByName method to PlanService (enables FR-4 plan cutover)",
             "description": "Add `getBySlug(slug: string)` (and optionally `getByName(name: string)`) to `packages/service-core/src/services/billing/plan/plan.service.ts` (or `plan.crud.ts`). PlanService already exists but may lack this lookup method. Slug resolves via `billing_plans.name` (SPEC-168 convention: slug stored as name). Return `Result<PlanRow>`. Tests in `__tests__/plan-service.get-by-slug.test.ts`: resolves known slug; returns NOT_FOUND for unknown. Files: 1 service file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-022", "T-023", "T-024", "T-025"],
             "subtasks": [
                 {
                     "title": "Add getBySlug() querying billing_plans.name === slug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Return Result<PlanRow> with NOT_FOUND on miss",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests: known slug resolves; unknown returns NOT_FOUND",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "billing", "plan", "fr-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
             }
         },
         {
@@ -758,101 +758,101 @@
             "id": "T-022",
             "title": "Cut over public listPlans.ts route from ALL_PLANS config to PlanService (FR-4)",
             "description": "In `apps/api/src/routes/billing/public/listPlans.ts`, replace `ALL_PLANS` config read with `PlanService.list()`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/billing/public/__tests__/listPlans.cutover.test.ts`: DB-resolved plan list equals config-resolved list for each plan slug (prices, entitlements, limits). Files: 1 route file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Replace ALL_PLANS with PlanService.list()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write DB-vs-config parity regression test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "plan", "fr-4", "cutover", "public"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Cut over protected subscription.ts and stats.ts routes from getPlanBySlug to PlanService (FR-4)",
             "description": "In `apps/api/src/routes/user/protected/subscription.ts` and `stats.ts`, replace `getPlanBySlug` config calls with `PlanService.getBySlug()`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/user/protected/__tests__/subscription-plan.cutover.test.ts` covering both files. Files: 2 route files + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022"],
             "blocks": ["T-024"],
             "subtasks": [
                 {
                     "title": "Cutover subscription.ts plan lookup to PlanService.getBySlug()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cutover stats.ts plan lookup to PlanService.getBySlug()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test for both routes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "plan", "fr-4", "cutover", "protected"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Cut over entitlement.ts middleware plan lookup from getPlanBySlug to PlanService (FR-4)",
             "description": "In `apps/api/src/middlewares/entitlement.ts`, replace the plan-lookup portion using `getPlanBySlug` / `ALL_PLANS` config with `PlanService.getBySlug()`. Do NOT touch `getDefaultEntitlements` / `getUnlimitedEntitlements` — those stay in code (FR-6). Write parity regression test in `apps/api/src/middlewares/__tests__/entitlement-plan.cutover.test.ts`. Files: 1 middleware file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-023"],
             "blocks": ["T-025"],
             "subtasks": [
                 {
                     "title": "Identify and replace only the plan-lookup portion (not structural defs)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace getPlanBySlug with PlanService.getBySlug()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test asserting getDefaultEntitlements unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "plan", "fr-4", "cutover", "middleware"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
             }
         },
         {
@@ -1321,9 +1321,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 20,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.4
     }
