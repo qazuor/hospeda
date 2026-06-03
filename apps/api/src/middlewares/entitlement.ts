@@ -19,13 +19,13 @@ import {
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
-    getPlanBySlug,
     getUnlimitedEntitlements
 } from '@repo/billing';
 import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
@@ -126,6 +126,33 @@ const entitlementCache = new EntitlementCache({
 });
 
 /**
+ * Module-level PlanService singleton used for the host-draft default plan lookup.
+ *
+ * Shared across all requests to avoid recreating the service on every call.
+ * Safe: PlanService has no mutable state.
+ */
+const planService = new PlanService();
+
+/**
+ * Memoized promise carrying the resolved owner-basico defaults.
+ *
+ * Populated on first call to {@link buildHostDraftDefaultsResult} and
+ * invalidated after {@link HOST_DRAFT_CACHE_TTL_MS} (5 minutes — matching
+ * the entitlement cache TTL philosophy). A single promise is shared across
+ * all concurrent requests on the HOST fallback path, so the DB is only
+ * queried once per TTL window even under burst load (SPEC-192 T-024).
+ *
+ * Set to `null` on module initialisation and after TTL expiry.
+ */
+let hostDraftDefaultsCache: Promise<LoadEntitlementsResult> | null = null;
+
+/** Timestamp of the last successful hostDraftDefaultsCache population */
+let hostDraftDefaultsCachedAt = 0;
+
+/** TTL for the owner-basico defaults memo — matches the entitlement cache TTL */
+const HOST_DRAFT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
  * Result of loading entitlements for a billing customer.
  */
 interface LoadEntitlementsResult {
@@ -171,32 +198,64 @@ function buildDefaultEntitlementsResult(): LoadEntitlementsResult {
  * publish, we fall back to the `owner-basico` plan entitlements/limits instead
  * of the tourist-free defaults used for regular users.
  *
- * This result is `shouldCache: true` because it derives exclusively from
- * static in-memory plan config, same as {@link buildDefaultEntitlementsResult}.
+ * **Performance (SPEC-192 T-024):** this function is called on every protected
+ * request for HOST actors without an active subscription — a hot path. The
+ * previous implementation was an in-memory map lookup (O(n) on ALL_PLANS); the
+ * new implementation queries the `billing_plans` DB table. To preserve the
+ * near-zero latency of the hot path, the resolved result is memoized with a
+ * module-level promise and a 5-minute TTL matching the entitlement cache
+ * philosophy (see {@link HOST_DRAFT_CACHE_TTL_MS}). The promise is shared, so
+ * concurrent requests on first load coalesce into a single DB query.
  *
- * If `owner-basico` is somehow absent from the plan registry (mis-configuration,
- * should never happen in production), this function falls back to
- * {@link buildDefaultEntitlementsResult} instead of crashing the request.
+ * If `owner-basico` is NOT_FOUND (mis-configuration or plan not yet seeded),
+ * this function falls back to {@link buildDefaultEntitlementsResult} and does
+ * NOT memoize the miss — the next request will retry so the plan is picked up
+ * after seeding without requiring a restart.
  *
- * @returns A LoadEntitlementsResult populated from the `owner-basico` plan.
+ * @returns A LoadEntitlementsResult populated from the `owner-basico` DB plan.
  */
-function buildHostDraftDefaultsResult(): LoadEntitlementsResult {
-    const plan = getPlanBySlug('owner-basico');
+async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
+    const now = Date.now();
 
-    if (!plan) {
-        // Defensive: plan registry mis-configuration. Log and fall back to
-        // tourist-free rather than crashing.
-        apiLogger.warn(
-            'owner-basico plan not found in registry — falling back to tourist-free defaults for HOST actor'
-        );
-        return buildDefaultEntitlementsResult();
+    // Return the memoized promise if still within TTL
+    if (
+        hostDraftDefaultsCache !== null &&
+        now - hostDraftDefaultsCachedAt < HOST_DRAFT_CACHE_TTL_MS
+    ) {
+        return hostDraftDefaultsCache;
     }
 
-    return {
-        entitlements: new Set<EntitlementKey>(plan.entitlements as EntitlementKey[]),
-        limits: new Map<LimitKey, number>(plan.limits.map((l) => [l.key as LimitKey, l.value])),
-        shouldCache: true
-    };
+    // Build a new promise and memoize it immediately so concurrent callers
+    // share the same inflight query (promise deduplication).
+    const fetchPromise = planService.getBySlug('owner-basico').then((result) => {
+        if (!result.success) {
+            // NOT_FOUND or INTERNAL_ERROR — do NOT memoize; next request retries.
+            hostDraftDefaultsCache = null;
+            hostDraftDefaultsCachedAt = 0;
+            apiLogger.warn(
+                { errorCode: result.error.code },
+                'owner-basico plan not found in DB — falling back to tourist-free defaults for HOST actor'
+            );
+            return buildDefaultEntitlementsResult();
+        }
+
+        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>
+        const limits = new Map<LimitKey, number>(
+            Object.entries(result.data.limits) as [LimitKey, number][]
+        );
+
+        return {
+            entitlements: new Set<EntitlementKey>(result.data.entitlements as EntitlementKey[]),
+            limits,
+            shouldCache: true
+        };
+    });
+
+    // Memoize the promise; set the timestamp now so concurrent callers use it.
+    hostDraftDefaultsCache = fetchPromise;
+    hostDraftDefaultsCachedAt = now;
+
+    return fetchPromise;
 }
 
 /**
@@ -296,7 +355,7 @@ async function loadEntitlements(
             // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
             // defaults (SPEC-143 T-143-58).
             if (actorRole === RoleEnum.HOST) {
-                return buildHostDraftDefaultsResult();
+                return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
         }
@@ -311,7 +370,7 @@ async function loadEntitlements(
             // role-appropriate defaults. Same rationale as the no-subscriptions
             // branch above (SPEC-143 Block 1 / T-143-58).
             if (actorRole === RoleEnum.HOST) {
-                return buildHostDraftDefaultsResult();
+                return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
         }
@@ -466,7 +525,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
 
             const fallback =
                 (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? buildHostDraftDefaultsResult()
+                    ? await buildHostDraftDefaultsResult()
                     : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
@@ -500,7 +559,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
 
             const fallback =
                 (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? buildHostDraftDefaultsResult()
+                    ? await buildHostDraftDefaultsResult()
                     : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
@@ -849,6 +908,19 @@ export function getAllLimits(c: Context<AppBindings>): Map<LimitKey, number> {
 export function clearEntitlementCache(customerId: string): void {
     apiLogger.debug({ customerId }, 'Entitlement cache cleared');
     entitlementCache.invalidate(customerId);
+}
+
+/**
+ * Invalidates the module-level memo for the `owner-basico` host-draft defaults
+ * (SPEC-192 T-024).
+ *
+ * Forces the next call to {@link buildHostDraftDefaultsResult} to re-query the
+ * DB. Useful in test harnesses and after plan updates that should be reflected
+ * immediately without waiting for the TTL to expire.
+ */
+export function clearHostDraftDefaultsCache(): void {
+    hostDraftDefaultsCache = null;
+    hostDraftDefaultsCachedAt = 0;
 }
 
 /**
