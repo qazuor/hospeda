@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -85,7 +85,7 @@
             "id": "T-004",
             "title": "Tests for LOG_FORMAT toggle in @repo/logger",
             "description": "Write Vitest tests in `packages/logger/test/format.test.ts` (or extend existing formatter tests). Cover: (a) FORMAT=json emits a parseable JSON line with correct ts/level/message fields; (b) FORMAT=json with object payload puts redacted data in the `data` field; (c) FORMAT=json has no chalk ANSI escape codes (assert no `\\u001b[` in output); (d) FORMAT=pretty output is unchanged (snapshot or existing tests pass); (e) sensitive key (e.g. 'password') is '[REDACTED]' in json output. Acceptance: all tests green; coverage >= 90% on the new json-format branch in formatter.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-015"],
@@ -99,9 +99,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T16:31:04.000Z",
+                "completed": "2026-06-03T16:31:04.000Z"
+            },
+            "notes": "Added packages/logger/test/format.test.ts (6 integration tests) covering the toggle at the public logger->console boundary: FORMAT=json emits parseable NDJSON with ts/level/message; object payload -> redacted data; sensitive key -> [REDACTED]; no ANSI even with USE_COLORS=true; FORMAT=pretty stays non-JSON; runtime flip changes shape. Unit coverage (a/b/c/e) already existed from T-002 (formatter.test.ts NDJSON + log-entry.test.ts) so format.test.ts deliberately targets the end-to-end path, not duplicates. Coverage on the json branch: log-entry.ts 100%, environment.ts 100%, redact.ts 100%, formatter.ts 97.8% (uncovered lines are pretty-path only). Logger suite 165/165 green, typecheck+biome clean."
         },
         {
             "id": "T-005",
