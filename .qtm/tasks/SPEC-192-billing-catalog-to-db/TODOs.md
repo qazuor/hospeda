@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 1/37 tasks (3%)
+## Progress: 4/37 tasks (11%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -25,17 +25,17 @@
 
 ### Core Phase
 
-- [ ] **T-002** (complexity: 3) — Build AddonCatalogService list() and getBySlug() methods (DB-backed)
+- [x] **T-002** (complexity: 3) — Build AddonCatalogService list() and getBySlug() methods (DB-backed)
   - New `packages/service-core/src/services/billing/addon/addon-catalog.service.ts` reading billing_addons with filters, sort, getBySlug via metadata.slug, returning Result<T>
   - Blocked by: T-001
   - Blocks: T-003, T-004
 
-- [ ] **T-003** (complexity: 3) — Build AddonCatalogService row-to-AddonDefinition mapper with field-for-field parity test
+- [x] **T-003** (complexity: 3) — Build AddonCatalogService row-to-AddonDefinition mapper with field-for-field parity test
   - `mapRowToAddonDefinition(row)` unpacking billing_addons columns + metadata JSONB; parity test asserting field-for-field equality against ALL_ADDONS config for every seeded slug
   - Blocked by: T-002
   - Blocks: T-005, T-006
 
-- [ ] **T-004** (complexity: 2) — Rewrite addon.catalog.ts to delegate to AddonCatalogService
+- [x] **T-004** (complexity: 2) — Rewrite addon.catalog.ts to delegate to AddonCatalogService
   - `packages/service-core/src/services/billing/addon/addon.catalog.ts` delegating to AddonCatalogService; public API unchanged (behavior-preserving)
   - Blocked by: T-002, T-003
   - Blocks: T-007 through T-017 (all FR-2 addon cutovers), T-018 (FR-3 write methods)

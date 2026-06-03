@@ -37,67 +37,67 @@
             "id": "T-002",
             "title": "Build AddonCatalogService list() and getBySlug() methods (DB-backed)",
             "description": "Create `packages/service-core/src/services/billing/addon/addon-catalog.service.ts`. Implement `list(filter?)` reading from `billing_addons` with filters (billingType, targetCategory, active), sorted by `sortOrder` from metadata. Implement `getBySlug(slug)` querying `metadata.slug`. Both return `Result<T>`. Import table from `@repo/db`. Tests in `packages/service-core/src/services/billing/addon/__tests__/addon-catalog.service.test.ts`: list with no filter returns all active addons sorted; getBySlug returns correct addon; getBySlug with unknown slug returns NOT_FOUND. Files: 1 service file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
                 {
                     "title": "Implement list() with billingType/targetCategory/active filters + sortOrder",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Implement getBySlug() querying metadata.slug", "completed": false },
-                { "title": "Map billing_addons row to AddonDefinition shape", "completed": false },
+                { "title": "Implement getBySlug() querying metadata.slug", "completed": true },
+                { "title": "Map billing_addons row to AddonDefinition shape", "completed": true },
                 {
                     "title": "Write unit tests for list/getBySlug/NOT_FOUND/filter parity",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "billing", "addon", "catalog", "fr-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T17:30:00.000Z",
+                "completed": "2026-06-03T17:50:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Build AddonCatalogService row-to-AddonDefinition mapper with field-for-field parity test",
             "description": "In the same service file or a sibling `addon-catalog.mapper.ts`, implement the `mapRowToAddonDefinition(row)` function that unpacks `billing_addons` columns + `metadata` JSONB into the `AddonDefinition` shape (slug, name, description, billingType, priceArs, durationDays, affectsLimitKey, limitIncrease, grantsEntitlement, targetCategories, isActive, sortOrder). Write a parity test in `__tests__/addon-catalog.mapper.test.ts` asserting field-for-field equality against the static `ALL_ADDONS` config for every seeded addon slug. Files: 1 mapper file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
                 {
                     "title": "Implement mapRowToAddonDefinition extracting columns + metadata JSONB fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle optional fields gracefully (null vs undefined)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write field-for-field parity test against ALL_ADDONS for every seeded slug",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "billing", "addon", "mapper", "fr-1", "parity"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T17:50:00.000Z",
+                "completed": "2026-06-03T18:05:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Rewrite addon.catalog.ts to delegate to AddonCatalogService",
             "description": "Rewrite `packages/service-core/src/services/billing/addon/addon.catalog.ts` so `listAvailableAddons()` and `getAddonCatalogEntry()` delegate to `AddonCatalogService.list()` and `AddonCatalogService.getBySlug()`. Public API signatures stay unchanged (behavior-preserving — downstream consumers untouched). Tests: update existing tests in `addon.catalog.test.ts` (if present) or create them, asserting the public API returns the same results as before for the same filter inputs. Files: 1 existing file rewritten + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [
@@ -115,18 +115,18 @@
             "subtasks": [
                 {
                     "title": "Replace ALL_ADDONS/getAddonBySlug calls with service delegation",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify public API signatures unchanged", "completed": false },
-                { "title": "Write/update tests asserting behavior parity", "completed": false }
+                { "title": "Verify public API signatures unchanged", "completed": true },
+                { "title": "Write/update tests asserting behavior parity", "completed": true }
             ],
             "tags": ["service-core", "billing", "addon", "catalog", "fr-1"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T18:05:00.000Z",
+                "completed": "2026-06-03T18:20:00.000Z"
             }
         },
         {
@@ -1077,9 +1077,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 36,
+        "pending": 33,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.4
     }
