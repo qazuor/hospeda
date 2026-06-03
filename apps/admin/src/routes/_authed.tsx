@@ -72,12 +72,17 @@ export const Route = createFileRoute('/_authed')({
             authState,
             pathname: location.pathname,
             preferredLocale,
-            siteUrl: env.VITE_SITE_URL
+            siteUrl: env.VITE_SITE_URL,
+            adminUrl: env.VITE_ADMIN_URL
         });
 
         switch (decision.kind) {
             case 'redirect-signin':
-                throw redirect({ to: '/auth/signin', search: decision.search });
+                // SPEC-182: admin no longer hosts its own signin. Send
+                // unauthenticated users to the unified web auth surface; the
+                // guard already built the absolute web URL with an allowlisted
+                // callbackUrl back into admin.
+                throw redirect({ href: decision.href });
             case 'redirect-tourist-funnel':
                 // Telemetry: log the original path the tourist was trying to
                 // reach. We deliberately do NOT pass it to the funnel — the

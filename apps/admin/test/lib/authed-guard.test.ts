@@ -11,6 +11,7 @@ import { describe, expect, it } from 'vitest';
 import { decideAuthedGuard } from '../../src/lib/authed-guard';
 
 const SITE_URL = 'https://hospeda.com.ar';
+const ADMIN_URL = 'https://admin.hospeda.com.ar';
 const DEFAULT_PATH = '/dashboard';
 const DEFAULT_LOCALE = 'es';
 
@@ -28,18 +29,41 @@ const baseAuthState = (overrides: Partial<AuthState>): AuthState => ({
 });
 
 describe('decideAuthedGuard', () => {
-    it('redirects unauthenticated users to signin with the original path preserved', () => {
+    it('redirects unauthenticated users to the web signin with an absolute admin callbackUrl (SPEC-182)', () => {
         const decision = decideAuthedGuard({
             authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
             pathname: '/admin/accommodations',
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
-        expect(decision).toEqual({
-            kind: 'redirect-signin',
-            search: { redirect: '/admin/accommodations' }
+        expect(decision.kind).toBe('redirect-signin');
+        if (decision.kind !== 'redirect-signin') return;
+
+        const url = new URL(decision.href);
+        // Lands on the web signin page, not the admin's own deleted signin.
+        expect(url.origin).toBe(SITE_URL);
+        expect(url.pathname).toBe('/es/auth/signin/');
+        // callbackUrl is the ABSOLUTE admin URL the user was trying to reach,
+        // so the web signin (validateCallbackUrl) accepts it post-login.
+        expect(url.searchParams.get('callbackUrl')).toBe(
+            'https://admin.hospeda.com.ar/admin/accommodations'
+        );
+    });
+
+    it('builds the web signin callbackUrl with the preferred locale', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            pathname: '/dashboard',
+            preferredLocale: 'en',
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
+
+        expect(decision.kind).toBe('redirect-signin');
+        if (decision.kind !== 'redirect-signin') return;
+        expect(new URL(decision.href).pathname).toBe('/en/auth/signin/');
     });
 
     it('redirects a tourist (role=USER, no panel access) to the public host funnel with from=admin', () => {
@@ -47,7 +71,8 @@ describe('decideAuthedGuard', () => {
             authState: baseAuthState({ role: 'USER', permissions: [] }),
             pathname: DEFAULT_PATH,
             preferredLocale: 'pt',
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision.kind).toBe('redirect-tourist-funnel');
@@ -64,7 +89,8 @@ describe('decideAuthedGuard', () => {
             authState: baseAuthState({ role: 'USER', permissions: [] }),
             pathname: DEFAULT_PATH,
             preferredLocale: 'en',
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision.kind).toBe('redirect-tourist-funnel');
@@ -77,7 +103,8 @@ describe('decideAuthedGuard', () => {
             authState: baseAuthState({ role: 'HOST', permissions: [] }),
             pathname: '/admin/accommodations/abc',
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision).toEqual({
@@ -94,7 +121,8 @@ describe('decideAuthedGuard', () => {
             authState: baseAuthState({ role: 'ADMIN', permissions: [] }),
             pathname: '/admin/billing/plans',
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision).toEqual({
@@ -115,7 +143,8 @@ describe('decideAuthedGuard', () => {
             }),
             pathname: DEFAULT_PATH,
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision).toEqual({ kind: 'redirect-change-password' });
@@ -130,7 +159,8 @@ describe('decideAuthedGuard', () => {
             authState,
             pathname: DEFAULT_PATH,
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision).toEqual({ kind: 'allow', authState });
@@ -141,7 +171,8 @@ describe('decideAuthedGuard', () => {
             authState: baseAuthState({ role: null, permissions: [] }),
             pathname: '/admin',
             preferredLocale: DEFAULT_LOCALE,
-            siteUrl: SITE_URL
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
         });
 
         expect(decision.kind).toBe('redirect-forbidden');
