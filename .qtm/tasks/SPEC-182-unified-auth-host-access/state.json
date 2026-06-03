@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -346,7 +346,7 @@
             "id": "T-016",
             "title": "Extend HostLandingCta + mobile nav CTA for host-mode three-state logic",
             "description": "In apps/web/src/components/sections/HostLandingCta.client.tsx: extend existing unauthenticated/authenticated branches to add the role=HOST case (CTA → admin URL). In apps/web/src/components/shared/navigation/MobileMenuIsland.astro (and desktop nav CTA if applicable): apply the same three-state logic. D3 resolved: role===HOST → admin URL (no extra API call); role=USER or unauthenticated → /{locale}/publicar/. Use PUBLIC_ADMIN_URL (or an existing env var) as the admin URL. Acceptance: all three CTA surfaces adapt correctly per user state; typecheck clean; no regression on existing tourist flow.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-019"],
@@ -356,12 +356,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T17:17:40Z",
+                "completed": "2026-06-03T17:24:04Z"
             }
         },
         {
