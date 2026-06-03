@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 12/37 tasks (32%)
+## Progress: 17/37 tasks (46%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -86,27 +86,27 @@
   - Blocked by: T-011
   - Blocks: T-013
 
-- [ ] **T-013** (complexity: 2) — Cut over addon-plan-change.service.ts (api/services) from config to AddonCatalogService
+- [x] **T-013** (complexity: 2) — Cut over addon-plan-change.service.ts (api/services) from config to AddonCatalogService
   - `apps/api/src/services/addon-plan-change.service.ts` + parity regression test
   - Blocked by: T-012
   - Blocks: T-014
 
-- [ ] **T-014** (complexity: 3) — Cut over addon-lifecycle.service.ts and addon-lifecycle-cancellation.service.ts from config
+- [x] **T-014** (complexity: 3) — Cut over addon-lifecycle.service.ts and addon-lifecycle-cancellation.service.ts from config
   - Both lifecycle files; parity regression test; MONEY-HANDLING
   - Blocked by: T-013
   - Blocks: T-015
 
-- [ ] **T-015** (complexity: 3) — Cut over addon-expiry.job.ts (cron) from config to AddonCatalogService
+- [x] **T-015** (complexity: 3) — Cut over addon-expiry.job.ts (cron) from config to AddonCatalogService
   - `apps/api/src/cron/jobs/addon-expiry.job.ts`; DB-resolved list equals config list; MONEY-HANDLING / HIGH RISK
   - Blocked by: T-014
   - Blocks: T-016
 
-- [ ] **T-016** (complexity: 3) — Cut over payment-logic.ts webhook from config to AddonCatalogService
+- [x] **T-016** (complexity: 3) — Cut over payment-logic.ts webhook from config to AddonCatalogService
   - `apps/api/src/routes/webhooks/mercadopago/payment-logic.ts`; HIGHEST RISK — real money; staging smoke required before merge
   - Blocked by: T-015
   - Blocks: T-017
 
-- [ ] **T-017** (complexity: 2) — Cut over qzpay-admin-hooks.ts from config to AddonCatalogService
+- [x] **T-017** (complexity: 2) — Cut over qzpay-admin-hooks.ts from config to AddonCatalogService
   - `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`; documents addon.checkout.ts exclusion (SPEC-127 dependency)
   - Blocked by: T-016
   - Blocks: T-020

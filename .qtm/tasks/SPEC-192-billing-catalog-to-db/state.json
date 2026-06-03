@@ -435,171 +435,171 @@
             "id": "T-013",
             "title": "Cut over addon-plan-change.service.ts (api/services) from config to AddonCatalogService",
             "description": "In `apps/api/src/services/addon-plan-change.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-plan-change.cutover.test.ts`. Files: 1 service file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Replace config reads with AddonCatalogService calls",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write DB-vs-config parity regression test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-2", "cutover"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Cut over addon-lifecycle.service.ts and addon-lifecycle-cancellation.service.ts from config",
             "description": "In `apps/api/src/services/addon-lifecycle.service.ts` and `addon-lifecycle-cancellation.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-lifecycle.cutover.test.ts` covering both files. Files: 2 service files + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Cutover addon-lifecycle.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cutover addon-lifecycle-cancellation.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test for both lifecycle services",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-2", "cutover", "money-handling"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Cut over addon-expiry.job.ts (cron) from config to AddonCatalogService",
             "description": "In `apps/api/src/cron/jobs/addon-expiry.job.ts`, replace `ALL_ADDONS` iteration with `AddonCatalogService.list()`. Behavior-preserving — same addon set processed. Write parity regression test in `apps/api/src/cron/jobs/__tests__/addon-expiry.cutover.test.ts` asserting the DB-resolved addon list equals the config-resolved list (same slugs, same fields). Files: 1 cron job file + 1 test file. HIGH RISK: this file runs against real money flows.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Replace ALL_ADDONS iteration with AddonCatalogService.list()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle async service result in cron context",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test: DB-resolved list equals config list",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-2", "cutover", "cron", "money-handling"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Cut over payment-logic.ts webhook from config to AddonCatalogService",
             "description": "In `apps/api/src/routes/webhooks/mercadopago/payment-logic.ts`, replace `getAddonBySlug` config call with `AddonCatalogService.getBySlug()`. Behavior-preserving — resolved addon must equal config-resolved for same slug. Write parity regression test in `apps/api/src/routes/webhooks/mercadopago/__tests__/payment-logic.cutover.test.ts`. Files: 1 webhook file + 1 test file. HIGHEST RISK: real money, requires staging smoke before merge.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Replace getAddonBySlug config call with AddonCatalogService.getBySlug()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handle NOT_FOUND case gracefully (error path unchanged)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write DB-vs-config parity regression test for all seeded slugs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-2", "cutover", "webhook", "money-handling"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Cut over qzpay-admin-hooks.ts from config to AddonCatalogService",
             "description": "In `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/billing/admin/__tests__/qzpay-admin-hooks.cutover.test.ts`. NOTE: `addon.checkout.ts` cutover is intentionally excluded from this chain — it must run AFTER SPEC-127 (qzpay migration). See T-037 for the deferred cutover task. Files: 1 file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Replace config reads with AddonCatalogService calls",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document addon.checkout.ts exclusion (SPEC-127 dependency)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-2", "cutover", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
             }
         },
         {
@@ -1321,9 +1321,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 25,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.4
     }
