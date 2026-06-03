@@ -1,23 +1,28 @@
 /**
  * Admin Add-on Definition Routes
  *
- * Read-only admin endpoints for add-on definitions from the billing configuration.
- * These return add-on DEFINITIONS (catalog), not purchases.
+ * Read-only admin endpoints for add-on definitions from the `billing_addons` DB
+ * table (via {@link AddonCatalogService}). These return add-on DEFINITIONS
+ * (catalog), not purchases.
  *
  * Routes:
- * - GET /api/v1/admin/billing/addons     - List all add-on definitions
+ * - GET /api/v1/admin/billing/addons       - List all add-on definitions
  * - GET /api/v1/admin/billing/addons/:slug - Get add-on details by slug
  *
  * @module routes/billing/admin/addons
  */
 
-import { ALL_ADDONS, getAddonBySlug } from '@repo/billing';
 import { AddonResponseSchema, ListAddonsQuerySchema, PermissionEnum } from '@repo/schemas';
+import { AddonCatalogService } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service for add-on definition lookups. */
+const catalogService = new AddonCatalogService();
 
 /**
  * GET /api/v1/admin/billing/addons
@@ -36,23 +41,26 @@ export const adminListAddonsRoute = createAdminRoute({
     handler: async (_c, _params, _body, query) => {
         apiLogger.debug({ filters: query }, 'Admin listing add-on definitions');
 
-        let addons = [...ALL_ADDONS];
+        // Build filter for the DB-backed catalog service
+        const filter = {
+            ...(query?.billingType !== undefined ? { billingType: query.billingType } : {}),
+            ...(query?.targetCategory !== undefined
+                ? { targetCategory: query.targetCategory as 'owner' | 'complex' }
+                : {}),
+            ...(query?.active !== undefined && query.active !== false ? { active: true } : {})
+        };
 
-        if (query?.billingType) {
-            addons = addons.filter((a) => a.billingType === query.billingType);
-        }
+        const result = await catalogService.list(filter);
 
-        if (query?.targetCategory) {
-            addons = addons.filter((a) =>
-                a.targetCategories.includes(query.targetCategory as 'owner' | 'complex')
+        if (!result.success) {
+            apiLogger.error(
+                { error: result.error },
+                'Failed to list add-on definitions from DB catalog'
             );
+            throw new HTTPException(500, { message: 'Failed to retrieve add-on definitions' });
         }
 
-        if (query?.active !== undefined && query.active !== false) {
-            addons = addons.filter((a) => a.isActive);
-        }
-
-        return addons.map((addon) => ({
+        return result.data.map((addon) => ({
             slug: addon.slug,
             name: addon.name,
             description: addon.description,
@@ -88,13 +96,23 @@ export const adminGetAddonRoute = createAdminRoute({
         const slug = params.slug as string;
         apiLogger.debug({ slug }, 'Admin getting add-on details');
 
-        const addon = getAddonBySlug(slug);
+        const result = await catalogService.getBySlug(slug);
 
-        if (!addon) {
-            throw new HTTPException(404, {
-                message: `Add-on with slug '${slug}' not found`
-            });
+        if (!result.success) {
+            if (result.error.code === 'NOT_FOUND') {
+                throw new HTTPException(404, {
+                    message: `Add-on with slug '${slug}' not found`
+                });
+            }
+
+            apiLogger.error(
+                { slug, error: result.error },
+                'Failed to retrieve add-on definition from DB catalog'
+            );
+            throw new HTTPException(500, { message: 'Failed to retrieve add-on definition' });
         }
+
+        const addon = result.data;
 
         return {
             slug: addon.slug,
