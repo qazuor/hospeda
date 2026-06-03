@@ -741,25 +741,28 @@ export function NewsletterForm({
                 noValidate
             >
                 <div className={styles.inputRow}>
-                    {/* Email input */}
+                    {/* Email field */}
                     <div className={styles.inputWrapper}>
                         {isAuthed ? (
-                            // Authenticated / in-flight / error: controlled read-only input
-                            <input
-                                id={`${emailLabelId}-input`}
-                                type="email"
-                                className={styles.emailInput}
-                                value={resolvedEmail}
-                                placeholder={resolvedEmail}
-                                readOnly
-                                disabled={isLoading}
+                            // Authenticated: the subscription is bound to the
+                            // account email, so we show it as static text instead
+                            // of a read-only <input>. A read-only input looks
+                            // editable but does not open the mobile keyboard on
+                            // Android / Samsung Internet (BETA-25); the static
+                            // text avoids that trap and the "Configurar" link
+                            // sends the user to the full newsletter settings.
+                            <div
+                                className={styles.authedEmail}
                                 aria-labelledby={emailLabelId}
-                                aria-invalid={formState === 'error' ? 'true' : 'false'}
-                                autoComplete="email"
-                                onChange={() => {
-                                    // readOnly — no change handler needed; required to suppress React warning
-                                }}
-                            />
+                            >
+                                <span className={styles.authedEmailLabel}>
+                                    {t(
+                                        'footer.newsletter.authedEmailLabel',
+                                        'Te suscribís con el email de tu cuenta'
+                                    )}
+                                </span>
+                                <span className={styles.authedEmailValue}>{resolvedEmail}</span>
+                            </div>
                         ) : (
                             // Guest: editable controlled input. The visitor types
                             // their email here and the form submits to the public
@@ -813,6 +816,17 @@ export function NewsletterForm({
                             t('footer.newsletter.subscribeButton', 'Suscribirme')
                         )}
                     </button>
+
+                    {/* Authenticated users get a link to the full newsletter
+                        settings page (manage content types, frequency, etc.). */}
+                    {isAuthed && (
+                        <a
+                            href={managePath}
+                            className={styles.configureLink}
+                        >
+                            {t('footer.newsletter.configureLink', 'Configurar')}
+                        </a>
+                    )}
                 </div>
 
                 {/* Inline error — shown only in error state */}
