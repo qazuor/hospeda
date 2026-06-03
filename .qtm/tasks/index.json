@@ -191,14 +191,15 @@
         {
             "specId": "SPEC-192",
             "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/37",
             "path": "SPEC-192-billing-catalog-to-db",
+            "parent": "SPEC-193",
             "branch": "spec/SPEC-192-billing-catalog-to-db",
             "linearIssues": [
                 "BETA-58"
             ],
-            "note": "tasks pending atomization",
+            "note": "atomized 2026-06-03 (37 tasks)",
             "archived": false
         }
     ],
