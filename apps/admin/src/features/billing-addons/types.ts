@@ -10,6 +10,35 @@ export interface AddonWithMetadata extends AddonDefinition {
 }
 
 /**
+ * Parsed addon catalog record shape used by DataTable cells and column definitions.
+ *
+ * Produced by `transformAddonRecord` in hooks.ts. Maps from the DB
+ * AdminAddonResponse shape. Mirrors ParsedPlanRecord from billing-plans.
+ *
+ * This is the canonical row type for the addon catalog DataTable.
+ */
+export interface ParsedAddonRecord {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+    readonly billingType: 'one_time' | 'recurring';
+    readonly priceArs: number;
+    readonly durationDays: number | null;
+    readonly affectsLimitKey: string | null;
+    readonly limitIncrease: number | null;
+    readonly grantsEntitlement: string | null;
+    readonly targetCategories: readonly ('owner' | 'complex')[];
+    readonly isActive: boolean;
+    readonly sortOrder: number;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    /** Whether the addon is soft-deleted (admin list only) */
+    readonly isDeleted: boolean;
+    readonly deletedAt: string | null;
+}
+
+/**
  * Addon filters for UI
  */
 export interface AddonFilters {
@@ -17,6 +46,19 @@ export interface AddonFilters {
     isActive?: boolean;
     page?: number;
     limit?: number;
+}
+
+/**
+ * Catalog filter options for admin addon catalog list.
+ */
+export interface AddonCatalogFilters {
+    readonly billingType?: 'one_time' | 'recurring';
+    readonly targetCategory?: 'owner' | 'complex';
+    readonly isActive?: boolean;
+    readonly includeDeleted?: boolean;
+    readonly search?: string;
+    readonly page?: number;
+    readonly pageSize?: number;
 }
 
 /**
