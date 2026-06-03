@@ -20,7 +20,7 @@
  */
 
 import { cn } from '@/lib/cn';
-import { MoonIcon, SettingsIcon, SunIcon } from '@repo/icons';
+import { MonitorIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import styles from './ThemeControl.module.css';
@@ -36,7 +36,7 @@ const OPTIONS: ReadonlyArray<{
     { value: 'light', Icon: SunIcon, label: 'Claro', fullLabel: 'Tema claro' },
     {
         value: 'system',
-        Icon: SettingsIcon,
+        Icon: MonitorIcon,
         label: 'Sistema',
         fullLabel: 'Seguir preferencia del sistema'
     },
