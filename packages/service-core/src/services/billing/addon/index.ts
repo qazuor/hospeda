@@ -12,3 +12,6 @@ export * from './addon-downgrade-detection.js';
 export * from './addon-user-addons.js';
 export * from './trial.types.js';
 export * from './usage-tracking.types.js';
+export * from './addon.audit.js';
+export * from './addon.crud.js';
+export * from './addon.write-types.js';

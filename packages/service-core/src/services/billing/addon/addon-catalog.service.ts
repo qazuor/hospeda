@@ -1,9 +1,9 @@
 /**
  * Addon Catalog Service
  *
- * Provides DB-backed listing and retrieval of add-on catalog entries from the
- * `billing_addons` table. This replaces the static in-memory catalog reads from
- * `@repo/billing` for all catalog queries.
+ * Provides DB-backed listing, retrieval, and mutation of add-on catalog entries
+ * from the `billing_addons` table. This replaces the static in-memory catalog
+ * reads from `@repo/billing` for all catalog queries.
  *
  * The `billing_addons` table is seeded from `ALL_ADDONS` via
  * `packages/seed/src/required/billingAddons.seed.ts`. Catalog data (slug,
@@ -11,15 +11,30 @@
  * column. Limit/entitlement effects are stored in `limits` and `entitlements`
  * columns respectively (and mirrored back by the mapper).
  *
+ * Write methods (create, update, toggleActive, softDelete, restore, hardDelete)
+ * are backed by {@link module:services/billing/addon/addon.crud} and emit audit
+ * log entries via {@link module:services/billing/addon/addon.audit}.
+ *
  * @module services/billing/addon/addon-catalog.service
  */
 
 import type { AddonDefinition } from '@repo/billing';
 import type { QueryContext } from '@repo/db';
-import { and, asc, billingAddons, eq, getDb, sql } from '@repo/db';
+import { and, asc, billingAddons, count, eq, getDb, isNull, sql } from '@repo/db';
+import type { AdminAddonResponse } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import { mapRowToAddonDefinition } from './addon-catalog.mapper.js';
+import {
+    createAddon,
+    hardDeleteAddon,
+    mapRowToAdminAddonResponse,
+    restoreAddon,
+    softDeleteAddon,
+    toggleAddonActive,
+    updateAddon
+} from './addon.crud.js';
 import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
+import type { CreateAddonInput, UpdateAddonInput } from './addon.write-types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,6 +47,9 @@ import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
 function resolveDb(ctx?: QueryContext) {
     return ctx?.tx ?? getDb();
 }
+
+// Re-export for consumers that import from the service module directly
+export type { CreateAddonInput, UpdateAddonInput };
 
 // ---------------------------------------------------------------------------
 // Public service
@@ -181,5 +199,289 @@ export class AddonCatalogService {
                 }
             };
         }
+    }
+
+    /**
+     * Gets a single add-on catalog entry by its UUID.
+     *
+     * Returns NOT_FOUND for soft-deleted rows (deletedAt IS NOT NULL).
+     *
+     * @param id - UUID of the billing addon
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns The matching admin addon response or a NOT_FOUND error
+     *
+     * @example
+     * ```ts
+     * const result = await svc.getById('550e8400-e29b-41d4-a716-446655440000');
+     * if (result.success) {
+     *   console.log(result.data.slug);
+     * }
+     * ```
+     */
+    async getById(id: string, ctx?: QueryContext): Promise<ServiceResult<AdminAddonResponse>> {
+        try {
+            const db = resolveDb(ctx);
+
+            const [row] = await db
+                .select()
+                .from(billingAddons)
+                .where(and(eq(billingAddons.id, id), isNull(billingAddons.deletedAt)))
+                .limit(1);
+
+            if (!row) {
+                return {
+                    success: false,
+                    error: {
+                        code: ServiceErrorCode.NOT_FOUND,
+                        message: `Add-on '${id}' not found`
+                    }
+                };
+            }
+
+            return { success: true, data: mapRowToAdminAddonResponse(row) };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Failed to get add-on '${id}': ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Lists add-on catalog entries with optional filtering and pagination.
+     *
+     * Returns an {@link AdminAddonResponse} shape including `id`, `createdAt`,
+     * `updatedAt`, and `deletedAt`. By default excludes soft-deleted addons;
+     * pass `includeDeleted: true` to include them.
+     *
+     * @param filter - Optional filter criteria including pagination
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Paginated admin addon list or error
+     *
+     * @example
+     * ```ts
+     * const result = await svc.listAdmin({ isActive: true, page: 1, pageSize: 20 });
+     * if (result.success) {
+     *   console.log(result.data.items, result.data.pagination);
+     * }
+     * ```
+     */
+    async listAdmin(
+        filter: {
+            readonly billingType?: 'one_time' | 'recurring';
+            readonly targetCategory?: 'owner' | 'complex';
+            readonly isActive?: boolean;
+            readonly includeDeleted?: boolean;
+            readonly search?: string;
+            readonly page?: number;
+            readonly pageSize?: number;
+        } = {},
+        ctx?: QueryContext
+    ): Promise<
+        ServiceResult<{
+            items: AdminAddonResponse[];
+            pagination: {
+                page: number;
+                pageSize: number;
+                total: number;
+                totalPages: number;
+            };
+        }>
+    > {
+        try {
+            const db = resolveDb(ctx);
+            const {
+                page = 1,
+                pageSize = 20,
+                billingType,
+                targetCategory,
+                isActive,
+                includeDeleted,
+                search
+            } = filter;
+
+            const conditions = [];
+
+            if (!includeDeleted) {
+                conditions.push(isNull(billingAddons.deletedAt));
+            }
+
+            if (isActive !== undefined) {
+                conditions.push(eq(billingAddons.active, isActive));
+            }
+
+            if (billingType !== undefined) {
+                const interval = billingType === 'one_time' ? 'one_time' : 'month';
+                conditions.push(eq(billingAddons.billingInterval, interval));
+            }
+
+            if (targetCategory !== undefined) {
+                conditions.push(
+                    sql`${billingAddons.metadata}->'targetCategories' @> ${JSON.stringify([targetCategory])}::jsonb`
+                );
+            }
+
+            if (search) {
+                const safeSearch = `%${search.replace(/[%_\\]/g, '\\$&')}%`;
+                conditions.push(
+                    sql`(
+                        ${billingAddons.name} ILIKE ${safeSearch}
+                        OR
+                        ${billingAddons.metadata}->>'slug' ILIKE ${safeSearch}
+                    )`
+                );
+            }
+
+            const whereClause = and(...conditions);
+
+            const countResult = await db
+                .select({ value: count() })
+                .from(billingAddons)
+                .where(whereClause);
+
+            const total = countResult[0]?.value ?? 0;
+
+            const rows = await db
+                .select()
+                .from(billingAddons)
+                .where(whereClause)
+                .orderBy(
+                    asc(sql`(${billingAddons.metadata}->>'sortOrder')::int`),
+                    asc(billingAddons.name)
+                )
+                .limit(pageSize)
+                .offset((page - 1) * pageSize);
+
+            return {
+                success: true,
+                data: {
+                    items: rows.map(mapRowToAdminAddonResponse),
+                    pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) }
+                }
+            };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            return {
+                success: false,
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Failed to list add-on catalog: ${message}`
+                }
+            };
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Write methods — delegate to addon.crud.ts
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a new billing addon.
+     *
+     * Rejects duplicate slugs with ALREADY_EXISTS.
+     *
+     * @param input - Addon creation data
+     * @param options - Optional settings
+     * @param options.livemode - Whether to create in live mode (default: false)
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Created admin addon response or error
+     */
+    async create(
+        input: CreateAddonInput,
+        options: { readonly livemode?: boolean; readonly actorId?: string } = {},
+        ctx?: QueryContext
+    ) {
+        return createAddon(input, options, ctx);
+    }
+
+    /**
+     * Updates mutable fields of a billing addon.
+     *
+     * Slug is immutable and cannot be changed.
+     *
+     * @param id - UUID of the addon to update
+     * @param input - Fields to update (all optional)
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Updated admin addon response or error
+     */
+    async update(
+        id: string,
+        input: UpdateAddonInput & { readonly slug?: never },
+        options: { readonly actorId?: string } = {},
+        ctx?: QueryContext
+    ) {
+        return updateAddon(id, input, options, ctx);
+    }
+
+    /**
+     * Toggles the `active` flag of a billing addon.
+     *
+     * @param id - UUID of the addon
+     * @param active - Desired active state
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Updated admin addon response or error
+     */
+    async toggleActive(
+        id: string,
+        active: boolean,
+        options: { readonly actorId?: string } = {},
+        ctx?: QueryContext
+    ) {
+        return toggleAddonActive(id, active, options, ctx);
+    }
+
+    /**
+     * Soft-deletes a billing addon (sets `deletedAt = now()`, `active = false`).
+     *
+     * The row is retained; `getBySlug` will return NOT_FOUND for it.
+     *
+     * @param id - UUID of the addon to soft-delete
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Success or error
+     */
+    async softDelete(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
+        return softDeleteAddon(id, options, ctx);
+    }
+
+    /**
+     * Restores a soft-deleted billing addon by clearing `deletedAt` and setting `active = true`.
+     *
+     * Returns VALIDATION_ERROR if the addon is not currently soft-deleted.
+     *
+     * @param id - UUID of the addon to restore
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Restored admin addon response or error (NOT_FOUND | VALIDATION_ERROR | INTERNAL_ERROR)
+     */
+    async restore(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
+        return restoreAddon(id, options, ctx);
+    }
+
+    /**
+     * Permanently deletes a billing addon.
+     *
+     * Blocked if any `billing_subscription_addons` or `billing_addon_purchases`
+     * row references this addon (ALREADY_EXISTS conflict error).
+     *
+     * @param id - UUID of the addon to hard-delete
+     * @param options - Optional settings
+     * @param options.actorId - Optional actor for audit log
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Success or error (ALREADY_EXISTS if referenced by purchases)
+     */
+    async hardDelete(id: string, options: { readonly actorId?: string } = {}, ctx?: QueryContext) {
+        return hardDeleteAddon(id, options, ctx);
     }
 }
