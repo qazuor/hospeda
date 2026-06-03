@@ -14,10 +14,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { ALL_PLANS, type EntitlementKey, type LimitKey } from '@repo/billing';
+import type { EntitlementKey, LimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { AddonCatalogService } from '@repo/service-core';
+import { AddonCatalogService, PlanService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -35,9 +35,18 @@ interface AddonAdjustment {
     appliedAt: string;
 }
 
-// ─── Module-level singleton ────────────────────────────────────────────────────
+// ─── Module-level singletons ───────────────────────────────────────────────────
 /** DB-backed catalog service used to resolve addon definitions by slug. */
 const catalogService = new AddonCatalogService();
+
+/**
+ * DB-backed plan service used to resolve base plan limits.
+ *
+ * Post-SPEC-168, `subscription.planId` may be a `billing_plans` UUID (new rows)
+ * or a legacy slug (older rows/seeds). Resolution order: `getById(planId)` first;
+ * on NOT_FOUND fall back to `getBySlug(planId)`.
+ */
+const planService = new PlanService();
 
 /**
  * Service for managing add-on entitlements and limits
@@ -53,9 +62,12 @@ export class AddonEntitlementService {
      * 2. Gets the customer's active subscription
      * 3. For entitlement add-ons: calls `billing.entitlements.grant()` with source='addon' and
      *    optional `expiresAt` derived from `addon.durationDays`
-     * 4. For limit add-ons: reads the base plan limit from canonical config (`ALL_PLANS`),
-     *    computes `newMaxValue = basePlanLimit + addon.limitIncrease`, then calls
-     *    `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
+     * 4. For limit add-ons: resolves the base plan limit via `PlanService` (DB-backed,
+     *    SPEC-192 T-025). `getById(planId)` is tried first (handles UUID planIds); on
+     *    NOT_FOUND falls back to `getBySlug(planId)` (handles legacy slug planIds). The
+     *    DB `limits` field is `Record<string,number>`, so the key lookup is a plain
+     *    property access. Computes `newMaxValue = basePlanLimit + totalIncrement`, then
+     *    calls `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
      * 5. Writes add-on adjustment to subscription metadata (backward compat, deprecated)
      * 6. Clears the entitlement cache
      *
@@ -163,16 +175,38 @@ export class AddonEntitlementService {
                     'Granted add-on entitlement via QZPay'
                 );
             } else if (addon.affectsLimitKey !== null && addon.limitIncrease !== null) {
-                // Resolve base plan limit from canonical config
-                const canonicalPlan = ALL_PLANS.find(
-                    (plan) => plan.slug === activeSubscription.planId
-                );
+                // ── Resolve base plan limit via PlanService (DB-backed, SPEC-192 T-025) ──
+                //
+                // Post-SPEC-168, `subscription.planId` may be a `billing_plans` UUID (new
+                // rows) or a legacy slug (older rows/seeds). Strategy:
+                //   1. Try `getById(planId)` — succeeds for UUID planIds.
+                //   2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
+                //   3. If both fail, log a warning and treat base as 0 (safe minimal change).
+                //
+                // The DB response's `limits` is `Record<string, number>` (not LimitDefinition[]),
+                // so the key lookup is a direct property access.
+                let basePlanLimit = 0;
 
-                const baseLimitDef = canonicalPlan?.limits.find(
-                    (lim) => lim.key === addon.affectsLimitKey
-                );
+                const planId = activeSubscription.planId as string;
+                const planByIdResult = await planService.getById(planId);
+                const resolvedPlanResult = planByIdResult.success
+                    ? planByIdResult
+                    : await planService.getBySlug(planId);
 
-                const basePlanLimit = baseLimitDef?.value ?? 0;
+                if (resolvedPlanResult.success) {
+                    const planLimits = resolvedPlanResult.data.limits as Record<string, number>;
+                    basePlanLimit = planLimits[addon.affectsLimitKey] ?? 0;
+                } else {
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            planId,
+                            addonSlug: input.addonSlug,
+                            limitKey: addon.affectsLimitKey
+                        },
+                        'Could not resolve base plan limit via PlanService (getById + getBySlug both failed); using 0'
+                    );
+                }
 
                 if (basePlanLimit === -1) {
                     // Base plan already has unlimited for this limit; adding more is a no-op

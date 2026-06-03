@@ -20,29 +20,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockGetBySlug } = vi.hoisted(() => ({
-    mockGetBySlug: vi.fn()
+const { mockGetBySlug, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(() => ({
+    mockGetBySlug: vi.fn(),
+    mockPlanGetById: vi.fn(),
+    mockPlanGetBySlug: vi.fn()
 }));
 
 // Mock AddonCatalogService (DB-backed after T-012 cutover; addon reads only)
+// PlanService added for T-025 plan-reads cutover (getById+getBySlug dual-resolve)
 vi.mock('@repo/service-core', () => ({
     AddonCatalogService: vi.fn().mockImplementation(() => ({
         getBySlug: mockGetBySlug,
         list: vi.fn()
+    })),
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanGetById,
+        getBySlug: mockPlanGetBySlug
     }))
 }));
 
-// Plan reads stay config-backed (ALL_PLANS not touched)
+// Plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover)
 vi.mock('@repo/billing', () => ({
-    ALL_PLANS: [
-        {
-            slug: 'host-basic',
-            limits: [
-                { key: 'max_accommodations', value: 5 },
-                { key: 'max_photos_per_accommodation', value: 10 }
-            ]
-        }
-    ]
+    // ALL_PLANS intentionally empty — plan reads no longer go through config
+    ALL_PLANS: []
 }));
 
 vi.mock('@repo/db', () => ({
@@ -166,10 +166,37 @@ describe('addon-entitlement.service cutover parity (SPEC-192 T-012)', () => {
     let service: AddonEntitlementService;
     let billing: ReturnType<typeof buildBilling>;
 
+    /** Stub DB plan response (limits as Record<string,number>, per BillingPlanResponse) */
+    const STUB_DB_PLAN = {
+        id: 'plan-uuid-001',
+        slug: 'host-basic',
+        name: 'Host Basic',
+        description: 'Basic plan',
+        category: 'owner',
+        monthlyPriceArs: 500,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: 3,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 1,
+        isActive: true,
+        entitlements: [],
+        limits: { max_accommodations: 5, max_photos_per_accommodation: 10 },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
         billing = buildBilling();
         service = new AddonEntitlementService(billing);
+        // Default: getById returns NOT_FOUND so getBySlug fallback is used
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'not found' }
+        });
+        mockPlanGetBySlug.mockResolvedValue({ success: true, data: STUB_DB_PLAN });
     });
 
     describe('applyAddonEntitlements — addon reads via AddonCatalogService', () => {
@@ -336,10 +363,16 @@ describe('addon-entitlement.service cutover parity (SPEC-192 T-012)', () => {
         });
     });
 
-    describe('plan reads are NOT cut over — ALL_PLANS still used', () => {
-        it('base plan limit comes from ALL_PLANS (still config-backed)', async () => {
+    describe('plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover)', () => {
+        it('base plan limit comes from PlanService.getBySlug (DB-backed), not ALL_PLANS', async () => {
             // Arrange — limit addon: catalog returns limitIncrease=5
             mockGetBySlug.mockResolvedValue({ success: true, data: STUB_EXTRA_ACCOMMODATIONS });
+            // getById fails → getBySlug fallback returns STUB_DB_PLAN with max_accommodations=5
+            mockPlanGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'not found' }
+            });
+            mockPlanGetBySlug.mockResolvedValue({ success: true, data: STUB_DB_PLAN });
 
             // Act
             const result = await service.applyAddonEntitlements({
@@ -349,12 +382,14 @@ describe('addon-entitlement.service cutover parity (SPEC-192 T-012)', () => {
             });
 
             // Assert — billing.limits.set was called with newMaxValue=basePlanLimit+0 (no purchases in DB)
-            // basePlanLimit for max_accommodations is 5 (from mocked ALL_PLANS)
+            // basePlanLimit for max_accommodations is 5 (from mocked PlanService DB response)
             expect(result.success).toBe(true);
+            // PlanService was used (ALL_PLANS is empty — would yield 0 if still used)
+            expect(mockPlanGetBySlug).toHaveBeenCalledWith('host-basic');
             expect(billing.limits.set).toHaveBeenCalledWith(
                 expect.objectContaining({
                     limitKey: 'max_accommodations',
-                    maxValue: 5 // basePlanLimit=5 + totalIncrement=0 (empty allActivePurchases)
+                    maxValue: 5 // basePlanLimit=5 from DB + totalIncrement=0 (empty allActivePurchases)
                 })
             );
         });
