@@ -45,7 +45,13 @@ vi.mock('react-leaflet-cluster', () => ({
 }));
 
 vi.mock('leaflet', () => ({
-    default: { Icon: { Default: { mergeOptions: vi.fn() } } }
+    default: {
+        Icon: { Default: { mergeOptions: vi.fn() } },
+        // divIcon was added in commit 9690b6a25 ("show Airbnb-style pill on each
+        // map accommodation") — the mock must include it so the component can
+        // call L.divIcon() without throwing.
+        divIcon: vi.fn().mockReturnValue({})
+    }
 }));
 
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
@@ -86,8 +92,11 @@ describe('ListingMap', () => {
             />
         );
 
+        // Since commit 9690b6a25 ("show Airbnb-style pill on each map accommodation")
+        // each accommodation renders BOTH a Circle (approximate location blurred area)
+        // AND a Marker carrying a divIcon pill. Both are expected in accommodation mode.
         expect(screen.getAllByTestId('circle')).toHaveLength(2);
-        expect(screen.queryByTestId('marker')).not.toBeInTheDocument();
+        expect(screen.getAllByTestId('marker')).toHaveLength(2);
         expect(screen.getByText('Ubicación aproximada.')).toBeInTheDocument();
     });
 

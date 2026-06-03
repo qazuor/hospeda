@@ -87,7 +87,7 @@ pnpm typecheck        # TypeScript validation
 # Database
 pnpm db:start         # Start PostgreSQL + Redis (Docker)
 pnpm db:stop          # Stop database containers
-pnpm db:migrate       # Apply migrations
+pnpm db:migrate       # Apply pending versioned migrations (real drizzle-kit migrate)
 pnpm db:generate      # Generate migration from schema changes
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Seed database
@@ -356,7 +356,9 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
 - **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
-- **`drizzle-kit push` is not enough**: triggers, materialized views (`search_index`), and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any `drizzle-kit push` or `pnpm db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh`. See [ADR-017](docs/decisions/ADR-017-postgres-specific-features.md) and [triggers manifest](packages/db/docs/triggers-manifest.md).
+- **Two migration carriles** — structural changes (tables/columns/indexes/FKs/enums) go to `packages/db/src/migrations/` via `pnpm db:generate` + `pnpm db:migrate`; Drizzle-invisible objects (triggers, materialized views, CHECK constraints, special indexes) go to `packages/db/src/migrations/extras/` (hand-written, idempotent, re-applied by `pnpm db:apply-extras`). Always run `db:apply-extras` after `db:migrate`. See [packages/db/CLAUDE.md](packages/db/CLAUDE.md) and [docs/guides/migrations.md](docs/guides/migrations.md).
+- **`db:push` is dev-only** — NEVER run `drizzle-kit push` against the VPS. Use `pnpm db:migrate` for staging and production. On VPS use `hops db-migrate --target=staging|prod`.
+- **`db:generate` before a schema PR** — the drift guard blocks CI if the TS schema changed without a committed migration file.
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
 
 ## Single Source of Truth

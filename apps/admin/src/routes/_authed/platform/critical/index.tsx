@@ -16,6 +16,9 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/critical/')({
     beforeLoad: ({ context }) => {
+        // TYPE-WORKAROUND: TanStack Router types `beforeLoad` context as a generic
+        // `Record<string, unknown>`; the `_authed` layout injects `AuthState` at runtime
+        // but the type system doesn't propagate it to child route guards automatically.
         const authState = context as unknown as AuthState;
         const canView = authState.permissions?.includes(PermissionEnum.SYSTEM_MAINTENANCE_MODE);
         if (!canView) {

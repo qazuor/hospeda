@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
+import { i18nText } from '../../common/i18n.schema.js';
 import { DestinationSummarySchema } from '../destination/destination.query.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
@@ -68,7 +69,7 @@ const ReviewSummarySchema = z.object({
 const FeatureSummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.string(),
+    name: i18nText({ min: 2, max: 100 }),
     description: z.string().optional(),
     icon: z.string().optional(),
     category: z.string().optional()
@@ -81,7 +82,7 @@ const FeatureSummarySchema = z.object({
 const AmenitySummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.string(),
+    name: i18nText({ min: 2, max: 100 }),
     description: z.string().optional(),
     icon: z.string().optional(),
     category: z.string().optional()

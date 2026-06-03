@@ -66,7 +66,10 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
 
     describe('icon usage — Phosphor via @repo/icons, no emoji', () => {
         it('imports InfoIcon from @repo/icons', () => {
-            expect(src).toContain("import { InfoIcon } from '@repo/icons'");
+            // Commit c42235bcb merged the single-line import into a multi-line destructure,
+            // so we assert InfoIcon is imported somewhere from @repo/icons (not the exact line form).
+            expect(src).toContain('InfoIcon');
+            expect(src).toContain("from '@repo/icons'");
         });
 
         it('uses InfoIcon inside the eyebrow (not an inline emoji)', () => {
@@ -86,7 +89,16 @@ describe('publicar/index.astro — from-admin eyebrow', () => {
 
     describe('styling — tokens, no hardcoded values', () => {
         it('does not bring back the deprecated banner border-left + warm surface combo', () => {
-            expect(src).not.toContain('border-left: 4px solid var(--brand-accent)');
+            // The original guard was file-wide, but commit 85cce1b2d legitimately added
+            // border-left: 4px solid var(--brand-accent) for the trial callout block.
+            // Narrow the check to the from-admin eyebrow CSS block only.
+            const eyebrowCssIdx = src.indexOf('.publicar-hero__from-admin {');
+            const eyebrowCssBlock =
+                eyebrowCssIdx !== -1
+                    ? src.slice(eyebrowCssIdx, src.indexOf('}', eyebrowCssIdx) + 1)
+                    : '';
+            expect(eyebrowCssBlock).not.toContain('border-left: 4px solid var(--brand-accent)');
+            // The deprecated wrapper class must never reappear.
             expect(src).not.toContain('publicar-from-admin-wrap');
         });
 

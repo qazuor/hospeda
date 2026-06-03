@@ -1,0 +1,782 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-185",
+    "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
+    "created": "2026-06-02T00:00:00.000Z",
+    "phaseBreakdown": {
+        "phase1-filter-infrastructure": ["T-001", "T-002", "T-003", "T-004"],
+        "phase2-filter-backfill": ["T-005", "T-006", "T-007"],
+        "phase3-grid-card-polish": ["T-008", "T-009", "T-010"],
+        "phase4-host-portfolio": ["T-011", "T-012"],
+        "phase5-tags-migration": ["T-013", "T-014", "T-015"],
+        "phase6-closeout": ["T-016", "T-017"]
+    },
+    "parallelTracks": {
+        "trackA": ["T-001", "T-002", "T-003", "T-004"],
+        "trackB": ["T-005", "T-006", "T-007"],
+        "trackC": ["T-008", "T-009", "T-010"],
+        "trackD": ["T-011", "T-012"],
+        "trackE": ["T-013", "T-014", "T-015"],
+        "mergePoint": "T-016"
+    },
+    "criticalPath": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007",
+        "T-008",
+        "T-009",
+        "T-010",
+        "T-011",
+        "T-012",
+        "T-013",
+        "T-014",
+        "T-015",
+        "T-016",
+        "T-017"
+    ],
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Extend FilterControlType union and add range config types",
+            "description": "Extend the filter type system with two new discriminated union members.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/filter-types.ts`\n\n**What to implement**:\n1. Change `FilterControlType` from `'select' | 'boolean'` to `'select' | 'boolean' | 'number-range' | 'date-range'`.\n2. Add `NumberRangeFilterConfig` interface:\n   - `type: 'number-range'`\n   - `paramKeyMin: string` (e.g. `'priceMin'`)\n   - `paramKeyMax: string` (e.g. `'priceMax'`)\n   - `min?: number`, `max?: number`, `step?: number`, `unitLabelKey?: string`\n3. Add `DateRangeFilterConfig` interface:\n   - `type: 'date-range'`\n   - `paramKeyFrom: string` (e.g. `'createdAtFrom'`)\n   - `paramKeyTo: string` (e.g. `'createdAtTo'`)\n   - Values serialize as ISO `YYYY-MM-DD` strings\n4. Update the `FilterConfig` discriminated union to include both new types.\n5. Add JSDoc on all new types.\n\n**Acceptance criteria**:\n- `FilterControlType` includes `'number-range'` and `'date-range'`\n- Both new config interfaces are exported and JSDoc-documented\n- Existing `SelectFilterConfig` and `BooleanFilterConfig` shapes are unchanged\n- `pnpm typecheck` passes in apps/admin\n- No existing list breaks (purely additive change)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Change FilterControlType union to include 'number-range' and 'date-range'",
+                    "completed": false
+                },
+                {
+                    "title": "Add NumberRangeFilterConfig interface with paramKeyMin/paramKeyMax + optional bounds",
+                    "completed": false
+                },
+                {
+                    "title": "Add DateRangeFilterConfig interface with paramKeyFrom/paramKeyTo",
+                    "completed": false
+                },
+                {
+                    "title": "Update FilterConfig discriminated union to include new types",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck passes — additive, no breakage",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-1", "admin", "filter-types", "typescript", "beta-75"],
+            "phase": "phase1-filter-infrastructure",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Build FilterNumberRange and FilterDateRange UI controls",
+            "description": "Implement the two new filter control React components and register them in FilterBar.\n\n**Files to create**:\n- `apps/admin/src/components/entity-list/filters/FilterNumberRange.tsx`\n- `apps/admin/src/components/entity-list/filters/FilterDateRange.tsx`\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/FilterBar.tsx`\n\n**FilterNumberRange.tsx**:\n- Receives `NumberRangeFilterConfig` + current min/max values from filter state\n- Two `<input type=\"number\">` fields (min, max), each independently clearable\n- Shows `unitLabelKey` label when provided (i18n-resolved)\n- Respects optional `min`/`max`/`step` props as HTML input attributes\n- On change: calls the state updater with the new bound value (empty = clear = sentinel)\n- Tailwind v4 styling (no CSS modules); Shadcn Input component for field styling\n\n**FilterDateRange.tsx**:\n- Receives `DateRangeFilterConfig` + current from/to values from filter state\n- Two `<input type=\"date\">` fields (from, to), each independently clearable\n- Values formatted as `YYYY-MM-DD` (HTML date input native format)\n- On change: calls the state updater with the date string value\n- Tailwind v4 styling; Shadcn Input for field styling\n\n**FilterBar.tsx registration**:\n- Add `case 'number-range'`: render `<FilterNumberRange>`\n- Add `case 'date-range'`: render `<FilterDateRange>`\n- Preserve existing `select` and `boolean` cases unchanged\n\n**Acceptance criteria**:\n- Both components render without console errors\n- Clearing a bound reverts to the sentinel model (independent per bound)\n- `pnpm typecheck` passes in apps/admin\n- Tests alongside: render test for each component (value set, clear, apply)\n- Tailwind v4 only — no CSS modules",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create FilterNumberRange.tsx with dual independent number inputs",
+                    "completed": false
+                },
+                {
+                    "title": "Create FilterDateRange.tsx with dual independent date inputs",
+                    "completed": false
+                },
+                {
+                    "title": "Register both controls in FilterBar.tsx switch/case",
+                    "completed": false
+                },
+                {
+                    "title": "Write render + apply + clear tests for FilterNumberRange",
+                    "completed": false
+                },
+                {
+                    "title": "Write render + apply + clear tests for FilterDateRange",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-1", "admin", "components", "filters", "react", "beta-75"],
+            "phase": "phase1-filter-infrastructure",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extend useFilterState for two-param range URL serialization",
+            "description": "Extend the filter state hook to handle the new range filter types, each serializing as two independent URL params using the existing `FILTER_CLEARED_SENTINEL` 3-state model.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/useFilterState.ts`\n\n**What to implement**:\n1. For `number-range` filters: serialize `paramKeyMin` and `paramKeyMax` as two independent URL params.\n   - Each bound can be set, cleared (sentinel), or absent (default/never touched).\n   - When a bound is absent from the query, omit it from the API request.\n   - When a bound is set to sentinel, clear it from the URL.\n2. For `date-range` filters: same pattern using `paramKeyFrom` and `paramKeyTo`.\n3. The existing serialization for `select` and `boolean` filters MUST be unchanged.\n4. The active-filter chip logic must render one chip per populated bound (so each bound is individually clearable).\n\n**Acceptance criteria**:\n- URL gains `priceMin=1000&priceMax=5000` when both bounds are set\n- URL gains `priceMin=1000` only when max is absent\n- Clearing one bound removes only its URL param (the other persists)\n- Existing `select` + `boolean` serialization is untouched (regression tests pass)\n- Tests: at minimum 6 unit tests — set-both, set-min-only, set-max-only, clear-min, clear-max, clear-both",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Add number-range serialization logic (paramKeyMin / paramKeyMax) to useFilterState",
+                    "completed": false
+                },
+                {
+                    "title": "Add date-range serialization logic (paramKeyFrom / paramKeyTo) to useFilterState",
+                    "completed": false
+                },
+                {
+                    "title": "Update active-filter chip logic so each bound is independently clearable",
+                    "completed": false
+                },
+                {
+                    "title": "Write 6 unit tests: set-both, min-only, max-only, clear-min, clear-max, clear-both",
+                    "completed": false
+                },
+                {
+                    "title": "Verify existing select + boolean serialization tests still pass",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-1", "admin", "filter-state", "url-serialization", "beta-75"],
+            "phase": "phase1-filter-infrastructure",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extend createEntityApi to forward range bounds and wire backend range filters",
+            "description": "Wire the range params through the full vertical slice: API client forwards bounds, backend schemas declare them, services apply them.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/api/createEntityApi.ts`\n- Relevant `packages/schemas/` admin list query schemas (accommodations, events, destinations)\n- Relevant `packages/service-core/` service filter methods\n\n**createEntityApi.ts**:\n- For each `number-range` filter config: include `paramKeyMin` and `paramKeyMax` in the request only when their values are present and non-sentinel.\n- For each `date-range` filter config: include `paramKeyFrom` and `paramKeyTo` the same way.\n- Existing `paramKey` forwarding for `select`/`boolean` is untouched.\n\n**Backend Zod schemas** (in `packages/schemas/`):\n- Add `priceMin?: number`, `priceMax?: number` to accommodations admin list schema.\n- Add `ratingMin?: number`, `ratingMax?: number` to accommodations admin list schema (rating filter).\n- Add `createdAtFrom?: string`, `createdAtTo?: string` to accommodations, destinations, and events list schemas.\n- Add `startDateFrom?: string`, `startDateTo?: string` to events list schema for event date filtering.\n- All new params are optional and declared explicitly so `createAdminListRoute` accepts them.\n\n**service-core service filters**:\n- AccommodationService.adminList: apply `WHERE price >= priceMin AND price <= priceMax` (centavo integers), `WHERE rating >= ratingMin AND rating <= ratingMax`, `WHERE created_at >= createdAtFrom AND created_at <= createdAtTo`.\n- EventService.adminList: apply `createdAt` range and `startDate` range filters.\n- DestinationService.adminList: apply `createdAt` range filter.\n- Each bound is optional: present → apply; absent → skip.\n\n**Acceptance criteria**:\n- `createEntityApi` only sends a bound param when it has a non-empty, non-sentinel value\n- Admin list route rejects an undeclared range param (proof: add a test with an unknown param)\n- Service tests: price range inclusive both ends, min-only, max-only, date range inclusive, single date bound\n- `pnpm typecheck` passes in apps/admin, packages/schemas, packages/service-core",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Extend createEntityApi.ts to forward range bound params when present",
+                    "completed": false
+                },
+                {
+                    "title": "Add price/rating range params to accommodations admin list Zod schema",
+                    "completed": false
+                },
+                {
+                    "title": "Add createdAt range params to accommodations, destinations, events Zod schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Add startDate range params to events Zod schema",
+                    "completed": false
+                },
+                {
+                    "title": "Wire price/rating/date range filters into AccommodationService.adminList",
+                    "completed": false
+                },
+                {
+                    "title": "Wire date/startDate range filters into EventService.adminList and DestinationService.adminList",
+                    "completed": false
+                },
+                {
+                    "title": "Write service tests: boundary cases (inclusive min/max, single bound, empty, inverted range guard)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-1", "admin", "api", "schemas", "service-core", "backend", "beta-75"],
+            "phase": "phase1-filter-infrastructure",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wire number-range and date-range filters into entity configs",
+            "description": "Add the new range filter types to the entity configs that should expose them.\n\n**Files to modify** (config files under `apps/admin/src/features/*/config/`):\n- `accommodations/config/accommodations.config.ts` — add `priceMin`/`priceMax` number-range + `createdAtFrom`/`createdAtTo` date-range\n- `events/config/events.config.ts` — add `startDateFrom`/`startDateTo` date-range + `createdAtFrom`/`createdAtTo` date-range\n- `destinations/config/destinations.config.ts` — add `createdAtFrom`/`createdAtTo` date-range\n\n**For each config**, extend the `filterBarConfig.filters` array with the appropriate `NumberRangeFilterConfig` or `DateRangeFilterConfig` entries matching the param keys declared in T-004 backend schemas.\n\n**Note**: `number-range` on money columns (price) operates on stored integer centavos. Add `unitLabelKey` pointing to an i18n key like `'filters.unit.ars'` or similar so the UI can label the unit. If no i18n key exists, add a minimal one to `@repo/i18n` (es/en/pt).\n\n**Acceptance criteria**:\n- Accommodations list exposes price range and createdAt range filter controls in the FilterBar\n- Events list exposes event start-date range and createdAt range filter controls\n- Destinations list exposes createdAt range filter control\n- Each filter round-trips: set → URL param set → reload → filter state restored → list narrows correctly\n- `pnpm typecheck` passes in apps/admin",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add price range + createdAt date-range to accommodations.config.ts filterBarConfig",
+                    "completed": false
+                },
+                {
+                    "title": "Add startDate + createdAt date-range to events.config.ts filterBarConfig",
+                    "completed": false
+                },
+                {
+                    "title": "Add createdAt date-range to destinations.config.ts filterBarConfig",
+                    "completed": false
+                },
+                {
+                    "title": "Add unitLabelKey i18n entry for centavo price unit (es/en/pt) if missing",
+                    "completed": false
+                },
+                {
+                    "title": "Verify filter round-trip per config (URL state + list narrowing)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-2", "admin", "entity-config", "filters", "beta-75"],
+            "phase": "phase2-filter-backfill",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add filter bars to the six previously-unfiltered entity lists",
+            "description": "For each of the six entities with no filter bar today (sponsors, amenities, attractions, event-locations, event-organizers, features), add a `filterBarConfig` to their entity config. For each, also declare the new params on the admin route Zod schema and wire them into the service filter.\n\n**Entities and their filters** (verify against schema before implementing):\n- **sponsors**: `isFeatured` (boolean), `includeDeleted` (boolean); add `status` select if sponsor schema has a status enum.\n- **amenities**: `includeDeleted` (boolean); add `category`/`group` select if the schema exposes one.\n- **attractions**: `includeDeleted` (boolean); add `category` select if present.\n- **event-locations**: `includeDeleted` (boolean); add any city/state select available on the schema.\n- **event-organizers**: `includeDeleted` (boolean).\n- **features**: `includeDeleted` (boolean); add `category` select if present.\n\n**For each entity**, update:\n1. `apps/admin/src/features/<entity>/config/<entity>.config.ts` — add `filterBarConfig`.\n2. The admin list route's Zod query schema in `packages/schemas/` — declare the new params.\n3. The `@repo/service-core` service `adminList` method — apply the filter if the param is present.\n\n**Acceptance criteria**:\n- All six lists render a FilterBar after this task\n- `includeDeleted=true` returns soft-deleted rows for all six\n- `isFeatured` filter (sponsors) narrows correctly\n- Each applied filter survives a page reload (URL state persistence)\n- Route rejects undeclared params (existing `createAdminListRoute` behavior)\n- Config tests: smoke test per list asserting FilterBar presence and at least one filter application",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig to sponsors.config.ts + update sponsors schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Add filterBarConfig to amenities.config.ts + update amenities schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Add filterBarConfig to attractions.config.ts + update attractions schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Add filterBarConfig to event-locations.config.ts + update event-locations schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Add filterBarConfig to event-organizers.config.ts + update event-organizers schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Add filterBarConfig to features.config.ts + update features schema/service",
+                    "completed": false
+                },
+                {
+                    "title": "Write smoke tests per entity: FilterBar presence + includeDeleted filter application",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-2", "admin", "entity-config", "filters", "schemas", "service-core", "beta-75"],
+            "phase": "phase2-filter-backfill",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Quality gate — Phase 1 + Phase 2 all tests green",
+            "description": "Pause-point quality gate for Phases 1 and 2: every list now has a useful filter bar and the full range filter vertical slice is testable in isolation.\n\n**Run**:\n```bash\npnpm --filter hospeda-admin test        # component + config tests\npnpm --filter @repo/schemas test        # Zod schema tests (if test suite exists)\npnpm --filter @repo/service-core test   # range filter service tests\npnpm typecheck                          # all packages\npnpm lint                              # biome\n```\n\n**Verify**:\n- `useFilterState` range serialization tests GREEN (T-003)\n- `FilterNumberRange` + `FilterDateRange` component tests GREEN (T-002)\n- Service range filter tests GREEN — boundary cases inclusive, single-bound, empty (T-004)\n- All six previously-unfiltered list smoke tests GREEN (T-006)\n- No existing test regressions\n\n**Acceptance criteria**:\n- All test suites exit 0\n- `pnpm typecheck` exits 0\n- `pnpm lint` exits 0\n- No `.only()` or hard-coded `.skip()` in committed test code",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm --filter hospeda-admin test — all GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm --filter @repo/service-core test — all GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck — 0 errors",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm lint — 0 errors",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-2", "testing", "quality-gate", "beta-75"],
+            "phase": "phase2-filter-backfill",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Polish the generic GridCard component",
+            "description": "Improve the visual quality of the generic `GridCard` component: stronger hierarchy, dedicated action affordance, responsive single-column reflow, and a proper empty state.\n\n**Files to modify**:\n- `apps/admin/src/components/grid/GridCard.tsx`\n- (optionally) the grid container component that renders the empty state\n\n**Polish targets**:\n1. **Visual hierarchy**: Entity title should be the most prominent element (font-size, weight). Secondary fields smaller. Avoid flat uniform-weight text blocks.\n2. **Action affordance**: Peek / Edit / Delete actions should have a clear, consistently positioned action bar or overlay (e.g. bottom strip or top-right icon cluster). Must be keyboard-accessible (tabIndex, aria-label).\n3. **Responsive reflow**: Grid uses CSS grid. On narrow viewports (< `sm`), cards reflow to a single column without horizontal overflow. Use Tailwind `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` or equivalent.\n4. **Empty state**: When the grid has zero rows, render a styled empty state (icon + message) that visually aligns with the web app design system. Match the pattern used by other empty states in the admin app (check `apps/admin/src/components/` for an existing empty-state component or pattern).\n5. **Tailwind v4 only** — no CSS modules.\n\n**Acceptance criteria**:\n- Polished generic card renders for any entity config that lacks `renderCard`\n- Empty state renders when zero rows are present\n- Cards reflow to single column on narrow viewport (test: resize or snapshot)\n- Action buttons remain accessible (aria-label, keyboard reachable)\n- Existing entity configs are unaffected (backward compatible — no config changes needed)",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Improve visual hierarchy in GridCard (title prominence, field sizing)",
+                    "completed": false
+                },
+                {
+                    "title": "Add action affordance (peek/edit/delete action bar or overlay with aria-labels)",
+                    "completed": false
+                },
+                {
+                    "title": "Fix responsive reflow (single column on narrow viewport)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement grid empty state (icon + message, aligned with admin design)",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests: generic card renders for a config, empty state renders at 0 rows, responsive snapshot",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-3", "admin", "grid", "components", "ui", "beta-72"],
+            "phase": "phase3-grid-card-polish",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add gridConfig.renderCard and GridCardRenderProps to EntityConfig",
+            "description": "Add the per-entity override mechanism to the entity config type system.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/types.ts`\n- `apps/admin/src/components/grid/GridCard.tsx` (or whichever component resolves which card to render)\n\n**What to implement**:\n1. In `types.ts`, add to the existing `gridConfig` sub-shape:\n   ```ts\n   renderCard?: (props: GridCardRenderProps<TData>) => ReactNode;\n   ```\n2. Define `GridCardRenderProps<TData>` in the same file:\n   ```ts\n   export interface GridCardRenderProps<TData> {\n     row: TData;\n     onPeek: (row: TData) => void;\n     onEdit: (row: TData) => void;\n     onDelete: (row: TData) => void;\n   }\n   ```\n3. In the grid renderer (wherever `GridCard` is instantiated per row), check:\n   - If `gridConfig.renderCard` is defined → call it with `{ row, onPeek, onEdit, onDelete }`.\n   - Otherwise → render the polished generic `<GridCard>` (the T-008 version).\n4. Add comprehensive JSDoc on `GridCardRenderProps<TData>` and `renderCard`.\n\n**Acceptance criteria**:\n- When `renderCard` is absent, polished generic card renders (backward compatible)\n- When `renderCard` is present, the custom renderer is called with the correct props\n- `GridCardRenderProps<TData>` is exported and usable by external feature config files\n- Tests: generic card used when `renderCard` absent; custom renderer called when `renderCard` present\n- `pnpm typecheck` passes — no `any` types",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Add renderCard?: (props: GridCardRenderProps<TData>) => ReactNode to gridConfig in types.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Define and export GridCardRenderProps<TData> interface with row + 3 action callbacks",
+                    "completed": false
+                },
+                {
+                    "title": "Wire renderCard fallback in grid renderer: custom if present, polished generic otherwise",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests: generic card default, custom renderer dispatch, action callback signatures",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-3", "admin", "types", "grid", "entity-config", "beta-72"],
+            "phase": "phase3-grid-card-polish",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Quality gate — Phase 3 grid tests green and visual smoke done",
+            "description": "Pause-point quality gate for Phase 3: grid mode is polished and overridable; defaults are unchanged.\n\n**Automated checks**:\n```bash\npnpm --filter hospeda-admin test   # GridCard + renderCard tests\npnpm typecheck\npnpm lint\n```\n\n**Manual smoke** (browser):\n1. Open any grid-capable list (e.g. accommodations in grid mode).\n2. Verify the polished generic card renders: clear title hierarchy, action affordance visible.\n3. Resize to narrow viewport and confirm single-column reflow (no overflow).\n4. Scroll to an empty-state condition (if filterable to zero results) and confirm empty state renders.\n\n**Acceptance criteria**:\n- All automated tests GREEN\n- `pnpm typecheck` and `pnpm lint` exit 0\n- Manual smoke confirms visual polish and responsive reflow\n- No existing entity configs broken (backward compatibility verified)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm --filter hospeda-admin test — GridCard + renderCard tests GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck and pnpm lint — both 0 errors",
+                    "completed": false
+                },
+                {
+                    "title": "Manual browser smoke: polished card visual check + narrow-viewport reflow",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no existing entity config breaks (spot-check 2 configs in grid mode)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-3", "testing", "quality-gate", "beta-72"],
+            "phase": "phase3-grid-card-polish",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create grid-only host accommodations config",
+            "description": "Create a new entity config for the host's own accommodations portfolio, separate from the admin accommodations config.\n\n**Files to create**:\n- `apps/admin/src/features/accommodations/config/me-accommodations.config.ts`\n- `apps/admin/src/features/accommodations/config/me-accommodations.columns.ts` (or reuse columns from the existing accommodations config where sensible)\n\n**Config requirements**:\n- `viewConfig.defaultView = 'grid'`\n- `viewConfig.allowViewToggle = false` (no table/grid toggle rendered; table mode unreachable)\n- `apiConfig` points to the host's own accommodations endpoint (owner-scoped; the same data source the current hand-rolled route shows — `useAccommodationListQuery` scoped by actor)\n- Reuse `peekFields` and column definitions from the existing accommodations config where applicable\n- A sensible `filterBarConfig` (at minimum `status` select + `includeDeleted` boolean)\n- `listItemSchema` sourced from the existing `@repo/schemas` accommodations list item schema\n\n**Acceptance criteria**:\n- Config compiles with `pnpm typecheck` — no `any` types\n- `defaultView: 'grid'` and `allowViewToggle: false` are set\n- The config's `apiConfig` endpoint is owner-scoped (host sees only their own rows)\n- Reused columns and peek fields from the admin config do not duplicate logic (import, don't copy)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Create me-accommodations.config.ts with defaultView:'grid' + allowViewToggle:false",
+                    "completed": false
+                },
+                {
+                    "title": "Create or import me-accommodations.columns.ts (reuse admin columns where sensible)",
+                    "completed": false
+                },
+                {
+                    "title": "Set apiConfig to owner-scoped host accommodations endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Add minimal filterBarConfig (status select + includeDeleted boolean)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck passes — no any types, no duplicated logic",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-4", "admin", "entity-config", "host", "accommodations", "beta-76"],
+            "phase": "phase4-host-portfolio",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Migrate /me/accommodations route onto createEntityListPage",
+            "description": "Replace the hand-rolled Shadcn `Card` grid in the host portfolio route with the generic `createEntityListPage` using the config from T-011.\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/me/accommodations/index.tsx`\n\n**What to do**:\n1. Remove the hand-rolled `<Card>` grid implementation and the direct `useAccommodationListQuery` call.\n2. Import and wire `createEntityListPage` (or its result) using `meAccommodationsConfig` from T-011.\n3. The route should render the generic list page in grid-only mode.\n4. Verify that the existing child routes (`new.tsx`, `$id_.edit.tsx`, peek drawer navigation) still function — these are NOT changed by this task, but the migration must not break them.\n\n**Acceptance criteria**:\n- `/me/accommodations` renders via `createEntityListPage` in grid mode\n- No table/grid toggle is shown\n- Only the authenticated host's own accommodations appear (owner-scoped)\n- The peek drawer opens on card click with the same fields as before migration\n- Pagination works (page/pageSize params)\n- Existing create/edit child routes still function\n- Tests: grid-only (no toggle rendered), owner-scoped data assertion, peek drawer integration smoke\n- Hand-rolled `<Card>` grid code is fully removed",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Remove hand-rolled Shadcn Card grid + direct useAccommodationListQuery from index.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "Wire meAccommodationsConfig into createEntityListPage at the route",
+                    "completed": false
+                },
+                {
+                    "title": "Verify child routes (new.tsx, $id_.edit.tsx) still function after migration",
+                    "completed": false
+                },
+                {
+                    "title": "Write test: no toggle rendered (allowViewToggle:false), only host rows shown",
+                    "completed": false
+                },
+                {
+                    "title": "Manual smoke: HOST user opens /me/accommodations — grid-only, correct rows, peek works",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-4", "admin", "host", "accommodations", "migration", "beta-76"],
+            "phase": "phase4-host-portfolio",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Migrate post-tags list onto createEntityListPage",
+            "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/tags/post-tags/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/post-tags/config/post-tags.config.ts`\n- `apps/admin/src/features/tags/post-tags/config/post-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/tags/post-tags/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the existing `@repo/schemas` post-tag schema\n- `createColumns` defining at minimum: name, slug, usage count (if available), createdAt\n- `filterBarConfig` with at minimum `includeDeleted` (boolean); add status/type select if the tag schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Preserve the create/edit navigation — `new.tsx` and `$id_.edit.tsx` routes must still work after migration. Do NOT change those route files.\n\n**Acceptance criteria**:\n- post-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results\n- Applied filter survives page reload (URL state)\n- Existing `new.tsx` and `$id_.edit.tsx` navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed from `index.tsx`",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Create post-tags.config.ts with listItemSchema, columns, filterBarConfig (includeDeleted), peekFields",
+                    "completed": false
+                },
+                {
+                    "title": "Create post-tags.columns.ts with name, slug, createdAt columns",
+                    "completed": false
+                },
+                {
+                    "title": "Replace hand-rolled table in post-tags/index.tsx with createEntityListPage",
+                    "completed": false
+                },
+                {
+                    "title": "Verify new.tsx and $id_.edit.tsx routes unaffected",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "post-tags"],
+            "phase": "phase5-tags-migration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Migrate internal tags list onto createEntityListPage",
+            "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/platform/tags/internal/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/internal/config/internal-tags.config.ts`\n- `apps/admin/src/features/tags/internal/config/internal-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/platform/tags/internal/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the internal tag schema in `@repo/schemas`\n- `createColumns` with at minimum: name, slug, context/scope (if present), createdAt\n- `filterBarConfig` with `includeDeleted` (boolean); add `category`/`type` select if the schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Each tag list migrates in its own commit to bound regression blast radius (per spec §10 decision 6). Preserve any existing create/edit child routes.\n\n**Acceptance criteria**:\n- internal-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results and survives page reload\n- Existing create/edit navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Create internal-tags.config.ts with listItemSchema, columns, filterBarConfig, peekFields",
+                    "completed": false
+                },
+                {
+                    "title": "Create internal-tags.columns.ts with name, slug, context columns",
+                    "completed": false
+                },
+                {
+                    "title": "Replace hand-rolled table in platform/tags/internal/index.tsx with createEntityListPage",
+                    "completed": false
+                },
+                {
+                    "title": "Verify existing create/edit child routes unaffected",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "internal-tags"],
+            "phase": "phase5-tags-migration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Migrate user-moderation tags list onto createEntityListPage",
+            "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/tags/user-moderation/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/user-moderation/config/user-moderation-tags.config.ts`\n- `apps/admin/src/features/tags/user-moderation/config/user-moderation-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/tags/user-moderation/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the user-moderation tag schema in `@repo/schemas`\n- `createColumns` with at minimum: name, slug, severity/type (if present), createdAt\n- `filterBarConfig` with `includeDeleted` (boolean); add any severity/category select if the schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Each tag list migrates in its own commit. Preserve any existing create/edit child routes.\n\n**Acceptance criteria**:\n- user-moderation-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results and survives page reload\n- Existing create/edit navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Create user-moderation-tags.config.ts with listItemSchema, columns, filterBarConfig, peekFields",
+                    "completed": false
+                },
+                {
+                    "title": "Create user-moderation-tags.columns.ts with name, slug, severity columns",
+                    "completed": false
+                },
+                {
+                    "title": "Replace hand-rolled table in tags/user-moderation/index.tsx with createEntityListPage",
+                    "completed": false
+                },
+                {
+                    "title": "Verify existing create/edit child routes unaffected",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "user-moderation-tags"],
+            "phase": "phase5-tags-migration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Full test suite, manual admin smoke, and PR open",
+            "description": "Final integration gate: all tests pass, every touched list is manually verified in the browser, and the PR is opened.\n\n**Automated checks**:\n```bash\npnpm --filter hospeda-admin test\npnpm --filter @repo/service-core test\npnpm --filter @repo/schemas test\npnpm typecheck\npnpm lint\n```\n\n**Manual admin smoke** (every touched list, in the browser):\n- superadmin account: verify all 13 lists have filter bars and operate correctly.\n- `number-range` smoke: set a price range on the accommodations list — URL params set, list narrows.\n- `date-range` smoke: set a createdAt range — URL params set, list narrows.\n- Grid mode on a polished card: verify visual hierarchy, action buttons, responsive reflow.\n- HOST account: open `/me/accommodations` — grid-only mode, only own rows, no toggle.\n- Post-tags / internal-tags / user-moderation-tags: FilterBar present, includeDeleted works, grid mode available.\n\n**PR**:\n- Branch `spec/SPEC-185-admin-entity-lists-v2` → base `staging`\n- PR title: `feat(admin): SPEC-185 — entity lists v2 (range filters, grid polish, host portfolio, tags migration)`\n- PR body references BETA-75, BETA-72, BETA-76\n\n**Acceptance criteria**:\n- All automated test suites exit 0\n- Manual smoke covers all 5 FRs\n- PR is open with green CI (or pre-existing red documented)\n- No `.only()` or hard-coded `.skip()` in committed test code",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Run full test suite (admin + service-core + schemas) — all GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck and pnpm lint — both 0 errors",
+                    "completed": false
+                },
+                {
+                    "title": "Manual smoke — superadmin: all 13 lists, range filters, grid polish",
+                    "completed": false
+                },
+                {
+                    "title": "Manual smoke — HOST account: /me/accommodations grid-only, correct rows",
+                    "completed": false
+                },
+                {
+                    "title": "Manual smoke — 3 tag lists: FilterBar present, includeDeleted works, grid mode available",
+                    "completed": false
+                },
+                {
+                    "title": "Open PR spec/SPEC-185 → staging with BETA-75/72/76 references",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-6", "testing", "smoke", "pr", "closeout", "beta-75", "beta-72", "beta-76"],
+            "phase": "phase6-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Post-merge: flip spec + task indexes to completed and close Linear issues",
+            "description": "After the PR is merged:\n\n1. Flip `specs/index.json` entry for SPEC-185: `status: 'completed'`, add `completedAt`, `archived: true`, `archivedAt`, `completionRef` (PR number + merge commit).\n2. Flip `tasks/index.json` epic entry for SPEC-185: `status: 'completed'`, `progress: '17/17'`, `archived: true`, `archivedAt`.\n3. Update `spec.md` frontmatter: `status: completed`.\n4. Close Linear issues BETA-75, BETA-72, BETA-76 as Done, referencing the merged PR.\n5. Save engram entry: `topic_key: spec/SPEC-185/completed`, content = final state summary.\n6. Commit the index + spec.md changes on a NEW branch (not the spec branch, which is merged) → PR to staging.\n\n**Acceptance criteria**:\n- Both index files show SPEC-185 as completed + archived (in sync)\n- `spec.md` status = completed\n- All 3 Linear issues (BETA-75, BETA-72, BETA-76) closed as Done\n- Engram entry saved\n- Closeout commit is on a new branch (not the already-merged spec branch)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Flip specs/index.json SPEC-185 entry to completed + archived",
+                    "completed": false
+                },
+                {
+                    "title": "Flip tasks/index.json SPEC-185 epic to completed + archived + progress 17/17",
+                    "completed": false
+                },
+                {
+                    "title": "Update spec.md frontmatter status to completed",
+                    "completed": false
+                },
+                {
+                    "title": "Close Linear BETA-75, BETA-72, BETA-76 as Done with PR reference",
+                    "completed": false
+                },
+                {
+                    "title": "Save engram memory entry spec/SPEC-185/completed",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-185", "phase-6", "closeout", "linear", "indexes"],
+            "phase": "phase6-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

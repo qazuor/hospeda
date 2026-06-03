@@ -129,7 +129,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             const directives = buildCspHeader({
                 nonce: cspNonce,
                 apiUrl: getApiUrl(),
-                sentryReportUri
+                sentryReportUri,
+                // Drop the external *.sentry.io connect-src when the first-party
+                // Sentry tunnel is active (SPEC-181 follow-up).
+                sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
             });
             betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);
         }
@@ -291,7 +294,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const directives = buildCspHeader({
             nonce: cspNonce,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
-            sentryReportUri
+            sentryReportUri,
+            // Drop the external *.sentry.io connect-src when the first-party
+            // Sentry tunnel is active (SPEC-181 follow-up).
+            sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
         });
 
         response.headers.set(CSP_HEADER_NAME, directives);

@@ -50,6 +50,8 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 
 const hasLeftFilters = showFilters && filterPosition === 'left';
 const hasTopFilters = showFilters && filterPosition === 'top';
+
+const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -190,7 +192,7 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 	}
 </style>
 
-<script is:inline>
+<script is:inline nonce={cspNonce}>
 	/**
 	 * Same-path partial swap for listing pages.
 	 *

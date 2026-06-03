@@ -2,21 +2,17 @@
  * Tests for Billing HTTP Adapter
  *
  * Tests the QZPay HTTP Storage Adapter implementation for the Admin app.
- * Covers CRUD operations, error handling, authentication, and type safety.
+ * Covers the live branches (entitlements, limits, plans, transaction),
+ * the stubbed branches (customers, subscriptions, payments, promoCodes, etc.),
+ * and adapter shape.
+ *
+ * Background: the adapter was deliberately trimmed in 9585c49c2 to expose only
+ * the branches the admin app actually uses. All other branches throw a
+ * descriptive "not implemented" error via a Proxy. Tests that previously
+ * exercised those removed branches now assert the throw instead.
  */
 
-import type {
-    QZPayCreateCustomerInput,
-    QZPayCreateSubscriptionInput,
-    QZPayCustomer,
-    QZPayListOptions,
-    QZPayPaginatedResult,
-    QZPayPayment,
-    QZPayPlan,
-    QZPayPromoCode,
-    QZPaySubscription,
-    QZPayUpdateCustomerInput
-} from '@qazuor/qzpay-core';
+import type { QZPayPlan } from '@qazuor/qzpay-core';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createHttpBillingAdapter } from '../../src/lib/billing-http-adapter';
@@ -30,23 +26,12 @@ describe('Billing HTTP Adapter', () => {
         mockGetAuthToken = vi.fn().mockResolvedValue('test-auth-token');
     });
 
-    /**
-     * Helper to create mock customer with string dates
-     * (JSON serialization converts Date objects to strings)
-     */
-    const createMockCustomer = (overrides?: Partial<QZPayCustomer>): QZPayCustomer => ({
-        id: 'cus_test123',
-        externalId: 'user_123',
-        email: 'test@example.com',
-        name: 'Test Customer',
-        metadata: {},
-        createdAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
-        updatedAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
-        ...overrides
-    });
+    // -------------------------------------------------------------------------
+    // Adapter shape
+    // -------------------------------------------------------------------------
 
     describe('createHttpBillingAdapter', () => {
-        it('should create adapter with all storage implementations', () => {
+        it('should create adapter with all storage branches defined', () => {
             const adapter = createHttpBillingAdapter({
                 apiUrl: API_URL,
                 getAuthToken: mockGetAuthToken
@@ -76,497 +61,120 @@ describe('Billing HTTP Adapter', () => {
         });
     });
 
-    describe('Customer Storage', () => {
-        describe('create', () => {
-            it('should create customer successfully', async () => {
-                // Arrange
-                const input: QZPayCreateCustomerInput = {
-                    externalId: 'user_123',
-                    email: 'test@example.com',
-                    name: 'Test Customer'
-                };
+    // -------------------------------------------------------------------------
+    // Stubbed branches — all methods throw "not implemented"
+    // -------------------------------------------------------------------------
 
-                const mockCustomer = createMockCustomer();
+    /**
+     * The Proxy in createThrowingStorage throws synchronously (not a rejected
+     * Promise), so we use `expect(() => ...).toThrow()` rather than
+     * `expect(promise).rejects.toThrow()`.
+     */
+    describe('Stubbed Storage Branches', () => {
+        it('customers.findById() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.findById('cus_123')).toThrow(
+                'QZPayStorageAdapter.customers.findById() is not implemented in the admin app HTTP adapter'
+            );
+        });
 
-                server.use(
-                    http.post(
-                        `${API_URL}/api/v1/protected/billing/customers`,
-                        async ({ request }) => {
-                            const body = (await request.json()) as QZPayCreateCustomerInput;
-
-                            expect(body).toEqual(input);
-
-                            return HttpResponse.json({ data: mockCustomer });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.create(input);
-
-                // Assert
-                expect(result).toEqual(mockCustomer);
-                // getAuthToken is deprecated and not called; auth uses session cookies
-                expect(mockGetAuthToken).not.toHaveBeenCalled();
-            });
-
-            it('should handle API error responses', async () => {
-                // Arrange
-                const input: QZPayCreateCustomerInput = {
-                    externalId: 'user_123',
-                    email: 'invalid-email',
-                    name: 'Test'
-                };
-
-                server.use(
-                    http.post(`${API_URL}/api/v1/protected/billing/customers`, () => {
-                        return HttpResponse.json(
-                            {
-                                error: {
-                                    message: 'Invalid email format'
-                                }
-                            },
-                            { status: 400 }
-                        );
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(adapter.customers.create(input)).rejects.toThrow(
-                    'Invalid email format'
-                );
-            });
-
-            it('should handle network errors', async () => {
-                // Arrange
-                const input: QZPayCreateCustomerInput = {
+        it('customers.create() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() =>
+                adapter.customers.create({
                     externalId: 'user_123',
                     email: 'test@example.com',
                     name: 'Test'
-                };
-
-                server.use(
-                    http.post(`${API_URL}/api/v1/protected/billing/customers`, () => {
-                        return HttpResponse.error();
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(adapter.customers.create(input)).rejects.toThrow();
-            });
+                })
+            ).toThrow(
+                'QZPayStorageAdapter.customers.create() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('update', () => {
-            it('should update customer successfully', async () => {
-                // Arrange
-                const customerId = 'cus_test123';
-                const updateInput: QZPayUpdateCustomerInput = {
-                    name: 'Updated Name',
-                    metadata: { updated: true }
-                };
-
-                const updatedCustomer = createMockCustomer({
-                    name: 'Updated Name',
-                    metadata: { updated: true }
-                });
-
-                server.use(
-                    http.put(
-                        `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
-                        async ({ request }) => {
-                            const body = (await request.json()) as QZPayUpdateCustomerInput;
-                            expect(body).toEqual(updateInput);
-
-                            return HttpResponse.json({ data: updatedCustomer });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.update(customerId, updateInput);
-
-                // Assert
-                expect(result.name).toBe('Updated Name');
-                expect(result.metadata).toEqual({ updated: true });
-            });
-
-            it('should handle 404 for non-existent customer', async () => {
-                // Arrange
-                const customerId = 'cus_nonexistent';
-
-                server.use(
-                    http.put(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                        return HttpResponse.json(
-                            { error: { message: 'Customer not found' } },
-                            { status: 404 }
-                        );
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(
-                    adapter.customers.update(customerId, { name: 'Test' })
-                ).rejects.toThrow('Customer not found');
-            });
+        it('customers.update() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.update('cus_123', { name: 'Updated' })).toThrow(
+                'QZPayStorageAdapter.customers.update() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('delete', () => {
-            it('should delete customer successfully', async () => {
-                // Arrange
-                const customerId = 'cus_test123';
-
-                server.use(
-                    http.delete(
-                        `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
-                        () => {
-                            // DELETE typically returns empty object or success: true
-                            return HttpResponse.json({ success: true });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(adapter.customers.delete(customerId)).resolves.not.toThrow();
-            });
+        it('customers.delete() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.delete('cus_123')).toThrow(
+                'QZPayStorageAdapter.customers.delete() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('findById', () => {
-            it('should find customer by id', async () => {
-                // Arrange
-                const customerId = 'cus_test123';
-                const mockCustomer = createMockCustomer();
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                        return HttpResponse.json({ data: mockCustomer });
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.findById(customerId);
-
-                // Assert
-                expect(result).toEqual(mockCustomer);
-            });
-
-            it('should return null for non-existent customer', async () => {
-                // Arrange
-                const customerId = 'cus_nonexistent';
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                        return HttpResponse.json(
-                            { error: { message: 'Not found' } },
-                            { status: 404 }
-                        );
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(adapter.customers.findById(customerId)).rejects.toThrow('Not found');
-            });
+        it('customers.list() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.list()).toThrow(
+                'QZPayStorageAdapter.customers.list() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('findByExternalId', () => {
-            it('should find customer by external id', async () => {
-                // Arrange
-                const externalId = 'user_123';
-                const mockCustomer = createMockCustomer();
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
-                        const url = new URL(request.url);
-                        expect(url.searchParams.get('externalId')).toBe(externalId);
-
-                        return HttpResponse.json({ data: mockCustomer });
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.findByExternalId(externalId);
-
-                // Assert
-                expect(result).toEqual(mockCustomer);
-            });
+        it('customers.findByExternalId() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.findByExternalId('ext_123')).toThrow(
+                'QZPayStorageAdapter.customers.findByExternalId() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('findByEmail', () => {
-            it('should find customer by email', async () => {
-                // Arrange
-                const email = 'test@example.com';
-                const mockCustomer = createMockCustomer();
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
-                        const url = new URL(request.url);
-                        expect(url.searchParams.get('email')).toBe(email);
-
-                        return HttpResponse.json({ data: mockCustomer });
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.findByEmail(email);
-
-                // Assert
-                expect(result).toEqual(mockCustomer);
-            });
+        it('customers.findByEmail() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.customers.findByEmail('test@example.com')).toThrow(
+                'QZPayStorageAdapter.customers.findByEmail() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('list', () => {
-            it('should list customers with pagination', async () => {
-                // Arrange
-                const options: QZPayListOptions = {
-                    limit: 10,
-                    offset: 0
-                };
-
-                const mockCustomer = createMockCustomer();
-                const mockResult: QZPayPaginatedResult<QZPayCustomer> = {
-                    data: [mockCustomer],
-                    hasMore: false,
-                    total: 1
-                };
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers`, () => {
-                        return HttpResponse.json({ data: mockResult });
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.list(options);
-
-                // Assert
-                expect(result.data).toHaveLength(1);
-                expect(result.total).toBe(1);
-                expect(result.hasMore).toBe(false);
-            });
-
-            it('should list customers without options', async () => {
-                // Arrange
-                const mockCustomer = createMockCustomer();
-                const mockResult: QZPayPaginatedResult<QZPayCustomer> = {
-                    data: [mockCustomer],
-                    hasMore: false,
-                    total: 1
-                };
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/customers`, () => {
-                        return HttpResponse.json({ data: mockResult });
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.customers.list();
-
-                // Assert
-                expect(result.data).toHaveLength(1);
-                expect(result.total).toBe(1);
-                expect(result.hasMore).toBe(false);
-            });
-        });
-    });
-
-    describe('Subscription Storage', () => {
-        describe('create', () => {
-            it('should create subscription successfully', async () => {
-                // Arrange
-                const input: QZPayCreateSubscriptionInput & { id: string } = {
-                    id: 'sub_test123',
-                    customerId: 'cus_test123',
+        it('subscriptions.create() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() =>
+                adapter.subscriptions.create({
+                    customerId: 'cus_123',
                     planId: 'plan_test',
                     priceId: 'price_test'
-                };
-
-                const mockSubscription: QZPaySubscription = {
-                    id: 'sub_test123',
-                    customerId: 'cus_test123',
-                    planId: 'plan_test',
-                    priceId: 'price_test',
-                    status: 'active',
-                    currentPeriodStart: '2024-01-01T00:00:00.000Z' as unknown as Date,
-                    currentPeriodEnd: '2024-02-01T00:00:00.000Z' as unknown as Date,
-                    cancelAtPeriodEnd: false,
-                    metadata: {},
-                    createdAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
-                    updatedAt: '2024-01-01T00:00:00.000Z' as unknown as Date
-                };
-
-                server.use(
-                    http.post(
-                        `${API_URL}/api/v1/protected/billing/subscriptions`,
-                        async ({ request }) => {
-                            const body = (await request.json()) as QZPayCreateSubscriptionInput;
-                            expect(body).toEqual(input);
-
-                            return HttpResponse.json({ data: mockSubscription });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.subscriptions.create(input);
-
-                // Assert
-                expect(result).toEqual(mockSubscription);
-            });
+                })
+            ).toThrow(
+                'QZPayStorageAdapter.subscriptions.create() is not implemented in the admin app HTTP adapter'
+            );
         });
 
-        describe('findByCustomerId', () => {
-            it('should find subscriptions by customer id', async () => {
-                // Arrange
-                const customerId = 'cus_test123';
+        it('subscriptions.findByCustomerId() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.subscriptions.findByCustomerId('cus_123')).toThrow(
+                'QZPayStorageAdapter.subscriptions.findByCustomerId() is not implemented in the admin app HTTP adapter'
+            );
+        });
 
-                const mockSubscription: QZPaySubscription = {
-                    id: 'sub_test123',
-                    customerId: 'cus_test123',
-                    planId: 'plan_test',
-                    priceId: 'price_test',
-                    status: 'active',
-                    currentPeriodStart: '2024-01-01T00:00:00.000Z' as unknown as Date,
-                    currentPeriodEnd: '2024-02-01T00:00:00.000Z' as unknown as Date,
-                    cancelAtPeriodEnd: false,
-                    metadata: {},
-                    createdAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
-                    updatedAt: '2024-01-01T00:00:00.000Z' as unknown as Date
-                };
+        it('payments.findByCustomerId() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.payments.findByCustomerId('cus_123')).toThrow(
+                'QZPayStorageAdapter.payments.findByCustomerId() is not implemented in the admin app HTTP adapter'
+            );
+        });
 
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/subscriptions`, ({ request }) => {
-                        const url = new URL(request.url);
-                        expect(url.searchParams.get('customerId')).toBe(customerId);
+        it('promoCodes.findByCode() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.promoCodes.findByCode('SAVE20')).toThrow(
+                'QZPayStorageAdapter.promoCodes.findByCode() is not implemented in the admin app HTTP adapter'
+            );
+        });
 
-                        return HttpResponse.json([mockSubscription]);
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.subscriptions.findByCustomerId(customerId);
-
-                // Assert
-                expect(result).toHaveLength(1);
-                expect(result[0]).toEqual(mockSubscription);
-            });
+        it('promoCodes.incrementRedemptions() should throw "not implemented" error', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.promoCodes.incrementRedemptions('promo_123')).toThrow(
+                'QZPayStorageAdapter.promoCodes.incrementRedemptions() is not implemented in the admin app HTTP adapter'
+            );
         });
     });
 
-    describe('Payment Storage', () => {
-        describe('findByCustomerId', () => {
-            it('should find payments by customer id', async () => {
-                // Arrange
-                const customerId = 'cus_test123';
+    // -------------------------------------------------------------------------
+    // Plan Storage — live read methods (findById via admin endpoint)
+    // -------------------------------------------------------------------------
 
-                const mockPayment: QZPayPayment = {
-                    id: 'pay_test123',
-                    customerId: 'cus_test123',
-                    amount: 10000,
-                    currency: 'ARS',
-                    status: 'succeeded',
-                    paymentMethod: 'card',
-                    metadata: {},
-                    createdAt: '2024-01-01T00:00:00.000Z' as unknown as Date,
-                    updatedAt: '2024-01-01T00:00:00.000Z' as unknown as Date
-                };
-
-                server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/payments`, ({ request }) => {
-                        const url = new URL(request.url);
-                        expect(url.searchParams.get('customerId')).toBe(customerId);
-
-                        return HttpResponse.json([mockPayment]);
-                    })
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.payments.findByCustomerId(customerId);
-
-                // Assert
-                expect(result).toHaveLength(1);
-                expect(result[0]?.amount).toBe(10000);
-            });
-        });
-    });
-
-    describe('Plan Storage', () => {
+    describe('Plan Storage (live)', () => {
         describe('findById', () => {
-            it('should find plan by id', async () => {
+            it('should find plan by id via admin endpoint', async () => {
                 // Arrange
                 const planId = 'plan_test123';
 
@@ -597,89 +205,30 @@ describe('Billing HTTP Adapter', () => {
                 expect(result).toEqual(mockPlan);
             });
         });
-    });
 
-    describe('Promo Code Storage', () => {
-        const mockPromoCode: QZPayPromoCode = {
-            id: 'promo_test123',
-            code: 'SAVE20',
-            discountType: 'percentage',
-            discountValue: 20,
-            maxRedemptions: 100,
-            timesRedeemed: 5,
-            active: true,
-            metadata: {},
-            createdAt: new Date('2024-01-01'),
-            updatedAt: new Date('2024-01-01')
-        };
-
-        describe('findByCode', () => {
-            it('should find promo code by code', async () => {
-                // Arrange
-                const code = 'SAVE20';
-
-                server.use(
-                    http.get(
-                        `${API_URL}/api/v1/protected/billing/promo-codes/by-code/${code}`,
-                        () => {
-                            return HttpResponse.json({ data: mockPromoCode });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act
-                const result = await adapter.promoCodes.findByCode(code);
-
-                // Assert
-                expect(result.code).toBe('SAVE20');
-                expect(result.discountValue).toBe(20);
-            });
-        });
-
-        describe('incrementRedemptions', () => {
-            it('should increment promo code redemptions', async () => {
-                // Arrange
-                const promoCodeId = 'promo_test123';
-
-                server.use(
-                    http.post(
-                        `${API_URL}/api/v1/protected/billing/promo-codes/${promoCodeId}/redeem`,
-                        () => {
-                            return HttpResponse.json({ success: true });
-                        }
-                    )
-                );
-
-                const adapter = createHttpBillingAdapter({
-                    apiUrl: API_URL,
-                    getAuthToken: mockGetAuthToken
-                });
-
-                // Act & Assert
-                await expect(
-                    adapter.promoCodes.incrementRedemptions(promoCodeId)
-                ).resolves.not.toThrow();
-            });
+        it('plans.list() should throw "not implemented" (only findById is live)', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.plans.list()).toThrow(
+                'QZPayStorageAdapter.plans.list() is not implemented in the admin app HTTP adapter'
+            );
         });
     });
 
-    describe('Authentication', () => {
-        it('should include auth token in request headers', async () => {
+    // -------------------------------------------------------------------------
+    // Entitlement Storage — live methods
+    // -------------------------------------------------------------------------
+
+    describe('Entitlement Storage (live)', () => {
+        it('findByCustomerId should fetch entitlements for a customer', async () => {
             // Arrange
             const customerId = 'cus_test123';
-            let capturedAuthHeader: string | null = null;
+            const mockEntitlements = [{ key: 'CREATE_LISTINGS', hasAccess: true }];
 
             server.use(
                 http.get(
-                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
-                    ({ request }) => {
-                        capturedAuthHeader = request.headers.get('Authorization');
-                        return HttpResponse.json({ data: {} });
+                    `${API_URL}/api/v1/protected/billing/entitlements/customer/${customerId}`,
+                    () => {
+                        return HttpResponse.json(mockEntitlements);
                     }
                 )
             );
@@ -690,251 +239,63 @@ describe('Billing HTTP Adapter', () => {
             });
 
             // Act
-            await adapter.customers.findById(customerId);
+            const result = await adapter.entitlements.findByCustomerId(customerId);
 
             // Assert
-            // getAuthToken is deprecated; auth uses session cookies (credentials: 'include')
-            // so no Authorization header is sent and getAuthToken is never called
-            expect(mockGetAuthToken).not.toHaveBeenCalled();
-            expect(capturedAuthHeader).toBeNull();
+            expect(result).toEqual(mockEntitlements);
         });
 
-        it('should work without auth token (cookies only)', async () => {
+        it('check should return hasAccess boolean for a specific entitlement', async () => {
             // Arrange
             const customerId = 'cus_test123';
-            let capturedAuthHeader: string | null = null;
+            const entitlementKey = 'CREATE_LISTINGS';
 
             server.use(
                 http.get(
-                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
-                    ({ request }) => {
-                        capturedAuthHeader = request.headers.get('Authorization');
-                        return HttpResponse.json({ data: {} });
-                    }
-                )
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL
-                // No getAuthToken provided
-            });
-
-            // Act
-            await adapter.customers.findById(customerId);
-
-            // Assert
-            expect(capturedAuthHeader).toBeNull();
-        });
-
-        it('should handle null auth token gracefully', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-            const nullTokenFn = vi.fn().mockResolvedValue(null);
-            let capturedAuthHeader: string | null = null;
-
-            server.use(
-                http.get(
-                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
-                    ({ request }) => {
-                        capturedAuthHeader = request.headers.get('Authorization');
-                        return HttpResponse.json({ data: {} });
+                    `${API_URL}/api/v1/protected/billing/entitlements/${customerId}/${entitlementKey}/check`,
+                    () => {
+                        return HttpResponse.json({ hasAccess: true });
                     }
                 )
             );
 
             const adapter = createHttpBillingAdapter({
                 apiUrl: API_URL,
-                getAuthToken: nullTokenFn
-            });
-
-            // Act
-            await adapter.customers.findById(customerId);
-
-            // Assert
-            // getAuthToken is deprecated and never invoked; auth uses session cookies
-            expect(nullTokenFn).not.toHaveBeenCalled();
-            expect(capturedAuthHeader).toBeNull();
-        });
-    });
-
-    describe('Request Configuration', () => {
-        it('should include credentials for cookies', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-            let capturedCredentials: RequestCredentials | undefined;
-
-            // We need to spy on fetch to capture credentials
-            const originalFetch = global.fetch;
-            global.fetch = vi.fn(async (input, init) => {
-                capturedCredentials = init?.credentials;
-                return originalFetch(input, init);
-            });
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return HttpResponse.json({ data: {} });
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
                 getAuthToken: mockGetAuthToken
             });
 
             // Act
-            await adapter.customers.findById(customerId);
+            const result = await adapter.entitlements.check(customerId, entitlementKey);
 
             // Assert
-            expect(capturedCredentials).toBe('include');
-
-            // Cleanup
-            global.fetch = originalFetch;
+            expect(result).toBe(true);
         });
 
-        it('should include Content-Type header', async () => {
-            // Arrange
-            const input: QZPayCreateCustomerInput = {
-                externalId: 'user_123',
-                email: 'test@example.com',
-                name: 'Test'
-            };
-
-            let capturedContentType: string | null = null;
-
-            server.use(
-                http.post(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
-                    capturedContentType = request.headers.get('Content-Type');
-                    return HttpResponse.json({ data: {} });
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            // Act
-            await adapter.customers.create(input);
-
-            // Assert
-            expect(capturedContentType).toBe('application/json');
-        });
-    });
-
-    describe('Error Handling', () => {
-        it('should handle malformed JSON error response', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return new HttpResponse('Not JSON', {
-                        status: 500,
-                        statusText: 'Internal Server Error'
-                    });
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            // Act & Assert
-            await expect(adapter.customers.findById(customerId)).rejects.toThrow();
-        });
-
-        it('should extract error message from nested error object', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return HttpResponse.json(
-                        {
-                            error: {
-                                message: 'Nested error message'
-                            }
-                        },
-                        { status: 400 }
-                    );
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            // Act & Assert
-            await expect(adapter.customers.findById(customerId)).rejects.toThrow(
-                'Nested error message'
-            );
-        });
-
-        it('should extract message from top-level message field', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return HttpResponse.json(
-                        {
-                            message: 'Top-level error message'
-                        },
-                        { status: 400 }
-                    );
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            // Act & Assert
-            await expect(adapter.customers.findById(customerId)).rejects.toThrow(
-                'Top-level error message'
-            );
-        });
-
-        it('should use status text as fallback error message', async () => {
-            // Arrange
-            const customerId = 'cus_test123';
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return new HttpResponse(JSON.stringify({}), {
-                        status: 404,
-                        statusText: 'Not Found'
-                    });
-                })
-            );
-
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            // Act & Assert
-            // The client uses `Request failed (${status})` as fallback when no message
-            // is present in the error body (empty object {} has no error.message or message)
-            await expect(adapter.customers.findById(customerId)).rejects.toThrow(
-                'Request failed (404)'
+        it('grant() should throw "not implemented" (only getByCustomerId and check are live)', () => {
+            const adapter = createHttpBillingAdapter({ apiUrl: API_URL });
+            expect(() => adapter.entitlements.grant('cus_123', 'some_key')).toThrow(
+                'QZPayStorageAdapter.entitlements.grant() is not implemented'
             );
         });
     });
 
-    describe('Response Transformation', () => {
-        it('should extract data from response.data field', async () => {
+    // -------------------------------------------------------------------------
+    // Limit Storage — live methods
+    // -------------------------------------------------------------------------
+
+    describe('Limit Storage (live)', () => {
+        it('findByCustomerId should fetch limits for a customer', async () => {
             // Arrange
             const customerId = 'cus_test123';
-            const mockCustomer = createMockCustomer({ id: customerId });
+            const mockLimits = [{ key: 'MAX_LISTINGS', used: 3, limit: 5 }];
 
             server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return HttpResponse.json({ data: mockCustomer });
-                })
+                http.get(
+                    `${API_URL}/api/v1/protected/billing/limits/customer/${customerId}`,
+                    () => {
+                        return HttpResponse.json(mockLimits);
+                    }
+                )
             );
 
             const adapter = createHttpBillingAdapter({
@@ -943,21 +304,25 @@ describe('Billing HTTP Adapter', () => {
             });
 
             // Act
-            const result = await adapter.customers.findById(customerId);
+            const result = await adapter.limits.findByCustomerId(customerId);
 
             // Assert
-            expect(result).toEqual(mockCustomer);
+            expect(result).toEqual(mockLimits);
         });
 
-        it('should return entire response if no data field', async () => {
+        it('check should return a limit record for a specific limit key', async () => {
             // Arrange
             const customerId = 'cus_test123';
-            const mockCustomer = createMockCustomer({ id: customerId });
+            const limitKey = 'MAX_LISTINGS';
+            const mockLimit = { key: 'MAX_LISTINGS', used: 3, limit: 5 };
 
             server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
-                    return HttpResponse.json(mockCustomer);
-                })
+                http.get(
+                    `${API_URL}/api/v1/protected/billing/limits/${customerId}/${limitKey}/check`,
+                    () => {
+                        return HttpResponse.json(mockLimit);
+                    }
+                )
             );
 
             const adapter = createHttpBillingAdapter({
@@ -966,12 +331,16 @@ describe('Billing HTTP Adapter', () => {
             });
 
             // Act
-            const result = await adapter.customers.findById(customerId);
+            const result = await adapter.limits.check(customerId, limitKey);
 
             // Assert
-            expect(result).toEqual(mockCustomer);
+            expect(result).toEqual(mockLimit);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // Transaction Wrapper
+    // -------------------------------------------------------------------------
 
     describe('Transaction Wrapper', () => {
         it('should execute transaction function and return result', async () => {
@@ -1003,41 +372,6 @@ describe('Billing HTTP Adapter', () => {
 
             // Act & Assert
             await expect(adapter.transaction(mockFn)).rejects.toThrow('Transaction failed');
-        });
-    });
-
-    describe('Type Safety', () => {
-        it('should maintain type safety for customer operations', async () => {
-            // Arrange
-            const adapter = createHttpBillingAdapter({
-                apiUrl: API_URL,
-                getAuthToken: mockGetAuthToken
-            });
-
-            const mockCustomer: QZPayCustomer = {
-                id: 'cus_test123',
-                externalId: 'user_123',
-                email: 'test@example.com',
-                name: 'Test Customer',
-                metadata: {},
-                createdAt: new Date('2024-01-01'),
-                updatedAt: new Date('2024-01-01')
-            };
-
-            server.use(
-                http.get(`${API_URL}/api/v1/protected/billing/customers/cus_test123`, () => {
-                    return HttpResponse.json({ data: mockCustomer });
-                })
-            );
-
-            // Act
-            const result = await adapter.customers.findById('cus_test123');
-
-            // Assert - TypeScript ensures these properties exist
-            expect(result.id).toBeDefined();
-            expect(result.email).toBeDefined();
-            expect(result.name).toBeDefined();
-            expect(result.createdAt).toBeDefined();
         });
     });
 });

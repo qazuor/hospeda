@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-179",
+    "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+    "type": "infra",
+    "complexity": "medium",
+    "status": "approved",
+    "created": "2026-06-01T00:00:00Z",
+    "approved": "2026-06-01T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "ci",
+        "github-actions",
+        "self-hosted-runner",
+        "cost",
+        "quota",
+        "pr-ci",
+        "e2e",
+        "devops",
+        "workflows",
+        "security"
+    ]
+}

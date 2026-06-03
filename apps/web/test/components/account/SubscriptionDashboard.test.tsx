@@ -29,12 +29,16 @@ vi.mock('../../../src/components/account/SubscriptionDashboard.module.css', () =
     })
 }));
 
-// Mock @repo/icons — return simple span elements for each icon
+// Mock @repo/icons — return simple span elements for each icon.
+// PlayIcon and PowerOffIcon were added in commit 87b0cf75f
+// ("host self-serve subscription pause/resume, SPEC-143 #29").
 vi.mock('@repo/icons', () => ({
     CheckIcon: () => <span data-testid="icon-check" />,
     ArrowRightIcon: () => <span data-testid="icon-arrow-right" />,
     DownloadIcon: () => <span data-testid="icon-download" />,
-    CancelIcon: () => <span data-testid="icon-cancel" />
+    CancelIcon: () => <span data-testid="icon-cancel" />,
+    PlayIcon: () => <span data-testid="icon-play" />,
+    PowerOffIcon: () => <span data-testid="icon-power-off" />
 }));
 
 // Mock env helper — must match the RESOLVED path that @/lib/env points to

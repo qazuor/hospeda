@@ -35,6 +35,9 @@ export const EventQualityScore = React.memo(function EventQualityScoreComponent(
     const { form } = useEntityFormContext();
     const { has, isLoading: entitlementsLoading } = useMyEntitlements();
 
+    // TYPE-WORKAROUND: `ReactFormApi` (the EntityFormContext type alias) doesn't expose
+    // `.store` in its public type even though the runtime `FormApi` from `useForm` always
+    // has it; casting to a structural shape that matches what `useStore` accepts.
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 

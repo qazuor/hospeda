@@ -163,8 +163,11 @@ describe('CategoryTiles.astro', () => {
             expect(src).toContain('var(--surface-warm)');
         });
 
-        it('uses --space-section for section padding', () => {
-            expect(src).toContain('var(--space-section');
+        it('uses a clamp-based block padding for the section (commit 819399a44 replaced --space-section)', () => {
+            // Commit 819399a44 (style: tighten CategoryTiles vertical padding) intentionally
+            // replaced var(--space-section, 120px) with clamp(3rem, 6vw, 4.5rem) because the
+            // default 240px total vertical padding dwarfed the compact tile content.
+            expect(src).toContain('clamp(3rem, 6vw, 4.5rem)');
         });
 
         it('uses --radius-card for tile border-radius', () => {

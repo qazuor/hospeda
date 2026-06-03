@@ -47,6 +47,9 @@ export const useAccommodationHeaderProps = ({
             return { media: undefined, subtitle: undefined, badges: null };
         }
 
+        // TYPE-WORKAROUND: the entity prop is typed as the narrow Accommodation schema type;
+        // internal helpers accept `Record<string, unknown>` for generic field access across
+        // entity types. The widening is safe because we only read known fields.
         const entityRecord = entity as unknown as Record<string, unknown>;
 
         // ---- Media (thumbnail with type-icon fallback) --------------------
@@ -54,6 +57,8 @@ export const useAccommodationHeaderProps = ({
 
         // Helpers build dynamic i18n keys (e.g. `common.enums.accommodationType.${type}`)
         // that aren't part of the strict TranslationKey union — accept any string here.
+        // TYPE-WORKAROUND: `t` is typed with a finite `TranslationKey` union; helpers
+        // construct keys dynamically at runtime so we widen to `(key: string) => string`.
         const tForHelpers = t as unknown as (key: string) => string;
 
         // ---- Subtitle ("<Type> · <Destination>") --------------------------

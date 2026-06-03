@@ -1,0 +1,214 @@
+name: E2E (Local / Self-Hosted)
+
+# SPEC-179 D4: On-demand E2E gate that runs entirely on the owner's laptop
+# (self-hosted runner), consuming zero GitHub-hosted Actions minutes.
+#
+# Usage:
+#   gh workflow run e2e-local.self-hosted.yml -f branch=feat/my-branch -f scope=p0
+#
+# Or via the Actions UI: Actions → "E2E (Local / Self-Hosted)" → Run workflow.
+#
+# Requires Docker running on the laptop (for postgres/redis/mailpit service
+# containers). See docs/guides/self-hosted-runner.md for runner setup.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to check out (leave empty to use the default branch)'
+        type: string
+        default: ''
+      scope:
+        description: 'E2E scope: p0 (smoke) or full (P0 + P1 + Resilience)'
+        type: choice
+        options:
+          - p0
+          - full
+        default: p0
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-local-self-hosted
+  cancel-in-progress: false
+
+jobs:
+  e2e-local:
+    name: E2E Local (${{ inputs.scope }})
+    runs-on: [self-hosted, linux, x64, leo-laptop]
+    timeout-minutes: 60
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: hospeda_user
+          POSTGRES_PASSWORD: hospeda_pass
+          POSTGRES_DB: hospeda_e2e
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      mailpit:
+        image: axllent/mailpit:latest
+        ports:
+          - 1025:1025
+          - 8025:8025
+        env:
+          MP_MAX_MESSAGES: 5000
+          MP_SMTP_AUTH_ACCEPT_ANY: 1
+          MP_SMTP_AUTH_ALLOW_INSECURE: 1
+        options: >-
+          --health-cmd "wget -q --spider http://localhost:8025/api/v1/info"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+    env:
+      HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
+      HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
+      HOSPEDA_REDIS_URL: redis://localhost:6380
+      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+      HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
+      HOSPEDA_API_URL: http://localhost:3001
+      HOSPEDA_SITE_URL: http://localhost:4321
+      HOSPEDA_ADMIN_URL: http://localhost:3000
+      HOSPEDA_MAILER_HOST: localhost
+      HOSPEDA_MAILER_PORT: '1025'
+
+      # MercadoPago: local mode uses simulated webhook only (no real sandbox calls).
+      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-local-stub-access-token
+      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: TEST-local-stub-public-key
+      HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
+      HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+
+      # Cloudinary: optional (tests tagged @cloudinary skip when absent)
+      HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
+      HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
+      HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+
+      E2E_MODE: local
+
+    steps:
+      - name: Resolve checkout ref
+        id: ref
+        shell: bash
+        # inputs.branch comes from workflow_dispatch (collaborator-only), but we
+        # still sanitize it: only allow characters valid in a git branch/tag/SHA
+        # reference (alphanumeric, hyphen, underscore, slash, dot).  An empty
+        # input falls back to the workflow's own ref (typically the default branch
+        # when triggered from the Actions UI without specifying a branch).
+        #
+        # NOTE: the GitHub-context values are passed via `env:` (NOT interpolated
+        # directly into the shell) so they are never parsed as shell — this avoids
+        # the run-shell-injection class flagged by SAST. The grep allow-list is the
+        # value sanitiser; the env indirection is the injection-safety boundary.
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          GH_REF: ${{ github.ref }}
+        run: |
+          if [ -z "$INPUT_BRANCH" ]; then
+            echo "ref=$GH_REF" >> "$GITHUB_OUTPUT"
+          elif echo "$INPUT_BRANCH" | grep -qP '^[a-zA-Z0-9._/\-]+$'; then
+            echo "ref=$INPUT_BRANCH" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Invalid branch name: '$INPUT_BRANCH'. Only alphanumeric, hyphen, underscore, dot, and slash characters are allowed."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Setup turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter hospeda-e2e exec playwright install chromium --with-deps
+
+      - name: Build apps
+        run: pnpm exec turbo run build --filter=hospeda-api --filter=hospeda-admin --filter=hospeda-web
+
+      - name: Apply versioned Drizzle migrations to E2E database
+        run: pnpm --filter @repo/db db:migrate
+        env:
+          HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
+
+      - name: Apply Postgres extras
+        run: bash packages/db/scripts/apply-postgres-extras.sh "$HOSPEDA_E2E_DATABASE_URL"
+
+      - name: Seed E2E database
+        run: pnpm --filter hospeda-e2e e2e:seed
+
+      - name: Run E2E P0 suite
+        if: inputs.scope == 'p0'
+        run: pnpm --filter hospeda-e2e e2e:test:p0
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Run E2E full suite (P0 + P1 + Resilience)
+        if: inputs.scope == 'full'
+        run: pnpm --filter hospeda-e2e e2e:test
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-local-${{ github.run_id }}
+          path: apps/e2e/playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-local-${{ github.run_id }}
+          path: apps/e2e/test-results/
+          retention-days: 7

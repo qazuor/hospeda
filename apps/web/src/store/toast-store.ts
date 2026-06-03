@@ -267,6 +267,9 @@ export function pauseToast(id: string): void {
     clearTimeout(timer.timeoutId);
     timers.set(id, {
         ...timer,
+        // TYPE-WORKAROUND: `ReturnType<typeof setTimeout>` is `NodeJS.Timeout` in Node
+        // and `number` in browsers; using `0` as a sentinel for "no active timer" when
+        // the timer is paused requires a cast because `0` is not assignable to either.
         timeoutId: 0 as unknown as ReturnType<typeof setTimeout>,
         remaining,
         paused: true

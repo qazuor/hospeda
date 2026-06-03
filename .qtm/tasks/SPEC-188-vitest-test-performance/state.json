@@ -1,0 +1,172 @@
+{
+    "specId": "SPEC-188",
+    "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
+    "status": "pending",
+    "created": "2026-06-02T17:44:49Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Establish baseline: per-package + per-shard timings, local peak memory & safe-concurrency observation (run sequentially, machine-safe)",
+            "phase": "setup",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Lock SC-2 speed target and SC-3 local concurrency ceiling from the baseline (needs leo-laptop cores/RAM)",
+            "phase": "setup",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Spike pool:'threads' vs tuned 'forks' on a representative node package; measure + 3x green; audit global/native state",
+            "phase": "core",
+            "complexity": 5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Spike isolate:false on a pure schema/util package; measure + 3x green; verify no mock/singleton pollution",
+            "phase": "core",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Spike environment split (environmentMatchGlobs / happy-dom) on apps/admin; measure + 3x green; confirm DOM behaviour-equal",
+            "phase": "core",
+            "complexity": 6,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Decide the per-package winning lever combination from the spikes (keep only no-flake, no-concurrency-increase gains)",
+            "phase": "core",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-007"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Add vitest.shared.config.ts (base test config) with env-driven concurrency knob (VITEST_MAX_FORKS / pool)",
+            "phase": "integration",
+            "complexity": 5,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-009", "T-010"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Migrate node-environment packages to extend the shared config (package-by-package, suite green after each)",
+            "phase": "integration",
+            "complexity": 6,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011", "T-013"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Migrate the 5 jsdom packages (admin/web/auth-ui/feedback/icons) with the environment split",
+            "phase": "integration",
+            "complexity": 6,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011", "T-013"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Wire the concurrency cap: turbo --concurrency for the test task + vitest forks/threads env, separate local vs CI values",
+            "phase": "integration",
+            "complexity": 4,
+            "blockedBy": ["T-007", "T-002"],
+            "blocks": ["T-011", "T-012"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Determinism validation: >=2 full CI runs match; >=3 consecutive green runs per changed package (AC-3.1)",
+            "phase": "testing",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": ["T-014", "T-015"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Machine-safety gate (SC-3): local full-suite run completes on leo-laptop/dev without OOM/hang; record sign-off",
+            "phase": "testing",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-015"],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Confirm coverage thresholds and the .only/.skip guard still pass unchanged (AC-3.2)",
+            "phase": "testing",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Write docs/guides/test-performance.md: the knobs, the machine-safety cap, and the re-measurement procedure",
+            "phase": "docs",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Update the ci.yml test-unit comment with the new baseline; decide whether to lower the 30 min cap",
+            "phase": "cleanup",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": [],
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-02T17:44:49Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 15,
+        "byPhase": {
+            "setup": 2,
+            "core": 4,
+            "integration": 4,
+            "testing": 3,
+            "docs": 1,
+            "cleanup": 1
+        }
+    }
+}

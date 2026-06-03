@@ -51,7 +51,7 @@ describe('Public destination detail embeds faqs (SPEC-158)', () => {
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE',
                 moderationState: 'APPROVED',
-                location: { lat: -32.48, lng: -58.23 }
+                location: { coordinates: { lat: '-32.48', long: '-58.23' } }
             })
             .returning({ id: destinations.id });
 
@@ -99,9 +99,10 @@ describe('Public destination detail embeds faqs (SPEC-158)', () => {
                 (f) => f.displayOrder !== null && f.displayOrder !== undefined
             );
             for (let i = 0; i < withOrder.length - 1; i++) {
-                const cur = withOrder[i].displayOrder as number;
-                const next = withOrder[i + 1].displayOrder as number;
-                expect(cur).toBeLessThanOrEqual(next);
+                const cur = withOrder[i];
+                const next = withOrder[i + 1];
+                if (!cur || !next) continue;
+                expect(cur.displayOrder as number).toBeLessThanOrEqual(next.displayOrder as number);
             }
         }
     };

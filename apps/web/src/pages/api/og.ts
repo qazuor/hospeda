@@ -175,6 +175,9 @@ export const GET: APIRoute = async ({ url }) => {
     const assets = loadStaticAssets();
     const element = buildOgElement(params, assets) as SatoriNode;
 
+    // TYPE-WORKAROUND: `@vercel/og` ImageResponse expects its own internal `ReactNode`-like
+    // type for the first argument; `SatoriNode` (from the satori package) is structurally
+    // identical at runtime but TypeScript treats them as unrelated nominal types.
     return new ImageResponse(element as unknown as ConstructorParameters<typeof ImageResponse>[0], {
         width: 1200,
         height: 630,

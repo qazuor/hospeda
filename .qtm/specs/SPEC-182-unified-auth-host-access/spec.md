@@ -164,15 +164,19 @@ happens in server-side `Astro.redirect()`, not in client JS.
 **What changes**:
 
 - `apps/admin/src/routes/_authed.tsx:78` — change:
+
   ```
   case 'redirect-signin':
       throw redirect({ to: '/auth/signin', search: decision.search });
   ```
+
   to redirect to the external web auth URL:
+
   ```
   case 'redirect-signin':
       throw redirect({ href: buildWebSigninUrl(env.VITE_SITE_URL, preferredLocale, adminUrl) });
   ```
+
   where `buildWebSigninUrl` constructs `{SITE_URL}/{locale}/auth/signin?callbackUrl={encodeURIComponent(adminUrl)}`.
 
 - `apps/admin/src/lib/authed-guard.ts` — update `DecideAuthedGuardArgs` if needed; the

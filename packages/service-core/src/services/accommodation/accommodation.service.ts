@@ -2118,7 +2118,7 @@ export class AccommodationService extends BaseCrudService<
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.hardDelete({ id: validated.faqId }, ctx?.tx);
+                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
                 return { success: true };
             }
         });

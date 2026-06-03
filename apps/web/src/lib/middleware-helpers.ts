@@ -470,11 +470,13 @@ export function generateCspNonce(): string {
 export function buildCspHeader({
     nonce,
     apiUrl,
-    sentryReportUri
+    sentryReportUri,
+    sentryTunnelEnabled = false
 }: {
     readonly nonce: string;
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
+    readonly sentryTunnelEnabled?: boolean;
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
@@ -497,15 +499,31 @@ export function buildCspHeader({
     const oauthAvatarHosts =
         'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
 
-    // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
-    // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
-    // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
-    // 'strict-dynamic' which makes host allowlists a no-op for scripts loaded
-    // via the nonce-tagged bootstrapper — the hosts here are documentation +
-    // safety net if 'strict-dynamic' is ever removed.
+    // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
+    // Cloudflare Worker forwards to PostHog Cloud US — see
+    // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
+    // `'self'` already covers script/connect/img for PostHog — no external
+    // `us.i.posthog.com` / `us-assets.i.posthog.com` allowlist entries are needed
+    // (SPEC-140 added them when the SDK talked to PostHog directly; removed here).
+    // COUPLING: the Worker must be live and `PUBLIC_POSTHOG_HOST` set to the proxy
+    // origin BEFORE this CSP is enforced, or PostHog breaks silently (deploy order
+    // in the Worker README). `script-src` keeps 'strict-dynamic' (the nonce-tagged
+    // bootstrapper loads the SDK).
+    //
+    // SPEC-181 follow-up: Sentry has its OWN first-party tunnel under `/api/event`
+    // (a separate Cloudflare Worker — infra/cloudflare/sentry-tunnel/). When the
+    // tunnel is enabled (`PUBLIC_SENTRY_TUNNEL` set), the browser SDK POSTs
+    // envelopes to that same-origin path, so the external `https://*.sentry.io`
+    // `connect-src` entry is dropped ('self' covers it). When the tunnel is NOT
+    // enabled, `https://*.sentry.io` stays so the SDK can report to Sentry
+    // directly. The two proxy paths bind to DIFFERENT Workers (do not merge).
+    // NOTE: the `report-uri` directive still points at *.sentry.io directly — CSP
+    // violation reports are browser-emitted (not SDK envelopes) and are not
+    // tunneled; that directive is independent of `connect-src`.
+    const sentryConnectSrc = sentryTunnelEnabled ? '' : ' https://*.sentry.io';
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
         // The Astro client runtime injects an inline <style> at hydration time
         // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
         // Because the injection happens via JS AFTER the middleware response
@@ -526,8 +544,8 @@ export function buildCspHeader({
         //     used for tokenized inline colors and per-card transition delays)
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",

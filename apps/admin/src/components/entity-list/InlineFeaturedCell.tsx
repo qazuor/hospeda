@@ -59,6 +59,9 @@ export function InlineFeaturedCell<TPatch extends Record<string, unknown>>({
 
     const handleChange = async (next: boolean) => {
         try {
+            // TYPE-WORKAROUND: `TPatch` is the entity-specific PATCH shape; `{ isFeatured }`
+            // is always a valid subset of it but TypeScript can't verify that without a
+            // `extends` constraint on the generic — the cast keeps the helper entity-agnostic.
             await mutation.mutateAsync({ isFeatured: next } as unknown as TPatch);
             addToast({
                 message: t(

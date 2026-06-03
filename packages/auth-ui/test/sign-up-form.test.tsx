@@ -4,6 +4,10 @@
  * Covers hydration skeleton, email/password sign-up, OAuth buttons,
  * error handling, loading states, and redirect behavior.
  *
+ * The name field was intentionally removed from the form in SPEC-113.
+ * Name collection now happens in the post-signup profile completion form.
+ * The component still passes `name: ''` to signUp.email internally.
+ *
  * @module sign-up-form.test
  */
 
@@ -86,18 +90,18 @@ describe('SignUpForm', () => {
             />
         );
 
-        // The skeleton includes loading text and placeholder divs
-        // After useEffect fires, the real form replaces it
-        // We verify the form eventually renders
+        // The skeleton includes loading text and placeholder divs.
+        // After useEffect fires, the real form replaces it.
+        // We verify the form eventually renders by waiting for the email field.
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
         // Verify the skeleton is gone (no more placeholder divs with bg-gray-50)
         expect(container.querySelector('.bg-gray-50')).not.toBeInTheDocument();
     });
 
-    it('renders name, email, and password fields after hydration', async () => {
+    it('renders email, password, and confirm-password fields after hydration (no name field)', async () => {
         const SignUpForm = await importSignUpForm();
         render(
             <SignUpForm
@@ -107,14 +111,16 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/auth-ui\.signUp\.password/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i)).toBeInTheDocument();
+        // Name field must NOT be present — it was intentionally removed in SPEC-113
+        expect(screen.queryByLabelText(/auth-ui\.signUp\.name/i)).not.toBeInTheDocument();
     });
 
-    it('calls signUp.email with name, email, and password on submit', async () => {
+    it('calls signUp.email with email, password, and empty name on submit', async () => {
         const user = userEvent.setup();
         const mockSignUp = createMockSignUp();
         const SignUpForm = await importSignUpForm();
@@ -127,18 +133,21 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John Doe');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'securepassword123');
+        await user.type(
+            screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i),
+            'securepassword123'
+        );
 
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
             expect(mockSignUp.email).toHaveBeenCalledWith({
-                name: 'John Doe',
+                name: '',
                 email: 'john@example.com',
                 password: 'securepassword123'
             });
@@ -161,12 +170,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -192,12 +201,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -241,7 +250,7 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
         expect(screen.queryByLabelText('Sign up with Google')).not.toBeInTheDocument();
@@ -316,12 +325,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -342,12 +351,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -370,12 +379,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -458,12 +467,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         // Wait for loading state
@@ -503,12 +512,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -530,12 +539,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {
@@ -557,12 +566,12 @@ describe('SignUpForm', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByLabelText(/auth-ui\.signUp\.name/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/auth-ui\.signUp\.email/i)).toBeInTheDocument();
         });
 
-        await user.type(screen.getByLabelText(/auth-ui\.signUp\.name/i), 'John');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.email/i), 'john@example.com');
         await user.type(screen.getByLabelText(/auth-ui\.signUp\.password/i), 'password123');
+        await user.type(screen.getByLabelText(/auth-ui\.signUp\.confirmPassword/i), 'password123');
         await user.click(screen.getByRole('button', { name: /auth-ui\.signUp\.signUpButton/i }));
 
         await waitFor(() => {

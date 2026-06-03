@@ -47,6 +47,11 @@ const openPicker = async (user: ReturnType<typeof userEvent.setup>) => {
     await screen.findByPlaceholderText(`${K}.searchPermissions`);
 };
 
+// The dialog mounts a cmdk CommandList over the full PermissionEnum set (~333
+// items), so each `userEvent` interaction re-runs cmdk scoring and is genuinely
+// heavy to render. It clears 5s locally, but the self-hosted CI runner (single
+// job, loaded) pushes these past the 5s default and they time out. Raise the
+// per-suite timeout to give the heavy render headroom on a slow runner.
 describe('PermissionPicker', () => {
     it('opens the dialog from the trigger', async () => {
         const user = userEvent.setup();
@@ -110,4 +115,4 @@ describe('PermissionPicker', () => {
             0
         );
     });
-});
+}, 20000);

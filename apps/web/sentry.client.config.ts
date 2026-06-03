@@ -8,6 +8,15 @@ const dsn = import.meta.env.PUBLIC_SENTRY_DSN;
 const environment =
     import.meta.env.PUBLIC_SENTRY_ENVIRONMENT || import.meta.env.MODE || 'development';
 
+// First-party tunnel path (SPEC-181 follow-up). When set (e.g. `/api/event`),
+// the browser SDK POSTs all envelopes to this same-origin path instead of
+// directly to *.sentry.io, so ad-blockers (uBlock `||sentry.io^$3p`) cannot
+// intercept error reporting. A Cloudflare Worker bound to that path
+// (infra/cloudflare/sentry-tunnel/) parses the DSN and forwards to Sentry.
+// Leave unset to report directly to Sentry (the Worker must be live BEFORE this
+// is set — see the Worker README for the deploy order + CSP coupling).
+const tunnel = import.meta.env.PUBLIC_SENTRY_TUNNEL || undefined;
+
 // Only initialize Sentry when the user has consented to crash reporting.
 // Crash reporting is its own consent category (separate from analytics) so
 // users who opt out of behavioural tracking can still opt in to error
@@ -20,6 +29,9 @@ if (dsn && crashReportingAllowed) {
     Sentry.init({
         dsn,
         environment,
+        // Route envelopes through the first-party tunnel when configured (only
+        // included when set, so the default behavior is unchanged).
+        ...(tunnel ? { tunnel } : {}),
         release: import.meta.env.PUBLIC_SENTRY_RELEASE || 'development',
 
         initialScope: {

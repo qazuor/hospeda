@@ -142,6 +142,7 @@ explicitly via the `head-extra` slot.
 | `legal/privacidad` | Yes |
 | `legal/terminos` | Yes |
 | `alojamientos/[slug]` (when accommodation has FAQs) | Yes (T-067 fix) |
+| `destinos/[...path]` (when destination has FAQs) | Yes (SPEC-158) |
 
 ### AboutPage
 

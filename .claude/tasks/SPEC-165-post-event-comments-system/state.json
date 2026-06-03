@@ -622,9 +622,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 9,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 3.1
     }
