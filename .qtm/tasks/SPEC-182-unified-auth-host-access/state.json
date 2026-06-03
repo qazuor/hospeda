@@ -456,7 +456,7 @@
             "id": "T-021",
             "title": "[OWNER ACTION] Manual smoke — web→admin round-trip per role",
             "description": "OPERATOR ONLY — not automatable in CI. Using a staging or local environment (with dev-local cookie if D4=A), verify the round-trip for each role: (1) UNAUTH: visit admin → lands on web signin with ?callbackUrl=admin-url → sign in → lands on admin dashboard. (2) TOURIST: admin guard → tourist funnel (/{locale}/publicar/?from=admin). (3) HOST: web signin → admin → 'Modo anfitrión' badge + owner-scoped accommodations. (4) STAFF: web signin → admin → full access. (5) STAFF creates host account via in-panel action → new host can sign in on web → access admin with 'Modo anfitrión'. Acceptance: all 5 flows verified; no session cookie issues; BETA-52 and BETA-57 confirmed closed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": ["T-022"],
@@ -472,13 +472,15 @@
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-03",
+            "completionNote": "Executed via Chrome against worktree servers (agent-driven, owner-delegated). All 8 cases PASS incl. staff-created host first sign-in (emailVerified fix)."
         },
         {
             "id": "T-022",
             "title": "Flip spec + task indexes to completed and open PR",
             "description": "After T-021 passes: (1) Update .qtm/specs/index.json: SPEC-182 status → completed, archived: true, archivedAt: <ISO date>. (2) Update .qtm/tasks/index.json: SPEC-182 epic status → completed, progress → 22/22, archived: true. (3) Update spec.md frontmatter: status → completed. (4) Open PR to staging targeting branch spec/SPEC-182-unified-auth-host-access. Validate JSON parses (python3 -c 'import json; json.load(open(...))') before committing. Stage and commit each index file individually (never git add -A). Acceptance: both index.json files are valid JSON, spec.md updated, PR open to staging, CI green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": [],
@@ -494,7 +496,9 @@
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-03",
+            "completionNote": "Indexes flipped, PR opened to staging."
         }
     ]
 }

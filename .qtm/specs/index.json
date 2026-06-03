@@ -521,7 +521,7 @@
         {
             "specId": "SPEC-182",
             "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-182-unified-auth-host-access",
             "created": "2026-06-02T00:00:00.000Z",
