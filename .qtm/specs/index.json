@@ -2133,6 +2133,17 @@
             "complexity": "medium",
             "path": "SPEC-188-vitest-test-performance",
             "created": "2026-06-02T17:44:49Z"
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-182-unified-auth-host-access",
+            "created": "2026-06-02T00:00:00.000Z",
+            "archived": false,
+            "archivedAt": null,
+            "archiveNote": null
         }
     ]
 }
