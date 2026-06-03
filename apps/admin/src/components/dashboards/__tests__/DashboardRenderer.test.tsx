@@ -82,6 +82,12 @@ vi.mock('../widgets', () => ({
             data-widget-id={widget.id}
         />
     ),
+    CommentsFeedCard: ({ widget }: { widget: Widget }) => (
+        <div
+            data-testid="feed-card"
+            data-widget-id={widget.id}
+        />
+    ),
     DeferredWidget: ({
         phaseSpec,
         title
@@ -312,7 +318,7 @@ describe('DashboardRenderer', () => {
 
     // ── Deferred / phase-2 types ────────────────────────────────────────────
 
-    it('renders DeferredWidget for type=feed (phase-2 slot)', () => {
+    it('renders CommentsFeedCard for type=feed (live renderer, SPEC-165 T-016)', () => {
         const dashboard = makeDashboard([makeWidget({ id: 'f1', type: 'feed' })]);
         render(
             <TestWrapper>
@@ -322,7 +328,8 @@ describe('DashboardRenderer', () => {
                 />
             </TestWrapper>
         );
-        expect(screen.getByTestId('deferred-widget')).toBeInTheDocument();
+        expect(screen.getByTestId('feed-card')).toBeInTheDocument();
+        expect(screen.queryByTestId('deferred-widget')).not.toBeInTheDocument();
     });
 
     it('renders DeferredWidget for type=callout (phase-2 slot)', () => {
@@ -380,8 +387,9 @@ describe('DashboardRenderer', () => {
     // ── Deferred widget phaseSpec ────────────────────────────────────────────
 
     it('uses widget.config.phaseSpec as phaseSpec badge when present', () => {
+        // 'callout' is a deferred type — dispatches to DeferredWidget with the supplied phaseSpec.
         const dashboard = makeDashboard([
-            makeWidget({ id: 'f1', type: 'feed', config: { phaseSpec: 'SPEC-162' } })
+            makeWidget({ id: 'co1', type: 'callout', config: { phaseSpec: 'SPEC-162' } })
         ]);
         render(
             <TestWrapper>
@@ -398,7 +406,8 @@ describe('DashboardRenderer', () => {
     });
 
     it('falls back to "SPEC-155 Phase 2" when phaseSpec is not in config', () => {
-        const dashboard = makeDashboard([makeWidget({ id: 'f1', type: 'feed' })]);
+        // 'callout' is a deferred type — dispatches to DeferredWidget with the fallback label.
+        const dashboard = makeDashboard([makeWidget({ id: 'co1', type: 'callout' })]);
         render(
             <TestWrapper>
                 <DashboardRenderer
@@ -416,6 +425,8 @@ describe('DashboardRenderer', () => {
     // ── Mixed widget types ──────────────────────────────────────────────────
 
     it('renders all widget types in a mixed config without crashing', () => {
+        // 'feed' is now a live type (SPEC-165 T-016) → CommentsFeedCard.
+        // Only 'callout' is deferred here.
         const dashboard = makeDashboard([
             makeWidget({ id: 'k1', type: 'kpi' }),
             makeWidget({ id: 'l1', type: 'list' }),
@@ -438,7 +449,8 @@ describe('DashboardRenderer', () => {
         expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
         expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
         expect(screen.getByTestId('status-widget')).toBeInTheDocument();
-        expect(screen.getAllByTestId('deferred-widget')).toHaveLength(2);
+        expect(screen.getByTestId('feed-card')).toBeInTheDocument();
+        expect(screen.getAllByTestId('deferred-widget')).toHaveLength(1);
     });
 
     // ── Actualizar button ───────────────────────────────────────────────────

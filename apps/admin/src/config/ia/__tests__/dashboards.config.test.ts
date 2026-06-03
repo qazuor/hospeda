@@ -77,6 +77,8 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'editor.shortcuts',
     'editor.content.health.posts',
     'editor.content.health.events',
+    // SPEC-165 T-016: recent-comments feed card (editor-card-h, type='feed')
+    'editor.comments.recent',
 
     // T-020 ADMIN (admin.ts)
     'admin.accommodations.latest',
@@ -393,8 +395,9 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
 
         it('no live-source card in any dashboard uses a deferred type', () => {
             // A "live-source card" is one with config.source set and no config.deferred=true.
-            // Deferred types are those NOT in the live set: feed, callout, shortcut, map, calendar.
-            const deferredTypes = new Set(['feed', 'callout', 'shortcut', 'map', 'calendar']);
+            // Deferred types are those NOT in the live set: callout, shortcut, map, calendar.
+            // Note: 'feed' is a LIVE type since SPEC-165 T-016 (dispatches to CommentsFeedCard).
+            const deferredTypes = new Set(['callout', 'shortcut', 'map', 'calendar']);
             const allDashboards = [
                 dashboards.hostDashboard,
                 dashboards.editorDashboard,

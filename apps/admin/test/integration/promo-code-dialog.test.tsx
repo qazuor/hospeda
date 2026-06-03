@@ -91,16 +91,14 @@ vi.mock('@/components/ui/switch', () => ({
 // ---------------------------------------------------------------------------
 
 /**
- * Build a PromoCode object from the fixture (fixture uses string dates,
- * but PromoCode expects Date instances).
+ * Build a PromoCode object from the fixture.
+ *
+ * Updated for commit 3af9c5601: PromoCode fields are now all-string (ISO dates
+ * or null) — no Date instances — matching the API response DTO shape.
  */
 function buildPromoCode(overrides?: Partial<Record<string, unknown>>): PromoCode {
     return {
         ...mockPromoCode,
-        validFrom: new Date(mockPromoCode.validFrom),
-        validUntil: mockPromoCode.validUntil ? new Date(mockPromoCode.validUntil) : null,
-        createdAt: new Date(mockPromoCode.createdAt),
-        updatedAt: new Date(mockPromoCode.updatedAt),
         ...overrides
     } as unknown as PromoCode;
 }
@@ -260,7 +258,8 @@ describe('PromoCodeFormDialog', () => {
         expect(payload.code).toBe('SUMMER30');
         expect(payload.description).toBe('Summer sale');
         expect(payload.discountValue).toBe(30);
-        expect(payload.type).toBe('percentage');
+        // CreatePromoCodePayload uses `discountType`, not `type` (updated in 3af9c5601)
+        expect(payload.discountType).toBe('percentage');
     });
 
     it('calls onClose when cancel button is clicked', async () => {

@@ -30,11 +30,17 @@ export type AppLayoutProps = {
 function AppLayoutInner({ children }: AppLayoutProps) {
     return (
         <div className="min-h-screen bg-background text-foreground">
-            {/* Impersonation warning banner */}
-            <ImpersonationBanner />
+            {/* Sticky chrome: the impersonation banner (when active) stacks
+                above the header inside a single sticky container, so the two
+                never overlap at top-0 on scroll (BETA-79). The banner and
+                header are no longer individually sticky. */}
+            <div className="sticky top-0 z-50">
+                {/* Impersonation warning banner */}
+                <ImpersonationBanner />
 
-            {/* Level 1: Header with config-driven section navigation */}
-            <Header />
+                {/* Level 1: Header with config-driven section navigation */}
+                <Header />
+            </div>
 
             <div className="flex min-h-[calc(100vh-3.5rem)]">
                 {/* Level 2: Contextual sidebar */}

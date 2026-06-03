@@ -102,10 +102,11 @@ describe('OwnTagManager — supplemental (T-044)', () => {
      * D-022, AC-003-04: All three lifecycle states relevant to user-tags
      * (ACTIVE / INACTIVE / ARCHIVED) carry distinct CSS badge classes.
      *
-     * The component renders a state badge via STATE_BADGE map:
-     *   ACTIVE   → 'bg-green-100 text-green-800'
+     * The component renders a state badge via STATE_BADGE map (OwnTagRow.tsx).
+     * Classes updated in commit 45a6d894b (semantic token migration):
+     *   ACTIVE   → 'bg-success/15 text-success'
      *   INACTIVE → 'bg-gray-100 text-gray-600'
-     *   ARCHIVED → 'bg-orange-100 text-orange-700'
+     *   ARCHIVED → 'bg-warning/15 text-warning'
      *
      * DRAFT is a valid LifecycleStatusEnum value but does not apply to
      * user-tags (a user creates a tag and it is immediately ACTIVE; there
@@ -135,11 +136,14 @@ describe('OwnTagManager — supplemental (T-044)', () => {
         const inactiveBadge = screen.getByText('Inactivo');
         const archivedBadge = screen.getByText('Archivado');
 
-        // Verify visual distinction: ACTIVE uses green, INACTIVE uses gray, ARCHIVED uses orange.
-        // The CSS classes are sourced directly from the STATE_BADGE map in OwnTagRow.tsx.
-        expect(activeBadge.className).toContain('bg-green-100');
+        // Verify visual distinction via the STATE_BADGE map in OwnTagRow.tsx.
+        // Classes updated in commit 45a6d894b (semantic token migration):
+        //   ACTIVE   → 'bg-success/15 text-success'
+        //   INACTIVE → 'bg-gray-100 text-gray-600'
+        //   ARCHIVED → 'bg-warning/15 text-warning'
+        expect(activeBadge.className).toContain('bg-success/15');
         expect(inactiveBadge.className).toContain('bg-gray-100');
-        expect(archivedBadge.className).toContain('bg-orange-100');
+        expect(archivedBadge.className).toContain('bg-warning/15');
 
         // Confirm the three classes are distinct (no two share the same bg class)
         const bgClasses = [

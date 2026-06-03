@@ -253,13 +253,32 @@ describe('buildCspHeader', () => {
         expect(header).toContain('report-uri https://sentry.io/report');
     });
 
+    it('keeps https://*.sentry.io in connect-src when the tunnel is OFF (default)', () => {
+        // SPEC-181 follow-up: with no first-party Sentry tunnel, the browser SDK
+        // reports directly to *.sentry.io, so the CSP must still allow it.
+        const header = buildCspHeader({ nonce: 'x' });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
+        expect(connectSrc).toContain('https://*.sentry.io');
+    });
+
+    it('drops https://*.sentry.io from connect-src when the tunnel is ON', () => {
+        // SPEC-181 follow-up: when PUBLIC_SENTRY_TUNNEL is set, envelopes go
+        // through the same-origin /api/event path (covered by 'self'); the
+        // external host must NOT appear or ad-blockers regain a host to block.
+        const header = buildCspHeader({ nonce: 'x', sentryTunnelEnabled: true });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
+        expect(connectSrc).not.toContain('sentry.io');
+        // 'self' still covers the same-origin tunnel path.
+        expect(connectSrc).toContain("'self'");
+    });
+
     it('should allow OpenStreetMap tile hosts in img-src and connect-src (SPEC-097)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).toContain('https://*.tile.openstreetmap.org');
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
-    it('should allow PostHog Cloud (US) hosts in script-src, connect-src, and img-src (SPEC-140)', () => {
+    it('should NOT include external PostHog hosts — analytics is proxied first-party via /api/relay (SPEC-181)', () => {
         // Arrange
         const header = buildCspHeader({ nonce: 'x' });
 
@@ -269,15 +288,18 @@ describe('buildCspHeader', () => {
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
 
-        // script-src and connect-src need BOTH the ingestion host and the
-        // assets host (PostHog loads sub-bundles from us-assets).
-        expect(scriptSrc).toContain('https://us.i.posthog.com');
-        expect(scriptSrc).toContain('https://us-assets.i.posthog.com');
-        expect(connectSrc).toContain('https://us.i.posthog.com');
-        expect(connectSrc).toContain('https://us-assets.i.posthog.com');
+        // SPEC-181: PostHog ingestion + assets go through the same-origin /api/relay
+        // proxy (covered by 'self'). The external hosts must NOT appear in any
+        // directive, or ad-blockers regain a host to block. Replaces the SPEC-140
+        // allowlist; guards against accidental re-introduction.
+        expect(scriptSrc).not.toContain('us.i.posthog.com');
+        expect(scriptSrc).not.toContain('us-assets.i.posthog.com');
+        expect(connectSrc).not.toContain('us.i.posthog.com');
+        expect(connectSrc).not.toContain('us-assets.i.posthog.com');
+        expect(imgSrc).not.toContain('us.i.posthog.com');
 
-        // img-src only needs the ingestion host (1x1 pixel fallback origin).
-        expect(imgSrc).toContain('https://us.i.posthog.com');
+        // script-src stays on strict-dynamic with the request nonce.
+        expect(scriptSrc).toContain("'nonce-x' 'strict-dynamic'");
     });
 
     it('should not include report-uri when not provided', () => {

@@ -1,0 +1,258 @@
+{
+    "version": "1.0",
+    "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+    "specRef": "SPEC-181-posthog-reverse-proxy",
+    "created": "2026-06-02T00:00:00.000Z",
+    "summary": {
+        "total": 11,
+        "pending": 2,
+        "inProgress": 0,
+        "completed": 9,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Author Cloudflare Worker script (posthog-proxy/worker.js)",
+            "description": "Create infra/cloudflare/posthog-proxy/worker.js using the official PostHog Cloudflare Worker template (~50 lines, no deps). Worker must: strip /ingest prefix, route /static/* to us-assets.i.posthog.com and all other paths to us.i.posthog.com, forward X-Forwarded-For with real client IP, set Cache-Control: no-store on ingestion endpoints (/e/, /decide/, /flags/), return upstream response unmodified. Acceptance: worker.js correctly rewrites paths, no npm deps, code compiles (wrangler validate or manual review).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004"],
+            "subtasks": [],
+            "tags": ["infra", "cloudflare-worker", "phase-worker"],
+            "phase": "phase-worker",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add wrangler.toml for posthog-proxy Worker",
+            "description": "Create infra/cloudflare/posthog-proxy/wrangler.toml with name=posthog-proxy, compatibility_date, and route placeholder (hospeda.com.ar/ingest/*). Mark routes as a placeholder — actual route binding is done in the Cloudflare dashboard by the owner. Acceptance: wrangler.toml is valid, wrangler dev starts without errors.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [],
+            "tags": ["infra", "cloudflare-worker", "phase-worker"],
+            "phase": "phase-worker",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Write Worker README with deploy instructions + CSP coupling gotcha",
+            "description": "Create infra/cloudflare/posthog-proxy/README.md documenting: (1) what the Worker does, (2) deploy steps (wrangler deploy, set CF route in dashboard), (3) CRITICAL: Worker MUST be deployed and route verified BEFORE setting PUBLIC_POSTHOG_HOST in Coolify — reversing order breaks PostHog init, (4) how to verify (curl + DevTools), (5) staging vs prod route config. Acceptance: README covers all operator steps, CSP coupling gotcha is prominently called out.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["infra", "docs", "phase-worker"],
+            "phase": "phase-worker",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Write Worker unit test (path rewriting + no-cache headers)",
+            "description": "Write a Vitest test (or wrangler worker-test-env test) in infra/cloudflare/posthog-proxy/worker.test.js verifying: (a) /ingest/e/ → upstream us.i.posthog.com/e/ with Cache-Control: no-store, (b) /ingest/decide/ → us.i.posthog.com/decide/ with Cache-Control: no-store, (c) /ingest/static/array.js → us-assets.i.posthog.com/static/array.js (no cache restriction), (d) X-Forwarded-For header is set from the real client IP. Acceptance: tests pass, coverage of the path-routing logic ≥90%.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["infra", "testing", "cloudflare-worker", "phase-worker"],
+            "phase": "phase-worker",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": null,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:00:00Z",
+                "completed": "2026-06-02T08:00:00Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update CSP in middleware-helpers.ts — remove hardcoded PostHog hosts",
+            "description": "In apps/web/src/lib/middleware-helpers.ts (around lines 508, 529-530): remove 'https://us.i.posthog.com' and 'https://us-assets.i.posthog.com' from script-src, connect-src, and img-src. Update the comment block (lines 500-505) to document the proxy approach (Worker on /ingest/*; same-origin so 'self' covers it). The proxy path is same-origin for both hospeda.com.ar (prod) and staging.hospeda.com.ar — no new host entries needed. Acceptance: the four external PostHog host strings are absent from the CSP output, typecheck clean.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-011"],
+            "subtasks": [],
+            "tags": ["web", "csp", "security", "phase-app"],
+            "phase": "phase-app",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Update env-registry PUBLIC_POSTHOG_HOST description + .env.example",
+            "description": "In packages/config/src/env-registry.client.ts (lines 184-200): update description, descriptionEs, defaultValue, exampleValue, howToObtain, howToObtainEs to reflect that the recommended value is https://hospeda.com.ar/ingest (the Worker route) and that changing this var requires an atomic CSP update in middleware-helpers.ts. In apps/web/.env.example (line 46): update the commented-out PUBLIC_POSTHOG_HOST example to show https://hospeda.com.ar/ingest. Acceptance: registry updated, example clear, env:check:registry CI gate still passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["web", "config", "env-registry", "phase-app"],
+            "phase": "phase-app",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "CSP regression test — PostHog external hosts absent from directives",
+            "description": "Add a test in apps/web/test/ (or extend apps/web/test/lib/middleware-helpers.test.ts if it exists) that calls buildCspHeader (or the function that builds the CSP directive string) and asserts that 'us.i.posthog.com' and 'us-assets.i.posthog.com' do NOT appear in any directive. This is a regression guard to prevent re-introduction of the external hosts. Acceptance: test passes green, fails if either external host is added back.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["web", "csp", "testing", "phase-app"],
+            "phase": "phase-app",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:10:00Z",
+                "completed": "2026-06-02T08:10:00Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Write docs/guides/posthog-proxy.md",
+            "description": "Create docs/guides/posthog-proxy.md documenting: (1) why the proxy exists (ad-blocker loss, BETA-77), (2) architecture diagram (browser → CF Worker → PostHog Cloud), (3) the CSP coupling rule (Worker before env var before CSP change, atomicity), (4) deployment checklist (Worker deploy, CF route, Coolify env, verify), (5) troubleshooting (events 404 = Worker not deployed; CSP violations = old hosts still in directives). Acceptance: doc complete, all operator steps covered.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["docs", "phase-docs"],
+            "phase": "phase-docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:20:00Z",
+                "completed": "2026-06-02T08:20:00Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update SPEC-140 reference in docs to note SPEC-181 proxy followup",
+            "description": "In apps/web/src/components/analytics/PostHogScript.astro (or wherever SPEC-140 is referenced in docs), add a note that SPEC-181 introduced the reverse proxy and that PUBLIC_POSTHOG_HOST now points to hospeda.com.ar/ingest. Update any docs/guides/ that reference the direct PostHog host. Acceptance: no stale references to the old direct-host setup in docs.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["docs", "phase-docs"],
+            "phase": "phase-docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": "2026-06-02T08:20:00Z",
+                "completed": "2026-06-02T08:20:00Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "[OWNER ACTION] Deploy Cloudflare Worker + configure route",
+            "description": "OPERATOR ONLY — not automatable. Deploy the Worker: (1) cd infra/cloudflare/posthog-proxy, (2) wrangler deploy, (3) in Cloudflare dashboard add route hospeda.com.ar/ingest/* → posthog-proxy Worker (and optionally staging.hospeda.com.ar/ingest/* → same Worker). (4) Verify: curl https://hospeda.com.ar/ingest/e/ returns 200 from PostHog (or 400 if no payload — the key is that it proxies, not 404/522). Acceptance: Worker live, route active, curl verification passes BEFORE proceeding to T-011.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["infra", "ops", "cloudflare", "owner-action", "phase-verify"],
+            "phase": "phase-verify",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "[OWNER ACTION] Set PUBLIC_POSTHOG_HOST in Coolify + redeploy + manual smoke",
+            "description": "OPERATOR ONLY — not automatable. ONLY after T-010 is verified: (1) In Coolify: hospeda-web-prod (and hospeda-web-staging) → Environment Variables → set PUBLIC_POSTHOG_HOST=https://hospeda.com.ar/ingest (or https://staging.hospeda.com.ar/ingest for staging). (2) Redeploy web app (atomic: CSP change from T-005 + env var change deploy together). (3) Manual smoke: open site with uBlock Origin enabled, open DevTools Network, verify /ingest/e/ requests return 200, verify events appear in PostHog live stream, verify no CSP violations in console. (4) Flip spec status to completed + sync indexes (T-011 triggers closeout). Acceptance: events flowing through proxy with ad-blocker enabled, no CSP violations, PostHog dashboard shows events.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006", "T-007", "T-008", "T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ops", "cloudflare", "owner-action", "smoke", "phase-verify"],
+            "phase": "phase-verify",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

@@ -77,42 +77,43 @@ describe('RoutePermissionGuard', () => {
     });
 
     describe('when permissions are still loading (empty array)', () => {
-        it('returns null without navigating', () => {
+        it('renders sr-only placeholder without navigating', () => {
             // Arrange
             mockUseUserPermissions.mockReturnValue([]);
             mockUseNavigate.mockReturnValue(mockNavigate);
 
             // Act
-            const { container } = render(
+            render(
                 <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
                     <span>Loading guard content</span>
                 </RoutePermissionGuard>
             );
 
-            // Assert - nothing is rendered
+            // Assert - children not rendered, sr-only placeholder shown instead
             expect(screen.queryByText('Loading guard content')).not.toBeInTheDocument();
-            expect(container).toBeEmptyDOMElement();
+            // The guard now renders a sr-only h1 placeholder for a11y (commit a83bf89ee)
+            expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
             // navigate should NOT have been called because we treat empty as loading
             expect(mockNavigate).not.toHaveBeenCalled();
         });
     });
 
     describe('when user lacks the required permission', () => {
-        it('returns null and navigates to /dashboard by default', () => {
+        it('renders sr-only placeholder and navigates to /dashboard by default', () => {
             // Arrange
             mockUseUserPermissions.mockReturnValue([PermissionEnum.ACCOMMODATION_VIEW_ALL]);
             mockUseNavigate.mockReturnValue(mockNavigate);
 
             // Act
-            const { container } = render(
+            render(
                 <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
                     <span>Should not appear</span>
                 </RoutePermissionGuard>
             );
 
-            // Assert
+            // Assert - children not rendered, sr-only placeholder shown instead (commit a83bf89ee)
             expect(screen.queryByText('Should not appear')).not.toBeInTheDocument();
-            expect(container).toBeEmptyDOMElement();
+            expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
             expect(mockNavigate).toHaveBeenCalledWith({ to: '/dashboard' });
         });
 
@@ -187,13 +188,13 @@ describe('RoutePermissionGuard', () => {
             expect(mockNavigate).not.toHaveBeenCalled();
         });
 
-        it('navigates away when user is missing one of the required permissions', () => {
+        it('renders sr-only placeholder and navigates away when user is missing one of the required permissions', () => {
             // Arrange
             mockUseUserPermissions.mockReturnValue([PermissionEnum.ACCOMMODATION_CREATE]);
             mockUseNavigate.mockReturnValue(mockNavigate);
 
             // Act
-            const { container } = render(
+            render(
                 <RoutePermissionGuard
                     permissions={[
                         PermissionEnum.ACCOMMODATION_CREATE,
@@ -205,9 +206,9 @@ describe('RoutePermissionGuard', () => {
                 </RoutePermissionGuard>
             );
 
-            // Assert
+            // Assert - children not rendered, sr-only placeholder shown instead (commit a83bf89ee)
             expect(screen.queryByText('AND requires all')).not.toBeInTheDocument();
-            expect(container).toBeEmptyDOMElement();
+            expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
             expect(mockNavigate).toHaveBeenCalledWith({ to: '/dashboard' });
         });
     });

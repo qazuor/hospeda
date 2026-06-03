@@ -1,0 +1,27 @@
+# Cloudflare Worker config for the PostHog reverse proxy (SPEC-181).
+#
+# Deploy is a manual OWNER action (T-010). Two environments are defined so each
+# origin is one command:
+#   pnpm --filter @repo/posthog-proxy-worker exec wrangler deploy --env staging
+#   pnpm --filter @repo/posthog-proxy-worker exec wrangler deploy --env production
+#
+# See README.md for the deploy ORDER and the CSP coupling gotcha (the Worker
+# must be live + PUBLIC_POSTHOG_HOST set to the proxy BEFORE the web redeploys).
+
+name = "posthog-proxy"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Staging: deploys a Worker named `posthog-proxy-staging` bound to the staging
+# origin's /api/relay path.
+[env.staging]
+routes = [
+  { pattern = "staging.hospeda.com.ar/api/relay/*", zone_name = "hospeda.com.ar" }
+]
+
+# Production: deploys a Worker named `posthog-proxy-production` bound to the
+# production origin's /api/relay path.
+[env.production]
+routes = [
+  { pattern = "hospeda.com.ar/api/relay/*", zone_name = "hospeda.com.ar" }
+]

@@ -1,11 +1,13 @@
 ---
 specId: SPEC-165
 title: Post and Event Comments System
-status: in-progress
+status: completed
 complexity: high
 owner: qazuor
 created: 2026-05-27
 revised: 2026-05-30
+completedAt: 2026-06-02T07:22:56Z
+completionRef: "PR #1349 (backend) + #1368 (frontend follow-ups); e2e verified in close-out session 2026-06-02"
 related:
   - SPEC-155 (admin-dashboards-v1 — origin; feeds EDITOR card H)
   - SPEC-164 (admin-billing-super-only — parallel spec, same sprint)

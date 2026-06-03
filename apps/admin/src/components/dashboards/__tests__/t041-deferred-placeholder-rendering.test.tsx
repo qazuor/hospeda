@@ -87,6 +87,15 @@ vi.mock('../widgets', () => ({
         />
     ),
     /**
+     * CommentsFeedCard stub — 'feed' is a live type (SPEC-165 T-016).
+     */
+    CommentsFeedCard: ({ widget }: { widget: Widget }) => (
+        <div
+            data-testid="feed-card"
+            data-widget-id={widget.id}
+        />
+    ),
+    /**
      * DeferredWidget stub — exposes phaseSpec and title as data attributes
      * so assertions remain independent of i18n output and icon rendering.
      */
@@ -225,7 +234,8 @@ describe('T-041 deferred slot rendering — each deferred type renders DeferredW
         expect(screen.getByTestId('deferred-widget')).toBeInTheDocument();
     });
 
-    it('type=feed renders DeferredWidget without error', () => {
+    it('type=feed renders CommentsFeedCard without error (live renderer, SPEC-165 T-016)', () => {
+        // 'feed' graduated from deferred to live in SPEC-165 T-016.
         const dashboard = makeDashboard([makeWidget({ id: 'w-feed', type: 'feed' })]);
         render(
             <TestWrapper>
@@ -235,7 +245,8 @@ describe('T-041 deferred slot rendering — each deferred type renders DeferredW
                 />
             </TestWrapper>
         );
-        expect(screen.getByTestId('deferred-widget')).toBeInTheDocument();
+        expect(screen.getByTestId('feed-card')).toBeInTheDocument();
+        expect(screen.queryByTestId('deferred-widget')).not.toBeInTheDocument();
     });
 
     it('type=shortcut renders DeferredWidget without error', () => {
@@ -301,10 +312,11 @@ describe('T-041 deferred slot rendering — live slots unaffected by deferred si
         expect(screen.getByTestId('deferred-widget')).toBeInTheDocument();
     });
 
-    it('dashboard with live list + deferred feed renders both correctly', () => {
+    it('dashboard with live list + live feed renders both correctly (SPEC-165 T-016)', () => {
+        // 'feed' is a live type dispatched to CommentsFeedCard — not deferred.
         const dashboard = makeDashboard([
             makeWidget({ id: 'live-list', type: 'list' }),
-            makeWidget({ id: 'deferred-feed', type: 'feed' })
+            makeWidget({ id: 'live-feed', type: 'feed' })
         ]);
         render(
             <TestWrapper>
@@ -316,10 +328,13 @@ describe('T-041 deferred slot rendering — live slots unaffected by deferred si
         );
 
         expect(screen.getByTestId('list-widget')).toBeInTheDocument();
-        expect(screen.getByTestId('deferred-widget')).toBeInTheDocument();
+        expect(screen.getByTestId('feed-card')).toBeInTheDocument();
+        expect(screen.queryByTestId('deferred-widget')).not.toBeInTheDocument();
     });
 
     it('mixed config: kpi+list+chart+checklist+status+callout+feed — all render', () => {
+        // 'feed' is a live type (SPEC-165 T-016) → CommentsFeedCard.
+        // Only 'callout' is deferred.
         const dashboard = makeDashboard([
             makeWidget({ id: 'k', type: 'kpi' }),
             makeWidget({ id: 'l', type: 'list' }),
@@ -343,8 +358,9 @@ describe('T-041 deferred slot rendering — live slots unaffected by deferred si
         expect(screen.getByTestId('chart-widget')).toBeInTheDocument();
         expect(screen.getByTestId('checklist-widget')).toBeInTheDocument();
         expect(screen.getByTestId('status-widget')).toBeInTheDocument();
-        // callout + feed both go to DeferredWidget.
-        expect(screen.getAllByTestId('deferred-widget')).toHaveLength(2);
+        expect(screen.getByTestId('feed-card')).toBeInTheDocument();
+        // Only callout goes to DeferredWidget.
+        expect(screen.getAllByTestId('deferred-widget')).toHaveLength(1);
     });
 
     it('live widgets are not replaced by DeferredWidget when adjacent deferred slots exist', () => {
@@ -399,7 +415,8 @@ describe('T-041 deferred slot rendering — phaseSpec propagation', () => {
     });
 
     it('phaseSpec falls back to "SPEC-155 Phase 2" when widget.config has no phaseSpec', () => {
-        const dashboard = makeDashboard([makeWidget({ id: 'w-nophase', type: 'feed' })]);
+        // Use a truly deferred type ('callout') — 'feed' is live since SPEC-165 T-016.
+        const dashboard = makeDashboard([makeWidget({ id: 'w-nophase', type: 'callout' })]);
         render(
             <TestWrapper>
                 <DashboardRenderer
@@ -437,6 +454,7 @@ describe('T-041 deferred slot rendering — phaseSpec propagation', () => {
     });
 
     it('multiple deferred widgets each display their own phaseSpec independently', () => {
+        // 'feed' is live since SPEC-165 T-016 — use 'map' instead to keep 3 deferred slots.
         const dashboard = makeDashboard([
             makeWidget({
                 id: 'w-spec162',
@@ -445,7 +463,7 @@ describe('T-041 deferred slot rendering — phaseSpec propagation', () => {
             }),
             makeWidget({
                 id: 'w-spec159',
-                type: 'feed',
+                type: 'map',
                 config: { phaseSpec: 'SPEC-159' }
             }),
             makeWidget({
@@ -479,9 +497,10 @@ describe('T-041 deferred slot rendering — phaseSpec propagation', () => {
 
 describe('T-041 deferred slot rendering — all-deferred dashboard', () => {
     it('a dashboard with only deferred widgets renders all DeferredWidgets without error', () => {
+        // 'feed' is live (SPEC-165 T-016) — use 'calendar' to keep 3 truly-deferred slots.
         const dashboard = makeDashboard([
             makeWidget({ id: 'd1', type: 'callout', config: { phaseSpec: 'SPEC-162' } }),
-            makeWidget({ id: 'd2', type: 'feed', config: { phaseSpec: 'SPEC-159' } }),
+            makeWidget({ id: 'd2', type: 'calendar', config: { phaseSpec: 'SPEC-159' } }),
             makeWidget({ id: 'd3', type: 'shortcut', config: { phaseSpec: 'SPEC-163' } })
         ]);
 
@@ -500,9 +519,10 @@ describe('T-041 deferred slot rendering — all-deferred dashboard', () => {
     });
 
     it('no live widget testids appear in an all-deferred dashboard', () => {
+        // 'feed' is live (SPEC-165 T-016) — use 'map' instead as a deferred slot.
         const dashboard = makeDashboard([
             makeWidget({ id: 'd1', type: 'callout' }),
-            makeWidget({ id: 'd2', type: 'feed' })
+            makeWidget({ id: 'd2', type: 'map' })
         ]);
         render(
             <TestWrapper>
@@ -518,6 +538,7 @@ describe('T-041 deferred slot rendering — all-deferred dashboard', () => {
         expect(screen.queryByTestId('chart-widget')).not.toBeInTheDocument();
         expect(screen.queryByTestId('checklist-widget')).not.toBeInTheDocument();
         expect(screen.queryByTestId('status-widget')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('feed-card')).not.toBeInTheDocument();
         expect(screen.getAllByTestId('deferred-widget')).toHaveLength(2);
     });
 });

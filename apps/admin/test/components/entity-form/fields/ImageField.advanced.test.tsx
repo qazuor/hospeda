@@ -23,6 +23,9 @@ import { ImageField, type ImageValue } from '@/components/entity-form/fields/Ima
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { ModerationStatusEnum } from '@repo/schemas';
 
+// New uploads always carry moderationState PENDING (commit 61f08b016).
+const PENDING = ModerationStatusEnum.PENDING;
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -89,7 +92,8 @@ describe('ImageField — happy path upload', () => {
         });
         expect(onChange).toHaveBeenCalledWith({
             url: 'https://cdn.example.com/new.jpg',
-            alt: 'good.jpg'
+            alt: 'good.jpg',
+            moderationState: PENDING
         });
     });
 
@@ -114,7 +118,8 @@ describe('ImageField — happy path upload', () => {
             await waitFor(() => {
                 expect(onChange).toHaveBeenCalledWith({
                     url: 'blob:mocked',
-                    alt: 'ok.png'
+                    alt: 'ok.png',
+                    moderationState: PENDING
                 });
             });
         } finally {

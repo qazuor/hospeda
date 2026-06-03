@@ -7,9 +7,12 @@ export default defineConfig({
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
         // Default 5s is too tight under parallel load (3 forks + concurrent monorepo
-        // packages). A handful of tests cold-import and instantiate Hono apps; bumping
-        // to 15s avoids flakes without masking real hangs.
-        testTimeout: 15000,
+        // packages). A handful of tests cold-import and instantiate Hono apps. 15s held
+        // until the suite grew (SPEC-156/165/177 + baseline-recovery); under CI load the
+        // route-module-wiring tests (platform-settings-admin/public) now cold-import in
+        // ~16s and intermittently tripped the 15s cap, failing shard 3. Bumped to 30s for
+        // headroom; the real fix (cutting per-file cold-import cost) is tracked in SPEC-188.
+        testTimeout: 30000,
         pool: 'forks',
         poolOptions: {
             forks: {

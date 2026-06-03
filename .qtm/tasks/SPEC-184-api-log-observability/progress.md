@@ -34,6 +34,7 @@ T-003 + T-004 + T-006 + T-011 + T-014 → T-015 → T-016
 ## Cross-Spec Coordination
 
 ### SPEC-180 (Sentry, in-progress) — BLOCKING for Phase 2
+
 SPEC-180 is adding `registerCaptureHook` to `@repo/logger`. Before starting T-005,
 the implementer MUST check the SPEC-180 branch for any existing hook infrastructure.
 If `registerCaptureHook` already exists, extend it (shared `registerHook` API) rather
@@ -41,11 +42,13 @@ than building a parallel registry. The goal is ONE generic hook registry in
 `packages/logger/src/hooks.ts` that both specs use.
 
 ### SPEC-162 (audit-log query, draft) — BOUNDARY
+
 SPEC-162 owns domain-specific audit logs (user/resource context). SPEC-184 owns
 general application WARN/ERROR logs. Do NOT conflate: `app_log_entries` is NOT an
 audit log table. No overlap in data model or UI.
 
 ### SPEC-161 (cron_runs, shipped) — PRECEDENT
+
 Use `cron_runs` / `CronRunModel` / `CronRunService` / `cron-run-purge` as the
 template for `app_log_entries` / `AppLogEntryModel` / `AppLogEntryService` /
 `app-log-purge`. Same append-only design, same purge pattern, same manifest

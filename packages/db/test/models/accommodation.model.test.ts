@@ -101,8 +101,14 @@ describe('AccommodationModel', () => {
         const relations = { faqs: true };
         const result = await model.findWithRelations(where, relations);
 
-        // The faqs relation must reach Drizzle's `with` clause.
-        expect(findFirst).toHaveBeenCalledWith(expect.objectContaining({ with: { faqs: true } }));
+        // The faqs relation must reach Drizzle's `with` clause carrying the
+        // SPEC-177 config (display_order ordering + soft-delete filter), not a
+        // bare `true` — that config is what makes the relation load correctly.
+        const withArg = (findFirst.mock.calls[0]?.[0] as { with?: Record<string, unknown> })?.with;
+        expect(withArg).toHaveProperty('faqs');
+        expect(withArg?.faqs).toEqual(
+            expect.objectContaining({ where: expect.any(Function), orderBy: expect.any(Function) })
+        );
         // It must NOT fall back to findOne, which drops relations entirely.
         expect(mockFindOne).not.toHaveBeenCalled();
         expect(result).toEqual({ id: '1', faqs });

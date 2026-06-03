@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-188",
+    "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "approved",
+    "created": "2026-06-02T17:44:49Z",
+    "approved": "2026-06-02T17:44:49Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["ci", "testing", "vitest", "performance", "infrastructure", "monorepo"]
+}

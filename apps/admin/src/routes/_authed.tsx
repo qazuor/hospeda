@@ -59,12 +59,14 @@ function AuthedNotFoundComponent() {
  */
 export const Route = createFileRoute('/_authed')({
     beforeLoad: async ({ location }) => {
-        const authState = await fetchAuthSession();
-
-        // Resolve the user's preferred locale eagerly. Cheap (one read of the
-        // request's Accept-Language header) and lets `decideAuthedGuard` stay
-        // a pure function with no I/O.
-        const { locale: preferredLocale } = await fetchPreferredLocale();
+        // Resolve the session and the preferred locale in parallel: the locale
+        // is a pure Accept-Language read with no dependency on the auth state,
+        // so the two server functions need not run sequentially. Keeps
+        // `decideAuthedGuard` a pure function with no I/O. (BETA-71.)
+        const [authState, { locale: preferredLocale }] = await Promise.all([
+            fetchAuthSession(),
+            fetchPreferredLocale()
+        ]);
 
         const decision = decideAuthedGuard({
             authState,

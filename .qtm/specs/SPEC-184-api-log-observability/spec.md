@@ -46,6 +46,7 @@ captures stdout/stderr automatically with configurable retention. There are NO l
 volume mounts or rotation. Writing to the container filesystem would be invisible to
 Coolify's log viewer, leak disk space with no purge, and require volume mount ops.
 **File persistence is therefore OUT OF SCOPE.** It is replaced by:
+
 - Documented stdout → Coolify retention (free, already works).
 - A DB sink for WARN+ERROR only (queryable by admin).
 - A Loki+Grafana note as a PHASE-2 future option (free, self-hosted, NOT implemented here).
@@ -56,6 +57,7 @@ with user/resource context). This spec covers **general application logs** (WARN
 surfaced by the API logger). Keep them DISTINCT. Do NOT build an audit-log viewer here.
 
 **Precedents to reuse (do not rebuild):**
+
 - `cron_runs` table + `CronRunModel` + `CronRunService` + `cron-run-purge` job
   (SPEC-161) — append-only observability table + purge pattern. Use the same shape.
 - `schedules.manifest.ts` — cron job manifest SSOT. The purge job for `app_log_entries`
@@ -112,6 +114,7 @@ that both SPEC-180 (capture) and SPEC-184 (sink) call — so they coexist cleanl
 don't each build their own registry.
 
 **Coordination protocol:**
+
 - Whichever spec lands first (SPEC-180 or SPEC-184) builds the generic hook infrastructure.
 - The second spec extends it rather than adding a parallel mechanism.
 - The implementer MUST read the SPEC-180 branch before starting Phase 2, or coordinate

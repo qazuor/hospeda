@@ -1,0 +1,29 @@
+{
+    "specId": "SPEC-182",
+    "title": "Unified Authentication + Host-Mode Access Model",
+    "type": "feature",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-06-02T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "linear": ["BETA-52", "BETA-57"],
+    "tags": [
+        "auth",
+        "web",
+        "admin",
+        "better-auth",
+        "session",
+        "host-mode",
+        "cookie",
+        "redirect",
+        "signup-as-host",
+        "permissions",
+        "callbackUrl",
+        "cross-subdomain",
+        "dev-local",
+        "beta-52",
+        "beta-57"
+    ]
+}

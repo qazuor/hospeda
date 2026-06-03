@@ -1,0 +1,34 @@
+# Cloudflare Worker config for the Sentry tunnel (SPEC-181 follow-up).
+#
+# Sibling of infra/cloudflare/posthog-proxy/. Both are first-party reverse
+# proxies that defeat ad-blockers, but they bind DIFFERENT paths and forward to
+# DIFFERENT upstreams — do NOT merge them:
+#   - posthog-proxy  ->  /api/relay/*  ->  PostHog Cloud (fixed host, passthrough)
+#   - sentry-tunnel  ->  /api/event    ->  Sentry (host derived from envelope DSN)
+#
+# Deploy is a manual OWNER action. Two environments are defined so each origin
+# is one command:
+#   pnpm --filter @repo/sentry-tunnel-worker exec wrangler deploy --env staging
+#   pnpm --filter @repo/sentry-tunnel-worker exec wrangler deploy --env production
+#
+# See README.md for the deploy ORDER and the CSP coupling gotcha (the Worker
+# must be live + PUBLIC_SENTRY_TUNNEL set BEFORE the web redeploys with the CSP
+# that drops https://*.sentry.io).
+
+name = "sentry-tunnel"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Staging: deploys a Worker named `sentry-tunnel-staging` bound to the staging
+# origin's exact /api/event path.
+[env.staging]
+routes = [
+  { pattern = "staging.hospeda.com.ar/api/event", zone_name = "hospeda.com.ar" }
+]
+
+# Production: deploys a Worker named `sentry-tunnel-production` bound to the
+# production origin's exact /api/event path.
+[env.production]
+routes = [
+  { pattern = "hospeda.com.ar/api/event", zone_name = "hospeda.com.ar" }
+]

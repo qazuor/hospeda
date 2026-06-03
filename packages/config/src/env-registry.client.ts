@@ -96,6 +96,23 @@ export const CLIENT_WEB_ENV_VARS = [
             'Etiqueta libre que se aplica a todos los eventos de Sentry del web app (SSR y browser). Poné `production` en hospeda-web-prod y `staging` en hospeda-web-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Astro en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
     },
     {
+        name: 'PUBLIC_SENTRY_TUNNEL',
+        description:
+            'First-party tunnel path for the Sentry browser SDK (SPEC-181 follow-up). RECOMMENDED: `/api/event` so ad-blockers (uBlock `||sentry.io^$3p`) cannot intercept error reporting. When set, the SDK POSTs envelopes to this same-origin path and a Cloudflare Worker (infra/cloudflare/sentry-tunnel/) parses the DSN and forwards to Sentry. Setting this ALSO drops `https://*.sentry.io` from the web CSP connect-src (same deploy, automatic). Leave unset to report directly to Sentry. DEPLOY ORDER: the Worker must be live BEFORE this is set, or Sentry breaks silently.',
+        descriptionEs:
+            'Path del tunnel first-party para el SDK de Sentry del browser (follow-up de SPEC-181). RECOMENDADO: `/api/event` para que los ad-blockers (uBlock `||sentry.io^$3p`) no intercepten el reporte de errores. Cuando se setea, el SDK hace POST de los envelopes a ese path same-origin y un Cloudflare Worker (infra/cloudflare/sentry-tunnel/) parsea el DSN y reenvía a Sentry. Setearlo TAMBIÉN saca `https://*.sentry.io` del connect-src del CSP de la web (mismo deploy, automático). Dejalo sin setear para reportar directo a Sentry. ORDEN DE DEPLOY: el Worker debe estar vivo ANTES de setear esto, o Sentry se rompe silenciosamente.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '/api/event',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Set to `/api/event` once the Cloudflare Worker in infra/cloudflare/sentry-tunnel/ is deployed for this environment (staging route: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). DEPLOY ORDER MATTERS: the Worker must be live first — the same env flip drops the external *.sentry.io CSP entry, so if the tunnel path 404s, all browser error reports are lost. Sibling of PUBLIC_POSTHOG_HOST (PostHog uses a DIFFERENT path, /api/relay, and a DIFFERENT Worker — do not mix them). Leave unset for direct-to-Sentry reporting (default; *.sentry.io stays in the CSP).',
+        howToObtainEs:
+            'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Hermano de PUBLIC_POSTHOG_HOST (PostHog usa un path DISTINTO, /api/relay, y un Worker DISTINTO — no los mezcles). Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
+    },
+    {
         name: 'PUBLIC_ENABLE_LOGGING',
         description: 'Enable verbose client-side logging in the web app',
         descriptionEs: 'Activa el logging verboso del lado cliente en la web',
@@ -183,20 +200,20 @@ export const CLIENT_WEB_ENV_VARS = [
     {
         name: 'PUBLIC_POSTHOG_HOST',
         description:
-            'PostHog ingestion endpoint for the web app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
+            'PostHog ingestion endpoint for the web app. RECOMMENDED: the first-party reverse proxy `https://hospeda.com.ar/api/relay` (SPEC-181) so ad-blockers cannot intercept analytics. Falls back to US Cloud direct (`https://us.i.posthog.com`) when unset. Changing this REQUIRES a matching CSP update in apps/web/src/lib/middleware-helpers.ts (same deploy).',
         descriptionEs:
-            'Endpoint de ingestión de PostHog para la app web. Default región US Cloud. Override para EU Cloud o self-hosted.',
+            'Endpoint de ingestión de PostHog para la app web. RECOMENDADO: el reverse proxy first-party `https://hospeda.com.ar/api/relay` (SPEC-181) para que los ad-blockers no intercepten analytics. Fallback a US Cloud directo (`https://us.i.posthog.com`) si no se setea. Cambiarlo REQUIERE actualizar el CSP en apps/web/src/lib/middleware-helpers.ts (mismo deploy).',
         type: 'url',
         required: false,
         secret: false,
         defaultValue: 'https://us.i.posthog.com',
-        exampleValue: 'https://us.i.posthog.com',
+        exampleValue: 'https://hospeda.com.ar/api/relay',
         apps: ['web'],
         category: 'client-web',
         howToObtain:
-            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Leave unset to use the default.',
+            'Set to the first-party proxy `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) once the Cloudflare Worker in infra/cloudflare/posthog-proxy/ is deployed. DEPLOY ORDER MATTERS: the Worker must be live AND the CSP in middleware-helpers.ts must drop the external PostHog hosts in the SAME deploy, or PostHog breaks silently. Falls back to `https://us.i.posthog.com` (US Cloud, Hospeda org, decided 2026-05-17) if unset. For EU Cloud use `https://eu.i.posthog.com`.',
         howToObtainEs:
-            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. Dejalo sin setear para usar el default.'
+            'Seteá el proxy first-party `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) una vez deployado el Cloudflare Worker en infra/cloudflare/posthog-proxy/. EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo Y el CSP en middleware-helpers.ts debe sacar los hosts externos de PostHog en el MISMO deploy, o PostHog se rompe silenciosamente. Fallback a `https://us.i.posthog.com` (US Cloud, org Hospeda, decidido 2026-05-17) si no se setea. Para EU Cloud usá `https://eu.i.posthog.com`.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
