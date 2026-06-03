@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -269,7 +269,7 @@
             "id": "T-012",
             "title": "Add admin list endpoint GET /api/v1/admin/logs",
             "description": "Use `createAdminListRoute` pattern (page+pageSize, NEVER limit). Permission: `PermissionEnum.SYSTEM_MAINTENANCE_MODE`. Route file: `apps/api/src/routes/admin/logs/index.ts` (or co-locate with cron-admin routes). Query params: level (enum: warn|error), category (string), fromDate (ISO date string), toDate (ISO date string), page, pageSize. Delegate to `AppLogEntryService.listEntries`. Response: `{ success: true, data: { items, total, page, pageSize } }`. Register in the admin router. Add Zod schemas in `@repo/schemas` for request/response. Write API integration tests (mock service): 200 with filter, 400 on bad level, 403 without permission. Acceptance: endpoint returns paginated log entries; filter params work; permission gate blocks unauthorized access.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-013"],
@@ -283,9 +283,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T18:14:21.000Z",
+                "completed": "2026-06-03T18:14:21.000Z"
+            },
+            "notes": "GET /api/v1/admin/logs in NEW apps/api/src/routes/app-logs/ — split list.ts (route def, clone of cron-admin/runs.ts pattern: createAdminRoute + lazy service singleton + AppLogEntryFilterSchema.shape as requestQuery + page/pageSize echoed in response) and index.ts (router assembly), mirroring the cron-admin layout so the route test can capture handlers by mocking route-factory without touching createRouter. Mounted at /api/v1/admin/logs in routes/index.ts next to admin/cron. Permission SYSTEM_MAINTENANCE_MODE. 4 route tests in test/routes/app-logs/list.test.ts."
         },
         {
             "id": "T-013",
