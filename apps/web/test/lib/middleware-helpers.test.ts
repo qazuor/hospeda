@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
+    buildAdminLoginRedirect,
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
@@ -126,6 +127,52 @@ describe('buildLoginRedirect', () => {
     it('should build login URL with encoded return path', () => {
         const result = buildLoginRedirect({ locale: 'es', currentUrl: '/es/mi-cuenta/perfil/' });
         expect(result).toBe('/es/auth/signin/?returnUrl=%2Fes%2Fmi-cuenta%2Fperfil%2F');
+    });
+});
+
+describe('buildAdminLoginRedirect', () => {
+    it('builds an absolute web signin URL with the admin URL as encoded callbackUrl', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar',
+            locale: 'es',
+            adminUrl: 'https://admin.hospeda.com.ar/dashboard'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/es/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar%2Fdashboard'
+        );
+    });
+
+    it('respects the requested locale', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar',
+            locale: 'en',
+            adminUrl: 'https://admin.hospeda.com.ar'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/en/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar'
+        );
+    });
+
+    it('strips a trailing slash on siteUrl so the path is not doubled', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar/',
+            locale: 'es',
+            adminUrl: 'https://admin.hospeda.com.ar'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/es/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar'
+        );
+    });
+
+    it('works with a localhost dev siteUrl + admin URL', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'http://localhost:4321',
+            locale: 'es',
+            adminUrl: 'http://localhost:3000/dashboard'
+        });
+        expect(result).toBe(
+            'http://localhost:4321/es/auth/signin/?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard'
+        );
     });
 });
 

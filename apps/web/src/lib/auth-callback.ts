@@ -21,6 +21,8 @@
  * Parsing with the WHATWG `URL` and inspecting `hostname` defeats all three.
  */
 
+import type { SupportedLocale } from './i18n';
+
 /** Production apex domain whose subdomains share the cross-subdomain session cookie. */
 const PROD_APEX = 'hospeda.com.ar';
 
@@ -150,4 +152,42 @@ export function validateCallbackUrl({
     }
 
     return null;
+}
+
+/**
+ * Builds the absolute web signin URL the admin guard redirects unauthenticated
+ * users to (SPEC-182 Phase 2).
+ *
+ * Unlike {@link buildLoginRedirect} (a same-app, relative web→web redirect with
+ * `returnUrl`), this is a CROSS-ORIGIN admin→web redirect, so it must be an
+ * absolute URL built on the web site origin. The admin destination travels in
+ * the `callbackUrl` param and is consumed back on the web signin page via
+ * {@link validateCallbackUrl}.
+ *
+ * @param params - Object with the web `siteUrl`, target `locale`, and the
+ *   `adminUrl` to return to after a successful signin
+ * @returns Absolute URL `{siteUrl}/{locale}/auth/signin/?callbackUrl={encoded adminUrl}`
+ *
+ * @example
+ * ```ts
+ * buildAdminLoginRedirect({
+ *   siteUrl: 'https://hospeda.com.ar',
+ *   locale: 'es',
+ *   adminUrl: 'https://admin.hospeda.com.ar/dashboard'
+ * });
+ * // => 'https://hospeda.com.ar/es/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar%2Fdashboard'
+ * ```
+ */
+export function buildAdminLoginRedirect({
+    siteUrl,
+    locale,
+    adminUrl
+}: {
+    readonly siteUrl: string;
+    readonly locale: SupportedLocale;
+    readonly adminUrl: string;
+}): string {
+    const base = siteUrl.replace(/\/$/, '');
+    const encodedCallbackUrl = encodeURIComponent(adminUrl);
+    return `${base}/${locale}/auth/signin/?callbackUrl=${encodedCallbackUrl}`;
 }
