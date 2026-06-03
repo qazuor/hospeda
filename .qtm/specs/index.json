@@ -63,7 +63,9 @@
             "path": "SPEC-121-e2e-mp-secrets-and-nightly-reactivation",
             "created": "2026-05-14T00:00:00Z",
             "extractedFrom": "SPEC-092",
-            "dependsOn": ["SPEC-103"],
+            "dependsOn": [
+                "SPEC-103"
+            ],
             "firstAllocatedViaEngramProtocol": true
         },
         {
@@ -74,8 +76,17 @@
             "status": "draft",
             "path": "SPEC-122-billing-production-readiness-master",
             "created": "2026-05-15T00:00:00Z",
-            "children": ["SPEC-123", "SPEC-124", "SPEC-125", "SPEC-126", "SPEC-127", "SPEC-128"],
-            "dependsOn": ["SPEC-109"],
+            "children": [
+                "SPEC-123",
+                "SPEC-124",
+                "SPEC-125",
+                "SPEC-126",
+                "SPEC-127",
+                "SPEC-128"
+            ],
+            "dependsOn": [
+                "SPEC-109"
+            ],
             "firstAllocatedViaEngramProtocol": true
         },
         {
@@ -88,7 +99,9 @@
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-122",
             "phase": "E",
-            "dependsOn": ["SPEC-125"],
+            "dependsOn": [
+                "SPEC-125"
+            ],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
             "firstAllocatedViaEngramProtocol": true
         },
@@ -102,7 +115,10 @@
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-122",
             "phase": "F+G",
-            "dependsOn": ["SPEC-126", "SPEC-127"],
+            "dependsOn": [
+                "SPEC-126",
+                "SPEC-127"
+            ],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
             "firstAllocatedViaEngramProtocol": true
         },
@@ -116,7 +132,15 @@
             "created": "2026-05-15T18:30:00Z",
             "discoveredDuring": "SPEC-111 T-111-04 validation (2026-05-15)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"]
+            "tags": [
+                "web",
+                "tests",
+                "react-19",
+                "astro-6",
+                "vitest",
+                "follow-up",
+                "spec-111"
+            ]
         },
         {
             "specId": "SPEC-132",
@@ -167,7 +191,13 @@
             "path": "SPEC-129-security-audit-vulnerabilities",
             "created": "2026-05-15T17:50:00.000Z",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
-            "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
+            "tags": [
+                "security",
+                "dependencies",
+                "supply-chain",
+                "ci",
+                "vulnerability"
+            ]
         },
         {
             "specId": "SPEC-142",
@@ -178,8 +208,18 @@
             "path": "SPEC-142-csp-phase-2-and-coverage",
             "created": "2026-05-17T18:30:00Z",
             "extractedFrom": "SPEC-046 closure: T-015 deferral + T-014 follow-up findings (Logo blind spot lesson, /es/ home CSP header miss, Sentry env config, eval probe noise)",
-            "dependsOn": ["SPEC-046"],
-            "tags": ["security", "csp", "web", "billing", "phase-2", "auth-flows", "mercadopago"]
+            "dependsOn": [
+                "SPEC-046"
+            ],
+            "tags": [
+                "security",
+                "csp",
+                "web",
+                "billing",
+                "phase-2",
+                "auth-flows",
+                "mercadopago"
+            ]
         },
         {
             "specId": "SPEC-144",
@@ -194,7 +234,13 @@
             "renumberedReason": "Collision with SPEC-141 subscription post-launch follow-ups (merged via PR #1139). Engram registry resolved in favor of the merged subscription work; this draft (no work started) renumbered to next free slot SPEC-144 (SPEC-143 already reserved for billing-testing-coverage).",
             "extractedFrom": "SPEC-136 post-fix axe verification",
             "parent": "SPEC-134",
-            "tags": ["admin", "accessibility", "wcag", "design-tokens", "tailwind"]
+            "tags": [
+                "admin",
+                "accessibility",
+                "wcag",
+                "design-tokens",
+                "tailwind"
+            ]
         },
         {
             "specId": "SPEC-145",
@@ -205,8 +251,12 @@
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "created": "2026-05-18T22:00:00Z",
             "extractedFrom": "SPEC-143 T-143-09 sub-commit 4 audit (engram spec/spec-145/reserved)",
-            "dependsOn": ["SPEC-143"],
-            "blocks": ["real-money-go-live"],
+            "dependsOn": [
+                "SPEC-143"
+            ],
+            "blocks": [
+                "real-money-go-live"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "worktree": null,
             "branch": null,
@@ -230,7 +280,10 @@
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "created": "2026-05-19T00:00:00Z",
             "discoveredDuring": "SPEC-143 T-143-27 — user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses soft-cancel branch of qzpay-core",
-            "dependsOn": ["SPEC-143", "SPEC-109"],
+            "dependsOn": [
+                "SPEC-143",
+                "SPEC-109"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "billing",
@@ -250,7 +303,9 @@
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "created": "2026-05-20T00:00:00Z",
             "discoveredDuring": "SPEC-143 T-143-63 reframe — original task scope conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism",
-            "dependsOn": ["SPEC-143"],
+            "dependsOn": [
+                "SPEC-143"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "billing",
@@ -271,7 +326,9 @@
             "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
             "created": "2026-05-20T00:00:00Z",
             "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer",
-            "dependsOn": ["SPEC-143"],
+            "dependsOn": [
+                "SPEC-143"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "billing",
@@ -292,7 +349,9 @@
             "path": "SPEC-150-billing-multi-currency-support",
             "created": "2026-05-20T00:00:00Z",
             "discoveredDuring": "SPEC-143 T-143-62 reframe — multi-currency price selection is aspirational. billing_customers has no currency/locale, billing_plans has single-currency price columns, checkout never branches on customer currency, exchange_rates table exists but is decorative wrt checkout, addon currency mismatch is not validated",
-            "dependsOn": ["SPEC-143"],
+            "dependsOn": [
+                "SPEC-143"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "billing",
@@ -314,7 +373,9 @@
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. Extracted as heavy backend: three dashboard view widgets (HOST accommodation views, EDITOR post views, EDITOR event views) have no DB-backed data — PostHog tracks client-side only. Consolidated into one cross-entity tracking piece.",
             "dependsOn": [],
-            "enables": ["SPEC-155"],
+            "enables": [
+                "SPEC-155"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "analytics",
@@ -336,12 +397,23 @@
             "path": "SPEC-160-newsletter-engagement-tracking",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. EDITOR open-rate widget deferred to phase 2: newsletter_campaigns stores no engagement metrics (only totalRecipients/sentAt). Needs open/click tracking, likely via Brevo webhooks.",
-            "dependsOn": ["SPEC-101"],
-            "enables": ["SPEC-155"],
+            "dependsOn": [
+                "SPEC-101"
+            ],
+            "enables": [
+                "SPEC-155"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "revised": "2026-05-30T00:00:00.000Z",
             "note": "Re-scoped 2026-05-30: the open/click tracking backend (newsletter_campaign_deliveries table, NewsletterTrackingService applyOpened/applyClick, Brevo webhook handler, NewsletterCampaignService.computeMetrics, GET /admin/newsletter/campaigns/{id}/metrics endpoint, use-campaign-metrics hook) ALREADY shipped under SPEC-101. Remaining work is frontend-only: EDITOR dashboard Card C widget (apps/admin/src/lib/dashboard-sources/editor.ts:29 still says PHASE 2) plus optionally exposing openRate/clickRate percentages in the API response. Complexity downgraded high->low.",
-            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"]
+            "tags": [
+                "newsletter",
+                "analytics",
+                "open-rate",
+                "ctr",
+                "frontend",
+                "phase-2"
+            ]
         },
         {
             "specId": "SPEC-162",
@@ -353,9 +425,18 @@
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. SUPER_ADMIN audit-log + security-log widgets: logging infra (audit-logger.ts, AuditEventType) is logger-only, not queryable. Needs a queryable store + admin endpoints gated by AUDIT_LOG_VIEW / SECURITY_LOG_VIEW.",
             "dependsOn": [],
-            "enables": ["SPEC-155"],
+            "enables": [
+                "SPEC-155"
+            ],
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["audit", "security", "observability", "super-admin", "backend", "phase-2"]
+            "tags": [
+                "audit",
+                "security",
+                "observability",
+                "super-admin",
+                "backend",
+                "phase-2"
+            ]
         },
         {
             "specId": "SPEC-163",
@@ -367,7 +448,9 @@
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. SUPER_ADMIN 'Sentry errors 24h' widget: Sentry is write-only in our stack, not queryable. Lowest-priority extracted spec (external integration, dashboard ships fine without it).",
             "dependsOn": [],
-            "enables": ["SPEC-155"],
+            "enables": [
+                "SPEC-155"
+            ],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
                 "sentry",
@@ -390,8 +473,16 @@
             "extractedFrom": "SPEC-155",
             "archived": false,
             "extractionReason": "Phase-1 scout 2026-05-27: accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not moderationState. No review moderation flow exists. ADMIN dashboard card F reviews-pending sub-slot renders a deferred placeholder until this spec ships.",
-            "enables": ["SPEC-155 ADMIN card F reviews-pending sub-slot"],
-            "tags": ["reviews", "moderation", "admin", "backend", "phase-2"]
+            "enables": [
+                "SPEC-155 ADMIN card F reviews-pending sub-slot"
+            ],
+            "tags": [
+                "reviews",
+                "moderation",
+                "admin",
+                "backend",
+                "phase-2"
+            ]
         },
         {
             "specId": "SPEC-167",
@@ -402,9 +493,17 @@
             "path": "SPEC-167-downgrade-preflight-remediation",
             "created": "2026-05-27T00:00:00.000Z",
             "origin": "SPEC-143 local smoke findings F-F1/F-F2",
-            "dependsOn": ["SPEC-143"],
+            "dependsOn": [
+                "SPEC-143"
+            ],
             "archived": false,
-            "tags": ["billing", "downgrade", "entitlements", "limits", "backend"],
+            "tags": [
+                "billing",
+                "downgrade",
+                "entitlements",
+                "limits",
+                "backend"
+            ],
             "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry — registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land."
         },
         {
@@ -420,7 +519,13 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-173-ai-core",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
-            "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
+            "tags": [
+                "ai",
+                "foundation",
+                "package",
+                "provider-agnostic",
+                "infrastructure"
+            ],
             "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
         },
         {
@@ -435,7 +540,15 @@
             "base": "staging",
             "firstAllocatedViaEngramProtocol": true,
             "archived": false,
-            "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
+            "tags": [
+                "admin",
+                "onboarding",
+                "ux",
+                "config-driven",
+                "i18n",
+                "frontend",
+                "api"
+            ],
             "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15."
         },
         {
@@ -563,6 +676,115 @@
             "complexity": "medium",
             "path": "SPEC-184-api-log-observability",
             "created": "2026-06-02T00:00:00.000Z"
+        },
+        {
+            "specId": "SPEC-185",
+            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
+            "type": "feature",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-185-admin-entity-lists-v2",
+            "branch": "spec/SPEC-185-admin-entity-lists-v2",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-75",
+                "BETA-72",
+                "BETA-76"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-186",
+            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+            "type": "feature",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-186-web-dynamic-image-grid",
+            "branch": "spec/SPEC-186-web-dynamic-image-grid",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-53"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-187",
+            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+            "type": "feature",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-187-rich-text-entity-descriptions",
+            "branch": "spec/SPEC-187-rich-text-entity-descriptions",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-60"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-189",
+            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+            "type": "refactor",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-189-optimize-seed-and-app-builds",
+            "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-54"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-190",
+            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
+            "type": "refactor",
+            "status": "draft",
+            "complexity": "medium-high",
+            "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
+            "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-74"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-191",
+            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
+            "type": "feature",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-191-web-contribution-pages-and-banners",
+            "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-69",
+                "BETA-68",
+                "BETA-65"
+            ],
+            "created": "2026-06-02",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-192",
+            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+            "type": "refactor",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-192-billing-catalog-to-db",
+            "branch": "spec/SPEC-192-billing-catalog-to-db",
+            "base": "staging",
+            "linearIssues": [
+                "BETA-58"
+            ],
+            "created": "2026-06-02",
+            "archived": false
         }
     ]
 }
