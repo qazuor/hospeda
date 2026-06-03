@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 21/37 tasks (57%)
+## Progress: 25/37 tasks (68%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -150,22 +150,22 @@
   - Blocked by: T-023
   - Blocks: T-025
 
-- [ ] **T-025** (complexity: 3) — Fix addon-entitlement.service.ts:160 bug (ALL_PLANS.find by UUID instead of slug) (FR-4)
+- [x] **T-025** (complexity: 3) — Fix addon-entitlement.service.ts:160 bug (ALL_PLANS.find by UUID instead of slug) (FR-4)
   - HIGH PRIORITY BUG: `ALL_PLANS.find(p => p.slug === activeSubscription.planId)` fails post-SPEC-168 (planId is UUID). Fix: PlanService.getById(UUID). Regression test first.
   - Blocked by: T-024
   - Blocks: T-026
 
-- [ ] **T-026** (complexity: 2) — Cut over addon-plan-change.helpers.ts (service-core) and addon-plan-change.service.ts (api) plan reads to PlanService (FR-4)
+- [x] **T-026** (complexity: 2) — Cut over addon-plan-change.helpers.ts (service-core) and addon-plan-change.service.ts (api) plan reads to PlanService (FR-4)
   - Both files; parity regression test
   - Blocked by: T-025
   - Blocks: T-027
 
-- [ ] **T-027** (complexity: 2) — Cut over billing-subscriptions/utils.ts (admin) and addon-limit-recalculation.service.ts plan reads to PlanService (FR-4)
+- [x] **T-027** (complexity: 2) — Cut over billing-subscriptions/utils.ts (admin) and addon-limit-recalculation.service.ts plan reads to PlanService (FR-4)
   - Both files; parity regression test
   - Blocked by: T-026
   - Blocks: T-028
 
-- [ ] **T-028** (complexity: 2) — Verify fetch-plans.ts (web) calls DB-backed endpoint and add parity assertion (FR-4)
+- [x] **T-028** (complexity: 2) — Verify fetch-plans.ts (web) calls DB-backed endpoint and add parity assertion (FR-4)
   - `apps/web/src/lib/billing/fetch-plans.ts`; verify it calls the now-DB-backed public plans endpoint; remove any config fallback
   - Blocked by: T-027
   - Blocks: T-029

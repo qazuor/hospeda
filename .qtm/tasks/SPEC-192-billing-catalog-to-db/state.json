@@ -859,140 +859,140 @@
             "id": "T-025",
             "title": "Fix addon-entitlement.service.ts:160 bug (ALL_PLANS.find by UUID instead of slug) (FR-4)",
             "description": "HIGH PRIORITY BUG. In `apps/api/src/services/addon-entitlement.service.ts` line ~160: `ALL_PLANS.find(p => p.slug === activeSubscription.planId)` fails post-SPEC-168 because `planId` is now a UUID, not a slug — causing basePlanLimit to fall to 0. Fix: replace with `PlanService.getById(activeSubscription.planId)` (lookup by UUID, not slug). Write regression test in `apps/api/src/services/__tests__/addon-entitlement-plan-bug.test.ts` that reproduces the bug before the fix, then passes after. Files: 1 service file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Write failing regression test reproducing basePlanLimit=0 bug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace ALL_PLANS.find(slug) with PlanService.getById(UUID)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify regression test now passes with correct basePlanLimit",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "plan", "fr-4", "bugfix", "addon-entitlement"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Cut over addon-plan-change.helpers.ts (service-core) and addon-plan-change.service.ts (api) plan reads to PlanService (FR-4)",
             "description": "In `packages/service-core/src/services/billing/addon/addon-plan-change.helpers.ts` and `apps/api/src/services/addon-plan-change.service.ts`, replace `ALL_PLANS` / `getPlanBySlug` config reads with `PlanService.getBySlug()`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-plan-change-plan.cutover.test.ts`. Files: 2 files + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Cutover addon-plan-change.helpers.ts plan reads to PlanService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cutover addon-plan-change.service.ts plan reads to PlanService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test for both files",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "api", "billing", "plan", "fr-4", "cutover"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Cut over billing-subscriptions/utils.ts (admin) and addon-limit-recalculation.service.ts plan reads to PlanService (FR-4)",
             "description": "In `apps/admin/src/features/billing-subscriptions/utils.ts` and `packages/service-core/src/services/billing/addon/addon-limit-recalculation.service.ts` (for plan-read portion), replace `ALL_PLANS` / `getPlanBySlug` config reads with `PlanService`. Behavior-preserving. Write parity regression test in `apps/admin/src/features/billing-subscriptions/__tests__/utils-plan.cutover.test.ts`. Files: 2 files + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-026"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Cutover billing-subscriptions/utils.ts plan reads to PlanService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cutover addon-limit-recalculation.service.ts plan-read portion to PlanService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write parity regression test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "service-core", "billing", "plan", "fr-4", "cutover"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Verify fetch-plans.ts (web) calls DB-backed endpoint and add parity assertion (FR-4)",
             "description": "In `apps/web/src/lib/billing/fetch-plans.ts`, verify that the public API endpoint it calls (`/api/v1/public/billing/plans`) is now DB-backed (after T-022). If `fetch-plans.ts` itself has a hardcoded fallback to config, remove it. Write a test in `apps/web/src/lib/billing/__tests__/fetch-plans.test.ts` asserting the function calls the correct endpoint and handles the DB-backed response. Files: 1 web file (verify/minor fix) + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
             "subtasks": [
                 {
                     "title": "Verify fetch-plans.ts calls /api/v1/public/billing/plans (DB-backed)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove any config fallback if present",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test asserting correct endpoint and response handling",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "billing", "plan", "fr-4", "cutover"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
             }
         },
         {
@@ -1321,9 +1321,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 16,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.4
     }
