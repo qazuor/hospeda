@@ -97,6 +97,68 @@ describe('AppLogEntryModel', () => {
             expect(logger.logError).not.toHaveBeenCalled();
         });
 
+        it('should accept and insert all 4 request-context fields', async () => {
+            // Arrange
+            const row = {
+                id: 'log-2',
+                level: 'WARN',
+                message: 'slow query',
+                requestId: 'req-abc123',
+                userId: 'c2ddce77-7e2d-4gb0-dd8f-8dd1df502c33',
+                method: 'GET',
+                path: '/api/v1/public/accommodations'
+            };
+            getDb.mockReturnValue({
+                insert: () => ({
+                    values: () => ({
+                        returning: () => Promise.resolve([row])
+                    })
+                })
+            });
+
+            // Act
+            const created = await model.createQuiet({
+                level: 'WARN',
+                message: 'slow query',
+                requestId: 'req-abc123',
+                userId: 'c2ddce77-7e2d-4gb0-dd8f-8dd1df502c33',
+                method: 'GET',
+                path: '/api/v1/public/accommodations'
+            } as never);
+
+            // Assert
+            expect(created).toEqual(row);
+            expect(created.requestId).toBe('req-abc123');
+            expect(created.userId).toBe('c2ddce77-7e2d-4gb0-dd8f-8dd1df502c33');
+            expect(created.method).toBe('GET');
+            expect(created.path).toBe('/api/v1/public/accommodations');
+            expect(logger.logQuery).not.toHaveBeenCalled();
+            expect(logger.logError).not.toHaveBeenCalled();
+        });
+
+        it('should insert successfully when request-context fields are absent (non-request scope)', async () => {
+            // Arrange
+            const row = { id: 'log-3', level: 'ERROR', message: 'startup failure' };
+            getDb.mockReturnValue({
+                insert: () => ({
+                    values: () => ({
+                        returning: () => Promise.resolve([row])
+                    })
+                })
+            });
+
+            // Act
+            const created = await model.createQuiet({
+                level: 'ERROR',
+                message: 'startup failure'
+            } as never);
+
+            // Assert
+            expect(created).toEqual(row);
+            expect(created.requestId).toBeUndefined();
+            expect(created.userId).toBeUndefined();
+        });
+
         it('should propagate a driver failure WITHOUT calling logError', async () => {
             // Arrange
             getDb.mockReturnValue({

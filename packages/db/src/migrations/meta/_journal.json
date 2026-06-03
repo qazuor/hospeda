@@ -15,6 +15,13 @@
             "when": 1780507158307,
             "tag": "0001_simple_apocalypse",
             "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "7",
+            "when": 1780525048343,
+            "tag": "0002_petite_wendell_rand",
+            "breakpoints": true
         }
     ]
 }

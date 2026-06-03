@@ -32,7 +32,28 @@ export const appLogEntries = pgTable(
         data: jsonb('data').$type<Record<string, unknown>>(),
         /** When the log entry was emitted (LogEntry.ts) */
         loggedAt: timestamp('logged_at', { withTimezone: true }).notNull(),
-        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        /**
+         * Correlation ID from AsyncLocalStorage request context.
+         * Nullable — entries emitted outside a request scope (startup, cron) have no request.
+         */
+        requestId: varchar('request_id', { length: 64 }),
+        /**
+         * Authenticated user at the time of the log entry.
+         * No foreign key by design: logs must survive user deletion and the
+         * purge cron must stay decoupled from the users table.
+         */
+        userId: uuid('user_id'),
+        /**
+         * HTTP method of the in-flight request (e.g. 'GET', 'POST').
+         * Nullable — absent for non-request-scoped entries.
+         */
+        method: varchar('method', { length: 10 }),
+        /**
+         * Request path (e.g. '/api/v1/public/accommodations').
+         * Nullable — absent for non-request-scoped entries.
+         */
+        path: text('path')
     },
     (table) => ({
         /** "Browse by level + time" + purge by age */
@@ -43,6 +64,11 @@ export const appLogEntries = pgTable(
         /** "Browse by category + time" */
         appLogEntries_category_logged_idx: index('appLogEntries_category_logged_idx').on(
             table.category,
+            table.loggedAt.desc()
+        ),
+        /** "Browse by user + time" — powers per-user error investigation in the admin panel */
+        appLogEntries_userId_logged_idx: index('appLogEntries_userId_logged_idx').on(
+            table.userId,
             table.loggedAt.desc()
         )
     })
