@@ -14,9 +14,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
+import { getPlanBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
+import { AddonCatalogService } from './addon-catalog.service.js';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -64,6 +65,10 @@ export interface RecalculateAddonLimitsInput {
     /** Drizzle database instance for querying `billing_addon_purchases`. */
     db: DrizzleClient;
 }
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
 
 // ─── Implementation ───────────────────────────────────────────────────────────
 
@@ -172,11 +177,19 @@ export async function recalculateAddonLimitsForCustomer(
             const activePurchases = lockResult.rows ?? [];
 
             // ── Step 2: Filter to purchases that affect this limitKey ─────────
+            // Resolve each addon definition from the DB-backed catalog service.
+            // Uses Promise.all so all lookups run in parallel within the transaction.
 
-            const relevantPurchases = activePurchases.filter((purchase: { addonSlug: string }) => {
-                const addonDef = getAddonBySlug(purchase.addonSlug);
-                return addonDef?.affectsLimitKey === limitKey;
-            });
+            const addonDefResults = await Promise.all(
+                activePurchases.map(async (purchase) => {
+                    const result = await catalogService.getBySlug(purchase.addonSlug);
+                    return { purchase, addonDef: result.success ? result.data : null };
+                })
+            );
+
+            const relevantPurchases = addonDefResults
+                .filter(({ addonDef }) => addonDef?.affectsLimitKey === limitKey)
+                .map(({ purchase }) => purchase);
 
             // ── Step 3: Resolve the active subscription ───────────────────────
             // External API call inside the transaction is unavoidable here
