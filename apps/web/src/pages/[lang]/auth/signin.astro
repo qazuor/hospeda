@@ -158,6 +158,7 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
                 client:load
                 locale={locale}
                 redirectTo={redirectTo}
+                externalRedirect={Boolean(validatedCallbackUrl)}
                 showOAuth={true}
                 initialOAuthError={initialOAuthError}
             />

@@ -95,5 +95,12 @@ describe('signin.astro', () => {
         it('uses a valid callbackUrl as the redirectTo passed to the SignIn island', () => {
             expect(src).toMatch(/redirectTo\s*=\s*validatedCallbackUrl\s*\?\?/);
         });
+
+        it('flags the island redirect as external when a validated callbackUrl is present', () => {
+            // Without this flag the island's host-strip+reattach workaround
+            // rewrites the admin URL onto the web origin and the post-login
+            // redirect to admin silently breaks (SPEC-182 follow-up fix).
+            expect(src).toMatch(/externalRedirect=\{Boolean\(validatedCallbackUrl\)\}/);
+        });
     });
 });
