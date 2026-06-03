@@ -1636,6 +1636,18 @@
             "completed": "2026-06-02T19:30:00.000Z",
             "archived": true,
             "archivedAt": "2026-06-02T19:30:00.000Z"
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "created": "2026-06-01T00:00:00.000Z",
+            "completed": "2026-06-02T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-03T00:00:00.000Z",
+            "completionRef": "PRs #1369/#1370/#1377 merged 2026-06-02 — ci.yml self-hosted PR runner + e2e-local.self-hosted workflow + docs/guides/self-hosted-runner.md. Shipped without task atomization (approved -> ship), so no tasks/index entry."
         }
     ]
 }
