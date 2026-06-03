@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -324,7 +324,7 @@
             "id": "T-015",
             "title": "Wire UserMenu.client.tsx hostMode item to admin URL for role=HOST",
             "description": "In apps/web/src/components/shared/navigation/UserMenu.client.tsx: the 'hostMode' i18n key (es/en/pt) and the STAFF_DISCRIMINATOR_PERMISSION logic already exist. Add a three-state CTA based on /auth/me response: (1) unauthenticated/tourist → href=/{locale}/publicar/, (2) role=HOST → href=env.VITE_ADMIN_URL (or HOSPEDA_ADMIN_URL from PUBLIC_ADMIN_URL), (3) staff with access.apiAdmin → href=env.VITE_ADMIN_URL with 'Panel de administración' label. The 'Modo anfitrión' label is already i18n'd. D3 resolved: derive host state from role===HOST — no extra API call needed. Acceptance: host user sees 'Modo anfitrión' linking to admin; staff sees 'Panel de administración'; tourist sees 'Publicar alojamiento'; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
@@ -334,12 +334,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T17:03:10Z",
+                "completed": "2026-06-03T17:05:22Z"
             }
         },
         {
