@@ -253,6 +253,13 @@ export function NewsletterForm({
         isAuthenticated ? 'idle-auth' : 'idle-guest'
     );
 
+    // Whether the visitor is authenticated. This is the stable "mode" of the
+    // form (guest vs authed), separate from `formState` which tracks progress
+    // (idle/pending/error/...). We need it explicitly because `error` and
+    // `pending` are reachable from BOTH modes, and the render must know which
+    // input to show. Seeded from the SSR prop, re-resolved on mount.
+    const [isAuthed, setIsAuthed] = useState<boolean>(isAuthenticated);
+
     // Inline error message for the error state
     const [errorMessage, setErrorMessage] = useState<string>('');
 
@@ -284,6 +291,7 @@ export function NewsletterForm({
 
             if (controller.signal.aborted) return;
 
+            setIsAuthed(auth.isAuthenticated);
             setResolvedEmail(auth.email);
 
             // 2. If the resolved state is guest, snap the form to idle-guest.
@@ -735,31 +743,7 @@ export function NewsletterForm({
                 <div className={styles.inputRow}>
                     {/* Email input */}
                     <div className={styles.inputWrapper}>
-                        {formState === 'idle-guest' ? (
-                            // Guest: editable controlled input. The visitor types
-                            // their email here and the form submits to the public
-                            // endpoint, which then redirects to confirma-tu-email.
-                            <input
-                                id={`${emailLabelId}-input`}
-                                type="email"
-                                className={styles.emailInput}
-                                value={guestEmail}
-                                onChange={(event) => {
-                                    setGuestEmail(event.currentTarget.value);
-                                    if (formState !== 'idle-guest') {
-                                        // Recover from the error state on the next keystroke.
-                                        setErrorMessage('');
-                                    }
-                                }}
-                                placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
-                                aria-labelledby={emailLabelId}
-                                aria-invalid="false"
-                                autoComplete="email"
-                                inputMode="email"
-                                disabled={isLoading}
-                                required
-                            />
-                        ) : (
+                        {isAuthed ? (
                             // Authenticated / in-flight / error: controlled read-only input
                             <input
                                 id={`${emailLabelId}-input`}
@@ -775,6 +759,34 @@ export function NewsletterForm({
                                 onChange={() => {
                                     // readOnly — no change handler needed; required to suppress React warning
                                 }}
+                            />
+                        ) : (
+                            // Guest: editable controlled input. The visitor types
+                            // their email here and the form submits to the public
+                            // endpoint, which then redirects to confirma-tu-email.
+                            // Editable across idle-guest AND error so a guest who
+                            // mistyped can correct and retry (BETA-25).
+                            <input
+                                id={`${emailLabelId}-input`}
+                                type="email"
+                                className={styles.emailInput}
+                                value={guestEmail}
+                                onChange={(event) => {
+                                    setGuestEmail(event.currentTarget.value);
+                                    if (formState === 'error') {
+                                        // Recover from the error state on the next
+                                        // keystroke so the guest can resubmit.
+                                        setErrorMessage('');
+                                        setFormState('idle-guest');
+                                    }
+                                }}
+                                placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
+                                aria-labelledby={emailLabelId}
+                                aria-invalid="false"
+                                autoComplete="email"
+                                inputMode="email"
+                                disabled={isLoading}
+                                required
                             />
                         )}
                     </div>

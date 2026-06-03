@@ -269,6 +269,36 @@ describe('NewsletterForm', () => {
                 expect(screen.getByRole('alert').textContent).toMatch(/no pudimos/i);
             });
         });
+
+        it('keeps the email input editable in the error state so a guest can correct and retry (BETA-25)', async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+            renderGuest();
+
+            // Mistype an email and submit → client-side validation → error state.
+            const input = screen.getByRole('textbox') as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'not-an-email' } });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+
+            // Regression: a guest input that flips to readonly in the error state
+            // can never be corrected — and a readonly input also suppresses the
+            // mobile keyboard (the BETA-25 symptom). It must stay editable.
+            const inputAfterError = screen.getByRole('textbox') as HTMLInputElement;
+            expect(inputAfterError).not.toHaveAttribute('readonly');
+            expect(inputAfterError).toHaveValue('not-an-email');
+
+            // Editing clears the error so the guest can resubmit.
+            fireEvent.change(inputAfterError, { target: { value: 'guest@example.com' } });
+            await waitFor(() => {
+                expect(screen.queryByRole('alert')).toBeNull();
+            });
+            expect(inputAfterError).toHaveValue('guest@example.com');
+        });
     });
 
     // =========================================================================
