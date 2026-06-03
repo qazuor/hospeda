@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -16,7 +16,7 @@
             "id": "T-001",
             "title": "Add FORMAT field to BaseLoggerConfig and getConfigFromEnv",
             "description": "Add `FORMAT: 'pretty' | 'json'` to the `BaseLoggerConfig` interface in `packages/logger/src/types.ts`. Default value: `'pretty'`. Add `LOG_FORMAT` env-var reading to `getConfigFromEnv` in `packages/logger/src/environment.ts` (string enum validation: only 'pretty'|'json' accepted; invalid values fall back to 'pretty' with a console.warn). Update `defaultConfig` in `packages/logger/src/config.ts` to include `FORMAT: 'pretty'`. Acceptance: TypeScript strict-mode compiles; existing logger tests are unaffected (FORMAT defaults to 'pretty').",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
@@ -26,13 +26,14 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T08:14:20.000Z",
+                "completed": "2026-06-03T08:14:20.000Z"
+            },
+            "notes": "Implemented with LogFormat enum (FORMAT: LogFormatType) for consistency with LogLevel, not a 'pretty'|'json' union. Invalid LOG_FORMAT values are handled silently (null -> default PRETTY), matching getLogLevelEnv; no console.warn. Ratified by owner 2026-06-03."
         },
         {
             "id": "T-002",
