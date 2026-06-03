@@ -6,8 +6,8 @@
     "summary": {
         "total": 22,
         "pending": 2,
-        "inProgress": 1,
-        "completed": 19,
+        "inProgress": 0,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -434,7 +434,7 @@
             "id": "T-020",
             "title": "Write docs/guides/auth-architecture.md — unified auth reference",
             "description": "Create docs/guides/auth-architecture.md documenting: (1) the unified auth model (web is the single auth surface, admin consumes the shared cookie), (2) the role matrix table (unauthenticated / tourist / host / staff / change-password), (3) cross-subdomain cookie setup (production: Better Auth crossSubDomainCookies; dev-local: T-018 workaround), (4) how HOST role is earned (action-triggered on first publish, not declared at signup), (5) staff host-creation back-office action, (6) the cross-app coupling risk (admin auth depends on web — runbook note), (7) references to SPEC-169 (owner-scoping) and SPEC-182. Acceptance: doc is complete, accurate, and covers all operator and developer scenarios.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": ["T-021"],
@@ -442,14 +442,14 @@
             "tags": ["docs", "auth", "phase-6"],
             "phase": "phase-6-closeout",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": "2026-06-03T18:21:42Z",
-                "completed": null
+                "completed": "2026-06-03T18:27:36Z"
             }
         },
         {
