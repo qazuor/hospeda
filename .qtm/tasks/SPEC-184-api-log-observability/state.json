@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 10,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -154,7 +154,7 @@
             "id": "T-007",
             "title": "Add app_log_entries Drizzle schema",
             "description": "Create `packages/db/src/schemas/logs/app_log_entry.dbschema.ts` following the `cron_runs` schema pattern. Table: `app_log_entries`. Columns: id (uuid PK), level (varchar 10, notNull), category (varchar 50, nullable), label (text, nullable), message (text, notNull), data (jsonb, nullable, $type<Record<string,unknown>>()), loggedAt (timestamp with timezone, notNull), createdAt (timestamp with timezone, defaultNow, notNull). Indexes: level+loggedAt desc, category+loggedAt desc. NO deletedAt (append-only). Export from `packages/db/src/schemas/index.ts`. NOTE: `drizzle-kit push` is used (NOT generate); apply directly to the DB. No updated_at trigger needed for this table — no apply-postgres-extras step required. Acceptance: `pnpm typecheck` on @repo/db passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-008"],
@@ -164,19 +164,20 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:30:17.000Z",
+                "completed": "2026-06-03T17:30:17.000Z"
+            },
+            "notes": "app_log_entries Drizzle schema in NEW packages/db/src/schemas/app-log/app_log_entry.dbschema.ts (style: cron_runs — append-only, no soft-delete, 2 composite indexes level+loggedAt / category+loggedAt). Level stored UPPERCASE ('WARN'|'ERROR') matching the logger's LogLevelType — the spec's lowercase comment was an internal inconsistency, resolved in favor of what the logger actually emits. Registered in schemas/index.ts. Migration generated: packages/db/src/migrations/0001_simple_apocalypse.sql (table + 2 indexes only, no extras needed)."
         },
         {
             "id": "T-008",
             "title": "Add AppLogEntryModel in @repo/db",
             "description": "Create `packages/db/src/models/logs/appLogEntry.model.ts` following `CronRunModel`. Extend `BaseModelImpl<AppLogEntry>`. Table: `appLogEntries`. Entity name: 'app_log_entries'. Custom query `listEntries({ level?, category?, fromDate?, toDate?, page?, pageSize? })` — builds conditions (gte/lte for date range, eq for level/category) and calls `findAll` with `sortBy: 'loggedAt', sortOrder: 'desc'`. Export singleton `appLogEntryModel`. Export from `packages/db/src/models/index.ts`. Acceptance: `pnpm typecheck` on @repo/db passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-009", "T-011"],
@@ -186,19 +187,20 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:30:17.000Z",
+                "completed": "2026-06-03T17:30:17.000Z"
+            },
+            "notes": "AppLogEntryModel in NEW packages/db/src/models/app-log/appLogEntry.model.ts (style: CronRunModel — BaseModelImpl, listEntries with level/category equality + loggedAt range + pagination via findAll, purgeOlderThan({before}) single-threshold hard delete by loggedAt). Singleton appLogEntryModel exported. 5 unit tests in test/models/appLogEntry.model.test.ts."
         },
         {
             "id": "T-009",
             "title": "Add AppLogEntryService in @repo/service-core",
             "description": "Create service following CronRunService pattern. Expose: `listEntries(filter)` (delegates to model), `purgeOld({ retentionDays })` (hard-delete rows where createdAt < cutoff). Return `Result<T>` consistently. Export from `@repo/service-core`. Write Vitest tests covering list and purge with mocked model. Acceptance: tests green; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-011"],
@@ -212,9 +214,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:30:17.000Z",
+                "completed": "2026-06-03T17:30:17.000Z"
+            },
+            "notes": "AppLogEntryService in NEW packages/service-core/src/services/appLog/ (style: CronRunService — extends BaseService NOT BaseCrudService). recordEntry (system op, validates CreateAppLogEntrySchema, truncates message >2000 -> data.messageFull), listEntries (admin-tier, checkCanViewAppLogs = SYSTEM_MAINTENANCE_MODE), purgeOld (default 30d uniform). NEW Zod schemas in packages/schemas/src/entities/appLogEntry/ (AppLogEntrySchema, CreateAppLogEntrySchema with APP_LOG_MESSAGE_MAX_LENGTH=2000, AppLogEntryFilterSchema page+pageSize max 100). 7 service tests. The schema-level AppLogEntryLevelEnum(['WARN','ERROR']) IS the volume guard for recordEntry."
         },
         {
             "id": "T-010",
