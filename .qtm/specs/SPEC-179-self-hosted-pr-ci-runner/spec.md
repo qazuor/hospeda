@@ -3,7 +3,7 @@ spec-id: SPEC-179
 title: Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)
 type: infra
 complexity: medium
-status: approved
+status: completed
 created: 2026-06-01T00:00:00Z
 references:
   - .github/workflows/ci.yml (current PR + push CI, all ubuntu-latest)

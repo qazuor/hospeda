@@ -796,6 +796,31 @@ React island at `src/components/account/CollectionDetailActions.client.tsx`. Mou
 - **Auth in islands**: Pass `Astro.locals.user` as props. Islands cannot read server locals
 - **Image optimization**: `<Image>` from `astro:assets` for local images; `<img loading="lazy">` for remote
 
+## Accepted production-build warnings (`pnpm build`)
+
+`pnpm build` (Astro + Vite/Rolldown) completes successfully (exit 0). It emits a
+set of warnings that were reviewed under BETA-78 and accepted — they are **not
+defects**. All of them are upstream artifacts of the Vite→Rolldown / Astro
+transition (none come from our own `astro.config.mjs`), so there is nothing to
+fix on our side:
+
+- `esbuild option deprecated, use oxc instead` (`vite:react-babel`) and the
+  `@vitejs/plugin-react` → `@vitejs/plugin-react-oxc` recommendation. Upstream;
+  out of scope (same call as the admin app — see `apps/admin/CLAUDE.md`).
+- `optimizeDeps.rollupOptions` / `optimizeDeps.esbuildOptions` deprecation hints
+  (the latter set by the `astro:dev-toolbar` plugin) → suggest `rolldownOptions`.
+  Upstream / set by Astro's own plugins.
+- ``resolve.alias` contains an alias with `customResolver` (deprecated, removed in
+  Vite 9)``. **Not ours** — `customResolver` does not appear anywhere in the repo;
+  it is injected by an Astro integration. Out of scope until Astro updates it.
+- `transformWithEsbuild is deprecated, migrate to transformWithOxc`. Upstream.
+- `(!) Some chunks are larger than 500 kB` — currently two client chunks exceed
+  the limit (~1 MB and ~770 kB; Astro does not list which in the log). This is a
+  **runtime load-performance** concern only — it does NOT affect test time
+  (Vitest never bundles) and only marginally affects build time. Far less severe
+  than the admin's 4 MB chunk (BETA-86); the web already code-splits by island
+  (SPEC-176). Accepted for now; revisit if a perf pass is prioritized.
+
 ## lib/ File Origins
 
 Files in `src/lib/` come from the previous web app iteration with varying levels of adaptation:

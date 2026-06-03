@@ -172,6 +172,11 @@ export const ApiEnvBaseSchema = z.object({
     API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
     API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
     API_LOG_STRINGIFY: z.coerce.boolean().default(false),
+    API_LOG_FORMAT: z
+        .string()
+        .transform((val) => val.toLowerCase())
+        .pipe(z.enum(['pretty', 'json']))
+        .default('pretty'),
 
     // CORS
     API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),

@@ -103,8 +103,9 @@
             "specId": "SPEC-184",
             "title": "API Log Observability",
             "status": "in-progress",
-            "progress": "0/16",
-            "path": "SPEC-184-api-log-observability"
+            "progress": "16/16",
+            "path": "SPEC-184-api-log-observability",
+            "note": "Implementation complete on spec/SPEC-184-api-log-observability; pending PR to staging. Flip to completed+archived after merge."
         },
         {
             "specId": "SPEC-185",

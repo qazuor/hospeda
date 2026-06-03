@@ -20,6 +20,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - System       :  runtime/CI variables
  */
 /**
+ * Updated 2026-06-03 to 200: net +2 vs the recorded 198. SPEC-184 T-003 adds
+ * `API_LOG_FORMAT` (api-config 77→78). The other +1 reconciles a drift inherited
+ * at branch-off: the registry already had 199 entries on staging while this
+ * constant still read 198 (a prior var bump that never updated it). Bumping to
+ * 200 fixes both.
+ *
  * Updated 2026-05-26 to 198: net +1 vs the previous 197. The new var is a
  * SPEC-143 billing kill-switch (`HOSPEDA_ADDON_LIFECYCLE_ENABLED` /
  * `HOSPEDA_BILLING_POLLING_ENABLED`), bumping the billing category from 8 to 9.
@@ -40,8 +46,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * 201 (2026-06-03, SPEC-182 T-018): added HOSPEDA_DEV_COOKIE_DOMAIN (dev-only
  * session-cookie domain override for the *.hospeda.local recipe).
+ *
+ * 202 (2026-06-03, merge): staging's SPEC-184 (`API_LOG_FORMAT`, 200) and this
+ * branch's SPEC-182 (+2, 201) were added independently off the same 199 base;
+ * the merged registry holds both sets.
  */
-const EXPECTED_VAR_COUNT = 201;
+const EXPECTED_VAR_COUNT = 202;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -319,6 +329,20 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.enumValues).toContain('info');
             expect(entry?.enumValues).toContain('warn');
             expect(entry?.enumValues).toContain('error');
+        });
+    });
+
+    describe('API_LOG_FORMAT enum', () => {
+        it('should list pretty and json as valid values with a pretty default', () => {
+            const entry = REGISTRY.find((e) => e.name === 'API_LOG_FORMAT');
+
+            expect(entry).toBeDefined();
+            expect(entry?.type).toBe('enum');
+            expect(entry?.enumValues).toContain('pretty');
+            expect(entry?.enumValues).toContain('json');
+            expect(entry?.defaultValue).toBe('pretty');
+            expect(entry?.apps).toContain('api');
+            expect(entry?.category).toBe('api-config');
         });
     });
 
