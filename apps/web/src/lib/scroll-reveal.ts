@@ -55,7 +55,12 @@ export function initScrollReveal(): void {
                 }
             }
         },
-        { threshold: 0, rootMargin: '0px 0px -10% 0px' }
+        // Positive bottom margin pre-fires the reveal ~15% of the viewport
+        // BEFORE the element scrolls into view, so the opacity/translate
+        // transition has time to finish as it enters — instead of popping in
+        // mid-screen. A negative margin (the previous '-10%') triggered too
+        // late, causing the abrupt appearance reported in BETA-28.
+        { threshold: 0, rootMargin: '0px 0px 15% 0px' }
     );
 
     const viewportHeight = window.innerHeight;
