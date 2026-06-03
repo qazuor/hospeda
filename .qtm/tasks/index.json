@@ -762,6 +762,23 @@
             "note": "11 tasks across 4 phases (avg complexity 2.5). phase-worker: T-001..T-004 (Worker script + wrangler.toml + README + unit test). phase-app: T-005..T-007 (CSP removal + env-registry update + CSP regression test). phase-docs: T-008..T-009 (proxy guide + SPEC-140 ref update). phase-verify: T-010..T-011 (owner ops: CF Worker deploy + Coolify env set + smoke). T-010 and T-011 are manual owner actions, not automatable. Critical coupling: T-010 (Worker live) must precede T-011 (env var + redeploy)."
         },
         {
+            "specId": "SPEC-183",
+            "title": "API Error i18n Standardization",
+            "status": "in-progress",
+            "progress": "0/14",
+            "path": "SPEC-183-api-error-i18n-standardization",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
+            "branch": "spec/SPEC-183-api-error-i18n-standardization",
+            "base": "staging",
+            "driver": "Linear BETA-63",
+            "createdAt": "2026-06-02T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
+            "taskCount": 14,
+            "averageComplexity": 2.1,
+            "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
+            "archived": false
+        },
+        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "pending",

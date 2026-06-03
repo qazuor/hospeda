@@ -2152,6 +2152,17 @@
             "note": "Driver BETA-77. Web PostHog sends events directly to us.i.posthog.com — blocked by ad-blockers (est. 25-35% desktop loss in Argentina). Solution: Cloudflare Worker proxying /ingest/* on hospeda.com.ar to PostHog Cloud US. Web-only (admin out of scope). CRITICAL coupling: CSP in middleware-helpers.ts hardcodes the PostHog external hosts; removing them and changing PUBLIC_POSTHOG_HOST must be atomic with the Worker already live. 11 tasks across 4 phases: phase-worker (Worker + wrangler + test), phase-app (CSP + env-registry + CSP regression test), phase-docs, phase-verify (owner ops + smoke). T-010/T-011 are owner-only manual actions."
         },
         {
+            "specId": "SPEC-183",
+            "title": "API Error i18n Standardization",
+            "status": "in-progress",
+            "complexity": "medium",
+            "path": "SPEC-183-api-error-i18n-standardization",
+            "created": "2026-06-02T00:00:00.000Z",
+            "archived": false,
+            "archivedAt": null,
+            "archiveNote": null
+        },
+        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "draft",

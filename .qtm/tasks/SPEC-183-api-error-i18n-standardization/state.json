@@ -1,0 +1,324 @@
+{
+    "version": "1.0",
+    "title": "API Error i18n Standardization",
+    "specRef": "SPEC-183-api-error-i18n-standardization",
+    "created": "2026-06-02T00:00:00.000Z",
+    "summary": {
+        "total": 14,
+        "pending": 14,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Move translateApiError + types into packages/i18n/src/api-errors.ts",
+            "description": "Create packages/i18n/src/api-errors.ts containing the ApiErrorShape interface, TranslationFn type, and translateApiError pure function. Port the implementation verbatim from apps/web/src/lib/api-errors.ts. Replace the web-local `createT` call with a locale-to-trans lookup using @repo/i18n's own `trans` map and `Locale` type (same mechanism already used by toast-error.ts). Acceptance: the function compiles inside @repo/i18n with no imports from web. SupportedLocale in the param interface is aliased to @repo/i18n's `Locale` type.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [],
+            "tags": ["i18n", "refactor", "phase-1"],
+            "phase": "phase-1-centralize",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Export translateApiError + types from packages/i18n/src/index.ts",
+            "description": "Add named exports for translateApiError, ApiErrorShape, and TranslationFn to packages/i18n/src/index.ts. Build @repo/i18n and verify the dist exports are present. Acceptance: `import { translateApiError } from '@repo/i18n'` resolves in TypeScript strict mode from any package in the monorepo.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-006", "T-009"],
+            "subtasks": [],
+            "tags": ["i18n", "exports", "phase-1"],
+            "phase": "phase-1-centralize",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Port + extend api-errors test suite into packages/i18n/test/",
+            "description": "Create packages/i18n/test/translate-api-error.test.ts. Port all 7 existing test cases from apps/web/test/lib/api-errors.test.ts, updating the import to '@repo/i18n'. Add two new cases: (a) locale-only path (no t function, uses internal trans lookup) — assert returns correct Spanish text; (b) reason fallback when translation missing — assert falls through to code translation. Acceptance: all 9 tests pass; coverage ≥ 90% on packages/i18n/src/api-errors.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [],
+            "tags": ["i18n", "testing", "phase-1"],
+            "phase": "phase-1-centralize",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Replace apps/web/src/lib/api-errors.ts with a re-export shim",
+            "description": "Reduce apps/web/src/lib/api-errors.ts to three lines: re-export translateApiError, ApiErrorShape, and TranslationFn from '@repo/i18n'. Remove all implementation code and the import of web-local `createT`. Verify that all 17 existing web import sites (`import { translateApiError } from '@/lib/api-errors'` or similar) continue to resolve with zero changes. Acceptance: `pnpm typecheck` on apps/web passes; existing web api-errors.test.ts imports updated to point to @repo/i18n and all 7 cases still pass (or the test file is removed in favour of packages/i18n/test/ from T-003).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [],
+            "tags": ["web", "refactor", "phase-1"],
+            "phase": "phase-1-centralize",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Migrate remaining genuine API-error sites in apps/web",
+            "description": "Migrate the following 5 sites from raw `.message` to translateApiError (import from '@/lib/api-errors' which re-exports from @repo/i18n): (1) AvatarUpload.client.tsx:136,162 — errBody.error?.message; (2) PreferenceToggles.client.tsx:233 — errBody.error?.message; (3) ProfileCompletionAvatarPicker.tsx:129 — errBody.error?.message; (4) CreatePropertyMiniForm.client.tsx:181 — response.error.message; (5) reset-password-status.ts:72 — result.error.message. For each, pass the error object and either `t` (if in a React component with useTranslations) or `locale` (if in a plain util). Do NOT touch native JS Error instances. Acceptance: all 5 sites call translateApiError; typecheck clean.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["web", "migration", "phase-2"],
+            "phase": "phase-2-web-migration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Tests for migrated web components",
+            "description": "Write Vitest unit/component tests for the 5 migrated web sites (T-005). Minimum: for each site, assert that when the API returns a known code (e.g. 'VALIDATION_ERROR'), the component renders the localized text, not the raw English message. Use mock t functions or locale='es'. Acceptance: tests green; coverage ≥ 90% on the migrated code paths.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["web", "testing", "phase-2"],
+            "phase": "phase-2-web-migration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire translateApiError into admin billing dialogs (PlanDialog, AddonDialog, RefundDialog)",
+            "description": "In apps/admin: import { translateApiError } from '@repo/i18n'. In each component, get `t` from useTranslations() and replace the raw `error.message` with translateApiError({ error: apiError, t }). Files: (1) features/billing-plans/components/PlanDialog.tsx:115, (2) features/billing-addons/components/AddonDialog.tsx:93, (3) features/billing-payments/RefundDialog.tsx:73 (currently concatenated into toast description — replace the raw message portion). Acceptance: typecheck clean; no raw English API strings in these dialogs when an API error occurs.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "billing", "migration", "phase-3"],
+            "phase": "phase-3-admin-adoption",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Wire translateApiError into admin exchange-rate components",
+            "description": "In apps/admin exchange-rate feature: replace raw error.message with translateApiError in (1) features/exchange-rates/components/RateHistoryView.tsx:296, (2) features/exchange-rates/components/FetchConfigForm.tsx:97, (3) features/exchange-rates/components/ManualOverrideDialog.tsx:102. Use `t` from useTranslations(). Acceptance: typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "exchange-rates", "migration", "phase-3"],
+            "phase": "phase-3-admin-adoption",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Wire translateApiError into admin sponsorship components + CronJobsPanel",
+            "description": "In apps/admin: replace raw error.message with translateApiError in (1) features/sponsorships/components/CreateSponsorshipPackageDialog.tsx:131, (2) features/sponsorships/components/SponsorshipsTab.tsx:204, (3) features/sponsorships/components/SponsorshipLevelsTab.tsx:158, (4) features/sponsorships/components/CreateSponsorshipDialog.tsx:175, (5) features/sponsorships/components/SponsorshipPackagesTab.tsx:128, (6) features/cron-jobs/components/CronJobsPanel.tsx:73. Use `t` from useTranslations(). Acceptance: typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "sponsorships", "cron", "migration", "phase-3"],
+            "phase": "phase-3-admin-adoption",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Tests for migrated admin components",
+            "description": "Write Vitest unit/component tests for the migrated admin sites (T-007, T-008, T-009). Minimum coverage: for PlanDialog, AddonDialog, RefundDialog — assert that a mock API error with a known code renders the localized message from common.apiError. Use mock `t` functions. Acceptance: tests green; coverage ≥ 90% on the migrated code paths.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-008", "T-009"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["admin", "testing", "phase-3"],
+            "phase": "phase-3-admin-adoption",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Audit ServiceErrorCode enum and add missing common.apiError keys (es/en/pt)",
+            "description": "Compare all ServiceErrorCode enum values against common.apiError keys in all three locales. The following are missing: INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED. Add them to packages/i18n/src/locales/es/common.json, en/common.json, pt/common.json with appropriate localized copy. es is the primary locale — en and pt must be provided (not '[MISSING:]' placeholders). Acceptance: all 5 keys present with non-empty values in all 3 locales.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["i18n", "keys", "phase-4"],
+            "phase": "phase-4-key-coverage",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add CI guard test: every ServiceErrorCode has a common.apiError key",
+            "description": "Create packages/i18n/test/api-error-key-coverage.test.ts. Import ServiceErrorCode from '@repo/schemas' and trans from '@repo/i18n'. For each enum value V, assert that trans['es'][`common.apiError.${V}`], trans['en'][...], and trans['pt'][...] are all non-empty strings. The test must fail with a clear message listing missing keys when a new code is added without a corresponding translation. Acceptance: test green after T-011; test fails deterministically when a key is removed.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["i18n", "testing", "ci-guard", "phase-4"],
+            "phase": "phase-4-key-coverage",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write api-error-translation guide in packages/i18n/docs/",
+            "description": "Create packages/i18n/docs/api-error-translation.md explaining: (1) the translation priority chain (reason → code → message → fallback → GENERIC), (2) how to call translateApiError from a React component (with t) vs. a plain util (with locale), (3) how to add a new error code (add ServiceErrorCode value + common.apiError key in all 3 locales + guard test will catch omissions), (4) what NOT to migrate (native JS errors, cache internals, logger calls). Acceptance: doc is clear, accurate, and consistent with implemented code.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005", "T-006", "T-010", "T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["docs", "i18n", "phase-4"],
+            "phase": "phase-4-key-coverage",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Spec + task index closeout",
+            "description": "Flip SPEC-183 in .qtm/specs/index.json to status=completed + archived=true + archivedAt. Flip the matching entry in .qtm/tasks/index.json to status=completed + progress=14/14 + archived=true + archivedAt + completionRef (PR number). Validate that both JSON files parse without error. Acceptance: jq parses both files; spec status=completed in both indexes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["closeout", "phase-4"],
+            "phase": "phase-4-key-coverage",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
