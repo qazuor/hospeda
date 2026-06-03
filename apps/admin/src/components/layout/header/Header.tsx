@@ -65,7 +65,7 @@ export function Header() {
     }, [showNotifications]);
 
     return (
-        <header className="sticky top-0 z-40">
+        <header>
             <div className="bg-[var(--palette-river-100)]">
                 <div className="flex h-14 items-center gap-3 px-3 md:px-4">
                     {/* Mobile menu button — opens sidebar drawer */}
