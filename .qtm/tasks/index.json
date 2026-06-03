@@ -30,9 +30,7 @@
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "worktree": null,
             "branch": null,
-            "dependsOn": [
-                "SPEC-143"
-            ],
+            "dependsOn": ["SPEC-143"],
             "reservedAt": "2026-05-18T22:00:00Z",
             "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         },
@@ -63,7 +61,7 @@
             "specId": "SPEC-182",
             "title": "Unified Authentication + Host-Mode Access Model",
             "status": "in-progress",
-            "progress": "0/22",
+            "progress": "4/22",
             "path": "SPEC-182-unified-auth-host-access",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-182-unified-auth-host-access",
             "branch": "spec/SPEC-182-unified-auth-host-access",
@@ -108,34 +106,13 @@
             "path": "SPEC-184-api-log-observability"
         },
         {
-            "specId": "SPEC-182",
-            "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "in-progress",
-            "progress": "0/22",
-            "path": "SPEC-182-unified-auth-host-access",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-182-unified-auth-host-access",
-            "branch": "spec/SPEC-182-unified-auth-host-access",
-            "base": "staging",
-            "driver": "Linear BETA-52, BETA-57",
-            "createdAt": "2026-06-02T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
-            "taskCount": 22,
-            "averageComplexity": 2.5,
-            "note": "22 tasks across 6 phases (avg complexity 2.5). Consolidates BETA-52 (admin redirects to own signin) + BETA-57 (admin OAuth signup role=USER bug). phase-1 (T-001..T-004): web callbackUrl support + allowlist validator + buildAdminLoginRedirect helper + tests. phase-2 (T-005..T-009): admin guard redirect to web auth + delete admin signin/signup pages + update callback/index + tests. phase-3 (T-010..T-013): owner decision on permission (USER_CREATE vs HOST_ONBOARD) + migrate signup-as-host endpoint to permission-gated + in-panel staff host-creation UI + tests. phase-4 (T-014..T-016): owner decision on CTA check strategy + wire UserMenu hostMode → admin URL + extend HostLandingCta/mobile nav. phase-5 (T-017..T-018): owner decision on dev-local cookie approach + implement/document workaround. phase-6 (T-019..T-022): full test suite + auth-architecture docs + manual smoke per role + index closeout. BETA-57 dissolves at T-006 (admin signup page deleted). BETA-52 resolves at T-005 (guard redirect to web auth). 3 owner decisions required before implementation: T-010 (D1+D2), T-014 (D3+D5), T-017 (D4).",
-            "archived": false
-        },
-        {
             "specId": "SPEC-185",
             "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "status": "in-progress",
             "progress": "0/17",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
-            "linearIssues": [
-                "BETA-75",
-                "BETA-72",
-                "BETA-76"
-            ],
+            "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
             "archived": false
         },
         {
@@ -145,9 +122,7 @@
             "progress": "0/0",
             "path": "SPEC-186-web-dynamic-image-grid",
             "branch": "spec/SPEC-186-web-dynamic-image-grid",
-            "linearIssues": [
-                "BETA-53"
-            ],
+            "linearIssues": ["BETA-53"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -158,9 +133,7 @@
             "progress": "0/0",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
-            "linearIssues": [
-                "BETA-60"
-            ],
+            "linearIssues": ["BETA-60"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -171,9 +144,7 @@
             "progress": "0/0",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
-            "linearIssues": [
-                "BETA-54"
-            ],
+            "linearIssues": ["BETA-54"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -184,9 +155,7 @@
             "progress": "0/0",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "linearIssues": [
-                "BETA-74"
-            ],
+            "linearIssues": ["BETA-74"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -197,11 +166,7 @@
             "progress": "0/0",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
-            "linearIssues": [
-                "BETA-69",
-                "BETA-68",
-                "BETA-65"
-            ],
+            "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -212,9 +177,7 @@
             "progress": "0/0",
             "path": "SPEC-192-billing-catalog-to-db",
             "branch": "spec/SPEC-192-billing-catalog-to-db",
-            "linearIssues": [
-                "BETA-58"
-            ],
+            "linearIssues": ["BETA-58"],
             "note": "tasks pending atomization",
             "archived": false
         }

@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -38,7 +38,7 @@
             "id": "T-002",
             "title": "Implement callbackUrl allowlist validator (server-side, no open-redirect)",
             "description": "Create a pure function validateCallbackUrl(url: string, env: { siteUrl: string; adminUrl: string; nodeEnv: string }): string | null in apps/web/src/lib/auth-callback.ts (or middleware-helpers.ts). Returns the URL if allowed, null otherwise. Allowlist rules: (1) hospeda.com.ar and any subdomain (regex ^https?://([a-z0-9-]+\\.)?hospeda\\.com\\.ar); (2) HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL exact origins; (3) *.hospeda.local + localhost in development. MUST NOT allow arbitrary domains. Acceptance: unit tests cover allowed/blocked cases; open-redirect with evil.example.com returns null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-001", "T-003"],
@@ -52,8 +52,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T07:26:01Z",
+                "completed": "2026-06-03T07:31:56Z"
             }
         },
         {
