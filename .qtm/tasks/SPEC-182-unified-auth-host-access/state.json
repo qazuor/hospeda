@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -126,7 +126,7 @@
             "id": "T-006",
             "title": "Delete apps/admin/src/routes/auth/signup.tsx",
             "description": "Remove the logged-out host signup page from admin. This closes BETA-57: the OAuth signup path that created role=USER instead of HOST no longer exists. Before deleting: check for any import references to this file in the admin app (routes manifest, auth.tsx, etc.) and remove them. Acceptance: file is gone, typecheck passes, no dangling imports, routes tree does not 404 on any currently-linked page (the signup link from signin.tsx is also going away in T-007).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-019"],
@@ -136,12 +136,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:20:06Z",
+                "completed": "2026-06-03T08:26:21Z"
             }
         },
         {
