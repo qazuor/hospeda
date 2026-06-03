@@ -4,9 +4,13 @@ name: CI
 #   - pull_request events from the same repo (non-draft) → self-hosted runner
 #     on the owner's laptop (labels: self-hosted, linux, x64, leo-laptop).
 #     These events consume ZERO GitHub-hosted minutes (private-repo quota saving).
-#   - push to main/staging, workflow_call, fork PRs, and draft PRs → ubuntu-latest
-#     (GitHub-hosted) so the validated baseline is always reachable even if the
-#     laptop is offline.
+#   - push to refs/heads/staging → self-hosted (same laptop). Staging CI now
+#     depends on the laptop being online; jobs queue if it is offline.
+#   - push to refs/heads/main → ubuntu-latest (GitHub-hosted). Main is the
+#     trusted, always-available baseline and must never depend on the laptop.
+#   - workflow_call, fork PRs, and draft PRs → ubuntu-latest (GitHub-hosted).
+# Tradeoff: staging CI is free but availability-dependent; main CI is paid but
+# always reachable. This is intentional — main is the release gate.
 # See docs/guides/self-hosted-runner.md for setup and operational details.
 
 on:
@@ -82,9 +86,10 @@ jobs:
   lint:
     name: Lint
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -120,9 +125,10 @@ jobs:
     # preserving the same CI-gate behaviour as the old action.
     # setup-python + pip install semgrep adds ~30-60s; acceptable.
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -154,9 +160,10 @@ jobs:
   guards:
     name: Guards
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -218,9 +225,10 @@ jobs:
   build:
     name: Build
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 15
@@ -251,9 +259,10 @@ jobs:
   typecheck:
     name: Typecheck
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 15
@@ -279,9 +288,10 @@ jobs:
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
@@ -372,9 +382,10 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 20
@@ -416,9 +427,10 @@ jobs:
   coverage-check:
     name: Coverage Threshold
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -542,9 +554,10 @@ jobs:
   ci-pass:
     name: CI Pass
     runs-on: >-
-      ${{ (github.event_name == 'pull_request'
-           && github.event.pull_request.draft == false
-           && github.event.pull_request.head.repo.full_name == github.repository)
+      ${{ ((github.event_name == 'pull_request'
+            && github.event.pull_request.draft == false
+            && github.event.pull_request.head.repo.full_name == github.repository)
+           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
           && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
           || 'ubuntu-latest' }}
     if: always()
