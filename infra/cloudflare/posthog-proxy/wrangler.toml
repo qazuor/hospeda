@@ -13,15 +13,15 @@ main = "worker.js"
 compatibility_date = "2024-09-01"
 
 # Staging: deploys a Worker named `posthog-proxy-staging` bound to the staging
-# origin's /ingest path.
+# origin's /api/relay path.
 [env.staging]
 routes = [
-  { pattern = "staging.hospeda.com.ar/ingest/*", zone_name = "hospeda.com.ar" }
+  { pattern = "staging.hospeda.com.ar/api/relay/*", zone_name = "hospeda.com.ar" }
 ]
 
 # Production: deploys a Worker named `posthog-proxy-production` bound to the
-# production origin's /ingest path.
+# production origin's /api/relay path.
 [env.production]
 routes = [
-  { pattern = "hospeda.com.ar/ingest/*", zone_name = "hospeda.com.ar" }
+  { pattern = "hospeda.com.ar/api/relay/*", zone_name = "hospeda.com.ar" }
 ]
