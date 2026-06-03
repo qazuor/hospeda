@@ -2,6 +2,21 @@
 
 > First-party analytics ingestion to defeat ad-blockers (SPEC-181, Linear BETA-77).
 
+## Reserved first-party proxy paths (read this first)
+
+Hospeda runs **two** first-party reverse proxies that exist purely to stop
+ad-blockers from dropping telemetry. They look similar but are **different
+mechanisms bound to different paths and Workers**. Do not confuse, merge, or
+repurpose them, and never point an application/API route at these paths:
+
+| Path           | Worker                                  | Upstream                          | Mechanism                                          | Web env var to enable it          |
+| -------------- | --------------------------------------- | --------------------------------- | -------------------------------------------------- | --------------------------------- |
+| `/api/relay/*` | `posthog-proxy` (`@repo/posthog-proxy-worker`) | PostHog Cloud (fixed host)        | Blind passthrough; rewrites `/api/relay`→PostHog   | `PUBLIC_POSTHOG_HOST=…/api/relay` |
+| `/api/event`   | `sentry-tunnel` (`@repo/sentry-tunnel-worker`) | Sentry (host derived from DSN)    | Reads envelope, parses DSN, SSRF-guards, forwards  | `PUBLIC_SENTRY_TUNNEL=/api/event` |
+
+This page documents the **PostHog** proxy (`/api/relay`). For the **Sentry**
+tunnel (`/api/event`), see [Sentry Tunnel](./sentry-tunnel.md).
+
 ## Why
 
 The web app originally sent PostHog events directly to `us.i.posthog.com` and loaded
