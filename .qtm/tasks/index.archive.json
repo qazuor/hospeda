@@ -715,6 +715,16 @@
             "archived": true,
             "archivedAt": "2026-06-03T21:57:52.000Z",
             "archiveNote": "All 16 tasks done; PR #1412 merged to staging 2026-06-03. Follow-up (ALS request-context enrichment: request_id/user_id/method/path columns + filters) tracked separately as new branch post-merge. Operator pending: provision app-log-purge cron in external scheduler."
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "status": "completed",
+            "progress": "11/11",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "archived": true,
+            "archivedAt": "2026-06-03T22:35:55.000Z",
+            "archiveNote": "Code merged in PR #1385 (2026-06-02). Owner ops T-010 (CF Worker deploy + route) and T-011 (PUBLIC_POSTHOG_HOST in Coolify + redeploy + smoke) executed 2026-06-03. 11/11."
         }
     ]
 }
