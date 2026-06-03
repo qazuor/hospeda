@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -170,7 +170,7 @@
             "id": "T-008",
             "title": "Update admin auth/index.tsx + auth/callback.tsx for removed signin/signup routes",
             "description": "Review apps/admin/src/routes/auth/index.tsx: if it redirects to /auth/signin, update the redirect to the web signin URL. If it is a layout, ensure it does not reference the deleted pages. Review apps/admin/src/routes/auth/callback.tsx: after OAuth code exchange, if it redirects to /auth/signin on failure (unauthenticated), update to redirect to web signin URL. On success it redirects to /dashboard — keep that unchanged. Acceptance: auth index and callback handle the missing pages gracefully; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
@@ -180,12 +180,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:39:33Z",
+                "completed": "2026-06-03T08:41:42Z"
             }
         },
         {
