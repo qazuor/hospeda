@@ -3,7 +3,13 @@
  * @module logger/environment
  */
 
-import { type BaseLoggerConfig, LogLevel, type LogLevelType } from './types.js';
+import {
+    type BaseLoggerConfig,
+    LogFormat,
+    type LogFormatType,
+    LogLevel,
+    type LogLevelType
+} from './types.js';
 
 /**
  * Get a boolean value from an environment variable
@@ -51,6 +57,19 @@ export function getLogLevelEnv(key: string): LogLevelType | null {
 }
 
 /**
+ * Get a log format from an environment variable
+ * @param key - Environment variable key
+ * @returns Log format, or null if unset or invalid
+ */
+export function getLogFormatEnv(key: string): LogFormatType | null {
+    const value = process.env[key]?.toUpperCase();
+    if (!value) {
+        return null;
+    }
+    return Object.keys(LogFormat).includes(value) ? (value as LogFormatType) : null;
+}
+
+/**
  * Get configuration from environment variables
  * @param categoryKey - Optional category key to get specific configuration
  * @returns Partial configuration from environment
@@ -62,6 +81,9 @@ export function getConfigFromEnv(categoryKey?: string): Partial<BaseLoggerConfig
 
     const level = getLogLevelEnv(`${prefix}LEVEL`) ?? getLogLevelEnv('LOG_LEVEL') ?? undefined;
     if (level !== undefined) result.LEVEL = level;
+
+    const format = getLogFormatEnv(`${prefix}FORMAT`) ?? getLogFormatEnv('LOG_FORMAT') ?? undefined;
+    if (format !== undefined) result.FORMAT = format;
 
     const shouldSave = getBooleanEnv(`${prefix}SAVE`) ?? getBooleanEnv('LOG_SAVE');
     if (shouldSave !== null) result.SAVE = shouldSave;

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { configureLogger, defaultConfig, getConfig, resetLoggerConfig } from '../src/config.js';
-import { LogLevel } from '../src/types.js';
+import { LogFormat, LogLevel } from '../src/types.js';
 
 describe('config', () => {
     beforeEach(() => {
@@ -17,6 +17,7 @@ describe('config', () => {
             expect(config.INCLUDE_TIMESTAMPS).toBe(true);
             expect(config.INCLUDE_LEVEL).toBe(true);
             expect(config.USE_COLORS).toBe(true);
+            expect(config.FORMAT).toBe(LogFormat.PRETTY);
             expect(config.SAVE).toBe(false);
             expect(config.EXPAND_OBJECT_LEVELS).toBe(2);
             expect(config.TRUNCATE_LONG_TEXT).toBe(true);
