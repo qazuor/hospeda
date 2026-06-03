@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -60,7 +60,7 @@
             "id": "T-003",
             "title": "Add buildAdminLoginRedirect helper in web middleware-helpers.ts",
             "description": "In apps/web/src/lib/middleware-helpers.ts, add an exported function buildAdminLoginRedirect({ siteUrl, locale, adminUrl }: { siteUrl: string; locale: SupportedLocale; adminUrl: string }): string that returns a URL of the form /{locale}/auth/signin/?callbackUrl={encodeURIComponent(adminUrl)}. This is the URL the admin guard will redirect unauthenticated users to. Note: this function lives in the web app but is also referenced conceptually by the admin guard (which builds the equivalent URL from its env vars — see T-005). Acceptance: unit test covers the URL shape and encoding; existing buildLoginRedirect is unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
@@ -74,8 +74,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T07:36:40Z",
+                "completed": "2026-06-03T07:39:10Z"
             }
         },
         {
