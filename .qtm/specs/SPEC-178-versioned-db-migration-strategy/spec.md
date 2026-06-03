@@ -3,8 +3,9 @@ spec-id: SPEC-178
 title: Versioned DB Migration Strategy Overhaul
 type: infrastructure
 complexity: high
-status: in-progress
+status: completed
 created: 2026-06-01T00:00:00Z
+completed: 2026-06-02T19:30:00Z
 references:
   - ADR-017 (PostgreSQL-specific features via manual migrations — partially superseded)
   - SPEC-172 (amenity/feature name -> i18n jsonb — the conversion that exposed the gap)
@@ -294,7 +295,7 @@ do:
 - **Root `CLAUDE.md`** — fix the misleading `db:migrate` = "Apply migrations" line and the
   "`drizzle-kit push` is not enough" gotcha; point to the new flow.
 - **New ADR** (supersedes the relevant parts of ADR-017) — decision record for adopting versioned migrations
-  + the two-carril model + reset rationale.
+  - the two-carril model + reset rationale.
 - **`docs/guides/migrations.md`** — currently out of sync (describes an aspirational migrate flow that was
   never used). Rewrite to the actual new flow.
 - **"Rules for agents touching the schema"** — an explicit, copy-pasteable protocol in `packages/db/CLAUDE.md`

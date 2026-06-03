@@ -1,20 +1,20 @@
 # PostHog Reverse Proxy Worker (SPEC-181)
 
 A Cloudflare Worker that proxies PostHog ingestion and static assets under a
-**first-party** path (`/ingest/*`) on the site origin, so ad-blockers and privacy
+**first-party** path (`/api/relay/*`) on the site origin, so ad-blockers and privacy
 extensions cannot intercept analytics. Recovers the ~25–35% desktop analytics loss
 observed in the Argentina market (Linear BETA-77).
 
 ## What it does
 
-After stripping the `/ingest` prefix:
+After stripping the `/api/relay` prefix:
 
 | Incoming path                  | Forwarded to                          | Cached? |
 | ------------------------------ | ------------------------------------- | ------- |
-| `/ingest/static/*`             | `https://us-assets.i.posthog.com/*`   | yes (assets) |
-| `/ingest/e/`                   | `https://us.i.posthog.com/e/`         | **no-store** |
-| `/ingest/decide/`              | `https://us.i.posthog.com/decide/`    | **no-store** |
-| `/ingest/flags/`               | `https://us.i.posthog.com/flags/`     | **no-store** |
+| `/api/relay/static/*`             | `https://us-assets.i.posthog.com/*`   | yes (assets) |
+| `/api/relay/e/`                   | `https://us.i.posthog.com/e/`         | **no-store** |
+| `/api/relay/decide/`              | `https://us.i.posthog.com/decide/`    | **no-store** |
+| `/api/relay/flags/`               | `https://us.i.posthog.com/flags/`     | **no-store** |
 | anything else                  | `https://us.i.posthog.com/*`          | passthrough |
 
 It also forwards the real client IP as `X-Forwarded-For` (from Cloudflare's
@@ -31,7 +31,7 @@ Correct order:
 
 1. **Deploy this Worker** and configure its routes (below).
 2. **Verify** it proxies correctly (see "Verify" below) — do NOT skip this.
-3. **Atomically** in the web app deploy: set `PUBLIC_POSTHOG_HOST=https://<origin>/ingest`
+3. **Atomically** in the web app deploy: set `PUBLIC_POSTHOG_HOST=https://<origin>/api/relay`
    in Coolify **and** ensure the CSP no longer lists `us.i.posthog.com` /
    `us-assets.i.posthog.com` (the proxy path is same-origin, covered by `'self'`).
 4. **Confirm** events arrive in the PostHog dashboard live stream.
@@ -49,10 +49,10 @@ a one-off operator tool run from your machine or the VPS.
 ```bash
 cd infra/cloudflare/posthog-proxy
 
-# Staging first (Worker named posthog-proxy-staging, route staging.hospeda.com.ar/ingest/*)
+# Staging first (Worker named posthog-proxy-staging, route staging.hospeda.com.ar/api/relay/*)
 wrangler deploy --env staging
 
-# Production later, once staging is verified (route hospeda.com.ar/ingest/*)
+# Production later, once staging is verified (route hospeda.com.ar/api/relay/*)
 wrangler deploy --env production
 ```
 
@@ -60,15 +60,15 @@ wrangler deploy --env production
 
 ```bash
 # Static asset (should return the PostHog array.js, 200):
-curl -i https://hospeda.com.ar/ingest/static/array.js
+curl -i https://hospeda.com.ar/api/relay/static/array.js
 
 # Ingestion endpoint (should proxy to us.i.posthog.com, no-store):
-curl -i -X POST https://hospeda.com.ar/ingest/e/ \
+curl -i -X POST https://hospeda.com.ar/api/relay/e/ \
   -H 'content-type: application/json' --data '{}'
 ```
 
 In the browser (with uBlock Origin enabled), open DevTools → Network and confirm
-requests to `/ingest/e/` return 200 and events show up in the PostHog dashboard.
+requests to `/api/relay/e/` return 200 and events show up in the PostHog dashboard.
 
 ## Test
 

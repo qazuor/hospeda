@@ -1,9 +1,9 @@
 {
-    "name": "@repo/posthog-proxy-worker",
+    "name": "@repo/sentry-tunnel-worker",
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "description": "Cloudflare Worker that reverse-proxies PostHog ingestion under a first-party /api/relay path (SPEC-181).",
+    "description": "Cloudflare Worker that tunnels Sentry SDK envelopes under a first-party /api/event path so ad-blockers cannot intercept error reports (SPEC-181 follow-up).",
     "scripts": {
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",

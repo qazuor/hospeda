@@ -2,6 +2,21 @@
 
 > First-party analytics ingestion to defeat ad-blockers (SPEC-181, Linear BETA-77).
 
+## Reserved first-party proxy paths (read this first)
+
+Hospeda runs **two** first-party reverse proxies that exist purely to stop
+ad-blockers from dropping telemetry. They look similar but are **different
+mechanisms bound to different paths and Workers**. Do not confuse, merge, or
+repurpose them, and never point an application/API route at these paths:
+
+| Path           | Worker                                  | Upstream                          | Mechanism                                          | Web env var to enable it          |
+| -------------- | --------------------------------------- | --------------------------------- | -------------------------------------------------- | --------------------------------- |
+| `/api/relay/*` | `posthog-proxy` (`@repo/posthog-proxy-worker`) | PostHog Cloud (fixed host)        | Blind passthrough; rewrites `/api/relay`→PostHog   | `PUBLIC_POSTHOG_HOST=…/api/relay` |
+| `/api/event`   | `sentry-tunnel` (`@repo/sentry-tunnel-worker`) | Sentry (host derived from DSN)    | Reads envelope, parses DSN, SSRF-guards, forwards  | `PUBLIC_SENTRY_TUNNEL=/api/event` |
+
+This page documents the **PostHog** proxy (`/api/relay`). For the **Sentry**
+tunnel (`/api/event`), see [Sentry Tunnel](./sentry-tunnel.md).
+
 ## Why
 
 The web app originally sent PostHog events directly to `us.i.posthog.com` and loaded
@@ -11,7 +26,7 @@ desktop users — who have high ad-blocker adoption — were silently excluded f
 analytics. That is not a functional bug; it is a **data-quality** problem that biases
 funnels, flags, and experiments.
 
-SPEC-181 routes ingestion through a **first-party** path (`/ingest/*`) on the site
+SPEC-181 routes ingestion through a **first-party** path (`/api/relay/*`) on the site
 origin. Blocklists cannot block a first-party path without breaking the site itself.
 Bonus: the real client IP is forwarded (accurate geo) and first-party cookies survive
 ITP/Safari longer.
@@ -23,11 +38,11 @@ longer in the web CSP.
 
 ```
 Browser (even with an ad-blocker)
-  │  GET  https://hospeda.com.ar/ingest/static/array.js
-  │  POST https://hospeda.com.ar/ingest/e/
+  │  GET  https://hospeda.com.ar/api/relay/static/array.js
+  │  POST https://hospeda.com.ar/api/relay/e/
   ▼
-Cloudflare edge — route hospeda.com.ar/ingest/*  →  PostHog Proxy Worker
-  │  strips /ingest, forwards to PostHog Cloud (US):
+Cloudflare edge — route hospeda.com.ar/api/relay/*  →  PostHog Proxy Worker
+  │  strips /api/relay, forwards to PostHog Cloud (US):
   │    /static/*  → us-assets.i.posthog.com
   │    /e/,/decide/,/flags/ and the rest → us.i.posthog.com
   │  adds X-Forwarded-For (real IP); no-store on ingestion endpoints
@@ -45,8 +60,8 @@ coupled to the Worker. **Deploy the Worker first**, or PostHog breaks silently (
 visibly once CSP moves from Report-Only to enforce).
 
 1. Deploy the Worker and bind the route — see the [Worker README](../../infra/cloudflare/posthog-proxy/README.md).
-2. Verify it proxies (curl `/ingest/static/array.js` and `/ingest/e/`).
-3. **Atomically** in the web deploy: set `PUBLIC_POSTHOG_HOST=https://<origin>/ingest`
+2. Verify it proxies (curl `/api/relay/static/array.js` and `/api/relay/e/`).
+3. **Atomically** in the web deploy: set `PUBLIC_POSTHOG_HOST=https://<origin>/api/relay`
    in Coolify. The CSP already dropped the external hosts (SPEC-181), and the proxy
    path is same-origin (`'self'`), so no CSP host entry is needed.
 4. Confirm events in the PostHog dashboard live stream (test with an ad-blocker on).
@@ -57,8 +72,8 @@ Reversing steps 1 and 3 causes a broken init window with lost events.
 
 | Env var | Where | Value |
 |---------|-------|-------|
-| `PUBLIC_POSTHOG_HOST` | Coolify (web, prod) | `https://hospeda.com.ar/ingest` |
-| `PUBLIC_POSTHOG_HOST` | Coolify (web, staging) | `https://staging.hospeda.com.ar/ingest` |
+| `PUBLIC_POSTHOG_HOST` | Coolify (web, prod) | `https://hospeda.com.ar/api/relay` |
+| `PUBLIC_POSTHOG_HOST` | Coolify (web, staging) | `https://staging.hospeda.com.ar/api/relay` |
 | `PUBLIC_POSTHOG_HOST` | local dev | unset (snippet stays off; falls back to `https://us.i.posthog.com`) |
 
 `apps/admin` is out of scope — internal staff have negligible ad-blocker rates, so
