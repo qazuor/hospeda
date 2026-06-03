@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -16,7 +16,7 @@
             "id": "T-001",
             "title": "Add callbackUrl param support to web signin page (server-side redirect)",
             "description": "In apps/web/src/pages/[lang]/auth/signin.astro: read the ?callbackUrl query param in server-side Astro code. After a successful sign-in, if callbackUrl is present and passes the allowlist check (T-002), redirect to callbackUrl instead of the default returnUrl destination. If callbackUrl is absent or fails allowlist, use existing returnUrl logic unchanged. The redirect must happen in server-side Astro.redirect() — NOT in client JS. Acceptance: signin with ?callbackUrl=https://admin.hospeda.com.ar redirects there post-signin; signin without ?callbackUrl behaves identically to today.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
@@ -26,12 +26,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T07:48:09Z",
+                "completed": "2026-06-03T07:49:44Z"
             }
         },
         {
