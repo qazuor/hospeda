@@ -24,10 +24,11 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
+import { getPlanBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     ADDON_RECALC_SOURCE_ID,
+    AddonCatalogService,
     BILLING_EVENT_TYPES,
     withServiceTransaction
 } from '@repo/service-core';
@@ -44,6 +45,10 @@ import {
     resolvePlanBaseLimit,
     sumIncrements
 } from './addon-plan-change.helpers.js';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-013) ─────────────────
+// Instantiated once at module level; stateless, no DB connection held.
+const catalogService = new AddonCatalogService();
 
 // ─── Dedup guard (GAP-043-014) ────────────────────────────────────────────────
 
@@ -132,7 +137,7 @@ export interface PlanChangeRecalculationInput {
  * This function is the orchestrating entry point for Flow B. It:
  * 1. Queries all `status = 'active' AND deleted_at IS NULL` addon purchases for
  *    the customer.
- * 2. Resolves each purchase's addon definition via `getAddonBySlug`.
+ * 2. Resolves each purchase's addon definition via `AddonCatalogService.getBySlug` (DB-backed, SPEC-192 T-013).
  * 3. Filters to limit-type addons only (`addon.affectsLimitKey != null`).
  * 4. Groups purchases by `limitKey`.
  * 5. For each unique `limitKey`:
@@ -310,15 +315,19 @@ export async function handlePlanChangeAddonRecalculation(
         const limitAddons: LimitAddon[] = [];
 
         for (const purchase of activePurchases) {
-            const addonDef = getAddonBySlug(purchase.addonSlug);
+            // SPEC-192 T-013: resolve addon definition from DB-backed catalog.
+            // Preserves original skip-and-log semantics on not-found/error.
+            const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
 
-            if (!addonDef) {
+            if (!catalogResult.success) {
                 apiLogger.warn(
                     { customerId, addonSlug: purchase.addonSlug, purchaseId: purchase.id },
                     'Addon definition not found during plan-change recalculation; skipping purchase'
                 );
                 continue;
             }
+
+            const addonDef = catalogResult.data;
 
             if (!addonDef.affectsLimitKey) {
                 continue;
