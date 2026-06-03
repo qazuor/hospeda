@@ -52,7 +52,7 @@ export function ImpersonationBanner() {
     return (
         <div
             role="alert"
-            className="sticky top-0 z-50 flex items-center justify-between gap-3 border-warning/30 border-b bg-warning/10 px-4 py-2 text-foreground"
+            className="flex items-center justify-between gap-3 border-warning/30 border-b bg-warning/10 px-4 py-2 text-foreground"
         >
             <div className="flex items-center gap-2">
                 <AlertTriangleIcon

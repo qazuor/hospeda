@@ -1,119 +1,127 @@
-# SPEC-167 — Downgrade preflight + excess remediation
+---
+spec-id: SPEC-167
+title: Downgrade Over-Limit Remediation (grandfather + restrict)
+type: feature
+complexity: medium
+status: draft
+created: 2026-05-27T00:00:00Z
+rewritten: 2026-06-03T00:00:00Z
+parent: SPEC-193
+depends_on: [SPEC-143, SPEC-145, SPEC-194]
+relates_to: [SPEC-167-was-preflight-block]
+blocks: [real-money-go-live]
+priority: medium
+base: staging
+worktree: spec-167-downgrade-preflight-remediation
+---
 
-**Status:** draft (implementation deferred — created during SPEC-143 smoke, to be tackled after the F-B1/F-B2/F-A1/F-E1 fixes)
-**Type:** feature · **Complexity:** medium · **Base:** staging
-**Origin:** SPEC-143 local smoke findings F-F1 / F-F2 (engram `spec-143/smoke-grupo-f-downgrade`)
+# SPEC-167: Downgrade Over-Limit Remediation (grandfather + restrict)
+
+> **Policy decision (2026-06-03, owner-confirmed under master SPEC-193, decision O-2).** The original spec
+> proposed a **preflight hard-block** (don't let the host downgrade until they fit the target plan). After
+> reviewing the industry standard (downgrades are deferred to period end; data is never destroyed; access
+> is not abruptly blocked — grandfather existing + enforce going-forward), the policy is changed to
+> **grandfather + restrict**. The hard-block is dropped. This rewrite reflects that.
 
 ## 1. Problem
 
-Today a plan downgrade **grandfathers** everything the host already has. A host on `owner-pro`
-(3 accommodations, 15 photos/accommodation, rich text + video, 3 active promotions) who
-downgrades to `owner-basico` (1 accommodation, 5 photos, 0 promotions, no rich/video) keeps
-**all** of it published and publicly visible. Only *new* actions (create, upload, premium edit)
-are gated; existing over-limit content stays.
+Today a plan downgrade **grandfathers everything** with no restriction. A host on `owner-pro`
+(3 accommodations, 15 photos, rich text + video, 3 promotions) who downgrades to `owner-basico`
+(1 accommodation, 5 photos, 0 promotions, no rich/video) keeps **all** of it published and publicly
+visible indefinitely. Only *new* actions are gated. Verified in SPEC-143 smoke (Grupo F, F-F1/F-F2):
+3 accommodations stay public when the plan allows 1; rich/video persist and stay public.
 
-Verified during SPEC-143 smoke (Grupo F):
-- 3 accommodations remain published/visible when the plan allows 1 (F-F1).
-- Rich description / embedded video / photos beyond the new cap persist and stay public; only
-  new edits are blocked (F-F2).
+This is a **revenue leak** (PRO-level visibility while paying BASICO, no upgrade incentive) but the fix is
+NOT to block the downgrade or destroy data — it is to **restrict** the over-cap resources in a reversible
+way and gate going-forward.
 
-This is internally consistent (enforcement is create-time only) but means a host gets PRO-level
-visibility and premium content while paying for BASICO indefinitely — the limit/entitlement is
-decorative for existing content, there is no upgrade incentive, and it is a revenue leak.
+## 2. Policy: grandfather + restrict (O-2)
 
-## 2. Goal
+When a downgrade is **applied** (at period end, by the `apply-scheduled-plan-changes` cron) and the host
+exceeds the target plan:
 
-Make a downgrade **preflight-checked**: when a host requests to move to a lower plan, verify that
-their current usage fits the target plan's limits and entitlements. If it does not, do **not**
-silently grandfather — block the downgrade and either let the host remove the excess themselves
-and retry, or offer to remove it automatically.
+- **Do NOT hard-block the downgrade.** The downgrade proceeds (the host asked for it; they keep the higher
+  plan until period end via the existing scheduled model).
+- **Quantity over cap (accommodations, active promotions): restrict the excess, reversibly.** On apply, the
+  over-cap items move to a **restricted state** (accommodations → unpublished/`owner_suspended`-style lock;
+  promotions → deactivated), reversible if the host re-upgrades. The host **chooses which N to keep active**
+  (default: keep the N most-recently-updated / most-viewed, restrict the rest). Nothing is deleted.
+- **Premium content (rich text, embedded video, photos over cap): grandfather, read-only.** Existing content
+  stays public and intact, but becomes **read-only for new edits** of those fields (consistent with how
+  `gateRichDescription`/`gateVideoEmbed` already gate PATCH). Photos over cap are **hidden/kept-data**, not
+  deleted; the host can pick which to keep visible.
+- **Block creating/publishing new over the cap** (this is SPEC-145 enforcement, going-forward).
+- **Inform the host** before and after: a "your account will exceed the new plan — here's what gets
+  restricted and how to choose" notice, with the ability to select which resources stay active.
 
-## 3. Desired behavior (from user, 2026-05-27)
+The principle (master INV-5): **never destroy data, never hard-block the downgrade; restrict reversibly.**
 
-When a host requests a downgrade and would end up over the target plan:
+## 3. Excess dimensions
 
-- **Block** the downgrade (do not schedule/apply it) until the account fits the target plan.
-- **Inform** the host exactly what is in excess (which accommodations, how many photos per
-  accommodation, which active promotions, which accommodations use premium description/video).
-- **Offer two remediation paths:**
-  1. *"Remove it for me"* — the system removes the excess automatically (policy TBD), then the
-     downgrade proceeds.
-  2. *"I'll remove it"* — the host deletes/trims the excess and retries the downgrade.
+| Dimension | Limit/entitlement | Excess condition | Remediation on apply |
+|-----------|-------------------|------------------|----------------------|
+| Accommodations | `MAX_ACCOMMODATIONS` | owned active count > target cap | restrict (unpublish/lock) excess, host picks which to keep; reversible |
+| Active promotions | `MAX_ACTIVE_PROMOTIONS` | active count > target cap | deactivate excess, reversible |
+| Photos per accommodation | `MAX_PHOTOS_PER_ACCOMMODATION` | gallery+featured > target cap | hide over-cap photos (keep data), host picks which to keep |
+| Rich description | `CAN_USE_RICH_DESCRIPTION` | description contains markdown | grandfather, read-only for new edits |
+| Embedded video | `CAN_EMBED_VIDEO` | description contains a video URL | grandfather, read-only for new edits |
 
-Same philosophy for premium content (F-F2): detect what would no longer be allowed under the
-target plan (rich text, embedded video, photos beyond cap) and require it be removed/trimmed
-(or auto-removed) before the downgrade.
+## 4. Resolved design decisions (were "open" — now locked by O-2)
 
-## 4. Excess dimensions to check
+1. **Enforcement point → apply-time (the real gate) + request-time UX notice.** The downgrade is scheduled;
+   the restriction happens when the cron applies it. Request-time only shows the host a preview of what will
+   be restricted. No hard-block at request-time.
+2. **Restriction semantics → reversible, non-destructive.** Soft state change (unpublish/lock/hide), never
+   hard delete. Restored automatically on re-upgrade (or manually by the host once back under cap).
+3. **Which items → host chooses; sensible default.** The host selects which N to keep active; default keeps
+   the most-recently-updated/most-viewed, restricts the rest.
+4. **Scheduled-change recheck → apply-time computes the excess fresh** and restricts per policy (the host may
+   have changed usage between request and apply). No deferral, no block — restrict and notify.
 
-| Dimension | Limit/entitlement | Excess condition |
-|-----------|-------------------|------------------|
-| Accommodations | `MAX_ACCOMMODATIONS` | owned active count > target cap |
-| Photos per accommodation | `MAX_PHOTOS_PER_ACCOMMODATION` | any accommodation gallery+featured count > target cap |
-| Active promotions | `MAX_ACTIVE_PROMOTIONS` | active promotions count > target cap |
-| Rich description | `CAN_USE_RICH_DESCRIPTION` | any accommodation description contains markdown (gate regex) |
-| Embedded video | `CAN_EMBED_VIDEO` | any accommodation description contains a video URL (gate regex) |
+## 5. Affected surfaces
 
-(Other entitlements that have no enforced surface today are out of scope.)
+- `apps/api/src/services/subscription-downgrade.service.ts` — usage-vs-target diff helper (read-only;
+  computes excess; no blocking).
+- `apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts` — apply-time restriction of the excess per policy
+  (coordinates with SPEC-194 T-194-07 idempotency and the state-machine INV-4).
+- `apps/api/src/routes/billing/plan-change.ts` — request-time preview (what will be restricted), NOT a block.
+- Self-serve UI (web) — "you'll exceed the new plan" preview + "choose what to keep" selector.
+- Admin downgrade ops — mirror the restriction behavior.
+- Accommodation/promotion restrict + restore primitives (reversible state).
 
-## 5. Open design decisions (lock before implementing)
+## 6. Public-page cache revalidation (folded in — was 145 D-5 / F-E1)
 
-1. **Enforcement point.** Downgrades are currently **scheduled** (`plan-change.ts` writes a
-   `scheduledPlanChange`, applied by the `apply-scheduled-plan-changes` cron at cycle end).
-   The preflight at request-time leaves a gap: the host can re-exceed between request and apply.
-   Decide: enforce at **request-time only**, **apply-time only** (cron re-checks and remediates),
-   or **both** (recommended for correctness — request-time for UX, apply-time as the real gate).
-2. **Auto-delete semantics (destructive).** "Remove it for me" deletes the host's content.
-   Decide: soft-delete + restore-on-re-upgrade vs hard removal; and *which* items are removed
-   (most-recent-first, least-viewed, or host explicitly selects which N to keep). Auto-deleting
-   accommodations is high-stakes — losing customer data is unacceptable, so reversibility is
-   strongly preferred.
-3. **Premium content remediation (F-F2).** For rich/video: strip to plain / remove video, or
-   require the host to edit it down? For photos over cap: which photos are removed? Prefer
-   "hide/keep-data" over destructive strip where feasible.
-4. **Scheduled-change recheck.** When `apply-scheduled-plan-changes` runs and the host is now
-   over the target (re-exceeded after the request, or never remediated): defer + notify, or
-   auto-remediate per the chosen policy.
+When a host self-pauses (`subscription-pause.service.ts`) the service flips
+`accommodations.owner_suspended` but does NOT call `getRevalidationService()?.scheduleRevalidation(...)`,
+unlike `accommodation.service` on create/update/delete. So already-cached public pages (Cloudflare ISR in
+prod) keep showing the listing until the TTL expires. The same gap applies to this downgrade-restrict flow.
 
-## 6. Affected surfaces (estimate)
+**Resolve with a shared revalidation trigger** invoked from: pause/resume (suspend/un-suspend owner's
+accommodations) and downgrade-apply (when excess is restricted/hidden), following the existing
+`scheduleRevalidation` pattern (build affected-accommodation context — slug, destination — schedule
+per-accommodation or batch).
 
-- `apps/api/src/routes/billing/plan-change.ts` — request-time preflight on the downgrade branch.
-- `apps/api/src/services/subscription-downgrade.service.ts` — usage-vs-target-plan diff helper +
-  remediation.
-- `apps/api/src/routes/.../apply-scheduled-plan-changes` cron — apply-time recheck.
-- Self-serve UI (web) — the "you're over the new plan" modal with the two remediation choices.
-- Admin билling pause/downgrade ops — mirror behavior if admins can downgrade on behalf.
-
-## 6b. Related concern folded in — revalidation on plan-state change (F-E1)
-
-SPEC-143 smoke F-E1: when a host self-pauses (`subscription-pause.service.ts`), the service
-flips `accommodations.owner_suspended` but does **not** schedule any public-page revalidation,
-unlike `accommodation.service` which calls `getRevalidationService()?.scheduleRevalidation(...)`
-on create/update/delete. So the host's already-cached public pages (Cloudflare ISR in prod) keep
-showing the listing as visible until the cache TTL expires, even though fresh reads now 404.
-
-The same gap applies to the downgrade flow (this spec) and any other plan-state change that
-should hide/alter public content. Resolve with a **shared revalidation trigger** invoked from:
-- pause / resume (suspend / un-suspend the owner's accommodations),
-- downgrade apply (when excess content is removed/hidden),
-
-following the existing `scheduleRevalidation` pattern. Build the affected-accommodations context
-(slug, destination) and schedule per-accommodation (or batch).
-
-Note (separate, broader, NOT in this spec): the API's own in-memory response cache
-(`apps/api/src/middlewares/cache.ts`, 300s TTL) is invalidated by TTL only — no data-change
-invalidation in any flow. That is a general caching choice (≤5min staleness) and is out of scope
-here; `scheduleRevalidation` targets the web/Cloudflare ISR layer, not this in-memory cache.
+Note (out of scope, broader): the API in-memory response cache (`middlewares/cache.ts`, 300s TTL) is
+TTL-only invalidated; that is a separate caching choice (≤5min staleness). `scheduleRevalidation` targets
+the web/Cloudflare ISR layer.
 
 ## 7. Out of scope
 
-- Changing the scheduled-vs-immediate downgrade model itself.
-- Upgrades (no excess possible on upgrade).
+- The hard-block preflight (dropped per O-2).
+- Changing the scheduled-vs-immediate downgrade model.
+- Upgrades (no excess possible).
+- Destructive deletion of host content (explicitly forbidden by INV-5).
 - Entitlements with no enforced surface.
 
 ## 8. Constraints
 
-- **Billing-core**: any change to the downgrade/plan-change flow requires the staging billing
-  smoke before merging to staging (per root CLAUDE.md billing rule).
-- Non-destructive by default: prefer reversible soft-delete / hide-keep-data over hard removal.
+- **Billing-core**: any change to the downgrade/plan-change flow requires the staging billing smoke before
+  merging to staging (root CLAUDE.md billing rule).
+- Non-destructive, reversible by default (INV-5).
 - Branch from `staging`, PR to `staging`. Own worktree (`spec-167-downgrade-preflight-remediation`).
+
+## 9. Cross-references
+
+- Master: SPEC-193 (decision O-2, invariant INV-5). Coordinates with SPEC-145 (going-forward enforcement +
+  the post-downgrade-restriction e2e T-145-11), SPEC-194 (state-machine INV-4 + scheduled-change idempotency
+  T-194-07). Origin: SPEC-143 smoke F-F1/F-F2/F-E1 (engram `spec-143/smoke-grupo-f-downgrade`).

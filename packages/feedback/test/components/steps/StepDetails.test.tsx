@@ -1,13 +1,11 @@
 /**
  * Tests for the StepDetails component.
  *
- * Since @testing-library/react is not installed in this package, we verify
- * the component contract through: import validation, prop type compliance,
- * and the pure helper logic embedded in the module.
- *
- * Full DOM render tests should be added once jsdom + testing-library are
- * added to this package's devDependencies.
+ * Combines contract-level checks (import validation, prop type compliance,
+ * embedded helper logic) with DOM render tests via @testing-library/react +
+ * jsdom (e.g. the BETA-17 drag-and-drop upload behavior).
  */
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
     StepDetails,
@@ -178,5 +176,63 @@ describe('StepDetails', () => {
     it('button labels match FEEDBACK_STRINGS', () => {
         expect(FEEDBACK_STRINGS.buttons.back).toBe('Volver');
         expect(FEEDBACK_STRINGS.buttons.submit).toBe('Enviar');
+    });
+});
+
+const makeProps = (overrides: Partial<StepDetailsProps> = {}): StepDetailsProps => ({
+    data: makeData(),
+    onChange: vi.fn(),
+    attachments: [],
+    onAddAttachments: vi.fn(),
+    onRemoveAttachment: vi.fn(),
+    environment: makeEnvironment(),
+    onEnvironmentChange: vi.fn(),
+    onBack: vi.fn(),
+    onSubmit: vi.fn(),
+    isSubmitting: false,
+    ...overrides
+});
+
+const getUploadZone = (): HTMLLabelElement =>
+    screen.getByText(FEEDBACK_STRINGS.fields.uploadButton).closest('label') as HTMLLabelElement;
+
+describe('StepDetails drag-and-drop upload (BETA-17)', () => {
+    it('attaches a dropped valid image via onAddAttachments', () => {
+        const onAddAttachments = vi.fn();
+        render(<StepDetails {...makeProps({ onAddAttachments })} />);
+
+        const file = new File(['data'], 'shot.png', { type: 'image/png' });
+        fireEvent.drop(getUploadZone(), { dataTransfer: { files: [file] } });
+
+        expect(onAddAttachments).toHaveBeenCalledTimes(1);
+        expect(onAddAttachments.mock.calls[0]?.[0]?.[0]?.name).toBe('shot.png');
+    });
+
+    it('prevents the browser default on dragover (image is not opened in the tab)', () => {
+        render(<StepDetails {...makeProps()} />);
+
+        // fireEvent returns false when the event's default action was prevented.
+        const notPrevented = fireEvent.dragOver(getUploadZone(), { dataTransfer: { files: [] } });
+
+        expect(notPrevented).toBe(false);
+    });
+
+    it('prevents the browser default on drop', () => {
+        render(<StepDetails {...makeProps()} />);
+
+        const file = new File(['data'], 'shot.png', { type: 'image/png' });
+        const notPrevented = fireEvent.drop(getUploadZone(), { dataTransfer: { files: [file] } });
+
+        expect(notPrevented).toBe(false);
+    });
+
+    it('rejects a dropped file with a disallowed type (no attachment added)', () => {
+        const onAddAttachments = vi.fn();
+        render(<StepDetails {...makeProps({ onAddAttachments })} />);
+
+        const pdf = new File(['data'], 'doc.pdf', { type: 'application/pdf' });
+        fireEvent.drop(getUploadZone(), { dataTransfer: { files: [pdf] } });
+
+        expect(onAddAttachments).not.toHaveBeenCalled();
     });
 });

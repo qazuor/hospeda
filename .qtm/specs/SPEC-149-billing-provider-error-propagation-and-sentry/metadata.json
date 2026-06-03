@@ -8,5 +8,6 @@
     "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer. Error mode differentiation, Sentry capture with billing context, and retry policy all require integration-level refactor, not just hospeda-side wiring.",
     "tags": ["billing", "errors", "sentry", "observability", "qzpay", "refactor", "user-facing"],
     "effortEstimateHours": "16-32",
-    "firstAllocatedViaEngramProtocol": true
+    "firstAllocatedViaEngramProtocol": true,
+    "parent": "SPEC-193"
 }
