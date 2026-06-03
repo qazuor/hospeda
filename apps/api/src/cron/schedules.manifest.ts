@@ -59,6 +59,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Expire addons whose subscription term has ended.'
     },
     {
+        name: 'app-log-purge',
+        displayName: 'Purga de logs de aplicación',
+        category: 'system',
+        schedule: '0 5 * * *',
+        description: 'Purge app_log_entries older than 30 days (WARN/ERROR only).'
+    },
+    {
         name: 'apply-scheduled-plan-changes',
         displayName: 'Cambios de plan programados',
         category: 'billing',
