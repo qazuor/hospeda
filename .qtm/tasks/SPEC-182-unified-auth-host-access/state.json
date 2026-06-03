@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -104,7 +104,7 @@
             "id": "T-005",
             "title": "Update admin /_authed.tsx redirect-signin to point to web auth URL",
             "description": "In apps/admin/src/routes/_authed.tsx, change the 'redirect-signin' case from `throw redirect({ to: '/auth/signin', search: decision.search })` to an external redirect: build the URL {VITE_SITE_URL}/{locale}/auth/signin?callbackUrl={encodeURIComponent(location.pathname + location.search)} and throw redirect({ href: webSigninUrl }). Use env.VITE_SITE_URL for the web origin. The admin's own env.VITE_ADMIN_URL (or window.location.origin) is the callbackUrl value so the web signin knows where to send the user after auth. Acceptance: unauthenticated request to any admin route redirects to web signin with correct callbackUrl; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003"],
             "blocks": ["T-006", "T-007"],
@@ -114,12 +114,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:01:50Z",
+                "completed": "2026-06-03T08:17:43Z"
             }
         },
         {
