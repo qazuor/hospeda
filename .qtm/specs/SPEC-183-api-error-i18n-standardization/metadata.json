@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-183",
+    "title": "API Error i18n Standardization",
+    "type": "refactor",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-06-02T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "linear": ["BETA-63"],
+    "tags": [
+        "i18n",
+        "error-handling",
+        "web",
+        "admin",
+        "api-errors",
+        "translateApiError",
+        "ux",
+        "beta-63"
+    ]
+}
