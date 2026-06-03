@@ -1,0 +1,368 @@
+{
+    "version": "1.0",
+    "title": "API Log Observability",
+    "specRef": "SPEC-184-api-log-observability",
+    "created": "2026-06-02T00:00:00.000Z",
+    "summary": {
+        "total": 16,
+        "pending": 16,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add FORMAT field to BaseLoggerConfig and getConfigFromEnv",
+            "description": "Add `FORMAT: 'pretty' | 'json'` to the `BaseLoggerConfig` interface in `packages/logger/src/types.ts`. Default value: `'pretty'`. Add `LOG_FORMAT` env-var reading to `getConfigFromEnv` in `packages/logger/src/environment.ts` (string enum validation: only 'pretty'|'json' accepted; invalid values fall back to 'pretty' with a console.warn). Update `defaultConfig` in `packages/logger/src/config.ts` to include `FORMAT: 'pretty'`. Acceptance: TypeScript strict-mode compiles; existing logger tests are unaffected (FORMAT defaults to 'pretty').",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [],
+            "tags": ["logger", "config", "phase-1"],
+            "phase": "phase-1-log-format",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Implement NDJSON output path in formatLogArgs",
+            "description": "In `packages/logger/src/formatter.ts`, extend `formatLogArgs` to branch on `config.FORMAT`. When `FORMAT='json'`: build a `LogEntry`-shaped plain object `{ ts, level, category?, label?, message, data? }`, apply the existing sensitive-key redaction logic to `data`, then return `[JSON.stringify(entry)]` (single-element array, no chalk). When `FORMAT='pretty'` (default): behavior is IDENTICAL to today — zero change. Note: `data` must be the already-redacted value; string log values go into `message` directly; object log values go into `data` (with `message` set to label or empty). Acceptance: `FORMAT=json` emits valid parseable JSON lines; chalk escape codes are absent; `FORMAT=pretty` output is bit-for-bit identical to before this change.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [],
+            "tags": ["logger", "formatter", "phase-1"],
+            "phase": "phase-1-log-format",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Register LOG_FORMAT in @repo/config env-registry + update .env.example",
+            "description": "Add an entry for `LOG_FORMAT` to `packages/config/src/env-registry.*.ts` with: type=string, required=false, secret=false, defaultValue='pretty', exampleValue='json', apps=['api'], category='logging', description='Logger output format. pretty = chalk-colored terminal output (default). json = NDJSON for aggregators and Coolify log search.' Also add `LOG_EXPAND_OBJECT_LEVELS` if it is not already registered (verify first — it reads from env but may lack a registry entry). Update `apps/api/.env.example` to include both vars with their default values and a one-line comment. Acceptance: `pnpm env:check:registry` passes; .env.example reflects both vars.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["config", "env", "phase-1"],
+            "phase": "phase-1-log-format",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Tests for LOG_FORMAT toggle in @repo/logger",
+            "description": "Write Vitest tests in `packages/logger/test/format.test.ts` (or extend existing formatter tests). Cover: (a) FORMAT=json emits a parseable JSON line with correct ts/level/message fields; (b) FORMAT=json with object payload puts redacted data in the `data` field; (c) FORMAT=json has no chalk ANSI escape codes (assert no `\\u001b[` in output); (d) FORMAT=pretty output is unchanged (snapshot or existing tests pass); (e) sensitive key (e.g. 'password') is '[REDACTED]' in json output. Acceptance: all tests green; coverage >= 90% on the new json-format branch in formatter.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["logger", "testing", "phase-1"],
+            "phase": "phase-1-log-format",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Build generic hook registry in packages/logger/src/hooks.ts (coordinate with SPEC-180)",
+            "description": "BLOCKING: Before writing this task, check the SPEC-180 branch (`spec/SPEC-180-*`) for any `registerCaptureHook` implementation. If it already exists, extend it rather than creating a new file. If not, create `packages/logger/src/hooks.ts` with: `LogEntry` type (ts/level/category?/label?/message/data?), `LogHookFn = (entry: LogEntry) => void | Promise<void>`, `hookRegistry = new Map<string, LogHookFn>()`, `registerHook(name, fn)`, `unregisterHook(name)` (for tests), `dispatchHooks(entry)` (fire-and-forget: catches all hook errors, logs to stderr only, never throws). Export all from `packages/logger/src/index.ts`. Wire `dispatchHooks` into `logWithLevel` AFTER console output. Package must remain dependency-free — no Sentry, no DB imports. Acceptance: `@repo/logger` builds cleanly; hook dispatch is verified by T-006.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-010"],
+            "subtasks": [],
+            "tags": ["logger", "hooks", "spec-180-coordination", "phase-2"],
+            "phase": "phase-2-sink-hook",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Tests for hook registry in @repo/logger",
+            "description": "Write Vitest tests in `packages/logger/test/hooks.test.ts`. Cover: (a) registered hook receives a LogEntry with correct fields on WARN; (b) multiple hooks (e.g. 'capture' + 'sink') both receive the entry independently; (c) a hook that throws does NOT propagate the error to the caller of logWithLevel; (d) unregisterHook removes the hook (subsequent log does not call it); (e) dispatchHooks is fire-and-forget: async hooks that reject do not block or throw. Acceptance: all tests green; coverage >= 90% on hooks.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["logger", "testing", "phase-2"],
+            "phase": "phase-2-sink-hook",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add app_log_entries Drizzle schema",
+            "description": "Create `packages/db/src/schemas/logs/app_log_entry.dbschema.ts` following the `cron_runs` schema pattern. Table: `app_log_entries`. Columns: id (uuid PK), level (varchar 10, notNull), category (varchar 50, nullable), label (text, nullable), message (text, notNull), data (jsonb, nullable, $type<Record<string,unknown>>()), loggedAt (timestamp with timezone, notNull), createdAt (timestamp with timezone, defaultNow, notNull). Indexes: level+loggedAt desc, category+loggedAt desc. NO deletedAt (append-only). Export from `packages/db/src/schemas/index.ts`. NOTE: `drizzle-kit push` is used (NOT generate); apply directly to the DB. No updated_at trigger needed for this table — no apply-postgres-extras step required. Acceptance: `pnpm typecheck` on @repo/db passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [],
+            "tags": ["db", "schema", "phase-3"],
+            "phase": "phase-3-db-persistence",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add AppLogEntryModel in @repo/db",
+            "description": "Create `packages/db/src/models/logs/appLogEntry.model.ts` following `CronRunModel`. Extend `BaseModelImpl<AppLogEntry>`. Table: `appLogEntries`. Entity name: 'app_log_entries'. Custom query `listEntries({ level?, category?, fromDate?, toDate?, page?, pageSize? })` — builds conditions (gte/lte for date range, eq for level/category) and calls `findAll` with `sortBy: 'loggedAt', sortOrder: 'desc'`. Export singleton `appLogEntryModel`. Export from `packages/db/src/models/index.ts`. Acceptance: `pnpm typecheck` on @repo/db passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009", "T-011"],
+            "subtasks": [],
+            "tags": ["db", "model", "phase-3"],
+            "phase": "phase-3-db-persistence",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add AppLogEntryService in @repo/service-core",
+            "description": "Create service following CronRunService pattern. Expose: `listEntries(filter)` (delegates to model), `purgeOld({ retentionDays })` (hard-delete rows where createdAt < cutoff). Return `Result<T>` consistently. Export from `@repo/service-core`. Write Vitest tests covering list and purge with mocked model. Acceptance: tests green; typecheck clean.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-3"],
+            "phase": "phase-3-db-persistence",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Register db-sink hook at API startup (WARN+ERROR only, async fire-and-forget)",
+            "description": "In `apps/api/src/index.ts` (after DB initialization), call `registerHook('db-sink', async (entry) => { if (entry.level !== 'WARN' && entry.level !== 'ERROR') return; appLogEntryModel.insert({ level: entry.level.toLowerCase(), category: entry.category ?? null, label: entry.label ?? null, message: entry.message, data: entry.data ?? null, loggedAt: new Date(entry.ts) }).catch(() => {}); })`. The insert is fire-and-forget: never awaited, never throws to the caller. DB errors are silently swallowed (the logger path must never affect request handling). Acceptance: integration test or manual verification shows WARN/ERROR rows appearing in app_log_entries; INFO rows absent.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["api", "sink", "phase-3"],
+            "phase": "phase-3-db-persistence",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add app-log-purge cron job + register in schedules manifest",
+            "description": "Create `apps/api/src/cron/jobs/app-log-purge.job.ts` following `cron-run-purge.job.ts`. Retention: 30 days (APP_LOG_RETENTION_DAYS constant, uniform for WARN+ERROR). Schedule: `'0 5 * * *'` (daily at 5:00 UTC — after cron-run-purge at 4:00). Register in `apps/api/src/cron/registry.ts`. Add entry to `schedules.manifest.ts`: name='app-log-purge', displayName='Purgar entradas de log', category='system', schedule='0 5 * * *'. The manifest sync test (`test/cron/schedules-manifest.test.ts`) must pass. Acceptance: manifest sync test green; purge job correctly hard-deletes entries older than APP_LOG_RETENTION_DAYS days.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["cron", "purge", "phase-3"],
+            "phase": "phase-3-db-persistence",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add admin list endpoint GET /api/v1/admin/logs",
+            "description": "Use `createAdminListRoute` pattern (page+pageSize, NEVER limit). Permission: `PermissionEnum.SYSTEM_MAINTENANCE_MODE`. Route file: `apps/api/src/routes/admin/logs/index.ts` (or co-locate with cron-admin routes). Query params: level (enum: warn|error), category (string), fromDate (ISO date string), toDate (ISO date string), page, pageSize. Delegate to `AppLogEntryService.listEntries`. Response: `{ success: true, data: { items, total, page, pageSize } }`. Register in the admin router. Add Zod schemas in `@repo/schemas` for request/response. Write API integration tests (mock service): 200 with filter, 400 on bad level, 403 without permission. Acceptance: endpoint returns paginated log entries; filter params work; permission gate blocks unauthorized access.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["api", "admin", "route", "phase-4"],
+            "phase": "phase-4-admin-query",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add admin UI log viewer page under Plataforma → Operaciones del sistema",
+            "description": "Add a TanStack Table log viewer to the admin app, co-located with the cron observability page under Plataforma → Operaciones del sistema. Implementation: new route file or tab in the existing cron/platform page; `useAppLogs` TanStack Query hook calling GET /api/v1/admin/logs; TanStack Table with columns: loggedAt (formatted timestamp), level (colored badge: WARN=yellow/ERROR=red), category, label, message (truncated with expand). Filter controls: level select (All/WARN/ERROR), category text input, date range (from/to). Gate page with `SYSTEM_MAINTENANCE_MODE` permission check in beforeLoad. Follows Tailwind v4 + Shadcn patterns (admin only). Acceptance: page renders; filters work; permission gate redirects unauthorized users.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["admin", "ui", "tanstack-table", "phase-4"],
+            "phase": "phase-4-admin-query",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Tests for admin log UI components",
+            "description": "Write Vitest/testing-library tests for the log viewer UI (T-013). Minimum: (a) renders table with mocked log rows showing level badge and message; (b) level filter updates the query param and re-fetches; (c) WARN shows yellow badge, ERROR shows red badge; (d) unauthorized user (no SYSTEM_MAINTENANCE_MODE) sees redirect or empty state (depending on route guard implementation). Use mock TanStack Query provider. Acceptance: tests green.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["admin", "testing", "phase-4"],
+            "phase": "phase-4-admin-query",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write docs/guides/log-management.md",
+            "description": "Create (or extend existing) `docs/guides/log-management.md`. Content must cover: (1) stdout → Coolify retention: how Docker/Coolify captures logs, where to find them in the Coolify UI (hospeda-api-prod → Logs tab), retention config; (2) LOG_FORMAT usage: `LOG_FORMAT=pretty` (default) vs `LOG_FORMAT=json` (jq pipeable: `docker logs hospeda-api-prod | jq 'select(.level==\"ERROR\")'`); (3) LOG_EXPAND_OBJECT_LEVELS: what it controls, default value (2), example; (4) DB persistence: WARN+ERROR written to `app_log_entries` via async sink; retention 30 days via `app-log-purge` cron; admin query via Plataforma → Operaciones del sistema; (5) Phase-2 future option: Loki+Grafana (self-hosted on VPS, free) for log aggregation and Grafana dashboards — NOT implemented, flagged for a future spec when volume justifies it. Acceptance: doc is accurate, matches implemented code.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-006", "T-011", "T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "tags": ["docs", "phase-5"],
+            "phase": "phase-5-docs-closeout",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Spec + task index closeout",
+            "description": "Flip SPEC-184 in `.qtm/specs/index.json` to status=completed + archived=true + archivedAt. Flip the matching entry in `.qtm/tasks/index.json` to status=completed + progress=16/16 + archived=true + archivedAt + completionRef (PR number). Validate that both JSON files parse without error (`jq . .qtm/specs/index.json && jq . .qtm/tasks/index.json`). Acceptance: jq parses both files; spec status=completed in both indexes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["closeout", "phase-5"],
+            "phase": "phase-5-docs-closeout",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-02T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
