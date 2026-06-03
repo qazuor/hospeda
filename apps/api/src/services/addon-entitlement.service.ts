@@ -14,9 +14,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { ALL_PLANS, type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
+import { ALL_PLANS, type EntitlementKey, type LimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
+import { AddonCatalogService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -33,6 +34,10 @@ interface AddonAdjustment {
     limitIncrease?: number;
     appliedAt: string;
 }
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
 
 /**
  * Service for managing add-on entitlements and limits
@@ -84,10 +89,10 @@ export class AddonEntitlementService {
         }
 
         try {
-            // Get add-on definition
-            const addon = getAddonBySlug(input.addonSlug);
+            // Get add-on definition from the DB-backed catalog service (SPEC-192 T-012 cutover).
+            const addonResult = await catalogService.getBySlug(input.addonSlug);
 
-            if (!addon) {
+            if (!addonResult.success) {
                 return {
                     success: false,
                     error: {
@@ -96,6 +101,8 @@ export class AddonEntitlementService {
                     }
                 };
             }
+
+            const addon = addonResult.data;
 
             // Get customer's active subscription
             const subscriptions = await this.billing.subscriptions.getByCustomerId(
@@ -196,10 +203,16 @@ export class AddonEntitlementService {
                             )
                         );
 
-                    // Sum increments from all active purchases that affect this limitKey
+                    // Sum increments from all active purchases that affect this limitKey.
+                    // Resolves each purchase addon from the DB-backed catalog service.
                     let totalIncrement = 0;
                     for (const purchase of allActivePurchases) {
-                        const purchaseAddon = getAddonBySlug(purchase.addonSlug);
+                        const purchaseAddonResult = await catalogService.getBySlug(
+                            purchase.addonSlug
+                        );
+                        const purchaseAddon = purchaseAddonResult.success
+                            ? purchaseAddonResult.data
+                            : null;
                         if (
                             purchaseAddon?.affectsLimitKey === addon.affectsLimitKey &&
                             purchaseAddon.limitIncrease !== null
@@ -333,10 +346,10 @@ export class AddonEntitlementService {
         }
 
         try {
-            // Get add-on definition
-            const addon = getAddonBySlug(input.addonSlug);
+            // Get add-on definition from the DB-backed catalog service (SPEC-192 T-012 cutover).
+            const addonResult = await catalogService.getBySlug(input.addonSlug);
 
-            if (!addon) {
+            if (!addonResult.success) {
                 return {
                     success: false,
                     error: {
@@ -345,6 +358,8 @@ export class AddonEntitlementService {
                     }
                 };
             }
+
+            const addon = addonResult.data;
 
             // Get customer's active subscription
             const subscriptions = await this.billing.subscriptions.getByCustomerId(
