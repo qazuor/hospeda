@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -246,7 +246,7 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": false
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
@@ -280,7 +280,7 @@
             "id": "T-013",
             "title": "Tests: staff host-creation endpoint permission matrix",
             "description": "Write Vitest integration tests for the migrated signup-as-host endpoint (T-011): (a) authenticated user with USER_CREATE → 200 + role=HOST in response, (b) unauthenticated → 401, (c) authenticated without USER_CREATE → 403, (d) missing fields → 400 (Zod validation), (e) duplicate email → appropriate error from Better Auth. Use the project's standard mock-actor auth pattern. Acceptance: all 5 cases covered, tests green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-019"],
@@ -294,8 +294,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T16:37:49Z",
+                "completed": "2026-06-03T16:54:41Z"
             }
         },
         {
