@@ -133,59 +133,59 @@
             "id": "T-005",
             "title": "Confirm billingAddons.seed.ts idempotency and verify row schema match",
             "description": "Inspect `packages/seed/src/required/billingAddons.seed.ts`: confirm skip-by-name logic is correct, that `metadata.slug` is written during seed, and that all `AddonDefinition` fields are stored in the right columns vs metadata JSONB. Run `pnpm db:fresh-dev` locally and verify `SELECT count(*) FROM billing_addons` equals `ALL_ADDONS.length` (5). Write a simple verification test in `packages/seed/src/required/__tests__/billingAddons.seed.test.ts` asserting idempotency (run twice, count unchanged). Files: 1 seed file (minor fix if needed) + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Verify skip-by-name logic and metadata.slug write",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm all AddonDefinition fields stored correctly",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write idempotency test (run twice, row count unchanged)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "billing", "addon", "fr-7", "fr-8"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T18:30:00.000Z",
+                "completed": "2026-06-03T18:45:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Write billing_addons backfill runbook and verify env row count",
             "description": "Create `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/backfill-runbook.md` documenting: (1) run `hops db-seed --target=staging` (and prod), (2) verify `SELECT count(*) FROM billing_addons` equals ALL_ADDONS.length (5), (3) confirm the cutover deploy ordering (backfill BEFORE cutover). Mark billing_addons as FR-8 complete when row count verified locally. No DDL required (data-only backfill via idempotent seed). Files: 1 runbook doc + no code change.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Write backfill runbook with step-by-step commands",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document pre-cutover verification (row count check)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Note that DDL is not required (data-only seed)", "completed": false }
+                { "title": "Note that DDL is not required (data-only seed)", "completed": true }
             ],
             "tags": ["docs", "billing", "addon", "fr-8", "backfill"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "passed", "typecheck": "passed", "tests": "passed" },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T18:45:00.000Z",
+                "completed": "2026-06-03T18:55:00.000Z"
             }
         },
         {
@@ -1077,9 +1077,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 33,
+        "pending": 31,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }

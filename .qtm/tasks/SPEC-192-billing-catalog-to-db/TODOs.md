@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 4/37 tasks (11%)
+## Progress: 6/37 tasks (16%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -40,12 +40,12 @@
   - Blocked by: T-002, T-003
   - Blocks: T-007 through T-017 (all FR-2 addon cutovers), T-018 (FR-3 write methods)
 
-- [ ] **T-005** (complexity: 2) — Confirm billingAddons.seed.ts idempotency and verify row schema match
+- [x] **T-005** (complexity: 2) — Confirm billingAddons.seed.ts idempotency and verify row schema match
   - Inspect `packages/seed/src/required/billingAddons.seed.ts`; confirm skip-by-name + metadata.slug write; run pnpm db:fresh-dev; count == 5; idempotency test
   - Blocked by: T-003
   - Blocks: T-006
 
-- [ ] **T-006** (complexity: 1) — Write billing_addons backfill runbook and verify env row count
+- [x] **T-006** (complexity: 1) — Write billing_addons backfill runbook and verify env row count
   - `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/backfill-runbook.md`; hops db-seed commands; pre-cutover row-count verification
   - Blocked by: T-005
   - Blocks: T-007
