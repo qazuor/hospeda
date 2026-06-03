@@ -15,6 +15,9 @@ const AdminEnvSchema = z.object({
     // API Configuration
     VITE_API_URL: z.string().url().describe('API base URL'),
     VITE_SITE_URL: z.string().url().describe('Public web app URL'),
+    // Admin's own public URL. Used to build the absolute callbackUrl when the
+    // _authed guard redirects unauthenticated users to the web signin (SPEC-182).
+    VITE_ADMIN_URL: z.string().url().describe('Admin dashboard own public URL'),
 
     // Server-side API URL used by TanStack Start server functions (e.g. auth-session.ts).
     // Must be set as a plain process.env variable (no VITE_ prefix) since it is never
@@ -162,6 +165,7 @@ export const validateAdminEnv = (): AdminEnv => {
         const envData = {
             VITE_API_URL: import.meta.env.VITE_API_URL,
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
+            VITE_ADMIN_URL: import.meta.env.VITE_ADMIN_URL,
             HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL ?? process.env.HOSPEDA_API_URL,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',

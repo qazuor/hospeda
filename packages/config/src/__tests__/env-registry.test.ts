@@ -37,8 +37,21 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * removed a pre-existing duplicate of PUBLIC_ENABLE_LOGGING. Previous 189
  * (2026-05-15) covered SPEC-109. When adding or removing variables, bump this
  * constant in the same commit and regenerate the snapshot below (`vitest -u`).
+ *
+ * 200 (2026-06-03, SPEC-182): added VITE_ADMIN_URL (admin's own origin, used to
+ * build the absolute callbackUrl for the web-auth redirect). Bumped from 198 to
+ * 200 (not 199) because the registry had already drifted to 199 — a prior change
+ * added a variable without updating this constant; this corrects it to the real
+ * count in the same pass.
+ *
+ * 201 (2026-06-03, SPEC-182 T-018): added HOSPEDA_DEV_COOKIE_DOMAIN (dev-only
+ * session-cookie domain override for the *.hospeda.local recipe).
+ *
+ * 202 (2026-06-03, merge): staging's SPEC-184 (`API_LOG_FORMAT`, 200) and this
+ * branch's SPEC-182 (+2, 201) were added independently off the same 199 base;
+ * the merged registry holds both sets.
  */
-const EXPECTED_VAR_COUNT = 200;
+const EXPECTED_VAR_COUNT = 202;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -386,12 +399,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 26 VITE_* admin variables', () => {
+        it('should contain all 27 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(26);
+            expect(viteVars.length).toBe(27);
         });
     });
 

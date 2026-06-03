@@ -26,6 +26,8 @@ function createValidEnv(overrides: Record<string, unknown> = {}): Record<string,
     return {
         VITE_API_URL: 'http://localhost:3001',
         VITE_SITE_URL: 'http://localhost:4321',
+        // SPEC-182: the admin's own origin (required for the web-auth callbackUrl)
+        VITE_ADMIN_URL: 'http://localhost:3000',
         HOSPEDA_API_URL: 'http://localhost:3001',
         VITE_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
         NODE_ENV: 'development',
@@ -69,6 +71,18 @@ describe('AdminEnvSchema', () => {
 
         it('should reject invalid VITE_SITE_URL (not a URL)', () => {
             const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_SITE_URL: 'not-a-url' }));
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject missing VITE_ADMIN_URL (SPEC-182)', () => {
+            const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_ADMIN_URL: undefined }));
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject invalid VITE_ADMIN_URL (not a URL)', () => {
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({ VITE_ADMIN_URL: 'not-a-url' })
+            );
             expect(result.success).toBe(false);
         });
 
@@ -297,6 +311,7 @@ describe('AdminEnvSchema', () => {
             const result = AdminEnvSchema.safeParse({
                 VITE_API_URL: 'https://api.hospeda.com.ar',
                 VITE_SITE_URL: 'https://hospeda.com.ar',
+                VITE_ADMIN_URL: 'https://admin.hospeda.com.ar',
                 HOSPEDA_API_URL: 'https://api.hospeda.com.ar',
                 VITE_BETTER_AUTH_URL: 'https://api.hospeda.com.ar/api/auth',
                 VITE_APP_NAME: 'Hospeda Admin',
