@@ -77,7 +77,7 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
   the notification sender (`trial-expiry.ts:61`), so `TRIAL_EXPIRED` emails never send. Inject the sender.
 - **T-194-07 [G-05] Scheduled-change apply is idempotent.** `apply-scheduled-plan-changes.ts:250-272`: if
   `markResolved` (step 5) fails after the plan was applied, the next tick re-applies (double `changePlan`
-  - double addon recalc). Stamp `scheduledPlanChange.status='applied'` atomically with/before the resolve so
+  and double addon recalc). Stamp `scheduledPlanChange.status='applied'` atomically with/before the resolve so
   a failed resolve never re-runs the mutation.
 
 ## 5. Phase 3 — MEDIUM

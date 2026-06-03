@@ -78,7 +78,7 @@ the children implement against them.
   guard test (145 T-145-66) and stale-cache regression test (145 T-145-65) prove completeness.
 - **INV-2 error contract.** Entitlement/limit denials return `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` with a
   structured `details` body — never `FORBIDDEN` with a stringified JSON message. Owned by 145 (gate refactor)
-  - 149 (provider error mapping).
+  and 149 (provider error mapping).
 - **INV-3 catalog single source of truth.** No `as EntitlementKey` / `as LimitKey` casts in production source;
   every key is enum-validated; the catalog ADR is single (192). 145 consumes; 192 owns.
 - **INV-4 state-machine.** Subscription status changes go through a validated transition table (194), not
