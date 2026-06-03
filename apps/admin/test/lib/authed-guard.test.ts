@@ -180,3 +180,92 @@ describe('decideAuthedGuard', () => {
         expect(decision.search.reason).toBe('generic');
     });
 });
+
+/**
+ * Focused coverage of the SPEC-182 web-auth redirect shape (T-009). The
+ * redirect-signin href must be a well-formed absolute web signin URL whose
+ * callbackUrl is the percent-encoded ABSOLUTE admin URL the visitor requested,
+ * so the web signin's allowlist (validateCallbackUrl) accepts it and returns
+ * the user to admin after login.
+ */
+describe('decideAuthedGuard — web-auth redirect shape (SPEC-182 T-009)', () => {
+    const signinHref = (pathname: string, locale = DEFAULT_LOCALE): string => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            pathname,
+            preferredLocale: locale,
+            siteUrl: SITE_URL,
+            adminUrl: ADMIN_URL
+        });
+        if (decision.kind !== 'redirect-signin') {
+            throw new Error(`expected redirect-signin, got ${decision.kind}`);
+        }
+        return decision.href;
+    };
+
+    it('percent-encodes the callbackUrl inside the raw href (not left as raw URL chars)', () => {
+        const href = signinHref('/accommodations');
+        // The callbackUrl value must be escaped in the query string: its ':'
+        // and '/' appear as %3A / %2F, never as a second bare "https://".
+        expect(href).toContain('callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar%2Faccommodations');
+        expect(href.indexOf('https://')).toBe(href.lastIndexOf('https://'));
+    });
+
+    it('points the callbackUrl at the ADMIN origin, never the site origin', () => {
+        const callbackUrl = new URL(signinHref('/destinations')).searchParams.get('callbackUrl');
+        const cb = new URL(callbackUrl ?? '');
+        expect(cb.origin).toBe(ADMIN_URL);
+        expect(cb.origin).not.toBe(SITE_URL);
+        expect(cb.pathname).toBe('/destinations');
+    });
+
+    it('preserves a deep admin path verbatim in the callbackUrl', () => {
+        const callbackUrl = new URL(signinHref('/accommodations/abc-123/edit')).searchParams.get(
+            'callbackUrl'
+        );
+        expect(callbackUrl).toBe('https://admin.hospeda.com.ar/accommodations/abc-123/edit');
+    });
+
+    it('escapes special characters in the requested admin path', () => {
+        // A path segment with a space + ampersand must round-trip safely.
+        const raw = '/search/a b&c';
+        const callbackUrl = new URL(signinHref(raw)).searchParams.get('callbackUrl');
+        // Decoded callbackUrl resolves back to the same absolute admin URL.
+        expect(callbackUrl).toBe(new URL(raw, ADMIN_URL).toString());
+    });
+
+    it('does not double the slash when admin URL has a trailing slash', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            pathname: '/dashboard',
+            preferredLocale: DEFAULT_LOCALE,
+            siteUrl: SITE_URL,
+            adminUrl: 'https://admin.hospeda.com.ar/'
+        });
+        if (decision.kind !== 'redirect-signin') throw new Error('expected redirect-signin');
+        const callbackUrl = new URL(decision.href).searchParams.get('callbackUrl');
+        expect(callbackUrl).toBe('https://admin.hospeda.com.ar/dashboard');
+    });
+
+    it('builds the signin path with a trailing slash on every locale', () => {
+        for (const locale of ['es', 'en', 'pt']) {
+            expect(new URL(signinHref('/dashboard', locale)).pathname).toBe(
+                `/${locale}/auth/signin/`
+            );
+        }
+    });
+
+    it('works against localhost dev origins', () => {
+        const decision = decideAuthedGuard({
+            authState: baseAuthState({ isAuthenticated: false, userId: null, role: null }),
+            pathname: '/dashboard',
+            preferredLocale: DEFAULT_LOCALE,
+            siteUrl: 'http://localhost:4321',
+            adminUrl: 'http://localhost:3000'
+        });
+        if (decision.kind !== 'redirect-signin') throw new Error('expected redirect-signin');
+        const url = new URL(decision.href);
+        expect(url.origin).toBe('http://localhost:4321');
+        expect(url.searchParams.get('callbackUrl')).toBe('http://localhost:3000/dashboard');
+    });
+});
