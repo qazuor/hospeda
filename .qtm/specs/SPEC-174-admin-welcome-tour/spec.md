@@ -46,6 +46,7 @@ and respect the user's role (role = which layout/sections they see) and language
 ## 2. Context & motivation (verified 2026-05-29)
 
 ### 2.1 What exists today
+
 - **Config-driven IA (SPEC-154)** lives in `apps/admin/src/config/ia/`: `schema.ts` (Zod,
   boot-validated), `index.ts` (assembles `rawConfig`), `validate.ts` (IIFE that `safeParse`s
   and throws), `sections.ts`, `dashboards.ts`, `sidebars.ts`, `roles/{host,editor,admin,super-admin}.ts`.
@@ -65,6 +66,7 @@ and respect the user's role (role = which layout/sections they see) and language
 - **PostHog** client exists (`apps/admin/src/lib/analytics/posthog-client.ts`, `trackEvent`).
 
 ### 2.2 Why config-driven + a library
+
 Consistency with SPEC-154 (everything in admin IA is config + Zod + boot validation). The tour
 is just another config sibling. For the spotlight we use **driver.js** (~5kb, no deps, MIT)
 rather than reinventing fragile overlay/anchoring/repositioning code; the welcome modal reuses
@@ -74,6 +76,7 @@ dependency-policy (document in the PR).
 ## 3. Goals / Non-goals
 
 ### Goals
+
 1. Hybrid UX: a warm welcome **modal** (Radix Dialog) → an **optional** spotlight walkthrough
    (driver.js).
 2. **Contextual, separate tours** (no cross-route auto-navigation): one **welcome** tour per
@@ -90,6 +93,7 @@ dependency-policy (document in the PR).
 9. **Catalog v1**: 4 welcome + 15 contextual = 19 tours.
 
 ### Non-goals (this spec)
+
 - Cross-route auto-navigation during a tour (explicitly rejected — too fragile for non-tech users).
 - A dedicated `onboarding` DB table (we reuse the `UserSettings` JSONB column).
 - Tours for disabled roles (SPONSOR/CLIENT_MANAGER).
@@ -128,10 +132,12 @@ contract and zero clobber risk on sibling settings like theme/language/notificat
 | D9 | Versioning: auto-trigger offers iff `config.version > seenVersion`; manual replay ignores version. |
 | D10 | Roles v1: HOST, EDITOR, ADMIN, SUPER_ADMIN. |
 | D11 | Analytics via existing PostHog `trackEvent`. |
+| D12 | **Cross-spec priority vs SPEC-175 (owner-locked 2026-06-03)**: the welcome tour always wins over the What's New auto-modal. While the role's welcome tour is unseen, SPEC-175's auto-modal is suppressed (a new user has no "news"). Whichever spec ships second wires the coordination in its auto-trigger. |
 
 ## 6. Architecture — Backend (`apps/api` + `@repo/schemas` + `@repo/service-core`)
 
 ### 6.1 Schema delta
+
 `packages/schemas/src/entities/user/user.settings.schema.ts` — add to `UserSettingsSchema`
 (additive-only; `settings` is a JSONB column, **no DB migration**):
 
@@ -148,7 +154,9 @@ onboarding: z.object({
 - Export an inferred `UserOnboarding` type alongside the others.
 
 ### 6.2 Dedicated endpoint
+
 `PATCH /api/v1/protected/users/me/tour-progress`:
+
 - **Tier**: protected (authenticated, no guest). Ownership is implicit (`me` = actor).
 - **Body** (Zod, in `@repo/schemas`): `{ tourId: z.string().min(1), version: z.number().int().nonnegative() }`.
 - **Route** is thin (existing Hono factory) → delegates to a service method.
@@ -158,7 +166,9 @@ onboarding: z.object({
 - Returns `Result<T>` per project convention; `ResponseFactory` for the HTTP shape.
 
 ### 6.3 Service (read-modify-merge, server-side)
+
 A method on `UserService` (or a dedicated `markAdminTourSeen`) in `@repo/service-core`:
+
 - Reads the actor's current `settings`, sets
   `settings.onboarding.adminTours[tourId] = version`, **preserving all other settings keys**
   (theme/language/notifications/newsletter). The merge happens server-side so the client never
@@ -168,6 +178,7 @@ A method on `UserService` (or a dedicated `markAdminTourSeen`) in `@repo/service
   (read current → spread → write). This is the entire reason a dedicated endpoint was chosen.
 
 ### 6.4 Read path
+
 The client reads its own settings via the existing owner-scoped protected GET
 (`GET /api/v1/protected/users/{actorId}` with `actorId = useAuthContext().user.id`), which
 returns `settings`. (Alternative considered: embed the map in `/public/auth/me` — rejected to
@@ -176,11 +187,13 @@ avoid inflating `me`. Reuse the protected GET.)
 ## 7. Architecture — Frontend (`apps/admin`)
 
 ### 7.1 Config (sibling of the SPEC-154 IA config)
+
 - `src/config/ia/primitives.ts` (NEW) — extract `I18nLabelSchema` + permission primitives from
   `schema.ts` and re-export them, to avoid an ESM cycle with `tour.schema.ts`. `schema.ts`
   re-exports for backward compat (no behavior change).
 - `src/config/ia/tour.schema.ts` (NEW) — Zod shapes + `KNOWN_DATA_TOUR_IDS` (the target
   registry) + inferred types:
+
   ```
   Tour { id, roles: 'all' | RoleEnum[], kind: 'welcome' | 'contextual', route?: string,
          version: number (int > 0), trigger: 'auto-first-visit' | 'manual',
@@ -188,6 +201,7 @@ avoid inflating `me`. Reuse the protected GET.)
   Step { id, target: 'center' | 'data-tour:<id>', title: I18nLabel, body: I18nLabel,
          side?, align?, permissions?: PermissionGate }
   ```
+
 - `src/config/ia/schema.ts` (MOD) — add `tours: ToursRecordSchema` to `AdminIAConfigSchema` and
   3 cross-checks in `superRefine`:
   - **§T1** every non-`center` `target` (stripped of `data-tour:`) ∈ `KNOWN_DATA_TOUR_IDS`.
@@ -198,11 +212,13 @@ avoid inflating `me`. Reuse the protected GET.)
 - `src/config/ia/index.ts` (MOD) — include `tours` in `rawConfig` (validate.ts already parses all).
 
 ### 7.2 Selectors — `src/hooks/use-tours.ts` (NEW)
+
 `useTourById`, `useToursForRole`, `useWelcomeTourForRole`,
 `useContextualTourForRoute({ pathname })` (matches via `useCurrentSection()` →
 `tour.route === (section.defaultRoute ?? section.route)`). RO-RO, named exports.
 
 ### 7.3 Pure logic — `src/lib/tour/` (unit-testable, no React/DOM)
+
 - `compare-version.ts` → `shouldOfferTour({ configVersion, seenVersion })` = `seenVersion === null || configVersion > seenVersion`.
 - `resolve-step-text.ts` → locale fallback (requested → es → first key). Shared with `use-localized-label.ts`.
 - `build-driver-steps.ts` → `Tour` → `DriveStep[]`: filter steps by `permissions`
@@ -213,7 +229,9 @@ avoid inflating `me`. Reuse the protected GET.)
   welcome > contextual priority; respects version.
 
 ### 7.4 Engine — `src/contexts/tour-context.tsx` (NEW)
+
 `TourProvider` + `useTour()` → `{ isRunning, activeTourId, startTour({ tourId }), stopTour() }`.
+
 - `startTour`: `trackEvent('admin.tour.shown', …)`; if `showWelcomeModal` render
   `TourWelcomeModal` (Radix Dialog, "Saltar" / "Mostrame →"); on proceed (or immediately for
   contextual) **lazy-import** driver.js (`const { driver } = await import('driver.js')`), build
@@ -224,18 +242,21 @@ avoid inflating `me`. Reuse the protected GET.)
 - Mounted **inside `AppLayout`** (below Auth/QueryClient/i18n providers).
 
 ### 7.5 Client persistence — `src/hooks/use-admin-tour-state.ts` (NEW)
+
 TanStack Query against the protected GET (key `['user','settings', userId]`) + a `useMutation`
 hitting `PATCH …/users/me/tour-progress`. Exposes `hasSeen(tourId, version)` and
 `markSeen({ tourId, version })` with optimistic update + invalidate. Must NOT reuse
 `useUserProfile`/`useUpdateUserSettings` (those are the dead admin-tier hooks, §4).
 
 ### 7.6 Auto-trigger — `src/components/tour/TourAutoTrigger.tsx` (NEW, headless, renders null)
+
 Mounted in `AppLayout`. `useEffect` keyed `[pathname, isLoaded, role]`: bail if
 `!isLoaded || isRunning || !role`; call `decideAutoTrigger(...)`; if non-`none`, wait a
 double-`requestAnimationFrame` (let `data-tour` targets paint) then `startTour`. `useRef` latch
 per pathname for strict-mode double-mount. Lives below `_authed` so it never races the guard.
 
 ### 7.7 `data-tour` attributes (additive, no behavior change)
+
 Registry in `KNOWN_DATA_TOUR_IDS`. Add to existing layout components: `main-menu` +
 `main-menu-section-<id>` (`MainMenu.tsx`), `sidebar` (`Sidebar.tsx`), `dashboard-region`
 (dashboard page), `quick-create` (`QuickCreate.tsx`), `command-palette` + `notifications`
@@ -245,12 +266,14 @@ per-section anchors as specific mini-tours need them. Steps whose target may be 
 (driver.js skips; `adminLogger.warn`).
 
 ### 7.8 "Ver guía" — `src/integrations/clerk/header-user.tsx` (MOD)
+
 Avatar dropdown items: "Ver guía" (relaunch role welcome via `useWelcomeTourForRole`) +
 "Ver guía de esta página" (only when `useContextualTourForRoute` returns a tour). Labels via
 `t('admin-common.tour.replay' | 'replayPage')`. Manual replay ignores version but still
 `markSeen` on finish.
 
 ### 7.9 Accessibility & i18n
+
 driver.js focus trap + restore (default), ESC/overlay → skip, keyboard nav on; Radix Dialog
 handles its own focus/aria. `prefers-reduced-motion` → `animate: false` + drop Dialog enter/exit
 animation. Chrome keys `tour.next/prev/done/skip/replay/replayPage` added to the admin i18n
@@ -261,6 +284,7 @@ bundle (es/en/pt). Step content is inline `I18nLabel`.
 ## 9. Tour catalog v1 (4 welcome + 15 contextual = 19)
 
 ### Welcome tours (auto on `/dashboard`, `showWelcomeModal: true`)
+
 | tourId | role | steps (summary) |
 |---|---|---|
 | `host.welcome` | HOST | greeting → main menu → cards "Mis alojamientos"/"Mi plan"/"Consultas"/"Próximos pasos" → quick-create "+" → help/replay |
@@ -269,6 +293,7 @@ bundle (es/en/pt). Step content is inline `I18nLabel`.
 | `superAdmin.welcome` | SUPER_ADMIN | greeting → 7 sections → base cards + Audit Logs + Billing stats (super-only) → help |
 
 ### Contextual mini-tours (auto on first visit to the route, `kind: 'contextual'`)
+
 | tourId | role | route (confirm vs sections.ts) | teaches |
 |---|---|---|---|
 | `host.misAlojamientos` | HOST | `/me/accommodations` | view/create/publish your own listings |
@@ -288,12 +313,14 @@ bundle (es/en/pt). Step content is inline `I18nLabel`.
 | `superAdmin.analisis` | SUPER_ADMIN | `/analytics/usage` | admin content + super-only debug |
 
 Locked content decisions:
+
 - SUPER_ADMIN reuses `admin.catalogo/editorial/comunidad/comercial`; only `plataforma`/`analisis`
   get super-specific variants (different content).
 - `miCuenta` mini-tour only for HOST/EDITOR (ADMIN/SUPER reach it via dropdown, `accountInMenu:false`).
 - All routes must be confirmed against `sections.ts` when authoring `tours.ts`.
 
 ## 10. Versioning & edge cases
+
 - AUTO: offer iff `config.version > seenVersion` (absent ⇒ 0). MANUAL: always runs.
 - New user: all auto-eligible role tours offered; nothing written until finish/skip.
 - `markSeen` fires on **finish OR skip**, writing `version` (the one shown), not `version+1`.
@@ -341,6 +368,7 @@ the `tour-progress` body schema; new route `apps/api/.../protected/users/me/tour
 service method in `@repo/service-core`; admin i18n bundle (`tour.*` chrome keys).
 
 ## 13. Implementation sequence
+
 1. Schema delta `onboarding` + tour-progress body schema + types (`@repo/schemas`).
 2. Dedicated endpoint + service method (server-side merge) + tests (`apps/api`, `service-core`).
 3. `primitives.ts` extraction + `schema.ts` re-export (no behavior change; tests stay green).
@@ -355,6 +383,7 @@ service method in `@repo/service-core`; admin i18n bundle (`tour.*` chrome keys)
 12. Author the 19 tours' content (es/en/pt I18nLabel).
 
 ## 14. Verification
+
 - **Unit (Vitest, no `.only`/`.skip`)**: config `safeParse` + negative cases (bad role/target/route);
   `shouldOfferTour` truth table; locale resolution; `buildDriverSteps` (center/data-tour/permission
   filter); `decideAutoTrigger` (welcome on dashboard, suppressed when seen, contextual by route, priority).
@@ -368,6 +397,7 @@ service method in `@repo/service-core`; admin i18n bundle (`tour.*` chrome keys)
 - `pnpm typecheck` + `pnpm lint` + `pnpm test` green before PR to `staging`.
 
 ## 15. Open questions / decisions for owner (consult per protocol)
+
 - **Q1** Exact protected-tier permission guard for the endpoint (`USER_SETTINGS_UPDATE` vs
   `USER_UPDATE_SELF`) — confirm against the seed.
 - **Q2** Does `UserService.update` replace or merge the JSONB column? Drives whether the service
