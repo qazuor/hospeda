@@ -106,20 +106,20 @@ jobs:
     # p/typescript, p/nodejs, p/owasp-top-ten, p/secrets. `--error` makes
     # semgrep exit non-zero on any finding, preserving the old action's gate.
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
       - name: Install uv (provides Python + semgrep CLI)
-        # actions/setup-python is NOT used: it has no prebuilt Python for the
-        # self-hosted runner's OS (Ubuntu 25.04 → "version 3.12 not found"),
-        # and that machine's system Python is 3.14, which semgrep does not yet
-        # support. uv fetches a pinned, semgrep-compatible Python (3.12) on ANY
-        # runner without relying on the GitHub tool-cache, so it works on both
-        # the self-hosted leo-laptop and ubuntu-latest.
-        uses: astral-sh/setup-uv@v8.2.0
+        # uv fetches a pinned, semgrep-compatible Python (3.12) without relying
+        # on the GitHub tool-cache (which actions/setup-python lacks for some
+        # OSes). The official installer is used directly: astral-sh/setup-uv@v8
+        # was observed hanging ~9min in CI and tripping the job timeout.
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Semgrep SAST scan
         # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
         # isolated Python 3.12 env. Same rule packs + --error gate as the old
