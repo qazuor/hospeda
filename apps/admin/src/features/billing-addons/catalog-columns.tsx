@@ -111,7 +111,7 @@ export function getAddonCatalogColumns(
         },
         {
             id: 'targetCategories',
-            header: t('admin-billing.addons.catalogColumns.targetCategories'),
+            header: t('admin-billing.addons.catalogColumns.categories'),
             accessorKey: 'targetCategories',
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
@@ -168,7 +168,7 @@ export function getAddonCatalogColumns(
                                     size="sm"
                                     disabled={isRestoring}
                                     onClick={() => onRestore(row)}
-                                    title={t('admin-billing.addons.restore')}
+                                    title={t('admin-billing.addons.actionRestore')}
                                 >
                                     <RotateCcwIcon className="h-4 w-4 text-blue-500" />
                                 </Button>
@@ -179,7 +179,7 @@ export function getAddonCatalogColumns(
                                     size="sm"
                                     disabled={isHardDeleting}
                                     onClick={() => onHardDelete(row)}
-                                    title={t('admin-billing.addons.hardDelete')}
+                                    title={t('admin-billing.addons.actionHardDelete')}
                                 >
                                     <DeleteIcon className="h-4 w-4 text-destructive" />
                                 </Button>
@@ -195,7 +195,7 @@ export function getAddonCatalogColumns(
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => onEdit(row)}
-                                title={t('admin-billing.addons.edit')}
+                                title={t('admin-billing.addons.actionEdit')}
                             >
                                 <EditIcon className="h-4 w-4" />
                             </Button>
@@ -208,8 +208,8 @@ export function getAddonCatalogColumns(
                                 onClick={() => onToggleActive(row.id, !row.isActive)}
                                 title={
                                     row.isActive
-                                        ? t('admin-billing.addons.deactivate')
-                                        : t('admin-billing.addons.activate')
+                                        ? t('admin-billing.addons.actionDeactivate')
+                                        : t('admin-billing.addons.actionActivate')
                                 }
                             >
                                 <PowerIcon
@@ -223,7 +223,7 @@ export function getAddonCatalogColumns(
                                 size="sm"
                                 disabled={isDeleting}
                                 onClick={() => onDelete(row)}
-                                title={t('admin-billing.addons.delete')}
+                                title={t('admin-billing.addons.actionDelete')}
                             >
                                 <DeleteIcon className="h-4 w-4 text-destructive" />
                             </Button>

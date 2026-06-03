@@ -50,11 +50,9 @@ export function AddonSoftDeleteConfirmDialog({
         >
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>
-                        {t('admin-billing.addons.catalog.actionDelete')}
-                    </AlertDialogTitle>
+                    <AlertDialogTitle>{t('admin-billing.addons.actionDelete')}</AlertDialogTitle>
                     <AlertDialogDescription>
-                        {t('admin-billing.addons.catalog.confirmSoftDelete')}{' '}
+                        {t('admin-billing.addons.confirmSoftDeleteDesc')}{' '}
                         <strong>{addon?.name}</strong>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -63,7 +61,7 @@ export function AddonSoftDeleteConfirmDialog({
                         {t('admin-billing.common.cancel')}
                     </AlertDialogCancel>
                     <AlertDialogAction onClick={onConfirm}>
-                        {t('admin-billing.addons.catalog.actionDelete')}
+                        {t('admin-billing.addons.actionDelete')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
@@ -91,10 +89,10 @@ export function AddonHardDeleteConfirmDialog({
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>
-                        {t('admin-billing.addons.catalog.actionHardDelete')}
+                        {t('admin-billing.addons.actionHardDelete')}
                     </AlertDialogTitle>
                     <AlertDialogDescription>
-                        {t('admin-billing.addons.catalog.confirmHardDelete')}{' '}
+                        {t('admin-billing.addons.confirmHardDeleteDesc')}{' '}
                         <strong>{addon?.name}</strong>
                     </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -106,7 +104,7 @@ export function AddonHardDeleteConfirmDialog({
                         onClick={onConfirm}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                        {t('admin-billing.addons.catalog.actionHardDelete')}
+                        {t('admin-billing.addons.actionHardDelete')}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
