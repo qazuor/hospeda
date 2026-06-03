@@ -76,6 +76,13 @@
     gap: 0.125rem;
     max-height: 13rem;
     overflow-y: auto;
+    /* Firefox uses its native (wider) scrollbar — the ::-webkit rules below
+     * do not apply there, so the scrollbar overlapped the right-aligned
+     * featured (star) indicator on each option (BETA-29). Make the scrollbar
+     * thin and reserve a stable gutter so it never covers the content. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--core-muted-foreground-a15) transparent;
+    scrollbar-gutter: stable;
     border: none;
     padding: 0;
     margin: 0;
