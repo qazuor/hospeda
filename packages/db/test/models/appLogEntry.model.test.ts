@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AppLogEntryModel } from '../../src/models/app-log/appLogEntry.model';
+import * as logger from '../../src/utils/logger';
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -69,6 +70,48 @@ describe('AppLogEntryModel', () => {
             const [where, , conditions] = findAll.mock.calls[0] ?? [];
             expect(where).toEqual({});
             expect(conditions).toBeUndefined();
+        });
+    });
+
+    describe('createQuiet (feedback-loop guard)', () => {
+        it('should insert and return the row WITHOUT emitting any DB-layer log', async () => {
+            // Arrange
+            const row = { id: 'log-1', level: 'ERROR', message: 'boom' };
+            getDb.mockReturnValue({
+                insert: () => ({
+                    values: () => ({
+                        returning: () => Promise.resolve([row])
+                    })
+                })
+            });
+
+            // Act
+            const created = await model.createQuiet({
+                level: 'ERROR',
+                message: 'boom'
+            } as never);
+
+            // Assert
+            expect(created).toEqual(row);
+            expect(logger.logQuery).not.toHaveBeenCalled();
+            expect(logger.logError).not.toHaveBeenCalled();
+        });
+
+        it('should propagate a driver failure WITHOUT calling logError', async () => {
+            // Arrange
+            getDb.mockReturnValue({
+                insert: () => ({
+                    values: () => ({
+                        returning: () => Promise.reject(new Error('db down'))
+                    })
+                })
+            });
+
+            // Act + Assert
+            await expect(
+                model.createQuiet({ level: 'WARN', message: 'x' } as never)
+            ).rejects.toThrow('db down');
+            expect(logger.logError).not.toHaveBeenCalled();
         });
     });
 

@@ -88,9 +88,13 @@ logger hook registry (`packages/logger/src/hooks.ts`). The sink:
 - Persists **WARN and ERROR only** (volume guard) into `app_log_entries`.
 - Is **fire-and-forget**: the insert is never awaited and its failure never
   breaks the logging call site.
-- Has a **30-second failure cooldown**: a failed insert triggers the DB
-  layer's own ERROR log, which would re-enter the sink forever while the DB
-  is down; the cooldown cuts that feedback loop and self-heals on recovery.
+- Is **loop-proof by construction**: the insert goes through a quiet model
+  path (`AppLogEntryModel.createQuiet`) that emits NO DB-layer log. A normal
+  `create` would log its own failure as an ERROR, which would re-enter the
+  sink forever while the DB is down. Because the sink's write path is
+  log-free, every legitimate WARN/ERROR is always attempted — nothing is
+  dropped during or after a DB outage. Insert failures are reported to
+  stderr (which bypasses the logger), throttled to one report per 30s.
 - Truncates messages longer than 2000 chars (full text kept under
   `data.messageFull`).
 

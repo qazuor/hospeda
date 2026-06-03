@@ -6,6 +6,9 @@ import type { DrizzleClient } from '../../types.ts';
 /** Row type inferred from the app_log_entries table */
 type AppLogEntry = typeof appLogEntries.$inferSelect;
 
+/** Insert type inferred from the app_log_entries table */
+type AppLogEntryInsert = typeof appLogEntries.$inferInsert;
+
 /**
  * Model for the append-only `app_log_entries` table.
  * Persists WARN/ERROR entries surfaced by the API logger (SPEC-184 / BETA-82)
@@ -24,6 +27,31 @@ export class AppLogEntryModel extends BaseModelImpl<AppLogEntry> {
 
     protected getTableName(): string {
         return 'app_log_entries';
+    }
+
+    /**
+     * Inserts a log entry WITHOUT emitting any DB-layer log (no logQuery /
+     * logError).
+     *
+     * This is the write path used by the logger's db-sink hook. The base
+     * `create` logs its own failure via `dbLogger.error(...)`, which is itself
+     * dispatched to the sink — so a failed sink insert would re-enter the sink
+     * forever while the DB is down. Keeping this path log-free eliminates that
+     * feedback loop by construction.
+     *
+     * @param data - The entry row to insert.
+     * @param tx - Optional transaction client.
+     * @returns The created entry.
+     * @throws The raw driver error on failure — callers MUST catch (the sink
+     * is fire-and-forget).
+     */
+    async createQuiet(data: AppLogEntryInsert, tx?: DrizzleClient): Promise<AppLogEntry> {
+        const db = this.getClient(tx);
+        const result = await db.insert(appLogEntries).values(data).returning();
+        if (!result[0]) {
+            throw new Error(`Insert failed for entity '${this.entityName}'`);
+        }
+        return result[0] as AppLogEntry;
     }
 
     /**

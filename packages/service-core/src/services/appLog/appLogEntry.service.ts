@@ -47,8 +47,11 @@ export class AppLogEntryService extends BaseService {
      *
      * System operation (no actor). Validates the payload, truncates an
      * oversized `message` (keeping the full text under `data.messageFull`),
-     * and inserts the row. Throws on validation/DB failure — the db-sink hook
-     * MUST `.catch()` so recording never breaks the logging call site.
+     * and inserts the row via the model's QUIET path (`createQuiet`): the
+     * insert emits no DB-layer log, so a failed sink insert can never
+     * re-enter the sink through its own error log (feedback-loop guard by
+     * construction). Throws on validation/DB failure — the db-sink hook MUST
+     * `.catch()` so recording never breaks the logging call site.
      *
      * @param input.data - The log entry to persist.
      * @returns The created entry.
@@ -66,7 +69,7 @@ export class AppLogEntryService extends BaseService {
             message = message.slice(0, APP_LOG_MESSAGE_MAX_LENGTH);
         }
 
-        const created = await this.model.create({
+        const created = await this.model.createQuiet({
             level: data.level,
             category: data.category ?? null,
             label: data.label ?? null,

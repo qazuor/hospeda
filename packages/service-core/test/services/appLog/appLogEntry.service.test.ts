@@ -32,7 +32,7 @@ describe('AppLogEntryService', () => {
 
     beforeEach(() => {
         modelMock = createTypedModelMock(AppLogEntryModel, [
-            'create',
+            'createQuiet',
             'listEntries',
             'purgeOlderThan'
         ]);
@@ -44,7 +44,7 @@ describe('AppLogEntryService', () => {
 
     describe('recordEntry', () => {
         it('inserts the entry as-is when the message is within the limit', async () => {
-            asMock(modelMock.create).mockResolvedValue(makeRow());
+            asMock(modelMock.createQuiet).mockResolvedValue(makeRow());
 
             await service.recordEntry({
                 data: {
@@ -55,7 +55,7 @@ describe('AppLogEntryService', () => {
                 }
             });
 
-            const arg = asMock(modelMock.create).mock.calls[0]?.[0] as {
+            const arg = asMock(modelMock.createQuiet).mock.calls[0]?.[0] as {
                 level: string;
                 category: string | null;
                 label: string | null;
@@ -70,7 +70,7 @@ describe('AppLogEntryService', () => {
         });
 
         it('truncates an oversized message and keeps the full text in data.messageFull', async () => {
-            asMock(modelMock.create).mockResolvedValue(makeRow());
+            asMock(modelMock.createQuiet).mockResolvedValue(makeRow());
             const longMessage = 'x'.repeat(2500);
 
             await service.recordEntry({
@@ -81,7 +81,7 @@ describe('AppLogEntryService', () => {
                 }
             });
 
-            const arg = asMock(modelMock.create).mock.calls[0]?.[0] as {
+            const arg = asMock(modelMock.createQuiet).mock.calls[0]?.[0] as {
                 message: string;
                 data: Record<string, unknown>;
             };

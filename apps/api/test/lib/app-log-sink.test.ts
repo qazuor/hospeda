@@ -104,7 +104,7 @@ describe('createAppLogSinkHandler', () => {
         });
     });
 
-    describe('failure cooldown (feedback-loop guard)', () => {
+    describe('failure behavior (no entry is ever dropped)', () => {
         it('should not throw when recordEntry rejects', async () => {
             const { service, recordEntry } = makeServiceMock();
             recordEntry.mockRejectedValue(new Error('db down'));
@@ -114,31 +114,38 @@ describe('createAppLogSinkHandler', () => {
             await flush();
         });
 
-        it('should skip subsequent entries during the cooldown window', async () => {
+        it('should still attempt subsequent entries after a failure', async () => {
             const { service, recordEntry } = makeServiceMock();
             recordEntry.mockRejectedValue(new Error('db down'));
             const handler = createAppLogSinkHandler(service);
 
             handler(makeEntry());
-            await flush(); // let the .catch() set the cooldown
-
-            handler(makeEntry({ message: 'second' }));
-
-            expect(recordEntry).toHaveBeenCalledTimes(1);
-        });
-
-        it('should keep separate cooldown state per handler instance', async () => {
-            const failing = makeServiceMock();
-            failing.recordEntry.mockRejectedValue(new Error('db down'));
-            const failingHandler = createAppLogSinkHandler(failing.service);
-            failingHandler(makeEntry());
             await flush();
 
-            const healthy = makeServiceMock();
-            const healthyHandler = createAppLogSinkHandler(healthy.service);
-            healthyHandler(makeEntry());
+            handler(makeEntry({ message: 'second' }));
+            await flush();
 
-            expect(healthy.recordEntry).toHaveBeenCalledOnce();
+            // The feedback loop is prevented by the quiet insert path, not by
+            // dropping entries — every WARN/ERROR must be attempted.
+            expect(recordEntry).toHaveBeenCalledTimes(2);
+        });
+
+        it('should report failures to stderr, throttled to one report per window', async () => {
+            const stderr = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+            const { service, recordEntry } = makeServiceMock();
+            recordEntry.mockRejectedValue(new Error('db down'));
+            const handler = createAppLogSinkHandler(service);
+
+            handler(makeEntry());
+            await flush();
+            handler(makeEntry({ message: 'second' }));
+            await flush();
+
+            // Both inserts attempted, but only the first failure is reported
+            // within the throttle window.
+            expect(recordEntry).toHaveBeenCalledTimes(2);
+            expect(stderr).toHaveBeenCalledTimes(1);
+            expect(String(stderr.mock.calls[0]?.[0])).toContain('app-log-sink');
         });
     });
 });
