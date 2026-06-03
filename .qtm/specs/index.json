@@ -2098,6 +2098,31 @@
             "created": "2026-06-01T00:00:00.000Z"
         },
         {
+            "specId": "SPEC-180",
+            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
+            "type": "fix",
+            "complexity": "medium-high",
+            "status": "in-progress",
+            "path": "SPEC-180-sentry-observability",
+            "created": "2026-06-01T00:00:00.000Z",
+            "branch": "spec/SPEC-180-sentry-observability",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-180-sentry-observability",
+            "driver": "Linear BETA-66, BETA-50, BETA-64",
+            "tags": [
+                "sentry",
+                "observability",
+                "source-maps",
+                "docker",
+                "logger",
+                "api",
+                "web",
+                "admin",
+                "ops"
+            ],
+            "archived": false
+        },
+        {
             "specId": "SPEC-181",
             "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
             "type": "fix",

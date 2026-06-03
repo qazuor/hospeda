@@ -739,6 +739,13 @@
             "archiveNote": "Strategy + tooling + tests + docs delivered; PRs #1372/#1373/#1367 merged. T-024 staging reset+rebuild+seed executed & verified 2026-06-02 (3847 rows, 0 errors, app live). T-025 (prod reset) DEFERRED as a post-spec operational step — run via the validated hops db-migrate --reset / db-seed flow when ready."
         },
         {
+            "specId": "SPEC-180",
+            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
+            "status": "in-progress",
+            "progress": "0/14",
+            "path": "SPEC-180-sentry-observability"
+        },
+        {
             "specId": "SPEC-181",
             "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
             "status": "in-progress",
