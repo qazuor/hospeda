@@ -308,6 +308,32 @@ describe('SPEC-182 T-013 — POST /api/v1/admin/auth/signup-as-host permission m
             expect(body.data.user.id).toBe(STUB_USER_ID);
             expect(body.data.user.email).toBe(VALID_BODY.email);
         });
+
+        it('marks the new host email as verified (regression: prod verification gate)', async () => {
+            // Regression for the SPEC-182 review MAJOR: Better Auth has
+            // `requireEmailVerification: true`, so without `emailVerified: true`
+            // in the post-signup UPDATE a staff-provisioned host could not sign
+            // in with the temporary password in production (where a real email
+            // key disables the non-prod auto-verify branch). The staff member
+            // vouches for the email, so the account must be created verified.
+
+            // Arrange
+            signUpEmailFn.mockResolvedValueOnce({
+                user: { id: STUB_USER_ID, email: VALID_BODY.email }
+            });
+
+            // Act
+            const response = await app.request(buildRequest(VALID_BODY, ACTOR_WITH_USER_CREATE));
+
+            // Assert — the role UPDATE must also flip emailVerified to true.
+            expect(response.status).toBe(201);
+            const { getDb } = await import('@repo/db');
+            const db = getDb() as unknown as { set: ReturnType<typeof vi.fn> };
+            expect(db.set).toHaveBeenCalledWith({
+                role: RoleEnum.HOST,
+                emailVerified: true
+            });
+        });
     });
 
     // =========================================================================

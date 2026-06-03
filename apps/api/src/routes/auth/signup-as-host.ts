@@ -105,7 +105,17 @@ export const signupAsHostRoute = createAdminRoute({
         const db = getDb();
 
         try {
-            await db.update(users).set({ role: RoleEnum.HOST }).where(eq(users.id, newUserId));
+            // `emailVerified: true` — the account is staff-provisioned: the
+            // operator typed the email and hands the temporary password to the
+            // host out-of-band, so the Better Auth `requireEmailVerification`
+            // gate must not block the host's first sign-in (in production,
+            // where a real email key is configured, the gate would otherwise
+            // leave the new host unable to log in until they click the
+            // verification link — contradicting the temp-password UX).
+            await db
+                .update(users)
+                .set({ role: RoleEnum.HOST, emailVerified: true })
+                .where(eq(users.id, newUserId));
         } catch (error) {
             // Best-effort cleanup so we don't leave an orphan user stuck on
             // role=USER (the Better Auth default) — that would be worse than
