@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -246,7 +246,7 @@
             "id": "T-011",
             "title": "Add app-log-purge cron job + register in schedules manifest",
             "description": "Create `apps/api/src/cron/jobs/app-log-purge.job.ts` following `cron-run-purge.job.ts`. Retention: 30 days (APP_LOG_RETENTION_DAYS constant, uniform for WARN+ERROR). Schedule: `'0 5 * * *'` (daily at 5:00 UTC — after cron-run-purge at 4:00). Register in `apps/api/src/cron/registry.ts`. Add entry to `schedules.manifest.ts`: name='app-log-purge', displayName='Purgar entradas de log', category='system', schedule='0 5 * * *'. The manifest sync test (`test/cron/schedules-manifest.test.ts`) must pass. Acceptance: manifest sync test green; purge job correctly hard-deletes entries older than APP_LOG_RETENTION_DAYS days.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-015"],
@@ -260,9 +260,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T18:00:45.000Z",
+                "completed": "2026-06-03T18:00:45.000Z"
+            },
+            "notes": "app-log-purge cron job in NEW apps/api/src/cron/jobs/app-log-purge.job.ts (clone of cron-run-purge: dry-run support, failed-result-not-throw, AppLogEntryService.purgeOld retentionDays=30). Registered in jobs/index.ts + registry.ts + schedules.manifest.ts (name app-log-purge, displayName 'Purga de logs de aplicación', category system, schedule '0 5 * * *' per spec — NOTE: coexists with addon-expiry at 5:00 UTC, acceptable since three jobs already share 3:00). Manifest sync test green (6). 4 job tests. OPS REMINDER for closeout: the external scheduler must be provisioned with the new schedule."
         },
         {
             "id": "T-012",
