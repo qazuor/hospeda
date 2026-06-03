@@ -137,18 +137,21 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
-      - name: Setup Python for semgrep CLI
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install semgrep
-        # Pinned for a deterministic security gate: an unpinned `pip install
-        # semgrep` would pull whatever is latest at run time, so the same
-        # commit could pass one day and fail the next on new/changed rules.
-        run: pip install semgrep==1.164.0
+      - name: Install uv (provides Python + semgrep CLI)
+        # actions/setup-python is NOT used: it has no prebuilt Python for the
+        # self-hosted runner's OS (Ubuntu 25.04 → "version 3.12 not found"),
+        # and that machine's system Python is 3.14, which semgrep does not yet
+        # support. uv fetches a pinned, semgrep-compatible Python (3.12) on ANY
+        # runner without relying on the GitHub tool-cache, so it works on both
+        # the self-hosted leo-laptop and ubuntu-latest.
+        uses: astral-sh/setup-uv@v8
       - name: Semgrep SAST scan
+        # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
+        # isolated Python 3.12 env. Same rule packs + --error gate as the old
+        # semgrep-action. semgrep is pinned so the same commit can't pass one
+        # day and fail the next on changed rules.
         run: >-
-          semgrep scan
+          uvx --python 3.12 --from semgrep==1.164.0 semgrep scan
           --config p/typescript
           --config p/nodejs
           --config p/owasp-top-ten
