@@ -16,5 +16,6 @@
         "admin"
     ],
     "effortEstimateHours": "12-24",
-    "firstAllocatedViaEngramProtocol": true
+    "firstAllocatedViaEngramProtocol": true,
+    "parent": "SPEC-193"
 }

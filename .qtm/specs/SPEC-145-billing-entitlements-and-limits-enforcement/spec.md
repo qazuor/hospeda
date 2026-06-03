@@ -1,14 +1,17 @@
 ---
 spec-id: SPEC-145
-title: Billing Entitlements and Limits Enforcement
+title: Billing Entitlements & Limits Enforcement
 type: feature
 complexity: high
 status: reserved
 created: 2026-05-18T22:00:00Z
-effort_estimate_hours: 60-90
-tags: [billing, entitlements, limits, enforcement, e2e, feature-gates, go-live-gate]
-extracted_from: SPEC-143 T-143-09 sub-commit 4 audit (apps/api/src/middlewares/entitlement.ts + tourist-entitlements.ts + accommodation-entitlements.ts review)
-depends_on: [SPEC-143]
+rewritten: 2026-06-03T00:00:00Z
+scoped_under: SPEC-193
+effort_estimate_hours: 50-80
+tags: [billing, entitlements, limits, enforcement, feature-gates, e2e, go-live-gate]
+parent: SPEC-193
+depends_on: [SPEC-143, SPEC-192]
+relates_to: [SPEC-149, SPEC-167, SPEC-194]
 blocks: [real-money-go-live]
 first_allocated_via_engram_protocol: true
 priority: high
@@ -17,145 +20,144 @@ branch: null
 base: staging
 ---
 
-# SPEC-145: Billing Entitlements and Limits Enforcement
+# SPEC-145: Billing Entitlements & Limits Enforcement
 
-## Context
+> **Scope note (2026-06-03).** This spec was briefly over-widened to "all billing end-to-end" and then
+> reverted to its real scope: **enforcing entitlements and limits on routes**. The end-to-end concerns now
+> live in their owners under the master SPEC-193 — catalog/ADR → SPEC-192, webhook errors/observability →
+> SPEC-149, downgrade policy → SPEC-167, lifecycle bugs → SPEC-194. This spec **consumes** the catalog; it
+> does not own it. It depends on SPEC-192 landing the DB-backed catalog first.
 
-During SPEC-143 T-143-09 sub-commit 4 implementation (writing an e2e test for "entitlement load post-activation"), an exhaustive audit of the entitlement and limit subsystem surfaced a major feature gap that blocks real-money go-live:
+## 1. Context
 
-**The billing system charges customers for plans but does not restrict feature access by plan.** Concretely:
+The billing system loads `userEntitlements` (Set) and `userLimits` (Map) into request context for every
+protected route (`entitlementMiddleware`, mounted `create-app.ts:184`) but **most routes that should be
+restricted by plan are not gated**. A few gates are wired (rich description, video embed, favorites,
+accommodation/promotion/photo limits); most `gateXxx` middlewares are dead code; the error contract is
+inconsistent across two patterns; and there is **zero e2e coverage of enforcement against real production
+routes** (existing e2e tests cover entitlement *loading* and cache invalidation, not *blocking*).
 
-1. **`entitlementMiddleware()` is mounted globally** (`apps/api/src/utils/create-app.ts:184`) and correctly loads `userEntitlements: Set<EntitlementKey>` and `userLimits: Map<LimitKey, number>` into the request context for every protected route. This part of the pipeline works as designed.
+Without this spec, a customer can pay for the cheap plan and use expensive-only features. This is the
+**enforcement** half of the go-live gate.
 
-2. **No production endpoint reads or enforces those values.** A grep across `apps/api/src/routes/**` for `requireEntitlement`, `hasEntitlement`, `userEntitlements`, or `userLimits` returns zero results. The middleware computes correctly but the result is discarded.
+## 2. Already done (do NOT redo)
 
-3. **The `gateXxx` middlewares are fully implemented dead code.** `apps/api/src/middlewares/tourist-entitlements.ts` exports `gateFavorites`, `gatePriceAlerts`, `gateCompareAccommodations`, `gateAttachReviewPhotos`, `gateViewSearchHistory`, `gateViewRecommendations`, `gateExclusiveDeals`, and `gateEarlyAccessEvents`. `apps/api/src/middlewares/accommodation-entitlements.ts` exports a similar family. None of them are mounted on a single route.
-
-4. **The cheap test plan uses an entitlement value that is not in the `EntitlementKey` enum.** `apps/api/test/e2e/setup/seed-helpers.ts:352` declares `entitlements: ['public:read']` but `'public:read'` does not exist in `packages/billing/src/types/entitlement.types.ts`. The middleware accepts it because of the `as EntitlementKey[]` cast at `entitlement.ts:195` — a TypeScript escape hatch that silently masks the mismatch.
-
-5. **Latent bug at `apps/api/src/middlewares/actor.ts:178`.** The actor middleware reads `c.get('userEntitlements')` to populate `actor.entitlements`, but the actor middleware runs at position 175 of the chain and the entitlement middleware runs at position 184. The `userEntitlements` value is therefore always `undefined` at that read site. The resulting `actor.entitlements = undefined` is then never used downstream, which is why the bug has not surfaced.
-
-6. **`clearEntitlementCache` coverage is unknown.** The annual confirmation path correctly invalidates the cache (`apps/api/src/routes/webhooks/mercadopago/payment-logic.ts:183`), but no audit confirms that subscription cancellation, plan downgrade, addon revoke, customer-level grant/revoke, or any other entitlement-mutating event invalidates the cache. Stale-cache bugs in those paths would block legitimate access or grant illegitimate access for up to five minutes (the cache TTL).
-
-This spec is the formal follow-up of SPEC-143. SPEC-143 was intentionally scoped to **testing existing billing flows**; this spec carries the **enforcement implementation work** so that the billing surface goes to production with both the tests and the gates in place. Without this spec, customers can pay for any plan and use any feature regardless of what they paid for.
-
-This spec was allocated through the engram-backed spec-registry protocol (CLAUDE.md § "Spec Number Allocation"). Number 145 was reserved on 2026-05-18 (engram observation under topic `spec/spec-145/reserved`) after the SPEC-143 audit surfaced the feature gap.
-
-## Goal
-
-Wire the entitlement and limit subsystem from "loads correctly into context but is ignored" to "enforced end-to-end across every protected route that should be gated", with full e2e coverage (block, allow, post-upgrade elevation, post-downgrade restriction, customer overrides, addon-elevated limits, post-cancellation revocation) so real-money production charging restricts features by plan as the product expects.
-
-## Workstreams
-
-- **A — Catalog and reconciliation** (Phase 0). Single source of truth for what entitlements and limits exist, what they mean, and which plan grants which.
-- **B — Gate wiring** (Phase 1). Connect existing `gateXxx` middlewares to real routes and add new gates where needed.
-- **C — Bug fixes** (Phase 2). Fix the latent bugs discovered during the SPEC-143 audit.
-- **D — E2E coverage** (Phase 3). Vitest e2e tests following the SPEC-143 patterns (mp-stub, billing-fixtures, withRollback / clean) covering every enforcement flow.
-- **E — Hardening** (Phase 4). Snapshot tests, documentation, and contributor guidance to prevent regression.
-
-## Phases (priority = financial risk + feature criticality)
-
-### Phase 0 — Foundations: catalog and reconciliation
-
-Define the source of truth for entitlements and limits so every later phase has stable ground to stand on. The team defines the catalog; no external PM dependency.
-
-- T-145-01 Audit `EntitlementKey` enum in `packages/billing/src/types/entitlement.types.ts` against every usage in `apps/api/src/`, `apps/admin/src/`, `apps/web/src/`, `packages/`, and test seeds. Produce a `mismatches.md` listing every string-literal entitlement key that is not in the enum (e.g. `'public:read'`).
-- T-145-02 Same audit for `LimitKey` enum.
-- T-145-03 Define the final catalog: every `EntitlementKey` and `LimitKey` that the product needs, with a one-line description and the plan(s) that should grant it. Output: ADR-NNN-billing-entitlement-and-limit-catalog.md.
-- T-145-04 Reconcile: add missing enum values, remove unused ones, update seed plans to use only enum values, update production plan config (`HOSPEDA_BILLING_DEFAULT_PLANS` or wherever plans are bootstrapped) to match the catalog. CI gate must reject any string-literal entitlement value that does not parse as `EntitlementKey`.
-
-### Phase 1 — Wire gates to real routes (the feature gap)
-
-Connect the entitlement and limit subsystem to the surfaces that the product needs to restrict. This is the largest phase in line count and in test count.
-
-- T-145-05 Endpoint-to-gate matrix. Iterate over every protected route under `apps/api/src/routes/**`, decide which `EntitlementKey` / `LimitKey` (if any) should gate the route per the Phase 0 catalog, and produce `docs/billing/endpoint-gate-matrix.md`. This is the planning document that drives the rest of Phase 1.
-- T-145-06 Wire favorites gates (`gateFavorites`) onto the favorites routes per the matrix.
-- T-145-07 Wire accommodation gates (publish, edit, rich description, photos, advanced stats) onto the accommodation routes.
-- T-145-08 Wire price-alerts, compare, search-history, recommendations, exclusive-deals, early-access tourist gates onto their respective routes.
-- T-145-09 Wire reviews-attach-photos gates.
-- T-145-10 Wire any remaining accommodation or destination gates per the matrix.
-- T-145-11 For routes that should be gated but have no existing `gateXxx`, define new gates following the same pattern (HTTPException 403, JSON body with `code: 'ENTITLEMENT_REQUIRED'` or `code: 'LIMIT_REACHED'`, `details.upgradeUrl: '/billing/plans'`).
-- T-145-12 For routes that should be limit-gated but have no current usage counter, plumb the usage source (`c.set('currentFavoritesCount', n)` etc) from the service layer.
-- T-145-13 Admin override: ensure admin actors bypass all gates (`actor.role === 'admin'` short-circuits enforcement). Document the bypass in the JSDoc of `requireEntitlement` and each `gateXxx`.
-
-### Phase 2 — Fix latent bugs surfaced during the SPEC-143 audit
-
-- T-145-14 Fix `apps/api/src/middlewares/actor.ts:178` ordering bug. Two options to evaluate: (a) move the `userEntitlements` lookup into a deferred resolver that runs lazily when `actor.entitlements` is first read, (b) populate `actor.entitlements` in the entitlement middleware itself after it sets `userEntitlements`. Pick one based on which downstream code (if any) actually consumes `actor.entitlements`. If none, delete the block.
-- T-145-15 Audit `apps/api/src/middlewares/limit-enforcement.ts` for live vs dead code. If live, document its mount points; if dead, delete it.
-- T-145-16 `clearEntitlementCache` invocation audit. Grep every code path that mutates a subscription, plan, customer-level grant, addon purchase, or addon revoke. Verify each one calls `clearEntitlementCache(customerId)` synchronously after the DB write. Add the call where missing. Cover: monthly checkout confirmation, plan upgrade apply, plan downgrade apply (cron), subscription cancel, subscription pause, subscription resume, addon purchase confirmation, addon revoke, customer-level entitlement grant via admin, customer-level entitlement revoke via admin, refund-induced revocation.
-- T-145-17 Replace the unsafe `as EntitlementKey[]` cast at `apps/api/src/middlewares/entitlement.ts:195` with a runtime parse that warns when an unknown entitlement value reaches the middleware. Same for limits at line ~200.
-
-### Phase 3 — E2E coverage (Workstream D)
-
-Following the SPEC-143 patterns (mp-stub, billing-fixtures, withRollback / clean, mini-app probe where needed). Every test arranges the necessary plan + customer + subscription state, exercises a real HTTP route through the full middleware stack, and asserts the gate outcome.
-
-- T-145-18 Test: user on cheap plan, GET endpoint gated by a Phase 1 entitlement key the cheap plan does not have → 403 `ENTITLEMENT_REQUIRED`, body shape, no DB mutation.
-- T-145-19 Test: user on cheap plan, POST endpoint gated by an entitlement the cheap plan does grant → 2xx, side effect lands in DB.
-- T-145-20 Test: user on cheap plan respecting a `MAX_*` limit, performs N+1 attempts where the (N+1)th lands the limit → 403 `LIMIT_REACHED`, details include `currentCount`, `maxAllowed`, `remaining: 0`.
-- T-145-21 Test: same user upgrades to expensive plan via the upgrade flow (SPEC-143 T-143-11 coverage assumed). Immediately after activation, retry the previously-blocked endpoint → 2xx without waiting for the cache TTL.
-- T-145-22 Test: user on expensive plan, schedules downgrade to cheap (effective at period end). Before the cron runs, expensive-only feature still works. After the cron runs, feature is blocked → 403.
-- T-145-23 Test: customer-level entitlement grant (via admin override). Cheap-plan user receives a one-off grant for an expensive feature. Endpoint returns 2xx. Admin revokes the grant. Endpoint returns 403 immediately (cache invalidated).
-- T-145-24 Test: addon purchase elevates a limit. User on cheap plan with `MAX_ACCOMMODATIONS: 1` purchases an addon that adds 5 accommodations. Limit-gated endpoint now allows up to 6 accommodations. After addon expires (cron), limit drops back to 1.
-- T-145-25 Test: subscription cancellation revokes entitlements at the moment the sub transitions to `canceled` (or end of grace period, per product decision).
-- T-145-26 Test: trial subscription grants entitlements identical to the trialed plan; trial expiration (T-143-15 + cron) revokes them.
-- T-145-27 Test: stale-cache regression guard. Pre-populate the entitlement cache with an empty set, mutate the subscription state in DB without calling `clearEntitlementCache`, verify the test FAILS. Then add the missing `clearEntitlementCache` call and verify the test passes. (Meta-test that protects Phase 2 T-145-16 from regression.)
-
-### Phase 4 — Hardening
-
-- T-145-28 Snapshot test that walks every registered route in the app and asserts that any route under `apps/api/src/routes/protected/**` is either listed in `docs/billing/endpoint-gate-matrix.md` with an explicit "no gate needed" justification or has at least one entitlement/limit middleware in its chain. Test fails CI if a new protected route is added without an entry in the matrix.
-- T-145-29 Contributor docs in `docs/billing/adding-an-entitlement.md`. Step-by-step: add to enum, add to seed, add to plan config, gate the route, add the e2e test.
-- T-145-30 Update `apps/api/CLAUDE.md` and root `CLAUDE.md` to describe the enforcement model (middleware chain, gate pattern, admin bypass, cache invalidation contract).
-
-Additional atomic tasks (T-145-31 and beyond) will be created during atomization once the Phase 0 catalog firms up; estimated 30–50 more atomic tasks across Phases 1 and 3 depending on the surface area the matrix in T-145-05 produces. Total target: 60–80 atomic tasks at complexity ≤ 4 each.
-
-## Definition of done
-
-- Phase 0 catalog ADR merged and referenced by every later task.
-- Endpoint → gate matrix (T-145-05) merged.
-- Every route listed in the matrix has its gate wired and an e2e test that proves block + allow behavior under the appropriate plan.
-- Phase 2 latent bugs fixed; `clearEntitlementCache` invocation audit complete and every entitlement-mutating event invalidates the cache.
-- 100% functional + line coverage on `apps/api/src/middlewares/entitlement.ts`, `tourist-entitlements.ts`, `accommodation-entitlements.ts`, `limit-enforcement.ts` (if kept).
-- Phase 4 snapshot test (T-145-28) passing in CI; any new protected route added after this spec lands without an entry in the matrix breaks the build.
-- Manual smoke checklist run in STAGING confirms that a freshly-signed-up cheap-plan user sees the expected 403 on expensive-only features and 2xx on cheap-included features.
-
-## Workstream split with SPEC-143
-
-| Concern | SPEC-143 | SPEC-145 (this spec) |
+| Capability | Where | Source |
 |---|---|---|
-| Webhook signature, idempotency, dunning, etc | YES | — |
-| Checkout flows (annual, monthly, upgrade, downgrade) | YES | — |
-| Entitlement middleware loads correctly post-activation | YES (T-143-09 sub-commit 4) | — |
-| Production routes enforce entitlements/limits | — | YES |
-| `gateXxx` middlewares mounted on real routes | — | YES |
-| `clearEntitlementCache` invocation audit | partial (annual confirmation only) | YES (full audit) |
-| Endpoint → gate matrix | — | YES |
+| `entitlementMiddleware` loads entitlements/limits into context, mounted globally | `entitlement.ts`, `create-app.ts:184` | SPEC-143 |
+| Staff bypass (`SUPER_ADMIN/ADMIN/EDITOR/CLIENT_MANAGER` → unlimited), short-circuits before billing/cache | `entitlement.ts:215,433` | SPEC-171 |
+| Billing-off / no-customer fallback by role (HOST→owner-basico, others→tourist-free, guest→empty) | `buildHostDraftDefaultsResult`, `buildDefaultEntitlementsResult` | BETA-42 |
+| `requireEntitlement`/`hasEntitlement`/`clearEntitlementCache`/`getRemainingLimit` | `entitlement.ts:611,728,849,768` | SPEC-143 |
+| `EntitlementKey` (40) + `LimitKey` (6) enums | `packages/billing/src/types/*` | — |
+| Wired gates today: `gateRichDescription`/`gateVideoEmbed` (accom PATCH), `gateFavorites` + `assertFavoritesLimitOrThrow` (bookmark create), `enforceAccommodationLimit` (create/draft/onboarding), `enforcePromotionLimit` (promo create), inline photo limit (admin media upload) | various routes | SPEC-143 |
 
-SPEC-143 stays narrow on testing what exists. SPEC-145 stays narrow on enforcement. The two are sequential: SPEC-143 merges first to staging, then SPEC-145 activates.
+## 3. Cross-spec dependencies & boundaries
 
-## Activation criteria
+- **Consumes SPEC-192** (DB-backed catalog + single catalog ADR + the `as EntitlementKey`/`as LimitKey`
+  cast removal + the FR-4 plan-lookup fix). 145 references the catalog; it does not define or migrate it.
+- **INV-1 cache invalidation (master):** 145 owns the *transversal completeness test* and the *stale-cache
+  regression guard*. The individual cache-clear calls inside lifecycle events are wired by 194 (refund,
+  dunning) and already exist for ~17 events; 145 proves the set is complete.
+- **INV-2 error contract:** 145 refactors the gate denials; 149 handles provider-error mapping.
+- **Downgrade restriction at route level** is the *enforcement* side (145 e2e); the *policy* (grandfather +
+  restrict over-cap resources) is SPEC-167.
 
-This spec is `reserved`. Activation (flip to `in-progress`, create worktree `hospeda-spec-145-billing-entitlements-and-limits-enforcement`, cut branch `spec/SPEC-145-billing-entitlements-and-limits-enforcement` from staging, register in `.qtm/tasks/index.json`) happens when **either** of:
+## 4. Tasks
 
-1. SPEC-143 merges to staging (preferred sequential path).
-2. The user explicitly authorizes parallelization while SPEC-143 is still in flight.
+### Workstream B — Gate wiring (the feature gap)
 
-## Risks
+- **T-145-01** `docs/billing/endpoint-gate-matrix.md` — every protected/admin route, its decided
+  `EntitlementKey`/`LimitKey` or "no gate needed" + reason. Seed with the audit candidates:
+  - create/publish accommodation + draft + onboarding/start → `PUBLISH_ACCOMMODATIONS` (on top of existing `MAX_ACCOMMODATIONS`).
+  - accommodation update/patch → `EDIT_ACCOMMODATION_INFO`.
+  - owner-promotion create/update → `CREATE_PROMOTIONS` (on top of existing `MAX_ACTIVE_PROMOTIONS`).
+  - accommodation + destination review create → `WRITE_REVIEWS`.
+  - host favorites-breakdown / market-comparison → `VIEW_ADVANCED_STATS`.
+  - conversations response-rate / monthly-inquiries → `VIEW_BASIC_STATS`.
+  - protected gallery media upload → `MAX_PHOTOS_PER_ACCOMMODATION`.
+- **T-145-02** Unify the error contract. Refactor the **Pattern B** gates (`gateAlerts`, `gateComparator`,
+  `gateReviewPhotos`, `gateSearchHistory`, `gateRecommendations`, `gateExclusiveDeals`, `gateEarlyEventAccess`,
+  `gateCalendarAccess`, `gateExternalCalendarSync`, `gateWhatsAppDisplay`, `gateWhatsAppDirect`,
+  `gateReviewResponse`, and `requireEntitlement`/`requireLimit`) from `HTTPException(403, JSON.stringify(...))`
+  — which the global `onError` maps to `FORBIDDEN` with a stringified body — to
+  `ServiceError(ENTITLEMENT_REQUIRED | LIMIT_REACHED, ...)` so `code`/`message`/`details` are correct
+  (matching Pattern A). Fixes INV-2.
+- **T-145-03** Wire the entitlement gates from the matrix: publish, edit, create-promotions, write-reviews,
+  advanced/basic stats. Each gets a block + allow e2e test (Workstream E).
+- **T-145-04** Plumb missing limit counters: `MAX_PROPERTIES` / `MAX_STAFF_ACCOUNTS` are hardcoded
+  `currentCount=0` stubs (`limit-enforcement.ts:619,725`). Wire the real count when the owning service
+  exists, or register as "reserved" in the matrix so the snapshot test treats it as known (no silent
+  never-triggering limit).
+- **T-145-05** Favorites gate coverage: confirm matrix decision for list/delete/update/collections. Removal
+  must stay ungated (BETA-42 — users at cap can still remove). Wire per matrix.
+- **T-145-06** Phantom gates (calendar, external sync, whatsapp display/direct, review-response, alerts,
+  comparator, review-photos, search-history, recommendations, exclusive-deals, early-event-access): keep as
+  **documented dead code** (owner decision). Add `// PHANTOM-GATE (SPEC-145): route not built yet, see
+  endpoint-gate-matrix.md`, register each in the matrix under "reserved — route pending", and except them
+  in the snapshot test (T-145-12). Do NOT delete, do NOT build the routes.
+- **T-145-07** Document + test admin/staff bypass on the wired gates (INV-6): JSDoc on each `gateXxx` and
+  `requireEntitlement`; an e2e test that a staff actor passes a gate a tourist-free actor fails.
 
-- **Scope creep on Phase 0 catalog.** Defining the catalog can pull in product debates ("does feature X belong to cheap or expensive?"). Mitigation: time-box T-145-03 to a single sit-down, document defaults that can be revised later, do not block phase 1+ on unrelated catalog debates.
-- **Surface area in Phase 1.** Wiring every protected route is large by default; the matrix in T-145-05 may surface 50+ endpoints. Mitigation: prioritize by financial value (publish/edit/photos/limits first; vanity features later) and ship in batches.
-- **Cache invalidation completeness.** Missing a single `clearEntitlementCache` site causes silent bugs (users locked out or granted illegitimate access for up to 5 minutes). Mitigation: T-145-27 meta-test + manual grep checklist in the PR description template.
-- **Test runtime.** Adding 10+ enforcement e2e tests on top of the SPEC-143 suite may push CI runtime past the budget. Mitigation: reuse the same `testDb.withRollback` / `testDb.clean()` setup, and parallelize within vitest if needed.
+### Workstream E — Enforcement e2e coverage
 
-## Cross-references
+Following SPEC-143 patterns (mp-stub, billing-factories, withRollback/clean, probe). Every test exercises a
+**real production route** through the full middleware stack.
 
-- Engram `spec/spec-145/reserved` — reservation rationale and audit summary.
-- Engram `spec/spec-143/t-143-09-checkpoint` (#564) — SPEC-143 state at handoff.
-- Engram `spec-registry/hospeda/last-number` — registry source of truth.
-- `apps/api/src/middlewares/entitlement.ts` — `entitlementMiddleware`, `requireEntitlement`, `hasEntitlement`, `clearEntitlementCache`, `getEntitlementCacheStats`.
-- `apps/api/src/middlewares/tourist-entitlements.ts` — `gateFavorites` and friends (dead code today, target of Phase 1).
-- `apps/api/src/middlewares/accommodation-entitlements.ts` — same.
-- `apps/api/src/middlewares/limit-enforcement.ts` — possibly dead, audit in T-145-15.
-- `packages/billing/src/types/entitlement.types.ts` — `EntitlementKey` enum.
-- `packages/billing/src/types/plan.types.ts` — `LimitKey` enum.
-- `apps/api/test/middlewares/entitlement.test.ts` — existing unit test pattern reusable in Phase 3.
-- `apps/api/test/e2e/flows/billing/annual-checkout.test.ts` — sub-commit 4 of SPEC-143 T-143-09 is the entry point that surfaced this spec.
+- **T-145-08** Block: user whose plan lacks the entitlement → 403 `ENTITLEMENT_REQUIRED`, correct body, no
+  DB mutation. One per wired gate.
+- **T-145-09** Allow: same route under a plan that grants it → 2xx, side effect lands.
+- **T-145-10** Limit: N+1 attempts where the (N+1)th hits a `MAX_*` over a real route → 403 `LIMIT_REACHED`
+  with `currentCount`/`maxAllowed`/`remaining`. Cover accommodations, promotions, favorites, photos.
+- **T-145-11** Elevation/restriction across plan changes: post-upgrade previously-blocked route → 2xx
+  immediately (no TTL wait); post-downgrade (scheduled + cron apply, per 167 policy) premium route → 403.
+- **T-145-12** Customer-level override: admin grants a one-off entitlement → 2xx; admin revokes → 403
+  immediately (confirm the admin grant/revoke route invalidates cache; coordinate with 194 if it's a gap).
+- **T-145-13** Addon limit elevation: cheap plan `MAX_ACCOMMODATIONS=1` + extra-accommodations-5 → allows up
+  to 6; after addon-expiry cron → back to 1.
+- **T-145-14** Cancellation/refund revocation at route level (refund behavior owned by 194; 145 asserts the
+  route-level effect).
+- **T-145-15** Trial: grants the trialed plan's entitlements at route level; trial-expiry revokes them.
+- **T-145-16** Staff bypass e2e (pairs with T-145-07).
+- **T-145-17 [INV-1] Stale-cache regression guard:** pre-populate cache empty, mutate sub state in DB
+  without `clearEntitlementCache`, assert the test FAILS; add the call, assert it passes.
+- **T-145-18 [INV-1] Transversal cache-invalidation test:** enumerate every money-mutating event
+  (activation, upgrade, downgrade-cron, cancel, pause, resume, addon purchase/expiry/cancel, trial
+  start/expire, refund, dunning-cancellation, admin grant/revoke) and assert each calls
+  `clearEntitlementCache`. This is the master INV-1 guard; the refund/dunning calls themselves are wired by
+  194 — this test fails until they are.
+
+### Workstream F — Hardening
+
+- **T-145-19** Route snapshot/guard test: walk every registered route; any `routes/**/protected/**` or gated
+  `admin/**` route must be in `endpoint-gate-matrix.md` with a "no gate needed" justification or have an
+  entitlement/limit middleware. Phantom/reserved entries excepted explicitly. Fails CI when a new protected
+  route lands without a matrix entry.
+- **T-145-20** Contributor doc `docs/billing/adding-an-entitlement.md`: enum (192) → seed/plan config → gate
+  the route → block+allow e2e → matrix entry.
+- **T-145-21** Update `apps/api/CLAUDE.md` + `packages/billing/CLAUDE.md` with the enforcement model:
+  middleware chain order, the unified error contract, admin/staff bypass, the `clearEntitlementCache`
+  invariant, and the phantom/reserved-key concept.
+- **T-145-22** Coverage: 100% functional + line on `entitlement.ts`, `tourist-entitlements.ts`,
+  `accommodation-entitlements.ts`, `limit-enforcement.ts` (chunked coverage per SPEC-143; full `--coverage`
+  OOMs, engram #636).
+
+## 5. Definition of done
+
+- Endpoint-gate-matrix merged; every gated route has block + allow e2e under the right/wrong plan.
+- Error contract unified (INV-2): no gate returns `FORBIDDEN` with a stringified body.
+- Admin/staff bypass documented + tested (INV-6).
+- INV-1 proven by the transversal + stale-cache tests (the refund/dunning cache calls land in 194; the test
+  is the gate that they did).
+- Snapshot guard in CI (T-145-19); a new protected route without a matrix entry breaks the build.
+- 100% functional coverage on the four enforcement files.
+- Manual staging smoke: a fresh cheap-plan user sees 403 on expensive-only features, 2xx on included ones.
+
+## 6. Cross-references
+
+- Master: SPEC-193. Depends on SPEC-192 (catalog). Coordinates with SPEC-149 (error mapping), SPEC-167
+  (downgrade policy), SPEC-194 (lifecycle cache-clear calls feed INV-1).
+- ADRs: 013 (deferred limit enforcement — this spec activates it), 016 (fail-open), 021 (type-cast policy),
+  026 (collections limit). Catalog ADR owned by 192.
+- Code: `apps/api/src/middlewares/{entitlement,tourist-entitlements,accommodation-entitlements,limit-enforcement}.ts`;
+  `routes/**/protected/**`; `packages/billing/src/types/*`.
+- Tests: `apps/api/test/e2e/flows/billing/**`, `apps/api/test/middlewares/{entitlement,limit-enforcement,limit-enforcement-photo}.test.ts`.

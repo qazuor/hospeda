@@ -12,6 +12,7 @@ depends_on: [SPEC-143]
 blocks: []
 priority: medium
 firstAllocatedViaEngramProtocol: true
+parent: SPEC-193
 ---
 
 # SPEC-149: Billing provider error propagation + Sentry context + retry policy
@@ -162,6 +163,28 @@ Defer to design phase. High-level sequencing:
 - `[[bug/no-retry-policy-on-mp-errors]]` — engram bug pin (resilience gap).
 - SPEC-143 T-143-60 — idempotency middleware (retry prerequisite).
 - SPEC-143 T-143-47/49/50 — Sentry alert tuning (coordination).
+
+## Webhook error-handling ownership (added under SPEC-193)
+
+Under the SPEC-193 master, SPEC-149 is now also the owner of two additional webhook error-handling gaps:
+
+**(a) Handlers that swallow errors and always mark events processed.**
+
+- `handlePaymentUpdated` (`apps/api/src/routes/webhooks/mercadopago/payment-handler.ts:145`): on an internal error the handler currently catches, logs, and returns a success response — the event is marked `processed` even when the operation failed. This must be corrected so that transient errors (DB timeout, lock acquisition failure, etc.) either re-throw or explicitly mark the event `failed` so it reaches the dead-letter queue and can be retried.
+- `handleSubscriptionAuthorizedPayment` (`apps/api/src/routes/webhooks/mercadopago/subscription-payment-handler.ts:314`): same pattern — errors are swallowed and the event lands in `processed` state regardless of outcome. Same fix required: re-throw on transient errors OR explicitly set `failed` status.
+
+**(b) `webhook-retry.job.ts:208-248` — dead-letter retry omits two event types.**
+
+The switch statement in the dead-letter retry job does not handle `subscription_preapproval.created` and `subscription_authorized_payment.*` event types — they fall through to the default (no-op / skip) and are never retried from the dead-letter queue. Both types must be added to the switch so they are retried with the same backoff policy as the other event types.
+
+### Coordination with SPEC-194
+
+SPEC-194 owns the lifecycle bug fixes (including the `mark-processed` fix for the handlers above). The sequencing constraint is:
+
+1. SPEC-194's fix (handlers re-throw or mark `failed` on transient errors) ships FIRST — this creates the alertable failure signal.
+2. SPEC-149 then wires the Sentry alerting for those failures (this spec) — the alert has something to fire on.
+
+Additionally, SPEC-149 owns the Sentry alerting for cron failures — for example, `apply-scheduled-plan-changes` exhausting `MAX_APPLY_ATTEMPTS` should fire a Sentry alert. SPEC-194 only makes those failures surface as explicit errors; the wiring of the Sentry alert call belongs here.
 
 ## Status
 

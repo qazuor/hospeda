@@ -12,9 +12,17 @@ depends_on: [SPEC-143, SPEC-109]
 blocks: []
 priority: medium
 firstAllocatedViaEngramProtocol: true
+parent: SPEC-193
 ---
 
 # SPEC-147: User self-service subscription cancellation
+
+## Coordination (SPEC-193)
+
+As a child of SPEC-193 "Billing Go-Live Readiness — Master", this spec must honor two invariants:
+
+- **INV-1 (cache invalidation)**: the cancellation service must call `clearEntitlementCache` for the affected customer immediately after the soft-cancel is recorded. This is already called out in Workstream A step 6, but must not be removed or deferred.
+- **INV-4 (state-machine)**: all subscription state transitions triggered by cancellation (active → active+cancelAtPeriodEnd, then active+cancelAtPeriodEnd → canceled at period end) must follow the canonical state-machine defined in SPEC-194. Do not implement ad-hoc status flips — use the SPEC-194 transition helpers once they are available.
 
 ## Context
 
