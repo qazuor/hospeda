@@ -1,0 +1,604 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-180",
+    "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
+    "created": "2026-06-01T00:00:00.000Z",
+    "phaseBreakdown": {
+        "phase1-source-maps": ["T-001", "T-002", "T-003"],
+        "phase2-logger-capture": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-009"],
+        "phase3-environments-ops": ["T-010", "T-011", "T-012"],
+        "phase4-closeout": ["T-013", "T-014"]
+    },
+    "parallelTracks": {
+        "trackA": ["T-001", "T-002", "T-003"],
+        "trackB": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-009"],
+        "trackC": ["T-010", "T-011"],
+        "mergePoint": "T-012"
+    },
+    "criticalPath": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-007",
+        "T-008",
+        "T-009",
+        "T-012",
+        "T-013",
+        "T-014"
+    ],
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add ARG SENTRY_AUTH_TOKEN to all three Dockerfiles (build stage)",
+            "description": "Add `ARG SENTRY_AUTH_TOKEN` to the build stage of all three app Dockerfiles so the Sentry upload plugins can read the token during `docker build` in Coolify.\n\n**Root cause recap**: The token is set as a build-arg in Coolify, but Docker build-args are only visible inside the container if declared with `ARG`. Without the declaration the environment variable is invisible to the build process, so `process.env.SENTRY_AUTH_TOKEN` evaluates to `undefined` inside the Sentry plugin gates — and source maps are never uploaded.\n\n**Files to modify**:\n\n`apps/api/Dockerfile` — in the `FROM base AS build` stage, after the existing ARG declarations for `SOURCE_COMMIT`, `HOSPEDA_GIT_SHA`, `HOSPEDA_SENTRY_RELEASE`, add:\n```dockerfile\n# Build-time secret for Sentry source-map upload (SPEC-180).\n# No default — resolves to empty in local builds (upload gate skips silently).\nARG SENTRY_AUTH_TOKEN\nENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN\n```\nDo NOT add to the runner stage — it is a build-time secret only.\n\n`apps/web/Dockerfile` — in the `FROM base AS build` stage, after `ARG PUBLIC_SENTRY_ENVIRONMENT` (line ~47), add:\n```dockerfile\n# Build-time secret for Sentry source-map upload (SPEC-180).\nARG SENTRY_AUTH_TOKEN\nENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN\n```\nDo NOT propagate to the `pruned` or `runner` stages.\n\n`apps/admin/Dockerfile` — in the `FROM base AS build` stage, after `ARG VITE_POSTHOG_HOST` (line ~37), add:\n```dockerfile\n# Build-time secret for Sentry source-map upload (SPEC-180).\nARG SENTRY_AUTH_TOKEN\nENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN\n```\nDo NOT propagate to the `runner` stage.\n\n**Verification**: Run `docker build --build-arg SENTRY_AUTH_TOKEN=test_value .` in each app dir. Confirm the build succeeds and that the echo in each Dockerfile (existing Sentry release echo) still runs. A full source-map upload verification requires a real Coolify build with a valid token (tracked in T-003).\n\nAcceptance criteria:\n- All three Dockerfiles declare `ARG SENTRY_AUTH_TOKEN` (no default) and `ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN` in their build stage\n- The runner stages do NOT carry the token\n- Local `docker build` (no build-arg) completes without error (token absent = upload gate skips silently, not crashes)\n- `pnpm lint` (Biome) passes on modified files (Dockerfiles are not Biome-linted; shell-level only)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Add ARG + ENV SENTRY_AUTH_TOKEN to apps/api/Dockerfile build stage",
+                    "completed": false
+                },
+                {
+                    "title": "Add ARG + ENV SENTRY_AUTH_TOKEN to apps/web/Dockerfile build stage",
+                    "completed": false
+                },
+                {
+                    "title": "Add ARG + ENV SENTRY_AUTH_TOKEN to apps/admin/Dockerfile build stage",
+                    "completed": false
+                },
+                {
+                    "title": "Verify runner stages do NOT carry the token",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-1", "docker", "sentry", "source-maps", "beta-66"],
+            "phase": "phase1-source-maps",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Fix web Sentry plugin gate in astro.config.mjs (DSN → AUTH_TOKEN)",
+            "description": "The web Sentry plugin is currently gated on `process.env.PUBLIC_SENTRY_DSN` (line ~104 in `apps/web/astro.config.mjs`). This is wrong for two reasons:\n1. The DSN is configured in `sentry.client.config.ts` / `sentry.server.config.ts` (auto-discovered by `@sentry/astro`), not in `astro.config.mjs`. Requiring it here creates an unnecessary coupling.\n2. The plugin only needs the auth token to upload source maps. If the token is absent, the upload should be silently skipped — not the entire plugin.\n\n**Current code (lines ~104-112)**:\n```js\n...(process.env.PUBLIC_SENTRY_DSN\n    ? [\n          sentry({\n              org: 'qazuor',\n              project: 'hospeda-web',\n              authToken: process.env.SENTRY_AUTH_TOKEN\n          })\n      ]\n    : []),\n```\n\n**Fixed code**:\n```js\n...(process.env.SENTRY_AUTH_TOKEN\n    ? [\n          sentry({\n              org: 'qazuor',\n              project: 'hospeda-web',\n              authToken: process.env.SENTRY_AUTH_TOKEN\n          })\n      ]\n    : []),\n```\n\nThis makes the gate consistent with `apps/admin/vite.config.ts` (already gated on `SENTRY_AUTH_TOKEN`) and `apps/api/tsup.config.ts` (same).\n\nUpdate the inline comment to clarify:\n```js\n// Sentry build plugin: uploads source maps to the hospeda-web project.\n// Gated on SENTRY_AUTH_TOKEN (build-time secret, set in Coolify).\n// DSN is configured in sentry.client.config.ts + sentry.server.config.ts\n// (auto-discovered by @sentry/astro) — not passed here (SPEC-180).\n```\n\nAcceptance criteria:\n- Gate condition is `process.env.SENTRY_AUTH_TOKEN` (not `PUBLIC_SENTRY_DSN`)\n- Updated comment explains the rationale\n- `pnpm typecheck` passes in apps/web\n- `pnpm build` (web) with `SENTRY_AUTH_TOKEN=` unset completes without error (plugin skips silently)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Change gate condition from PUBLIC_SENTRY_DSN to SENTRY_AUTH_TOKEN in astro.config.mjs",
+                    "completed": false
+                },
+                {
+                    "title": "Update inline comment explaining gate rationale",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck passes in apps/web",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-1", "web", "sentry", "astro", "source-maps", "beta-66"],
+            "phase": "phase1-source-maps",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Verify source map upload via Coolify build (manual confirmation)",
+            "description": "After T-001 and T-002 are merged and the owner sets `SENTRY_AUTH_TOKEN` in Coolify, trigger a rebuild and confirm source maps are uploaded.\n\n**Steps**:\n1. Owner sets `SENTRY_AUTH_TOKEN` as a build-arg secret in Coolify for `hospeda-api-staging`, `hospeda-web-staging`, `hospeda-admin-staging` (see spec §3 Owner action required).\n2. Trigger full rebuild (not just restart) for each app.\n3. Navigate to Sentry → Projects → hospeda-api / hospeda-web / hospeda-admin → Releases.\n4. Confirm the latest release appears with artifact counts > 0.\n5. Find a real error event (or trigger one) and confirm the stack trace shows symbolicated file names.\n\n**Alternative verification (without triggering a real error)**:\nIn Sentry → Source Maps → upload artifacts for the latest release. If the count is non-zero, the upload worked.\n\n**Note**: This task is a MANUAL verification by the owner. It cannot be automated in CI because it requires a real Coolify build with a valid Sentry auth token. The task is marked `pending` until the owner confirms.\n\nAcceptance criteria:\n- Sentry shows source map artifacts for the latest release of all three apps\n- At least one error event (or test-triggered error) shows a readable, non-minified stack trace\n- Owner documents the confirmation in a comment on this task or the PR",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Owner: set SENTRY_AUTH_TOKEN in Coolify for all 3 staging apps (build-arg secret)",
+                    "completed": false
+                },
+                {
+                    "title": "Owner: trigger full rebuild for each staging app",
+                    "completed": false
+                },
+                {
+                    "title": "Verify Sentry shows source map artifacts for latest release",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm at least one error shows symbolicated stack trace",
+                    "completed": false
+                }
+            ],
+            "tags": [
+                "SPEC-180",
+                "phase-1",
+                "sentry",
+                "source-maps",
+                "manual-verification",
+                "ops",
+                "beta-66"
+            ],
+            "phase": "phase1-source-maps",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add capture?: boolean flag and registerCaptureHook() to @repo/logger",
+            "description": "Extend `packages/logger` to support opt-in Sentry forwarding via a hook mechanism. The package must stay completely Sentry-free — no `@sentry/*` import.\n\n**Step 1 — Extend `LoggerOptions` in `packages/logger/src/types.ts`**:\nAdd to the existing `LoggerOptions` interface (after the last existing field):\n```ts\n/**\n * When true and a capture hook is registered, forwards this error-level\n * log to the external capture system (e.g. Sentry). Has no effect on\n * non-error levels or when no hook is registered. Default: false.\n * (SPEC-180)\n */\ncapture?: boolean;\n```\n\n**Step 2 — Add `registerCaptureHook` to `packages/logger/src/logger.ts`**:\n```ts\n/**\n * Registered capture hook. Called on error-level logs with capture:true.\n * Registered at app startup (e.g. after Sentry.init()). Null by default.\n */\nlet _captureHook: ((error: unknown, extra: Record<string, unknown>) => void) | null = null;\n\n/**\n * Register a capture hook for error-level logs.\n * The hook is called when logger.error() is invoked with { capture: true }.\n * Keep this package Sentry-free — do not import @sentry here; register the\n * hook from the app's initialization code after Sentry.init() (SPEC-180).\n *\n * @param hook - Function receiving (error, extra) to forward to an external capture system.\n */\nexport function registerCaptureHook(\n    hook: (error: unknown, extra: Record<string, unknown>) => void\n): void {\n    _captureHook = hook;\n}\n```\n\n**Step 3 — Wire the hook in `logWithLevel()`**:\nIn the `logWithLevel` function (or equivalent), after writing to console, add:\n```ts\nif (level === LogLevel.ERROR && options?.capture === true && _captureHook !== null) {\n    try {\n        _captureHook(value, { label: label ?? '', category: options.category ?? '' });\n    } catch (_hookErr) {\n        // Hook errors must not propagate — observability must never break the app.\n    }\n}\n```\n\n**Step 4 — Export `registerCaptureHook` from `packages/logger/src/index.ts`**.\n\n**Step 5 — JSDoc** on all new exports.\n\nAcceptance criteria:\n- `registerCaptureHook` is exported from `@repo/logger`\n- `LoggerOptions.capture` is typed as `boolean | undefined`\n- `pnpm typecheck` passes in packages/logger\n- No `@sentry/*` import in ANY file in packages/logger\n- Hook invocation is wrapped in try/catch so hook errors cannot crash the app\n- Named exports only (no default exports)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Add capture?: boolean to LoggerOptions in types.ts with JSDoc",
+                    "completed": false
+                },
+                {
+                    "title": "Add _captureHook module-level variable and registerCaptureHook() export to logger.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Wire hook invocation in logWithLevel() after console write",
+                    "completed": false
+                },
+                {
+                    "title": "Export registerCaptureHook from packages/logger/src/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck passes and no @sentry import in packages/logger",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-2", "logger", "sentry", "hook", "beta-64"],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write tests for logger capture hook and beforeSend filter (RED first)",
+            "description": "Per the bug-fix + new-behavior rule: tests land before implementation of the Sentry forwarder and beforeSend extension.\n\n**Test 1 — Capture hook mechanism** (`packages/logger/src/__tests__/capture-hook.test.ts`):\n```ts\nimport { vi, it, describe, expect, beforeEach } from 'vitest';\nimport { registerCaptureHook, error, warn, info } from '../logger.ts';\n\ndescribe('registerCaptureHook', () => {\n    let capturedArgs: Array<[unknown, Record<string, unknown>]>;\n    beforeEach(() => {\n        capturedArgs = [];\n        registerCaptureHook((err, extra) => { capturedArgs.push([err, extra]); });\n    });\n\n    it('calls hook on error() with capture:true', () => { ... });\n    it('does NOT call hook on error() without capture:true', () => { ... });\n    it('does NOT call hook on warn() even with capture:true', () => { ... });\n    it('does NOT call hook on info() with capture:true', () => { ... });\n    it('swallows hook errors — does not propagate', () => {\n        registerCaptureHook(() => { throw new Error('hook exploded'); });\n        expect(() => error(new Error('test'), 'label', { capture: true })).not.toThrow();\n    });\n});\n```\n\n**Test 2 — beforeSend filter** (`apps/api/src/lib/__tests__/sentry-before-send.test.ts`):\nTest the extended `beforeSend` callback directly (extracted as a pure function for testability). Cases:\n- Drops events matching the HTTP middleware noise pattern (e.g. `event.message` matches `/IncomingRequest.*5[0-9]{2}/` or the specific logger-middleware string)\n- Drops events tagged `expected_error: true` (existing behavior — regression guard)\n- Passes through actionable events (e.g. cron bootstrap failure, newsletter dispatch failure)\n- Handles `null`/`undefined` event gracefully\n\nRun `pnpm --filter @repo/logger test` and `pnpm --filter hospeda-api test -- sentry-before-send` — both should be RED (hook tests fail because registerCaptureHook does not yet wire the hook in logWithLevel; beforeSend tests fail because the denylist entries don't yet exist).\n\nAcceptance criteria:\n- capture-hook.test.ts exists with 5 test cases\n- sentry-before-send.test.ts exists with 4+ test cases\n- Both test files are RED before T-004 / T-007 implementation\n- No `.only()` or hard-coded `.skip()` in committed test code",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create packages/logger/src/__tests__/capture-hook.test.ts (5 cases)",
+                    "completed": false
+                },
+                {
+                    "title": "Create apps/api/src/lib/__tests__/sentry-before-send.test.ts (4+ cases)",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm tests are RED before implementation (T-004 hook wiring not yet done)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-2", "testing", "test-first", "logger", "sentry", "beta-64"],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Register Sentry forwarder in apps/api after Sentry.init()",
+            "description": "Register the Sentry forwarding hook in the API's initialization path, after `Sentry.init()` is called.\n\n**Where to register**: Locate the file where the API registers the Sentry capture hook. This is likely `apps/api/src/utils/logger.ts` or wherever `initSentry()` is called in `apps/api/src/index.ts`. The hook must be registered AFTER `Sentry.init()` so the Sentry SDK is ready.\n\n**Implementation**:\n```ts\nimport { registerCaptureHook } from '@repo/logger';\nimport * as Sentry from '@sentry/node';\n\n// Register after Sentry.init() — called once at app startup (SPEC-180).\nregisterCaptureHook((error, extra) => {\n    Sentry.captureException(error, {\n        extra,\n        tags: { captured_via: 'logger_hook' }\n    });\n});\n```\n\n**`warn` → breadcrumb**:\nIf a `warn`-level breadcrumb forwarding is desired, wire it separately in the Sentry configuration using `beforeBreadcrumb` (optional — do only if the owner approves after seeing the initial volume).\n\n**Verification**: After registration, call `logger.error(new Error('test'), 'test-label', { capture: true })` in a non-production context and confirm the event appears in Sentry dev project.\n\nAcceptance criteria:\n- `registerCaptureHook` is called exactly once at API startup, after `Sentry.init()`\n- The forwarder calls `Sentry.captureException` with error + extra context\n- `pnpm typecheck` passes in apps/api\n- No import of `@sentry/*` added to `packages/logger`\n- T-005 capture-hook tests are now GREEN",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Locate API Sentry init site (index.ts or utils/logger.ts)",
+                    "completed": false
+                },
+                {
+                    "title": "Register Sentry forwarder hook after Sentry.init()",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm typecheck passes in apps/api",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm T-005 capture-hook tests are now GREEN",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-2", "api", "sentry", "logger", "beta-64"],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Extend beforeSend denylist in apps/api/src/lib/sentry.ts",
+            "description": "Extend the existing `beforeSend` hook in `apps/api/src/lib/sentry.ts` (around line 126) to drop known noise events before they reach Sentry's quota.\n\n**Current `beforeSend`** (already drops `expected_error: true` — keep that).\n\n**Add the following denylist patterns**:\n```ts\n// SPEC-180: drop HTTP middleware noise and response-body dumps that\n// arrive via sentryMiddleware but are already handled at a higher level.\nconst NOISE_PATTERNS: readonly RegExp[] = [\n    // Per-request 5xx logger middleware message (fires on every unhandled exception,\n    // already captured by sentryMiddleware with full request context).\n    /^\\[http\\].*responded with 5\\d\\d/i,\n    // Raw response body dumps from transform-pipeline logging.\n    /^\\[transform\\].*body:/i,\n] as const;\n\n// In beforeSend:\nconst msg = event.message ?? '';\nif (NOISE_PATTERNS.some(re => re.test(msg))) {\n    return null; // drop\n}\n```\n\nExtract the `beforeSend` body into a pure testable function `applyBeforeSend(event: Sentry.Event): Sentry.Event | null` and pass it as `beforeSend: applyBeforeSend` in the Sentry.init() config. This makes the T-005 `sentry-before-send.test.ts` tests work cleanly.\n\n**Verify T-005 tests are now GREEN** after this change.\n\nAcceptance criteria:\n- `NOISE_PATTERNS` denylist added with at least the two patterns above\n- `applyBeforeSend` extracted as a named, exported (for testing) pure function\n- Existing `expected_error: true` drop is preserved (T-005 regression test covers this)\n- `pnpm typecheck` passes in apps/api\n- T-005 sentry-before-send tests are GREEN",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Add NOISE_PATTERNS denylist array to sentry.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Extend beforeSend body to check NOISE_PATTERNS (return null = drop)",
+                    "completed": false
+                },
+                {
+                    "title": "Extract beforeSend body into applyBeforeSend() pure function for testability",
+                    "completed": false
+                },
+                {
+                    "title": "Verify T-005 sentry-before-send tests are GREEN",
+                    "completed": false
+                }
+            ],
+            "tags": [
+                "SPEC-180",
+                "phase-2",
+                "api",
+                "sentry",
+                "before-send",
+                "noise-filter",
+                "beta-64"
+            ],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Tag ~15 actionable call sites with { capture: true }",
+            "description": "Add `{ capture: true }` to the approximately 15 logger.error() call sites that are genuinely actionable and should appear in Sentry.\n\n**Confirmed sites to tag** (audit against actual code before tagging — verify these exist as described):\n\n1. `apps/api/src/cron/bootstrap.ts` — cron job bootstrap failure (the handler that wraps job execution and catches thrown errors). Tag the top-level catch that fires when a cron JOB ITSELF throws (not the HTTP response logger).\n2. `apps/api/src/lib/auth.ts` or equivalent — auth hook failure (e.g. `onSession` or `onUser` hook throws).\n3. `apps/api/src/lib/entity-resolver.ts` or equivalent — entity type not registered error (if this fires in production it means a code bug).\n4. Newsletter dispatch worker — job failed to send (already uses `captureBillingError` or similar; if it uses `logger.error`, add `capture: true`).\n5. Webhook validation failure — HMAC mismatch on a non-MP webhook (if any).\n\n**Sites to explicitly NOT tag** (would produce noise):\n- `service-core logError()` — fires on every 422/404, already tagged `expected_error: true` and dropped in beforeSend.\n- Per-request HTTP middleware / `sentryMiddleware` — already captured at a higher level.\n- Admin-only route errors (low severity, high volume).\n- Subscription-poll cron (handled separately in T-009 with rate limiting).\n\n**Audit approach**: run `grep -rn \"logger\\.error\" apps/api/src/` to enumerate all call sites. For each, decide: actionable (tag) or noise (skip). Document the decision in a code comment for each tagged site.\n\nAcceptance criteria:\n- Between 10 and 20 call sites tagged with `{ capture: true }` (target ~15)\n- Each tagged site has a brief inline comment explaining why it's actionable\n- Service-core logError, HTTP middleware, and admin-only routes are NOT tagged\n- `pnpm typecheck` passes in apps/api\n- `pnpm --filter @repo/service-core test` still green (no changes to service-core)",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Audit all logger.error() call sites in apps/api/src/ (grep + review)",
+                    "completed": false
+                },
+                {
+                    "title": "Tag cron bootstrap failure site with { capture: true }",
+                    "completed": false
+                },
+                {
+                    "title": "Tag auth hook failure sites with { capture: true }",
+                    "completed": false
+                },
+                {
+                    "title": "Tag entity-resolver type-not-registered error with { capture: true }",
+                    "completed": false
+                },
+                {
+                    "title": "Tag newsletter dispatch failure site with { capture: true }",
+                    "completed": false
+                },
+                {
+                    "title": "Add inline comments explaining rationale for each tagged site",
+                    "completed": false
+                },
+                {
+                    "title": "Verify service-core and HTTP middleware are NOT tagged",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-2", "api", "logger", "sentry", "capture", "beta-64"],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Rate-limit subscription-poll cron Sentry captures (consecutive-failure counter)",
+            "description": "The subscription-poll cron runs every minute. A connectivity blip can produce 1440 `logger.error` calls per day if left unchecked. Implement a consecutive-failure counter that only captures the 1st failure and every 10th thereafter.\n\n**Implementation** in `apps/api/src/cron/` (wherever the subscription-poll job is defined):\n```ts\n// SPEC-180: Rate-limit Sentry capture for subscription-poll failures.\n// State is module-level (single Node.js process). Resets on first success.\nlet _subscriptionPollConsecutiveFailures = 0;\n\n// Inside the catch block of the subscription-poll cron handler:\n_subscriptionPollConsecutiveFailures++;\nconst shouldCapture =\n    _subscriptionPollConsecutiveFailures === 1 ||\n    _subscriptionPollConsecutiveFailures % 10 === 0;\n\nlogger.error(err, 'subscription-poll cron failed', {\n    category: 'cron',\n    capture: shouldCapture,\n});\n\n// Inside the success path:\n_subscriptionPollConsecutiveFailures = 0;\n```\n\n**Acceptance criteria**:\n- First failure: Sentry event captured\n- 2nd–9th consecutive failures: no Sentry capture (logged to console only)\n- 10th consecutive failure: Sentry event captured\n- First success after failures: counter resets to 0\n- `pnpm typecheck` passes in apps/api\n- Counter is module-level (not class-level or request-level) — correct for a single-process Node server",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Locate subscription-poll cron handler in apps/api/src/cron/",
+                    "completed": false
+                },
+                {
+                    "title": "Add module-level consecutive failure counter",
+                    "completed": false
+                },
+                {
+                    "title": "Wire shouldCapture logic (1st + every 10th)",
+                    "completed": false
+                },
+                {
+                    "title": "Add counter reset on success path",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-2", "api", "cron", "sentry", "rate-limit", "beta-64"],
+            "phase": "phase2-logger-capture",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Harden environment derivation and add startup warning for missing HOSPEDA_SENTRY_ENVIRONMENT",
+            "description": "Add a startup warning in `apps/api` when `HOSPEDA_SENTRY_ENVIRONMENT` is unset in a non-dev deploy, to make the misconfiguration visible in logs before it silently collapses into `production`.\n\n**In `apps/api/src/lib/sentry.ts`** (near line ~76 where environment is computed):\n```ts\nconst sentryEnvironment = env.HOSPEDA_SENTRY_ENVIRONMENT || env.NODE_ENV;\n\n// SPEC-180: warn operators if the environment is derived from NODE_ENV fallback\n// in a production-like deploy. Staging Sentry events should never land in the\n// production bucket — set HOSPEDA_SENTRY_ENVIRONMENT=staging in Coolify.\nif (!env.HOSPEDA_SENTRY_ENVIRONMENT && env.NODE_ENV === 'production') {\n    logger.warn(\n        'HOSPEDA_SENTRY_ENVIRONMENT is not set. Sentry environment will be derived from '\n        + `NODE_ENV=${env.NODE_ENV}. Staging events may land in the production bucket. '\n        + 'Set HOSPEDA_SENTRY_ENVIRONMENT=staging|production in Coolify.'\n    );\n}\n```\n\nThis is a warn (not error, not capture:true) — it surfaces in logs only, not in Sentry itself.\n\n**No code changes for web/admin**: their environment vars are baked into the bundle at build time. If `PUBLIC_SENTRY_ENVIRONMENT` / `VITE_SENTRY_ENVIRONMENT` is missing from Coolify build-args, the plugin just falls back to `MODE`. The risk is acceptably documented.\n\nAcceptance criteria:\n- Startup warning logged if `NODE_ENV=production` and `HOSPEDA_SENTRY_ENVIRONMENT` is unset\n- Warning is `logger.warn` (not `logger.error`), NOT tagged `capture: true`\n- `pnpm typecheck` passes in apps/api",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add startup warning in apps/api/src/lib/sentry.ts when HOSPEDA_SENTRY_ENVIRONMENT is unset in production",
+                    "completed": false
+                },
+                {
+                    "title": "Verify warning does NOT use capture:true",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-3", "api", "sentry", "environment", "ops", "beta-50"],
+            "phase": "phase3-environments-ops",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Fix docs/runbooks/sentry-setup.md — update stale var names and document consent gate",
+            "description": "The Sentry setup doc (`docs/runbooks/sentry-setup.md`, last updated 2026-03-04) predates SPEC-035 and uses stale unprefixed env var names. Update it to reflect the current state.\n\n**Changes needed**:\n1. Replace any occurrence of unprefixed `SENTRY_DSN` with the correct prefixed names:\n   - Web: `PUBLIC_SENTRY_DSN`\n   - Admin: `VITE_SENTRY_DSN`\n   - API: `HOSPEDA_SENTRY_DSN`\n2. Replace any occurrence of unprefixed `SENTRY_ENVIRONMENT` with:\n   - Web: `PUBLIC_SENTRY_ENVIRONMENT`\n   - Admin: `VITE_SENTRY_ENVIRONMENT`\n   - API: `HOSPEDA_SENTRY_ENVIRONMENT`\n3. Add a section documenting `SENTRY_AUTH_TOKEN` (build-time, secret, set in Coolify as build-arg).\n4. Add a note about the web `crashReporting` consent gate:\n   ```markdown\n   ## Web Client — Consent Gate\n   The web Sentry client is gated behind the `crashReporting` consent cookie.\n   If the user has not accepted crash reporting in the cookie banner, Sentry\n   events from the web client are NOT sent. This is an intentional privacy\n   decision (GDPR alignment). No code change is required — document only.\n   ```\n5. Add the Coolify ops checklist (owner action required after SPEC-180 merges):\n   ```markdown\n   ## SPEC-180 Ops Checklist (required after merging)\n   After PR merge, set these in Coolify for each environment:\n   - [ ] `SENTRY_AUTH_TOKEN` — build-arg secret (same token for all 3 apps)\n   - [ ] `HOSPEDA_SENTRY_ENVIRONMENT=staging` — API staging app\n   - [ ] `PUBLIC_SENTRY_ENVIRONMENT=staging` — web staging app\n   - [ ] `VITE_SENTRY_ENVIRONMENT=staging` — admin staging app\n   - [ ] Corresponding `=production` values for prod apps\n   - [ ] Trigger FULL REBUILD (not just restart) for each app\n   ```\n\nAcceptance criteria:\n- All stale var names updated to SPEC-035 prefixed names\n- Consent gate and SENTRY_AUTH_TOKEN documented\n- Ops checklist present\n- Doc is under 200 lines or split into sections if needed",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Update stale SENTRY_DSN and SENTRY_ENVIRONMENT var names to SPEC-035 prefixed versions",
+                    "completed": false
+                },
+                {
+                    "title": "Add SENTRY_AUTH_TOKEN section (build-time, secret, Coolify build-arg)",
+                    "completed": false
+                },
+                {
+                    "title": "Add web crashReporting consent gate documentation",
+                    "completed": false
+                },
+                {
+                    "title": "Add SPEC-180 ops checklist for Coolify (owner action required)",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-3", "docs", "sentry", "environment", "ops", "beta-50"],
+            "phase": "phase3-environments-ops",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Run full test suite + integration smoke — all GREEN",
+            "description": "Final integration check: all unit tests pass and the critical paths are locally verified.\n\n**Step 1 — Run full test suites**:\n```bash\npnpm --filter @repo/logger test     # capture-hook.test.ts — 5 cases GREEN\npnpm --filter hospeda-api test      # sentry-before-send.test.ts + existing suite\n```\n\n**Step 2 — Typecheck all affected packages**:\n```bash\npnpm typecheck\n```\nAffected: packages/logger, apps/api (primary changes), apps/web, apps/admin (Dockerfile + gate only).\n\n**Step 3 — Lint**:\n```bash\npnpm lint\n```\n\n**Step 4 — Local smoke of capture hook**:\n```bash\n# Start API locally\npnpm dev:api\n# Trigger a logger.error call with capture:true via a test route or cron trigger\n# Confirm Sentry dev project receives the event\n```\n\n**Step 5 — Verify no NOISE** (before-send denylist):\nConfirm that a normal per-request 5xx error does NOT produce an additional event beyond what `sentryMiddleware` already captures.\n\nAcceptance criteria:\n- `pnpm --filter @repo/logger test` — all 5 capture-hook tests GREEN\n- `pnpm --filter hospeda-api test` — sentry-before-send tests GREEN + all pre-existing tests pass\n- `pnpm typecheck` exits 0 on all affected packages\n- `pnpm lint` exits 0\n- Local smoke confirms a `capture: true` error reaches Sentry\n- Local smoke confirms noise events (HTTP middleware) are dropped",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-009", "T-010", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm --filter @repo/logger test — all GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm --filter hospeda-api test — all GREEN",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck — 0 errors",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm lint — 0 errors",
+                    "completed": false
+                },
+                {
+                    "title": "Local smoke: capture:true event reaches Sentry dev project",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-3", "testing", "smoke", "integration"],
+            "phase": "phase3-environments-ops",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Open PR to staging + owner Coolify ops checklist",
+            "description": "Open the PR to staging and hand off the ops checklist to the owner.\n\n**PR checklist**:\n- Branch `spec/SPEC-180-sentry-observability` → base `staging`\n- PR title: `fix(sentry): SPEC-180 — source maps, env hardening, logger-driven capture`\n- PR body references:\n  - BETA-66 (source maps never upload → Dockerfile ARG fix + web gate fix)\n  - BETA-50 (env derivation risk → startup warning + docs update)\n  - BETA-64 (logger capture hook + beforeSend denylist + ~15 tagged sites + rate limiter)\n- Include the Coolify ops checklist from T-011 in the PR description so the owner sees it immediately\n- Tag the PR as requiring a **full rebuild** (not just restart) after setting `SENTRY_AUTH_TOKEN`\n\n**CI gate**: wait for CI green before merging. If CI is infra-red (pre-existing failures), document which failures are pre-existing vs SPEC-180-introduced.\n\n**Owner action after merge** (cannot be automated):\n1. Set `SENTRY_AUTH_TOKEN` in Coolify for all 3 staging apps (build-arg secret).\n2. Set `*_SENTRY_ENVIRONMENT=staging` for all 3 staging apps.\n3. Trigger full rebuild for each staging app.\n4. Verify T-003 (source map upload confirmation) after rebuild.\n\nAcceptance criteria:\n- PR is open and CI is green (or pre-existing red documented)\n- PR description contains Coolify ops checklist\n- T-003 is completed post-merge (source map verification)\n- Owner confirms in a PR comment that Coolify env vars are set and rebuild is done",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Open PR spec/SPEC-180-sentry-observability → staging",
+                    "completed": false
+                },
+                {
+                    "title": "Include Coolify ops checklist in PR description",
+                    "completed": false
+                },
+                {
+                    "title": "Wait for CI green (or document pre-existing red)",
+                    "completed": false
+                },
+                {
+                    "title": "Owner: set Coolify env vars and trigger full rebuild",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-4", "pr", "ops", "coolify"],
+            "phase": "phase4-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Post-merge: flip spec + task indexes to completed, close Linear issues",
+            "description": "After PR is merged and T-003 (source map verification) is confirmed:\n\n1. Flip `specs/index.json` entry for SPEC-180: `status: completed`, add `completedAt`, `archived: true`, `archivedAt`, `completionRef` (PR number + merge commit).\n2. Flip `tasks/index.json` epic entry for SPEC-180: `status: completed`, `progress: 14/14`, `archived: true`, `archivedAt`.\n3. Update `spec.md` frontmatter: `status: completed`.\n4. Close Linear issues BETA-66, BETA-50, BETA-64 as Done, referencing the PR.\n5. Save engram entry: `topic_key: spec/SPEC-180/completed`, content = final state summary.\n6. Commit the index + spec.md changes on a new branch (not the spec branch, which is merged) → PR to staging.\n\nAcceptance criteria:\n- Both index files show SPEC-180 as completed + archived\n- spec.md status = completed\n- All 3 Linear issues closed as Done\n- Engram entry saved",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Flip specs/index.json SPEC-180 entry to completed + archived",
+                    "completed": false
+                },
+                {
+                    "title": "Flip tasks/index.json SPEC-180 epic to completed + archived",
+                    "completed": false
+                },
+                {
+                    "title": "Update spec.md frontmatter status to completed",
+                    "completed": false
+                },
+                {
+                    "title": "Close Linear BETA-66, BETA-50, BETA-64 as Done",
+                    "completed": false
+                },
+                {
+                    "title": "Save engram memory entry spec/SPEC-180/completed",
+                    "completed": false
+                }
+            ],
+            "tags": ["SPEC-180", "phase-4", "closeout", "linear", "indexes"],
+            "phase": "phase4-closeout",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-01T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
