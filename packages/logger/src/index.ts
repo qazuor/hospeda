@@ -24,6 +24,14 @@ export {
     warn
 } from './logger.js';
 export { redactSensitiveData, shouldUseWhiteText } from './formatter.js';
+export {
+    clearHooks,
+    dispatchHooks,
+    hasHooks,
+    registerHook,
+    unregisterHook
+} from './hooks.js';
+export type { LogHookFn } from './hooks.js';
 export { buildLogEntry } from './log-entry.js';
 export type { LogEntry } from './log-entry.js';
 export * from './types.js';
