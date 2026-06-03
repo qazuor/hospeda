@@ -27,11 +27,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockGetBySlug, mockWarn, mockGetAddonBySlug } = vi.hoisted(() => ({
-    mockGetBySlug: vi.fn(),
-    mockWarn: vi.fn(),
-    mockGetAddonBySlug: vi.fn()
-}));
+const { mockGetBySlug, mockWarn, mockGetAddonBySlug, mockPlanGetById, mockPlanGetBySlug } =
+    vi.hoisted(() => ({
+        mockGetBySlug: vi.fn(),
+        mockWarn: vi.fn(),
+        mockGetAddonBySlug: vi.fn(),
+        mockPlanGetById: vi.fn(),
+        mockPlanGetBySlug: vi.fn()
+    }));
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -39,6 +42,11 @@ vi.mock('@repo/service-core', () => ({
     AddonCatalogService: vi.fn().mockImplementation(() => ({
         getBySlug: mockGetBySlug,
         list: vi.fn()
+    })),
+    // PlanService added for T-026 plan-reads cutover
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanGetById,
+        getBySlug: mockPlanGetBySlug
     })),
     ADDON_RECALC_SOURCE_ID: 'addon-recalc',
     BILLING_EVENT_TYPES: {
@@ -48,10 +56,7 @@ vi.mock('@repo/service-core', () => ({
 }));
 
 vi.mock('@repo/billing', () => ({
-    getPlanBySlug: vi.fn().mockReturnValue({
-        slug: 'owner-basic',
-        limits: [{ key: 'max_accommodations', value: 5 }]
-    }),
+    // getPlanBySlug no longer used in addon-plan-change.service after T-026
     getAddonBySlug: mockGetAddonBySlug
 }));
 
@@ -242,13 +247,44 @@ function setupTx(activePurchaseRows: unknown[]) {
 describe('addon-plan-change.service cutover parity (SPEC-192 T-013)', () => {
     let billing: ReturnType<typeof buildBilling>;
 
+    /** Stub DB plan with max_accommodations=5 for the owner-basic plan */
+    const STUB_DB_PLAN = {
+        id: 'plan-uuid-001',
+        slug: 'owner-basic',
+        name: 'Owner Basic',
+        description: 'Basic plan',
+        category: 'owner',
+        monthlyPriceArs: 500,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: 3,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 1,
+        isActive: true,
+        entitlements: [],
+        limits: { max_accommodations: 5 },
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+    };
+
     beforeEach(() => {
         billing = buildBilling();
         // Reset only call counts, preserve implementations
         mockGetBySlug.mockReset();
         mockWarn.mockReset();
         mockGetAddonBySlug.mockReset();
+        mockPlanGetById.mockReset();
+        mockPlanGetBySlug.mockReset();
         vi.mocked(withServiceTransaction).mockReset();
+
+        // Default PlanService stubs: getById returns NOT_FOUND, getBySlug returns STUB_DB_PLAN.
+        // Tests that need a different plan setup override these.
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'not found' }
+        });
+        mockPlanGetBySlug.mockResolvedValue({ success: true, data: STUB_DB_PLAN });
     });
 
     afterEach(() => {

@@ -24,12 +24,13 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getPlanBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
+import type { BillingPlanResponse } from '@repo/schemas';
 import {
     ADDON_RECALC_SOURCE_ID,
     AddonCatalogService,
     BILLING_EVENT_TYPES,
+    PlanService,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -39,16 +40,40 @@ import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { detectAndNotifyDowngrades } from './addon-downgrade-detection.service.js';
 import type { RecalculationResult } from './addon-limit-recalculation.service.js';
-import {
-    computeDirection,
-    hashCustomerId,
-    resolvePlanBaseLimit,
-    sumIncrements
-} from './addon-plan-change.helpers.js';
+import { computeDirection, hashCustomerId, sumIncrements } from './addon-plan-change.helpers.js';
 
 // ─── Catalog service (DB-backed addon reads — SPEC-192 T-013) ─────────────────
 // Instantiated once at module level; stateless, no DB connection held.
 const catalogService = new AddonCatalogService();
+
+// ─── Plan service (DB-backed plan reads — SPEC-192 T-026) ─────────────────────
+// Instantiated once at module level; stateless, no DB connection held.
+//
+// Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
+// legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
+const planService = new PlanService();
+
+/**
+ * Resolves a billing plan from the DB using dual-resolve:
+ * 1. Try `getById(planId)` — succeeds for UUID planIds.
+ * 2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
+ *
+ * Returns `null` if neither lookup succeeds.
+ *
+ * @param planId - UUID or slug of the billing plan
+ * @returns Resolved plan or `null` when not found
+ */
+async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanResponse | null> {
+    const byId = await planService.getById(planId);
+    if (byId.success) {
+        return byId.data;
+    }
+    const bySlug = await planService.getBySlug(planId);
+    if (bySlug.success) {
+        return bySlug.data;
+    }
+    return null;
+}
 
 // ─── Dedup guard (GAP-043-014) ────────────────────────────────────────────────
 
@@ -215,6 +240,19 @@ export async function handlePlanChangeAddonRecalculation(
         };
     }
 
+    // ── Pre-Phase 1: Resolve plan definitions via PlanService (DB-backed, T-026) ──
+    // Both oldPlanId and newPlanId may be UUIDs (new rows) or slugs (legacy rows).
+    // Resolve both before entering the transaction so the advisory lock is not held
+    // during async PlanService calls. `newPlanDef` is required to continue;
+    // `oldPlanDef` is best-effort (used for direction/downgrade computation only).
+    const newPlanDef = await resolvePlanByIdOrSlug(newPlanId);
+    const oldPlanDef = await resolvePlanByIdOrSlug(oldPlanId);
+
+    // Limits maps for direction/base-limit computation in Phase-2.
+    // Empty maps are safe: resolvePlanBaseLimit returns 0 for missing keys.
+    const newPlanLimits: Readonly<Record<string, number>> = newPlanDef?.limits ?? {};
+    const oldPlanLimits: Readonly<Record<string, number>> = oldPlanDef?.limits ?? {};
+
     // ── Phase 1: Read data inside a transaction (with advisory lock + dedup) ─────
     // All DB reads happen here. The transaction commits at the end of this block,
     // releasing the advisory lock. QZPay calls happen OUTSIDE any open transaction
@@ -234,7 +272,6 @@ export async function handlePlanChangeAddonRecalculation(
         | {
               byLimitKey: Map<string, PurchaseRecord[]>;
               affectedLimitKeys: readonly string[];
-              newPlanDef: NonNullable<ReturnType<typeof getPlanBySlug>>;
               subscriptionId: string | undefined;
           };
 
@@ -348,7 +385,7 @@ export async function handlePlanChangeAddonRecalculation(
                     oldPlanId,
                     newPlanId,
                     recalculations: [],
-                    direction: computeDirection([], oldPlanId, newPlanId)
+                    direction: computeDirection([], oldPlanLimits, newPlanLimits)
                 }
             };
             return result;
@@ -365,16 +402,16 @@ export async function handlePlanChangeAddonRecalculation(
 
         const affectedLimitKeys = [...byLimitKey.keys()] as readonly string[];
 
-        // ── Step 6: Validate new plan exists in canonical config ──────────────
-        const newPlanDef = getPlanBySlug(newPlanId);
-
+        // ── Step 6: Validate new plan was resolved (DB-backed, SPEC-192 T-026) ──
+        // `newPlanDef` was resolved before Phase-1 via PlanService dual-resolve.
+        // If it is null the plan is genuinely absent from the DB — treat as fatal.
         if (!newPlanDef) {
             apiLogger.error(
                 { customerId, newPlanId },
-                'New plan not found in canonical config during plan-change recalculation'
+                'New plan not found in DB during plan-change recalculation (tried getById + getBySlug)'
             );
             Sentry.captureMessage(
-                `Plan '${newPlanId}' not found in canonical config during plan-change recalculation`,
+                `Plan '${newPlanId}' not found in DB during plan-change recalculation`,
                 {
                     level: 'error',
                     tags: { subsystem: 'billing-addon-lifecycle', action: 'plan-change-recalc' },
@@ -392,7 +429,7 @@ export async function handlePlanChangeAddonRecalculation(
                         newMaxValue: 0,
                         addonCount: byLimitKey.get(limitKey)?.length ?? 0,
                         outcome: 'failed' as const,
-                        reason: `New plan '${newPlanId}' not found in canonical config`
+                        reason: `New plan '${newPlanId}' not found in DB`
                     })),
                     direction: 'lateral'
                 }
@@ -431,7 +468,6 @@ export async function handlePlanChangeAddonRecalculation(
         const result: PlanChangeData = {
             byLimitKey: purchaseRecordMap,
             affectedLimitKeys,
-            newPlanDef,
             subscriptionId: activeSubRows[0]?.id
         };
         return result;
@@ -448,7 +484,7 @@ export async function handlePlanChangeAddonRecalculation(
         return phase1.earlyReturn;
     }
 
-    const { byLimitKey, affectedLimitKeys, newPlanDef, subscriptionId } = phase1;
+    const { byLimitKey, affectedLimitKeys, subscriptionId } = phase1;
 
     // ── Phase 2: QZPay calls — OUTSIDE any open transaction ──────────────────
     // Calling billing.limits.set() while holding a DB transaction is hazardous:
@@ -462,16 +498,19 @@ export async function handlePlanChangeAddonRecalculation(
     const recalculations: RecalculationResult[] = [];
 
     for (const [limitKey, purchases] of byLimitKey) {
-        const planLimitDef = newPlanDef.limits.find((l) => l.key === limitKey);
+        // ── Resolve new plan base limit from pre-fetched DB limits map (T-026) ──
+        // `newPlanLimits` is a `Record<string,number>` from PlanService (DB shape).
+        // A missing key is treated as 0 (same semantics as the old config path).
+        const newBasePlanLimit: number = newPlanLimits[limitKey] ?? 0;
 
-        // AC-3.6: limitKey not in new plan's limits array
-        if (!planLimitDef) {
+        // AC-3.6: limitKey not in new plan's limits map (treated as 0)
+        if (!(limitKey in newPlanLimits)) {
             apiLogger.warn(
                 { customerId, newPlanId, limitKey },
-                'limitKey not present in new plan limits array; treating new base as 0'
+                'limitKey not present in new plan limits map (DB); treating new base as 0'
             );
             Sentry.captureMessage(
-                `limitKey '${limitKey}' not found in plan '${newPlanId}' during plan-change recalculation`,
+                `limitKey '${limitKey}' not found in plan '${newPlanId}' limits map during plan-change recalculation`,
                 {
                     level: 'warning',
                     tags: {
@@ -483,8 +522,6 @@ export async function handlePlanChangeAddonRecalculation(
             );
         }
 
-        const newBasePlanLimit = planLimitDef?.value ?? 0;
-
         // AC-3.5: new plan has unlimited for this key — skip
         if (newBasePlanLimit === -1) {
             apiLogger.debug(
@@ -492,7 +529,8 @@ export async function handlePlanChangeAddonRecalculation(
                 'New plan has unlimited for limitKey; skipping recalculation for this key'
             );
 
-            const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
+            // Use pre-fetched old plan limits (DB-backed, T-026)
+            const oldBasePlanLimit: number = oldPlanLimits[limitKey] ?? 0;
             const totalAddonIncrement = sumIncrements(purchases as PurchaseRecord[], limitKey);
 
             recalculations.push({
@@ -510,8 +548,8 @@ export async function handlePlanChangeAddonRecalculation(
         const totalAddonIncrement = sumIncrements(purchases as PurchaseRecord[], limitKey);
         const newMaxValue = newBasePlanLimit + totalAddonIncrement;
 
-        // Compute old max value for T-011 downgrade detection
-        const oldBasePlanLimit = resolvePlanBaseLimit(oldPlanId, limitKey);
+        // Compute old max value for T-011 downgrade detection (DB-backed, T-026)
+        const oldBasePlanLimit: number = oldPlanLimits[limitKey] ?? 0;
         const oldMaxValue = oldBasePlanLimit === -1 ? -1 : oldBasePlanLimit + totalAddonIncrement;
 
         apiLogger.info(
@@ -584,7 +622,16 @@ export async function handlePlanChangeAddonRecalculation(
     }
 
     // ── Step 8: Downgrade detection and notification dispatch (AC-4.1–4.4) ──
-    await detectAndNotifyDowngrades({ customerId, recalculations, billing, newPlanDef });
+    // `newPlanDef` is now BillingPlanResponse (DB-backed, T-026). Cast to the
+    // shape that detectAndNotifyDowngrades expects — it only reads `.name`,
+    // which both PlanDefinition and BillingPlanResponse have.
+    // biome-ignore lint/suspicious/noExplicitAny: cross-package shape cast (name field compatible)
+    await detectAndNotifyDowngrades({
+        customerId,
+        recalculations,
+        billing,
+        newPlanDef: newPlanDef as any
+    });
 
     // ── Step 9: Clear entitlement cache ──────────────────────────────────────
     clearEntitlementCache(customerId);
@@ -628,7 +675,8 @@ export async function handlePlanChangeAddonRecalculation(
     });
 
     // ── Step 10: Summary audit log ────────────────────────────────────────────
-    const direction = computeDirection(affectedLimitKeys, oldPlanId, newPlanId);
+    // Pass pre-resolved limits maps to computeDirection (DB-backed, T-026)
+    const direction = computeDirection(affectedLimitKeys, oldPlanLimits, newPlanLimits);
     const successCount = recalculations.filter((r) => r.outcome === 'success').length;
     const failedCount = recalculations.filter((r) => r.outcome === 'failed').length;
     const skippedCount = recalculations.filter((r) => r.outcome === 'skipped').length;
