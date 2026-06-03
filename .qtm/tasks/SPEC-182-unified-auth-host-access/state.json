@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -148,7 +148,7 @@
             "id": "T-007",
             "title": "Delete apps/admin/src/routes/auth/signin.tsx",
             "description": "Remove the admin-own signin page. This is now replaced by the web auth redirect (T-005). Before deleting: check the header-user.tsx (window.location.href = '/auth/signin') and callback.tsx (router.navigate to /auth/signin) references — update them to redirect to web signin URL or remove if unreachable. Also check auth.tsx (the route layout) for any direct link to /auth/signin and update. Acceptance: file gone, all former references updated, typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-008", "T-019"],
@@ -158,12 +158,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:28:59Z",
+                "completed": "2026-06-03T08:36:29Z"
             }
         },
         {
