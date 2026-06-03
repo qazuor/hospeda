@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 0/37 tasks (0%)
+## Progress: 1/37 tasks (3%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -16,7 +16,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) — Add addon CRUD Zod schemas to @repo/schemas
+- [x] **T-001** (complexity: 2) — Add addon CRUD Zod schemas to @repo/schemas
   - Extend `packages/schemas/src/api/billing/addon.schema.ts` with CreateAddonSchema, UpdateAddonSchema, AdminAddonListQuerySchema, AdminAddonResponseSchema mirroring billing-plan.schema.ts
   - Blocked by: none
   - Blocks: T-002, T-010, T-018
