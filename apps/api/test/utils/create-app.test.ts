@@ -208,11 +208,12 @@ describe('Create App Utility', () => {
             module.createApp();
 
             // Verify middleware registration order
-            // 22 middlewares: requestId, favicon, sentry, logger, cors, originVerification,
-            // securityHeaders, rateLimit, bodyLimit, compression, validation, cache, metrics,
-            // responseFormatting, responseValidator, mockAuth (test env), authMiddleware, actor,
-            // billing, billingCustomer, entitlement, trial
-            expect(mockApp.use).toHaveBeenCalledTimes(22);
+            // 23 middlewares: requestId, requestContext, favicon, sentry, logger, cors,
+            // originVerification, securityHeaders, rateLimit, bodyLimit, compression,
+            // validation, cache, metrics, responseFormatting, responseValidator,
+            // mockAuth (test env), authMiddleware, actor, billing, billingCustomer,
+            // entitlement, trial
+            expect(mockApp.use).toHaveBeenCalledTimes(23);
         });
 
         it('should register notFound handler', async () => {
