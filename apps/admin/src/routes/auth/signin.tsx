@@ -1,7 +1,7 @@
 import { useTranslations } from '@/hooks/use-translations';
 import { signIn } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
-import { Link, createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { type FormEvent, useEffect, useState } from 'react';
 import { useAuthSync } from '../../hooks/use-auth-sync';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
@@ -333,18 +333,6 @@ function SignInPage(): React.JSX.Element {
                                 </svg>
                                 {t('admin-pages.auth.signin.continueWithGoogle')}
                             </button>
-                        </div>
-
-                        <div className="text-center">
-                            <p className="text-muted-foreground">
-                                {t('admin-pages.auth.signin.noAccount')}{' '}
-                                <Link
-                                    to="/auth/signup"
-                                    className="font-medium text-primary transition-colors hover:text-primary/80"
-                                >
-                                    {t('admin-pages.auth.signin.signUpLink')}
-                                </Link>
-                            </p>
                         </div>
                     </div>
                 </div>
