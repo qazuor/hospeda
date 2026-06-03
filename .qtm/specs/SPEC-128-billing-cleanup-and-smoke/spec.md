@@ -7,7 +7,8 @@ status: draft
 created: 2026-05-15T00:00:00Z
 effort_estimate_hours: 6-10
 tags: [hospeda, qzpay, cleanup, smoke, e2e, runbook, ops]
-parent: SPEC-122
+parent: SPEC-193
+parent_legacy: SPEC-122
 phase: F+G
 depends_on: [SPEC-126, SPEC-127]
 priority: medium
@@ -16,6 +17,26 @@ first_allocated_via_engram_protocol: true
 ---
 
 # SPEC-128: Billing cleanup + E2E smoke + ops runbook (Phase F+G)
+
+## Dead-code list correction (SPEC-193 audit 2026-06-03)
+
+The original Task F1 candidate list included files that, after code audit, have active callers and are NOT dead code:
+
+- `apps/api/src/services/addon-downgrade-detection.service.ts` — has an active caller in `addon-plan-change.service.ts:578`. Do NOT delete.
+- `apps/api/src/services/addon.admin.ts` — imported by `customer-addons.ts:23`. Do NOT delete.
+- `apps/api/src/services/trial.service.ts reactivateFromTrial()` — called from `trial.ts:338`. Do NOT delete.
+
+The REAL dead-code candidates (confirmed 0 imports in `apps/api/src/` non-test files) are 3 `@deprecated` shims that are re-exports toward `@repo/service-core` with no remaining callers:
+
+1. `apps/api/src/services/addon-status-transitions.ts`
+2. `apps/api/src/services/promo-code.crud.ts`
+3. `apps/api/src/services/promo-code.redemption.ts`
+
+These three shims are safe to delete. Verify with `grep -rn '<filename>' apps/api/src --include='*.ts' | grep -v test` before deleting, per the existing F1 procedure.
+
+### Cross-reference SPEC-193
+
+The 10 smoke tests in Phase G (§ "In Phase G — smoke + runbook") validate the go-live readiness of the entire SPEC-193 master. SPEC-128 smokes are the acceptance gate for the integrated billing system — cross-ref SPEC-193 §6.
 
 ## Context
 
@@ -89,6 +110,7 @@ This phase closes the master spec.
 ### Task F1 — Dead code verification + removal
 
 For each candidate (`addon-downgrade-detection`, `addon-status-transitions`, `addon.admin`, `reactivateFromTrial`):
+
 1. Search the codebase: `grep -rn '<file-or-export>' apps/ packages/ --include='*.ts' | grep -v test`.
 2. If zero non-test references found: delete the file (and any test files for it).
 3. If references exist but they're also dead: trace upward, document, decide collaboratively.
@@ -103,6 +125,7 @@ Pure content work. Each doc file gets the relevant sections updated with the pos
 ### Task G1 — Smoke testing
 
 Each smoke is a manual step performed by the operator following the runbook. Results are captured:
+
 - Smoke ID
 - Date/time
 - Tester
@@ -111,6 +134,7 @@ Each smoke is a manual step performed by the operator following the runbook. Res
 - Engram observation saved per smoke
 
 The smoke runs are NOT automated CI tests for two reasons:
+
 1. They require interaction with MP's hosted pages (no headless automation viable).
 2. They consume real money (sandbox or not, the operator wants visibility).
 
@@ -119,6 +143,7 @@ E2E automation can come post-MVP as a separate effort (it's complex and not bloc
 ### Task G2 — Runbook authoring
 
 Single markdown file at `docs/migration/mercadopago-sandbox-runbook.md`. Organized by:
+
 1. Pre-requisites (MP dashboard config, test users, test cards).
 2. Smoke flows (numbered, step-by-step).
 3. Troubleshooting common failures.
@@ -127,6 +152,7 @@ Single markdown file at `docs/migration/mercadopago-sandbox-runbook.md`. Organiz
 ### Task G3 — SPEC-109 update + SPEC-122 closure
 
 After all smokes pass:
+
 1. Update SPEC-109's spec.md with a "Status post SPEC-122" section, marking Phases 1-2 as done and Phases 3-7 as ready to execute.
 2. Update SPEC-122 metadata: status `in-progress` → `completed`, `completedAt: <date>`, `completionRef: "All 6 children closed + 10/10 smokes passed"`.
 3. Update engram allocations registry with the status changes.

@@ -12,9 +12,18 @@ depends_on: [SPEC-143]
 blocks: []
 priority: medium
 firstAllocatedViaEngramProtocol: true
+parent: SPEC-193
 ---
 
 # SPEC-148: Billing defensive grace + plan lifecycle
+
+## Coordination (SPEC-193)
+
+As a child of SPEC-193 "Billing Go-Live Readiness — Master", this spec coordinates as follows:
+
+- **Cron-lag grace + active→past_due transition**: the cron-lag grace window (Part A) operates on subscriptions still in `active` status whose `currentPeriodEnd` has passed. The existing `pastDueGraceMiddleware` (`apps/api/src/middlewares/past-due-grace.middleware.ts`) handles the `active→past_due` transition grace — these are two distinct, non-overlapping mechanisms. SPEC-148 does not modify `pastDueGraceMiddleware`.
+- **INV-4 (state-machine)**: all state transitions triggered by this spec (e.g., flipping a disabled plan's existing subs to cancel-at-period-end, or advancing a cron-lag-exceeded sub to `past_due`) must use the canonical state-machine defined by SPEC-194. Do not implement ad-hoc status flips.
+- **Sentry alerting for grace exceedance**: the Sentry alert that fires when the cron-lag grace window is exceeded is wired in SPEC-149 (which owns all billing Sentry capture). SPEC-148 only defines the condition and constant (`BILLING_CRON_LAG_GRACE_HOURS`); it calls into a hook that SPEC-149 implements.
 
 ## Context
 

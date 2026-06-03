@@ -22,12 +22,28 @@ tags:
   - refactor
   - adr
   - migration
+parent: SPEC-193
 ---
 
 # SPEC-192 — Billing Catalog to DB
 
 > Skeleton note: this is the formalized functional spec. Tasks and `index.json`
 > updates are produced by the caller after this file lands — do not generate them here.
+
+## Ownership under SPEC-193 (added 2026-06-03)
+
+SPEC-192 is the SOLE owner of the billing catalog ADR (entitlements + limits + addons + plans + the code-vs-DB boundary). This ADR must NOT be duplicated in SPEC-145 or any other child spec — SPEC-145 consumes the catalog but does not document or own its structure.
+
+Additionally, the bug **FR-4** is owned exclusively by SPEC-192 and must be fixed here:
+
+- Location: `apps/api/src/services/addon-entitlement.service.ts:160`
+- Bug: `ALL_PLANS.find(p => p.slug === activeSubscription.planId)` fails post-SPEC-168 because `activeSubscription.planId` is now the UUID of a `billing_plans` row, not a slug string. This causes `basePlanLimit` to fall to 0, silently under-granting limits on addons.
+- SPEC-194 references this bug but does NOT fix it — the fix lives here in SPEC-192 as part of the FR-4 plan-reader residuals cutover.
+
+### Sequencing constraints
+
+- SPEC-192 must complete (or at minimum land FR-1 + FR-4) BEFORE SPEC-145, which consumes the DB-backed catalog for entitlement enforcement.
+- SPEC-192 FR-2 (`addon.checkout.ts` catalog lookup cutover) must run AFTER SPEC-127, which migrates `addon.checkout.ts` to the qzpay path. Both touch `addon.checkout.ts` in different zones: SPEC-127 = payment preference creation, SPEC-192 = catalog lookup. Landing them in reverse order would create a merge conflict or require re-doing the cutover.
 
 ## 1. Origin & problem statement
 

@@ -12,9 +12,19 @@ depends_on: [SPEC-143]
 blocks: []
 priority: medium
 firstAllocatedViaEngramProtocol: true
+parent: SPEC-193
 ---
 
 # SPEC-150: Billing multi-currency support
+
+## Coordination (SPEC-193)
+
+As a child of SPEC-193 "Billing Go-Live Readiness — Master", this spec is explicitly post-MVP:
+
+- **Post-MVP scope**: multi-currency is out of scope for the initial go-live, consistent with SPEC-122's out-of-scope designation. This spec documents the full design for when the feature is prioritized, but it does not block SPEC-193 completion.
+- **Schema coordination with SPEC-192**: the `prices` JSONB column on `billing_plans` (and `billing_addons`) that this spec proposes must be coordinated with SPEC-192, which owns the catalog-to-DB migration. If SPEC-192 ships first (expected), the `prices` column addition goes through the SPEC-178 versioned migration carril after SPEC-192 lands. Both specs cannot add columns to the same tables concurrently.
+- **Regression-guard test inversion**: the existing regression-guard test `apps/api/test/e2e/flows/billing/multi-currency.test.ts` was written under SPEC-143 T-143-62 to assert the current single-currency behavior. When SPEC-150 is implemented, those assertions must be inverted to validate the multi-currency paths.
+- **Exchange-rate cron advisory lock**: SPEC-194 (T-194-15) adds an advisory lock to the exchange-rate cron to prevent concurrent runs. This is a prerequisite before SPEC-150 enables FX-fallback in checkout (concurrent cron + checkout reads would create a TOCTOU window on the rate). Sequence: SPEC-194 T-194-15 ships before SPEC-150 Phase 3.
 
 ## Context
 

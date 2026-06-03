@@ -8,9 +8,14 @@ created: 2026-05-15T18:30:00Z
 effort_estimate_hours: 2-6
 tags: [web, tests, react-19, astro-6, vitest, follow-up, spec-111]
 extracted_from: SPEC-111 T-111-04 validation
+parent: SPEC-193
 ---
 
 # SPEC-131: Fix PlanPurchaseButton async-state tests
+
+## Coordination (SPEC-193)
+
+As a child of SPEC-193 "Billing Go-Live Readiness — Master", this spec is fully self-contained: it has no coupling to the billing backend, state-machine, catalog, or lifecycle changes owned by the other children. It can be executed at any point in the SPEC-193 sequence without waiting for or blocking any other child spec.
 
 ## Part 1 — Functional Specification
 
@@ -38,10 +43,12 @@ extracted_from: SPEC-111 T-111-04 validation
 ### 3. Symptom & Reproduction
 
 After applying the SPEC-111 bump + workaround:
+
 1. `cd apps/web && pnpm exec vitest run test/components/billing/PlanPurchaseButton.test.tsx`
 2. 13 of 23 tests fail with the same pattern: post-`await user.click(button)` the assertion `expect(button).toBeDisabled()` (or `aria-busy="true"`, processing-text presence, etc.) sees the INITIAL state, not the loading state.
 
 Sample failure:
+
 ```
 Received element is not disabled:
   <button aria-busy="false" aria-disabled="false" aria-label="Contratar — $ 1.200" ...>

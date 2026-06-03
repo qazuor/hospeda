@@ -16,5 +16,6 @@
         "schema-change"
     ],
     "effortEstimateHours": "24-40",
-    "firstAllocatedViaEngramProtocol": true
+    "firstAllocatedViaEngramProtocol": true,
+    "parent": "SPEC-193"
 }

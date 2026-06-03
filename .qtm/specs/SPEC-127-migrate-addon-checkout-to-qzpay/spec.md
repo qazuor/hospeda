@@ -7,7 +7,8 @@ status: draft
 created: 2026-05-15T00:00:00Z
 effort_estimate_hours: 3-5
 tags: [hospeda, addons, refactor, qzpay-migration]
-parent: SPEC-122
+parent: SPEC-193
+parent_legacy: SPEC-122
 phase: E
 depends_on: [SPEC-125]
 priority: low
@@ -16,6 +17,14 @@ first_allocated_via_engram_protocol: true
 ---
 
 # SPEC-127: Migrate addon.checkout.ts to qzpay path (Phase E)
+
+## Coordination (SPEC-193)
+
+As a child of SPEC-193 "Billing Go-Live Readiness — Master", this spec has one sequencing constraint:
+
+- **Must run BEFORE SPEC-192 FR-2**: both SPEC-127 and SPEC-192 touch `apps/api/src/services/addon.checkout.ts`, but in different zones. SPEC-127 replaces the payment preference creation (the `createMercadoPagoPreference` call → `billing.checkout.create()`). SPEC-192 FR-2 cuts over the catalog lookup (the `getAddonBySlug` / `ALL_ADDONS` reads → `AddonCatalogService`). Landing SPEC-192 FR-2 first and then applying SPEC-127 on top requires re-doing the catalog cutover — so SPEC-127 must merge before SPEC-192 FR-2 is cut over on `addon.checkout.ts`.
+
+The historical `parent: SPEC-122` relationship is preserved in `parent_legacy` for traceability.
 
 ## Context
 
@@ -143,6 +152,7 @@ export async function createAddonCheckout(billing, input) {
 ### Tests migration
 
 `apps/api/test/services/addon.checkout.test.ts`:
+
 - Remove `vi.mock('mercadopago', ...)` — no longer needed.
 - Remove `mockPreferenceCreate` and direct SDK assertions.
 - Replace with mock of `billing.checkout.create` on the qzpay billing instance fixture.
