@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -258,7 +258,7 @@
             "id": "T-012",
             "title": "Add in-panel staff 'Create host account' UI action (admin)",
             "description": "D2 resolved: modal on the admin users list page. Add a 'Create host account' button to the admin users list. The modal/form has name + email + password fields and calls the migrated endpoint (T-011). On success, show a toast and refresh the users list. On error, show the API error message. Requires the user to have USER_CREATE permission (the button is hidden or disabled otherwise). Acceptance: staff can create a host account in-panel; tourists/hosts without USER_CREATE do not see the button; typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011"],
             "blocks": ["T-013"],
@@ -268,12 +268,12 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:57:17Z",
+                "completed": "2026-06-03T09:08:06Z"
             }
         },
         {
