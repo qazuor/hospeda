@@ -141,4 +141,34 @@ describe('TagChips.astro', () => {
             expect(src).toContain(':focus-visible');
         });
     });
+
+    describe('scroll-edge fade (BETA-30)', () => {
+        it('defaults both edge fades to 0 so the first chip is never dimmed at rest', () => {
+            expect(src).toContain('--tag-chips-fade-start: 0px');
+            expect(src).toContain('--tag-chips-fade-end: 0px');
+        });
+
+        it('drives the mask from the fade custom properties (not a fixed 48px left fade)', () => {
+            expect(src).toContain('black var(--tag-chips-fade-start)');
+            expect(src).toContain('calc(100% - var(--tag-chips-fade-end))');
+            // The old fixed-width fade in the gradient must be gone.
+            expect(src).not.toContain('black 48px');
+        });
+
+        it('toggles the fades from a scroll-state script', () => {
+            expect(src).toContain('<script>');
+            expect(src).toContain("addEventListener('scroll'");
+            expect(src).toContain('--tag-chips-fade-start');
+            expect(src).toContain('scrollLeft');
+        });
+
+        it('re-evaluates on resize and on every page load (incl. View Transitions)', () => {
+            expect(src).toContain('ResizeObserver');
+            expect(src).toContain("addEventListener('astro:page-load'");
+        });
+
+        it('is idempotent per list via a fadeInit guard', () => {
+            expect(src).toContain('dataset.fadeInit');
+        });
+    });
 });
