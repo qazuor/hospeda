@@ -37,8 +37,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 200 (not 199) because the registry had already drifted to 199 — a prior change
  * added a variable without updating this constant; this corrects it to the real
  * count in the same pass.
+ *
+ * 201 (2026-06-03, SPEC-182 T-018): added HOSPEDA_DEV_COOKIE_DOMAIN (dev-only
+ * session-cookie domain override for the *.hospeda.local recipe).
  */
-const EXPECTED_VAR_COUNT = 200;
+const EXPECTED_VAR_COUNT = 201;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

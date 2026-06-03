@@ -237,6 +237,23 @@ export const HOSPEDA_ENV_VARS = [
             'Siempre es HOSPEDA_API_URL + "/api/auth". Local: http://localhost:3001/api/auth. Producción: https://api.hospeda.com.ar/api/auth. Better Auth maneja sign-in/sign-out/sesiones en esa ruta.'
     },
     {
+        name: 'HOSPEDA_DEV_COOKIE_DOMAIN',
+        description:
+            'DEV-ONLY session-cookie domain override for the *.hospeda.local cross-subdomain recipe (SPEC-182). Ignored in production (cookie domain is pinned to hospeda.com.ar). See docs/guides/auth-local-dev.md.',
+        descriptionEs:
+            'Override DEV-ONLY del dominio de la cookie de sesión para la receta cross-subdomain *.hospeda.local (SPEC-182). Se ignora en producción (el dominio queda fijo en hospeda.com.ar). Ver docs/guides/auth-local-dev.md.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '.hospeda.local',
+        apps: ['api'],
+        category: 'auth',
+        howToObtain:
+            'Set to `.hospeda.local` in apps/api/.env.local AFTER adding the /etc/hosts entries (web/admin/api.hospeda.local -> 127.0.0.1). Leave unset for plain localhost development (per-host cookies). Never set in Coolify.',
+        howToObtainEs:
+            'Poné `.hospeda.local` en apps/api/.env.local DESPUÉS de agregar las entradas de /etc/hosts (web/admin/api.hospeda.local -> 127.0.0.1). Dejala sin setear para desarrollo en localhost plano (cookies por host). Nunca la setees en Coolify.'
+    },
+    {
         name: 'HOSPEDA_GOOGLE_CLIENT_ID',
         description: 'Google OAuth client ID',
         descriptionEs: 'Client ID de OAuth de Google',
