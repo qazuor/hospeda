@@ -17,6 +17,7 @@ import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { registerAppLogDbSink } from './lib/app-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
@@ -66,6 +67,10 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
+        // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.
+        registerAppLogDbSink();
 
         // SPEC-103 T-073: fail-fast healthcheck against an essential table.
         // The /health endpoint does NOT touch the DB by design, so an
