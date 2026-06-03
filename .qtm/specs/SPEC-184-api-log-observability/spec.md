@@ -2,7 +2,7 @@
 specId: SPEC-184
 title: API Log Observability
 type: feature
-status: in-progress
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-06-02
