@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 22,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -192,7 +192,7 @@
             "id": "T-009",
             "title": "Extend authed-guard unit tests to cover web-auth redirect shape",
             "description": "In the existing authed-guard.test.ts (or create one if absent), add/extend tests for the 'redirect-signin' case to verify that the decision carries the correct pathname for use by the caller in building the web auth URL. Also add an integration-level test (or snapshot) for the _authed.tsx handler: given authState.isAuthenticated=false, verify the redirect href matches the expected web signin URL pattern (including callbackUrl encoding). Acceptance: tests green, existing guard tests preserved.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-019"],
@@ -206,8 +206,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T08:43:07Z",
+                "completed": "2026-06-03T08:45:57Z"
             }
         },
         {
