@@ -60,8 +60,8 @@
         {
             "specId": "SPEC-182",
             "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "in-progress",
-            "progress": "0/22",
+            "status": "completed",
+            "progress": "22/22",
             "path": "SPEC-182-unified-auth-host-access",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-182-unified-auth-host-access",
             "branch": "spec/SPEC-182-unified-auth-host-access",
@@ -72,7 +72,8 @@
             "taskCount": 22,
             "averageComplexity": 2.5,
             "note": "22 tasks across 6 phases (avg complexity 2.5). Consolidates BETA-52 (admin redirects to own signin) + BETA-57 (admin OAuth signup role=USER bug). phase-1 (T-001..T-004): web callbackUrl support + allowlist validator + buildAdminLoginRedirect helper + tests. phase-2 (T-005..T-009): admin guard redirect to web auth + delete admin signin/signup pages + update callback/index + tests. phase-3 (T-010..T-013): owner decision on permission (USER_CREATE vs HOST_ONBOARD) + migrate signup-as-host endpoint to permission-gated + in-panel staff host-creation UI + tests. phase-4 (T-014..T-016): owner decision on CTA check strategy + wire UserMenu hostMode → admin URL + extend HostLandingCta/mobile nav. phase-5 (T-017..T-018): owner decision on dev-local cookie approach + implement/document workaround. phase-6 (T-019..T-022): full test suite + auth-architecture docs + manual smoke per role + index closeout. BETA-57 dissolves at T-006 (admin signup page deleted). BETA-52 resolves at T-005 (guard redirect to web auth). 3 owner decisions required before implementation: T-010 (D1+D2), T-014 (D3+D5), T-017 (D4).",
-            "archived": false
+            "archived": false,
+            "completedAt": "2026-06-03"
         },
         {
             "specId": "SPEC-180",

@@ -25,6 +25,7 @@ import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
+import { resolveCookieDomain } from './auth-cookie-domain';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 
 const logger = createLogger('auth');
@@ -448,12 +449,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
              * SSO across subdomains (web, admin, api). In production the cookie is
              * scoped to the apex `hospeda.com.ar` so a session minted on
              * `hospeda.com.ar` is also valid on `admin.hospeda.com.ar` and
-             * `api.hospeda.com.ar`. In dev `domain` stays undefined so cookies
-             * fall back to per-host scoping (localhost:3000 vs localhost:4321).
+             * `api.hospeda.com.ar`. In dev `domain` defaults to undefined
+             * (per-host cookies) unless HOSPEDA_DEV_COOKIE_DOMAIN is set —
+             * the `*.hospeda.local` recipe in docs/guides/auth-local-dev.md
+             * (SPEC-182 T-018). Production deliberately ignores the dev var;
+             * see resolveCookieDomain.
              */
             crossSubDomainCookies: {
                 enabled: true,
-                domain: env.NODE_ENV === 'production' ? 'hospeda.com.ar' : undefined
+                domain: resolveCookieDomain({
+                    nodeEnv: env.NODE_ENV,
+                    devCookieDomain: env.HOSPEDA_DEV_COOKIE_DOMAIN
+                })
             }
         },
 

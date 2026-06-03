@@ -566,6 +566,13 @@ export function buildCspHeader({
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';
 
+// SPEC-182: the admin→web cross-origin signin redirect helper is colocated with
+// the callbackUrl validator in `auth-callback.ts` (both manage the same param),
+// but is re-exported here so consumers can import it alongside the other
+// redirect builders (and so the admin guard's reference point — see T-005 —
+// resolves from the documented `middleware-helpers` location).
+export { buildAdminLoginRedirect } from './auth-callback';
+
 // ---------------------------------------------------------------------------
 // SPEC-113: Profile completion guard helpers
 // ---------------------------------------------------------------------------

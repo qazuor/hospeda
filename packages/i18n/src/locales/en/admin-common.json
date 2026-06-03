@@ -49,6 +49,27 @@
         "confirm": "Are you sure you want to impersonate this user?",
         "error": "Failed to impersonate user. Please try again."
     },
+    "createHost": {
+        "trigger": "Create host",
+        "title": "Create host account",
+        "description": "Create an account with the HOST role. The new host signs in with the temporary password you set here.",
+        "nameLabel": "Name*",
+        "namePlaceholder": "Host name",
+        "emailLabel": "Email*",
+        "emailPlaceholder": "host@example.com",
+        "passwordLabel": "Temporary password*",
+        "passwordPlaceholder": "At least 8 characters",
+        "nameRequired": "Name is required",
+        "emailInvalid": "Enter a valid email",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "successTitle": "Host account created",
+        "successMessage": "The account for {{email}} was created with the HOST role.",
+        "errorTitle": "Could not create the account",
+        "errorMessage": "An error occurred while creating the host account. Please try again.",
+        "cancel": "Cancel",
+        "submit": "Create host",
+        "submitting": "Creating..."
+    },
     "browserGate": {
         "title": "Your browser is not compatible with the admin panel.",
         "message": "This tool requires Chrome 111, Firefox 128, Safari 16.4 or higher. Please update your browser to continue.",

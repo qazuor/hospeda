@@ -64,9 +64,10 @@ function ForbiddenPage(): React.JSX.Element {
 
     const handleSwitchAccount = async () => {
         setIsSigningOut(true);
-        const signInTarget = redirectPath
-            ? `/auth/signin?redirect=${encodeURIComponent(redirectPath)}`
-            : '/auth/signin';
+        // SPEC-182: after signing out, land on the admin root. The _authed
+        // guard redirects the now-unauthenticated user to the unified web
+        // signin (which carries the appropriate callbackUrl back into admin).
+        const signInTarget = '/';
 
         try {
             await signOut({

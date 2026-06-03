@@ -528,10 +528,23 @@ export const createEntityListPage = <TData extends { id: string }>(
             />
         ) : null;
 
+        // SPEC-182: opt-in entity-specific header actions (e.g. the users list's
+        // "Create host account" modal). Rendered before the create button. When
+        // unset, the header is unchanged (create button only).
+        const HeaderActionsComponent = config.layoutConfig?.headerActionsComponent;
+        const headerActions = HeaderActionsComponent ? (
+            <div className="flex items-center gap-2">
+                <HeaderActionsComponent />
+                {createButtonAction}
+            </div>
+        ) : (
+            createButtonAction
+        );
+
         return (
             <SidebarPageLayout
                 title={translatedTitle}
-                actions={createButtonAction}
+                actions={headerActions}
             >
                 <div className="space-y-4">
                     <div className="space-y-3 rounded-md border bg-card p-4">

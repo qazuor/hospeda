@@ -49,6 +49,27 @@
         "confirm": "Tem certeza de que deseja personificar este usuário?",
         "error": "Erro ao personificar usuário. Tente novamente."
     },
+    "createHost": {
+        "trigger": "Criar host",
+        "title": "Criar conta de host",
+        "description": "Crie uma conta com a função HOST. O novo host entra com a senha temporária que você definir aqui.",
+        "nameLabel": "Nome*",
+        "namePlaceholder": "Nome do host",
+        "emailLabel": "Email*",
+        "emailPlaceholder": "host@exemplo.com",
+        "passwordLabel": "Senha temporária*",
+        "passwordPlaceholder": "Mínimo de 8 caracteres",
+        "nameRequired": "O nome é obrigatório",
+        "emailInvalid": "Insira um email válido",
+        "passwordTooShort": "A senha deve ter pelo menos 8 caracteres",
+        "successTitle": "Conta de host criada",
+        "successMessage": "A conta de {{email}} foi criada com a função HOST.",
+        "errorTitle": "Não foi possível criar a conta",
+        "errorMessage": "Ocorreu um erro ao criar a conta de host. Tente novamente.",
+        "cancel": "Cancelar",
+        "submit": "Criar host",
+        "submitting": "Criando..."
+    },
     "browserGate": {
         "title": "Seu navegador não é compatível com o painel de administração.",
         "message": "Esta ferramenta requer Chrome 111, Firefox 128, Safari 16.4 ou superior. Atualize seu navegador para continuar.",

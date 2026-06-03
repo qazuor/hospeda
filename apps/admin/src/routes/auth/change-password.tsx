@@ -35,9 +35,11 @@ export const Route = createFileRoute('/auth/change-password')({
     beforeLoad: async () => {
         const authState = await fetchAuthSession();
 
-        // Must be authenticated to access this page
+        // Must be authenticated to access this page. SPEC-182: the admin no
+        // longer hosts its own signin — bounce through the admin root so the
+        // _authed guard sends unauthenticated users to the web signin.
         if (!authState.isAuthenticated) {
-            throw redirect({ to: '/auth/signin' });
+            throw redirect({ to: '/' });
         }
 
         // If password change is not required, go to dashboard

@@ -8,7 +8,7 @@ import type {
     WidgetRenderer
 } from '@/components/table/DataTable';
 import type { TranslationKey } from '@repo/i18n';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { z } from 'zod';
 import type { FilterBarConfig } from './filters/filter-types';
 
@@ -67,6 +67,13 @@ export type LayoutConfig = {
      */
     readonly createButtonText?: string;
     readonly createButtonPath?: string;
+    /**
+     * SPEC-182: optional component rendered in the list header, before the
+     * standard create button. Used for entity-specific header actions such as
+     * the "Create host account" modal trigger on the users list. Opt-in — when
+     * unset, the header renders exactly as before (create button only).
+     */
+    readonly headerActionsComponent?: ComponentType;
 };
 
 /**

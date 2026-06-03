@@ -3,10 +3,10 @@
     "title": "Unified Authentication + Host-Mode Access Model",
     "type": "feature",
     "complexity": "high",
-    "status": "in-progress",
+    "status": "completed",
     "created": "2026-06-02T00:00:00Z",
     "approved": null,
-    "completed": null,
+    "completed": "2026-06-03T00:00:00Z",
     "planFileRef": null,
     "linear": ["BETA-52", "BETA-57"],
     "tags": [

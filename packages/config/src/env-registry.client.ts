@@ -258,6 +258,21 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'URL del sitio público; el admin la usa para armar links de tipo "Ver en el sitio". Local: http://localhost:4321. Producción: https://hospeda.com.ar.'
     },
     {
+        name: 'VITE_ADMIN_URL',
+        description: "Admin dashboard's own public URL (Vite VITE_ prefix)",
+        descriptionEs: 'URL pública propia del dashboard de admin (prefijo VITE_ de Vite)',
+        type: 'url',
+        required: true,
+        secret: false,
+        exampleValue: 'http://localhost:3000',
+        apps: ['admin'],
+        category: 'client-admin',
+        howToObtain:
+            "The admin app's own origin. Used to build the absolute callbackUrl when redirecting unauthenticated users to the web signin (SPEC-182). Local: http://localhost:3000. Staging: https://staging-admin.hospeda.com.ar. Production: https://admin.hospeda.com.ar.",
+        howToObtainEs:
+            'El origen propio de la app de admin. Se usa para armar el callbackUrl absoluto al redirigir usuarios no autenticados al signin del sitio web (SPEC-182). Local: http://localhost:3000. Staging: https://staging-admin.hospeda.com.ar. Producción: https://admin.hospeda.com.ar.'
+    },
+    {
         name: 'VITE_BETTER_AUTH_URL',
         description: 'Better Auth endpoint URL for the admin dashboard',
         descriptionEs: 'URL del endpoint de Better Auth para el dashboard de admin',

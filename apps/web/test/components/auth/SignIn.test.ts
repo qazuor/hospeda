@@ -105,4 +105,24 @@ describe('SignIn.client.tsx', () => {
             expect(src).not.toContain("url.search = ''");
         });
     });
+
+    // SPEC-182: cross-origin callbackUrl support. The host-strip+reattach
+    // workaround (reverse-proxy localhost fix) must NOT apply when redirectTo
+    // is a server-validated external callbackUrl (e.g. the admin panel) — the
+    // strip would silently turn the admin URL into a broken web-origin path.
+    describe('external redirect (SPEC-182 callbackUrl)', () => {
+        it('declares the externalRedirect prop on SignInProps', () => {
+            expect(src).toMatch(/readonly externalRedirect\?: boolean/);
+        });
+
+        it('honors redirectTo verbatim on credential success when externalRedirect', () => {
+            expect(src).toMatch(
+                /externalRedirect[\s\S]{0,300}window\.location\.replace\(redirectTo\)/
+            );
+        });
+
+        it('uses redirectTo verbatim as the OAuth callbackURL when externalRedirect', () => {
+            expect(src).toMatch(/externalRedirect[\s\S]{0,500}callbackURL = redirectTo/);
+        });
+    });
 });

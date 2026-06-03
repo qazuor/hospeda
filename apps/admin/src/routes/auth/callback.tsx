@@ -33,8 +33,10 @@ function AuthCallbackPage(): React.JSX.Element {
                 window.location.href = '/dashboard';
             }
         } else {
-            // Not authenticated, redirect to signin
-            router.navigate({ to: '/auth/signin' });
+            // Not authenticated. SPEC-182: the admin no longer hosts its own
+            // signin — navigate to the admin root, where the _authed guard
+            // redirects on to the unified web signin.
+            router.navigate({ to: '/' });
         }
     }, [isPending, session, router]);
 
