@@ -71,6 +71,108 @@ describe('AppLogEntryModel', () => {
             expect(where).toEqual({});
             expect(conditions).toBeUndefined();
         });
+
+        it('should include requestId in the equality where clause', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ requestId: 'req-abc-123' });
+
+            // Assert
+            const [where, , conditions] = findAll.mock.calls[0] ?? [];
+            expect(where).toMatchObject({ requestId: 'req-abc-123' });
+            expect(conditions).toBeUndefined();
+        });
+
+        it('should include userId in the equality where clause', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+            const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+            // Act
+            await model.listEntries({ userId });
+
+            // Assert
+            const [where, , conditions] = findAll.mock.calls[0] ?? [];
+            expect(where).toMatchObject({ userId });
+            expect(conditions).toBeUndefined();
+        });
+
+        it('should include method in the equality where clause', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ method: 'POST' });
+
+            // Assert
+            const [where, , conditions] = findAll.mock.calls[0] ?? [];
+            expect(where).toMatchObject({ method: 'POST' });
+            expect(conditions).toBeUndefined();
+        });
+
+        it('should add a safeIlike SQL condition for path substring match', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ path: '/api/v1/public' });
+
+            // Assert
+            const [where, , conditions] = findAll.mock.calls[0] ?? [];
+            // path is a contains-search, not an equality filter — it must NOT appear in where
+            expect(where).not.toHaveProperty('path');
+            // It must produce exactly one SQL condition (the ilike clause)
+            expect(conditions).toHaveLength(1);
+        });
+
+        it('should combine all new request-context filters with existing filters', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+            const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+            const fromDate = new Date('2026-06-01T00:00:00Z');
+
+            // Act
+            await model.listEntries({
+                level: 'ERROR',
+                category: 'BILLING',
+                requestId: 'req-combo',
+                userId,
+                method: 'GET',
+                path: '/api',
+                fromDate
+            });
+
+            // Assert
+            expect(findAll).toHaveBeenCalledOnce();
+            const [where, , conditions] = findAll.mock.calls[0] ?? [];
+            // Equality filters go into where
+            expect(where).toMatchObject({
+                level: 'ERROR',
+                category: 'BILLING',
+                requestId: 'req-combo',
+                userId,
+                method: 'GET'
+            });
+            expect(where).not.toHaveProperty('path');
+            // path ilike + fromDate gte = 2 conditions
+            expect(conditions).toHaveLength(2);
+        });
+
+        it('should not add requestId/userId/method to where when they are absent', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ level: 'WARN' });
+
+            // Assert
+            const [where] = findAll.mock.calls[0] ?? [];
+            expect(where).not.toHaveProperty('requestId');
+            expect(where).not.toHaveProperty('userId');
+            expect(where).not.toHaveProperty('method');
+        });
     });
 
     describe('createQuiet (feedback-loop guard)', () => {
