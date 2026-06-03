@@ -96,6 +96,23 @@ export const CLIENT_WEB_ENV_VARS = [
             'Etiqueta libre que se aplica a todos los eventos de Sentry del web app (SSR y browser). Poné `production` en hospeda-web-prod y `staging` en hospeda-web-staging. Tiene precedencia sobre import.meta.env.MODE en el init de Sentry — sin esto, los builds de Astro en producción siempre etiquetan los eventos como `production` sin importar de qué deploy vinieron, mezclando staging y prod en el mismo bucket en Sentry. Mirror de HOSPEDA_SENTRY_ENVIRONMENT (API).'
     },
     {
+        name: 'PUBLIC_SENTRY_TUNNEL',
+        description:
+            'First-party tunnel path for the Sentry browser SDK (SPEC-181 follow-up). RECOMMENDED: `/api/event` so ad-blockers (uBlock `||sentry.io^$3p`) cannot intercept error reporting. When set, the SDK POSTs envelopes to this same-origin path and a Cloudflare Worker (infra/cloudflare/sentry-tunnel/) parses the DSN and forwards to Sentry. Setting this ALSO drops `https://*.sentry.io` from the web CSP connect-src (same deploy, automatic). Leave unset to report directly to Sentry. DEPLOY ORDER: the Worker must be live BEFORE this is set, or Sentry breaks silently.',
+        descriptionEs:
+            'Path del tunnel first-party para el SDK de Sentry del browser (follow-up de SPEC-181). RECOMENDADO: `/api/event` para que los ad-blockers (uBlock `||sentry.io^$3p`) no intercepten el reporte de errores. Cuando se setea, el SDK hace POST de los envelopes a ese path same-origin y un Cloudflare Worker (infra/cloudflare/sentry-tunnel/) parsea el DSN y reenvía a Sentry. Setearlo TAMBIÉN saca `https://*.sentry.io` del connect-src del CSP de la web (mismo deploy, automático). Dejalo sin setear para reportar directo a Sentry. ORDEN DE DEPLOY: el Worker debe estar vivo ANTES de setear esto, o Sentry se rompe silenciosamente.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '/api/event',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Set to `/api/event` once the Cloudflare Worker in infra/cloudflare/sentry-tunnel/ is deployed for this environment (staging route: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). DEPLOY ORDER MATTERS: the Worker must be live first — the same env flip drops the external *.sentry.io CSP entry, so if the tunnel path 404s, all browser error reports are lost. Sibling of PUBLIC_POSTHOG_HOST (PostHog uses a DIFFERENT path, /api/relay, and a DIFFERENT Worker — do not mix them). Leave unset for direct-to-Sentry reporting (default; *.sentry.io stays in the CSP).',
+        howToObtainEs:
+            'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Hermano de PUBLIC_POSTHOG_HOST (PostHog usa un path DISTINTO, /api/relay, y un Worker DISTINTO — no los mezcles). Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
+    },
+    {
         name: 'PUBLIC_ENABLE_LOGGING',
         description: 'Enable verbose client-side logging in the web app',
         descriptionEs: 'Activa el logging verboso del lado cliente en la web',
