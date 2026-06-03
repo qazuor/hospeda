@@ -1,0 +1,17 @@
+{
+    "name": "@repo/sentry-tunnel-worker",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Cloudflare Worker that tunnels Sentry SDK envelopes under a first-party /api/event path so ad-blockers cannot intercept error reports (SPEC-181 follow-up).",
+    "scripts": {
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "deploy": "wrangler deploy"
+    },
+    "devDependencies": {
+        "vitest": "^3.1.3"
+    }
+}
