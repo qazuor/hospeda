@@ -54,6 +54,11 @@ vi.mock('@repo/db', () => ({
         updatedAt: 'updatedAt'
     },
     billingAuditLogs: { table: 'billingAuditLogs' },
+    billingSubscriptionAddons: {
+        table: 'billingSubscriptionAddons',
+        // qzpay-drizzle names this column `addOnId` (capital O)
+        addOnId: 'subscriptionAddonAddOnId'
+    },
     and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
     isNull: vi.fn((col: unknown) => ({ type: 'isNull', col })),
@@ -231,17 +236,34 @@ function buildSoftDeleteDb(selectRow?: unknown) {
 /**
  * Builds a mock DB for hard-delete operations.
  * `selectRow` — row for getAddonByIdInternal.
- * `countValue` — count of purchases (> 0 blocks delete).
+ * `subscriptionAddonCount` — count of billing_subscription_addons references (> 0 blocks delete).
+ * `purchaseCount` — count of billing_addon_purchases references (> 0 blocks delete).
+ *
+ * Count queries are table-aware: the `from(table)` argument decides which
+ * count to return, mirroring the two sequential referential guards.
  */
-function buildHardDeleteDb(options: { selectRow?: unknown; countValue?: number } = {}) {
-    const { selectRow, countValue = 0 } = options;
+function buildHardDeleteDb(
+    options: {
+        selectRow?: unknown;
+        subscriptionAddonCount?: number;
+        purchaseCount?: number;
+    } = {}
+) {
+    const { selectRow, subscriptionAddonCount = 0, purchaseCount = 0 } = options;
     return {
         select: vi.fn().mockImplementation((projection?: unknown) => {
             if (projection !== undefined) {
                 return {
-                    from: vi.fn().mockReturnValue({
-                        where: vi.fn().mockResolvedValue([{ value: countValue }])
-                    })
+                    from: vi.fn().mockImplementation((table: { table?: string }) => ({
+                        where: vi.fn().mockResolvedValue([
+                            {
+                                value:
+                                    table?.table === 'billingSubscriptionAddons'
+                                        ? subscriptionAddonCount
+                                        : purchaseCount
+                            }
+                        ])
+                    }))
                 };
             }
             return {
@@ -664,7 +686,7 @@ describe('AddonCatalogService — write methods (T-018)', () => {
 
                 mockWithTransaction.mockImplementation(
                     async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildHardDeleteDb({ selectRow: existingRow, countValue: 0 }));
+                        return fn(buildHardDeleteDb({ selectRow: existingRow }));
                     }
                 );
 
@@ -687,7 +709,7 @@ describe('AddonCatalogService — write methods (T-018)', () => {
 
                 mockWithTransaction.mockImplementation(
                     async (fn: (db: unknown) => Promise<unknown>) => {
-                        return fn(buildHardDeleteDb({ selectRow: existingRow, countValue: 3 }));
+                        return fn(buildHardDeleteDb({ selectRow: existingRow, purchaseCount: 3 }));
                     }
                 );
 
@@ -699,6 +721,33 @@ describe('AddonCatalogService — write methods (T-018)', () => {
                 if (result.success) return;
                 expect(result.error.code).toBe('ALREADY_EXISTS');
                 expect(result.error.message).toContain('3');
+                expect(result.error.message).toContain('purchase');
+            });
+        });
+
+        describe('when addon is referenced by subscription addons', () => {
+            it('should return ALREADY_EXISTS (conflict) before checking purchases', async () => {
+                // Arrange — FK on billing_subscription_addons.addon_id is
+                // ON DELETE RESTRICT, so this guard must block the delete
+                const existingRow = buildAddonRow({ id: 'hard-delete-uuid-003' });
+
+                mockWithTransaction.mockImplementation(
+                    async (fn: (db: unknown) => Promise<unknown>) => {
+                        return fn(
+                            buildHardDeleteDb({ selectRow: existingRow, subscriptionAddonCount: 2 })
+                        );
+                    }
+                );
+
+                // Act
+                const result = await hardDeleteAddon('hard-delete-uuid-003', {});
+
+                // Assert
+                expect(result.success).toBe(false);
+                if (result.success) return;
+                expect(result.error.code).toBe('ALREADY_EXISTS');
+                expect(result.error.message).toContain('2');
+                expect(result.error.message).toContain('subscription');
             });
         });
 

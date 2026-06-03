@@ -26,6 +26,7 @@ import {
     type QZPayBillingAddon,
     type QueryContext,
     billingAddons,
+    billingSubscriptionAddons,
     count,
     eq,
     sql,
@@ -558,7 +559,9 @@ export async function restoreAddon(
  * Permanently deletes a billing addon.
  *
  * **Referential guard**: before deleting, counts:
- * 1. `billing_subscription_addons` rows where `addon_slug` matches the addon slug
+ * 1. `billing_subscription_addons` rows where `addon_id = uuid` (FK is
+ *    `ON DELETE RESTRICT`, so skipping this check would surface as a raw
+ *    FK violation instead of a clean conflict error)
  * 2. `billing_addon_purchases` rows where `addon_id = uuid`
  *
  * If any references exist, rejects with ALREADY_EXISTS (treated as a conflict).
@@ -590,6 +593,27 @@ export async function hardDeleteAddon(
 
             const existingMeta = (existing.metadata ?? {}) as Record<string, unknown>;
             const addonSlug = typeof existingMeta.slug === 'string' ? existingMeta.slug : null;
+
+            // Referential guard: billing_subscription_addons (by addon UUID via
+            // FK with ON DELETE RESTRICT — without this check the delete would
+            // fail at the DB level with a raw FK violation instead of a 409)
+            const [subscriptionAddonCount] = await db
+                .select({ value: count() })
+                .from(billingSubscriptionAddons)
+                // NOTE: the qzpay-drizzle column is `addOnId` (capital O),
+                // unlike billingAddonPurchases.addonId
+                .where(eq(billingSubscriptionAddons.addOnId, id));
+
+            const activeSubscriptionAddonCount = subscriptionAddonCount?.value ?? 0;
+            if (activeSubscriptionAddonCount > 0) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.ALREADY_EXISTS,
+                        message: `Addon is referenced by ${activeSubscriptionAddonCount} subscription addon record(s) and cannot be hard-deleted`
+                    }
+                };
+            }
 
             // Referential guard: billing_addon_purchases (by addon UUID via FK)
             const [purchaseCount] = await db
