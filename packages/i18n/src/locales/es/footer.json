@@ -98,6 +98,8 @@
         "unsubscribeBusy": "Desuscribiendo...",
         "unsubscribeCta": "Desuscribirme",
         "blockedUnverifiedMessage": "Verificá el email de tu cuenta antes de suscribirte al newsletter.",
-        "blockedUnverifiedCta": "Ir a mi cuenta"
+        "blockedUnverifiedCta": "Ir a mi cuenta",
+        "authedEmailLabel": "Te suscribís con el email de tu cuenta",
+        "configureLink": "Configurar"
     }
 }
