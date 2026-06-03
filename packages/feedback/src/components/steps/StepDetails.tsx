@@ -246,12 +246,14 @@ export function StepDetails({
         onEnvironmentChange('errorInfo', next);
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = e.target.files;
-        if (!selected) return;
-
+    /**
+     * Validate and attach a batch of files (shared by the file input and the
+     * drag-and-drop zone). Enforces the remaining-slots, size, and type limits,
+     * surfacing rejections to the user.
+     */
+    const addFiles = (incoming: File[]) => {
         const remaining = FEEDBACK_CONFIG.maxAttachments - attachments.length;
-        const candidates = Array.from(selected).slice(0, remaining);
+        const candidates = incoming.slice(0, remaining);
         const rejections: string[] = [];
 
         const valid = candidates.filter((file) => {
@@ -271,9 +273,30 @@ export function StepDetails({
         if (valid.length > 0) {
             onAddAttachments(valid);
         }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selected = e.target.files;
+        if (!selected) return;
+
+        addFiles(Array.from(selected));
 
         // Reset input so same file can be re-selected after removal
         e.target.value = '';
+    };
+
+    // Drag-and-drop onto the upload zone. Without preventing the default on
+    // both dragover and drop, the browser opens the dropped image in the tab
+    // instead of attaching it (BETA-17).
+    const handleDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        const dropped = e.dataTransfer?.files;
+        if (!dropped || dropped.length === 0) return;
+        addFiles(Array.from(dropped));
     };
 
     return (
@@ -353,6 +376,8 @@ export function StepDetails({
                     <label
                         htmlFor="feedback-files"
                         className="uploadZone"
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
                     >
                         <span className="uploadZoneText">
                             {FEEDBACK_STRINGS.fields.uploadButton}
