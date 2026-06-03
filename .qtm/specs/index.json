@@ -2163,6 +2163,14 @@
             "archiveNote": null
         },
         {
+            "specId": "SPEC-184",
+            "title": "API Log Observability",
+            "status": "in-progress",
+            "complexity": "medium",
+            "path": "SPEC-184-api-log-observability",
+            "created": "2026-06-02T00:00:00.000Z"
+        },
+        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "draft",

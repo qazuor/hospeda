@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-184",
+    "title": "API Log Observability",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-06-02T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "linear": ["BETA-82"],
+    "tags": ["logging", "observability", "api", "admin", "db", "cron", "beta-82"]
+}
