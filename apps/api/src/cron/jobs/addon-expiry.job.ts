@@ -16,7 +16,6 @@
  * @module cron/jobs/addon-expiry
  */
 
-import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     and,
@@ -28,6 +27,7 @@ import {
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import { AddonCatalogService } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -39,6 +39,11 @@ import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { apiLogger } from '../../utils/logger.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-015) ─────────────────
+// Replaces static `getAddonBySlug` from `@repo/billing` for display-name
+// resolution and revocation retry. Instantiated once at module level.
+const catalogService = new AddonCatalogService();
 
 /**
  * Generate idempotency key for an add-on notification.
@@ -310,12 +315,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                         continue;
                                     }
 
-                                    // Resolve human-readable display name from config; fall back to slug
-                                    const addonConfigExpired = getAddonBySlug(
+                                    // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
+                                    const addonCatalogExpired = await catalogService.getBySlug(
                                         expiredAddon.addonSlug
                                     );
-                                    const addonDisplayNameExpired =
-                                        addonConfigExpired?.name ?? expiredAddon.addonSlug;
+                                    const addonDisplayNameExpired = addonCatalogExpired.success
+                                        ? addonCatalogExpired.data.name
+                                        : expiredAddon.addonSlug;
 
                                     // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                     sendNotification({
@@ -433,10 +439,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                     continue;
                                 }
 
-                                // Resolve human-readable display name from config; fall back to slug
-                                const addonConfig3d = getAddonBySlug(expiringAddon.addonSlug);
-                                const addonDisplayName3d =
-                                    addonConfig3d?.name ?? expiringAddon.addonSlug;
+                                // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
+                                const addonCatalog3d = await catalogService.getBySlug(
+                                    expiringAddon.addonSlug
+                                );
+                                const addonDisplayName3d = addonCatalog3d.success
+                                    ? addonCatalog3d.data.name
+                                    : expiringAddon.addonSlug;
 
                                 // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                 sendNotification({
@@ -551,10 +560,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                     continue;
                                 }
 
-                                // Resolve human-readable display name from config; fall back to slug
-                                const addonConfig1d = getAddonBySlug(expiringAddon.addonSlug);
-                                const addonDisplayName1d =
-                                    addonConfig1d?.name ?? expiringAddon.addonSlug;
+                                // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
+                                const addonCatalog1d = await catalogService.getBySlug(
+                                    expiringAddon.addonSlug
+                                );
+                                const addonDisplayName1d = addonCatalog1d.success
+                                    ? addonCatalog1d.data.name
+                                    : expiringAddon.addonSlug;
 
                                 // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                 sendNotification({
@@ -782,7 +794,14 @@ export const addonExpiryJob: CronJobDefinition = {
                                 }
                             }
 
-                            const addonDef = getAddonBySlug(purchase.addonSlug);
+                            // SPEC-192 T-015: resolve addon definition from DB-backed catalog.
+                            // NOT_FOUND → undefined (triggers "unknown/retired" path in revoke helper).
+                            const addonCatalogResult = await catalogService.getBySlug(
+                                purchase.addonSlug
+                            );
+                            const addonDef = addonCatalogResult.success
+                                ? addonCatalogResult.data
+                                : undefined;
 
                             const result = await revokeAddonForSubscriptionCancellation({
                                 customerId: purchase.customerId,
