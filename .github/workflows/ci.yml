@@ -142,7 +142,10 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install semgrep
-        run: pip install semgrep
+        # Pinned for a deterministic security gate: an unpinned `pip install
+        # semgrep` would pull whatever is latest at run time, so the same
+        # commit could pass one day and fail the next on new/changed rules.
+        run: pip install semgrep==1.164.0
       - name: Semgrep SAST scan
         run: >-
           semgrep scan
