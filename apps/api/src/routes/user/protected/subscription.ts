@@ -4,13 +4,17 @@
  * @route GET /api/v1/protected/users/me/subscription
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { PAYMENT_GRACE_PERIOD_DAYS, getPlanBySlug } from '@repo/billing';
+import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { PlanService } from '../../../services/plan.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+
+/** Module-level PlanService singleton for plan slug resolution */
+const planService = new PlanService();
 
 /** Allowed subscription status values */
 const SUBSCRIPTION_STATUSES = [
@@ -183,10 +187,21 @@ export const userSubscriptionRoute = createProtectedRoute({
             );
         }
 
-        // Resolve plan display name and price from @repo/billing ALL_PLANS
-        const planDefinition = getPlanBySlug(resolvedPlanSlug);
-        const planName = planDefinition?.name ?? resolvedPlanSlug;
-        const monthlyPriceArs = planDefinition?.monthlyPriceArs ?? 0;
+        // Resolve plan display name and price from DB via PlanService (SPEC-192 FR-4).
+        // Falls back gracefully: name → resolvedPlanSlug, price → 0 when NOT_FOUND.
+        let planName = resolvedPlanSlug;
+        let monthlyPriceArs = 0;
+
+        const planResult = await planService.getBySlug(resolvedPlanSlug);
+        if (planResult.success) {
+            planName = planResult.data.name;
+            monthlyPriceArs = planResult.data.monthlyPriceArs;
+        } else {
+            apiLogger.warn(
+                { planSlug: resolvedPlanSlug, errorCode: planResult.error.code },
+                'Plan not found in DB for subscription display — using slug as name'
+            );
+        }
 
         // Map QZPay status to our API status enum
         const mappedStatus: (typeof SUBSCRIPTION_STATUSES)[number] =
