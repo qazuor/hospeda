@@ -11,6 +11,8 @@ import {
 } from './categories.js';
 import { configureLogger, getConfig, resetLoggerConfig } from './config.js';
 import { formatLogArgs } from './formatter.js';
+import { dispatchHooks, hasHooks } from './hooks.js';
+import { buildLogEntry } from './log-entry.js';
 import {
     type ILogger,
     LogLevel,
@@ -100,6 +102,13 @@ function logWithLevel(
         case LogLevel.DEBUG:
             console.debug(...args);
             break;
+    }
+
+    // Dispatch the structured entry to any registered hooks (DB sink, Sentry
+    // capture, etc.) AFTER console output. Build the entry only when hooks
+    // exist so the no-hook path stays allocation-free.
+    if (hasHooks()) {
+        dispatchHooks(buildLogEntry(level, value, label, options));
     }
 
     // TODO: Implement file logging if save is enabled

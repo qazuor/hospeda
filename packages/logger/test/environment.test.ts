@@ -2,10 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     getBooleanEnv,
     getConfigFromEnv,
+    getLogFormatEnv,
     getLogLevelEnv,
     getNumberEnv
 } from '../src/environment.js';
-import { LogLevel } from '../src/types.js';
+import { LogFormat, LogLevel } from '../src/types.js';
 
 describe('environment', () => {
     beforeEach(() => {
@@ -134,6 +135,49 @@ describe('environment', () => {
         });
     });
 
+    describe('getLogFormatEnv', () => {
+        it('should return PRETTY for "pretty" (case-insensitive)', () => {
+            // Arrange
+            vi.stubEnv('TEST_FORMAT', 'pretty');
+
+            // Act
+            const result = getLogFormatEnv('TEST_FORMAT');
+
+            // Assert
+            expect(result).toBe(LogFormat.PRETTY);
+        });
+
+        it('should return JSON for "json" (case-insensitive)', () => {
+            // Arrange
+            vi.stubEnv('TEST_FORMAT', 'json');
+
+            // Act
+            const result = getLogFormatEnv('TEST_FORMAT');
+
+            // Assert
+            expect(result).toBe(LogFormat.JSON);
+        });
+
+        it('should return null for an invalid format', () => {
+            // Arrange
+            vi.stubEnv('TEST_FORMAT', 'xml');
+
+            // Act
+            const result = getLogFormatEnv('TEST_FORMAT');
+
+            // Assert
+            expect(result).toBeNull();
+        });
+
+        it('should return null if not set', () => {
+            // Act
+            const result = getLogFormatEnv('NONEXISTENT_FORMAT');
+
+            // Assert
+            expect(result).toBeNull();
+        });
+    });
+
     describe('getConfigFromEnv', () => {
         it('should use LOG_ prefix without categoryKey', () => {
             // Arrange
@@ -200,6 +244,48 @@ describe('environment', () => {
             expect(config.LEVEL).toBe(LogLevel.ERROR);
             expect(config.SAVE).toBe(true);
             expect(config.TRUNCATE_LONG_TEXT).toBe(false);
+        });
+
+        it('should read LOG_FORMAT correctly', () => {
+            // Arrange
+            vi.stubEnv('LOG_FORMAT', 'json');
+
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.FORMAT).toBe(LogFormat.JSON);
+        });
+
+        it('should use category-specific LOG_{CATEGORY}_FORMAT over LOG_FORMAT', () => {
+            // Arrange
+            vi.stubEnv('LOG_FORMAT', 'pretty');
+            vi.stubEnv('LOG_AUTH_FORMAT', 'json');
+
+            // Act
+            const config = getConfigFromEnv('AUTH');
+
+            // Assert
+            expect(config.FORMAT).toBe(LogFormat.JSON);
+        });
+
+        it('should fall back to LOG_FORMAT when category-specific format is not set', () => {
+            // Arrange
+            vi.stubEnv('LOG_FORMAT', 'json');
+
+            // Act
+            const config = getConfigFromEnv('DB');
+
+            // Assert
+            expect(config.FORMAT).toBe(LogFormat.JSON);
+        });
+
+        it('should leave FORMAT absent when LOG_FORMAT is not set', () => {
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.FORMAT).toBeUndefined();
         });
 
         it('should read LOG_STRINGIFY_OBJECTS correctly', () => {
