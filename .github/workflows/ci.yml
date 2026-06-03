@@ -144,7 +144,7 @@ jobs:
         # support. uv fetches a pinned, semgrep-compatible Python (3.12) on ANY
         # runner without relying on the GitHub tool-cache, so it works on both
         # the self-hosted leo-laptop and ubuntu-latest.
-        uses: astral-sh/setup-uv@v8
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Semgrep SAST scan
         # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
         # isolated Python 3.12 env. Same rule packs + --error gate as the old
