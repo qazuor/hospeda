@@ -6,6 +6,7 @@ import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import { getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
+import { LogFormat, configureLogger } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
@@ -38,6 +39,13 @@ import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
 validateApiEnv();
+
+// Apply the global logger output format (pretty | json) from API_LOG_FORMAT.
+// FORMAT is a process-wide setting, so it belongs at server bootstrap (here),
+// not in the shared logger module that test mocks import.
+configureLogger({
+    FORMAT: env.API_LOG_FORMAT === 'json' ? LogFormat.JSON : LogFormat.PRETTY
+});
 
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
