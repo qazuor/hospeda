@@ -31,7 +31,7 @@ import {
     getDb
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { BILLING_EVENT_TYPES } from '@repo/service-core';
+import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { getActorFromContext } from '../../../middlewares/actor';
@@ -43,6 +43,13 @@ import {
     setOwnerServiceSuspension
 } from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-017) ─────────────────
+// Replaces the dynamic `import('@repo/billing').getAddonBySlug` in the
+// onBeforeSubscriptionCancel hook. Instantiated once at module level.
+// NOTE: addon.checkout.ts is intentionally NOT cut over here — deferred to T-037,
+// pending SPEC-127 (checkout flow refactor). Only this hook's cancel path is updated.
+const catalogService = new AddonCatalogService();
 
 /**
  * Reads the `suspendService` flag from the admin pause request body.
@@ -177,8 +184,6 @@ const onBeforeSubscriptionCancel: NonNullable<
         return { ok: true };
     }
 
-    const { getAddonBySlug } = await import('@repo/billing');
-
     const customerId = purchases[0]?.customerId ?? '';
 
     apiLogger.info(
@@ -188,7 +193,11 @@ const onBeforeSubscriptionCancel: NonNullable<
 
     const settled = await Promise.allSettled(
         purchases.map(async (purchase): Promise<AddonRevocationSummary> => {
-            const addonDef = getAddonBySlug(purchase.addonSlug);
+            // SPEC-192 T-017: resolve addon definition from DB-backed catalog.
+            // NOT_FOUND → undefined (triggers "unknown/retired" path in revoke helper,
+            // identical to old getAddonBySlug returning undefined).
+            const catalogResult = await catalogService.getBySlug(purchase.addonSlug);
+            const addonDef = catalogResult.success ? catalogResult.data : undefined;
             try {
                 await revokeAddonForSubscriptionCancellation({
                     customerId,
