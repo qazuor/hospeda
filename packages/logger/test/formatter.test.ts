@@ -22,7 +22,7 @@ import {
 // does not apply.
 import { redactSensitiveData, shouldUseWhiteText } from '../src/formatter.ts';
 import { resetLogger } from '../src/logger.js';
-import { LogLevel, type LoggerColorType, LoggerColors } from '../src/types.js';
+import { LogFormat, LogLevel, type LoggerColorType, LoggerColors } from '../src/types.js';
 
 describe('formatter', () => {
     beforeEach(() => {
@@ -352,6 +352,64 @@ describe('formatter', () => {
             expect(typeof args[0]).toBe('string');
             expect(args[0] as string).toContain('hello');
             expect(args[0] as string).toContain('[label]');
+        });
+
+        describe('NDJSON mode (FORMAT=json)', () => {
+            it('should emit a single valid JSON line with the expected fields', () => {
+                // Arrange
+                configureLogger({ FORMAT: LogFormat.JSON });
+
+                // Act
+                const args = formatLogArgs(LogLevel.WARN, 'something happened', undefined, {
+                    category: 'API'
+                });
+
+                // Assert
+                expect(args).toHaveLength(1);
+                expect(typeof args[0]).toBe('string');
+                const parsed = JSON.parse(args[0] as string);
+                expect(parsed.level).toBe(LogLevel.WARN);
+                expect(parsed.category).toBe('API');
+                expect(parsed.message).toBe('something happened');
+                expect(parsed.ts).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+            });
+
+            it('should place an object value into the data field', () => {
+                // Arrange
+                configureLogger({ FORMAT: LogFormat.JSON });
+
+                // Act
+                const args = formatLogArgs(LogLevel.INFO, { orderId: 99 }, 'order');
+
+                // Assert
+                const parsed = JSON.parse(args[0] as string);
+                expect(parsed.data).toEqual({ orderId: 99 });
+                expect(parsed.message).toBe('order');
+            });
+
+            it('should redact sensitive data before serialization', () => {
+                // Arrange
+                configureLogger({ FORMAT: LogFormat.JSON });
+
+                // Act
+                const args = formatLogArgs(LogLevel.ERROR, { token: 'abc123', id: 1 });
+
+                // Assert
+                const parsed = JSON.parse(args[0] as string);
+                expect(parsed.data).toEqual({ token: '[REDACTED]', id: 1 });
+            });
+
+            it('should NOT contain ANSI color escape codes', () => {
+                // Arrange
+                configureLogger({ FORMAT: LogFormat.JSON, USE_COLORS: true });
+
+                // Act
+                const args = formatLogArgs(LogLevel.INFO, 'plain');
+
+                // Assert
+                // biome-ignore lint/suspicious/noControlCharactersInRegex: asserting absence of ANSI escapes
+                expect(args[0] as string).not.toMatch(/\x1b\[/);
+            });
         });
     });
 

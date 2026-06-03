@@ -24,6 +24,8 @@ export {
     warn
 } from './logger.js';
 export { redactSensitiveData, shouldUseWhiteText } from './formatter.js';
+export { buildLogEntry } from './log-entry.js';
+export type { LogEntry } from './log-entry.js';
 export * from './types.js';
 export { AuditEventType } from './audit-types.js';
 export type { AuditEventTypeValue } from './audit-types.js';
