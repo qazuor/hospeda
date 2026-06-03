@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 6/37 tasks (16%)
+## Progress: 12/37 tasks (32%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -56,32 +56,32 @@
 
 #### FR-2 Addon Consumer Cutovers (non-money first, money-handling last — each its own commit)
 
-- [ ] **T-007** (complexity: 3) — Cut over addon-user-addons.ts (service-core) from getAddonBySlug to AddonCatalogService
+- [x] **T-007** (complexity: 3) — Cut over addon-user-addons.ts (service-core) from getAddonBySlug to AddonCatalogService
   - `packages/service-core/src/services/billing/addon/addon-user-addons.ts` + parity regression test
   - Blocked by: T-004, T-006
   - Blocks: T-008
 
-- [ ] **T-008** (complexity: 3) — Cut over addon-limit-recalculation.service.ts from config to AddonCatalogService
+- [x] **T-008** (complexity: 3) — Cut over addon-limit-recalculation.service.ts from config to AddonCatalogService
   - `packages/service-core/src/services/billing/addon/addon-limit-recalculation.service.ts` + parity regression test
   - Blocked by: T-007
   - Blocks: T-009
 
-- [ ] **T-009** (complexity: 2) — Cut over addon-admin.ts (api/services) from config to AddonCatalogService
+- [x] **T-009** (complexity: 2) — Cut over addon-admin.ts (api/services) from config to AddonCatalogService
   - `apps/api/src/services/addon.admin.ts` + parity regression test
   - Blocked by: T-008
   - Blocks: T-011
 
-- [ ] **T-010** (complexity: 2) — Cut over admin addons.ts route (api) from config read to DB-backed AddonCatalogService
+- [x] **T-010** (complexity: 2) — Cut over admin addons.ts route (api) from config read to DB-backed AddonCatalogService
   - `apps/api/src/routes/billing/admin/addons.ts` GET endpoints; keep BILLING_READ_ALL gate; no write endpoints yet
   - Blocked by: T-001, T-009
   - Blocks: T-011
 
-- [ ] **T-011** (complexity: 2) — Cut over addon-user-addons.ts (api/services) from config to AddonCatalogService
+- [x] **T-011** (complexity: 2) — Cut over addon-user-addons.ts (api/services) from config to AddonCatalogService
   - `apps/api/src/services/addon.user-addons.ts` + parity regression test
   - Blocked by: T-009, T-010
   - Blocks: T-012
 
-- [ ] **T-012** (complexity: 2) — Cut over addon-entitlement.service.ts (api/services) from config to AddonCatalogService
+- [x] **T-012** (complexity: 2) — Cut over addon-entitlement.service.ts (api/services) from config to AddonCatalogService
   - `apps/api/src/services/addon-entitlement.service.ts` (addon reads only; plan bug fixed in T-025) + parity test
   - Blocked by: T-011
   - Blocks: T-013
