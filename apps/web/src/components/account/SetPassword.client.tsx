@@ -12,6 +12,12 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import {
+    Dialog,
+    DialogBody,
+    DialogFooter,
+    DialogHeader
+} from '@/components/shared/ui/Dialog.client';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -345,62 +351,60 @@ export function SetPassword({ locale, apiUrl, oauthProvider = 'unknown' }: SetPa
                 </form>
             </div>
 
-            {/* Skip confirmation modal */}
-            {showSkipModal && (
-                <dialog
-                    open
-                    className={styles.modalOverlay}
-                    aria-modal="true"
-                    aria-labelledby="skip-modal-title"
-                    aria-describedby="skip-modal-body"
-                >
-                    <div className={styles.modal}>
-                        <h2
-                            id="skip-modal-title"
-                            className={styles.modalTitle}
-                        >
-                            {t('account.setPassword.skipModalTitle', '¿Saltar por ahora?')}
-                        </h2>
-                        <p
-                            id="skip-modal-body"
-                            className={styles.modalBody}
-                        >
-                            {t(
-                                'account.setPassword.skipModalBody',
-                                'Vas a poder establecerla más tarde desde tu perfil. ¿Continuar?'
-                            )}
-                        </p>
-                        <div className={styles.modalActions}>
-                            <button
-                                type="button"
-                                className={styles.modalCancelBtn}
-                                onClick={() => setShowSkipModal(false)}
-                                disabled={skipping}
-                            >
-                                {t('account.setPassword.skipModalCancel', 'Cancelar')}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.modalConfirmBtn}
-                                onClick={handleSkipConfirm}
-                                disabled={skipping}
-                            >
-                                {skipping ? (
-                                    <>
-                                        <span
-                                            className={styles.spinner}
-                                            aria-hidden="true"
-                                        />
-                                        {t('account.setPassword.submitting', 'Guardando...')}
-                                    </>
-                                ) : (
-                                    t('account.setPassword.skipModalConfirm', 'Sí, saltar')
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </dialog>
-            )}
+            {/* Skip confirmation modal — uses the shared Dialog primitive (portal,
+                backdrop, focus trap, Esc + overlay close). A raw `<dialog>` element
+                inherits user-agent width/margin/border that break the overlay layout. */}
+            <Dialog
+                isOpen={showSkipModal}
+                onClose={() => setShowSkipModal(false)}
+                size="sm"
+                ariaLabelledBy="skip-modal-title"
+                closeOnEscape={!skipping}
+                closeOnOverlayClick={!skipping}
+            >
+                <DialogHeader titleId="skip-modal-title">
+                    {t('account.setPassword.skipModalTitle', '¿Saltar por ahora?')}
+                </DialogHeader>
+                <DialogBody>
+                    <p
+                        id="skip-modal-body"
+                        className={styles.modalBody}
+                    >
+                        {t(
+                            'account.setPassword.skipModalBody',
+                            'Vas a poder establecerla más tarde desde tu perfil. ¿Continuar?'
+                        )}
+                    </p>
+                </DialogBody>
+                <DialogFooter>
+                    <button
+                        type="button"
+                        className={styles.modalCancelBtn}
+                        onClick={() => setShowSkipModal(false)}
+                        disabled={skipping}
+                    >
+                        {t('account.setPassword.skipModalCancel', 'Cancelar')}
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.modalConfirmBtn}
+                        onClick={handleSkipConfirm}
+                        disabled={skipping}
+                    >
+                        {skipping ? (
+                            <>
+                                <span
+                                    className={styles.spinner}
+                                    aria-hidden="true"
+                                />
+                                {t('account.setPassword.submitting', 'Guardando...')}
+                            </>
+                        ) : (
+                            t('account.setPassword.skipModalConfirm', 'Sí, saltar')
+                        )}
+                    </button>
+                </DialogFooter>
+            </Dialog>
         </div>
     );
 }
