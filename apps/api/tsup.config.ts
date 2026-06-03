@@ -5,7 +5,7 @@ export default defineConfig({
     entry: ['src/index.ts', 'src/vercel.ts'],
     outDir: 'dist',
     target: 'es2022',
-    format: ['esm', 'cjs'],
+    format: ['esm'],
     splitting: false,
     sourcemap: true,
     clean: true,
