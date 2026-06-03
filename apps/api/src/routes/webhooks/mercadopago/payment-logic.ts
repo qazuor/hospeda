@@ -10,10 +10,10 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
 import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { AddonCatalogService } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
@@ -29,6 +29,11 @@ import {
     extractPaymentInfo,
     extractPlanChangeUpgradeMetadata
 } from './utils';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-016) ─────────────────
+// Replaces static `getAddonBySlug` from `@repo/billing` for the addon
+// purchase notification path. Instantiated once at module level.
+const catalogService = new AddonCatalogService();
 
 /** Input for processing a payment.updated event */
 interface ProcessPaymentUpdatedInput {
@@ -678,7 +683,10 @@ export async function processPaymentUpdated({
     // Send addon purchase notification
     try {
         const customer = await billing.customers.get(addonCustomerId);
-        const addon = getAddonBySlug(addonSlug);
+        // SPEC-192 T-016: resolve addon definition from DB-backed catalog.
+        // Identical fallback: if NOT_FOUND, `addon` is undefined → notification not sent.
+        const addonCatalogResult = await catalogService.getBySlug(addonSlug);
+        const addon = addonCatalogResult.success ? addonCatalogResult.data : undefined;
 
         if (customer && addon) {
             const customerName =
