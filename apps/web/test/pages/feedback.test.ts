@@ -21,6 +21,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const src = readFileSync(resolve(__dirname, '../../src/pages/[lang]/feedback/index.astro'), 'utf8');
+const overrides = readFileSync(
+    resolve(__dirname, '../../src/styles/feedback-overrides.css'),
+    'utf8'
+);
 
 // Strip JS/CSS comments so doc-comments mentioning `oklch`/`--core-` for
 // historical context don't trip the guards below.
@@ -45,5 +49,21 @@ describe('feedback/index.astro (BETA-45)', () => {
         // FeedbackForm styles + --fb-* tokens cascade from a `.feedback-root`
         // ancestor (same mechanism the modal uses via the <dialog>).
         expect(src).toContain('feedback-standalone__form feedback-root');
+    });
+});
+
+describe('feedback-overrides.css (BETA-45 — FAB modal on Chrome 109)', () => {
+    // The web overrides the widget's --fb-* tokens. Raw oklch() in the base
+    // block left the FAB modal backdrop/shadow/hover invalid on Chrome 109.
+    // The CI relative-colors guard only catches `oklch(from`, NOT plain
+    // `oklch()`, so this guards the regression directly.
+    const base = overrides.split('@supports')[0];
+
+    it('uses sRGB fallbacks (no raw oklch) outside the @supports block', () => {
+        expect(base).not.toMatch(/oklch\(/);
+    });
+
+    it('restores oklch inside an @supports block for modern browsers', () => {
+        expect(overrides).toContain('@supports (color: oklch(0 0 0))');
     });
 });
