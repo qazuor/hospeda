@@ -248,6 +248,68 @@ describe('AppLogsPanel', () => {
         expect(labelCells[0]).toHaveTextContent('—');
     });
 
+    // ── Request-context in row detail (AppLogsPanel integration) ───────────
+
+    it('shows request-context fields when expanded for an entry with context', () => {
+        const entries = [
+            makeEntry({
+                id: 'e1',
+                requestId: 'req-xyz-789',
+                userId: '550e8400-e29b-41d4-a716-446655440001',
+                method: 'GET',
+                path: '/api/v1/public/accommodations'
+            })
+        ];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        // Expand the message cell
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.getByTestId('log-request-context')).toBeInTheDocument();
+        expect(screen.getByTestId('log-detail-request-id')).toHaveTextContent('req-xyz-789');
+        expect(screen.getByTestId('log-detail-method')).toHaveTextContent('GET');
+        expect(screen.getByTestId('log-detail-path')).toHaveTextContent(
+            '/api/v1/public/accommodations'
+        );
+    });
+
+    it('does not show request-context section for entries with no context', () => {
+        const entries = [
+            makeEntry({
+                id: 'e1',
+                requestId: null,
+                userId: null,
+                method: null,
+                path: null
+            })
+        ];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.queryByTestId('log-request-context')).not.toBeInTheDocument();
+    });
+
     // ── Pagination ─────────────────────────────────────────────────────────
 
     it('disables the Anterior button on the first page', () => {
@@ -413,6 +475,101 @@ describe('AppLogMessageCell', () => {
 
         expect(screen.queryByTestId('log-message-data')).not.toBeInTheDocument();
     });
+
+    // ── Request-context fields in expanded detail ──────────────────────────
+
+    it('shows request-context section when expanded and fields are present', () => {
+        render(
+            <AppLogMessageCell
+                message="Request failed"
+                data={null}
+                requestId="req-abc-123"
+                userId="550e8400-e29b-41d4-a716-446655440000"
+                method="POST"
+                path="/api/v1/admin/logs"
+            />
+        );
+
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.getByTestId('log-request-context')).toBeInTheDocument();
+        expect(screen.getByTestId('log-detail-request-id')).toHaveTextContent('req-abc-123');
+        expect(screen.getByTestId('log-detail-user-id')).toHaveTextContent(
+            '550e8400-e29b-41d4-a716-446655440000'
+        );
+        expect(screen.getByTestId('log-detail-method')).toHaveTextContent('POST');
+        expect(screen.getByTestId('log-detail-path')).toHaveTextContent('/api/v1/admin/logs');
+    });
+
+    it('does not show request-context section when all context fields are null', () => {
+        render(
+            <AppLogMessageCell
+                message="Cron job entry"
+                data={null}
+                requestId={null}
+                userId={null}
+                method={null}
+                path={null}
+            />
+        );
+
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.queryByTestId('log-request-context')).not.toBeInTheDocument();
+    });
+
+    it('does not show request-context section when props are omitted', () => {
+        render(
+            <AppLogMessageCell
+                message="Startup log"
+                data={null}
+            />
+        );
+
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.queryByTestId('log-request-context')).not.toBeInTheDocument();
+    });
+
+    it('shows only the present context fields when partial context is given', () => {
+        render(
+            <AppLogMessageCell
+                message="Partial context"
+                data={null}
+                method="GET"
+                path="/api/v1/public/accommodations"
+                requestId={null}
+                userId={null}
+            />
+        );
+
+        fireEvent.click(screen.getByTestId('log-message-toggle'));
+
+        expect(screen.getByTestId('log-request-context')).toBeInTheDocument();
+        expect(screen.getByTestId('log-detail-method')).toHaveTextContent('GET');
+        expect(screen.getByTestId('log-detail-path')).toHaveTextContent(
+            '/api/v1/public/accommodations'
+        );
+        expect(screen.queryByTestId('log-detail-request-id')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('log-detail-user-id')).not.toBeInTheDocument();
+    });
+
+    it('hides request-context section after collapsing', () => {
+        render(
+            <AppLogMessageCell
+                message="Toggle context"
+                data={null}
+                requestId="req-xyz"
+            />
+        );
+
+        const toggle = screen.getByTestId('log-message-toggle');
+        fireEvent.click(toggle); // expand
+        expect(screen.getByTestId('log-request-context')).toBeInTheDocument();
+
+        fireEvent.click(toggle); // collapse
+        expect(screen.queryByTestId('log-request-context')).not.toBeInTheDocument();
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -451,5 +608,120 @@ describe('AppLogsPanel filter changes', () => {
         // Now change the level filter — page should reset to 1
         // The Select is Radix-based; we trigger onChange on the underlying mock
         // by directly invoking filter onChange (we test AppLogFilters separately)
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AppLogFilters new request-context inputs render and propagate
+// ---------------------------------------------------------------------------
+
+import { AppLogFilters } from '../components/AppLogFilters';
+
+describe('AppLogFilters — request-context filters', () => {
+    /** Default minimal filter matching DEFAULT_FILTER in AppLogsPanel */
+    const BASE_FILTER: AppLogEntryFilter = { page: 1, pageSize: 50 };
+
+    it('renders the request-id, user-id, method, and path filter controls', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={BASE_FILTER}
+                onChange={onChange}
+            />
+        );
+
+        expect(screen.getByTestId('log-filter-request-id')).toBeInTheDocument();
+        expect(screen.getByTestId('log-filter-user-id')).toBeInTheDocument();
+        expect(screen.getByTestId('log-filter-method')).toBeInTheDocument();
+        expect(screen.getByTestId('log-filter-path')).toBeInTheDocument();
+    });
+
+    it('calls onChange with requestId set and page reset to 1 on requestId input', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={{ ...BASE_FILTER, page: 3 }}
+                onChange={onChange}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('log-filter-request-id'), {
+            target: { value: 'req-abc' }
+        });
+
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ requestId: 'req-abc', page: 1 })
+        );
+    });
+
+    it('calls onChange with userId set and page reset to 1 on userId input', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={{ ...BASE_FILTER, page: 2 }}
+                onChange={onChange}
+            />
+        );
+
+        const uuid = '550e8400-e29b-41d4-a716-446655440000';
+        fireEvent.change(screen.getByTestId('log-filter-user-id'), {
+            target: { value: uuid }
+        });
+
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ userId: uuid, page: 1 }));
+    });
+
+    it('calls onChange with path set and page reset to 1 on path input', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={{ ...BASE_FILTER, page: 2 }}
+                onChange={onChange}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('log-filter-path'), {
+            target: { value: '/api/v1/admin' }
+        });
+
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ path: '/api/v1/admin', page: 1 })
+        );
+    });
+
+    it('sets requestId to undefined when the input is cleared', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={{ ...BASE_FILTER, requestId: 'existing-id' }}
+                onChange={onChange}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('log-filter-request-id'), {
+            target: { value: '   ' }
+        });
+
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ requestId: undefined, page: 1 })
+        );
+    });
+
+    it('sets path to undefined when the input is cleared', () => {
+        const onChange = vi.fn();
+        render(
+            <AppLogFilters
+                filter={{ ...BASE_FILTER, path: '/existing' }}
+                onChange={onChange}
+            />
+        );
+
+        fireEvent.change(screen.getByTestId('log-filter-path'), {
+            target: { value: '' }
+        });
+
+        expect(onChange).toHaveBeenCalledWith(
+            expect.objectContaining({ path: undefined, page: 1 })
+        );
     });
 });
