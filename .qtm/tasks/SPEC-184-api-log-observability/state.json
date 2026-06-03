@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -223,7 +223,7 @@
             "id": "T-010",
             "title": "Register db-sink hook at API startup (WARN+ERROR only, async fire-and-forget)",
             "description": "In `apps/api/src/index.ts` (after DB initialization), call `registerHook('db-sink', async (entry) => { if (entry.level !== 'WARN' && entry.level !== 'ERROR') return; appLogEntryModel.insert({ level: entry.level.toLowerCase(), category: entry.category ?? null, label: entry.label ?? null, message: entry.message, data: entry.data ?? null, loggedAt: new Date(entry.ts) }).catch(() => {}); })`. The insert is fire-and-forget: never awaited, never throws to the caller. DB errors are silently swallowed (the logger path must never affect request handling). Acceptance: integration test or manual verification shows WARN/ERROR rows appearing in app_log_entries; INFO rows absent.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-009"],
             "blocks": ["T-011"],
@@ -237,9 +237,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:40:53.000Z",
+                "completed": "2026-06-03T17:40:53.000Z"
+            },
+            "notes": "db-sink registered via NEW apps/api/src/lib/app-log-sink.ts. createAppLogSinkHandler(service) is the testable core: volume guard (WARN|ERROR only), LogEntry->CreateAppLogEntry mapping (non-object data wrapped under {value}; category/label default null; loggedAt from entry.ts), fire-and-forget via .catch(). CRITICAL ADDITION beyond the spec text: a 30s failure COOLDOWN (SINK_FAILURE_COOLDOWN_MS) — a failed insert makes packages/db logError emit its own ERROR through the logger, which re-enters the sink; without the cooldown that chain spins forever while the DB is down. Uses AppLogEntryService (recordEntry) not the raw model, to inherit message truncation+validation. registerAppLogDbSink() called in startServer() AFTER initializeDatabase() (apps/api/src/index.ts). 11 tests in apps/api/test/lib/app-log-sink.test.ts. setup.ts mock NOT touched (registerHook only used at bootstrap)."
         },
         {
             "id": "T-011",
