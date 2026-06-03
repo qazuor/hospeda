@@ -85,7 +85,7 @@ function isHostOfDomain(hostname: string, apex: string): boolean {
  *   1. It parses as an absolute `http:`/`https:` URL.
  *   2. Its real host (parsed `hostname`) is one of:
  *      - the configured site origin, or the configured admin origin (exact); or
- *      - `hospeda.com.ar` or any of its subdomains (production cross-subdomain); or
+ *      - `hospeda.com.ar` or any of its subdomains (trusted in EVERY env); or
  *      - `localhost` / `hospeda.local` (+ subdomains) — DEVELOPMENT ONLY.
  *
  * Any other value (external domain, non-http protocol, relative/protocol-relative
@@ -141,7 +141,10 @@ export function validateCallbackUrl({
         return url;
     }
 
-    // 2. Production: hospeda.com.ar and any subdomain.
+    // 2. hospeda.com.ar and any subdomain. Intentionally NOT gated by
+    // `isProduction`: production hosts are trusted Hospeda origins in every
+    // environment, so a dev instance honoring a redirect to the real admin is
+    // harmless (and useful when testing against deployed apps).
     if (isHostOfDomain(hostname, PROD_APEX)) {
         return url;
     }

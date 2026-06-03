@@ -89,8 +89,12 @@ Two paths, both deliberate:
    admin-tier, gated by `PermissionEnum.USER_CREATE` (401 without session,
    403 without the permission — see
    `apps/api/test/integration/auth/signup-as-host.test.ts`), creates the
-   user via Better Auth with a temporary password, sets `role=HOST`, and
-   audit-logs the mutation. The old public, Origin-checked endpoint is gone.
+   user via Better Auth with a temporary password, sets `role=HOST` **and
+   `emailVerified=true`** (staff vouches for the email; without this the
+   `requireEmailVerification` gate would block the host's first sign-in in
+   production, where a real email key disables the non-prod auto-verify
+   branch), and audit-logs the mutation. The old public, Origin-checked
+   endpoint is gone.
 
 UI surfaces adapt to host state (D3: `role=HOST` implies ≥1 published
 accommodation):
