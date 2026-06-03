@@ -821,6 +821,19 @@ const plataformaSidebar: SidebarInput = {
                     route: '/platform/ops/cron',
                     permissions: ['SYSTEM_MAINTENANCE_MODE'],
                     onMissing: 'hide'
+                },
+                {
+                    type: 'link',
+                    id: 'platform-app-logs',
+                    label: {
+                        es: 'Logs de aplicación',
+                        en: 'Application logs',
+                        pt: 'Logs de aplicação'
+                    },
+                    icon: 'LogsIcon',
+                    route: '/platform/ops/logs',
+                    permissions: ['SYSTEM_MAINTENANCE_MODE'],
+                    onMissing: 'hide'
                 }
             ]
         },

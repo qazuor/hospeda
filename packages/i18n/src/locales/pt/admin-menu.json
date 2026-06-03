@@ -62,6 +62,7 @@
         "metrics": "Métricas",
         "settings": "Configurações",
         "cron": "Tarefas Agendadas",
+        "appLogs": "Logs de Aplicação",
         "notificationLogs": "Registros de Notificação",
         "webhookEvents": "Eventos de Webhook"
     },
