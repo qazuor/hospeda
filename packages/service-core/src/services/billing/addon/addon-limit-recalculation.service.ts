@@ -14,9 +14,9 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getPlanBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
+import { PlanService } from '../plan/plan.service.js';
 import { AddonCatalogService } from './addon-catalog.service.js';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
@@ -66,9 +66,43 @@ export interface RecalculateAddonLimitsInput {
     db: DrizzleClient;
 }
 
-// ─── Module-level singleton ────────────────────────────────────────────────────
+// ─── Module-level singletons ───────────────────────────────────────────────────
 /** DB-backed catalog service used to resolve addon definitions by slug. */
 const catalogService = new AddonCatalogService();
+
+/**
+ * DB-backed plan service used to resolve base plan limits.
+ *
+ * Post-SPEC-168, `subscription.planId` may be a `billing_plans` UUID (new rows)
+ * or a legacy slug (older rows/seeds). Dual-resolve: `getById` first, then
+ * `getBySlug` as fallback. See `resolvePlanByIdOrSlugForRecalc`.
+ */
+const planService = new PlanService();
+
+/**
+ * Resolves a billing plan from the DB using dual-resolve (SPEC-192 T-027):
+ * 1. Try `getById(planId)` — succeeds for UUID planIds (new rows).
+ * 2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds (legacy rows).
+ *
+ * Returns `null` if neither lookup succeeds. The DB response's `limits` field is
+ * `Record<string, number>` (not `LimitDefinition[]`).
+ *
+ * @param planId - UUID or slug of the billing plan
+ * @returns Resolved plan `limits` map or `null` when not found
+ */
+async function resolvePlanLimitsByIdOrSlug(
+    planId: string
+): Promise<Readonly<Record<string, number>> | null> {
+    const byId = await planService.getById(planId);
+    if (byId.success) {
+        return byId.data.limits as Record<string, number>;
+    }
+    const bySlug = await planService.getBySlug(planId);
+    if (bySlug.success) {
+        return bySlug.data.limits as Record<string, number>;
+    }
+    return null;
+}
 
 // ─── Implementation ───────────────────────────────────────────────────────────
 
@@ -85,8 +119,9 @@ const catalogService = new AddonCatalogService();
  * 2. Filter to purchases whose addon definition (`getAddonBySlug`) has
  *    `affectsLimitKey === limitKey`.
  * 3. Get the active subscription via `billing.subscriptions.getByCustomerId`.
- * 4. Resolve the base plan limit from the canonical plan config
- *    (`getPlanBySlug(subscription.planId)`).
+ * 4. Resolve the base plan limit via `PlanService` (DB-backed, SPEC-192 T-027).
+ *    Dual-resolve: `getById(planId)` (UUID planIds) then `getBySlug(planId)` fallback.
+ *    The DB `limits` field is `Record<string, number>` (key → value map).
  * 5. If the base plan limit is `-1` (unlimited), skip — addons cannot exceed
  *    unlimited and no QZPay call is needed.
  * 6. Sum `purchase.limitAdjustments[limitKey].increase` across all matching purchases.
@@ -100,8 +135,8 @@ const catalogService = new AddonCatalogService();
  * - The aggregated limit is always stored with {@link ADDON_RECALC_SOURCE_ID} so
  *   cleanup does not affect limits owned by other sources.
  * - This function does NOT modify `billing_addon_purchases` rows.
- * - If the plan slug is not found in the local config the function returns
- *   `outcome: 'failed'` rather than silently falling back to 0.
+ * - If the plan is not found in the DB (both UUID and slug lookups fail), the
+ *   function returns `outcome: 'failed'` rather than silently falling back to 0.
  *
  * @param input - Customer ID, limit key, billing client, and DB instance.
  * @returns A {@link RecalculationResult} describing what happened.
@@ -232,11 +267,17 @@ export async function recalculateAddonLimitsForCustomer(
                 return skippedResult;
             }
 
-            // ── Step 4: Resolve base plan limit from canonical config ─────────
+            // ── Step 4: Resolve base plan limit via PlanService (DB-backed, T-027) ──
+            //
+            // Post-SPEC-168, `subscription.planId` may be a UUID (new rows) or a
+            // legacy slug (older rows/seeds). Dual-resolve: getById first, then
+            // getBySlug as fallback. The DB `limits` is `Record<string,number>`.
 
-            const planDef = getPlanBySlug(activeSubscription.planId);
+            const planLimits = await resolvePlanLimitsByIdOrSlug(
+                activeSubscription.planId as string
+            );
 
-            if (!planDef) {
+            if (!planLimits) {
                 const skippedResult: ReadPhaseResult = {
                     skipped: true,
                     result: {
@@ -245,14 +286,13 @@ export async function recalculateAddonLimitsForCustomer(
                         newMaxValue: 0,
                         addonCount: 0,
                         outcome: 'failed',
-                        reason: `Plan '${activeSubscription.planId}' not found in canonical config`
+                        reason: `Plan '${activeSubscription.planId}' not found in DB (tried getById + getBySlug)`
                     }
                 };
                 return skippedResult;
             }
 
-            const planLimitDef = planDef.limits.find((l) => l.key === limitKey);
-            const basePlanLimit = planLimitDef?.value ?? 0;
+            const basePlanLimit: number = planLimits[limitKey] ?? 0;
 
             // ── Step 5: Skip if the plan grants unlimited ─────────────────────
 

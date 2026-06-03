@@ -22,10 +22,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockGetBySlug, mockWithTransaction } = vi.hoisted(() => ({
-    mockGetBySlug: vi.fn(),
-    mockWithTransaction: vi.fn()
-}));
+const { mockGetBySlug, mockWithTransaction, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(
+    () => ({
+        mockGetBySlug: vi.fn(),
+        mockWithTransaction: vi.fn(),
+        mockPlanGetById: vi.fn(),
+        mockPlanGetBySlug: vi.fn()
+    })
+);
 
 // Mock AddonCatalogService — DB-backed after cutover
 vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
@@ -48,7 +52,15 @@ vi.mock('@repo/db', () => ({
     )
 }));
 
-// Mock @repo/billing — getPlanBySlug (plan reads stay config-backed, addon reads moved to DB)
+// Mock PlanService — DB-backed after T-027 cutover
+vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanGetById,
+        getBySlug: mockPlanGetBySlug
+    }))
+}));
+
+// Mock @repo/billing — getPlanBySlug no longer used after T-027 cutover
 vi.mock('@repo/billing', () => ({
     getPlanBySlug: vi.fn()
 }));
@@ -58,7 +70,6 @@ vi.mock('../../src/services/billing/addon/addon-lifecycle.constants.js', () => (
 }));
 
 // Import after mocks
-import { getPlanBySlug } from '@repo/billing';
 import { recalculateAddonLimitsForCustomer } from '../../src/services/billing/addon/addon-limit-recalculation.service.js';
 
 // ─── Catalog stubs (parity with addons.config.ts, accepted divergence: annualPriceArs=null) ──
@@ -174,12 +185,39 @@ function wireTxWithRows(rows: unknown[]) {
 }
 
 /**
- * Wires `getPlanBySlug` to return a plan with the given limit for `limitKey`.
+ * Wires `PlanService.getById`/`getBySlug` to return a plan with the given limit for `limitKey`.
+ *
+ * Post-T-027: plan reads use PlanService dual-resolve (getById → getBySlug fallback).
+ * The DB `limits` shape is `Record<string,number>` (not `LimitDefinition[]`).
+ * getById returns NOT_FOUND so the fallback getBySlug is exercised.
  */
 function wirePlan(limitKey: string, basePlanLimit: number) {
-    (getPlanBySlug as ReturnType<typeof vi.fn>).mockReturnValue({
-        slug: 'host-basic',
-        limits: [{ key: limitKey, value: basePlanLimit }]
+    mockPlanGetById.mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'not found' }
+    });
+    mockPlanGetBySlug.mockResolvedValue({
+        success: true,
+        data: {
+            id: 'plan-uuid',
+            slug: 'host-basic',
+            name: 'Host Basic',
+            description: 'Basic plan',
+            category: 'owner',
+            monthlyPriceArs: 500,
+            annualPriceArs: null,
+            monthlyPriceUsdRef: 3,
+            hasTrial: false,
+            trialDays: 0,
+            isDefault: false,
+            sortOrder: 1,
+            isActive: true,
+            entitlements: [],
+            /** DB shape: Record<string,number> */
+            limits: { [limitKey]: basePlanLimit },
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z'
+        }
     });
 }
 

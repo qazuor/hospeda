@@ -62,7 +62,20 @@ export function getStatusLabel(
 }
 
 /**
- * Get plan details by slug
+ * Get plan display details by slug.
+ *
+ * Returns the plan definition for UI-display purposes (plan name, price display, etc.).
+ *
+ * CONFIG-FALLBACK(SPEC-192): This is a display-only lookup that reads from the
+ * static `ALL_PLANS` config catalog. It is intentionally NOT cut over to the
+ * DB-backed `PlanService` in this task because:
+ * 1. `PlanService` is a server-side service (not importable in client components).
+ * 2. The admin subscription API response (`Subscription.planSlug`) does not carry
+ *    plan display data. Plumbing it would require changes to API schema, hooks,
+ *    and 3 consuming components — a wide cascade not in scope for T-027.
+ * 3. This function is display-only and does not gate any billing logic.
+ * When the admin subscriptions API is extended to include plan display data
+ * (name, price, etc.), callers should be updated to use the API data directly.
  */
 export function getPlanBySlug(slug: string): PlanDefinition | undefined {
     return ALL_PLANS.find((plan) => plan.slug === slug);
