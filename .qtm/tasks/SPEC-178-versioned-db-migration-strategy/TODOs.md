@@ -1,6 +1,6 @@
 # SPEC-178 — Versioned DB Migration Strategy Overhaul — TODOs
 
-26 atomic tasks across 6 phase groups. Status: 23/26 (in-progress) — foundations + tooling + testing + docs + CI wiring DONE; only the real staging/prod reset execution (T-024/025/026) remains.
+26 atomic tasks across 6 phase groups. Status: 25/26 (COMPLETED / archived 2026-06-02) — foundations + tooling + testing + docs + CI wiring DONE; T-024 staging reset executed & verified; T-026 close-out done. T-025 (prod reset) DEFERRED as a post-spec operational step (run with the validated `hops db-migrate --reset` / `db-seed` flow when ready).
 
 ## Phase: foundations (migration artifacts)
 
@@ -42,9 +42,9 @@
 
 ## Phase: validation (execution + close-out)
 
-- [ ] **T-024** Execute staging reset + rebuild + verify seed completes — *blockedBy T-010, T-011*
-- [ ] **T-025** Execute prod reset + rebuild (after staging soak) — *blockedBy T-024*
-- [ ] **T-026** Close-out: green verify + index sync (specs + tasks) — *blockedBy T-024, T-025*
+- [x] **T-024** Execute staging reset + rebuild + verify seed completes — DONE 2026-06-02: backup (1.44MB→R2) → reset (000/001) → drizzle-kit migrate → apply-extras (9/9) → seed (3847 rows, 0 errors). App verified live on staging (web 200, API serves 104 accommodations, `__drizzle_migrations` tracked).
+- [~] **T-025** Execute prod reset + rebuild (after staging soak) — DEFERRED: post-spec operational step. Run `hops db-migrate --target=prod --reset` (typed confirm required) + `hops db-seed --target=prod` (NODE_ENV=production → livemode:true) when ready. Tooling validated on staging.
+- [x] **T-026** Close-out: green verify + index sync (specs + tasks) — DONE: specs/tasks indices flipped to completed/archived, metadata + spec.md status updated, engram saved, worktree + merged branches cleaned.
 
 ## Critical path
 
