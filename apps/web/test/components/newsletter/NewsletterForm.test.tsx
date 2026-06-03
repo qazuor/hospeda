@@ -336,6 +336,9 @@ describe('NewsletterForm', () => {
             // keyboard on Android / Samsung Internet. The authed view must show
             // the email as text, so there is no textbox at all.
             expect(screen.queryByRole('textbox')).toBeNull();
+            // The visually-hidden label must not keep a dangling `for` pointing
+            // at the now-removed input id.
+            expect(document.querySelector('label')).not.toHaveAttribute('for');
         });
 
         it('shows a "Configurar" link to the newsletter settings page', async () => {

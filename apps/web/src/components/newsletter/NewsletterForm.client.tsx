@@ -721,11 +721,14 @@ export function NewsletterForm({
                 {statusText}
             </p>
 
-            {/* Visually hidden label — accessible to screen readers */}
+            {/* Visually hidden label — accessible to screen readers. Only the
+                guest branch renders an <input> with the matching id; in authed
+                mode the email is static text labelled via aria-labelledby, so we
+                drop htmlFor to avoid a dangling reference. */}
             <label
                 id={emailLabelId}
                 className={styles.srOnly}
-                htmlFor={`${emailLabelId}-input`}
+                htmlFor={isAuthed ? undefined : `${emailLabelId}-input`}
             >
                 {t('footer.newsletter.title', 'Suscribite al newsletter')}
             </label>
@@ -785,7 +788,7 @@ export function NewsletterForm({
                                 }}
                                 placeholder={t('footer.newsletter.emailPlaceholder', 'Tu email')}
                                 aria-labelledby={emailLabelId}
-                                aria-invalid="false"
+                                aria-invalid={formState === 'error' ? 'true' : 'false'}
                                 autoComplete="email"
                                 inputMode="email"
                                 disabled={isLoading}
