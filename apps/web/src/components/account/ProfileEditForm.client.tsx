@@ -286,7 +286,12 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         );
 
         if (!parsed.success) {
-            setFieldErrors(parseZodErrors(parsed.error.issues));
+            // The web `t` is (key, fallback?, params?); parseZodErrors +
+            // resolveValidationMessage expect (key, params?). Adapt by pinning
+            // fallback to undefined so interpolation params reach the i18n layer.
+            const tValidation = (key: string, params?: Record<string, unknown>): string =>
+                t(key, undefined, params);
+            setFieldErrors(parseZodErrors(parsed.error.issues, tValidation));
             return;
         }
 

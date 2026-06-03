@@ -65,6 +65,36 @@ describe('scroll-reveal', () => {
         expect(observeSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('observes with a pre-firing positive rootMargin (BETA-28)', () => {
+        vi.spyOn(window, 'matchMedia').mockReturnValue({
+            matches: false,
+            media: '(prefers-reduced-motion: reduce)',
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn()
+        });
+
+        let capturedOptions: IntersectionObserverInit | undefined;
+        vi.stubGlobal(
+            'IntersectionObserver',
+            vi.fn((_cb: IntersectionObserverCallback, opts?: IntersectionObserverInit) => {
+                capturedOptions = opts;
+                return { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
+            })
+        );
+
+        initScrollReveal();
+
+        // Reveal must pre-fire BEFORE the element enters the viewport so the
+        // transition completes smoothly — a negative bottom margin fired late
+        // and caused the abrupt mid-screen pop (BETA-28).
+        expect(capturedOptions?.rootMargin).toBe('0px 0px 15% 0px');
+        expect(capturedOptions?.rootMargin).not.toContain('-');
+    });
+
     it('should disconnect previous observer on re-init', () => {
         vi.spyOn(window, 'matchMedia').mockReturnValue({
             matches: false,

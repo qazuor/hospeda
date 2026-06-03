@@ -558,14 +558,6 @@
             "archiveNote": null
         },
         {
-            "specId": "SPEC-184",
-            "title": "API Log Observability",
-            "status": "in-progress",
-            "complexity": "medium",
-            "path": "SPEC-184-api-log-observability",
-            "created": "2026-06-02T00:00:00.000Z"
-        },
-        {
             "specId": "SPEC-185",
             "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "type": "feature",

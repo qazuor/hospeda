@@ -1,6 +1,6 @@
 {
     "version": "1.0",
-    "archivedAt": "2026-06-03T00:00:00.000Z",
+    "archivedAt": "2026-06-03T21:57:52.000Z",
     "specs": [
         {
             "specId": "SPEC-059",
@@ -1648,6 +1648,18 @@
             "archived": true,
             "archivedAt": "2026-06-03T00:00:00.000Z",
             "completionRef": "PRs #1369/#1370/#1377 merged 2026-06-02 — ci.yml self-hosted PR runner + e2e-local.self-hosted workflow + docs/guides/self-hosted-runner.md. Shipped without task atomization (approved -> ship), so no tasks/index entry."
+        },
+        {
+            "specId": "SPEC-184",
+            "title": "API Log Observability",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-184-api-log-observability",
+            "created": "2026-06-02T00:00:00.000Z",
+            "completed": "2026-06-03T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-03T21:57:52.000Z",
+            "completionRef": "PR #1412 merged 2026-06-03 — NDJSON log format toggle (API_LOG_FORMAT), logger hook registry, app_log_entries DB sink with cooldown guard, 30d purge cron, admin /platform/ops/logs viewer. 16/16 tasks, 28 atomic commits."
         }
     ]
 }
