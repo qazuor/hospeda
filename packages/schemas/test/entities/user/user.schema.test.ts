@@ -304,13 +304,13 @@ describe('UserSchema', () => {
             });
 
             it('should reject invalid settings values', () => {
+                // Use schema-known fields with invalid values to trigger rejection.
+                // `preferences.*` are unknown keys and are stripped (not rejected) by
+                // UserSettingsSchema. Use `themeWeb` with an invalid value instead.
                 const validData = createValidUser();
                 const invalidSettings = {
-                    preferences: {
-                        language: 'invalid-lang',
-                        currency: 'INVALID',
-                        theme: 'INVALID_THEME'
-                    }
+                    themeWeb: 'INVALID_THEME_VALUE',
+                    languageWeb: 'INVALID_LANG'
                 };
 
                 const data = { ...validData, settings: invalidSettings };

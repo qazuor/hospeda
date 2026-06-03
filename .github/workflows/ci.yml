@@ -182,6 +182,13 @@ jobs:
         run: pnpm --filter @repo/i18n check-locales
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      - name: Web must not call admin API tier (BETA-73)
+        run: |
+          if grep -rn "/api/v1/admin" apps/web/src; then
+            echo "::error::apps/web must only use /public/ and /protected/ API tiers, never /admin/"
+            exit 1
+          fi
+          echo "OK: no admin-tier API calls in apps/web/src"
       - name: Env registry parity (SPEC-035)
         run: pnpm env:check:registry
 

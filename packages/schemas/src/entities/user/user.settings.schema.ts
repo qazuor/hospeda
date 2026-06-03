@@ -103,8 +103,8 @@ export const UserSettingsSchema = z.object({
      */
     languageAdmin: LanguageEnumSchema.default('es').optional(),
 
-    /** Notification channel preferences. */
-    notifications: UserNotificationsSchema,
+    /** Notification channel preferences. Optional so that legacy stored JSONB without this key still parses (BETA-36). */
+    notifications: UserNotificationsSchema.optional(),
 
     /**
      * Whether the user has opted in to the marketing newsletter.
