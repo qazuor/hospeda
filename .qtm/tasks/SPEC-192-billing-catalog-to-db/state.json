@@ -606,78 +606,78 @@
             "id": "T-018",
             "title": "Add addon CRUD write methods and audit logging to AddonCatalogService (FR-3)",
             "description": "Extend `packages/service-core/src/services/billing/addon/addon-catalog.service.ts` with: create(input), update(id, input), toggleActive(id), softDelete(id), restore(id), hardDelete(id). HardDelete must query `billing_subscription_addons` and return ALREADY_EXISTS if referenced. Add audit logging mirroring `plan.audit.ts`. Tests in `__tests__/addon-catalog.crud.test.ts`: create inserts row + audit; update changes field; toggleActive flips isActive; softDelete sets deletedAt; restore clears deletedAt; hardDelete blocked when subscription_addons row exists. Files: 1 service file extended + 1 audit file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Implement create/update/toggleActive write methods",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement softDelete/restore/hardDelete with subscription guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add audit logging (mirror plan.audit.ts)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write CRUD unit tests including hard-delete-blocked guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "billing", "addon", "fr-3", "crud", "audit"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Convert admin addons.ts route to full CRUD (FR-3)",
             "description": "In `apps/api/src/routes/billing/admin/addons.ts`, add POST / PATCH /:id / DELETE /:id / POST /:id/restore endpoints backed by AddonCatalogService write methods. Permission split: BILLING_READ_ALL (GET) / BILLING_MANAGE (write). Error-code→HTTP mapping: VALIDATION_ERROR→422, NOT_FOUND→404, ALREADY_EXISTS→409. Use createAdminListRoute for list with page+pageSize. Write integration tests in `apps/api/src/routes/billing/admin/__tests__/addons.crud.test.ts`: create/update/toggle/softDelete/restore/hardDelete; permission rejection (403); pagination. Files: 1 route file + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "Add POST/PATCH/DELETE/restore endpoints with BILLING_MANAGE gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement error-code→HTTP mapping (422/404/409)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire createAdminListRoute with page+pageSize",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write integration tests including 403 permission rejection",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "addon", "fr-3", "crud", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
             }
         },
         {
@@ -719,39 +719,39 @@
             "id": "T-021",
             "title": "Build admin addon management UI (TanStack Form + Zod) in apps/admin (FR-3)",
             "description": "In `apps/admin/src/features/billing-addons/`, create a list page and create/edit form mirroring `apps/admin/src/features/billing-plans/**`. Use TanStack Form with Zod schema from T-001 for validation. Wire to the admin API CRUD endpoints (T-019). Write component tests in `__tests__/billing-addons.test.tsx` for: form validation errors, successful submit, list renders rows. Files: ~4 component files + 1 test file (UI scope). Blocked by T-019 (routes).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-036"],
             "subtasks": [
                 {
                     "title": "Create billing-addons list page mirroring billing-plans",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create create/edit form with TanStack Form + Zod",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire to admin API endpoints (create/update/toggle/delete/restore)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests for form validation and list render",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "billing", "addon", "fr-3", "ui", "tanstack-form"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
             }
         },
         {
@@ -1321,9 +1321,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 12,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.4
     }

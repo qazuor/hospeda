@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 25/37 tasks (68%)
+## Progress: 28/37 tasks (76%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -113,17 +113,17 @@
 
 #### FR-3 Admin Addon CRUD (separable track, runs parallel to FR-4 after T-004)
 
-- [ ] **T-018** (complexity: 3) — Add addon CRUD write methods and audit logging to AddonCatalogService (FR-3)
+- [x] **T-018** (complexity: 3) — Add addon CRUD write methods and audit logging to AddonCatalogService (FR-3)
   - create/update/toggleActive/softDelete/restore/hardDelete + hardDelete guard against billing_subscription_addons; audit logging (mirror plan.audit.ts)
   - Blocked by: T-001, T-004
   - Blocks: T-019
 
-- [ ] **T-019** (complexity: 3) — Convert admin addons.ts route to full CRUD (FR-3)
+- [x] **T-019** (complexity: 3) — Convert admin addons.ts route to full CRUD (FR-3)
   - POST/PATCH/DELETE/restore endpoints; BILLING_READ_ALL/BILLING_MANAGE split; 422/404/409 error mapping; createAdminListRoute with page+pageSize
   - Blocked by: T-018
   - Blocks: T-021
 
-- [ ] **T-021** (complexity: 3) — Build admin addon management UI (TanStack Form + Zod) in apps/admin (FR-3)
+- [x] **T-021** (complexity: 3) — Build admin addon management UI (TanStack Form + Zod) in apps/admin (FR-3)
   - `apps/admin/src/features/billing-addons/` list + create/edit form; mirrors billing-plans UI; TanStack Form + Zod
   - Blocked by: T-019
   - Blocks: T-036
