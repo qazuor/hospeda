@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { fetchApi } from '@/lib/api/client';
 import { createEntityQueryKeys } from '@/lib/query-keys/factory';
@@ -28,31 +29,42 @@ import { adminLogger } from '@/utils/logger';
 import { AddIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
 
-/**
- * Mirrors the server-side SignupAsHostBodySchema (apps/api). Kept local because
- * it is a tiny, UI-only validation surface; the endpoint re-validates regardless.
- */
-const CreateHostSchema = z.object({
-    name: z.string().min(1, 'El nombre es obligatorio').max(255),
-    email: z.string().email('Ingresá un email válido'),
-    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres')
-});
-
-type FormState = z.infer<typeof CreateHostSchema>;
+interface FormState {
+    readonly name: string;
+    readonly email: string;
+    readonly password: string;
+}
 
 const INITIAL_STATE: FormState = { name: '', email: '', password: '' };
 
 export function CreateHostAccountAction() {
     const canCreate = useHasPermission(PermissionEnum.USER_CREATE);
+    const { t } = useTranslations();
     const { addToast } = useToast();
     const queryClient = useQueryClient();
     const [open, setOpen] = useState(false);
     const [values, setValues] = useState<FormState>(INITIAL_STATE);
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
     const [submitting, setSubmitting] = useState(false);
+
+    /**
+     * Mirrors the server-side SignupAsHostBodySchema (apps/api). Kept local
+     * because it is a tiny, UI-only validation surface; the endpoint
+     * re-validates regardless. Built inside the component so the validation
+     * messages resolve through i18n.
+     */
+    const createHostSchema = useMemo(
+        () =>
+            z.object({
+                name: z.string().min(1, t('admin-common.createHost.nameRequired')).max(255),
+                email: z.string().email(t('admin-common.createHost.emailInvalid')),
+                password: z.string().min(8, t('admin-common.createHost.passwordTooShort'))
+            }),
+        [t]
+    );
 
     // Hide the action entirely when the actor cannot create users — the API
     // enforces USER_CREATE too, so this is a UX mirror, not the security gate.
@@ -77,7 +89,7 @@ export function CreateHostAccountAction() {
     };
 
     const handleSubmit = async () => {
-        const parsed = CreateHostSchema.safeParse(values);
+        const parsed = createHostSchema.safeParse(values);
         if (!parsed.success) {
             const fieldErrors: Partial<Record<keyof FormState, string>> = {};
             for (const issue of parsed.error.issues) {
@@ -98,8 +110,10 @@ export function CreateHostAccountAction() {
                 body: parsed.data
             });
             addToast({
-                title: 'Cuenta de host creada',
-                message: `Se creó la cuenta de ${parsed.data.email} con rol HOST.`,
+                title: t('admin-common.createHost.successTitle'),
+                message: t('admin-common.createHost.successMessage', {
+                    email: parsed.data.email
+                }),
                 variant: 'success'
             });
             // Refresh the users list so the new host appears without a manual reload.
@@ -111,11 +125,11 @@ export function CreateHostAccountAction() {
         } catch (error) {
             adminLogger.error('[CreateHostAccountAction] Submit failed', error);
             addToast({
-                title: 'No se pudo crear la cuenta',
+                title: t('admin-common.createHost.errorTitle'),
                 message:
                     error instanceof Error
                         ? error.message
-                        : 'Ocurrió un error al crear la cuenta de host. Probá de nuevo.',
+                        : t('admin-common.createHost.errorMessage'),
                 variant: 'error'
             });
         } finally {
@@ -131,7 +145,7 @@ export function CreateHostAccountAction() {
                 onClick={() => setOpen(true)}
             >
                 <AddIcon className="mr-2 h-4 w-4" />
-                Crear host
+                {t('admin-common.createHost.trigger')}
             </Button>
 
             <Dialog
@@ -143,21 +157,22 @@ export function CreateHostAccountAction() {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Crear cuenta de host</DialogTitle>
+                        <DialogTitle>{t('admin-common.createHost.title')}</DialogTitle>
                         <DialogDescription>
-                            Creá una cuenta con rol HOST. El nuevo host inicia sesión con la
-                            contraseña temporal que definas acá.
+                            {t('admin-common.createHost.description')}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="grid gap-4 py-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="ch-name">Nombre*</Label>
+                            <Label htmlFor="ch-name">
+                                {t('admin-common.createHost.nameLabel')}
+                            </Label>
                             <Input
                                 id="ch-name"
                                 value={values.name}
                                 onChange={(e) => setField('name', e.target.value)}
-                                placeholder="Nombre del host"
+                                placeholder={t('admin-common.createHost.namePlaceholder')}
                             />
                             {errors.name && (
                                 <p className="text-destructive text-sm">{errors.name}</p>
@@ -165,13 +180,15 @@ export function CreateHostAccountAction() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="ch-email">Email*</Label>
+                            <Label htmlFor="ch-email">
+                                {t('admin-common.createHost.emailLabel')}
+                            </Label>
                             <Input
                                 id="ch-email"
                                 type="email"
                                 value={values.email}
                                 onChange={(e) => setField('email', e.target.value)}
-                                placeholder="host@ejemplo.com"
+                                placeholder={t('admin-common.createHost.emailPlaceholder')}
                             />
                             {errors.email && (
                                 <p className="text-destructive text-sm">{errors.email}</p>
@@ -179,13 +196,15 @@ export function CreateHostAccountAction() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="ch-password">Contraseña temporal*</Label>
+                            <Label htmlFor="ch-password">
+                                {t('admin-common.createHost.passwordLabel')}
+                            </Label>
                             <Input
                                 id="ch-password"
                                 type="password"
                                 value={values.password}
                                 onChange={(e) => setField('password', e.target.value)}
-                                placeholder="Mínimo 8 caracteres"
+                                placeholder={t('admin-common.createHost.passwordPlaceholder')}
                             />
                             {errors.password && (
                                 <p className="text-destructive text-sm">{errors.password}</p>
@@ -199,13 +218,15 @@ export function CreateHostAccountAction() {
                             onClick={() => setOpen(false)}
                             disabled={submitting}
                         >
-                            Cancelar
+                            {t('admin-common.createHost.cancel')}
                         </Button>
                         <Button
                             onClick={handleSubmit}
                             disabled={submitting}
                         >
-                            {submitting ? 'Creando...' : 'Crear host'}
+                            {submitting
+                                ? t('admin-common.createHost.submitting')
+                                : t('admin-common.createHost.submit')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

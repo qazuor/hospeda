@@ -22,6 +22,15 @@ vi.mock('@/hooks/use-user-permissions', () => ({
     useHasPermission: vi.fn()
 }));
 
+// Identity mock so assertions target translation keys (project convention).
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        t: (key: string) => key,
+        locale: 'es',
+        tPlural: (key: string) => key
+    })
+}));
+
 const addToast = vi.fn();
 vi.mock('@/components/ui/ToastProvider', () => ({
     useToast: () => ({ addToast })
@@ -47,6 +56,8 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
+const K = 'admin-common.createHost';
+
 describe('CreateHostAccountAction', () => {
     it('renders nothing when the actor lacks USER_CREATE', () => {
         mockUseHasPermission.mockReturnValue(false);
@@ -54,7 +65,7 @@ describe('CreateHostAccountAction', () => {
         const { container } = renderWithClient(<CreateHostAccountAction />);
 
         expect(container).toBeEmptyDOMElement();
-        expect(screen.queryByRole('button', { name: /crear host/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: `${K}.trigger` })).not.toBeInTheDocument();
     });
 
     it('renders the trigger button when the actor has USER_CREATE', () => {
@@ -62,23 +73,23 @@ describe('CreateHostAccountAction', () => {
 
         renderWithClient(<CreateHostAccountAction />);
 
-        expect(screen.getByRole('button', { name: /crear host/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: `${K}.trigger` })).toBeInTheDocument();
     });
 
     it('shows validation errors and does not call the API on an empty submit', async () => {
         mockUseHasPermission.mockReturnValue(true);
 
         renderWithClient(<CreateHostAccountAction />);
-        fireEvent.click(screen.getByRole('button', { name: /crear host/i }));
+        fireEvent.click(screen.getByRole('button', { name: `${K}.trigger` }));
 
         // Submit the empty form (the dialog's primary button).
-        fireEvent.click(screen.getByRole('button', { name: /^crear host$/i }));
+        fireEvent.click(screen.getByRole('button', { name: `${K}.submit` }));
 
         await waitFor(() => {
-            expect(screen.getByText(/el nombre es obligatorio/i)).toBeInTheDocument();
+            expect(screen.getByText(`${K}.nameRequired`)).toBeInTheDocument();
         });
-        expect(screen.getByText(/ingresá un email válido/i)).toBeInTheDocument();
-        expect(screen.getByText(/al menos 8 caracteres/i)).toBeInTheDocument();
+        expect(screen.getByText(`${K}.emailInvalid`)).toBeInTheDocument();
+        expect(screen.getByText(`${K}.passwordTooShort`)).toBeInTheDocument();
         expect(mockFetchApi).not.toHaveBeenCalled();
     });
 
@@ -90,17 +101,19 @@ describe('CreateHostAccountAction', () => {
         } as never);
 
         renderWithClient(<CreateHostAccountAction />);
-        fireEvent.click(screen.getByRole('button', { name: /crear host/i }));
+        fireEvent.click(screen.getByRole('button', { name: `${K}.trigger` }));
 
-        fireEvent.change(screen.getByLabelText(/nombre/i), { target: { value: 'New Host' } });
-        fireEvent.change(screen.getByLabelText(/email/i), {
+        fireEvent.change(screen.getByLabelText(`${K}.nameLabel`), {
+            target: { value: 'New Host' }
+        });
+        fireEvent.change(screen.getByLabelText(`${K}.emailLabel`), {
             target: { value: 'host@example.com' }
         });
-        fireEvent.change(screen.getByLabelText(/contraseña/i), {
+        fireEvent.change(screen.getByLabelText(`${K}.passwordLabel`), {
             target: { value: 'password123' }
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /^crear host$/i }));
+        fireEvent.click(screen.getByRole('button', { name: `${K}.submit` }));
 
         await waitFor(() => {
             expect(mockFetchApi).toHaveBeenCalledTimes(1);
