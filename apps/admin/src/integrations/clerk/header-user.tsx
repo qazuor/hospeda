@@ -67,7 +67,9 @@ export function HeaderUser() {
         setIsOpen(false);
         await signOut();
         if (typeof window !== 'undefined') {
-            window.location.href = '/auth/signin';
+            // SPEC-182: land on the admin root after sign-out; the _authed
+            // guard redirects the unauthenticated user to the unified web signin.
+            window.location.href = '/';
         }
     };
 

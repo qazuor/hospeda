@@ -272,13 +272,12 @@ describe('Nested Routes and Layout Persistence', () => {
         it('should trigger redirect for unauthenticated users', () => {
             const mockRedirect = vi.fn();
 
-            // Simulate beforeLoad logic
+            // Simulate beforeLoad logic. SPEC-182: the admin no longer hosts its
+            // own signin; unauthenticated users are bounced to the admin root,
+            // where the _authed guard redirects them on to the web signin.
             function simulateBeforeLoad(isAuthenticated: boolean) {
                 if (!isAuthenticated) {
-                    mockRedirect({
-                        to: '/auth/signin',
-                        search: { redirect: '/dashboard' }
-                    });
+                    mockRedirect({ to: '/' });
                 }
             }
 
@@ -288,10 +287,7 @@ describe('Nested Routes and Layout Persistence', () => {
 
             // Unauthenticated user
             simulateBeforeLoad(false);
-            expect(mockRedirect).toHaveBeenCalledWith({
-                to: '/auth/signin',
-                search: { redirect: '/dashboard' }
-            });
+            expect(mockRedirect).toHaveBeenCalledWith({ to: '/' });
         });
     });
 
