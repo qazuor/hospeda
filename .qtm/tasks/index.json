@@ -30,9 +30,7 @@
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "worktree": null,
             "branch": null,
-            "dependsOn": [
-                "SPEC-143"
-            ],
+            "dependsOn": ["SPEC-143"],
             "reservedAt": "2026-05-18T22:00:00Z",
             "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         },
@@ -104,8 +102,9 @@
             "specId": "SPEC-184",
             "title": "API Log Observability",
             "status": "in-progress",
-            "progress": "0/16",
-            "path": "SPEC-184-api-log-observability"
+            "progress": "16/16",
+            "path": "SPEC-184-api-log-observability",
+            "note": "Implementation complete on spec/SPEC-184-api-log-observability; pending PR to staging. Flip to completed+archived after merge."
         },
         {
             "specId": "SPEC-185",
@@ -114,11 +113,7 @@
             "progress": "0/17",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
-            "linearIssues": [
-                "BETA-75",
-                "BETA-72",
-                "BETA-76"
-            ],
+            "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
             "archived": false
         },
         {
@@ -128,9 +123,7 @@
             "progress": "0/0",
             "path": "SPEC-186-web-dynamic-image-grid",
             "branch": "spec/SPEC-186-web-dynamic-image-grid",
-            "linearIssues": [
-                "BETA-53"
-            ],
+            "linearIssues": ["BETA-53"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -141,9 +134,7 @@
             "progress": "0/0",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
-            "linearIssues": [
-                "BETA-60"
-            ],
+            "linearIssues": ["BETA-60"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -154,9 +145,7 @@
             "progress": "0/0",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
-            "linearIssues": [
-                "BETA-54"
-            ],
+            "linearIssues": ["BETA-54"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -167,9 +156,7 @@
             "progress": "0/0",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "linearIssues": [
-                "BETA-74"
-            ],
+            "linearIssues": ["BETA-74"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -180,11 +167,7 @@
             "progress": "0/0",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
-            "linearIssues": [
-                "BETA-69",
-                "BETA-68",
-                "BETA-65"
-            ],
+            "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
             "note": "tasks pending atomization",
             "archived": false
         },
@@ -195,9 +178,7 @@
             "progress": "0/0",
             "path": "SPEC-192-billing-catalog-to-db",
             "branch": "spec/SPEC-192-billing-catalog-to-db",
-            "linearIssues": [
-                "BETA-58"
-            ],
+            "linearIssues": ["BETA-58"],
             "note": "tasks pending atomization",
             "archived": false
         }
