@@ -1,6 +1,6 @@
 # SPEC-184 — API Log Observability — Progress
 
-**Status**: in-progress (4/16)
+**Status**: in-progress (6/16)
 **Created**: 2026-06-02
 **Linear**: BETA-82
 
@@ -9,7 +9,7 @@
 | Phase | Tasks | Done |
 |---|---|---|
 | phase-1-log-format (LOG_FORMAT pretty/json toggle + env-registry) | T-001, T-002, T-003, T-004 | 4/4 ✅ |
-| phase-2-sink-hook (registerHook shared infra, coordinate SPEC-180) | T-005, T-006 | 0/2 |
+| phase-2-sink-hook (registerHook shared infra, coordinate SPEC-180) | T-005, T-006 | 2/2 ✅ |
 | phase-3-db-persistence (app_log_entries + purge cron + API sink) | T-007, T-008, T-009, T-010, T-011 | 0/5 |
 | phase-4-admin-query (admin endpoint + UI page) | T-012, T-013, T-014 | 0/3 |
 | phase-5-docs-closeout (log-management.md + index closeout) | T-015, T-016 | 0/2 |

@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 16,
-        "pending": 12,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -108,7 +108,7 @@
             "id": "T-005",
             "title": "Build generic hook registry in packages/logger/src/hooks.ts (coordinate with SPEC-180)",
             "description": "BLOCKING: Before writing this task, check the SPEC-180 branch (`spec/SPEC-180-*`) for any `registerCaptureHook` implementation. If it already exists, extend it rather than creating a new file. If not, create `packages/logger/src/hooks.ts` with: `LogEntry` type (ts/level/category?/label?/message/data?), `LogHookFn = (entry: LogEntry) => void | Promise<void>`, `hookRegistry = new Map<string, LogHookFn>()`, `registerHook(name, fn)`, `unregisterHook(name)` (for tests), `dispatchHooks(entry)` (fire-and-forget: catches all hook errors, logs to stderr only, never throws). Export all from `packages/logger/src/index.ts`. Wire `dispatchHooks` into `logWithLevel` AFTER console output. Package must remain dependency-free — no Sentry, no DB imports. Acceptance: `@repo/logger` builds cleanly; hook dispatch is verified by T-006.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-006", "T-010"],
@@ -118,19 +118,20 @@
             "qualityGate": {
                 "lint": true,
                 "typecheck": true,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:08:56.000Z",
+                "completed": "2026-06-03T17:08:56.000Z"
+            },
+            "notes": "Built packages/logger/src/hooks.ts: generic registry — LogHookFn type, registerHook/unregisterHook/clearHooks/hasHooks/dispatchHooks. dispatchHooks is fire-and-forget: sync throws caught, async rejections .catch()'d, both reported to process.stderr (guarded for browser-safety), never bubble. LogEntry imported from log-entry.ts (NOT redefined — spec originally placed it in hooks.ts). Wired into logWithLevel (logger.ts): after console output, `if (hasHooks()) dispatchHooks(buildLogEntry(...))` so the no-hook path stays allocation-free. Exported the registry API + LogHookFn from index.ts. SPEC-180 will registerHook('sentry-capture', fn) on the same registry."
         },
         {
             "id": "T-006",
             "title": "Tests for hook registry in @repo/logger",
             "description": "Write Vitest tests in `packages/logger/test/hooks.test.ts`. Cover: (a) registered hook receives a LogEntry with correct fields on WARN; (b) multiple hooks (e.g. 'capture' + 'sink') both receive the entry independently; (c) a hook that throws does NOT propagate the error to the caller of logWithLevel; (d) unregisterHook removes the hook (subsequent log does not call it); (e) dispatchHooks is fire-and-forget: async hooks that reject do not block or throw. Acceptance: all tests green; coverage >= 90% on hooks.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-015"],
@@ -144,9 +145,10 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-03T17:08:56.000Z",
+                "completed": "2026-06-03T17:08:56.000Z"
+            },
+            "notes": "Tests delivered with T-005 (TID): packages/logger/test/hooks.test.ts, 11 tests — register/dispatch, multiple hooks, same-name replace, unregister, clear, hasHooks, sync-error isolation, async-rejection isolation (stderr spy), and integration via logWithLevel (redacted entry dispatched on logger.warn; no dispatch when level filtered out). Logger suite 176/176, typecheck+biome clean."
         },
         {
             "id": "T-007",
