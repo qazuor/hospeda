@@ -459,17 +459,6 @@
             "archiveNote": "Track A (concurrency cap) merged. B2 (9% gain) implemented on branch spec/SPEC-188 but not merged — rebase cost > value. Four levers dead-ended (threads SIGSEGV, isolate:false breaks api, alias-to-dist deferred, deps.optimizer no-op)."
         },
         {
-            "specId": "SPEC-182",
-            "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "completed",
-            "complexity": "high",
-            "path": "SPEC-182-unified-auth-host-access",
-            "created": "2026-06-02T00:00:00.000Z",
-            "archived": false,
-            "archivedAt": null,
-            "archiveNote": null
-        },
-        {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "type": "fix",

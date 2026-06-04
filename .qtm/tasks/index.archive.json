@@ -735,6 +735,17 @@
             "archived": true,
             "archivedAt": "2026-06-04T08:56:41.000Z",
             "archiveNote": "All 20 tasks done; PR #1437 merged to staging 2026-06-04. Open: TBD-2 (CDN image origin) gated by allowlist test; D17 tour suppression seam wired when SPEC-174 ships. Catalog ships empty."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "status": "completed",
+            "progress": "22/22",
+            "path": "SPEC-182-unified-auth-host-access",
+            "archived": true,
+            "completedAt": "2026-06-03",
+            "archivedAt": "2026-06-04T17:30:00.000Z",
+            "archiveNote": "Closeout: 22/22 tasks done; merged to staging. Was left in active index with archived=false; moved to archive 2026-06-04 for consistency with the index.archive.json pattern."
         }
     ]
 }
