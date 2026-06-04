@@ -226,35 +226,35 @@
             "id": "T-007",
             "title": "Create /colaborar/reportar page (preset report_destination_info, ?destino= context)",
             "description": "Create apps/web/src/pages/[lang]/colaborar/reportar/index.astro (FR-3): SSG like the hub, mounts ContributionForm client:visible with presetType report_destination_info. The ?destino= slug is read client-side by the island (built in T-005) — works with no param too (generic report). Page copy explains what the report is for. Tests (source assertions): prerender + locales; ContributionForm mounted with presetType report_destination_info.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-010", "T-014"],
             "subtasks": [
                 {
                     "title": "Report page SSG mounting ContributionForm (preset report_destination_info)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Intro copy + SEOHead",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages", "forms"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:20:00.000Z",
+                "completed": "2026-06-04T18:35:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.1
     }
