@@ -162,7 +162,7 @@
             "id": "T-008",
             "title": "Implement pure lib/tour modules (4) + unit tests",
             "description": "apps/admin/src/lib/tour/ per spec §7.3 (pure, no React/DOM): compare-version.ts shouldOfferTour({ configVersion, seenVersion }); resolve-step-text.ts locale fallback (align with use-localized-label.ts); build-driver-steps.ts Tour→DriveStep[] (permission filter via expandPermissions ∩ userPermissions, 'center'→no element, 'data-tour:x'→[data-tour=\"x\"], localized title/body, side/align; import type only for driver.js types); decide-auto-trigger.ts per D9+D13: welcome > contextual priority, version-aware, returns 'welcome-redirect' decision when welcome eligible but route !== dashboard. Unit tests: shouldOfferTour truth table; locale matrix; buildDriverSteps center/data-tour/permission-filter; decideAutoTrigger matrix incl. D13 redirect case and seen-suppression.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-010", "T-013"],
@@ -170,14 +170,14 @@
             "tags": ["admin", "pure-logic", "phase-engine"],
             "phase": "engine",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T17:01:44.000Z",
-                "completed": null
+                "completed": "2026-06-04T17:38:05.000Z"
             }
         },
         {
@@ -206,7 +206,7 @@
             "id": "T-010",
             "title": "Add driver.js + tour-context.tsx engine + TourWelcomeModal",
             "description": "Install driver.js in apps/admin (D2 owner-approved dependency-policy exception — document in PR). apps/admin/src/contexts/tour-context.tsx per spec §7.4: TourProvider + useTour() { isRunning, activeTourId, startTour({ tourId }), stopTour() }; startTour: trackEvent admin.tour.shown → TourWelcomeModal (Radix Dialog, Saltar/Mostrame) when showWelcomeModal → lazy import('driver.js') → buildDriverSteps → run spotlight (showProgress, allowClose, keyboard, localized chrome via t('admin-common.tour.*')) → finish/skip → markSeen + trackEvent completed|skipped. Driver instance in useRef, destroyed on unmount. Driver CSS import + admin theme overrides in styles.css. prefers-reduced-motion → animate:false. Components/whats-new pattern for component dir. Tests: welcome modal Saltar/Mostrame; startTour event flow with driver mocked; reduced-motion flag.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009"],
             "blocks": ["T-013", "T-014", "T-015"],
@@ -220,7 +220,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T17:38:05.000Z",
                 "completed": null
             }
         },
@@ -228,7 +228,7 @@
             "id": "T-011",
             "title": "Implement use-tours.ts selectors",
             "description": "apps/admin/src/hooks/use-tours.ts per spec §7.2: useTourById, useToursForRole, useWelcomeTourForRole, useContextualTourForRoute({ pathname }) matching via useCurrentSection() → tour.route === (section.defaultRoute ?? section.route). RO-RO, named exports. Tests: role resolution incl. D14 reuse (SUPER_ADMIN gets admin.* contextual + super-specific plataforma/analisis); route matching; unknown role → empty.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-013", "T-014"],
@@ -236,21 +236,21 @@
             "tags": ["admin", "hook", "phase-engine"],
             "phase": "engine",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T17:01:44.000Z",
-                "completed": null
+                "completed": "2026-06-04T17:38:05.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Add data-tour attributes across layout components",
             "description": "Per spec §7.7 (additive, zero behavior change): main-menu + main-menu-section-<id> (MainMenu.tsx), sidebar (Sidebar.tsx), dashboard-region (dashboard page), quick-create (QuickCreate.tsx), command-palette + notifications (Header.tsx), user-menu (header-user.tsx), bottom-nav (BottomNav.tsx). Keep KNOWN_DATA_TOUR_IDS in sync (T-005 registry). Steps with permission-gated targets must carry matching permissions or tolerate absence (driver.js skips; adminLogger.warn). CRITICAL: run ALL pre-existing suites touching these components (Header.test.tsx, BottomNav.test.tsx, MainMenu/Sidebar suites — rg -l the component names over test dirs) before committing.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-013", "T-016"],
@@ -258,14 +258,14 @@
             "tags": ["admin", "layout", "phase-wiring"],
             "phase": "wiring",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T17:01:44.000Z",
-                "completed": null
+                "completed": "2026-06-04T17:38:05.000Z"
             }
         },
         {
@@ -403,9 +403,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 6,
-        "inProgress": 3,
-        "completed": 9,
+        "pending": 5,
+        "inProgress": 1,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.4
     }
