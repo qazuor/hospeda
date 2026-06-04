@@ -14,6 +14,9 @@
  * - Single-source-of-truth expiry: findExpiredAddons() is called once; the same
  *   list drives both expireAddon() calls and the ADDON_EXPIRED notification loop,
  *   eliminating the between-fetch gap (SPEC-194 T-014)
+ * - Chunked parallel expiry processing (EXPIRY_CHUNK_SIZE items/chunk, bounded
+ *   concurrency via Promise.allSettled) to stay within the 2-minute cron timeout
+ *   for large batches (SPEC-194 T-015)
  * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions
  *
  * @module cron/jobs/addon-expiry
@@ -31,6 +34,7 @@ import {
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { AddonCatalogService } from '@repo/service-core';
+import { chunkArray } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -47,6 +51,14 @@ import type { CronJobDefinition } from '../types.js';
 // Replaces static `getAddonBySlug` from `@repo/billing` for display-name
 // resolution and revocation retry. Instantiated once at module level.
 const catalogService = new AddonCatalogService();
+
+/**
+ * Number of expired addon purchases to process concurrently per chunk (SPEC-194 T-015).
+ * Bounded concurrency prevents the cron from hitting the 2-minute timeout with large
+ * batches while still parallelising per-item work within each chunk. Value of 5
+ * balances DB connection pressure against throughput.
+ */
+const EXPIRY_CHUNK_SIZE = 5;
 
 /**
  * Generate idempotency key for an add-on notification.
@@ -266,15 +278,50 @@ export const addonExpiryJob: CronJobDefinition = {
                         // Track which purchase IDs failed so we skip their notifications below.
                         const failedPurchaseIds = new Set<string>();
 
-                        // Sequential per-item expiry (SPEC-194 T-014 fix).
-                        // Each addon is expired individually so one failure never aborts the rest.
-                        for (const addon of addonsToExpire) {
-                            try {
-                                const expireResult = await addonExpirationService.expireAddon({
-                                    purchaseId: addon.id
-                                });
+                        // Chunked parallel expiry (SPEC-194 T-015 / GAP-038-42).
+                        // Sequential processing of large batches can exceed the 2-minute cron
+                        // window. Chunks of EXPIRY_CHUNK_SIZE items are fanned out concurrently
+                        // via Promise.allSettled — per-item error isolation is preserved: one
+                        // failure never aborts the rest of the chunk or any subsequent chunk.
+                        const chunks = chunkArray(addonsToExpire, EXPIRY_CHUNK_SIZE);
 
-                                if (expireResult.success) {
+                        for (const chunk of chunks) {
+                            const chunkResults = await Promise.allSettled(
+                                chunk.map((addon) =>
+                                    addonExpirationService.expireAddon({ purchaseId: addon.id })
+                                )
+                            );
+
+                            for (let i = 0; i < chunkResults.length; i++) {
+                                const settledResult = chunkResults[i];
+                                const addon = chunk[i];
+                                if (!addon || !settledResult) continue;
+
+                                if (settledResult.status === 'rejected') {
+                                    failed++;
+                                    errors++;
+                                    failedPurchaseIds.add(addon.id);
+                                    Sentry.captureException(settledResult.reason, {
+                                        tags: {
+                                            cronJob: 'addon-expiry',
+                                            phase: 'expire-addon'
+                                        },
+                                        extra: {
+                                            purchaseId: addon.id,
+                                            customerId: addon.customerId,
+                                            addonSlug: addon.addonSlug
+                                        }
+                                    });
+                                    logger.error('expireAddon threw unexpectedly', {
+                                        purchaseId: addon.id,
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug,
+                                        error:
+                                            settledResult.reason instanceof Error
+                                                ? settledResult.reason.message
+                                                : String(settledResult.reason)
+                                    });
+                                } else if (settledResult.value.success) {
                                     processed++;
                                 } else {
                                     failed++;
@@ -284,33 +331,9 @@ export const addonExpiryJob: CronJobDefinition = {
                                         purchaseId: addon.id,
                                         customerId: addon.customerId,
                                         addonSlug: addon.addonSlug,
-                                        error: expireResult.error
+                                        error: settledResult.value.error
                                     });
                                 }
-                            } catch (expireError) {
-                                failed++;
-                                errors++;
-                                failedPurchaseIds.add(addon.id);
-                                Sentry.captureException(expireError, {
-                                    tags: {
-                                        cronJob: 'addon-expiry',
-                                        phase: 'expire-addon'
-                                    },
-                                    extra: {
-                                        purchaseId: addon.id,
-                                        customerId: addon.customerId,
-                                        addonSlug: addon.addonSlug
-                                    }
-                                });
-                                logger.error('expireAddon threw unexpectedly', {
-                                    purchaseId: addon.id,
-                                    customerId: addon.customerId,
-                                    addonSlug: addon.addonSlug,
-                                    error:
-                                        expireError instanceof Error
-                                            ? expireError.message
-                                            : String(expireError)
-                                });
                             }
                         }
 
