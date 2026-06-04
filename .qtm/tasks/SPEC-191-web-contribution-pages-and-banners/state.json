@@ -370,31 +370,31 @@
             "id": "T-011",
             "title": "Mount fotos banner on destination detail (after gallery)",
             "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro, mount ContributionBanner with variant 'photos', source 'destination_detail', ctaHref buildUrl to colaborar/fotos, translated copy via t() — placed AFTER the DestinationGallery block, before the reviews section (FR-8 locked placement; thematic fit + clear of the FR-7 inline report link). Tests (source assertions): mount present with correct variant/source/ctaHref and positioned after the gallery block.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-008"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Mount banner after DestinationGallery with variant/source props",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion test (props + position)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "banners", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:35:00.000Z",
+                "completed": "2026-06-04T19:45:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.1
     }
