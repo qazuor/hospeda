@@ -1,0 +1,1526 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-173",
+    "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
+    "created": "2026-06-04T04:53:30.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scaffold @repo/ai-core package skeleton",
+            "description": "Create packages/ai-core with package.json (name @repo/ai-core, ESM, named exports), tsconfig extending @repo/typescript-config, vitest config, and src/index.ts barrel. Add empty src dirs: providers, engine, capabilities, config, usage, safety, storage, types. Wire into pnpm workspace + turbo. Verify: pnpm typecheck passes on empty package. Tests: trivial src/index.test.ts asserting the barrel imports without error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Create package.json + tsconfig + vitest config",
+                    "completed": false
+                },
+                {
+                    "title": "Create empty src module dirs + index.ts barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Register in workspace + turbo",
+                    "completed": false
+                },
+                {
+                    "title": "Write barrel smoke test",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "package", "ai-core"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add Vercel AI SDK dependencies to @repo/ai-core",
+            "description": "Add ai, @ai-sdk/openai, @ai-sdk/anthropic as dependencies of packages/ai-core (per §5.2, MIT, runs on VPS, no Vercel account). Pin versions. Do NOT add to apps directly. Verify: pnpm install clean, package builds. No new code logic. Tests: none (dependency-only setup task).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Add ai + @ai-sdk/openai + @ai-sdk/anthropic deps",
+                    "completed": false
+                },
+                {
+                    "title": "Pin versions and run pnpm install",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "dependencies", "ai-core"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Register HOSPEDA_AI_VAULT_MASTER_KEY env var",
+            "description": "Register HOSPEDA_AI_VAULT_MASTER_KEY in packages/config/src/env-registry.*.ts (description, type string, required, secret true, apps [api], category). Add Zod validation (min 32 chars) in apps/api/src/utils/env.ts ApiEnvBaseSchema. Add placeholder to apps/api/.env.example. Per §5.5 env workflow. STOP after and flag owner to set it in Coolify for hospeda-api-prod/staging. Tests: pnpm env:check:registry passes; add a unit assertion in env test that the key is required.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Register var in @repo/config env-registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add Zod min-32 validation in apps/api env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update apps/api/.env.example placeholder",
+                    "completed": false
+                },
+                {
+                    "title": "Run env:check:registry + add env test",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "env", "config", "api"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create ai_settings + ai_prompt_versions DB schemas",
+            "description": "Create packages/db/src/schemas/ai/ai-settings.dbschema.ts (JSONB value blob keyed by key, mirroring platform_settings per Q7) and ai-prompt-versions.dbschema.ts (feature, version, content, is_active, history). Soft-delete + timestamps. Export from ai barrel. Per §5.4. Run pnpm db:generate. Tests: schema unit test asserting columns/defaults; migration file generated.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-016"],
+            "subtasks": [
+                {
+                    "title": "ai_settings JSONB blob schema (platform_settings pattern)",
+                    "completed": false
+                },
+                {
+                    "title": "ai_prompt_versions schema with is_active + history",
+                    "completed": false
+                },
+                {
+                    "title": "Export from ai barrel + generate migration",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "database", "schema", "db"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create ai_provider_credentials + ai_credential_audit DB schemas",
+            "description": "Create packages/db/src/schemas/ai/ai-provider-credentials.dbschema.ts (encrypted key ciphertext, iv, providerId, metadata) and ai-credential-audit.dbschema.ts (Q1: dedicated table — actor, action created/rotated/deleted, providerId, ip, timestamp; permanent, NOT soft-delete). Per §5.4/§5.5. Export from ai barrel, db:generate. Tests: schema unit tests asserting ciphertext column never stores plaintext shape and audit action enum.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "ai_provider_credentials encrypted-key schema",
+                    "completed": false
+                },
+                {
+                    "title": "ai_credential_audit dedicated append-only schema (Q1)",
+                    "completed": false
+                },
+                {
+                    "title": "Export from ai barrel + generate migration",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "database", "schema", "security", "db"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create ai_usage + ai_request_log DB schemas",
+            "description": "Create packages/db/src/schemas/ai/ai-usage.dbschema.ts (userId, feature, provider, model, tokensIn, tokensOut, costEstimate centavos integer, latencyMs, status, timestamp) and ai-request-log.dbschema.ts (PII-scrubbed request metadata). Soft-delete + timestamps; cost as integer centavos per money convention. Index by userId+feature+createdAt for reporting. Export from ai barrel, db:generate. Tests: schema unit tests asserting cost is integer and reporting index exists.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-016", "T-018"],
+            "subtasks": [
+                {
+                    "title": "ai_usage metering schema (centavos cost + indexes)",
+                    "completed": false
+                },
+                {
+                    "title": "ai_request_log PII-scrubbed audit schema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from ai barrel + generate migration",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "database", "schema", "db"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create ai_conversations + ai_messages DB schemas",
+            "description": "Create packages/db/src/schemas/ai/ai-conversations.dbschema.ts (generic multi-turn container, userId) and ai-messages.dbschema.ts (conversationId FK, role, content verbatim, tokens, provider). Soft-delete + timestamps. Per §5.4 (used by chat child spec). Export from ai barrel, db:generate. Tests: schema unit tests asserting FK relation and role enum.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ai_conversations container schema",
+                    "completed": false
+                },
+                {
+                    "title": "ai_messages schema with conversation FK",
+                    "completed": false
+                },
+                {
+                    "title": "Export from ai barrel + generate migration",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "database", "schema", "db"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Author core AI Zod schemas in @repo/schemas",
+            "description": "Per Q3 (strict SSoT), author Zod schemas in @repo/schemas/src/entities/ai/: ai-settings.schema.ts (config blob: providers on/off, fallback order, per-feature model+params, feature flags, quotas), ai-provider.schema.ts (provider/model identifiers), ai-prompt.schema.ts (versioned prompt). Export from package barrel. Tests: schema unit tests for valid/invalid config blobs and prompt shapes (AAA).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-016"],
+            "subtasks": [
+                {
+                    "title": "ai-settings config blob schema",
+                    "completed": false
+                },
+                {
+                    "title": "ai-provider + ai-prompt schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Export from @repo/schemas barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "schema", "validation", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Author AI capability + intent Zod schemas in @repo/schemas",
+            "description": "Per Q3, author Zod schemas in @repo/schemas/src/entities/ai/: ai-capability.schema.ts (generateText/streamText/generateObject/moderate request+response shapes, locale es|en|pt param), ai-intent.schema.ts (typed validated intent object for extractIntent, consumed by NL search + chat). Export from barrel. Tests: schema unit tests covering locale enum and intent validation edge cases.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "ai-capability request/response schemas + locale",
+                    "completed": false
+                },
+                {
+                    "title": "ai-intent typed schema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel + write unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "schema", "validation", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement @repo/ai-core storage module",
+            "description": "Create src/storage/ — the ONLY module touching @repo/db (AC-4 isolation). Implement read/write of ai_settings blob + ai_prompt_versions + ai_usage insert + ai_request_log insert via getDb(). RO-RO, named exports, JSDoc. Validate config reads against the @repo/schemas ai-settings schema. Tests: unit tests with a stubbed db asserting reads parse via schema and writes shape rows correctly.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-008"],
+            "blocks": ["T-011", "T-016"],
+            "subtasks": [
+                {
+                    "title": "settings + prompt read/write via getDb()",
+                    "completed": false
+                },
+                {
+                    "title": "ai_usage + ai_request_log insert helpers",
+                    "completed": false
+                },
+                {
+                    "title": "Validate reads against @repo/schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Write storage unit tests (stubbed db)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "storage", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement AI config resolver + cache invalidation",
+            "description": "Create src/config/ — resolveConfig() reads the ai_settings blob via storage, resolves per-feature model+params+fallback chain+flags+quotas, with an in-memory cache invalidated on write (mind R-7 / billing 300s gotcha — invalidate explicitly on write, not just TTL). RO-RO, JSDoc. Tests: unit tests asserting resolution of per-feature config and that a write invalidates the cache (no stale read).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-014", "T-027", "T-034"],
+            "subtasks": [
+                {
+                    "title": "resolveConfig() per-feature resolution",
+                    "completed": false
+                },
+                {
+                    "title": "In-memory cache + explicit invalidate-on-write",
+                    "completed": false
+                },
+                {
+                    "title": "Write resolver + cache-invalidation unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "config", "cache", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Define AiProvider interface + StubProvider",
+            "description": "Create src/providers/ai-provider.interface.ts — package-owned interface (generateText, streamText, generateObject, extractIntent, moderate, embed iface) never referencing Vercel SDK types directly (§5.2, R-4). Create stub.provider.ts: deterministic StubProvider for tests (§5.14, R-6). RO-RO, JSDoc. Tests: unit tests asserting StubProvider returns deterministic shapes for each capability.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "AiProvider interface (all capabilities, SDK-free)",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic StubProvider",
+                    "completed": false
+                },
+                {
+                    "title": "Write StubProvider unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "provider", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement Vercel OpenAI + Anthropic provider adapters",
+            "description": "Create src/providers/vercel-openai.adapter.ts and vercel-anthropic.adapter.ts wrapping ai + @ai-sdk/* behind the AiProvider interface (§5.2). Credentials arrive by parameter (never env — AC-4). Implement generateText/streamText/generateObject/extractIntent. Include moderate() in the OpenAI adapter (Q4 default moderation impl). RO-RO, JSDoc. Tests: unit tests with the SDK mocked asserting each adapter maps to the interface and passes the key param through.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-009"],
+            "blocks": ["T-014", "T-019"],
+            "subtasks": [
+                {
+                    "title": "vercel-openai.adapter.ts (incl. moderate, Q4)",
+                    "completed": false
+                },
+                {
+                    "title": "vercel-anthropic.adapter.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Key-by-parameter, no env access (AC-4)",
+                    "completed": false
+                },
+                {
+                    "title": "Write adapter unit tests (SDK mocked)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "provider", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Implement engine routing + fallback + retries",
+            "description": "Create src/engine/ — routing layer selecting per-feature primary provider + fallback chain from resolved config (§5.3), with retries and automatic fallback on timeout/5xx/rate-limit, recording the fallback event. Leave a V2 hook for cost-based/ensemble/AB routing without API change. RO-RO, JSDoc. Tests: unit tests with StubProvider asserting primary success, fallback on simulated 5xx (AC-2), and fallback-event recording.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Per-feature primary + fallback chain routing",
+                    "completed": false
+                },
+                {
+                    "title": "Retries + automatic fallback + event recording",
+                    "completed": false
+                },
+                {
+                    "title": "V2 routing hook (no API change)",
+                    "completed": false
+                },
+                {
+                    "title": "Write routing/fallback unit tests (AC-2)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "engine", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement AiService public capabilities surface",
+            "description": "Create the public AiService in src/engine/ + src/capabilities/ exposing generateText, generateObject, extractIntent, moderate, embed-iface (stub) over the routing engine (FR-1). Locale-aware by parameter es|en|pt, default es (§5.12, FR-13). Export from src/index.ts (named only). streamText is wired in T-024. RO-RO, JSDoc on all exports. Tests: unit tests per capability via StubProvider asserting contract shapes + locale propagation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-024", "T-035", "T-036", "T-039"],
+            "subtasks": [
+                {
+                    "title": "AiService.generateText/generateObject/extractIntent",
+                    "completed": false
+                },
+                {
+                    "title": "moderate + embed-iface stub + locale param",
+                    "completed": false
+                },
+                {
+                    "title": "Export public surface from index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write per-capability unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "engine", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Implement usage metering recorder + cost calculator",
+            "description": "Create src/usage/ — record every call into ai_usage via storage (tokens, feature, provider, model, latency, status) and a cost calculator producing integer centavos from token counts × per-model rates (§5.7/FR-7). RO-RO, JSDoc. Tests: unit tests asserting a recorded row matches AC-7 fields and cost is computed in centavos for sample token counts.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-004", "T-006", "T-008"],
+            "blocks": ["T-017", "T-018", "T-031"],
+            "subtasks": [
+                {
+                    "title": "Metering recorder → ai_usage via storage",
+                    "completed": false
+                },
+                {
+                    "title": "Cost calculator (tokens → centavos)",
+                    "completed": false
+                },
+                {
+                    "title": "Write metering + cost unit tests (AC-7)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "usage", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement cost ceiling + kill-switch tracking",
+            "description": "Create src/usage/ceiling — track accumulated spend (global/per-feature/per-provider) against admin-set ceilings; hard-stop the affected scope on breach (controlled error) until period reset (§5.8/FR-9). Implement manual kill-switch state per feature/provider read from config. RO-RO, JSDoc. Threshold alerts are T-025. Tests: unit tests asserting hard-stop at ceiling (AC-8) and immediate stop when kill-switch off (AC-9).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Accumulated-spend tracking (global/feature/provider)",
+                    "completed": false
+                },
+                {
+                    "title": "Hard-stop on ceiling breach (controlled error)",
+                    "completed": false
+                },
+                {
+                    "title": "Kill-switch state evaluation",
+                    "completed": false
+                },
+                {
+                    "title": "Write ceiling + kill-switch unit tests (AC-8/AC-9)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "usage", "cost", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement usage reporting query helpers",
+            "description": "Create src/usage/reporting — query helpers aggregating ai_usage per user / feature / month (counts, tokens, cost centavos) backing the admin reporting endpoints (FR-7). Read-only via storage. RO-RO, JSDoc. Tests: unit tests with stubbed db asserting aggregation by user/feature/month buckets.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-006"],
+            "blocks": ["T-023", "T-033"],
+            "subtasks": [
+                {
+                    "title": "Aggregation by user/feature/month",
+                    "completed": false
+                },
+                {
+                    "title": "Read-only query helpers via storage",
+                    "completed": false
+                },
+                {
+                    "title": "Write reporting unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "usage", "reporting", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement prompt-injection guard + PII scrubber",
+            "description": "Create src/safety/ — injection-guard (input sanitization + basic override-attempt detection, §5.10.2) and pii-scrubber (redact emails/phones/cards before any Sentry/PostHog emit; DB keeps verbatim, §5.10.4/AC-11). RO-RO, JSDoc. Moderation hook reuses AiProvider.moderate (T-013). Tests: unit tests asserting injection patterns flagged and PII redacted in telemetry payload while raw text preserved (AC-11).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-020", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Prompt-injection guard (sanitize + detect)",
+                    "completed": false
+                },
+                {
+                    "title": "PII scrubber for external telemetry",
+                    "completed": false
+                },
+                {
+                    "title": "Write injection + PII unit tests (AC-11)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "safety", "security", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Wire moderation pass into AiService flow",
+            "description": "In src/safety/ + engine, route input/output through a moderation pass (AiProvider.moderate, Q4 OpenAI default) before serving/storing (§5.10.3). Block/flag on moderation failure with a controlled error. RO-RO, JSDoc. Tests: unit tests with StubProvider moderation asserting flagged content is blocked and clean content passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Input/output moderation pass wiring",
+                    "completed": false
+                },
+                {
+                    "title": "Controlled error on moderation block",
+                    "completed": false
+                },
+                {
+                    "title": "Write moderation-flow unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "safety", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Implement AES-256-GCM vault crypto util in apps/api",
+            "description": "Create apps/api/src/utils/ai-vault.ts: encrypt/decrypt AES-256-GCM using HOSPEDA_AI_VAULT_MASTER_KEY (read only here, §5.5). Round-trip encrypt → store ciphertext+iv, decrypt → plaintext. Package never touches this (AC-4). RO-RO, JSDoc. Tests: unit tests asserting ciphertext != plaintext, round-trip equality with a throwaway key, and tamper detection (auth tag).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "AES-256-GCM encrypt/decrypt with master key",
+                    "completed": false
+                },
+                {
+                    "title": "ciphertext+iv+authTag handling",
+                    "completed": false
+                },
+                {
+                    "title": "Write crypto round-trip + tamper unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "security", "vault", "api"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Implement credential vault service + audit writes",
+            "description": "Create the credential service (apps/api or service-core extending BaseService, Result<T>) to create/rotate/delete provider keys: encrypt via T-021, store in ai_provider_credentials, and write an ai_credential_audit row (actor, action, providerId, ip) on every mutation (Q1, §5.5/FR-4). Rotation without redeploy. Tests: unit tests asserting each mutation writes an audit row and stored value is ciphertext (AC-3 store half).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-023", "T-026"],
+            "subtasks": [
+                {
+                    "title": "create/rotate/delete credential ops (encrypted)",
+                    "completed": false
+                },
+                {
+                    "title": "ai_credential_audit row per mutation (Q1)",
+                    "completed": false
+                },
+                {
+                    "title": "Result<T> + runWithLoggingAndValidation",
+                    "completed": false
+                },
+                {
+                    "title": "Write credential-service unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "security", "vault", "service", "api"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add AI_SETTINGS_MANAGE permission + seed wiring",
+            "description": "Add PermissionEnum.AI_SETTINGS_MANAGE (SUPER_ADMIN only, following SPEC-164 super-only pattern, §5.6). Wire into role-permission seed for SUPER_ADMIN. Enum is push/seed-managed per repo convention. Tests: unit/seed test asserting SUPER_ADMIN has the permission and lower roles do not.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-022"],
+            "blocks": ["T-026", "T-027", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Add AI_SETTINGS_MANAGE to PermissionEnum",
+                    "completed": false
+                },
+                {
+                    "title": "Seed permission to SUPER_ADMIN only",
+                    "completed": false
+                },
+                {
+                    "title": "Write permission seed test",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "auth", "permission", "seed"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Implement streamText capability in @repo/ai-core",
+            "description": "Add streamText(...) to AiService returning an async iterable of tokens over the routing engine (§5.9/FR-10). Consumed later by SSE route. Locale-aware. RO-RO, JSDoc, named export. Tests: unit tests via StubProvider asserting tokens are yielded incrementally and fallback applies to the stream path too.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-029", "T-036"],
+            "subtasks": [
+                {
+                    "title": "streamText async-iterable over engine",
+                    "completed": false
+                },
+                {
+                    "title": "Fallback applies to stream path",
+                    "completed": false
+                },
+                {
+                    "title": "Export + write incremental-stream unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "streaming", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Implement cost threshold alerts via @repo/notifications",
+            "description": "Wire 50/80/100% ceiling threshold alerts to the SUPER_ADMIN through @repo/notifications (§5.8/FR-9), triggered by the ceiling tracker (T-017). De-dupe so each threshold fires once per period. RO-RO, JSDoc. Tests: unit tests asserting an alert is sent exactly once per crossed threshold (AC-8 alert half) with @repo/notifications mocked.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "50/80/100% threshold detection",
+                    "completed": false
+                },
+                {
+                    "title": "Send via @repo/notifications + per-period de-dupe",
+                    "completed": false
+                },
+                {
+                    "title": "Write alert unit tests (mocked notifications)",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "service", "notifications", "cost", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Create admin AI credential vault routes",
+            "description": "Create apps/api admin routes /api/v1/admin/ai/credentials* (list/create/rotate/delete) via createAdminRoute, guarded by AI_SETTINGS_MANAGE, calling the credential service (T-022). Never return plaintext keys. ResponseFactory contract. Tests: route unit tests asserting non-super rejected (403), create returns ciphertext-masked response, and an audit row is written.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-023"],
+            "blocks": ["T-033", "T-037"],
+            "subtasks": [
+                {
+                    "title": "list/create/rotate/delete admin credential routes",
+                    "completed": false
+                },
+                {
+                    "title": "AI_SETTINGS_MANAGE guard + masked responses",
+                    "completed": false
+                },
+                {
+                    "title": "Write credential-route unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "admin", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create admin AI settings routes",
+            "description": "Create apps/api admin routes /api/v1/admin/ai/settings* (get/update the ai_settings blob: providers on/off, fallback order, per-feature model+params, feature flags, quotas) via createAdminRoute, guarded by AI_SETTINGS_MANAGE (§5.6/FR-5). Validate body against the @repo/schemas ai-settings schema; invalidate config cache on write. Tests: route unit tests asserting update persists, cache invalidates (AC-1 swap path), invalid blob → 422, non-super → 403.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-023", "T-011"],
+            "blocks": ["T-033", "T-038"],
+            "subtasks": [
+                {
+                    "title": "get/update ai_settings admin routes",
+                    "completed": false
+                },
+                {
+                    "title": "Schema validation + cache invalidation on write",
+                    "completed": false
+                },
+                {
+                    "title": "Write settings-route unit tests (AC-1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "admin", "config"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create admin AI prompt-version routes",
+            "description": "Create apps/api admin routes /api/v1/admin/ai/prompts* (list/create/activate versioned per-feature prompts in ai_prompt_versions) via createAdminRoute, guarded by AI_SETTINGS_MANAGE (§5.6.3/FR-5). Activating a version flips is_active. Engine must still fall back to in-code default on empty/invalid (AC-12, verified in T-034). Tests: route unit tests asserting version create/activate and non-super → 403.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "list/create/activate prompt-version routes",
+                    "completed": false
+                },
+                {
+                    "title": "is_active flip on activate",
+                    "completed": false
+                },
+                {
+                    "title": "Write prompt-route unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "admin", "config"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Implement createStreamingRoute() SSE factory",
+            "description": "Add createStreamingRoute() to apps/api route factories + a streaming path in ResponseFactory emitting text/event-stream (§5.9/FR-10/AC-10), extending the existing factory pattern. Adapt an AiService.streamText async iterable to SSE token events. Tests: route unit tests asserting Content-Type text/event-stream and incremental token frames (AC-10) using StubProvider.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-031", "T-038"],
+            "subtasks": [
+                {
+                    "title": "createStreamingRoute() factory",
+                    "completed": false
+                },
+                {
+                    "title": "ResponseFactory SSE/event-stream path",
+                    "completed": false
+                },
+                {
+                    "title": "streamText → SSE adapter",
+                    "completed": false
+                },
+                {
+                    "title": "Write SSE route unit tests (AC-10)",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "streaming"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Add AI entitlement + limit keys in @repo/billing",
+            "description": "Per Q2, add to packages/billing/src/types/{entitlement,plan}.types.ts + config/{entitlements,limits}.config.ts (lowercase snake_case): gates ai_text_improve/ai_chat/ai_search/ai_support and limits max_ai_<feature>_per_month. Wire default per-plan values (HOST tiers, tourist free/pro/vip per §5.7 matrix). Tests: unit tests asserting keys exist and default plan→limit mapping resolves.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "Add 4 gate keys + 4 limit keys (snake_case, Q2)",
+                    "completed": false
+                },
+                {
+                    "title": "Default per-plan entitlement/limit values",
+                    "completed": false
+                },
+                {
+                    "title": "Write entitlement-key unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "billing", "entitlement"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Wire AI quota enforcement into apps/api",
+            "description": "Apply login-required + per-feature entitlement/limit enforcement on AI endpoints reusing entitlementMiddleware() + 5-min cache (apps/api/src/middlewares/entitlement.ts, Q2/§5.7). Unauthenticated → 401 (AC-5); over-limit → controlled 403 with upgrade hint (AC-6); meter the attempt regardless. Tests: route integration tests asserting 401 anon, 403 at limit with meter row (AC-5/AC-6).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-030", "T-016", "T-029"],
+            "blocks": ["T-032", "T-037"],
+            "subtasks": [
+                {
+                    "title": "Login-required guard on AI endpoints (AC-5)",
+                    "completed": false
+                },
+                {
+                    "title": "Per-feature entitlement/limit gate → 403 + hint (AC-6)",
+                    "completed": false
+                },
+                {
+                    "title": "Meter even on rejection",
+                    "completed": false
+                },
+                {
+                    "title": "Write enforcement integration tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "entitlement", "auth"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Apply sliding-window rate-limit to AI endpoints",
+            "description": "Reuse createSlidingWindowPerUserRateLimit() (apps/api/src/middlewares/rate-limit.ts, Q6 — do NOT build a new counter) on AI endpoints with configurable windows, plus per-IP as defense-in-depth (§5.10.1). This is independent of the monthly quota (T-031) and USD ceiling. Tests: route unit tests asserting burst over the window is rejected and the limiter is the reused factory.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Apply reused sliding-window limiter (Q6)",
+                    "completed": false
+                },
+                {
+                    "title": "Configurable window + per-IP defense",
+                    "completed": false
+                },
+                {
+                    "title": "Write rate-limit unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "safety", "rate-limit"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Create admin AI usage reporting routes",
+            "description": "Create apps/api admin routes /api/v1/admin/ai/usage* exposing per user/feature/month aggregates (T-018) via createAdminRoute guarded by AI_SETTINGS_MANAGE (FR-7). page+pageSize pagination. Tests: route unit tests asserting aggregates returned and non-super → 403.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-027", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "usage-report admin routes (aggregates)",
+                    "completed": false
+                },
+                {
+                    "title": "AI_SETTINGS_MANAGE guard + pagination",
+                    "completed": false
+                },
+                {
+                    "title": "Write usage-route unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "api", "admin", "reporting"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Wire prompt resolution with in-code default fallback",
+            "description": "In the engine, resolve the active prompt per feature from ai_prompt_versions; on empty/invalid/missing admin prompt, fall back to a mandatory in-code default so a feature never bricks (§5.6.3/AC-12). RO-RO, JSDoc. Tests: unit tests asserting active prompt used when valid and in-code default used when admin prompt empty/invalid (AC-12).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-028", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Resolve active prompt per feature",
+                    "completed": false
+                },
+                {
+                    "title": "Mandatory in-code default fallback",
+                    "completed": false
+                },
+                {
+                    "title": "Write prompt-fallback unit tests (AC-12)",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "service", "config", "ai-core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Wire Sentry + PostHog observability",
+            "description": "Wire Sentry (provider failures, timeouts, fallbacks, ceiling trips) and PostHog (per-feature usage events) as observability sinks (§5.13). All external emits pass through the PII scrubber (T-019/AC-11). RO-RO, JSDoc. Tests: unit tests with Sentry/PostHog mocked asserting an error breadcrumb on fallback and a usage event per feature, both PII-scrubbed.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Sentry error/fallback/ceiling wiring",
+                    "completed": false
+                },
+                {
+                    "title": "PostHog per-feature usage events",
+                    "completed": false
+                },
+                {
+                    "title": "Scrub PII before emit + write tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "observability", "ai-core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Write AC-4 no-env/no-vault static guard test",
+            "description": "Add a test/lint check (AC-4) asserting @repo/ai-core source contains NO process.env access and NO @repo/db access outside src/storage/, and no vault access. Scan src/** programmatically. Wire into the package test run / CI guard. Tests: the guard itself is the test — must fail if a process.env or out-of-storage db import is introduced.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Static scan for process.env in src/**",
+                    "completed": false
+                },
+                {
+                    "title": "Static scan for @repo/db outside src/storage/",
+                    "completed": false
+                },
+                {
+                    "title": "Wire guard into test run / CI",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "security", "ai-core"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Write vault round-trip + enforcement integration tests",
+            "description": "Integration tests against apps/api: (1) admin saves an OpenAI key → DB stores ciphertext, apps/api decrypts + uses it, audit row written (AC-3); (2) anon → 401, tourist-free at limit → 403 + meter (AC-5/AC-6); (3) ceiling breach hard-stop + 100% alert (AC-8). Use StubProvider + throwaway vault key, never real APIs (AC-13). Files under apps/api/test/ai/. Tests: this task IS the integration suite.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-031", "T-026", "T-025"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Vault round-trip + audit integration test (AC-3)",
+                    "completed": false
+                },
+                {
+                    "title": "Enforcement (401/403/meter) integration test",
+                    "completed": false
+                },
+                {
+                    "title": "Ceiling hard-stop + alert integration test (AC-8)",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "api", "security"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Write streaming + provider-swap E2E tests",
+            "description": "E2E tests: (1) streaming endpoint returns text/event-stream with incremental tokens (AC-10); (2) admin changes chat primary openai→anthropic → next call uses new provider with no redeploy (AC-1); (3) fallback on simulated 5xx records ai_usage event (AC-2). StubProvider only, no real APIs, assert ≥90% coverage on the package (AC-13). Files under apps/api/test/ai/. Tests: this task IS the E2E suite + coverage gate.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-029", "T-027", "T-037"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "SSE streaming E2E (AC-10)",
+                    "completed": false
+                },
+                {
+                    "title": "Provider-swap-no-redeploy E2E (AC-1)",
+                    "completed": false
+                },
+                {
+                    "title": "Fallback-event E2E (AC-2) + coverage assertion",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "integration", "api", "streaming"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Write @repo/ai-core README + usage guide",
+            "description": "Author packages/ai-core/README.md and a usage guide (public API surface, capabilities, provider config, locale param, how apps/api passes credentials by param) per FR-14. JSDoc on exports is done in code tasks; this is the package-level prose. No tests (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "README with public API surface",
+                    "completed": false
+                },
+                {
+                    "title": "Usage guide (config, locale, credential-by-param)",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "ai-core"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Write ADR for AI foundation architecture",
+            "description": "Add an ADR under docs/decisions/ capturing the architecture and resolved decisions: provider-agnostic wrap of Vercel AI SDK, tables in @repo/db (non-portable tradeoff), Q1 dedicated audit table, Q2 per-feature snake_case keys in @repo/billing, Q3 schemas in @repo/schemas, Q4 provider-agnostic moderation, Q6 reused rate-limit, Q7 JSONB settings. No tests (docs).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ADR: architecture + Q1-Q7 resolved decisions",
+                    "completed": false
+                },
+                {
+                    "title": "Link from docs/decisions index",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "adr"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Write packages/ai-core/CLAUDE.md",
+            "description": "Author packages/ai-core/CLAUDE.md (conventions: package never reads env/secrets, storage/ is the only db-coupled module, RO-RO, named exports, StubProvider for tests, add-a-provider recipe). Mirror the per-package CLAUDE.md style used across the monorepo. No tests (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Package CLAUDE.md with conventions + add-provider recipe",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "ai-core"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Final coverage + lint/typecheck verification pass",
+            "description": "Run full pnpm typecheck + lint + test across @repo/ai-core, @repo/schemas, @repo/billing, @repo/db, apps/api touched surfaces; confirm ≥90% coverage on the package (AC-13), no .only/.skip, no raw ilike, no any. Remove any temporary workarounds. Tests: this task verifies the full suite is green; no new product code.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run typecheck + lint + test across touched packages",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ≥90% coverage + no forbidden patterns",
+                    "completed": false
+                },
+                {
+                    "title": "Remove temporary workarounds",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "quality", "ai-core"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T04:53:30.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 42,
+        "pending": 42,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    }
+}
