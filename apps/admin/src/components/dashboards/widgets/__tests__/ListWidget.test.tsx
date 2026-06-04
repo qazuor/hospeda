@@ -758,4 +758,184 @@ describe('ListWidget', () => {
             expect(screen.queryByTestId('list-item')).not.toBeInTheDocument();
         });
     });
+
+    // ── footerLink (SPEC-175 T-015) ────────────────────────────────────────
+
+    describe('footerLink', () => {
+        it('renders the footer link when footerLink and onFooterLinkClick are configured', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(ITEMS)
+            });
+
+            const widget = makeWidget({
+                config: {
+                    source: 'admin.recent.consultations',
+                    footerLink: {
+                        label: { es: 'Ver todas', en: 'See all', pt: 'Ver todas' },
+                        action: 'whats-new-panel'
+                    },
+                    onFooterLinkClick: vi.fn()
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget');
+            expect(screen.getByTestId('list-widget-footer')).toBeInTheDocument();
+            expect(screen.getByTestId('list-widget-footer-link')).toHaveTextContent('Ver todas');
+        });
+
+        it('fires onFooterLinkClick with the action key when clicked', async () => {
+            const onFooterLinkClick = vi.fn();
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(ITEMS)
+            });
+
+            const widget = makeWidget({
+                config: {
+                    source: 'admin.recent.consultations',
+                    footerLink: {
+                        label: 'Ver todas',
+                        action: 'whats-new-panel'
+                    },
+                    onFooterLinkClick
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget-footer-link');
+            fireEvent.click(screen.getByTestId('list-widget-footer-link'));
+            expect(onFooterLinkClick).toHaveBeenCalledTimes(1);
+            expect(onFooterLinkClick).toHaveBeenCalledWith('whats-new-panel');
+        });
+
+        it('does not render the footer when footerLink is absent', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(ITEMS)
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget');
+            expect(screen.queryByTestId('list-widget-footer')).not.toBeInTheDocument();
+        });
+
+        it('does not render the footer when onFooterLinkClick is absent (safety guard)', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(ITEMS)
+            });
+
+            // footerLink present but no handler — footer must NOT render to avoid
+            // dead UI elements that do nothing when clicked.
+            const widget = makeWidget({
+                config: {
+                    source: 'admin.recent.consultations',
+                    footerLink: { label: 'Ver todas', action: 'whats-new-panel' }
+                    // onFooterLinkClick intentionally absent
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget');
+            expect(screen.queryByTestId('list-widget-footer')).not.toBeInTheDocument();
+        });
+    });
+
+    // ── onItemClick (SPEC-175 T-015) ───────────────────────────────────────
+
+    describe('onItemClick', () => {
+        it('fires onItemClick with the item when the action button is clicked', async () => {
+            const onItemClick = vi.fn();
+            const items = [
+                { id: 'entry-1', label: 'Primera novedad', meta: '2026-06-01' },
+                { id: 'entry-2', label: 'Segunda novedad', meta: '2026-05-15' }
+            ];
+
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(items)
+            });
+
+            const widget = makeWidget({
+                config: {
+                    source: 'whats-new.recent',
+                    actionPerItem: { label: { es: 'Ver', en: 'View', pt: 'Ver' } },
+                    onItemClick
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget');
+            const buttons = screen.getAllByTestId('list-item-action-button');
+            expect(buttons).toHaveLength(2);
+
+            fireEvent.click(buttons[0]);
+            expect(onItemClick).toHaveBeenCalledTimes(1);
+            expect(onItemClick).toHaveBeenCalledWith(items[0]);
+        });
+
+        it('widgets WITHOUT onItemClick/footerLink render identically to before (regression)', async () => {
+            // This test ensures the existing behavior is preserved when neither
+            // new config field is present — a regression guard.
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions(ITEMS)
+            });
+
+            const widget = makeWidget({
+                config: {
+                    source: 'admin.recent.consultations',
+                    maxItems: 3,
+                    actionPerItem: {
+                        label: 'Responder',
+                        hrefTemplate: '/admin/conversations/{id}'
+                    }
+                }
+            });
+
+            render(
+                <TestWrapper>
+                    <ListWidget widget={widget} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('list-widget');
+
+            // Normal data rendered.
+            expect(screen.getAllByTestId('list-item')).toHaveLength(3);
+            // Links rendered (not buttons).
+            expect(screen.getAllByTestId('list-item-action-link')).toHaveLength(3);
+            // No footer.
+            expect(screen.queryByTestId('list-widget-footer')).not.toBeInTheDocument();
+            // No extra buttons introduced.
+            expect(screen.queryByTestId('list-item-action-button')).not.toBeInTheDocument();
+        });
+    });
 });
