@@ -115,6 +115,12 @@ describe('ContributionBanner.astro', () => {
             expect(src).toMatch(/source:\s*banner\?\.dataset\.source/);
             expect(src).toMatch(/variant:\s*banner\?\.dataset\.variant/);
         });
+
+        it('re-binds on every view-transitions navigation (astro:page-load)', () => {
+            // Hoisted module scripts run ONCE per session; after a VT swap
+            // the banner elements are new and would otherwise lose tracking.
+            expect(src).toContain('astro:page-load');
+        });
     });
 });
 

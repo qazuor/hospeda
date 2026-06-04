@@ -41,6 +41,12 @@ describe('ContributionBackLink.astro', () => {
         expect(src).toContain('preventDefault');
     });
 
+    it('re-binds on every view-transitions navigation (astro:page-load)', () => {
+        // Hoisted module scripts run ONCE per session; after a VT swap the
+        // link element is new and would otherwise have no listener.
+        expect(src).toContain('astro:page-load');
+    });
+
     it('detects in-app history via the view-transitions router state AND the referrer', () => {
         // ClientRouter pushState does not update document.referrer, so both
         // signals are needed.

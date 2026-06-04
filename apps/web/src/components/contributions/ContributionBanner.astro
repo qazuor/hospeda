@@ -76,20 +76,29 @@ const variantClass = variant === 'editors' ? styles.editors : styles.photos;
 
     /**
      * Wire the click-tracking event on every ContributionBanner CTA in the
-     * page. Hoisted by Astro into a single module-bundled script — no
-     * duplication when the component appears multiple times. trackEvent is
-     * a safe no-op before the PostHog SDK loads, and navigation to ctaHref
-     * proceeds normally (the listener does not preventDefault).
+     * page. trackEvent is a safe no-op before the PostHog SDK loads, and
+     * navigation to ctaHref proceeds normally (no preventDefault).
+     *
+     * Hoisted module scripts execute ONCE per session — after a
+     * view-transitions swap the banner elements are brand new and would
+     * lose their listeners, so binding happens on `astro:page-load`, which
+     * fires on the initial load AND after every VT navigation.
      */
-    document
-        .querySelectorAll<HTMLAnchorElement>('[data-contribution-banner-link]')
-        .forEach((link) => {
-            link.addEventListener('click', () => {
-                const banner = link.closest<HTMLElement>('[data-contribution-banner]');
-                trackEvent(WebEvents.ContributionBannerClicked, {
-                    source: banner?.dataset.source ?? 'unknown',
-                    variant: banner?.dataset.variant ?? 'unknown'
+    function bindBannerTracking(): void {
+        document
+            .querySelectorAll<HTMLAnchorElement>('[data-contribution-banner-link]')
+            .forEach((link) => {
+                if (link.dataset.bound === 'true') return;
+                link.dataset.bound = 'true';
+                link.addEventListener('click', () => {
+                    const banner = link.closest<HTMLElement>('[data-contribution-banner]');
+                    trackEvent(WebEvents.ContributionBannerClicked, {
+                        source: banner?.dataset.source ?? 'unknown',
+                        variant: banner?.dataset.variant ?? 'unknown'
+                    });
                 });
             });
-        });
+    }
+
+    document.addEventListener('astro:page-load', bindBannerTracking);
 </script>

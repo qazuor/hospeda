@@ -47,7 +47,12 @@ const hubUrl = buildUrl({ locale, path: 'colaborar' });
     /**
      * Progressive enhancement: go back to the page the visitor came from
      * when there is somewhere to go back to; otherwise the anchor's hub
-     * href wins. Hoisted by Astro — one bundled module per page.
+     * href wins.
+     *
+     * Hoisted module scripts execute ONCE per session — after a
+     * view-transitions swap the link element is brand new and would have no
+     * listener, so binding happens on `astro:page-load`, which fires on the
+     * initial load AND after every VT navigation.
      */
     function hasInAppHistory(): boolean {
         // Astro's view-transitions router keeps an incrementing index in
@@ -69,14 +74,22 @@ const hubUrl = buildUrl({ locale, path: 'colaborar' });
         }
     }
 
-    document.querySelectorAll<HTMLAnchorElement>('[data-contribution-back]').forEach((link) => {
-        link.addEventListener('click', (event) => {
-            if (hasInAppHistory()) {
-                event.preventDefault();
-                window.history.back();
-            }
-        });
-    });
+    function bindBackLinks(): void {
+        document
+            .querySelectorAll<HTMLAnchorElement>('[data-contribution-back]')
+            .forEach((link) => {
+                if (link.dataset.bound === 'true') return;
+                link.dataset.bound = 'true';
+                link.addEventListener('click', (event) => {
+                    if (hasInAppHistory()) {
+                        event.preventDefault();
+                        window.history.back();
+                    }
+                });
+            });
+    }
+
+    document.addEventListener('astro:page-load', bindBackLinks);
 </script>
 
 <style>
