@@ -534,39 +534,39 @@
             "id": "T-015",
             "title": "Implement AiService public capabilities surface",
             "description": "Create the public AiService in src/engine/ + src/capabilities/ exposing generateText, generateObject, extractIntent, moderate, embed-iface (stub) over the routing engine (FR-1). Locale-aware by parameter es|en|pt, default es (§5.12, FR-13). Export from src/index.ts (named only). streamText is wired in T-024. RO-RO, JSDoc on all exports. Tests: unit tests per capability via StubProvider asserting contract shapes + locale propagation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-024", "T-035", "T-036", "T-039"],
             "subtasks": [
                 {
                     "title": "AiService.generateText/generateObject/extractIntent",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "moderate + embed-iface stub + locale param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export public surface from index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write per-capability unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "engine", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T09:12:00.000Z",
+                "completed": "2026-06-04T09:30:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 29,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.5
     }
