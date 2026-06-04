@@ -608,39 +608,39 @@
             "id": "T-017",
             "title": "Implement cost ceiling + kill-switch tracking",
             "description": "Create src/usage/ceiling — track accumulated spend (global/per-feature/per-provider) against admin-set ceilings; hard-stop the affected scope on breach (controlled error) until period reset (§5.8/FR-9). Implement manual kill-switch state per feature/provider read from config. RO-RO, JSDoc. Threshold alerts are T-025. Tests: unit tests asserting hard-stop at ceiling (AC-8) and immediate stop when kill-switch off (AC-9).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016"],
             "blocks": ["T-025"],
             "subtasks": [
                 {
-                    "title": "Accumulated-spend tracking (global/feature/provider)",
-                    "completed": false
+                    "title": "Accumulated-spend tracking (global/feature; per-provider deferred per owner 2026-06-04)",
+                    "completed": true
                 },
                 {
                     "title": "Hard-stop on ceiling breach (controlled error)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Kill-switch state evaluation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write ceiling + kill-switch unit tests (AC-8/AC-9)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "usage", "cost", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:05:00.000Z",
+                "completed": "2026-06-04T19:55:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.5
     }
