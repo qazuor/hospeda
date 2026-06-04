@@ -9,6 +9,7 @@ import type { LogEntry } from '@repo/logger';
 import type { AppLogEntryService } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppLogSinkHandler } from '../../src/lib/app-log-sink';
+import { runWithRequestContext, setRequestContextActor } from '../../src/lib/request-context';
 
 const makeEntry = (overrides: Partial<LogEntry> = {}): LogEntry => ({
     ts: '2026-06-03T12:00:00.000Z',
@@ -101,6 +102,77 @@ describe('createAppLogSinkHandler', () => {
 
             const arg = recordEntry.mock.calls[0]?.[0] as { data: { data: unknown } };
             expect(arg.data.data).toEqual({ value: [1, 2, 3] });
+        });
+    });
+
+    describe('request-context enrichment', () => {
+        it('should include requestId, userId, method, path when handler runs inside runWithRequestContext with an authenticated actor', async () => {
+            // Arrange
+            const { service, recordEntry } = makeServiceMock();
+            const handler = createAppLogSinkHandler(service);
+
+            // Act
+            await runWithRequestContext({
+                store: {
+                    requestId: 'req-abc-123',
+                    method: 'POST',
+                    path: '/api/v1/protected/bookmarks'
+                },
+                fn: async () => {
+                    setRequestContextActor({ userId: 'user-uuid-456', role: 'host' });
+                    handler(makeEntry({ level: 'WARN', message: 'context enriched' }));
+                }
+            });
+
+            // Assert
+            const arg = recordEntry.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+            expect(arg.data.requestId).toBe('req-abc-123');
+            expect(arg.data.method).toBe('POST');
+            expect(arg.data.path).toBe('/api/v1/protected/bookmarks');
+            expect(arg.data.userId).toBe('user-uuid-456');
+            // role must NOT be persisted — no column for it
+            expect(arg.data).not.toHaveProperty('role');
+        });
+
+        it('should omit all context fields when handler runs outside any ALS scope', () => {
+            // Arrange
+            const { service, recordEntry } = makeServiceMock();
+            const handler = createAppLogSinkHandler(service);
+
+            // Act — called at the top level, no runWithRequestContext wrapper
+            handler(makeEntry({ level: 'ERROR', message: 'no context' }));
+
+            // Assert
+            const arg = recordEntry.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+            expect(arg.data).not.toHaveProperty('requestId');
+            expect(arg.data).not.toHaveProperty('userId');
+            expect(arg.data).not.toHaveProperty('method');
+            expect(arg.data).not.toHaveProperty('path');
+        });
+
+        it('should include requestId, method, path but omit userId for an unauthenticated request', async () => {
+            // Arrange
+            const { service, recordEntry } = makeServiceMock();
+            const handler = createAppLogSinkHandler(service);
+
+            // Act — ALS scope active but actor never set (guest / public route)
+            await runWithRequestContext({
+                store: {
+                    requestId: 'req-guest-789',
+                    method: 'GET',
+                    path: '/api/v1/public/accommodations'
+                },
+                fn: async () => {
+                    handler(makeEntry({ level: 'WARN', message: 'unauthenticated' }));
+                }
+            });
+
+            // Assert
+            const arg = recordEntry.mock.calls[0]?.[0] as { data: Record<string, unknown> };
+            expect(arg.data.requestId).toBe('req-guest-789');
+            expect(arg.data.method).toBe('GET');
+            expect(arg.data.path).toBe('/api/v1/public/accommodations');
+            expect(arg.data).not.toHaveProperty('userId');
         });
     });
 

@@ -125,20 +125,12 @@ jobs:
         # isolated Python 3.12 env. Same rule packs + --error gate as the old
         # semgrep-action. semgrep is pinned so the same commit can't pass one
         # day and fail the next on changed rules.
-        #
-        # --exclude-rule dockerfile.security.missing-user: the prod Dockerfiles
-        # (apps/api, apps/web, apps/admin) currently run as root. This is a real
-        # finding but fixing it touches the Coolify deploy (container user,
-        # file/log permissions) and must be done + validated in a dedicated PR.
-        # Excluded here to keep parity with the previous semgrep-action gate
-        # (which did not flag it). TODO: add a non-root USER and drop this exclude.
         run: >-
           uvx --python 3.12 --from semgrep==1.164.0 semgrep scan
           --config p/typescript
           --config p/nodejs
           --config p/owasp-top-ten
           --config p/secrets
-          --exclude-rule dockerfile.security.missing-user.missing-user
           --error
 
   # ------------------------------------------------------------------

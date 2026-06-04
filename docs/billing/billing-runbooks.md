@@ -1,7 +1,7 @@
 # Billing operational runbooks
 
 > **Audience**: oncall, ops, anyone responding to a billing incident in production.
-> **Scope**: seven recurring failure scenarios with symptoms, investigation steps, resolution, and verification. NOT a feature reference — see [`packages/billing/docs/`](../../packages/billing/docs/) for that.
+> **Scope**: seven recurring failure scenarios with symptoms, investigation steps, resolution, and verification. NOT a feature reference — see [`packages/billing/docs/`](../../packages/billing/docs/README.md) for that.
 > **Companion docs**: [staging smoke](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md), [prod smoke + rollback](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md), [dispute handling v1](./dispute-handling-v1.md), [grace period source-of-truth](./grace-period-source-of-truth.md).
 > **Status**: SPEC-143 T-143-48, 2026-05-20.
 
