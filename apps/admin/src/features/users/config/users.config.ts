@@ -2,6 +2,7 @@ import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
 import type { z } from 'zod';
+import { CreateHostAccountAction } from '../components/CreateHostAccountAction';
 import { type User, UserListItemWithComputedFieldsSchema } from '../schemas/users.schemas';
 import { createUsersColumns } from './users.columns';
 
@@ -84,7 +85,10 @@ export const usersConfig: EntityConfig<User> = {
     layoutConfig: {
         showBreadcrumbs: true,
         showCreateButton: true,
-        createButtonPath: '/access/users/new'
+        createButtonPath: '/access/users/new',
+        // SPEC-182 T-012: staff "Create host account" modal trigger, shown before
+        // the standard create button. Self-gates on the USER_CREATE permission.
+        headerActionsComponent: CreateHostAccountAction
     },
 
     // Columns

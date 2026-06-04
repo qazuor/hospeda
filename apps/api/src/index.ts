@@ -6,6 +6,7 @@ import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import { getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
+import { LogFormat, configureLogger } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
@@ -16,6 +17,7 @@ import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { registerAppLogDbSink } from './lib/app-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
@@ -39,6 +41,13 @@ import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 // Validate environment variables before starting the server
 validateApiEnv();
 
+// Apply the global logger output format (pretty | json) from API_LOG_FORMAT.
+// FORMAT is a process-wide setting, so it belongs at server bootstrap (here),
+// not in the shared logger module that test mocks import.
+configureLogger({
+    FORMAT: env.API_LOG_FORMAT === 'json' ? LogFormat.JSON : LogFormat.PRETTY
+});
+
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
 
@@ -58,6 +67,10 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
+        // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.
+        registerAppLogDbSink();
 
         // SPEC-103 T-073: fail-fast healthcheck against an essential table.
         // The /health endpoint does NOT touch the DB by design, so an

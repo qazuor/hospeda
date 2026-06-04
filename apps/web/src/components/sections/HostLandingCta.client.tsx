@@ -26,6 +26,12 @@ import styles from './HostLandingCta.module.css';
 export interface HostLandingCtaProps {
     /** Current locale for building internal URLs and translating labels. */
     readonly locale: SupportedLocale;
+    /**
+     * Admin panel base URL for the host-mode CTA (SPEC-182). When the visitor
+     * is a HOST, the primary CTA points here instead of the create wizard.
+     * Undefined (env not configured) falls back to the wizard for everyone.
+     */
+    readonly adminUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -47,7 +53,7 @@ export interface HostLandingCtaProps {
  * <HostLandingCta client:load locale={locale} />
  * ```
  */
-export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
+export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.Element {
     const { data: session, isPending } = useSession();
 
     const { t } = createTranslations(locale);
@@ -58,8 +64,22 @@ export function HostLandingCta({ locale }: HostLandingCtaProps): JSX.Element {
 
     const isAuthenticated = !isPending && Boolean(session?.user);
 
-    const primaryHref = isAuthenticated ? newPropertyPath : signinPath;
-    const primaryLabel = t('host.landing.primaryCta', 'Publicar tu propiedad');
+    // SPEC-182 (D3): a HOST always has at least one published accommodation by
+    // the host-on-publish model, so role=HOST is enough to route the CTA to the
+    // admin panel — no extra API call. `role` is a Better Auth additional field
+    // returned in the session but absent from the client's inferred type.
+    // TYPE-WORKAROUND: cast narrows the runtime shape; falls back to undefined.
+    const role = (session?.user as { readonly role?: string } | undefined)?.role;
+    const isHostMode = isAuthenticated && role === 'HOST' && Boolean(adminUrl);
+
+    const primaryHref = isHostMode
+        ? (adminUrl as string)
+        : isAuthenticated
+          ? newPropertyPath
+          : signinPath;
+    const primaryLabel = isHostMode
+        ? t('host.landing.hostModeCta', 'Ir al panel de anfitrión')
+        : t('host.landing.primaryCta', 'Publicar tu propiedad');
     const secondaryLabel = t('host.landing.secondaryCta', 'Ver mis propiedades');
 
     return (

@@ -26,6 +26,7 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     '/billing/metrics': 'admin-menu.billing.metrics',
     '/billing/settings': 'admin-menu.billing.settings',
     '/platform/ops/cron': 'admin-menu.billing.cron',
+    '/platform/ops/logs': 'admin-menu.billing.appLogs',
     '/platform/email/logs': 'admin-menu.billing.notificationLogs',
     '/platform/ops/webhooks': 'admin-menu.billing.webhookEvents',
 

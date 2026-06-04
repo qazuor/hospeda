@@ -37,6 +37,13 @@ export interface DecideAuthedGuardArgs {
     readonly pathname: string;
     readonly preferredLocale: string;
     readonly siteUrl: string;
+    /**
+     * The admin app's own origin (e.g. `https://admin.hospeda.com.ar`). Used to
+     * build the ABSOLUTE `callbackUrl` for the web signin redirect (SPEC-182):
+     * the web signin only accepts absolute, allowlisted URLs, so the admin must
+     * advertise its own origin + the requested path as the return target.
+     */
+    readonly adminUrl: string;
 }
 
 /**
@@ -48,7 +55,13 @@ export type GuardDecision =
     | { readonly kind: 'allow'; readonly authState: AuthState }
     | {
           readonly kind: 'redirect-signin';
-          readonly search: { readonly redirect: string };
+          /**
+           * Absolute URL of the web signin page with the admin destination
+           * carried in an allowlisted `callbackUrl` param (SPEC-182). The admin
+           * no longer hosts its own signin page; unauthenticated users are sent
+           * to the unified web auth surface.
+           */
+          readonly href: string;
       }
     | {
           readonly kind: 'redirect-change-password';
@@ -75,6 +88,30 @@ const buildTouristFunnelHref = (siteUrl: string, locale: string): string => {
 };
 
 /**
+ * Build the absolute web signin URL an unauthenticated admin visitor is sent to
+ * (SPEC-182). The path the user was trying to reach is preserved as an ABSOLUTE
+ * admin URL in the `callbackUrl` param so the web signin — after a successful
+ * login — can validate it against its allowlist and redirect back into admin.
+ *
+ * @param siteUrl - The public web app origin (hosts the unified signin page)
+ * @param adminUrl - The admin app's own origin
+ * @param locale - The visitor's preferred locale
+ * @param pathname - The admin path the visitor originally requested
+ * @returns Absolute `{siteUrl}/{locale}/auth/signin/?callbackUrl={absolute admin URL}`
+ */
+const buildWebSigninHref = (
+    siteUrl: string,
+    adminUrl: string,
+    locale: string,
+    pathname: string
+): string => {
+    const callbackUrl = new URL(pathname, adminUrl).toString();
+    const target = new URL(`/${locale}/auth/signin/`, siteUrl);
+    target.searchParams.set('callbackUrl', callbackUrl);
+    return target.toString();
+};
+
+/**
  * Decide what the `/_authed` guard should do based on the resolved auth state
  * and request context.
  *
@@ -86,12 +123,12 @@ const buildTouristFunnelHref = (siteUrl: string, locale: string): string => {
  * @returns Guard decision descriptor.
  */
 export const decideAuthedGuard = (args: DecideAuthedGuardArgs): GuardDecision => {
-    const { authState, pathname, preferredLocale, siteUrl } = args;
+    const { authState, pathname, preferredLocale, siteUrl, adminUrl } = args;
 
     if (!authState.isAuthenticated) {
         return {
             kind: 'redirect-signin',
-            search: { redirect: pathname }
+            href: buildWebSigninHref(siteUrl, adminUrl, preferredLocale, pathname)
         };
     }
 

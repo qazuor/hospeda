@@ -614,6 +614,35 @@ The following warnings appear on every `pnpm dev` startup or page load and are *
 - `@vitejs/plugin-react` recommends switching to `@vitejs/plugin-react-oxc`. Out of scope.
 - `Open TanStack Devtools` floating button visible at the bottom-left of every page in dev. Cosmetic only — the button is gated by `env.NODE_ENV === 'development'` and never reaches production builds. Document, do not fix.
 
+### Accepted production-build warnings (`pnpm build`)
+
+`pnpm build` (Vite + Nitro) completes successfully (exit 0). It emits the dev-only
+recommendations above (plugin-react / `optimizeDeps.rollupOptions`) once per build
+environment, plus the following build-specific warnings. All were reviewed under
+BETA-81 and accepted — they are **not defects**. Do NOT "fix" them by swapping to
+`@vitejs/plugin-react-oxc` or removing `vite-tsconfig-paths`: those are explicitly
+out of scope (SPEC-117 CE-6, CE-8).
+
+- **`Module "crypto" has been externalized for browser compatibility`** (imported by
+  `@qazuor/qzpay-mercadopago/dist/index.js`). The MercadoPago SDK is pulled in
+  transitively via `@repo/billing` / `@repo/service-core` (aliased to `src/`); no
+  admin client code imports it directly. Its `crypto` usage is server-side (MP
+  webhook signing) and is never invoked from the browser — Vite stubs it to empty
+  in the client bundle. Benign; accepted.
+- **`"import.meta" is not available in the configured target environment ("es2019") and will be empty`**
+  (Nitro server build, e.g. `components-entity-*.js`). These are all
+  `import.meta.env.DEV` debug gates (EntityCreateContent, VirtualizedEntityList,
+  FilterSelect, …). In production `import.meta.env.DEV` resolves to falsy, so the
+  debug blocks correctly do NOT render. The empty value under Nitro's es2019
+  esbuild target is the desired behavior. Cosmetic; accepted.
+- **`(!) Some chunks are larger than 500 kB`** — worst case `components-entity`
+  (~4 MB), also `lib-utils` (~566 kB). Caused by the `manualChunks` rule
+  `id.includes('/components/entity-')` collapsing ~158 entity components + TipTap +
+  Leaflet + dnd-kit into one chunk. This is a **runtime load-performance** concern
+  only (it does NOT affect test time — Vitest never bundles — and only marginally
+  affects build time). Tracked separately for optimization in **BETA-86**; not a
+  blocker for BETA-81.
+
 ### Vite + `@repo/i18n` SSR cache (hard reload required after JSON edits)
 
 When you edit any `packages/i18n/src/locales/<locale>/<namespace>.json`, the running TanStack Start SSR Node process keeps the **old** flattened `trans` map in memory — HMR only refreshes CSS / TS modules, not JSON imports baked into pre-bundled deps. Symptom: pages render `[MISSING: <key>]` even though the JSON on disk has the new key.

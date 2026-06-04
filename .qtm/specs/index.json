@@ -474,14 +474,6 @@
             "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
         },
         {
-            "specId": "SPEC-179",
-            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
-            "status": "approved",
-            "complexity": "medium",
-            "path": "SPEC-179-self-hosted-pr-ci-runner",
-            "created": "2026-06-01T00:00:00.000Z"
-        },
-        {
             "specId": "SPEC-181",
             "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
             "type": "fix",
@@ -521,7 +513,7 @@
         {
             "specId": "SPEC-182",
             "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-182-unified-auth-host-access",
             "created": "2026-06-02T00:00:00.000Z",
@@ -564,14 +556,6 @@
             "archived": false,
             "archivedAt": null,
             "archiveNote": null
-        },
-        {
-            "specId": "SPEC-184",
-            "title": "API Log Observability",
-            "status": "in-progress",
-            "complexity": "medium",
-            "path": "SPEC-184-api-log-observability",
-            "created": "2026-06-02T00:00:00.000Z"
         },
         {
             "specId": "SPEC-185",

@@ -269,6 +269,36 @@ describe('NewsletterForm', () => {
                 expect(screen.getByRole('alert').textContent).toMatch(/no pudimos/i);
             });
         });
+
+        it('keeps the email input editable in the error state so a guest can correct and retry (BETA-25)', async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+            renderGuest();
+
+            // Mistype an email and submit → client-side validation → error state.
+            const input = screen.getByRole('textbox') as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'not-an-email' } });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+
+            // Regression: a guest input that flips to readonly in the error state
+            // can never be corrected — and a readonly input also suppresses the
+            // mobile keyboard (the BETA-25 symptom). It must stay editable.
+            const inputAfterError = screen.getByRole('textbox') as HTMLInputElement;
+            expect(inputAfterError).not.toHaveAttribute('readonly');
+            expect(inputAfterError).toHaveValue('not-an-email');
+
+            // Editing clears the error so the guest can resubmit.
+            fireEvent.change(inputAfterError, { target: { value: 'guest@example.com' } });
+            await waitFor(() => {
+                expect(screen.queryByRole('alert')).toBeNull();
+            });
+            expect(inputAfterError).toHaveValue('guest@example.com');
+        });
     });
 
     // =========================================================================
@@ -289,20 +319,35 @@ describe('NewsletterForm', () => {
             );
         });
 
-        it('renders form with pre-filled read-only email input', async () => {
+        it('renders the account email as static text, not an input', async () => {
             renderAuth();
-            // Wait for status fetch to resolve
+            // Wait for status fetch to resolve into idle-auth.
             await waitFor(() => {
-                const input = screen.getByRole('textbox');
-                expect(input).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
         });
 
-        it('email input is read-only in idle-auth state', async () => {
+        it('does NOT render an email input in idle-auth state (BETA-25 mobile keyboard)', async () => {
             renderAuth();
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveAttribute('readonly');
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
+            // Regression: a read-only <input> looks editable but never opens the
+            // keyboard on Android / Samsung Internet. The authed view must show
+            // the email as text, so there is no textbox at all.
+            expect(screen.queryByRole('textbox')).toBeNull();
+            // The visually-hidden label must not keep a dangling `for` pointing
+            // at the now-removed input id.
+            expect(document.querySelector('label')).not.toHaveAttribute('for');
+        });
+
+        it('shows a "Configurar" link to the newsletter settings page', async () => {
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
+            });
+            const configureLink = screen.getByRole('link', { name: /configurar/i });
+            expect(configureLink).toHaveAttribute('href', '/es/mi-cuenta/newsletter/');
         });
 
         it('calls GET /api/v1/protected/newsletter/status on mount', async () => {
@@ -354,9 +399,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
             renderAuth();
 
-            // Wait for status to resolve
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             const button = screen.getByRole('button', { name: /suscribirme/i });
@@ -384,8 +429,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
             renderAuth();
 
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             const form = screen.getByRole('form');
@@ -421,8 +467,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             fireEvent.submit(screen.getByRole('form'));
@@ -451,8 +498,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             fireEvent.submit(screen.getByRole('form'));
@@ -501,7 +549,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -790,7 +839,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -825,7 +875,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             // The alert role specifically targets the <p role="alert"> error paragraph
@@ -852,7 +903,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             // The alert role specifically targets the <p role="alert"> error paragraph
@@ -879,7 +931,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -904,7 +957,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -938,7 +992,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -969,7 +1024,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -996,7 +1052,8 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
             const form = screen.getByRole('form');
             const describedById = form.getAttribute('aria-describedby');
@@ -1019,7 +1076,8 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
             const liveRegion = document.querySelector('[aria-live="polite"]');
             expect(liveRegion).toBeInTheDocument();
@@ -1042,7 +1100,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -1051,7 +1110,7 @@ describe('NewsletterForm', () => {
             });
         });
 
-        it('email input has an associated label element', async () => {
+        it('authed email display has an associated label element via aria-labelledby', async () => {
             vi.stubGlobal(
                 'fetch',
                 mockFetchOk({
@@ -1063,10 +1122,13 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
-            const input = screen.getByRole('textbox');
-            const labelId = input.getAttribute('aria-labelledby');
+            // In authed mode there is no textbox; the email display div carries aria-labelledby
+            const authedEmailDiv = document.querySelector('[aria-labelledby]');
+            expect(authedEmailDiv).toBeInTheDocument();
+            const labelId = authedEmailDiv?.getAttribute('aria-labelledby');
             expect(labelId).toBeTruthy();
             const label = document.getElementById(labelId as string);
             expect(label).toBeInTheDocument();
@@ -1198,11 +1260,10 @@ describe('NewsletterForm', () => {
                 />
             );
 
-            // Read-only email input must be pre-filled with the cache email.
+            // After promotion to idle-auth the email is shown as static text, not an input.
             await waitFor(() => {
-                const input = screen.getByRole('textbox') as HTMLInputElement;
-                expect(input).toHaveAttribute('readonly');
-                expect(input.value).toBe('cached@example.com');
+                expect(screen.getByText('cached@example.com')).toBeInTheDocument();
+                expect(screen.queryByRole('textbox')).toBeNull();
             });
         });
 
@@ -1238,10 +1299,10 @@ describe('NewsletterForm', () => {
                 />
             );
 
+            // After promotion to idle-auth the email is shown as static text, not an input.
             await waitFor(() => {
-                const input = screen.getByRole('textbox') as HTMLInputElement;
-                expect(input).toHaveAttribute('readonly');
-                expect(input.value).toBe('fetched@example.com');
+                expect(screen.getByText('fetched@example.com')).toBeInTheDocument();
+                expect(screen.queryByRole('textbox')).toBeNull();
             });
 
             // First call is /auth/me, second is /status.

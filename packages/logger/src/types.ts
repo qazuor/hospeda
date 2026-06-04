@@ -43,6 +43,25 @@ export enum LogLevel {
 export type LogLevelType = keyof typeof LogLevel;
 
 /**
+ * Log output format enum
+ */
+export enum LogFormat {
+    /**
+     * Human-readable colored terminal output (chalk). Default — preserves
+     * existing pretty output.
+     */
+    PRETTY = 'PRETTY',
+
+    /**
+     * Newline-delimited JSON (NDJSON): one structured JSON object per line, no
+     * colors. Pipeable to jq and log aggregators.
+     */
+    JSON = 'JSON'
+}
+
+export type LogFormatType = keyof typeof LogFormat;
+
+/**
  * Base logger configuration interface
  */
 export interface BaseLoggerConfig {
@@ -65,6 +84,12 @@ export interface BaseLoggerConfig {
      * Whether to use colors in logs
      */
     USE_COLORS: boolean;
+
+    /**
+     * Output format for log lines: PRETTY (colored terminal, default) or JSON
+     * (NDJSON, no colors). When JSON, color settings are ignored.
+     */
+    FORMAT: LogFormatType;
 
     /**
      * Whether to save logs to a file

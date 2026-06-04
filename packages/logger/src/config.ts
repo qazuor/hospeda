@@ -4,7 +4,7 @@
  */
 
 import { getConfigFromEnv } from './environment.js';
-import { type BaseLoggerConfig, LogLevel, type LoggerConfig } from './types.js';
+import { type BaseLoggerConfig, LogFormat, LogLevel, type LoggerConfig } from './types.js';
 
 /**
  * Default logger configuration
@@ -14,6 +14,7 @@ export const defaultConfig: BaseLoggerConfig = {
     INCLUDE_TIMESTAMPS: true,
     INCLUDE_LEVEL: true,
     USE_COLORS: true,
+    FORMAT: LogFormat.PRETTY,
     SAVE: false,
     EXPAND_OBJECT_LEVELS: 2,
     TRUNCATE_LONG_TEXT: true,

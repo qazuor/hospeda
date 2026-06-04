@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    appLogPurgeJob,
     applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
@@ -56,7 +57,8 @@ export const cronJobs: CronJobDefinition[] = [
     abandonedPendingSubsJob,
     applyScheduledPlanChangesJob,
     subscriptionPollJob,
-    cronRunPurgeJob
+    cronRunPurgeJob,
+    appLogPurgeJob
 ];
 
 /**

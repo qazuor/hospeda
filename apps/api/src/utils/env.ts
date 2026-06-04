@@ -103,6 +103,15 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_SITE_URL: z.string().url('Must be a valid URL for the web app'),
     HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
+    /**
+     * Dev-only session-cookie domain override (SPEC-182). Set to
+     * `.hospeda.local` (with the `/etc/hosts` recipe in
+     * docs/guides/auth-local-dev.md) to share the Better Auth cookie across
+     * web/admin/api dev hosts, mirroring production cross-subdomain behavior.
+     * Ignored in production (the apex is pinned in auth-cookie-domain.ts).
+     */
+    HOSPEDA_DEV_COOKIE_DOMAIN: z.string().optional(),
+
     // Test / debug flags (explicit opt-in; use HOSPEDA_* names)
     // NOTE: we use string→boolean transform here instead of z.coerce.boolean()
     // because the latter has a notorious footgun: any non-empty string
@@ -163,6 +172,11 @@ export const ApiEnvBaseSchema = z.object({
     API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
     API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
     API_LOG_STRINGIFY: z.coerce.boolean().default(false),
+    API_LOG_FORMAT: z
+        .string()
+        .transform((val) => val.toLowerCase())
+        .pipe(z.enum(['pretty', 'json']))
+        .default('pretty'),
 
     // CORS
     API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),

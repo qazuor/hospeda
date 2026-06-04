@@ -49,6 +49,27 @@
         "confirm": "¿Estás seguro de que quieres suplantar a este usuario?",
         "error": "Error al suplantar usuario. Intenta de nuevo."
     },
+    "createHost": {
+        "trigger": "Crear host",
+        "title": "Crear cuenta de host",
+        "description": "Creá una cuenta con rol HOST. El nuevo host inicia sesión con la contraseña temporal que definas acá.",
+        "nameLabel": "Nombre*",
+        "namePlaceholder": "Nombre del host",
+        "emailLabel": "Email*",
+        "emailPlaceholder": "host@ejemplo.com",
+        "passwordLabel": "Contraseña temporal*",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "nameRequired": "El nombre es obligatorio",
+        "emailInvalid": "Ingresá un email válido",
+        "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+        "successTitle": "Cuenta de host creada",
+        "successMessage": "Se creó la cuenta de {{email}} con rol HOST.",
+        "errorTitle": "No se pudo crear la cuenta",
+        "errorMessage": "Ocurrió un error al crear la cuenta de host. Probá de nuevo.",
+        "cancel": "Cancelar",
+        "submit": "Crear host",
+        "submitting": "Creando..."
+    },
     "browserGate": {
         "title": "Tu navegador no es compatible con el panel de administración.",
         "message": "Esta herramienta requiere Chrome 111, Firefox 128, Safari 16.4 o superior. Por favor, actualizá tu navegador para continuar.",

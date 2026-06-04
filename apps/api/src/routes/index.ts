@@ -58,6 +58,7 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
+import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
@@ -332,6 +333,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
+
+        // Admin app log viewer (SPEC-184)
+        app.route('/api/v1/admin/logs', adminAppLogRoutes);
 
         // Conversations admin (SPEC-085 T-011)
         app.route('/api/v1/admin/conversations', adminConversationsRouter);

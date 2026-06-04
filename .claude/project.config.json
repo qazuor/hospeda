@@ -40,18 +40,23 @@
         {
             "file": "apps/api/.env.local",
             "vars": {
+                "API_PORT": "{api}",
                 "HOSPEDA_API_URL": "http://localhost:{api}",
                 "HOSPEDA_SITE_URL": "http://localhost:{web}",
                 "HOSPEDA_ADMIN_URL": "http://localhost:{admin}",
                 "API_CORS_ORIGINS": "http://localhost:{admin},http://localhost:{web}",
-                "HOSPEDA_BETTER_AUTH_URL": "http://localhost:{api}/api/auth"
+                "HOSPEDA_BETTER_AUTH_URL": "http://localhost:{api}/api/auth",
+                "PUBLIC_API_URL": "http://localhost:{api}",
+                "PUBLIC_SITE_URL": "http://localhost:{web}"
             }
         },
         {
             "file": "apps/web/.env.local",
             "vars": {
                 "HOSPEDA_API_URL": "http://localhost:{api}",
-                "HOSPEDA_SITE_URL": "http://localhost:{web}"
+                "HOSPEDA_SITE_URL": "http://localhost:{web}",
+                "HOSPEDA_ADMIN_URL": "http://localhost:{admin}",
+                "PUBLIC_ADMIN_URL": "http://localhost:{admin}"
             }
         },
         {
@@ -60,7 +65,12 @@
                 "VITE_API_URL": "http://localhost:{api}",
                 "HOSPEDA_API_URL": "http://localhost:{api}",
                 "VITE_BETTER_AUTH_URL": "http://localhost:{api}/api/auth",
-                "VITE_SITE_URL": "http://localhost:{web}"
+                "VITE_SITE_URL": "http://localhost:{web}",
+                "VITE_ADMIN_URL": "http://localhost:{admin}",
+                "HOSPEDA_ADMIN_URL": "http://localhost:{admin}",
+                "HOSPEDA_SITE_URL": "http://localhost:{web}",
+                "PUBLIC_API_URL": "http://localhost:{api}",
+                "PUBLIC_SITE_URL": "http://localhost:{web}"
             }
         }
     ],

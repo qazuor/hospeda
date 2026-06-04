@@ -2,7 +2,7 @@
 specId: SPEC-182
 title: Unified Authentication + Host-Mode Access Model
 type: feature
-status: in-progress
+status: completed
 complexity: high
 owner: qazuor
 created: 2026-06-02

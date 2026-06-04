@@ -1,4 +1,5 @@
 export * from './accommodation/accommodation.service';
+export * from './appLog/index.js';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
 export * from './accommodationReview/accommodationReview.service';

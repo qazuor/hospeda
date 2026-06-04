@@ -67,4 +67,40 @@ describe('signin.astro', () => {
             expect(src).toContain('initialOAuthError={initialOAuthError}');
         });
     });
+
+    // SPEC-182 — accept a cross-app callbackUrl (e.g. the admin panel) and use
+    // it as the post-login destination after allowlist validation.
+    describe('callbackUrl handling (SPEC-182)', () => {
+        it('reads ?callbackUrl= from the query string', () => {
+            expect(src).toContain("Astro.url.searchParams.get('callbackUrl')");
+        });
+
+        it('validates callbackUrl against the allowlist via validateCallbackUrl', () => {
+            expect(src).toContain('validateCallbackUrl');
+            expect(src).toContain("from '@/lib/auth-callback'");
+        });
+
+        it('resolves the allowlist against the configured site and admin origins', () => {
+            expect(src).toContain('getSiteUrl');
+            expect(src).toContain('getAdminUrl');
+            expect(src).toContain('isProduction');
+        });
+
+        it('lets a valid callbackUrl take precedence over returnUrl on the auth redirect', () => {
+            expect(src).toMatch(
+                /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
+            );
+        });
+
+        it('uses a valid callbackUrl as the redirectTo passed to the SignIn island', () => {
+            expect(src).toMatch(/redirectTo\s*=\s*validatedCallbackUrl\s*\?\?/);
+        });
+
+        it('flags the island redirect as external when a validated callbackUrl is present', () => {
+            // Without this flag the island's host-strip+reattach workaround
+            // rewrites the admin URL onto the web origin and the post-login
+            // redirect to admin silently breaks (SPEC-182 follow-up fix).
+            expect(src).toMatch(/externalRedirect=\{Boolean\(validatedCallbackUrl\)\}/);
+        });
+    });
 });
