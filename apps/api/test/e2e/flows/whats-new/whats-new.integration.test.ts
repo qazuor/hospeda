@@ -118,18 +118,23 @@ const FUTURE_ENTRY: WhatsNewEntry = {
 };
 
 /**
- * Injects entries into the module-level `whatsNewEntries` array used by the
- * route handler. Returns a `restore` function to clear the array after each
- * test. Works because `singleFork: true` gives a single module registry.
+ * Restore hook for the injected catalog. Registered by {@link injectEntries}
+ * and ALWAYS invoked from `afterEach` — never from test bodies — so a failing
+ * assertion can never leave the module singleton mutated for later tests.
  */
-async function injectEntries(entries: WhatsNewEntry[]): Promise<{ restore: () => void }> {
+let restoreEntries: () => void = () => undefined;
+
+/**
+ * Injects entries into the module-level `whatsNewEntries` array used by the
+ * route handler. Works because `singleFork: true` gives a single module
+ * registry. Cleanup is automatic via the suite's `afterEach`.
+ */
+async function injectEntries(entries: WhatsNewEntry[]): Promise<void> {
     const mod = await import('../../../../src/data/whats-new/whats-new.js');
     const real = mod.whatsNewEntries;
     real.splice(0, real.length, ...entries);
-    return {
-        restore: () => {
-            real.splice(0, real.length);
-        }
+    restoreEntries = () => {
+        real.splice(0, real.length);
     };
 }
 
@@ -165,6 +170,8 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
     });
 
     afterEach(async () => {
+        restoreEntries();
+        restoreEntries = () => undefined;
         if (!dbAvailable) return;
         await testDb.clean();
     });
@@ -178,7 +185,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'first GET for a user without whatsNew state creates baselineAt + seenIds=[] in DB',
             async () => {
                 // Arrange
-                const { restore } = await injectEntries([UNIVERSAL_ENTRY]);
+                await injectEntries([UNIVERSAL_ENTRY]);
 
                 const user = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -229,8 +236,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 expect(typeof whatsNewState?.baselineAt).toBe('string');
                 expect(Array.isArray(whatsNewState?.seenIds)).toBe(true);
                 expect(whatsNewState?.seenIds).toHaveLength(0);
-
-                restore();
             }
         );
 
@@ -238,7 +243,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'second GET does not overwrite the already-persisted baselineAt',
             async () => {
                 // Arrange
-                const { restore } = await injectEntries([UNIVERSAL_ENTRY]);
+                await injectEntries([UNIVERSAL_ENTRY]);
 
                 const user = await createTestUser({ role: RoleEnum.ADMIN });
                 const actor = createMockActor(
@@ -275,8 +280,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 const whatsNew2 = (afterSecond?.onboarding as Record<string, unknown> | undefined)
                     ?.whatsNew as { baselineAt?: string } | undefined;
                 expect(whatsNew2?.baselineAt).toBe(baselineAtFirst);
-
-                restore();
             }
         );
     });
@@ -361,7 +364,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'HOST user receives HOST-targeted entries but not ADMIN-only entries',
             async () => {
                 // Arrange
-                const { restore } = await injectEntries([HOST_ENTRY, ADMIN_ENTRY, UNIVERSAL_ENTRY]);
+                await injectEntries([HOST_ENTRY, ADMIN_ENTRY, UNIVERSAL_ENTRY]);
 
                 const hostUser = await createTestUser({
                     role: RoleEnum.HOST,
@@ -391,8 +394,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 expect(ids).toContain(HOST_ENTRY.id);
                 expect(ids).toContain(UNIVERSAL_ENTRY.id);
                 expect(ids).not.toContain(ADMIN_ENTRY.id);
-
-                restore();
             }
         );
 
@@ -400,7 +401,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'ADMIN user receives ADMIN-targeted entries but not HOST-only entries',
             async () => {
                 // Arrange
-                const { restore } = await injectEntries([HOST_ENTRY, ADMIN_ENTRY, UNIVERSAL_ENTRY]);
+                await injectEntries([HOST_ENTRY, ADMIN_ENTRY, UNIVERSAL_ENTRY]);
 
                 const adminUser = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -430,8 +431,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 expect(ids).toContain(ADMIN_ENTRY.id);
                 expect(ids).toContain(UNIVERSAL_ENTRY.id);
                 expect(ids).not.toContain(HOST_ENTRY.id);
-
-                restore();
             }
         );
     });
@@ -445,7 +444,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'en locale returns en title when entry has en translation',
             async () => {
                 // Arrange
-                const { restore } = await injectEntries([UNIVERSAL_ENTRY]);
+                await injectEntries([UNIVERSAL_ENTRY]);
 
                 const user = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -476,8 +475,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 );
                 expect(item).toBeDefined();
                 expect(item?.title).toBe('For everyone in english');
-
-                restore();
             }
         );
 
@@ -485,7 +482,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'en locale falls back to es when entry has no en translation',
             async () => {
                 // Arrange — entry with no en title/body
-                const { restore } = await injectEntries([UNIVERSAL_NO_EN]);
+                await injectEntries([UNIVERSAL_NO_EN]);
 
                 const user = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -516,8 +513,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 );
                 expect(item).toBeDefined();
                 expect(item?.title).toBe('Título sin inglés');
-
-                restore();
             }
         );
     });
@@ -589,7 +584,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'entry with publishedAt before baselineAt is returned as seen:true even with empty seenIds',
             async () => {
                 // Arrange — entry published in PAST; baseline is in FUTURE
-                const { restore } = await injectEntries([PAST_ENTRY]);
+                await injectEntries([PAST_ENTRY]);
 
                 const user = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -619,8 +614,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 const item = body.data.items.find((i: { id: string }) => i.id === PAST_ENTRY.id);
                 expect(item).toBeDefined();
                 expect(item?.seen).toBe(true);
-
-                restore();
             }
         );
 
@@ -628,7 +621,7 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
             'entry with publishedAt after baselineAt and not in seenIds is returned as seen:false',
             async () => {
                 // Arrange — entry published in FUTURE; baseline is in PAST
-                const { restore } = await injectEntries([FUTURE_ENTRY]);
+                await injectEntries([FUTURE_ENTRY]);
 
                 const user = await createTestUser({
                     role: RoleEnum.ADMIN,
@@ -659,8 +652,6 @@ describe('SPEC-175 T-019 — whats-new integration tests (real DB)', () => {
                 expect(item).toBeDefined();
                 expect(item?.seen).toBe(false);
                 expect(body.data.unseenCount).toBeGreaterThanOrEqual(1);
-
-                restore();
             }
         );
     });

@@ -16,8 +16,13 @@ export const WhatsNewSeenBodySchema = z.object({
      * Each id must be a non-empty string (matches the `id` field of
      * {@link WhatsNewEntrySchema}). At least one id is required — an empty
      * array is rejected with HTTP 400.
+     *
+     * Bounded defensively: at most 50 ids per call, each at most 100 chars.
+     * `seenIds` persists per-user in a JSONB column; these caps (together
+     * with the route's 30 req/min rate limit) prevent unbounded growth from
+     * a buggy or malicious client. Legitimate clients never approach them.
      */
-    ids: z.array(z.string().min(1)).min(1)
+    ids: z.array(z.string().min(1).max(100)).min(1).max(50)
 });
 
 /** Inferred TypeScript type for {@link WhatsNewSeenBodySchema}. */

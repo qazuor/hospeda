@@ -95,9 +95,7 @@ export function renderMarkdownToHtml(markdown: string): string {
         editor?.destroy();
     }
 
-    // Defence-in-depth DOMPurify pass.
-    // In non-browser environments (SSR/test without window) DOMPurify is a
-    // no-op — TipTap's allowlist has already handled the content.
+    // Defence-in-depth DOMPurify pass (AC-13).
     if (typeof window !== 'undefined' && DOMPurify.isSupported) {
         return DOMPurify.sanitize(html, {
             ALLOWED_TAGS: [...DOMPURIFY_ALLOWED_TAGS],
@@ -107,5 +105,10 @@ export function renderMarkdownToHtml(markdown: string): string {
         });
     }
 
-    return html;
+    // No DOMPurify available (SSR / non-browser runtime): never return raw
+    // HTML without the second sanitisation layer. The modal only renders
+    // client-side (it opens from effects/interactions), so this path is not
+    // reachable in practice — but if it ever is, degrade to escaped plain
+    // text instead of single-layer HTML (AC-13 defence-in-depth).
+    return `<p>${markdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`;
 }
