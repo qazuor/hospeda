@@ -381,82 +381,82 @@
             "id": "T-008",
             "title": "Polish the generic GridCard component",
             "description": "Improve the visual quality of the generic `GridCard` component: stronger hierarchy, dedicated action affordance, responsive single-column reflow, and a proper empty state.\n\n**Files to modify**:\n- `apps/admin/src/components/grid/GridCard.tsx`\n- (optionally) the grid container component that renders the empty state\n\n**Polish targets**:\n1. **Visual hierarchy**: Entity title should be the most prominent element (font-size, weight). Secondary fields smaller. Avoid flat uniform-weight text blocks.\n2. **Action affordance**: Peek / Edit / Delete actions should have a clear, consistently positioned action bar or overlay (e.g. bottom strip or top-right icon cluster). Must be keyboard-accessible (tabIndex, aria-label).\n3. **Responsive reflow**: Grid uses CSS grid. On narrow viewports (< `sm`), cards reflow to a single column without horizontal overflow. Use Tailwind `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` or equivalent.\n4. **Empty state**: When the grid has zero rows, render a styled empty state (icon + message) that visually aligns with the web app design system. Match the pattern used by other empty states in the admin app (check `apps/admin/src/components/` for an existing empty-state component or pattern).\n5. **Tailwind v4 only** \u2014 no CSS modules.\n\n**Acceptance criteria**:\n- Polished generic card renders for any entity config that lacks `renderCard`\n- Empty state renders when zero rows are present\n- Cards reflow to single column on narrow viewport (test: resize or snapshot)\n- Action buttons remain accessible (aria-label, keyboard reachable)\n- Existing entity configs are unaffected (backward compatible \u2014 no config changes needed)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Improve visual hierarchy in GridCard (title prominence, field sizing)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add action affordance (peek/edit/delete action bar or overlay with aria-labels)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix responsive reflow (single column on narrow viewport)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement grid empty state (icon + message, aligned with admin design)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: generic card renders for a config, empty state renders at 0 rows, responsive snapshot",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-3", "admin", "grid", "components", "ui", "beta-72"],
             "phase": "phase3-grid-card-polish",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add gridConfig.renderCard and GridCardRenderProps to EntityConfig",
             "description": "Add the per-entity override mechanism to the entity config type system.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/types.ts`\n- `apps/admin/src/components/grid/GridCard.tsx` (or whichever component resolves which card to render)\n\n**What to implement**:\n1. In `types.ts`, add to the existing `gridConfig` sub-shape:\n   ```ts\n   renderCard?: (props: GridCardRenderProps<TData>) => ReactNode;\n   ```\n2. Define `GridCardRenderProps<TData>` in the same file:\n   ```ts\n   export interface GridCardRenderProps<TData> {\n     row: TData;\n     onPeek: (row: TData) => void;\n     onEdit: (row: TData) => void;\n     onDelete: (row: TData) => void;\n   }\n   ```\n3. In the grid renderer (wherever `GridCard` is instantiated per row), check:\n   - If `gridConfig.renderCard` is defined \u2192 call it with `{ row, onPeek, onEdit, onDelete }`.\n   - Otherwise \u2192 render the polished generic `<GridCard>` (the T-008 version).\n4. Add comprehensive JSDoc on `GridCardRenderProps<TData>` and `renderCard`.\n\n**Acceptance criteria**:\n- When `renderCard` is absent, polished generic card renders (backward compatible)\n- When `renderCard` is present, the custom renderer is called with the correct props\n- `GridCardRenderProps<TData>` is exported and usable by external feature config files\n- Tests: generic card used when `renderCard` absent; custom renderer called when `renderCard` present\n- `pnpm typecheck` passes \u2014 no `any` types",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Add renderCard?: (props: GridCardRenderProps<TData>) => ReactNode to gridConfig in types.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Define and export GridCardRenderProps<TData> interface with row + 3 action callbacks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire renderCard fallback in grid renderer: custom if present, polished generic otherwise",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: generic card default, custom renderer dispatch, action callback signatures",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-3", "admin", "types", "grid", "entity-config", "beta-72"],
             "phase": "phase3-grid-card-polish",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
@@ -470,11 +470,11 @@
             "subtasks": [
                 {
                     "title": "Run pnpm --filter hospeda-admin test \u2014 GridCard + renderCard tests GREEN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm typecheck and pnpm lint \u2014 both 0 errors",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Manual browser smoke: polished card visual check + narrow-viewport reflow",
@@ -488,13 +488,13 @@
             "tags": ["SPEC-185", "phase-3", "testing", "quality-gate", "beta-72"],
             "phase": "phase3-grid-card-polish",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T00:00:00.000Z",
                 "completed": null
             }
         },
