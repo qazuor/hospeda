@@ -1,0 +1,412 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-174-admin-welcome-tour",
+    "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+    "created": "2026-06-04T16:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add tour-progress body schema to @repo/schemas",
+            "description": "Add TourProgressBodySchema ({ tourId: z.string().min(1).max(100), version: z.number().int().nonnegative() }) next to the whats-new http schemas pattern (entities/user/ or a tour entity dir — match whats-new.http.schema.ts conventions). NOTE: UserSettingsSchema.onboarding.adminTours ALREADY EXISTS (SPEC-175 T-002) — no settings delta needed. Export inferred type + wire into the barrel. Tests: valid body parses; empty tourId rejects; negative/float version rejects.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-009"],
+            "subtasks": [],
+            "tags": ["schemas", "phase-backend"],
+            "phase": "backend",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add markAdminTourSeen service method (RMW merge)",
+            "description": "Add markAdminTourSeen({ actor, tourId, version }) to packages/service-core/src/services/user/user.service.ts MIRRORING markWhatsNewSeen (read current settings, set settings.onboarding.adminTours[tourId] = version preserving ALL siblings incl. onboarding.whatsNew). The settings JSONB column is REPLACE-mode (D16) — defensive read-modify-write mandatory. Tests per spec §6.3: siblings preserved (incl. whatsNew.baselineAt/seenIds); upsert overwrites version for same tourId; missing onboarding initializes cleanly; Result<T> error paths.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-backend"],
+            "phase": "backend",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Implement PATCH /api/v1/protected/users/me/tour-progress",
+            "description": "Route apps/api/src/routes/user/protected/tourProgress.ts + registration in routes/user/protected/index.ts, MIRRORING whatsNewSeen.ts: createProtectedRoute, USER_SETTINGS_UPDATE guard (D16), customRateLimit { requests: 30, windowMs: 60000 }, body TourProgressBodySchema, delegates to markAdminTourSeen. Tests per spec §14: invalid body 400; valid 200 + service called; merge does not clobber sibling settings; 401 unauthenticated.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["api", "route", "phase-backend"],
+            "phase": "backend",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:10:59.000Z",
+                "completed": "2026-06-04T16:26:46.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extract config/ia/primitives.ts (I18nLabel + permission primitives)",
+            "description": "Per spec §7.1: extract I18nLabelSchema + permission gate primitives from apps/admin/src/config/ia/schema.ts into NEW primitives.ts; schema.ts re-exports for backward compat (zero behavior change). Purpose: avoid ESM cycle with tour.schema.ts. ALL existing config tests must stay green (run test/config/ia/ + src/config/ia/__tests__/ — the full pre-existing suites, not just new files).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["admin", "config-ia", "phase-config"],
+            "phase": "config",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create tour.schema.ts with Tour/Step shapes + KNOWN_DATA_TOUR_IDS",
+            "description": "NEW apps/admin/src/config/ia/tour.schema.ts per spec §7.1: Tour { id, roles: 'all'|RoleEnum[], kind: 'welcome'|'contextual', route?, version int>0, trigger: 'auto-first-visit'|'manual', showWelcomeModal, steps[] }; Step { id, target: 'center'|'data-tour:<id>', title/body I18nLabel, side?, align?, permissions? }; KNOWN_DATA_TOUR_IDS registry (initial set per §7.7: main-menu, main-menu-section-<id>, sidebar, dashboard-region, quick-create, command-palette, notifications, user-menu, bottom-nav). Imports from primitives.ts. Unit tests: valid tour parses; contextual requires route; welcome forbids route; unique step ids; bad target shape rejects.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007", "T-008", "T-011", "T-012"],
+            "subtasks": [],
+            "tags": ["admin", "config-ia", "zod", "phase-config"],
+            "phase": "config",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:10:59.000Z",
+                "completed": "2026-06-04T16:26:46.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire tours into AdminIAConfigSchema with cross-checks T1-T3",
+            "description": "Modify apps/admin/src/config/ia/schema.ts: add tours: ToursRecordSchema to AdminIAConfigSchema + superRefine cross-checks per spec §7.1: T1 every non-center target ∈ KNOWN_DATA_TOUR_IDS; T2 roles !== 'all' → each role exists in config.roles and is enabled; T3 contextual route equals some section.route/defaultRoute. Negative tests for each cross-check (bad target / disabled role / unknown route fail safeParse). Run the FULL pre-existing config suites after.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["admin", "config-ia", "zod", "phase-config"],
+            "phase": "config",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:26:46.000Z",
+                "completed": "2026-06-04T17:01:44.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create tours.ts initial catalog + index.ts wiring",
+            "description": "NEW apps/admin/src/config/ia/tours.ts typed z.input<typeof ToursRecordSchema> with the 4 WELCOME tours (host/editor/admin/superAdmin .welcome per spec §9 step outlines, real es/en/pt content for greeting + menu + dashboard + quick-create + help steps) and STUBS ready for the 15 contextual tours (added in T-016). Wire tours into rawConfig in config/ia/index.ts (validate.ts already parses all — boot validation must stay green). Confirm routes against sections.ts. Tests: catalog parses through full config; welcome tours resolve for each enabled role.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-011", "T-016"],
+            "subtasks": [],
+            "tags": ["admin", "config-ia", "content", "phase-config"],
+            "phase": "config",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:26:46.000Z",
+                "completed": "2026-06-04T17:01:44.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement pure lib/tour modules (4) + unit tests",
+            "description": "apps/admin/src/lib/tour/ per spec §7.3 (pure, no React/DOM): compare-version.ts shouldOfferTour({ configVersion, seenVersion }); resolve-step-text.ts locale fallback (align with use-localized-label.ts); build-driver-steps.ts Tour→DriveStep[] (permission filter via expandPermissions ∩ userPermissions, 'center'→no element, 'data-tour:x'→[data-tour=\"x\"], localized title/body, side/align; import type only for driver.js types); decide-auto-trigger.ts per D9+D13: welcome > contextual priority, version-aware, returns 'welcome-redirect' decision when welcome eligible but route !== dashboard. Unit tests: shouldOfferTour truth table; locale matrix; buildDriverSteps center/data-tour/permission-filter; decideAutoTrigger matrix incl. D13 redirect case and seen-suppression.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "pure-logic", "phase-engine"],
+            "phase": "engine",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T17:01:44.000Z",
+                "completed": "2026-06-04T17:38:05.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement use-admin-tour-state.ts (Query + PATCH mutation)",
+            "description": "apps/admin/src/hooks/use-admin-tour-state.ts per spec §7.5: useQuery ['user','settings',userId] against the owner-scoped protected GET (NOT the dead admin-tier hooks); useMutation → PATCH /users/me/tour-progress with optimistic update + invalidate. Expose hasSeen(tourId, version) (seenVersion>=configVersion semantics via shouldOfferTour) and markSeen({ tourId, version }). Tests: load lifecycle; markSeen optimistic + correct body; rollback on failure.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["admin", "hook", "tanstack-query", "phase-engine"],
+            "phase": "engine",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:10:59.000Z",
+                "completed": "2026-06-04T16:26:46.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add driver.js + tour-context.tsx engine + TourWelcomeModal",
+            "description": "Install driver.js in apps/admin (D2 owner-approved dependency-policy exception — document in PR). apps/admin/src/contexts/tour-context.tsx per spec §7.4: TourProvider + useTour() { isRunning, activeTourId, startTour({ tourId }), stopTour() }; startTour: trackEvent admin.tour.shown → TourWelcomeModal (Radix Dialog, Saltar/Mostrame) when showWelcomeModal → lazy import('driver.js') → buildDriverSteps → run spotlight (showProgress, allowClose, keyboard, localized chrome via t('admin-common.tour.*')) → finish/skip → markSeen + trackEvent completed|skipped. Driver instance in useRef, destroyed on unmount. Driver CSS import + admin theme overrides in styles.css. prefers-reduced-motion → animate:false. Components/whats-new pattern for component dir. Tests: welcome modal Saltar/Mostrame; startTour event flow with driver mocked; reduced-motion flag.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": ["T-013", "T-014", "T-015"],
+            "subtasks": [],
+            "tags": ["admin", "engine", "driver-js", "phase-engine"],
+            "phase": "engine",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T17:38:05.000Z",
+                "completed": "2026-06-04T18:24:57.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement use-tours.ts selectors",
+            "description": "apps/admin/src/hooks/use-tours.ts per spec §7.2: useTourById, useToursForRole, useWelcomeTourForRole, useContextualTourForRoute({ pathname }) matching via useCurrentSection() → tour.route === (section.defaultRoute ?? section.route). RO-RO, named exports. Tests: role resolution incl. D14 reuse (SUPER_ADMIN gets admin.* contextual + super-specific plataforma/analisis); route matching; unknown role → empty.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [],
+            "tags": ["admin", "hook", "phase-engine"],
+            "phase": "engine",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T17:01:44.000Z",
+                "completed": "2026-06-04T17:38:05.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add data-tour attributes across layout components",
+            "description": "Per spec §7.7 (additive, zero behavior change): main-menu + main-menu-section-<id> (MainMenu.tsx), sidebar (Sidebar.tsx), dashboard-region (dashboard page), quick-create (QuickCreate.tsx), command-palette + notifications (Header.tsx), user-menu (header-user.tsx), bottom-nav (BottomNav.tsx). Keep KNOWN_DATA_TOUR_IDS in sync (T-005 registry). Steps with permission-gated targets must carry matching permissions or tolerate absence (driver.js skips; adminLogger.warn). CRITICAL: run ALL pre-existing suites touching these components (Header.test.tsx, BottomNav.test.tsx, MainMenu/Sidebar suites — rg -l the component names over test dirs) before committing.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-013", "T-016"],
+            "subtasks": [],
+            "tags": ["admin", "layout", "phase-wiring"],
+            "phase": "wiring",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T17:01:44.000Z",
+                "completed": "2026-06-04T17:38:05.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement TourAutoTrigger with D13 redirect + D12 whats-new suppression",
+            "description": "apps/admin/src/components/tour/TourAutoTrigger.tsx (headless) per spec §7.6 + D13: useEffect keyed [pathname, isLoaded, role]; bail if !isLoaded || isRunning || !role; decideAutoTrigger; when decision is 'welcome-redirect' (welcome eligible, route !== dashboard) navigate({ to: '/dashboard' }) and let the dashboard pass fire the tour; redirect ONLY when tour will actually be offered, never post-seen/skip, never for manual replay. Double-rAF before startTour (data-tour targets painted). useRef latch per pathname (strict mode). Mount in AppLayout below _authed. D12 WIRING: pass suppressed={welcomeTourUnseen} to the existing WhatsNewAutoTrigger so the What's New auto-modal defers while the welcome tour is pending (seam shipped in SPEC-175). Tests: no fire while loading; fires once; redirect case; no redirect when seen; suppression passed correctly; latch.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["admin", "auto-trigger", "cross-spec", "phase-wiring"],
+            "phase": "wiring",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T18:24:57.000Z",
+                "completed": "2026-06-04T18:42:52.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add Ver guia entry points + tour i18n chrome keys",
+            "description": "Modify apps/admin/src/integrations/clerk/header-user.tsx per spec §7.8: 'Ver guía' (relaunch role welcome via useWelcomeTourForRole; manual replay ignores version but markSeen on finish) + 'Ver guía de esta página' (only when useContextualTourForRoute returns a tour). Add tour.* chrome keys (next/prev/done/skip/replay/replayPage) to the admin i18n bundle es/en/pt (follow admin-whats-new.json wiring pattern in packages/i18n: imports + rawTranslations + namespaces array, or extend admin-common if that is where chrome strings live — match existing). Tests: items by role/route; replay ignores version. Run pre-existing header-user suites.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["admin", "i18n", "entry-points", "phase-wiring"],
+            "phase": "wiring",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T18:24:57.000Z",
+                "completed": "2026-06-04T18:42:52.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "A11y pass: reduced-motion, focus, keyboard",
+            "description": "Per spec §7.9: verify driver.js focus trap + restore, ESC/overlay skip, keyboard nav enabled; prefers-reduced-motion → animate:false + drop Dialog enter/exit animation; aria on welcome modal (Radix handles base). Add targeted tests where feasible (reduced-motion flag propagation, ESC handling in welcome modal).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["admin", "a11y", "phase-wiring"],
+            "phase": "wiring",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T18:24:57.000Z",
+                "completed": "2026-06-04T18:42:52.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Author the 15 contextual mini-tours content (es/en/pt)",
+            "description": "Complete tours.ts with the 15 contextual tours per spec §9 table (host: misAlojamientos/consultas/miFacturacion/miCuenta; editor: editorial/analisis/miCuenta; admin: catalogo/editorial/comunidad/comercial/plataforma/analisis; superAdmin: plataforma/analisis variants — D14). Confirm every route against sections.ts; add per-section data-tour anchors where a mini-tour needs them (extend T-012 registry accordingly). Friendly, non-technical es content (en/pt translations); steps follow D7 (inline I18nLabel). Config boot validation green; cross-check tests still pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-012"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["admin", "content", "i18n", "phase-content"],
+            "phase": "content",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T18:42:52.000Z",
+                "completed": "2026-06-04T18:58:17.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Backend integration tests: tour-progress with real DB",
+            "description": "vitest e2e suite (vitest.config.e2e.ts pattern, real DB, restore via afterEach per SPEC-175 lesson): PATCH persists tourId→version in settings.onboarding.adminTours; sibling preservation incl. whatsNew keys (mirror of SPEC-175 AC-17 from the other side); upsert same tourId; version semantics; 401/400 paths with real middleware.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "integration-tests", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T16:26:46.000Z",
+                "completed": "2026-06-04T17:01:44.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Admin integration tests: full tour flows (cross-surface)",
+            "description": "Testing Library integration per spec §14: welcome auto-fires once on dashboard when unseen (driver.js mocked); D13 redirect from non-dashboard route; suppressed WhatsNewAutoTrigger while welcome unseen, releases after finish/skip (D12 end-to-end in component tree); contextual fires on first section visit; version bump re-offers; manual replay ignores version; markSeen wiring. SWEEP RULE (SPEC-175 lesson): before finishing, rg -l every touched component/config symbol over apps/admin/test and src __tests__ dirs and run ALL matching pre-existing suites, not just new files.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014", "T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "integration-tests", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:00:00.000Z",
+                "started": "2026-06-04T18:58:17.000Z",
+                "completed": "2026-06-04T20:15:42.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 18,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

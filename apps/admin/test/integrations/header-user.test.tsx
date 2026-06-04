@@ -47,7 +47,38 @@ vi.mock('@/lib/auth-client', () => ({
 vi.mock('@tanstack/react-router', () => ({
     useRouter: () => ({
         navigate: mockNavigate
+    }),
+    useLocation: () => ({ pathname: '/dashboard' })
+}));
+
+vi.mock('@/contexts/tour-context', () => ({
+    useTour: () => ({
+        isRunning: false,
+        activeTourId: null,
+        startTour: vi.fn(),
+        stopTour: vi.fn()
     })
+}));
+
+vi.mock('@/hooks/use-tours', () => ({
+    useWelcomeTourForRole: () => undefined,
+    useContextualTourForRoute: () => undefined
+}));
+
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        t: (key: string) => key,
+        locale: 'es'
+    })
+}));
+
+vi.mock('@repo/media', () => ({
+    getMediaUrl: (src: string) => src
+}));
+
+vi.mock('@repo/icons', () => ({
+    CompassIcon: () => null,
+    MapIcon: () => null
 }));
 
 import { HeaderUser } from '@/integrations/clerk/header-user';

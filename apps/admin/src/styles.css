@@ -13,6 +13,9 @@
 
 @import "tw-animate-css";
 
+/* driver.js base styles (SPEC-174 tour engine). Themed overrides live below. */
+@import "driver.js/dist/driver.css";
+
 /*
  * Surface elevation (admin UI polish): in LIGHT mode, lift content surfaces
  * (anything on `bg-card` / `bg-popover` — cards, blocks, table wrappers,
@@ -242,5 +245,104 @@ code {
     .feedback-root .minimizedDot {
         bottom: 1rem;
         right: 1rem;
+    }
+}
+
+/*
+ * driver.js CSS import + admin theme overrides (SPEC-174 T-010 §7.4).
+ *
+ * The JS runtime is lazy-loaded (dynamic import inside TourProvider), but the
+ * CSS is tiny (~2 kB minified) and does not change at runtime, so a static
+ * import here is fine. The overrides below remap driver.js's CSS variables to
+ * the admin design tokens so the tour popover matches the admin chrome.
+ *
+ * Color mapping:
+ *   --driver-popover-bg         → --color-bg-elevated  (card surface)
+ *   --driver-popover-title-color → --color-fg-primary
+ *   --driver-popover-description-color → --color-fg-secondary
+ *   --driver-btn-bg             → --color-primary       (river)
+ *   --driver-btn-text           → --palette-neutral-50  (white)
+ *   --driver-overlay-color      → black/60 opacity overlay
+ *
+ * driver.js base CSS is imported in the top import block of this file (CSS
+ * requires all `@import` rules before any other rules); these overrides take
+ * precedence by appearing later in the cascade.
+ */
+.driver-popover {
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px oklch(0 0 0 / 0.12), 0 1px 4px oklch(0 0 0 / 0.08);
+    max-width: 340px;
+    padding: 1.25rem;
+}
+
+.driver-popover-title {
+    color: var(--color-fg-primary);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+}
+
+.driver-popover-description {
+    color: var(--color-fg-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.driver-popover-footer {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.driver-popover-progress-text {
+    color: var(--color-fg-muted);
+    font-size: 0.75rem;
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+    background-color: var(--color-primary);
+    color: var(--palette-neutral-50);
+    border: none;
+    border-radius: calc(var(--radius) - 2px);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.4rem 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.driver-popover-prev-btn {
+    background-color: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 8%);
+    color: var(--color-fg-primary);
+}
+
+.driver-popover-prev-btn:hover {
+    background-color: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 14%);
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-close-btn:hover {
+    background-color: color-mix(in oklab, var(--color-primary), oklch(0 0 0) 12%);
+}
+
+.driver-overlay {
+    background-color: oklch(0 0 0 / 0.6);
+}
+
+/* Respect prefers-reduced-motion — disable driver.js animations */
+@media (prefers-reduced-motion: reduce) {
+    .driver-popover,
+    .driver-overlay,
+    .driver-highlighted-element {
+        transition: none !important;
+        animation: none !important;
     }
 }

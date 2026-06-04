@@ -10,6 +10,7 @@ import { protectedPatchUserRoute } from './patch';
 import { userReviewsRoute } from './reviews';
 import { userStatsRoute } from './stats';
 import { userSubscriptionRoute } from './subscription';
+import { tourProgressRoute } from './tourProgress';
 import { protectedUpdateUserRoute } from './update';
 import { whatsNewSeenRoute } from './whatsNewSeen';
 
@@ -42,5 +43,9 @@ app.route('/', protectedPatchUserRoute);
 // PATCH /me/whats-new-seen - Mark What's New entries as seen (SPEC-175)
 // Registered BEFORE /:id to avoid the route being captured by the UUID param matcher.
 app.route('/', whatsNewSeenRoute);
+
+// PATCH /me/tour-progress - Mark an admin tour as seen (SPEC-174)
+// Registered BEFORE /:id to avoid the route being captured by the UUID param matcher.
+app.route('/', tourProgressRoute);
 
 export { app as protectedUserRoutes };

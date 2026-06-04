@@ -1,0 +1,175 @@
+---
+/**
+ * @file colaborar/editores/index.astro
+ * @description Volunteer-editor recruitment page (SPEC-191 FR-5, BETA-65):
+ * recruitment copy for the blog (publicaciones) and events sections, plus a
+ * contribution form locked to `editor_application`.
+ * @route /{lang}/colaborar/editores/
+ * @rendering SSG (prerender)
+ */
+
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
+import { ContributionForm } from '@/components/contributions/ContributionForm.client';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { CheckCircleIcon } from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// What volunteer editors do — sets expectations before the application form.
+const roleItems = [
+    t(
+        'contributions.editors.role.item1',
+        'Escribir o revisar artículos del blog sobre los destinos del Litoral.'
+    ),
+    t(
+        'contributions.editors.role.item2',
+        'Cargar y curar eventos de la agenda: fechas, lugares, descripciones.'
+    ),
+    t(
+        'contributions.editors.role.item3',
+        'Proponer temas y ayudar a mantener el contenido al día.'
+    )
+];
+---
+
+<DefaultLayout
+    locale={locale}
+    title={t('contributions.editors.title', 'Sumate como editor')}
+    description={t(
+        'contributions.editors.description',
+        'Buscamos editores voluntarios para el blog y la agenda de eventos de Hospeda. Postulate y escribí con nosotros.'
+    )}
+>
+    <section class="editores section">
+        <div class="editores__container">
+            <ContributionBackLink locale={locale} />
+
+            <div data-reveal="up">
+                <SectionHeader
+                    tagline={t('contributions.editors.tagline', 'Convocatoria abierta')}
+                    title={t('contributions.editors.heading', 'Sumate como editor')}
+                    subtitle={t(
+                        'contributions.editors.subtitle',
+                        'El blog y la agenda de eventos crecen con gente que conoce y quiere al Litoral. Si te gusta escribir o curar contenido, postulate.'
+                    )}
+                />
+            </div>
+
+            <!-- ───── What editors do ─────────────────────────────────────── -->
+            <div
+                class="editores__role"
+                data-reveal="up"
+            >
+                <h2 class="editores__subheading">
+                    {t('contributions.editors.role.heading', '¿Qué hace un editor?')}
+                </h2>
+                <ul class="editores__list">
+                    {
+                        roleItems.map((item) => (
+                            <li class="editores__item">
+                                <span
+                                    class="editores__item-icon"
+                                    aria-hidden="true"
+                                >
+                                    <CheckCircleIcon
+                                        size="sm"
+                                        weight="fill"
+                                    />
+                                </span>
+                                <span>{item}</span>
+                            </li>
+                        ))
+                    }
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ───── Application form ───────────────────────────────────────────── -->
+    <section class="editores-form section section--warm">
+        <div class="editores__container">
+            <h2 class="editores__subheading">
+                {t('contributions.editors.form.heading', 'Postulate')}
+            </h2>
+            <p class="editores-form__hint">
+                {t(
+                    'contributions.editors.form.hint',
+                    'Contanos quién sos, sobre qué te gustaría escribir y si tenés experiencia (no es excluyente).'
+                )}
+            </p>
+            <div data-reveal="up">
+                <ContributionForm
+                    presetType="editor_application"
+                    locale={locale}
+                    client:visible
+                />
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
+
+<style>
+    .editores__container {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+
+    .editores__subheading {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+    }
+
+    .editores__role {
+        margin-top: var(--space-6, 1.5rem);
+    }
+
+    .editores__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+    }
+
+    .editores__item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2, 0.5rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+    }
+
+    .editores__item-icon {
+        display: inline-flex;
+        color: var(--brand-tertiary);
+        flex-shrink: 0;
+        margin-top: 0.2em;
+    }
+
+    .editores-form__hint {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        margin: 0 0 var(--space-5, 1.25rem);
+        line-height: 1.6;
+    }
+</style>

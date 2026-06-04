@@ -24,135 +24,30 @@
 import { z } from 'zod';
 
 // ============================================================================
-// CORE PRIMITIVES
+// CORE PRIMITIVES (re-exported from primitives.ts for backward compatibility)
+//
+// These four primitives have been extracted to `primitives.ts` so that
+// `tour.schema.ts` (SPEC-174) can import them without creating an ESM cycle
+// with this file. All existing imports of these types from `@/config/ia/schema`
+// continue to work unchanged — the names are imported here for use in the
+// schemas below, then re-exported so all consumers see them through this module.
 // ============================================================================
+import {
+    I18nLabelSchema,
+    OnMissingSchema,
+    PermissionExpressionSchema,
+    PermissionGateSchema
+} from './primitives';
+export type { I18nLabel, OnMissing, PermissionExpression, PermissionGate } from './primitives';
+export { I18nLabelSchema, OnMissingSchema, PermissionExpressionSchema, PermissionGateSchema };
 
-/**
- * Tri-locale label required on every user-facing navigation string.
- *
- * All three locales (es, en, pt) must be supplied and non-empty. This prevents
- * the "we forgot to translate to pt" regression that the Phase-1 i18n audit
- * surfaced (SPEC-154 §11.3 — documented SSOT exception for admin IA labels).
- *
- * @example
- * ```ts
- * const label: I18nLabel = { es: 'Inicio', en: 'Home', pt: 'Início' };
- * ```
- */
-export const I18nLabelSchema = z.object({
-    es: z.string().min(1),
-    en: z.string().min(1),
-    pt: z.string().min(1)
-});
-
-/**
- * Inferred TypeScript type for {@link I18nLabelSchema}.
- *
- * @example
- * ```ts
- * const label: I18nLabel = { es: 'Catálogo', en: 'Catalog', pt: 'Catálogo' };
- * ```
- */
-export type I18nLabel = z.infer<typeof I18nLabelSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * A single permission expression — one of three forms:
- *
- * - **Exact**: an uppercase `PermissionEnum` value like `ACCOMMODATION_VIEW_ALL`.
- *   Pattern: `[A-Z][A-Z0-9_]+` with no trailing `*`.
- * - **Prefix wildcard**: a namespace prefix followed by `_*`, like `ACCOMMODATION_*`.
- *   At runtime `expandPermissions()` resolves this to all matching `PermissionEnum` values.
- * - **Universal wildcard**: the single character `*`.
- *   Resolved by `expandPermissions()` to all known `PermissionEnum` values.
- *
- * **Rejected examples**:
- * - `foo` — lowercase is always invalid.
- * - `FOO*` — wildcard must use underscore separator (`FOO_*`).
- * - `` (empty) — the regex requires at least one character.
- *
- * @example
- * ```ts
- * const expr: PermissionExpression = 'ACCOMMODATION_VIEW_ALL'; // exact
- * const wild: PermissionExpression = 'ACCOMMODATION_*';         // prefix wildcard
- * const all:  PermissionExpression = '*';                       // universal wildcard
- * ```
- */
-export const PermissionExpressionSchema = z
-    .string()
-    .regex(
-        /^(\*|[A-Z][A-Z0-9_]+(_\*)?|[A-Z][A-Z0-9_]+)$/,
-        'Permission must be an exact PermissionEnum value, a prefix wildcard (FOO_*), or "*"'
-    );
-
-/**
- * Inferred TypeScript type for {@link PermissionExpressionSchema}.
- *
- * @example
- * ```ts
- * const p: PermissionExpression = 'BILLING_*';
- * ```
- */
-export type PermissionExpression = z.infer<typeof PermissionExpressionSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * An OR-logic permission gate: the user passes if they hold **at least one**
- * of the listed permission expressions.
- *
- * Rules:
- * - Must contain at least one entry (empty gates are a config error).
- * - Each entry must be a valid {@link PermissionExpression}.
- * - Wildcard expressions are expanded at runtime via `expandPermissions()`.
- *
- * @example
- * ```ts
- * // User sees the item if they have either permission:
- * const gate: PermissionGate = ['CONVERSATION_VIEW_OWN', 'CONVERSATION_VIEW_ALL'];
- * ```
- */
-export const PermissionGateSchema = z.array(PermissionExpressionSchema).min(1);
-
-/**
- * Inferred TypeScript type for {@link PermissionGateSchema}.
- *
- * @example
- * ```ts
- * const gate: PermissionGate = ['ACCOMMODATION_VIEW_OWN'];
- * ```
- */
-export type PermissionGate = z.infer<typeof PermissionGateSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * Behavior when the current user lacks the permissions required to access a
- * navigation item (per SPEC-154 §8 cherry-pick rule).
- *
- * - `'disable'` — item renders greyed-out with a tooltip "Requiere permiso X".
- *   Default when the field is omitted on sidebar items.
- * - `'hide'`    — item is omitted from the DOM entirely (structurally inaccessible
- *   items like "Configuración crítica" for non-SUPER_ADMIN roles).
- *
- * @example
- * ```ts
- * const behavior: OnMissing = 'hide';   // item won't appear for unauthorized users
- * const fallback: OnMissing = 'disable'; // item appears but is non-interactive
- * ```
- */
-export const OnMissingSchema = z.enum(['disable', 'hide']);
-
-/**
- * Inferred TypeScript type for {@link OnMissingSchema}.
- *
- * @example
- * ```ts
- * const b: OnMissing = 'disable';
- * ```
- */
-export type OnMissing = z.infer<typeof OnMissingSchema>;
+// ============================================================================
+// TOUR CONFIG (re-exported from tour.schema.ts — SPEC-174)
+//
+// Imported here to add `tours` to AdminIAConfigSchema and run cross-checks.
+// Import direction: schema.ts → tour.schema.ts → primitives.ts (no cycle).
+// ============================================================================
+import { DATA_TOUR_SECTION_PREFIX, KNOWN_DATA_TOUR_IDS, ToursRecordSchema } from './tour.schema';
 
 // ============================================================================
 // SECTIONS (T-002)
@@ -999,8 +894,8 @@ function resolveLabelPath(config: z.input<typeof AdminIAConfigSchema>, path: str
  * validated at boot. All maps use string keys for sections, sidebars,
  * dashboards, tabs and createActions; roles are keyed by `RoleEnum` values.
  *
- * Cross-reference validations run in `.superRefine()` (T-018). Any failure
- * causes the app to refuse to start with a precise error path and message.
+ * Cross-reference validations run in `.superRefine()` (T-018 + SPEC-174 T-006).
+ * Any failure causes the app to refuse to start with a precise error path and message.
  * Implemented validations (per doc 02 §13, §13.7 and §13.9 are DROPPED):
  *   §13.1 — sidebar refs
  *   §13.2 — role mainMenu section refs
@@ -1009,6 +904,9 @@ function resolveLabelPath(config: z.input<typeof AdminIAConfigSchema>, path: str
  *   §13.5 — mobile.bottomNav refs (must be in mainMenu)
  *   §13.6 — labelOverrides path resolution
  *   §13.8 — unique item IDs within each sidebar
+ *   §T1   — tour step targets in KNOWN_DATA_TOUR_IDS or valid section-prefix
+ *   §T2   — tour roles present and enabled in config.roles
+ *   §T3   — contextual tour route matches a known section route/defaultRoute
  *
  * @example
  * ```ts
@@ -1019,6 +917,7 @@ function resolveLabelPath(config: z.input<typeof AdminIAConfigSchema>, path: str
  *   tabs: { accommodation: { ... } },
  *   createActions: { newAccommodation: { ... } },
  *   roles: { [RoleEnum.HOST]: { ... } },
+ *   tours: { 'host.welcome': { ... } },
  * };
  * ```
  */
@@ -1044,7 +943,20 @@ export const AdminIAConfigSchema = z
          * (`index.ts`) builds this object with `RoleEnum.X` keys. The cross-reference
          * validations below validate the provided keys' contents.
          */
-        roles: z.record(z.string(), RoleConfigSchema)
+        roles: z.record(z.string(), RoleConfigSchema),
+        /**
+         * Tour catalog — the full map of guided tour definitions for this admin
+         * instance, keyed by tour id (e.g. `'host.welcome'`). Cross-checks §T1–§T3
+         * run inside superRefine below. Required so that the boot-time validation
+         * guarantees every tour references only known targets, roles, and routes.
+         *
+         * Typed `ToursRecordSchema` (from `tour.schema.ts` — no ESM cycle because
+         * tour.schema.ts imports from `primitives.ts`, not from this file).
+         *
+         * @see src/config/ia/tours.ts — v1 catalog
+         * @see SPEC-174 §7.1
+         */
+        tours: ToursRecordSchema
     })
     .superRefine((config, ctx) => {
         // ── §13.1 Sidebar refs ────────────────────────────────────────────
@@ -1172,6 +1084,90 @@ export const AdminIAConfigSchema = z
                     code: 'custom',
                     path: ['sidebars', sidebarId],
                     message: `Duplicate item IDs in sidebar: ${duplicates.join(', ')}`
+                });
+            }
+        }
+
+        // ── §T1 Tour step target validation ────────────────────────────────
+        // Every non-'center' step target (after stripping 'data-tour:' prefix)
+        // must either be in KNOWN_DATA_TOUR_IDS or start with
+        // DATA_TOUR_SECTION_PREFIX where the suffix matches a known section id.
+        for (const [tourId, tour] of Object.entries(config.tours)) {
+            for (const [stepIdx, step] of tour.steps.entries()) {
+                if (step.target === 'center') continue;
+
+                // Strip the 'data-tour:' prefix (guaranteed by TourStepTargetSchema regex)
+                const rawId = step.target.slice('data-tour:'.length);
+
+                if (KNOWN_DATA_TOUR_IDS.has(rawId)) continue;
+
+                if (rawId.startsWith(DATA_TOUR_SECTION_PREFIX)) {
+                    const sectionSuffix = rawId.slice(DATA_TOUR_SECTION_PREFIX.length);
+                    if (!config.sections[sectionSuffix]) {
+                        ctx.addIssue({
+                            code: 'custom',
+                            path: ['tours', tourId, 'steps', stepIdx, 'target'],
+                            message: `Tour step target '${step.target}' uses section prefix but section '${sectionSuffix}' is not in config.sections`
+                        });
+                    }
+                    continue;
+                }
+
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['tours', tourId, 'steps', stepIdx, 'target'],
+                    message: `Tour step target '${step.target}' (id '${rawId}') is not in KNOWN_DATA_TOUR_IDS and does not match the section prefix '${DATA_TOUR_SECTION_PREFIX}'`
+                });
+            }
+        }
+
+        // ── §T2 Tour role existence and enabled check ───────────────────────
+        // When tour.roles !== 'all', every role listed must exist in config.roles
+        // AND be enabled.
+        for (const [tourId, tour] of Object.entries(config.tours)) {
+            if (tour.roles === 'all') continue;
+
+            for (const [roleIdx, role] of (tour.roles as string[]).entries()) {
+                const roleConfig = config.roles[role];
+                if (!roleConfig) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['tours', tourId, 'roles', roleIdx],
+                        message: `Tour role '${role}' is not in config.roles`
+                    });
+                    continue;
+                }
+                if (!roleConfig.enabled) {
+                    ctx.addIssue({
+                        code: 'custom',
+                        path: ['tours', tourId, 'roles', roleIdx],
+                        message: `Tour role '${role}' is in config.roles but is not enabled`
+                    });
+                }
+            }
+        }
+
+        // ── §T3 Contextual tour route validation ────────────────────────────
+        // When kind === 'contextual', tour.route must equal some section.route
+        // or section.defaultRoute in config.sections.
+        const knownSectionRoutes = new Set<string>();
+        for (const section of Object.values(config.sections)) {
+            knownSectionRoutes.add(section.route);
+            if (section.defaultRoute) {
+                knownSectionRoutes.add(section.defaultRoute);
+            }
+        }
+
+        for (const [tourId, tour] of Object.entries(config.tours)) {
+            if (tour.kind !== 'contextual') continue;
+            // route is required for contextual (enforced by TourSchema.superRefine)
+            if (!tour.route) continue;
+
+            if (!knownSectionRoutes.has(tour.route)) {
+                ctx.addIssue({
+                    code: 'custom',
+                    path: ['tours', tourId, 'route'],
+                    message: `Contextual tour route '${tour.route}' does not match any section.route or section.defaultRoute in config.sections`
                 });
             }
         }

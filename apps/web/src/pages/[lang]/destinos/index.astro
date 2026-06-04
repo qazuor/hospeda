@@ -25,6 +25,7 @@
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import DestinationCard from '@/components/shared/cards/DestinationCard.astro';
 import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -356,6 +357,21 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 						</a>
 					</div>
 				)}
+
+				<!-- Photo-contribution banner (SPEC-191 FR-8): after the grid.
+				     page/[page].astro is a 301 redirect — this single mount
+				     covers the whole listing. -->
+				<ContributionBanner
+					title={t('contributions.banner.photosListing.title', '¿Tenés fotos de estos destinos?')}
+					description={t(
+						'contributions.banner.photosListing.description',
+						'Sumá tus fotos y ayudá a mostrar el Litoral como se merece.'
+					)}
+					ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
+					ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
+					source="destination_listing"
+					variant="photos"
+				/>
 			</div>
 		</div>
 	</div>

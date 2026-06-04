@@ -31,6 +31,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
@@ -482,6 +483,20 @@ const itemListEntries = cards.map((card) => ({
 			))}
 		</div>
 	)}
+
+	<!-- Editor-recruitment banner (SPEC-191 FR-8): after the grid, before
+	     pagination. page/[page].astro is a rewrite — single mount covers all pages. -->
+	<ContributionBanner
+		title={t('contributions.banner.editors.title', '¿Te gusta escribir?')}
+		description={t(
+			'contributions.banner.editorsEvents.description',
+			'Buscamos editores voluntarios para cargar y curar los eventos de la agenda.'
+		)}
+		ctaLabel={t('contributions.banner.editors.cta', 'Sumate como editor')}
+		ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+		source="events_listing"
+		variant="editors"
+	/>
 
 	{totalPages > 1 && (
 		<Pagination

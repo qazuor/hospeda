@@ -1,0 +1,113 @@
+---
+/**
+ * @file ContributionBackLink.astro
+ * @description Smart back link for the /colaborar subpages (SPEC-191).
+ *
+ * The anchor's href points at the contribution hub — that is the no-JS and
+ * direct-entry fallback. When the visitor arrived from another page of the
+ * site, the hoisted script intercepts the click and calls history.back()
+ * instead, returning them to where they actually came from (e.g. a
+ * destination detail after following the report link).
+ *
+ * Detection: the site uses Astro's ClientRouter (view transitions), whose
+ * pushState navigations do NOT update document.referrer — so the script
+ * checks the router's history.state.index (> 0 means in-app history exists)
+ * and falls back to a same-origin referrer check for the first full-page
+ * load.
+ */
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { ArrowLeftIcon } from '@repo/icons';
+
+interface Props {
+    /** Locale to resolve the label and the hub fallback URL in. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const hubUrl = buildUrl({ locale, path: 'colaborar' });
+---
+
+<a
+    href={hubUrl}
+    class="contribution-back"
+    data-contribution-back
+>
+    <ArrowLeftIcon
+        size="sm"
+        weight="bold"
+    />
+    {t('contributions.back', 'Volver')}
+</a>
+
+<script>
+    /**
+     * Progressive enhancement: go back to the page the visitor came from
+     * when there is somewhere to go back to; otherwise the anchor's hub
+     * href wins.
+     *
+     * Hoisted module scripts execute ONCE per session — after a
+     * view-transitions swap the link element is brand new and would have no
+     * listener, so binding happens on `astro:page-load`, which fires on the
+     * initial load AND after every VT navigation.
+     */
+    function hasInAppHistory(): boolean {
+        // Astro's view-transitions router keeps an incrementing index in
+        // history.state — > 0 means a previous in-app entry exists.
+        const state = window.history.state as { index?: number } | null;
+        if (state && typeof state.index === 'number' && state.index > 0) {
+            return true;
+        }
+        // First full-page load: fall back to a same-origin referrer check.
+        if (!document.referrer) return false;
+        try {
+            const ref = new URL(document.referrer);
+            return (
+                ref.origin === window.location.origin &&
+                ref.pathname !== window.location.pathname
+            );
+        } catch {
+            return false;
+        }
+    }
+
+    function bindBackLinks(): void {
+        document
+            .querySelectorAll<HTMLAnchorElement>('[data-contribution-back]')
+            .forEach((link) => {
+                if (link.dataset.bound === 'true') return;
+                link.dataset.bound = 'true';
+                link.addEventListener('click', (event) => {
+                    if (hasInAppHistory()) {
+                        event.preventDefault();
+                        window.history.back();
+                    }
+                });
+            });
+    }
+
+    document.addEventListener('astro:page-load', bindBackLinks);
+</script>
+
+<style>
+    .contribution-back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        margin-bottom: var(--space-5, 1.25rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .contribution-back:hover,
+    .contribution-back:focus-visible {
+        color: var(--brand-accent);
+    }
+</style>

@@ -418,6 +418,7 @@ export { QuotesIcon } from './icons/system/QuotesIcon';
 export { SparkleIcon } from './icons/system/SparkleIcon';
 export { AddressIcon } from './icons/system/AddressIcon';
 export { AdminIcon } from './icons/system/AdminIcon';
+export { ArrowLeftIcon } from './icons/system/ArrowLeftIcon';
 export { ArrowRightIcon } from './icons/system/ArrowRightIcon';
 export { AlertsIcon } from './icons/system/AlertsIcon';
 export { AlertTriangleIcon } from './icons/system/AlertTriangleIcon';

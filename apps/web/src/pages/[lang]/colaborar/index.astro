@@ -1,0 +1,231 @@
+---
+/**
+ * @file colaborar/index.astro
+ * @description Contribution hub landing page (SPEC-191 FR-2): hero plus three
+ * cards funnelling visitors into the contribution flows — report incorrect
+ * destination info, contribute photos, apply as blog/events editor.
+ * @route /{lang}/colaborar/
+ * @rendering SSG (prerender)
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { AlertTriangleIcon, ArrowRightIcon, EditIcon, ImageIcon } from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const cards = [
+    {
+        key: 'report',
+        Icon: AlertTriangleIcon,
+        title: t('contributions.hub.report.title', 'Reportá información incorrecta'),
+        description: t(
+            'contributions.hub.report.description',
+            '¿Viste un dato desactualizado o un error en un destino? Avisanos y lo corregimos.'
+        ),
+        cta: t('contributions.hub.report.cta', 'Reportar un error'),
+        href: buildUrl({ locale, path: 'colaborar/reportar' })
+    },
+    {
+        key: 'photos',
+        Icon: ImageIcon,
+        title: t('contributions.hub.photos.title', 'Aportá tus fotos'),
+        description: t(
+            'contributions.hub.photos.description',
+            'Sumá tus mejores fotos de los destinos del Litoral y ayudá a mostrarlos como se merecen.'
+        ),
+        cta: t('contributions.hub.photos.cta', 'Compartir fotos'),
+        href: buildUrl({ locale, path: 'colaborar/fotos' })
+    },
+    {
+        key: 'editors',
+        Icon: EditIcon,
+        title: t('contributions.hub.editors.title', 'Sumate como editor'),
+        description: t(
+            'contributions.hub.editors.description',
+            'Buscamos editores voluntarios para el blog y la agenda de eventos. Postulate y escribí con nosotros.'
+        ),
+        cta: t('contributions.hub.editors.cta', 'Quiero postularme'),
+        href: buildUrl({ locale, path: 'colaborar/editores' })
+    }
+];
+---
+
+<DefaultLayout
+    locale={locale}
+    title={t('contributions.hub.title', 'Colaborá con Hospeda')}
+    description={t(
+        'contributions.hub.description',
+        'Ayudanos a mejorar Hospeda: reportá errores, aportá fotos de los destinos o sumate como editor del blog y los eventos.'
+    )}
+>
+    <!-- ───── Hero ───────────────────────────────────────────────────────── -->
+    <section class="colaborar-hero section">
+        <div class="colaborar-hero__container">
+            <div data-reveal="up">
+                <SectionHeader
+                    tagline={t('contributions.hub.tagline', 'Entre todos')}
+                    title={t('contributions.hub.heading', 'Colaborá con Hospeda')}
+                    subtitle={t(
+                        'contributions.hub.subtitle',
+                        'Hospeda lo construimos entre todos. Elegí cómo querés dar una mano.'
+                    )}
+                />
+            </div>
+        </div>
+    </section>
+
+    <!-- ───── Contribution cards ─────────────────────────────────────────── -->
+    <section class="colaborar-cards section section--warm">
+        <div class="colaborar-cards__container">
+            <div class="colaborar-cards__grid">
+                {
+                    cards.map((card, i) => (
+                        <a
+                            href={card.href}
+                            class={`colaborar-card colaborar-card--${card.key}`}
+                            data-reveal="up"
+                            style={`transition-delay: ${i * 100}ms`}
+                        >
+                            <span
+                                class="colaborar-card__icon"
+                                aria-hidden="true"
+                            >
+                                <card.Icon
+                                    size="lg"
+                                    weight="duotone"
+                                />
+                            </span>
+                            <h2 class="colaborar-card__title">{card.title}</h2>
+                            <p class="colaborar-card__description">{card.description}</p>
+                            <span class="colaborar-card__cta">
+                                {card.cta}
+                                <ArrowRightIcon
+                                    size="sm"
+                                    weight="bold"
+                                />
+                            </span>
+                        </a>
+                    ))
+                }
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
+
+<style>
+    .colaborar-hero__container,
+    .colaborar-cards__container {
+        max-width: var(--container-max);
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+
+    .colaborar-cards__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap, 1.5rem);
+    }
+
+    @media (min-width: 768px) {
+        .colaborar-cards__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .colaborar-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        padding: var(--space-6, 1.5rem);
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid transparent;
+        transition:
+            transform var(--duration-normal) ease,
+            box-shadow var(--duration-normal) ease,
+            border-color var(--duration-normal) ease;
+    }
+
+    .colaborar-card:hover,
+    .colaborar-card:focus-visible {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-card-hover);
+        border-color: var(--brand-primary-a20);
+        outline: none;
+    }
+
+    .colaborar-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md, 10px);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+        flex-shrink: 0;
+    }
+
+    .colaborar-card--photos .colaborar-card__icon {
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+    }
+
+    /* --brand-tertiary has no alpha-token ladder (design-tokens gap), so the
+       editors tint uses the warm surface token to keep the green identity
+       without a raw relative-color expression (CI guard). */
+    .colaborar-card--editors .colaborar-card__icon {
+        background-color: var(--surface-warm);
+        color: var(--brand-tertiary);
+    }
+
+    .colaborar-card__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .colaborar-card__description {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .colaborar-card__cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        margin-top: auto;
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: var(--text-body-sm);
+        color: var(--brand-primary);
+        transition: gap var(--duration-fast) ease;
+    }
+
+    .colaborar-card:hover .colaborar-card__cta,
+    .colaborar-card:focus-visible .colaborar-card__cta {
+        gap: var(--space-3, 0.75rem);
+        color: var(--brand-accent);
+    }
+</style>
