@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ContributionType } from '../../../src/components/contributions/ContributionForm.client';
 import { ContributionForm } from '../../../src/components/contributions/ContributionForm.client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -276,6 +277,28 @@ describe('ContributionForm', () => {
 
             expect(await screen.findByText(/Demasiados intentos/)).toBeInTheDocument();
             expect(trackEventMock).not.toHaveBeenCalled();
+        });
+
+        it('surfaces a form-level error when validation fails on a non-rendered field (smoke regression)', async () => {
+            // SPEC-191 T-015 smoke finding: with a stale @repo/schemas bundle,
+            // the locked `type` was rejected by Zod — an error on a field this
+            // form never renders — and the submit failed SILENTLY. The form
+            // must surface the general error instead.
+            const fetchMock = mockFetch();
+            render(
+                <ContributionForm
+                    presetType={'not_a_valid_type' as ContributionType}
+                    locale="es"
+                />
+            );
+
+            fillRequiredFields();
+            fireEvent.submit(screen.getByRole('form'));
+
+            await waitFor(() =>
+                expect(screen.getByText(/Ha ocurrido un error/)).toBeInTheDocument()
+            );
+            expect(fetchMock).not.toHaveBeenCalled();
         });
 
         it('shows field errors and does not POST when validation fails', async () => {

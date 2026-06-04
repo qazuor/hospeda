@@ -159,7 +159,23 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
         });
 
         if (!parsed.success) {
-            setErrors(extractFieldErrors(parsed.error));
+            const fieldErrors = extractFieldErrors(parsed.error);
+            setErrors(fieldErrors);
+            // Safety net (SPEC-191 smoke finding): if every issue maps to a
+            // field this form does not render (e.g. the locked `type` rejected
+            // by a stale schema bundle), surface the general error instead of
+            // failing silently.
+            const renderableFields: ReadonlyArray<keyof FieldErrors> = [
+                'firstName',
+                'lastName',
+                'email',
+                'message'
+            ];
+            if (!renderableFields.some((field) => fieldErrors[field])) {
+                setFormError(
+                    t('contributions.form.errorGeneral', 'Ha ocurrido un error. Intentá de nuevo.')
+                );
+            }
             return;
         }
 
