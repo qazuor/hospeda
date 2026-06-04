@@ -573,35 +573,35 @@
             "id": "T-016",
             "title": "Implement usage metering recorder + cost calculator",
             "description": "Create src/usage/ — record every call into ai_usage via storage (tokens, feature, provider, model, latency, status) and a cost calculator producing integer centavos from token counts × per-model rates (§5.7/FR-7). RO-RO, JSDoc. Tests: unit tests asserting a recorded row matches AC-7 fields and cost is computed in centavos for sample token counts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-004", "T-006", "T-008"],
             "blocks": ["T-017", "T-018", "T-031"],
             "subtasks": [
                 {
                     "title": "Metering recorder → ai_usage via storage",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Cost calculator (tokens → centavos)",
-                    "completed": false
+                    "title": "Cost calculator (tokens → micro-USD)",
+                    "completed": true
                 },
                 {
                     "title": "Write metering + cost unit tests (AC-7)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "usage", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T17:05:00.000Z",
+                "completed": "2026-06-04T17:55:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.5
     }
