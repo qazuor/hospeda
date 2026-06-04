@@ -3,7 +3,7 @@ specId: SPEC-191
 title: Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners
 slug: web-contribution-pages-and-banners
 type: feature
-status: in-progress
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-06-02
