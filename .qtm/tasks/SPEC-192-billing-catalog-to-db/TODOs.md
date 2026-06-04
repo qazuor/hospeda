@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 31/37 tasks (84%)
+## Progress: 37/37 tasks (100%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -193,12 +193,12 @@
   - Blocked by: T-030
   - Blocks: T-032
 
-- [ ] **T-036** (complexity: 1) — Document MercadoPago staging smoke and prod smoke sign-off requirement in PR template
+- [x] **T-036** (complexity: 1) — Document MercadoPago staging smoke and prod smoke sign-off requirement in PR template
   - `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/smoke-signoff-checklist.md`; references SPEC-143 checklists
   - Blocked by: T-021, T-035
   - Blocks: T-037
 
-- [ ] **T-037** (complexity: 1) — Document deferred addon.checkout.ts cutover (blocked on SPEC-127) as a follow-up task
+- [x] **T-037** (complexity: 1) — Document deferred addon.checkout.ts cutover (blocked on SPEC-127) as a follow-up task
   - `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md`; ordering constraint: SPEC-127 must land first
   - Blocked by: T-036
   - Blocks: none
@@ -207,22 +207,22 @@
 
 ### Testing Phase
 
-- [ ] **T-032** (complexity: 3) — Write cross-cutting integration tests for addon catalog read path end-to-end (FR-1/FR-2 testing phase)
+- [x] **T-032** (complexity: 3) — Write cross-cutting integration tests for addon catalog read path end-to-end (FR-1/FR-2 testing phase)
   - Full read path integration test: billing_addons → AddonCatalogService → addon.catalog.ts; list, getBySlug, filter, NOT_FOUND
   - Blocked by: T-031
   - Blocks: T-033
 
-- [ ] **T-033** (complexity: 3) — Write cross-cutting integration tests for plan reader cutover end-to-end (FR-4 testing phase)
+- [x] **T-033** (complexity: 3) — Write cross-cutting integration tests for plan reader cutover end-to-end (FR-4 testing phase)
   - PlanService.getBySlug() for each seeded slug against config baseline; includes T-025 bug regression (UUID lookup)
   - Blocked by: T-032
   - Blocks: T-034
 
-- [ ] **T-034** (complexity: 3) — Write integration tests for admin addon CRUD routes end-to-end (FR-3 testing phase)
+- [x] **T-034** (complexity: 3) — Write integration tests for admin addon CRUD routes end-to-end (FR-3 testing phase)
   - Full CRUD lifecycle; hard-delete blocked (409); permission split (403); pagination
   - Blocked by: T-033
   - Blocks: T-035
 
-- [ ] **T-035** (complexity: 2) — Write promo defaults and structural defs integration tests (FR-5/FR-6 testing phase)
+- [x] **T-035** (complexity: 2) — Write promo defaults and structural defs integration tests (FR-5/FR-6 testing phase)
   - ensureDefaultPromoCodes idempotency; no runtime promo config read; structural defs exported correctly
   - Blocked by: T-034
   - Blocks: T-036

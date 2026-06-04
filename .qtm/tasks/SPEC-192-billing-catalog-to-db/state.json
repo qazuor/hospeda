@@ -1104,127 +1104,127 @@
             "id": "T-032",
             "title": "Write cross-cutting integration tests for addon catalog read path end-to-end (FR-1/FR-2 testing phase)",
             "description": "Write integration tests spanning the full read path: `billing_addons` table → AddonCatalogService → addon.catalog.ts → consumer. Test in `packages/service-core/src/__tests__/integration/addon-catalog-read-path.test.ts`: (1) seeded billing_addons returns all addons; (2) getBySlug returns correct row for each seeded slug; (3) unknown slug returns NOT_FOUND; (4) filter by billingType returns correct subset. Uses test DB (vitest). Files: 1 integration test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-031"],
             "blocks": ["T-033"],
             "subtasks": [
                 {
                     "title": "Set up test DB fixture with seeded billing_addons",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test full read path for list, getBySlug, filter, NOT_FOUND",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert DB-resolved results equal config baseline for all 5 addons",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "billing", "addon", "integration", "fr-1", "fr-2"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Write cross-cutting integration tests for plan reader cutover end-to-end (FR-4 testing phase)",
             "description": "Write integration tests asserting every plan-reader cutover resolves consistently from DB. Test in `packages/service-core/src/__tests__/integration/plan-reader-cutover.test.ts`: for each seeded plan slug, PlanService.getBySlug() returns same slug, prices, entitlements, limits as previous config-resolved plan. Includes regression test for the addon-entitlement bug fix (T-025): verify basePlanLimit > 0 when planId is UUID. Files: 1 integration test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-032"],
             "blocks": ["T-034"],
             "subtasks": [
                 {
                     "title": "Test PlanService.getBySlug() for each seeded slug against config baseline",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test addon-entitlement basePlanLimit fix (UUID lookup returns correct limit)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert all plan fields match DB to config for slug, prices, entitlements",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "billing", "plan", "integration", "fr-4"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Write integration tests for admin addon CRUD routes end-to-end (FR-3 testing phase)",
             "description": "Write integration tests for the full admin CRUD route stack in `apps/api/src/routes/billing/admin/__tests__/addons.integration.test.ts`: (1) create addon (POST) returns 201 + audit row; (2) update addon (PATCH) persists change; (3) toggleActive changes isActive; (4) softDelete sets deletedAt; (5) restore clears deletedAt; (6) hardDelete rejected (409) when billing_subscription_addons row exists; (7) unauthorized writes return 403; (8) list pagination uses page+pageSize. Files: 1 integration test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-033"],
             "blocks": ["T-035"],
             "subtasks": [
                 {
                     "title": "Test CRUD lifecycle: create/update/toggle/softDelete/restore",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test hard-delete blocked when subscription_addons row exists (409)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test permission rejection for write endpoints (403) and read-only (200)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "billing", "addon", "integration", "fr-3", "crud"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Write promo defaults and structural defs integration tests (FR-5/FR-6 testing phase)",
             "description": "Write integration tests in `packages/service-core/src/__tests__/integration/promo-and-structural.test.ts`: (1) ensureDefaultPromoCodes is idempotent (run twice, one row in billing_promo_codes for HOSPEDA_FREE); (2) no runtime code path reads DEFAULT_PROMO_CODES at request time; (3) ENTITLEMENT_DEFINITIONS and LIMIT_METADATA are unchanged and exported correctly from @repo/billing. Files: 1 integration test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-034"],
             "blocks": ["T-036"],
             "subtasks": [
                 {
                     "title": "Test ensureDefaultPromoCodes idempotency (skip-by-code)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert structural defs exported correctly from @repo/billing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify no runtime promo config read in any request handler",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": [
@@ -1238,92 +1238,92 @@
             ],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         },
         {
             "id": "T-036",
             "title": "Document MercadoPago staging smoke and prod smoke sign-off requirement in PR template",
             "description": "Add a PR checklist file at `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/smoke-signoff-checklist.md` enumerating the sections of SPEC-143 staging-smoke-checklist.md that must be executed before merging SPEC-192 PRs (addon checkout, addon purchase, webhook, cron addon-expiry, admin addon ops). Also list prod-smoke-checklist.md sections required (billing CORE gate). Reference `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md` and `prod-smoke-checklist.md`. Files: 1 doc file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021", "T-035"],
             "blocks": ["T-037"],
             "subtasks": [
                 {
                     "title": "List staging smoke sections required for SPEC-192 PRs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "List prod smoke sections required (billing CORE gate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Reference SPEC-143 checklist files with relative paths",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing", "testing", "smoke", "fr-8"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         },
         {
             "id": "T-037",
             "title": "Document deferred addon.checkout.ts cutover (blocked on SPEC-127) as a follow-up task",
             "description": "Create `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md` documenting: `apps/api/src/services/addon.checkout.ts` is intentionally NOT cut over in SPEC-192 because it must happen AFTER SPEC-127 (qzpay migration) to avoid merge conflicts. This cutover should be the first task of a follow-up SPEC-192 delta (or the first task in the SPEC-127 closeout checklist). Note the constraint: both touch `addon.checkout.ts` in different zones. Files: 1 doc file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-036"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document the addon.checkout.ts exclusion rationale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Describe the ordering constraint: SPEC-127 must land first",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Suggest follow-up: first task in SPEC-127 closeout or SPEC-192 delta",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing", "addon", "checkout", "deferred", "spec-127"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 37,
-        "pending": 6,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 37,
         "blocked": 0,
         "averageComplexity": 2.4
     }
