@@ -220,3 +220,40 @@ describe('T-012 — me/accommodations route migration', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// FIX-3 — EntityListPage honours allowViewToggle + defaultView (source-scan)
+// ---------------------------------------------------------------------------
+
+const entityListPageSrc = readFileSync(
+    resolve(__dirname, '../../src/components/entity-list/EntityListPage.tsx'),
+    'utf8'
+);
+
+describe('FIX-3 — EntityListPage grid-only implementation', () => {
+    describe('DataTableToolbar showViewToggle prop', () => {
+        it('EntityListPage passes showViewToggle to DataTableToolbar', () => {
+            expect(entityListPageSrc).toContain('showViewToggle');
+        });
+
+        it('showViewToggle is wired to viewConfig.allowViewToggle', () => {
+            expect(entityListPageSrc).toContain('showViewToggle={viewConfig.allowViewToggle}');
+        });
+    });
+
+    describe('validateSearch uses viewConfig.defaultView as fallback', () => {
+        it('validateSearch references viewConfig.defaultView for the view param', () => {
+            expect(entityListPageSrc).toContain('viewConfig.defaultView');
+        });
+    });
+
+    describe('meAccommodationsConfig grid-only constraints', () => {
+        it('allowViewToggle is false (toggle will be hidden)', () => {
+            expect(meAccommodationsConfig.viewConfig?.allowViewToggle).toBe(false);
+        });
+
+        it('defaultView is grid (page starts in grid without ?view= in URL)', () => {
+            expect(meAccommodationsConfig.viewConfig?.defaultView).toBe('grid');
+        });
+    });
+});

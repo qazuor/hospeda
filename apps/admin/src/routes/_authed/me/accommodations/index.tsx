@@ -11,6 +11,10 @@
  */
 
 import { MeAccommodationsRoute } from '@/features/accommodations/config/me-accommodations.config';
+import { createFileRoute } from '@tanstack/react-router';
+
+// TanStack Router requirement: bare reference prevents unused-import removal by bundler
+createFileRoute;
 
 // Re-export the generated route so TanStack Router picks it up via file-based routing.
 export const Route = MeAccommodationsRoute;
