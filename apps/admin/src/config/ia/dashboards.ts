@@ -1199,8 +1199,11 @@ const adminBaseDashboardWithWn: DashboardInput = {
     widgets: [...adminBaseDashboard.widgets, whatsNewWidget]
 };
 
+// Built from the WithWn base so the structural invariant holds:
+// superAdminDashboard.widgets === adminBaseDashboard(.registry).widgets + superAdminOnlySection.widgets
+// (t039-super-gating.test.ts asserts this concatenation by id order).
 const superAdminDashboardWithWn: DashboardInput = {
-    widgets: [...adminBaseDashboard.widgets, ...superAdminOnlySection.widgets, whatsNewWidget]
+    widgets: [...adminBaseDashboardWithWn.widgets, ...superAdminOnlySection.widgets]
 };
 
 export const dashboards: Record<string, DashboardInput> = {

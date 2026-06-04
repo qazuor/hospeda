@@ -271,14 +271,16 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
 
         it('superAdminDashboard widgets H–I come from superAdminOnlySection (ids match)', () => {
             const sectionIds = superAdminOnlySection.widgets.map((w) => w.id);
-            // Widgets 8–9 (0-indexed 7–8) are the super-only section; widget 10 is whats-new.
-            const superIds = dashboards.superAdminDashboard.widgets.slice(7, 9).map((w) => w.id);
+            // superAdminDashboard = adminBaseDashboard (A–G + whats-new) ++ superAdminOnlySection,
+            // so the super-only section occupies the LAST two positions (t039 spread invariant).
+            const superIds = dashboards.superAdminDashboard.widgets.slice(-2).map((w) => w.id);
             expect(superIds).toEqual(sectionIds);
         });
 
-        it('superAdminDashboard last widget is whats-new', () => {
-            const last = dashboards.superAdminDashboard.widgets.at(-1);
-            expect(last?.id).toBe('whats-new');
+        it('superAdminDashboard includes whats-new right after the A–G base (position 7)', () => {
+            // Concatenation invariant: [A–G, whats-new] ++ [H, I].
+            const widget = dashboards.superAdminDashboard.widgets.at(7);
+            expect(widget?.id).toBe('whats-new');
         });
     });
 
