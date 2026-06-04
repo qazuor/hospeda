@@ -53,24 +53,22 @@ vi.mock('@repo/service-core', () => ({
     withServiceTransaction: vi.fn(),
     // Re-export the pure helpers that the service imports from @repo/service-core via the shim
     hashCustomerId: vi.fn().mockReturnValue(12345),
-    sumIncrements: vi
-        .fn()
-        .mockImplementation(
-            (
-                purchases: ReadonlyArray<{
-                    limitAdjustments?: Array<{ limitKey: string; increase: number }> | null;
-                }>,
-                limitKey: string
-            ) => {
-                let total = 0;
-                for (const p of purchases) {
-                    const adj = p.limitAdjustments ?? [];
-                    const match = adj.find((la) => la.limitKey === limitKey);
-                    if (match) total += match.increase;
-                }
-                return total;
+    sumIncrements: vi.fn().mockImplementation(
+        (
+            purchases: ReadonlyArray<{
+                limitAdjustments?: Array<{ limitKey: string; increase: number }> | null;
+            }>,
+            limitKey: string
+        ) => {
+            let total = 0;
+            for (const p of purchases) {
+                const adj = p.limitAdjustments ?? [];
+                const match = adj.find((la) => la.limitKey === limitKey);
+                if (match) total += match.increase;
             }
-        ),
+            return total;
+        }
+    ),
     // computeDirection uses the real implementation (it now takes limits maps)
     computeDirection: vi.fn().mockReturnValue('lateral'),
     resolvePlanBaseLimit: vi
@@ -374,7 +372,7 @@ describe('addon-plan-change.service — PlanService cutover (SPEC-192 T-026)', (
                 })
             );
             // The maxValue must be > 0 (addon increment=5 > 0, so newMaxValue > 0)
-            const setCall = billing.limits.set.mock.calls[0];
+            const setCall = vi.mocked(billing.limits.set).mock.calls[0];
             expect(setCall).toBeDefined();
             expect((setCall?.[0] as { maxValue: number }).maxValue).toBeGreaterThan(0);
             // Config getPlanBySlug was never called

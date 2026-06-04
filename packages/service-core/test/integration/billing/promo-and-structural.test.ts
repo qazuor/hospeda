@@ -205,7 +205,7 @@ describe('static guard: DEFAULT_PROMO_CODES not exported from service-core barre
         try {
             pkg = (await import('@repo/service-core')) as Record<string, unknown>;
         } catch {
-            pkg = (await import('../../src/index.js')) as Record<string, unknown>;
+            pkg = (await import('../../../src/index.js')) as Record<string, unknown>;
         }
 
         // The function should be present in the barrel

@@ -157,7 +157,7 @@ function buildBilling() {
             remove: vi.fn().mockResolvedValue(undefined),
             removeBySource: vi.fn().mockResolvedValue(1)
         }
-    } as never;
+    };
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -190,7 +190,9 @@ describe('addon-entitlement.service cutover parity (SPEC-192 T-012)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         billing = buildBilling();
-        service = new AddonEntitlementService(billing);
+        // Cast at the boundary only — keeping buildBilling() un-cast preserves
+        // the inferred mock types for assertions (billing.entitlements.grant etc.)
+        service = new AddonEntitlementService(billing as never);
         // Default: getById returns NOT_FOUND so getBySlug fallback is used
         mockPlanGetById.mockResolvedValue({
             success: false,

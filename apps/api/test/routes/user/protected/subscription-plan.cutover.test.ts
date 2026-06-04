@@ -118,8 +118,10 @@ const [subscriptionRouteConfig, statsRouteConfig] = mockCreateProtectedRoute.moc
     (call) => call[0] as RouteConfig
 );
 
-const subscriptionHandler = subscriptionRouteConfig?.handler;
-const statsHandler = statsRouteConfig?.handler;
+// Casts keep strict typecheck happy: the configs are captured at import time
+// and the tests below would fail loudly if they were missing.
+const subscriptionHandler = subscriptionRouteConfig?.handler as (ctx: unknown) => Promise<unknown>;
+const statsHandler = statsRouteConfig?.handler as (ctx: unknown) => Promise<unknown>;
 
 // ─── Stubs ────────────────────────────────────────────────────────────────────
 
