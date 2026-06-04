@@ -1,0 +1,502 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-194",
+    "title": "Billing Lifecycle Robustness & Bug Fixes",
+    "created": "2026-06-04T20:32:33Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Design subscription status transition table + guard helper",
+            "description": "Spec §2 T-194-01. Create the validated transition table for SubscriptionStatusEnum and a single guard helper all status writes will route through (reject illegal transitions with typed error). Mirror the existing addon pattern: packages/service-core/src/services/billing/addon/addon-status-transitions.ts. Must cover: active→past_due→cancelled, trialing→active|cancelled, pending_provider→active|abandoned (incl. the SPEC-127 polling-timeout path). Place per the addon precedent (service-core billing dir). Unit tests for every legal/illegal edge (TDD: table is pure logic).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Transition table + typed guard helper", "completed": false },
+                { "title": "Exhaustive unit tests (legal + illegal edges)", "completed": false }
+            ],
+            "tags": ["state-machine", "foundation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Migrate the 6 free-form status-write sites onto the guard",
+            "description": "Spec §2 T-194-01. Route every update(billingSubscriptions) status write (webhook handlers, crons, services — enumerate via grep, drift-report counted 6 direct sites) through the T-001 helper behind a thin shim. No behavior change for currently-legal transitions; illegal ones log + reject. Regression tests per migrated site (existing test files get the new mock/assertion).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007", "T-008", "T-011"],
+            "subtasks": [
+                { "title": "Enumerate + migrate all write sites", "completed": false },
+                { "title": "Per-site regression tests", "completed": false }
+            ],
+            "tags": ["state-machine", "foundation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Canonicalize ABANDONED vocab (incomplete_expired → abandoned)",
+            "description": "Spec §5 T-194-13 folded into the state machine. abandoned-pending-subs.job.ts:60 writes 'incomplete_expired' while SubscriptionStatusEnum.ABANDONED='abandoned' (mapping documented at subscription-status.ts:114). Pick 'abandoned' as canonical: cron writes it via the T-001 guard; add a data backfill path for existing rows (migration or runtime mapping — check volume first; coordinate with the two-carriles migration policy) and keep read-compat for the legacy value. Tests: direct query on 'abandoned' finds the cron-written rows.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Cron writes canonical value via guard", "completed": false },
+                { "title": "Backfill/compat for legacy rows", "completed": false },
+                { "title": "Regression test", "completed": false }
+            ],
+            "tags": ["state-machine", "vocab"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Red regression test: trial-expiry advisory lock guards nothing",
+            "description": "Spec §3 T-194-02. Write a failing test demonstrating blockExpiredTrials (trial.service.ts:357-376) releases advisory lock 1004 before the processing loop (two concurrent invocations both process). Test the claim mechanism that SHOULD exist (claimed-row guard). Red-first per bug policy.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [{ "title": "Failing concurrency/claim test", "completed": false }],
+            "tags": ["bugfix", "tdd", "trial"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Fix blockExpiredTrials lock structure (ADR-019)",
+            "description": "Spec §3 T-194-02. Restructure: lock guards the CLAIM of rows; per-sub external (QZPay/MP) calls run in their own short txns with a claimed-row guard. No external calls inside the lock-holding tx (ADR-019). T-004 test goes green.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Claim-under-lock restructure", "completed": false },
+                { "title": "External calls in short txns", "completed": false }
+            ],
+            "tags": ["bugfix", "trial", "cron"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Red regression tests: refund revokes nothing (admin + webhook)",
+            "description": "Spec §3 T-194-03/04. Failing tests: (a) onAfterPaymentRefund (qzpay-admin-hooks.ts:407-437) must transition sub via state machine + revoke entitlements + clearEntitlementCache on full refund; (b) MP webhook refund (payment-logic.ts:498, subscription-payment-handler.ts:75) same policy. Today both only log/flip payment status. Red-first.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                { "title": "Failing admin-refund tests", "completed": false },
+                { "title": "Failing webhook-refund tests", "completed": false }
+            ],
+            "tags": ["bugfix", "tdd", "refund"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Refund (admin) revokes access + clears cache + transitions state",
+            "description": "Spec §3 T-194-03. onAfterPaymentRefund: full refund → transition to cancelled via T-001 guard, revoke entitlements, clearEntitlementCache(customerId); partial refund → keep sub, audit only (modeling in T-019). T-006(a) green.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "Full-refund revoke path", "completed": false },
+                { "title": "Partial-refund audit branch", "completed": false }
+            ],
+            "tags": ["bugfix", "refund"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Refund (MP webhook) applies the same policy",
+            "description": "Spec §3 T-194-04. payment-logic.ts:498 + subscription-payment-handler.ts:75: apply the T-007 policy (state transition + revoke + cache clear) on webhook-sourced refunds. Reuse the same service-level implementation — no duplicated policy. T-006(b) green. Mock-sweep note: payment-logic.ts factories were touched by SPEC-127; re-check its test mocks.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Webhook refund wiring to shared policy", "completed": false },
+                { "title": "Tests green incl. SPEC-127-touched mocks", "completed": false }
+            ],
+            "tags": ["bugfix", "refund", "webhook"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Dunning non-payment cancellation clears entitlement cache",
+            "description": "Spec §4 T-194-05. dunning.job.ts:261-313 subscription.canceled_nonpayment: add clearEntitlementCache (INV-1) + regression test.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [{ "title": "Cache clear + test", "completed": false }],
+            "tags": ["bugfix", "dunning", "cache"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Trial-expiry notifications fire (inject sender)",
+            "description": "Spec §4 T-194-06. trial-expiry.ts:60 builds TrialService without the notification sender → TRIAL_EXPIRED never sends. Inject the sender (match how other crons wire it) + regression test asserting the send.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Sender injection + test", "completed": false }],
+            "tags": ["bugfix", "trial", "notifications"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Scheduled-change apply is idempotent",
+            "description": "Spec §4 T-194-07. apply-scheduled-plan-changes.ts:249-272: stamp status='applied' atomically with/before markResolved so a failed resolve never re-runs changePlan + addon recalc. Red regression test (markResolved failure → second tick must NOT re-apply) then fix.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Red double-apply test", "completed": false },
+                { "title": "Atomic applied-stamp fix", "completed": false }
+            ],
+            "tags": ["bugfix", "cron", "idempotency"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Addon split-state reconciliation (re-apply missing grants)",
+            "description": "Spec §5 T-194-08 + realign notes. When billing_addon_purchases row is active but applyAddonEntitlements failed (addon.checkout.ts:738-753), reconcile: detect active-row-without-grant and re-apply (mirror addon-expiry's removal reconciliation). Anchor on the SELECT FOR UPDATE guard (636-656) — re-apply grants, never double-insert. Out of scope: the non-fatal scheduleAddonCheckoutPolling skip (intentional).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Detection + re-apply reconciliation", "completed": false },
+                { "title": "Tests (split-state fixture)", "completed": false }
+            ],
+            "tags": ["bugfix", "addon", "reconciliation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Polling treats ADDON_ALREADY_ACTIVE as terminal success",
+            "description": "Spec §5 T-194-08 realign note (a): SPEC-127's runOneTimePaymentPoll addon branch spins on the ADDON_ALREADY_ACTIVE sentinel (addon.checkout.ts:653-655 → error backoff until maxAttempts). Make already-active a graceful terminal 'succeeded' for addon polling jobs (the purchase exists — reconciliation T-012 covers missing grants). Regression test: addon job + already-active purchase → terminal succeeded, no retry loop.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [{ "title": "Terminal handling + regression test", "completed": false }],
+            "tags": ["bugfix", "polling", "addon"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Addon-expiry notification not skipped between queries",
+            "description": "Spec §5 T-194-09. addon-expiry.job.ts:249-255: single-fetch (or re-check) so an addon expiring between the two queries still gets ADDON_EXPIRED notif. Regression test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [{ "title": "Single-fetch fix + test", "completed": false }],
+            "tags": ["bugfix", "addon", "cron"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Batch/paginate addon-expiry processing",
+            "description": "Spec §5 T-194-10 (addon half). addon-expiry.job.ts:227-229 sequential processing can exceed the 2-min cron timeout >100 items. Batch with bounded concurrency or chunked pagination; keep per-item error isolation. Test with a large fixture.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [{ "title": "Batching + scale test", "completed": false }],
+            "tags": ["perf", "cron", "addon"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-016",
+            "title": "Paginate blockExpiredTrials trialing load",
+            "description": "Spec §5 T-194-10 (trial half). trial.service.ts:383 loads all trialing subs unpaginated. Paginate/chunk on top of the T-005 claim structure. Scale test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [{ "title": "Pagination + scale test", "completed": false }],
+            "tags": ["perf", "trial"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-017",
+            "title": "Align downgrade price comparison to normalized intervals",
+            "description": "Spec §5 T-194-11. subscription-downgrade.service.ts:216 compares absolute unitAmount; plan-change.ts:272-274 normalizes by intervalCount. Align the service to normalized comparison (annual→monthly same-tier classified consistently). Regression test with annual/monthly same-tier fixture.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Normalized compare + test", "completed": false }],
+            "tags": ["bugfix", "downgrade"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-018",
+            "title": "Add idempotencyKeyMiddleware to /change-plan",
+            "description": "Spec §5 T-194-12. plan-change.ts lacks the middleware that start-paid.ts:33 and addons.ts:31 already use. Wire it + double-submit test.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Middleware + double-submit test", "completed": false }],
+            "tags": ["idempotency", "route"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-019",
+            "title": "Partial-refund modeling + refund audit trail",
+            "description": "Spec §6 T-194-14. Write the never-written refunded_amount integer column (centavos) on refunds; insert a billing_subscription_events audit row for every refund (admin + webhook sources). Partial vs full discrimination feeds T-007's branch. Tests for both sources and both refund kinds.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "refunded_amount writes", "completed": false },
+                { "title": "Audit event rows", "completed": false },
+                { "title": "Tests (admin/webhook × full/partial)", "completed": false }
+            ],
+            "tags": ["refund", "audit"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-020",
+            "title": "Advisory lock for exchange-rate cron",
+            "description": "Spec §6 T-194-15. exchange-rate-fetch.job.ts has no advisory lock; two replicas can write concurrently. Add one per ADR-019 conventions (new lock key, registered wherever lock keys are catalogued). Note coordination with SPEC-150 (FX).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Lock + test", "completed": false }],
+            "tags": ["cron", "concurrency"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-021",
+            "title": "Stop writing deprecated addonAdjustments metadata",
+            "description": "Spec §6 T-194-16. addon-entitlement.service.ts:293-298 still writes the deprecated addonAdjustments JSON (billing_addon_purchases table is authoritative). Stop writing; verify no reader depends on it (grep readers first — if any remain, migrate them to the table in this task). Tests updated.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Reader audit + stop writing", "completed": false },
+                { "title": "Tests", "completed": false }
+            ],
+            "tags": ["cleanup", "addon"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-022",
+            "title": "Abandoned-sub user notification",
+            "description": "Spec §6 T-194-17. abandoned-pending-subs.job.ts: add an optional user notification when a sub is marked abandoned (existing notification conventions). Test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [{ "title": "Notification + test", "completed": false }],
+            "tags": ["notifications", "cron"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-023",
+            "title": "Guard annual-sub pause behavior",
+            "description": "Spec §6 T-194-18. subscription-pause.ts:78 calls MP preapproval pause; annual one-time subs have no preapproval. Define + guard (reject or no-op with clear typed error — pick per how the route consumes it; consult subscription metadata billingInterval). Test both sub kinds.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Guard + tests", "completed": false }],
+            "tags": ["bugfix", "pause"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-024",
+            "title": "Pin scheduled-change CronJobResult error contract",
+            "description": "Spec §6 T-194-19 (narrowed by realign — error count already surfaced at apply-scheduled-plan-changes.ts:183,400-408). Add a pinning test asserting MAX_APPLY_ATTEMPTS exhaustion yields failed>0 / success=false in CronJobResult, so SPEC-149's Sentry wiring can rely on it.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [{ "title": "Pinning test", "completed": false }],
+            "tags": ["tests", "cron"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-025",
+            "title": "Thread customer locale into return URLs",
+            "description": "Spec §6 T-194-20. start-paid.ts:55 hardcodes RETURN_URL_LOCALE='es'. Thread the customer locale (source: user/customer record or request context — follow i18n conventions). Test es + en. Note: candidate fold into SPEC-150 if it lands first — verify 150 hasn't.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [{ "title": "Locale threading + tests", "completed": false }],
+            "tags": ["i18n", "checkout"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-026",
+            "title": "Dispute manual-contract pinning test + runbook",
+            "description": "Spec §7 T-194-21 (narrowed by realign — admin notification already wired at dispute-logic.ts:38-87). Remaining: a test pinning the manual contract (no auto-cancel on dispute) + the ops runbook doc (where ops docs live — check docs/ structure).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Pinning test", "completed": false },
+                { "title": "Runbook doc", "completed": false }
+            ],
+            "tags": ["docs", "dispute"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-027",
+            "title": "Post-change mock sweep + per-package typecheck",
+            "description": "Mandatory sweep (SPEC-192/127 precedent): grep ALL test files mocking the touched modules (trial.service, qzpay-admin-hooks, payment-logic, dunning/addon-expiry/apply-scheduled-plan-changes/trial-expiry/exchange-rate/abandoned-pending-subs/subscription-poll jobs, subscription-downgrade, addon-entitlement, subscription-pause, plan-change, the new state-machine module). Fix stale enumerated vi.mock factories. Targeted sequential runs only.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-003",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-013",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024",
+                "T-025",
+                "T-026"
+            ],
+            "blocks": ["T-028"],
+            "subtasks": [
+                { "title": "Sweep + fixes", "completed": false },
+                { "title": "Targeted re-runs", "completed": false }
+            ],
+            "tags": ["tests", "sweep"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-028",
+            "title": "Quality gate: typecheck + lint + targeted suites + coverage",
+            "description": "Per-package typecheck on touched packages, lint, targeted test files sequential (owner constraint: no full suite). 100% functional coverage on touched lifecycle services/crons (chunked per SPEC-143). Adversarial fresh-context review before PR (money-handling).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Gates green", "completed": false },
+                { "title": "Adversarial review + fixes", "completed": false }
+            ],
+            "tags": ["quality-gate"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-029",
+            "title": "Register deferred smoke sections + docs",
+            "description": "Add SPEC-194's deferred staging-smoke sections (refund, dunning, trial, scheduled-change — billing CORE per spec §8) to the SPEC-193 pending-staging-smoke.md list, following the established entry format. Commit .qtm tracking separately.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-030"],
+            "subtasks": [{ "title": "Smoke list entry", "completed": false }],
+            "tags": ["docs", "tracking"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-030",
+            "title": "PR(s) to staging, CI green, merge",
+            "description": "Orphan-commit guard before push; verify remote ref after push (rtk silent no-op gotcha). Given the spec size (~30 tasks), evaluate chained PRs (foundation+critical / high+medium / low) vs single PR with the owner BEFORE pushing. Merge only via gh pr merge --merge with CI Pass SUCCESS. After merge: index-sync closeout + engram.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "PR strategy decision with owner", "completed": false },
+                { "title": "Push + PR + CI + merge", "completed": false },
+                { "title": "Closeout (indexes + engram)", "completed": false }
+            ],
+            "tags": ["pr", "release"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 30,
+        "pending": 30,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}
