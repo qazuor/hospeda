@@ -1,4 +1,4 @@
-import { GridCard } from '@/components/grid';
+import { GridCard, GridEmptyState } from '@/components/grid';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
@@ -603,27 +603,48 @@ export const createEntityListPage = <TData extends { id: string }>(
                             })}`}
                         >
                             {isLoading ? (
-                                <div className="text-muted-foreground text-sm">
+                                <div className="col-span-full text-muted-foreground text-sm">
                                     {t('ui.loading.text')}
                                 </div>
                             ) : rows.length === 0 ? (
-                                <div className="text-muted-foreground text-sm">
-                                    {filterState.hasActiveFilters
-                                        ? t(
-                                              'admin-entities.list.noResultsFiltered' as TranslationKey
-                                          )
-                                        : t('admin-entities.list.noResults' as TranslationKey)}
-                                </div>
+                                <GridEmptyState hasActiveFilters={filterState.hasActiveFilters} />
                             ) : (
-                                rows.map((r) => (
-                                    <GridCard<Row>
-                                        key={r.id}
-                                        item={r}
-                                        columns={columns}
-                                        visibleColumns={getGridVisibleColumns()}
-                                        maxFields={viewConfig.gridConfig?.maxFields || 10}
-                                    />
-                                ))
+                                rows.map((r) => {
+                                    // Access renderCard from the original config (not the
+                                    // DEFAULT_VIEW_CONFIG merge) to preserve its optional type.
+                                    const renderCard = config.viewConfig?.gridConfig?.renderCard;
+                                    if (renderCard) {
+                                        return renderCard({
+                                            row: r as unknown,
+                                            onPeek: (row: unknown) => setPeekRow(row as Row),
+                                            onEdit: (row: unknown) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: (row as Row).id }
+                                                } as DynamicNavigateOptions),
+                                            onDelete: (_row: unknown) => {
+                                                // Delete is handled externally; no-op here unless
+                                                // a future spec wires a delete handler into the config.
+                                            }
+                                        });
+                                    }
+                                    return (
+                                        <GridCard<Row>
+                                            key={r.id}
+                                            item={r}
+                                            columns={columns}
+                                            visibleColumns={getGridVisibleColumns()}
+                                            maxFields={viewConfig.gridConfig?.maxFields || 10}
+                                            onPeek={(row) => setPeekRow(row)}
+                                            onEdit={(row) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: row.id }
+                                                } as DynamicNavigateOptions)
+                                            }
+                                        />
+                                    );
+                                })
                             )}
                         </div>
                     )}
