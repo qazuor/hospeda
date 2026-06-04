@@ -271,6 +271,19 @@ describe('buildFilterChips — date-range', () => {
         expect(chips).toHaveLength(1);
         expect(chips[0].paramKey).toBe('createdAfter');
     });
+
+    it('generates one chip when only the to bound is active', () => {
+        const chips = buildFilterChips({
+            activeFilters: { createdBefore: '2026-03-31' },
+            filterBarConfig: rangeOnlyConfig,
+            defaultFilters: {},
+            t
+        });
+
+        expect(chips).toHaveLength(1);
+        expect(chips[0].paramKey).toBe('createdBefore');
+        expect(chips[0].value).toBe('2026-03-31');
+    });
 });
 
 // ---------------------------------------------------------------------------

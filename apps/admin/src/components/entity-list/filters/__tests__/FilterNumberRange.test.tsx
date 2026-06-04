@@ -75,7 +75,7 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        expect(screen.getByText(/admin-filters\.price\.label/)).toBeDefined();
+        expect(screen.getAllByText(/admin-filters\.price\.label/).length).toBeGreaterThan(0);
     });
 
     it('shows the unit label when unitLabelKey is provided', () => {
@@ -119,8 +119,10 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton'); // input type=number
-        fireEvent.change(inputs[0], { target: { value: '1000' } });
+        const minInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMin/
+        );
+        fireEvent.change(minInput, { target: { value: '1000' } });
         expect(onChangeMin).toHaveBeenCalledWith('1000');
     });
 
@@ -136,8 +138,10 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton');
-        fireEvent.change(inputs[1], { target: { value: '5000' } });
+        const maxInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMax/
+        );
+        fireEvent.change(maxInput, { target: { value: '5000' } });
         expect(onChangeMax).toHaveBeenCalledWith('5000');
     });
 
@@ -153,8 +157,10 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton');
-        fireEvent.change(inputs[0], { target: { value: '' } });
+        const minInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMin/
+        );
+        fireEvent.change(minInput, { target: { value: '' } });
         expect(onChangeMin).toHaveBeenCalledWith(undefined);
     });
 
@@ -170,12 +176,14 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton');
-        fireEvent.change(inputs[1], { target: { value: '' } });
+        const maxInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMax/
+        );
+        fireEvent.change(maxInput, { target: { value: '' } });
         expect(onChangeMax).toHaveBeenCalledWith(undefined);
     });
 
-    it('renders a fieldset with aria-label from the label', () => {
+    it('renders a fieldset with a sr-only legend providing the accessible name', () => {
         const { container } = render(
             <FilterNumberRange
                 config={priceConfig}
@@ -188,7 +196,9 @@ describe('FilterNumberRange', () => {
 
         const fieldset = container.querySelector('fieldset');
         expect(fieldset).not.toBeNull();
-        expect(fieldset?.getAttribute('aria-label')).toBe('admin-filters.price.label');
+        const legend = fieldset?.querySelector('legend');
+        expect(legend).not.toBeNull();
+        expect(legend?.textContent).toBe('admin-filters.price.label');
     });
 
     it('shows the current valueMin in the input', () => {
@@ -202,8 +212,10 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton');
-        expect((inputs[0] as HTMLInputElement).value).toBe('2500');
+        const minInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMin/
+        ) as HTMLInputElement;
+        expect(minInput.value).toBe('2500');
     });
 
     it('shows the current valueMax in the input', () => {
@@ -217,7 +229,9 @@ describe('FilterNumberRange', () => {
             />
         );
 
-        const inputs = screen.getAllByRole('spinbutton');
-        expect((inputs[1] as HTMLInputElement).value).toBe('7500');
+        const maxInput = screen.getByLabelText(
+            /admin-filters\.price\.label.*admin-filters\.rangeMax/
+        ) as HTMLInputElement;
+        expect(maxInput.value).toBe('7500');
     });
 });

@@ -62,10 +62,10 @@ describe('FilterDateRange', () => {
             />
         );
 
-        expect(screen.getByText(/admin-filters\.createdAt\.label/)).toBeDefined();
+        expect(screen.getAllByText(/admin-filters\.createdAt\.label/).length).toBeGreaterThan(0);
     });
 
-    it('renders a fieldset with aria-label from the label', () => {
+    it('renders a fieldset with a sr-only legend providing the accessible name', () => {
         const { container } = render(
             <FilterDateRange
                 config={createdAtConfig}
@@ -78,7 +78,9 @@ describe('FilterDateRange', () => {
 
         const fieldset = container.querySelector('fieldset');
         expect(fieldset).not.toBeNull();
-        expect(fieldset?.getAttribute('aria-label')).toBe('admin-filters.createdAt.label');
+        const legend = fieldset?.querySelector('legend');
+        expect(legend).not.toBeNull();
+        expect(legend?.textContent).toBe('admin-filters.createdAt.label');
     });
 
     it('calls onChangeFrom with the selected date string', () => {
