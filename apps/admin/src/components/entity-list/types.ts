@@ -49,9 +49,12 @@ export interface GridCardRenderProps<TData> {
 }
 
 /**
- * Configuration for view settings (table/grid)
+ * Configuration for view settings (table/grid).
+ *
+ * @typeParam TData - The entity row type. Defaults to `unknown` so that all
+ * existing usages of `ViewConfig` without a type parameter remain compatible.
  */
-export type ViewConfig = {
+export type ViewConfig<TData = unknown> = {
     readonly defaultView: 'table' | 'grid';
     readonly allowViewToggle: boolean;
     readonly gridConfig?: {
@@ -73,7 +76,7 @@ export type ViewConfig = {
          * When absent (the default), the generic `GridCard` is used — all
          * existing configs that do not set this field are unaffected.
          */
-        readonly renderCard?: (props: GridCardRenderProps<unknown>) => ReactNode;
+        readonly renderCard?: (props: GridCardRenderProps<TData>) => ReactNode;
     };
 };
 
@@ -292,7 +295,7 @@ export type EntityConfig<TData = unknown> = {
 
     // Configuration
     readonly searchConfig?: SearchConfig;
-    readonly viewConfig?: ViewConfig;
+    readonly viewConfig?: ViewConfig<TData>;
     readonly paginationConfig?: PaginationConfig;
     readonly layoutConfig: LayoutConfig;
     /**
