@@ -52,7 +52,7 @@
             "id": "T-003",
             "title": "Add markWhatsNewSeen service method with server-side merge",
             "description": "Add markWhatsNewSeen({ actor, ids }) to the user service in @repo/service-core (read-modify-write: read current settings, Set-union seenIds, write back preserving ALL sibling keys — theme/language/notifications/newsletter/adminTours/baselineAt). Also expose an initWhatsNewBaseline (or equivalent) used by lazy-init in T-006. FIRST confirm whether UserService.update replaces or merges the JSONB column (spec Q2 — treat as replace-only defensively regardless). Returns Result<T>. Tests per spec §12.2: sibling keys preserved; idempotent on overlapping ids; missing onboarding initializes cleanly; adminTours untouched when writing seenIds.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-006", "T-007"],
@@ -60,21 +60,21 @@
             "tags": ["service-core", "phase-service"],
             "phase": "service",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T01:21:18.000Z",
-                "completed": null
+                "completed": "2026-06-04T05:07:53.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Create curated whats-new data file with boot validation",
             "description": "Create apps/api/src/data/whats-new/whats-new.ts (NEW data/ dir) exporting whatsNewEntries = WhatsNewCatalogSchema.parse([...]) per spec §6.3 — empty array v1, example entry in comments, header documenting the 6-month archival policy (spec §15). Parse at module import time so a content typo fails API startup. Test: importing the module in vitest does not throw; a fixture with an invalid entry fails parse (AC-16).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-006", "T-018"],
@@ -82,21 +82,21 @@
             "tags": ["api", "data", "phase-api"],
             "phase": "api",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T01:21:18.000Z",
-                "completed": null
+                "completed": "2026-06-04T05:07:53.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Implement pure server helpers: role filter, seen computation, locale resolution",
             "description": "Pure, unit-testable functions (no Hono/DB) colocated near the whats-new route (e.g. apps/api/src/routes/whats-new/helpers.ts or lib): filterEntriesByRole({ entries, role }) (absent/empty roles = all); computeSeen({ entry, seenIds, baselineAt }) (seen = seenIds.includes(id) || publishedAt <= baselineAt — spec §6.5 step 5); resolveEntryLocale({ field, locale }) (requested -> es fallback, server-side per §6.7). RO-RO, named exports. Unit tests: role filter matrix; baseline boundary (publishedAt === baselineAt is seen); seenIds union; locale fallback es/en/pt per §12.5.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-006"],
@@ -104,21 +104,21 @@
             "tags": ["api", "pure-logic", "phase-api"],
             "phase": "api",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T01:21:18.000Z",
-                "completed": null
+                "completed": "2026-06-04T05:07:53.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Implement GET /api/v1/protected/whats-new with lazy-init",
             "description": "Route apps/api/src/routes/whats-new/protected/getWhatsNew.ts + index.ts registration + wire into apps/api/src/routes/index.ts. createProtectedRoute, NO requiredPermissions (any authenticated session — D4). Logic per spec §6.5: read actor settings; lazy-init baselineAt=now/seenIds=[] when onboarding.whatsNew absent (persist via T-003 service; init failure = non-fatal, log warn, proceed with empty state per §15); filter by role (T-005); compute seen per entry; resolve locale server-side from settings.languageAdmin ?? 'es'; sort newest-first; return { items, unseenCount }. Route tests per §12.3: 401 unauthenticated/guest; lazy-init fires once; role filter; seen computation; unseenCount; locale resolution + es fallback.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003", "T-004", "T-005"],
             "blocks": ["T-016", "T-019"],
@@ -132,7 +132,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T05:07:53.000Z",
                 "completed": null
             }
         },
@@ -140,7 +140,7 @@
             "id": "T-007",
             "title": "Implement PATCH /api/v1/protected/users/me/whats-new-seen",
             "description": "Route apps/api/src/routes/user/protected/whatsNewSeen.ts + registration in routes/user/protected/index.ts. createProtectedRoute, body WhatsNewSeenBodySchema, rate limit { requests: 30, windowMs: 60000 } (spec §6.6). Delegates to T-003 markWhatsNewSeen. Permission guard: resolve spec Q1 FIRST — check packages/seed/src/required/rolePermissions.seed.ts for the self-scope permission HOST/EDITOR hold (USER_SETTINGS_UPDATE vs USER_UPDATE_SELF); if genuinely ambiguous, consult owner per decision protocol. Returns { success: true }. Tests per §12.3: empty ids -> 400; valid ids -> 200 + seenIds updated + siblings preserved; idempotent double-call; 401 unauthenticated.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002", "T-003"],
             "blocks": ["T-019"],
@@ -154,7 +154,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T05:07:53.000Z",
                 "completed": null
             }
         },
@@ -447,9 +447,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 15,
-        "inProgress": 3,
-        "completed": 2,
+        "pending": 13,
+        "inProgress": 2,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }
