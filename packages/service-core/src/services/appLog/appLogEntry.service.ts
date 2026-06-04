@@ -75,7 +75,12 @@ export class AppLogEntryService extends BaseService {
             label: data.label ?? null,
             message,
             data: dataField ?? null,
-            loggedAt: data.loggedAt
+            loggedAt: data.loggedAt,
+            // Request-context fields — present when the sink ran inside an ALS scope.
+            requestId: data.requestId ?? null,
+            userId: data.userId ?? null,
+            method: data.method ?? null,
+            path: data.path ?? null
             // biome-ignore lint/suspicious/noExplicitAny: db Partial<row> vs schema type bridge
         } as any);
 

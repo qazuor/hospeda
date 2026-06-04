@@ -82,6 +82,7 @@ ENV HOST=0.0.0.0
 ENV PORT=4321
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=pruned /prod/web ./
+COPY --chown=node:node --from=pruned /prod/web ./
+USER node
 EXPOSE 4321
 CMD ["node", "dist/server/entry.mjs"]

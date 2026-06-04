@@ -17,6 +17,12 @@
  *   WARN/ERROR is therefore always attempted — nothing is dropped while the
  *   DB recovers. Failures are reported to stderr (which bypasses the logger)
  *   with a throttle on the REPORT only, never on the insert attempts.
+ * - Request-context enrichment: {@link getRequestContext} is called
+ *   synchronously at the top of each handler invocation (before the
+ *   fire-and-forget promise) so the ALS store is captured on the same
+ *   microtask tick as the log call site. When no store is active (startup,
+ *   crons, tests) the context fields are omitted entirely. `role` is NOT
+ *   persisted — it has no column and is reserved for SPEC-180/Sentry.
  */
 
 import type { LogEntry } from '@repo/logger';
@@ -24,6 +30,7 @@ import { registerHook } from '@repo/logger';
 import type { CreateAppLogEntry } from '@repo/schemas';
 import { AppLogEntryService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+import { getRequestContext } from './request-context';
 
 /** Minimum gap between stderr failure reports (throttles the report, NOT the inserts). */
 export const SINK_REPORT_THROTTLE_MS = 30_000;
@@ -81,8 +88,24 @@ export const createAppLogSinkHandler = (
             return;
         }
 
+        // Capture ALS store synchronously here — before any await boundary —
+        // so we read the correct per-request store regardless of when the
+        // fire-and-forget promise settles.
+        const reqCtx = getRequestContext();
+        const contextFields: Pick<CreateAppLogEntry, 'requestId' | 'userId' | 'method' | 'path'> =
+            reqCtx !== undefined
+                ? {
+                      requestId: reqCtx.requestId,
+                      method: reqCtx.method,
+                      path: reqCtx.path,
+                      ...(reqCtx.userId !== undefined ? { userId: reqCtx.userId } : {})
+                  }
+                : {};
+
+        const input: CreateAppLogEntry = { ...mapEntryToCreateInput(entry), ...contextFields };
+
         // Fire-and-forget: never awaited, rejection swallowed.
-        service.recordEntry({ data: mapEntryToCreateInput(entry) }).catch((err) => {
+        service.recordEntry({ data: input }).catch((err) => {
             failuresSinceReport += 1;
             const now = Date.now();
             if (now - lastReportAt >= SINK_REPORT_THROTTLE_MS) {

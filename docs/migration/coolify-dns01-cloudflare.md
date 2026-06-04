@@ -155,8 +155,7 @@ issuance falls back to the old flow.
 
 - [`docs/runbooks/sentry-setup.md`](../runbooks/sentry-setup.md) — same
   shape of "operator runbook with Cloudflare-flavoured steps".
-- [SPEC-103 T-077](../../.qtm/tasks/SPEC-103-vps-migration-post-merge-cleanup/TODOs.md)
-  — the tracker entry this runbook closes.
+- SPEC-103 T-077 — the tracker entry this runbook closes (spec archived; task dir removed).
 - Cloudflare docs: <https://developers.cloudflare.com/api/tokens/create/>
 - Coolify docs: <https://coolify.io/docs/knowledge-base/ssl> (DNS
   Challenge section).

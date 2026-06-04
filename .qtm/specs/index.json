@@ -474,35 +474,6 @@
             "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin."
         },
         {
-            "specId": "SPEC-181",
-            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
-            "type": "fix",
-            "complexity": "low-medium",
-            "status": "in-progress",
-            "path": "SPEC-181-posthog-reverse-proxy",
-            "priority": "P2",
-            "created": "2026-06-02T00:00:00.000Z",
-            "linear": "BETA-77",
-            "branch": "spec/SPEC-181-posthog-reverse-proxy",
-            "base": "staging",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-181-posthog-reverse-proxy",
-            "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
-            "tags": [
-                "posthog",
-                "analytics",
-                "cloudflare-worker",
-                "csp",
-                "web",
-                "infra",
-                "reverse-proxy",
-                "first-party",
-                "ad-blocker",
-                "env-registry"
-            ],
-            "note": "Driver BETA-77. Web PostHog sends events directly to us.i.posthog.com — blocked by ad-blockers (est. 25-35% desktop loss in Argentina). Solution: Cloudflare Worker proxying /ingest/* on hospeda.com.ar to PostHog Cloud US. Web-only (admin out of scope). CRITICAL coupling: CSP in middleware-helpers.ts hardcodes the PostHog external hosts; removing them and changing PUBLIC_POSTHOG_HOST must be atomic with the Worker already live. 11 tasks across 4 phases: phase-worker (Worker + wrangler + test), phase-app (CSP + env-registry + CSP regression test), phase-docs, phase-verify (owner ops + smoke). T-010/T-011 are owner-only manual actions."
-        },
-        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "completed",
