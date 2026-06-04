@@ -2,7 +2,7 @@
 id: SPEC-174
 slug: admin-welcome-tour
 title: Admin Guided Welcome Tour (role-based, config-driven)
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-05-29
 relatedSpecs:
@@ -132,7 +132,11 @@ contract and zero clobber risk on sibling settings like theme/language/notificat
 | D9 | Versioning: auto-trigger offers iff `config.version > seenVersion`; manual replay ignores version. |
 | D10 | Roles v1: HOST, EDITOR, ADMIN, SUPER_ADMIN. |
 | D11 | Analytics via existing PostHog `trackEvent`. |
-| D12 | **Cross-spec priority vs SPEC-175 (owner-locked 2026-06-03)**: the welcome tour always wins over the What's New auto-modal. While the role's welcome tour is unseen, SPEC-175's auto-modal is suppressed (a new user has no "news"). Whichever spec ships second wires the coordination in its auto-trigger. |
+| D12 | **Cross-spec priority vs SPEC-175 (owner-locked 2026-06-03)**: the welcome tour always wins over the What's New auto-modal. While the role's welcome tour is unseen, SPEC-175's auto-modal is suppressed (a new user has no "news"). SPEC-175 shipped first (PR #1437) and exposes a `suppressed` prop on `WhatsNewAutoTrigger` as the seam — SPEC-174 wires it. |
+| D13 | **Welcome auto-fire with redirect (owner-locked 2026-06-04, resolves Q3)**: the welcome tour auto-fires from ANY first authenticated route. If the current route is not the dashboard, the trigger first navigates to `/dashboard` and the tour runs there. The redirect happens ONLY when the tour will actually be offered (unseen + auto-eligible) — never after seen/skipped, never for manual replays. |
+| D14 | **SUPER_ADMIN reuses `admin.*` contextual tours (owner-locked 2026-06-04, resolves Q4)**: super-specific variants only for `plataforma`/`analisis`. Catalog stays at 19 tours. |
+| D15 | **No master opt-out in v1 (owner-locked 2026-06-04, resolves Q5)**: per-tour skip + versioning is enough; a global "no tours" flag can be added later if requested. |
+| D16 | **Q1/Q2 resolved by SPEC-175 implementation (2026-06-04)**: permission guard = `USER_SETTINGS_UPDATE` (held by HOST/EDITOR/ADMIN/SUPER_ADMIN/USER in rolePermissions.seed.ts; same guard as the settings PATCH and whats-new-seen). The `settings` JSONB column is REPLACE-mode (`UserModel` inherits `mergeableJsonbColumns = []`); the service method MUST read-modify-write, mirroring `markWhatsNewSeen` in `user.service.ts`. The `onboarding.adminTours` schema field ALREADY EXISTS in `UserSettingsSchema` (added by SPEC-175 T-002) — no schema delta needed beyond the tour-progress body schema. |
 
 ## 6. Architecture — Backend (`apps/api` + `@repo/schemas` + `@repo/service-core`)
 
@@ -396,14 +400,10 @@ service method in `@repo/service-core`; admin i18n bundle (`tour.*` chrome keys)
   verify es/en/pt and `prefers-reduced-motion`.
 - `pnpm typecheck` + `pnpm lint` + `pnpm test` green before PR to `staging`.
 
-## 15. Open questions / decisions for owner (consult per protocol)
+## 15. Open questions — ALL RESOLVED (see D13–D16 in §5)
 
-- **Q1** Exact protected-tier permission guard for the endpoint (`USER_SETTINGS_UPDATE` vs
-  `USER_UPDATE_SELF`) — confirm against the seed.
-- **Q2** Does `UserService.update` replace or merge the JSONB column? Drives whether the service
-  method must read-modify-write (assume yes/merge defensively).
-- **Q3** Should the welcome tour auto-fire only on `/dashboard`, or on whatever the first
-  authenticated landing route is? (Current plan: dashboard only.)
-- **Q4** Whether to keep separate `superAdmin.*` tourIds for ALL sections (per-role analytics) vs
-  the lean reuse of `admin.*` (current plan: reuse, super-specific only for plataforma/analisis).
-- **Q5** Is a "skip all tours forever" master opt-out desired in v1? (Not in current scope.)
+- **Q1** ✅ `USER_SETTINGS_UPDATE` (D16, evidence from SPEC-175 implementation).
+- **Q2** ✅ REPLACE-mode column → defensive read-modify-write mandatory (D16; mirror `markWhatsNewSeen`).
+- **Q3** ✅ First authenticated route + redirect to `/dashboard` when needed (D13, owner 2026-06-04).
+- **Q4** ✅ Reuse `admin.*`; super-specific only plataforma/analisis (D14).
+- **Q5** ✅ No master opt-out in v1 (D15).
