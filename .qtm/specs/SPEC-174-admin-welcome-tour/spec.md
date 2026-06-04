@@ -2,7 +2,7 @@
 id: SPEC-174
 slug: admin-welcome-tour
 title: Admin Guided Welcome Tour (role-based, config-driven)
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-05-29
 relatedSpecs:
