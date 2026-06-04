@@ -206,7 +206,7 @@
             "id": "T-010",
             "title": "Add driver.js + tour-context.tsx engine + TourWelcomeModal",
             "description": "Install driver.js in apps/admin (D2 owner-approved dependency-policy exception — document in PR). apps/admin/src/contexts/tour-context.tsx per spec §7.4: TourProvider + useTour() { isRunning, activeTourId, startTour({ tourId }), stopTour() }; startTour: trackEvent admin.tour.shown → TourWelcomeModal (Radix Dialog, Saltar/Mostrame) when showWelcomeModal → lazy import('driver.js') → buildDriverSteps → run spotlight (showProgress, allowClose, keyboard, localized chrome via t('admin-common.tour.*')) → finish/skip → markSeen + trackEvent completed|skipped. Driver instance in useRef, destroyed on unmount. Driver CSS import + admin theme overrides in styles.css. prefers-reduced-motion → animate:false. Components/whats-new pattern for component dir. Tests: welcome modal Saltar/Mostrame; startTour event flow with driver mocked; reduced-motion flag.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009"],
             "blocks": ["T-013", "T-014", "T-015"],
@@ -214,14 +214,14 @@
             "tags": ["admin", "engine", "driver-js", "phase-engine"],
             "phase": "engine",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T17:38:05.000Z",
-                "completed": null
+                "completed": "2026-06-04T18:24:57.000Z"
             }
         },
         {
@@ -272,7 +272,7 @@
             "id": "T-013",
             "title": "Implement TourAutoTrigger with D13 redirect + D12 whats-new suppression",
             "description": "apps/admin/src/components/tour/TourAutoTrigger.tsx (headless) per spec §7.6 + D13: useEffect keyed [pathname, isLoaded, role]; bail if !isLoaded || isRunning || !role; decideAutoTrigger; when decision is 'welcome-redirect' (welcome eligible, route !== dashboard) navigate({ to: '/dashboard' }) and let the dashboard pass fire the tour; redirect ONLY when tour will actually be offered, never post-seen/skip, never for manual replay. Double-rAF before startTour (data-tour targets painted). useRef latch per pathname (strict mode). Mount in AppLayout below _authed. D12 WIRING: pass suppressed={welcomeTourUnseen} to the existing WhatsNewAutoTrigger so the What's New auto-modal defers while the welcome tour is pending (seam shipped in SPEC-175). Tests: no fire while loading; fires once; redirect case; no redirect when seen; suppression passed correctly; latch.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012"],
             "blocks": ["T-018"],
@@ -286,7 +286,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T18:24:57.000Z",
                 "completed": null
             }
         },
@@ -294,7 +294,7 @@
             "id": "T-014",
             "title": "Add Ver guia entry points + tour i18n chrome keys",
             "description": "Modify apps/admin/src/integrations/clerk/header-user.tsx per spec §7.8: 'Ver guía' (relaunch role welcome via useWelcomeTourForRole; manual replay ignores version but markSeen on finish) + 'Ver guía de esta página' (only when useContextualTourForRoute returns a tour). Add tour.* chrome keys (next/prev/done/skip/replay/replayPage) to the admin i18n bundle es/en/pt (follow admin-whats-new.json wiring pattern in packages/i18n: imports + rawTranslations + namespaces array, or extend admin-common if that is where chrome strings live — match existing). Tests: items by role/route; replay ignores version. Run pre-existing header-user suites.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-010", "T-011"],
             "blocks": ["T-018"],
@@ -308,7 +308,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T18:24:57.000Z",
                 "completed": null
             }
         },
@@ -316,7 +316,7 @@
             "id": "T-015",
             "title": "A11y pass: reduced-motion, focus, keyboard",
             "description": "Per spec §7.9: verify driver.js focus trap + restore, ESC/overlay skip, keyboard nav enabled; prefers-reduced-motion → animate:false + drop Dialog enter/exit animation; aria on welcome modal (Radix handles base). Add targeted tests where feasible (reduced-motion flag propagation, ESC handling in welcome modal).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-018"],
@@ -330,7 +330,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T18:24:57.000Z",
                 "completed": null
             }
         },
@@ -403,9 +403,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 5,
-        "inProgress": 1,
-        "completed": 12,
+        "pending": 2,
+        "inProgress": 3,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.4
     }
