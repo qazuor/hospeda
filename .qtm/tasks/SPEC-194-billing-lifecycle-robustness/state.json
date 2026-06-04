@@ -256,285 +256,285 @@
             "id": "T-009",
             "title": "Dunning non-payment cancellation clears entitlement cache",
             "description": "Spec §4 T-194-05. dunning.job.ts:261-313 subscription.canceled_nonpayment: add clearEntitlementCache (INV-1) + regression test.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Cache clear + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "dunning", "cache"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": "2026-06-04T21:44:04Z",
-                "completed": null
+                "completed": "2026-06-04T21:50:00Z"
             }
         },
         {
             "id": "T-010",
             "title": "Trial-expiry notifications fire (inject sender)",
             "description": "Spec §4 T-194-06. trial-expiry.ts:60 builds TrialService without the notification sender → TRIAL_EXPIRED never sends. Inject the sender (match how other crons wire it) + regression test asserting the send.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Sender injection + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "trial", "notifications"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": "2026-06-04T21:44:04Z",
-                "completed": null
+                "completed": "2026-06-04T21:50:00Z"
             }
         },
         {
             "id": "T-011",
             "title": "Scheduled-change apply is idempotent",
-            "description": "Spec §4 T-194-07. apply-scheduled-plan-changes.ts:249-272: stamp status='applied' atomically with/before markResolved so a failed resolve never re-runs changePlan + addon recalc. Red regression test (markResolved failure → second tick must NOT re-apply) then fix.",
-            "status": "pending",
+            "description": "Spec §4 T-194-07. apply-scheduled-plan-changes.ts:249-272: stamp status='applied' atomically with/before markResolved so a failed resolve never re-runs changePlan + addon recalc. Red regression test (markResolved failure → second tick must NOT re-apply) then fix. [REVIEW NOTE for T-028: pre-stamp-to-applied design trades crash-window no-apply for eliminating double-apply/double-charge — verify acceptable + covered.]",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-024"],
             "subtasks": [
                 {
                     "title": "Red double-apply test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Atomic applied-stamp fix",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "cron", "idempotency"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T21:50:00Z",
+                "completed": "2026-06-04T21:59:19Z"
             }
         },
         {
             "id": "T-012",
             "title": "Addon split-state reconciliation (re-apply missing grants)",
             "description": "Spec §5 T-194-08 + realign notes. When billing_addon_purchases row is active but applyAddonEntitlements failed (addon.checkout.ts:738-753), reconcile: detect active-row-without-grant and re-apply (mirror addon-expiry's removal reconciliation). Anchor on the SELECT FOR UPDATE guard (636-656) — re-apply grants, never double-insert. Out of scope: the non-fatal scheduleAddonCheckoutPolling skip (intentional).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Detection + re-apply reconciliation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests (split-state fixture)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "addon", "reconciliation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T21:59:19Z",
+                "completed": "2026-06-04T22:13:53Z"
             }
         },
         {
             "id": "T-013",
             "title": "Polling treats ADDON_ALREADY_ACTIVE as terminal success",
             "description": "Spec §5 T-194-08 realign note (a): SPEC-127's runOneTimePaymentPoll addon branch spins on the ADDON_ALREADY_ACTIVE sentinel (addon.checkout.ts:653-655 → error backoff until maxAttempts). Make already-active a graceful terminal 'succeeded' for addon polling jobs (the purchase exists — reconciliation T-012 covers missing grants). Regression test: addon job + already-active purchase → terminal succeeded, no retry loop.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Terminal handling + regression test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "polling", "addon"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T21:59:19Z",
+                "completed": "2026-06-04T22:13:53Z"
             }
         },
         {
             "id": "T-014",
             "title": "Addon-expiry notification not skipped between queries",
             "description": "Spec §5 T-194-09. addon-expiry.job.ts:249-255: single-fetch (or re-check) so an addon expiring between the two queries still gets ADDON_EXPIRED notif. Regression test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Single-fetch fix + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "addon", "cron"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:13:53Z",
+                "completed": "2026-06-04T22:29:22Z"
             }
         },
         {
             "id": "T-015",
             "title": "Batch/paginate addon-expiry processing",
             "description": "Spec §5 T-194-10 (addon half). addon-expiry.job.ts:227-229 sequential processing can exceed the 2-min cron timeout >100 items. Batch with bounded concurrency or chunked pagination; keep per-item error isolation. Test with a large fixture.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Batching + scale test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["perf", "cron", "addon"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:13:53Z",
+                "completed": "2026-06-04T22:29:22Z"
             }
         },
         {
             "id": "T-016",
             "title": "Paginate blockExpiredTrials trialing load",
             "description": "Spec §5 T-194-10 (trial half). trial.service.ts:383 loads all trialing subs unpaginated. Paginate/chunk on top of the T-005 claim structure. Scale test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Pagination + scale test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["perf", "trial"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:29:22Z",
+                "completed": "2026-06-04T22:42:28Z"
             }
         },
         {
             "id": "T-017",
             "title": "Align downgrade price comparison to normalized intervals",
             "description": "Spec §5 T-194-11. subscription-downgrade.service.ts:216 compares absolute unitAmount; plan-change.ts:272-274 normalizes by intervalCount. Align the service to normalized comparison (annual→monthly same-tier classified consistently). Regression test with annual/monthly same-tier fixture.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Normalized compare + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "downgrade"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:29:22Z",
+                "completed": "2026-06-04T22:42:28Z"
             }
         },
         {
             "id": "T-018",
             "title": "Add idempotencyKeyMiddleware to /change-plan",
             "description": "Spec §5 T-194-12. plan-change.ts lacks the middleware that start-paid.ts:33 and addons.ts:31 already use. Wire it + double-submit test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Middleware + double-submit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["idempotency", "route"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:29:22Z",
+                "completed": "2026-06-04T22:42:28Z"
             }
         },
         {
             "id": "T-019",
             "title": "Partial-refund modeling + refund audit trail",
             "description": "Spec §6 T-194-14. Write the never-written refunded_amount integer column (centavos) on refunds; insert a billing_subscription_events audit row for every refund (admin + webhook sources). Partial vs full discrimination feeds T-007's branch. Tests for both sources and both refund kinds.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": [],
@@ -561,7 +561,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
+                "started": "2026-06-04T22:42:28Z",
                 "completed": null
             }
         },
@@ -907,9 +907,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 20,
-        "inProgress": 2,
-        "completed": 8,
+        "pending": 8,
+        "inProgress": 1,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.2
     }
