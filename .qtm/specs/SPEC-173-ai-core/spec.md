@@ -2,9 +2,10 @@
 id: SPEC-173
 slug: ai-core
 title: AI Foundation Package (provider-agnostic @repo/ai-core)
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-05-29
+designResolvedAt: 2026-06-04
 relatedSpecs:
   - SPEC-143  # billing testing / test-user matrix (role x plan) — usage enforcement plugs here
   - SPEC-145  # billing entitlements & limits enforcement — AI quotas reuse this
@@ -47,6 +48,7 @@ no SSE/streaming pattern anywhere in the monorepo.
 ## 2. Context & motivation
 
 ### 2.1 What exists today (verified 2026-05-29)
+
 - **No AI/LLM code**: grep across `packages/` and `apps/` for `openai`, `anthropic`,
   `embedding`, `ai-sdk`, `completion`, `gpt`, `claude` returns zero production matches.
 - **No vector infra**: no `pgvector`, no vector columns in `packages/db`.
@@ -61,6 +63,7 @@ no SSE/streaming pattern anywhere in the monorepo.
 - **Sentry + PostHog** are integrated and are the canonical observability sinks.
 
 ### 2.2 Why a dedicated package
+
 Single source of truth for all AI logic; keeps `apps/api` routes thin (project convention);
 lets us swap providers without touching API/admin/web code; isolates the AI surface for
 testing, cost control, and security review.
@@ -68,6 +71,7 @@ testing, cost control, and security review.
 ## 3. Goals / Non-goals
 
 ### Goals
+
 1. A `@repo/ai-core` package exposing a **stable, provider-agnostic API** for AI operations
    (text generation, streaming generation, structured output, intent extraction, moderation,
    embeddings interface stub).
@@ -85,6 +89,7 @@ testing, cost control, and security review.
 9. **Full test coverage** (incl. a deterministic provider stub) and **complete documentation**.
 
 ### Non-goals (this spec)
+
 - Any user-facing feature (text improvement, search, chat, support) — child specs (§4).
 - Vector database / semantic embeddings — V2 (§11). The embeddings interface is *defined* but
   no vector storage/search is implemented.
@@ -107,6 +112,7 @@ Child specs are allocated and written **after** this foundation merges.
 ## 5. Architecture & Design
 
 ### 5.1 Package layout (`packages/ai-core`)
+
 ```
 packages/ai-core/
 ├── src/
@@ -131,6 +137,7 @@ All inputs validated with Zod (schemas authored in `@repo/schemas` per SSoT, or 
 package-internal — to be confirmed in design, §8 Q3).
 
 ### 5.2 Provider abstraction
+
 - The engine depends on a package-owned `AiProvider` interface — **never** on the Vercel AI SDK
   types directly. Adapters wrap `ai` + `@ai-sdk/openai`, `@ai-sdk/anthropic`, etc.
 - **Rationale**: the Vercel AI SDK (MIT, free, runs on our VPS, no Vercel account/hosting needed)
@@ -140,6 +147,7 @@ package-internal — to be confirmed in design, §8 Q3).
   construction/call time by `apps/api` (§5.5).
 
 ### 5.3 Multi-provider strategy (V1)
+
 - **Per-feature primary provider + fallback chain**, both configurable from admin.
   e.g. `text-improve → [anthropic, openai]`, `chat → [openai, anthropic]`.
 - On primary failure (timeout, 5xx, rate-limit), the engine tries the next in the chain and
@@ -148,6 +156,7 @@ package-internal — to be confirmed in design, §8 Q3).
   added without changing the public API (§11).
 
 ### 5.4 Storage model
+
 **Decision (owner-approved tradeoff):** tables live in **`@repo/db`** (`packages/db/src/schemas/ai/`),
 NOT inside the package. This means the package is **NOT portable** to another project without
 rewriting its data layer — accepted consciously to stay consistent with the centralized repo
@@ -158,8 +167,9 @@ Tables (all soft-delete + timestamps per project convention):
 
 | Table | Purpose |
 |-------|---------|
-| `ai_settings` | Admin-managed config: providers on/off, fallback order, per-feature model+params, feature flags, quotas. Versioned where prompts are involved. |
+| `ai_settings` | Admin-managed config: providers on/off, fallback order, per-feature model+params, feature flags, quotas. **Shape (Q7 resolved):** single JSONB `value` blob keyed by `key` (e.g. `'global'`), mirroring the blessed `platform_settings` pattern (`packages/db/src/schemas/platform/platform-settings.dbschema.ts`). Validated by a Zod schema on write; cache invalidated on write. Prompts are NOT stored here (they live in `ai_prompt_versions`). |
 | `ai_provider_credentials` | Encrypted provider API keys (vault, §5.5) + metadata. |
+| `ai_credential_audit` | **(Q1 resolved)** Dedicated audit trail of credential mutations: actor, action (`created`/`rotated`/`deleted`), providerId, timestamp, ip. Permanent + queryable from admin (security trail over cost-bearing secrets; the repo has NO generic admin audit table — only `billing_audit_logs` from the third-party qzpay lib and a log-based `AuditEventType`, neither suitable). |
 | `ai_prompt_versions` | Versioned system prompts per feature (with `is_active` + history). |
 | `ai_usage` | Per-call metering: userId, feature, provider, model, tokensIn, tokensOut, costEstimate (centavos), latencyMs, status, timestamp. |
 | `ai_request_log` | Audit of every call (request metadata, PII-scrubbed) for debugging. |
@@ -169,19 +179,24 @@ Tables (all soft-delete + timestamps per project convention):
 > Cost is stored as **integer centavos** (project money convention).
 
 ### 5.5 Secrets vault (owner-approved: keys editable from admin)
+
 - Keys are stored **encrypted** (AES-256-GCM) in `ai_provider_credentials`. The **master key**
   lives in `.env` (`HOSPEDA_AI_VAULT_MASTER_KEY`), read **only by `apps/api`**.
 - **The package never touches the vault.** `apps/api` decrypts the key and passes the plaintext
   to `@repo/ai-core` **by parameter** at call time — this preserves the "package doesn't read
   secrets" requirement.
-- **Audit log**: every create/rotate/delete of a credential records actor + timestamp (reuse the
-  existing admin audit log if present; confirm in design, §8 Q1).
+- **Audit log (Q1 resolved):** every create/rotate/delete of a credential records actor + timestamp
+  in the **dedicated `ai_credential_audit` table** (§5.4). The repo has no reusable generic admin
+  audit table, so a first-party dedicated trail is used (permanent + queryable, fit for a security
+  trail over cost-bearing secrets).
 - Rotation does not require redeploy.
 - New env var must follow the project workflow: register in `@repo/config`, add Zod validation in
   `apps/api/src/utils/env.ts`, update `.env.example`, set in Coolify (operator action).
 
 ### 5.6 Admin configuration (new `PermissionEnum.AI_SETTINGS_MANAGE`, SUPER_ADMIN only)
+
 Configurable from the admin panel:
+
 1. Providers on/off + fallback order.
 2. Model + params (temperature, maxTokens, etc.) **per feature**.
 3. **System prompts per feature** — versioned (`ai_prompt_versions`) with a **mandatory code-level
@@ -193,6 +208,7 @@ The admin UI page itself is built in `apps/admin`; the API exposes `/api/v1/admi
 routes guarded by `AI_SETTINGS_MANAGE`.
 
 ### 5.7 Usage tracking + enforcement (login required for ALL AI)
+
 **Policy (owner-approved):** every AI feature requires an authenticated user. **No anonymous AI.**
 This removes the anonymous abuse vector and makes enforcement uniform.
 
@@ -204,14 +220,22 @@ Enforcement matrix:
 | Tourist FREE (logged in) | entitlement + per-plan limit (e.g. N/month) |
 | Tourist PRO / VIP (logged in) | entitlement + per-plan limit (more / unlimited) |
 
-- AI quotas are new `EntitlementKey`/`LimitKey` entries (proposed: `AI_TEXT_IMPROVE_QUOTA`,
-  `AI_CHAT_QUOTA`, `AI_SEARCH_QUOTA`, `AI_SUPPORT_QUOTA` — names confirmed in SPEC-152 alignment,
-  §8 Q2). They reuse the existing entitlement middleware + cache.
+- AI quotas are new `EntitlementKey`/`LimitKey` entries. **(Q2 resolved)** The model is
+  **per-feature quota** (unit costs differ by orders of magnitude — streaming RAG chat ≫ a one-shot
+  text-improve — and §5.8 requires per-feature ceilings). Keys live in **`@repo/billing`**
+  (`packages/billing/src/types/{entitlement,plan}.types.ts` + `config/{entitlements,limits}.config.ts`),
+  NOT in `@repo/schemas`/SPEC-152, and follow the real repo convention: **lowercase `snake_case`**.
+  - **Gates** (`EntitlementKey`, boolean — "can use?"): `ai_text_improve`, `ai_chat`, `ai_search`,
+    `ai_support`.
+  - **Limits** (`LimitKey`, number — "how many?"): `max_ai_text_improve_per_month`,
+    `max_ai_chat_per_month`, `max_ai_search_per_month`, `max_ai_support_per_month`.
+  - They reuse the existing `entitlementMiddleware()` + 5-min cache (`apps/api/src/middlewares/entitlement.ts`).
 - Every call is metered into `ai_usage` regardless of tier (reporting per user / feature / month).
 - Exceeding a limit returns a controlled `403` with an upgrade hint (contract aligned with the
   existing entitlement-gate convention).
 
 ### 5.8 Cost ceiling + kill-switch + alerts
+
 - The engine tracks **accumulated spend** (global, per-feature, per-provider) against admin-set
   ceilings (e.g. `USD 200/month` global, `USD 50/month` chat).
 - On crossing a ceiling: **hard stop** the affected scope (controlled error) until reset/next period.
@@ -219,34 +243,46 @@ Enforcement matrix:
 - **Threshold alerts** at 50% / 80% / 100% sent to the SUPER_ADMIN via **`@repo/notifications`**.
 
 ### 5.9 Streaming primitive (SSE)
+
 - New `apps/api` route factory `createStreamingRoute()` emitting `text/event-stream` (extends the
   existing factory pattern; `ResponseFactory` gains a streaming path).
 - `@repo/ai-core` exposes `streamText(...)` returning an async iterable of tokens; the API adapts
   it to SSE. Consumed by chat (child C) and text improvement (child A).
 
 ### 5.10 Safety layer (V1)
+
 1. **Rate-limiting** per user (and per IP as defense-in-depth) with configurable windows.
+   **(Q6 resolved)** Reuse the existing `createSlidingWindowPerUserRateLimit()`
+   (`apps/api/src/middlewares/rate-limit.ts`, Redis sliding-window + in-memory fallback, SPEC-079/110).
+   No new counter is built. This anti-burst layer is distinct from the monthly per-plan quota (Q2)
+   and the USD cost ceiling (§5.8) — three independent layers.
 2. **Prompt-injection guard**: input sanitization + basic detection of override attempts.
-3. **Content moderation**: input/output passed through a moderation pass (e.g. OpenAI moderation,
-   free) before serving/storing.
+3. **Content moderation (Q4 resolved)**: provider-agnostic — `moderate()` is a capability on the
+   `AiProvider` interface (§5.2/§5.11) with an **OpenAI moderation adapter as the default first impl**
+   (free), swappable like any other provider. Input/output pass through a moderation pass before
+   serving/storing.
 4. **PII scrubbing for external telemetry**: conversations are stored verbatim in our DB, but
    emails/phones/cards are redacted before anything is sent to Sentry/PostHog.
 
 ### 5.11 Intent extraction (foundation capability)
+
 `extractIntent(...)` is a **reusable engine capability**, not a feature. NL search (child B) and
 chat (child C) consume it. Returns a typed, validated intent object (Zod).
 
 ### 5.12 i18n
+
 The package is **locale-aware by parameter** (`es` | `en` | `pt`); prompts instruct the model to
 respond in the requested locale. Default locale `es` (Argentina market).
 
 ### 5.13 Observability
+
 - **Sentry**: errors (provider failures, timeouts, fallbacks, ceiling trips).
 - **PostHog**: usage events per feature (product analytics).
 - **`@repo/notifications`**: cost-threshold alerts.
 - **`ai_request_log`**: internal audit (PII-scrubbed) for debugging.
 
 ### 5.14 Testing
+
 - Deterministic **`StubProvider`** (same idea as the MercadoPago stub) so tests never hit real
   provider APIs or spend tokens.
 - AAA pattern, ≥90% coverage target, Vitest. Unit (engine/routing/fallback/cost/safety) +
@@ -317,22 +353,37 @@ respond in the requested locale. Default locale `es` (Argentina market).
 - **AC-13 (stub tests)** — *Given* the test suite, *when* it runs in CI, *then* no real provider
   API is contacted and coverage ≥ 90%.
 
-## 8. Open Questions (resolve in design — DO NOT assume; see §12)
+## 8. Resolved Decisions (closed 2026-06-04 with owner qazuor; were blocking open questions)
 
-- **Q1 — Audit log reuse**: does the existing admin audit-log infrastructure (SPEC-162?) cover
-  credential mutations, or do we add a dedicated trail? **(consult)**
-- **Q2 — Entitlement/limit key names**: exact `EntitlementKey`/`LimitKey` identifiers and where they
-  register (SPEC-152 editable plans). Proposed names in §5.7 are placeholders. **(consult)**
-- **Q3 — Zod schema location**: AI input/output schemas in `@repo/schemas` (SSoT) vs co-located in
-  `@repo/ai-core` (portability/cohesion). **(consult)**
-- **Q4 — Moderation provider**: OpenAI moderation (free) as default, or provider-agnostic moderation
-  abstraction in V1? **(consult)**
-- **Q5 — Default models per feature**: which concrete models are the V1 defaults (cost vs quality)?
-  **(consult)**
-- **Q6 — Rate-limit store**: reuse existing rate-limit infra (SPEC-110 IP extraction) or a new
-  per-user counter (Redis is available)? **(consult)**
-- **Q7 — `ai_settings` shape**: single JSONB config blob vs normalized rows per feature/provider?
-  **(consult)**
+All seven blocking questions were resolved with the owner after a code-grounded exploration of the
+existing infra. The exploration corrected three wrong assumptions the original draft made (noted below).
+
+- **Q1 — Credential audit → DEDICATED TABLE.** New first-party `ai_credential_audit` table (§5.4/§5.5).
+  *Correction:* the draft assumed an "admin audit-log (SPEC-162?)" exists — it does NOT. The only DB
+  audit is `billing_audit_logs` (third-party qzpay, billing-scoped) plus a log-based `AuditEventType`
+  in `@repo/logger`; neither fits a permanent, queryable security trail over cost-bearing secrets.
+- **Q2 — Entitlement/limit keys → PER-FEATURE, snake_case, in `@repo/billing`** (§5.7).
+  Gates: `ai_text_improve`/`ai_chat`/`ai_search`/`ai_support`. Limits: `max_ai_<feature>_per_month`.
+  *Correction:* the draft said keys live in "SPEC-152 / `@repo/schemas`" and proposed UPPERCASE names —
+  both wrong. `EntitlementKey`/`LimitKey` live in `@repo/billing` and the convention is lowercase
+  `snake_case`. Per-feature chosen over a shared credit pool because unit costs differ by orders of
+  magnitude and §5.8 requires per-feature ceilings.
+- **Q3 — Zod schemas → ALL in `@repo/schemas`** (strict SSoT). Accepted tradeoff: this couples
+  `@repo/ai-core` to `@repo/schemas` (gives up package portability — already conceded in §5.4 since
+  tables live in `@repo/db`). Consistency with the repo SSoT wins.
+- **Q4 — Moderation → PROVIDER-AGNOSTIC** via `AiProvider.moderate()` with an OpenAI moderation
+  adapter as the default first implementation (§5.10). Consistent with the whole agnostic design.
+- **Q5 — Default models → TIERED strategy, concrete strings fixed at SEED time.** Cheap/fast models
+  for simple tasks (text-improve, intent/search), better models for conversation (chat, support).
+  Exact model identifiers are decided in the seed task against pricing/availability current then
+  (defaults are admin-editable per §5.6, so this is a low-risk seed value, not a hard commitment).
+- **Q6 — Rate-limit → REUSE `createSlidingWindowPerUserRateLimit()`** (Redis sliding-window +
+  in-memory fallback, SPEC-079/110). No new counter (§5.10). Distinct from the monthly quota (Q2)
+  and the USD ceiling (§5.8).
+- **Q7 — `ai_settings` → JSONB BLOB** mirroring the blessed `platform_settings` pattern (§5.4).
+  Config is read/written whole; the relational data (prompts, credentials, usage) already lives in
+  its own normalized tables, so a blob is correct here (normalizing config would add cost with no
+  integrity benefit).
 
 ## 9. Risks
 
@@ -341,7 +392,7 @@ respond in the requested locale. Default locale `es` (Argentina market).
 - **R-2 Secret leakage** — master key compromise exposes all provider keys. *Mitigation*: master
   key only in `.env`/Coolify, never in code/DB; vault only in `apps/api`; audit log.
 - **R-3 Prompt injection** — tourist free-text manipulates the model. *Mitigation*: injection guard
-  + moderation + scoped system prompts.
+  - moderation + scoped system prompts.
 - **R-4 Provider API drift** — provider/SDK breaking changes. *Mitigation*: our `AiProvider`
   interface isolates adapters; SDK is wrapped.
 - **R-5 Portability debt** — tables in `@repo/db` make the package non-portable (accepted). *Mitigation*:
