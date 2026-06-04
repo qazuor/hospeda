@@ -179,7 +179,7 @@
             "specId": "SPEC-173",
             "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
             "status": "in-progress",
-            "progress": "8/42",
+            "progress": "9/42",
             "path": "SPEC-173-ai-core"
         }
     ],
