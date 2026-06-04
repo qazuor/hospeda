@@ -187,8 +187,11 @@ const cards = [
         color: var(--brand-accent);
     }
 
+    /* --brand-tertiary has no alpha-token ladder (design-tokens gap), so the
+       editors tint uses the warm surface token to keep the green identity
+       without a raw relative-color expression (CI guard). */
     .colaborar-card--editors .colaborar-card__icon {
-        background-color: oklch(from var(--brand-tertiary) l c h / 0.15);
+        background-color: var(--surface-warm);
         color: var(--brand-tertiary);
     }
 

@@ -79,7 +79,7 @@
 /* ── Variant accents ───────────────────────────────────────────────────── */
 
 .photos .iconWrap {
-    background-color: oklch(from var(--brand-accent) l c h / 0.15);
+    background-color: var(--brand-accent-a15);
     color: var(--brand-accent);
 }
 
@@ -89,7 +89,7 @@
 }
 
 .editors .iconWrap {
-    background-color: oklch(from var(--brand-primary) l c h / 0.15);
+    background-color: var(--brand-primary-a15);
     color: var(--brand-primary);
 }
 
