@@ -38,6 +38,7 @@ import {
 	toDestinationFaqs,
 	toEventCardProps
 } from '@/lib/api/transforms';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -438,6 +439,22 @@ const safeDescriptionHtml = renderContent({
 				/>
 			</div>
 		)}
+
+		<!-- Photo-contribution banner (SPEC-191 FR-8): after the gallery —
+		     the visitor just saw this destination's photos (or their absence). -->
+		<div class="dest-detail__section">
+			<ContributionBanner
+				title={t('contributions.banner.photos.title', '¿Tenés fotos de este destino?')}
+				description={t(
+					'contributions.banner.photos.description',
+					'Compartilas con la comunidad y ayudá a mostrarlo como se merece.'
+				)}
+				ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
+				ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
+				source="destination_detail"
+				variant="photos"
+			/>
+		</div>
 
 		<!-- Reviews + per-dimension rating (combined) -->
 		<div class="dest-detail__section">
