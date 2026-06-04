@@ -61,6 +61,19 @@ export type {
 const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
 
 /**
+ * Maximum number of trialing subscriptions claimed per `blockExpiredTrials` run.
+ *
+ * The cron fires daily, so unprocessed subs are claimed on the next tick.
+ * Keeping this bound prevents a single run from holding the advisory lock
+ * for an unbounded duration while fetching a huge result set from QZPay.
+ *
+ * `subscriptions.list()` supports `limit` + `offset`
+ * (QZPayListOptions / QZPayPaginatedResult). We pass `limit` here and rely
+ * on the cron cadence to drain the full backlog over successive runs.
+ */
+const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
+
+/**
  * Result of a reconciliation run for a single customer.
  */
 export interface ReconcileResult {
@@ -347,9 +360,11 @@ export class TrialService {
      *   re-check guard protects against the window between the claim commit and
      *   the per-sub processing (SPEC-064 T-041).
      *
-     * NOTE (T-016): the `subscriptions.list()` call is unpaginated — this is a
-     * known limitation tracked as T-016. Do not add pagination here; leave that
-     * for the dedicated pagination task.
+     * Claim phase pagination (T-016):
+     * `subscriptions.list()` is called with `limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE`
+     * (currently 200). Only one batch is claimed per cron tick. The daily cron
+     * cadence drains the backlog over successive runs without ever holding the
+     * advisory lock while fetching an unbounded result set.
      *
      * @returns Number of trials blocked in this run
      */
@@ -388,8 +403,11 @@ export class TrialService {
 
                 // Fetch candidate list while the lock is still held.
                 // When the tx commits the lock is released, but we already have the list.
+                // Capped at BLOCK_EXPIRED_TRIALS_BATCH_SIZE to bound lock-hold duration
+                // (T-016). Remaining subs are processed on the next cron tick.
                 const result = await this.billing?.subscriptions.list({
-                    filters: { status: 'trialing' }
+                    filters: { status: 'trialing' },
+                    limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE
                 });
 
                 return result?.data ?? [];

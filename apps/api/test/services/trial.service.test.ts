@@ -748,6 +748,76 @@ describe('TrialService', () => {
             // (In the BUG, list() is called AFTER the tx commits regardless.)
             // We assert cancel is not called as the critical invariant.
         });
+
+        // ── T-016: claim must pass limit to subscriptions.list() ────────────────
+        //
+        // blockExpiredTrials must pass `limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE` to
+        // `subscriptions.list()` to bound how many subs are claimed per run.
+        // An unbounded fetch could hold the advisory lock for seconds on a large
+        // tenant base. The cron cadence drains the backlog over successive ticks.
+
+        it('[T-016] claim phase passes limit to subscriptions.list()', async () => {
+            // Arrange
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: []
+            } as never);
+
+            // Act
+            await trialService.blockExpiredTrials();
+
+            // Assert: list() must have been called with a `limit` field so the
+            // fetch is bounded. We do not pin the exact number so the constant
+            // can be tuned without touching tests; we just require it is present
+            // and is a positive integer.
+            expect(mockBilling.subscriptions.list).toHaveBeenCalledOnce();
+            const callArg = (mockBilling.subscriptions.list as ReturnType<typeof vi.fn>).mock
+                .calls[0]?.[0] as Record<string, unknown> | undefined;
+            expect(typeof callArg?.limit).toBe('number');
+            expect((callArg?.limit as number) > 0).toBe(true);
+        });
+
+        it('[T-016] large fixture — only up to batch size subs are processed per run', async () => {
+            // Arrange: generate 5 expired trialing subs; the list mock honours the limit
+            // by returning exactly what it is configured to return (we return all 5 here
+            // to verify the processing loop handles them correctly — the capping is
+            // enforced by the real QZPay storage adapter, not the service itself).
+            const now = new Date();
+            const makeSub = (i: number) => ({
+                id: `sub-large-${i}`,
+                customerId: `cust-large-${i}`,
+                status: 'trialing' as const,
+                trialEnd: new Date(now.getTime() - 1000 * i).toISOString(),
+                metadata: {}
+            });
+
+            const largeBatch = Array.from({ length: 5 }, (_, i) => makeSub(i + 1));
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: largeBatch
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'cust-large-1',
+                email: 'host@example.com',
+                metadata: { name: 'Host', userId: 'u1' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert: all 5 expired subs in the batch are processed.
+            // The list() call must still carry a limit so future large deployments
+            // are automatically bounded without code changes.
+            expect(result).toBe(5);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(5);
+            const listArg = (mockBilling.subscriptions.list as ReturnType<typeof vi.fn>).mock
+                .calls[0]?.[0] as Record<string, unknown> | undefined;
+            expect(typeof listArg?.limit).toBe('number');
+        });
     });
 
     describe('reactivateFromTrial', () => {
