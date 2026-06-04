@@ -401,31 +401,31 @@
             "id": "T-012",
             "title": "Mount fotos banner on destinations listing (after card grid)",
             "description": "In apps/web/src/pages/[lang]/destinos/index.astro, mount ContributionBanner variant 'photos', source 'destination_listing', ctaHref to colaborar/fotos — placed AFTER the .dest-grid card grid (FR-8 locked placement). destinos/page/[page].astro is a 301 redirect and MUST NOT be touched. Tests (source assertions): mount with correct props after the grid; page/[page].astro unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-004", "T-008"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Mount banner after the card grid",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "banners", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:50:00.000Z",
+                "completed": "2026-06-04T20:00:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.1
     }
