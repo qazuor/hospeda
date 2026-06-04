@@ -13,6 +13,24 @@ export const attractionsConfig: EntityConfig<Attraction> = {
     // API
     apiEndpoint: '/api/v1/admin/attractions',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'isFeatured',
+                labelKey: 'admin-filters.isFeatured.label',
+                type: 'boolean',
+                order: 1
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/content/destination-attractions',
     detailPath: '/content/destination-attractions/[id]',

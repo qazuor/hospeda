@@ -105,5 +105,32 @@
     },
     "startDate": {
         "label": "Start date"
+    },
+    "endDate": {
+        "label": "End date"
+    },
+    "isBuiltin": {
+        "label": "Built-in"
+    },
+    "clientType": {
+        "label": "Client type",
+        "postSponsor": "Post sponsor",
+        "advertiser": "Advertiser",
+        "host": "Host"
+    },
+    "amenityType": {
+        "label": "Amenity type",
+        "climateControl": "Climate control",
+        "connectivity": "Connectivity",
+        "entertainment": "Entertainment",
+        "kitchen": "Kitchen",
+        "bedAndBath": "Bed & bath",
+        "outdoors": "Outdoors",
+        "accessibility": "Accessibility",
+        "services": "Services",
+        "safety": "Safety",
+        "familyFriendly": "Family-friendly",
+        "workFriendly": "Work-friendly",
+        "generalAppliances": "General appliances"
     }
 }
