@@ -30,11 +30,14 @@ vi.mock('@repo/db', () => ({
         active: 'active',
         billingInterval: 'billingInterval',
         metadata: 'metadata',
-        name: 'name'
+        name: 'name',
+        deletedAt: 'deletedAt'
     },
     and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
     asc: vi.fn((col: unknown) => ({ type: 'asc', col })),
     eq: vi.fn((col: unknown, val: unknown) => ({ type: 'eq', col, val })),
+    isNull: vi.fn((col: unknown) => ({ type: 'isNull', col })),
+    count: vi.fn(() => ({ type: 'count' })),
     sql: Object.assign(
         vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
             type: 'sql',
@@ -182,6 +185,24 @@ describe('AddonCatalogService', () => {
                 expect(result.success).toBe(true);
                 if (!result.success) return;
                 expect(result.data).toHaveLength(0);
+            });
+
+            it('should ALWAYS exclude soft-deleted rows from the public list (PR #1428 review fix)', async () => {
+                // Arrange
+                const mockDb = buildMockDb([buildAddonRow()]);
+                mockGetDb.mockReturnValue(mockDb);
+
+                // Act — no filters at all: the deletedAt guard must still apply
+                await svc.list();
+
+                // Assert — the where clause is and(...) and its args include
+                // the isNull(deletedAt) condition built by the mocked helpers
+                const whereArg = mockDb.where.mock.calls[0]?.[0] as {
+                    type: string;
+                    args: { type: string; col: string }[];
+                };
+                expect(whereArg.type).toBe('and');
+                expect(whereArg.args).toContainEqual({ type: 'isNull', col: 'deletedAt' });
             });
         });
 
@@ -367,6 +388,23 @@ describe('AddonCatalogService', () => {
                 expect(result.data.slug).toBe('visibility-boost-7d');
                 expect(result.data.priceArs).toBe(500000);
                 expect(result.data.billingType).toBe('one_time');
+            });
+
+            it('should exclude soft-deleted rows from slug resolution (PR #1428 review fix)', async () => {
+                // Arrange
+                const mockDb = buildMockDb([buildAddonRow()]);
+                mockGetDb.mockReturnValue(mockDb);
+
+                // Act
+                await svc.getBySlug('visibility-boost-7d');
+
+                // Assert — where receives and(sql-slug-match, isNull(deletedAt))
+                const whereArg = mockDb.where.mock.calls[0]?.[0] as {
+                    type: string;
+                    args: { type: string; col?: string }[];
+                };
+                expect(whereArg.type).toBe('and');
+                expect(whereArg.args).toContainEqual({ type: 'isNull', col: 'deletedAt' });
             });
         });
 

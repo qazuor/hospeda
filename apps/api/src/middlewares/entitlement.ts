@@ -251,11 +251,27 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
         };
     });
 
-    // Memoize the promise; set the timestamp now so concurrent callers use it.
-    hostDraftDefaultsCache = fetchPromise;
+    // Guard against promise REJECTION (DB threw, as opposed to a resolved
+    // failure Result): without this, the rejected promise stays memoized for
+    // the full TTL and every HOST request fails for up to 5 minutes after a
+    // single transient DB error. Reset the cache so the next request retries,
+    // and degrade to tourist-free defaults for this request.
+    const guardedPromise = fetchPromise.catch((err: unknown) => {
+        hostDraftDefaultsCache = null;
+        hostDraftDefaultsCachedAt = 0;
+        apiLogger.warn(
+            { error: err instanceof Error ? err.message : String(err) },
+            'owner-basico plan lookup threw — cache reset, falling back to tourist-free defaults for HOST actor'
+        );
+        return buildDefaultEntitlementsResult();
+    });
+
+    // Memoize the guarded promise; set the timestamp now so concurrent
+    // callers use it.
+    hostDraftDefaultsCache = guardedPromise;
     hostDraftDefaultsCachedAt = now;
 
-    return fetchPromise;
+    return guardedPromise;
 }
 
 /**

@@ -106,7 +106,11 @@ export class AddonCatalogService {
         try {
             const db = resolveDb(ctx);
 
-            const conditions = [];
+            // Public list ALWAYS excludes soft-deleted rows. The old config
+            // catalog had no concept of deletion, so this filter was implicit;
+            // with the DB-backed catalog it must be explicit or soft-deleted
+            // addons leak into user-facing listings.
+            const conditions = [isNull(billingAddons.deletedAt)];
 
             if (filter.active !== undefined) {
                 conditions.push(eq(billingAddons.active, filter.active));
@@ -154,7 +158,10 @@ export class AddonCatalogService {
      * Gets a single add-on catalog entry by its slug.
      *
      * The slug is stored in `metadata->>'slug'`. Returns NOT_FOUND when no
-     * row with the given slug exists.
+     * row with the given slug exists, or when the row is soft-deleted —
+     * retired addons must not resolve for purchases, webhooks, or
+     * entitlement grants. Callers that tolerate retired addons (e.g. the
+     * cron revocation path) already handle the NOT_FOUND fallback.
      *
      * @param slug - The add-on slug identifier (e.g. `'visibility-boost-7d'`)
      * @param ctx - Optional query context carrying a transaction client
@@ -175,7 +182,12 @@ export class AddonCatalogService {
             const [row] = await db
                 .select()
                 .from(billingAddons)
-                .where(sql`${billingAddons.metadata}->>'slug' = ${slug}`)
+                .where(
+                    and(
+                        sql`${billingAddons.metadata}->>'slug' = ${slug}`,
+                        isNull(billingAddons.deletedAt)
+                    )
+                )
                 .limit(1);
 
             if (!row) {

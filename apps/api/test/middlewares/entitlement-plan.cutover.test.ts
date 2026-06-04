@@ -317,6 +317,58 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
     });
 
     // =========================================================================
+    // Promise REJECTION (DB threw) — PR #1428 review fix
+    // =========================================================================
+
+    describe('fallback when PlanService.getBySlug rejects (DB threw)', () => {
+        it('should fall back to tourist-free defaults instead of failing the request', async () => {
+            // Arrange — the promise REJECTS (connection drop), it does not
+            // resolve with a failure Result
+            mockGetBySlug.mockRejectedValue(new Error('connection terminated'));
+
+            const ctx = makeCtx({
+                actor: { id: 'host-user', role: 'host', permissions: [], email: 'host@test.com' }
+            });
+            const next = vi.fn().mockResolvedValue(undefined);
+            const middleware = entitlementMiddleware();
+
+            // Act — must not throw
+            await middleware(ctx as never, next);
+
+            // Assert — degraded to tourist-free defaults, request continued
+            const entitlements = ctx.get('userEntitlements') as Set<string>;
+            expect(entitlements.has('SAVE_FAVORITES')).toBe(true);
+            expect(next).toHaveBeenCalled();
+        });
+
+        it('should NOT memoize the rejected promise — next request retries (no 5-minute poisoned cache)', async () => {
+            // Arrange — first call rejects, second call succeeds
+            mockGetBySlug
+                .mockRejectedValueOnce(new Error('connection terminated'))
+                .mockResolvedValueOnce(PLAN_FOUND);
+
+            const makeHostCtx = () =>
+                makeCtx({
+                    actor: {
+                        id: 'host-user',
+                        role: 'host',
+                        permissions: [],
+                        email: 'host@test.com'
+                    }
+                });
+            const next = vi.fn().mockResolvedValue(undefined);
+            const middleware = entitlementMiddleware();
+
+            // Act
+            await middleware(makeHostCtx() as never, next);
+            await middleware(makeHostCtx() as never, next);
+
+            // Assert — the rejection was not cached: PlanService retried
+            expect(mockGetBySlug).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    // =========================================================================
     // Non-HOST actors are unaffected
     // =========================================================================
 
