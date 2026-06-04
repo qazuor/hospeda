@@ -16,6 +16,7 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -281,5 +282,36 @@ describe('RequestCell', () => {
     it('renders the em-dash placeholder when method and path are both absent', () => {
         render(<RequestCell row={makeLogRow()} />);
         expect(screen.getByTestId('log-request-cell')).toHaveTextContent('—');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// userId column (via createAppLogsColumns)
+// ---------------------------------------------------------------------------
+
+import { createAppLogsColumns } from '../config/app-logs.columns';
+
+describe('userId column', () => {
+    const t = ((key: string) => key) as Parameters<typeof createAppLogsColumns>[0];
+
+    const renderUserCell = (row: AppLogItem) => {
+        const col = createAppLogsColumns(t).find((c) => c.id === 'userId');
+        if (!col?.widgetRenderer) throw new Error('userId column or renderer missing');
+        render(col.widgetRenderer(row) as ReactElement);
+    };
+
+    it('renders the truncated UUID with the full value as hover title', () => {
+        renderUserCell(makeLogRow({ userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' }));
+        const cell = screen.getByTestId('log-cell-user');
+        expect(cell).toHaveTextContent('a0eebc99');
+        expect(cell).not.toHaveTextContent('a0eebc99-9c0b');
+        expect(cell).toHaveAttribute('title', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+    });
+
+    it('renders the em-dash placeholder when userId is absent', () => {
+        renderUserCell(makeLogRow());
+        const cell = screen.getByTestId('log-cell-user');
+        expect(cell).toHaveTextContent('—');
+        expect(cell).not.toHaveAttribute('title');
     });
 });

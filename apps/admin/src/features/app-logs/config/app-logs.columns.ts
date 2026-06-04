@@ -145,6 +145,24 @@ export const createAppLogsColumns = (t: ColumnTFunction): readonly ColumnConfig<
         widgetRenderer: (row) => createElement(RequestCell, { row })
     },
     {
+        id: 'userId',
+        header: t('admin-entities.columns.appLog.userId'),
+        accessorKey: 'userId',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(
+                'span',
+                {
+                    className: 'font-mono text-muted-foreground text-xs',
+                    // Full UUID available on hover; cell shows the first block only
+                    title: row.userId ?? undefined,
+                    'data-testid': 'log-cell-user'
+                },
+                row.userId ? row.userId.slice(0, 8) : '—'
+            )
+    },
+    {
         id: 'message',
         header: t('admin-entities.columns.appLog.message'),
         accessorKey: 'message',

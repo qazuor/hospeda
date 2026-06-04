@@ -187,6 +187,7 @@
             "category": "Category",
             "label": "Label",
             "request": "Request",
+            "userId": "User",
             "message": "Message"
         }
     },
@@ -670,7 +671,9 @@
         "premiumCta": "Upgrade plan",
         "goToSection": "Go to section",
         "signals": {
-            "featuredImage": { "label": "Featured image uploaded" },
+            "featuredImage": {
+                "label": "Featured image uploaded"
+            },
             "galleryPhotos": {
                 "label": "At least {target} gallery photos",
                 "hint": "{current} of {target} uploaded"
@@ -683,28 +686,56 @@
                 "label": "Detailed description",
                 "hint": "{current} of {target} characters"
             },
-            "summary": { "label": "Short summary" },
-            "locationPin": { "label": "Location pinned on the map" },
-            "contact": { "label": "At least one contact channel" },
+            "summary": {
+                "label": "Short summary"
+            },
+            "locationPin": {
+                "label": "Location pinned on the map"
+            },
+            "contact": {
+                "label": "At least one contact channel"
+            },
             "services": {
                 "label": "Services filled",
                 "hint": "{current} of {target} ticked"
             },
-            "price": { "label": "Price set" },
-            "videoGallery": { "label": "Video gallery" },
-            "virtualTour": { "label": "360° virtual tour" },
-            "dates": { "label": "Event dates" },
-            "organizer": { "label": "Organizer assigned" },
-            "category": { "label": "Category selected" },
-            "location": { "label": "Event venue" },
+            "price": {
+                "label": "Price set"
+            },
+            "videoGallery": {
+                "label": "Video gallery"
+            },
+            "virtualTour": {
+                "label": "360° virtual tour"
+            },
+            "dates": {
+                "label": "Event dates"
+            },
+            "organizer": {
+                "label": "Organizer assigned"
+            },
+            "category": {
+                "label": "Category selected"
+            },
+            "location": {
+                "label": "Event venue"
+            },
             "content": {
                 "label": "Article body",
                 "hint": "{current} of {target} characters"
             },
-            "readingTime": { "label": "Reading time set" },
-            "author": { "label": "Author assigned" },
-            "relatedEntity": { "label": "Linked to another entity" },
-            "publishedAt": { "label": "Publish date" }
+            "readingTime": {
+                "label": "Reading time set"
+            },
+            "author": {
+                "label": "Author assigned"
+            },
+            "relatedEntity": {
+                "label": "Linked to another entity"
+            },
+            "publishedAt": {
+                "label": "Publish date"
+            }
         }
     }
 }
