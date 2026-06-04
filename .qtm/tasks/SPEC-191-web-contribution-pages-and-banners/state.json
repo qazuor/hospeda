@@ -467,39 +467,39 @@
             "id": "T-014",
             "title": "Create contributions i18n namespace (es/en/pt) and consolidate all copy",
             "description": "Create packages/i18n/src/locales/{es,en,pt}/contributions.json (FR-10, D-7): all copy for the hub, the three pages (incl. photo license terms text — still subject to legal sign-off D-9 — and the delivery-mechanics copy), the banners (per-surface titles/descriptions/CTAs), the report link labels, form labels and the contribution-specific success confirmations. es is authoritative; en/pt fall back to es per the package's existing namespace convention (check how sibling namespaces like contact.json handle untranslated locales and mirror it). Register the namespace if the i18n package requires explicit registration. Sweep the pages/components from T-004..T-013 to ensure every key now resolves (inline fallbacks remain as safety only). Tests: key-presence test across es/en/pt for the contributions namespace (en/pt may fall back to es but must never surface a raw key).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010", "T-011", "T-012", "T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "contributions.json for es (authoritative, all keys)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "en/pt files per package fallback convention + namespace registration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sweep all new surfaces for key coverage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Key-presence test across locales",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "content"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T20:25:00.000Z",
+                "completed": "2026-06-04T20:50:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.1
     }
