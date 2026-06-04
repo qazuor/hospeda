@@ -10,13 +10,12 @@
  * @rendering SSG (prerender)
  */
 
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
 import { ContributionForm } from '@/components/contributions/ContributionForm.client';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { ArrowLeftIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -28,8 +27,6 @@ export const getStaticPaths = (() => {
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
-
-const hubUrl = buildUrl({ locale, path: 'colaborar' });
 ---
 
 <DefaultLayout
@@ -42,16 +39,7 @@ const hubUrl = buildUrl({ locale, path: 'colaborar' });
 >
     <section class="reportar section">
         <div class="reportar__container">
-            <a
-                href={hubUrl}
-                class="reportar__back"
-            >
-                <ArrowLeftIcon
-                    size="sm"
-                    weight="bold"
-                />
-                {t('contributions.report.backToHub', 'Volver a Colaborá')}
-            </a>
+            <ContributionBackLink locale={locale} />
 
             <div data-reveal="up">
                 <SectionHeader
@@ -83,24 +71,6 @@ const hubUrl = buildUrl({ locale, path: 'colaborar' });
         max-width: 760px;
         margin: 0 auto;
         padding: 0 var(--space-container-x);
-    }
-
-    .reportar__back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2, 0.5rem);
-        margin-bottom: var(--space-5, 1.25rem);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        font-weight: 600;
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-fast) ease;
-    }
-
-    .reportar__back:hover,
-    .reportar__back:focus-visible {
-        color: var(--brand-accent);
     }
 
     .reportar__form {

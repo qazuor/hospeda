@@ -1,4 +1,5 @@
 {
+    "back": "Back",
     "hub": {
         "title": "Contribute to Hospeda",
         "description": "Help us improve Hospeda: report errors, contribute destination photos or join as a blog and events editor.",
@@ -26,8 +27,7 @@
         "description": "Found incorrect or outdated information on a destination? Tell us and we'll fix it.",
         "tagline": "Help us improve",
         "heading": "Report incorrect information",
-        "subtitle": "Spotted something off on a destination? Tell us what you found and the team will review it. If you arrived from a destination page, we already noted it in the message.",
-        "backToHub": "Back to Contribute"
+        "subtitle": "Spotted something off on a destination? Tell us what you found and the team will review it. If you arrived from a destination page, we already noted it in the message."
     },
     "photos": {
         "title": "Contribute your destination photos",
@@ -35,7 +35,6 @@
         "tagline": "Open call",
         "heading": "Contribute your photos",
         "subtitle": "Many Litoral destinations still lack photos that do them justice. If you have good shots, this is your page.",
-        "backToHub": "Back to Contribute",
         "how": {
             "heading": "How does it work?",
             "step1": "Tell us which destination your photos are from and what they show.",
@@ -62,7 +61,6 @@
         "tagline": "Open call",
         "heading": "Join as an editor",
         "subtitle": "The blog and the events calendar grow with people who know and love the Litoral. If you enjoy writing or curating content, apply.",
-        "backToHub": "Back to Contribute",
         "role": {
             "heading": "What does an editor do?",
             "item1": "Write or review blog articles about the Litoral destinations.",

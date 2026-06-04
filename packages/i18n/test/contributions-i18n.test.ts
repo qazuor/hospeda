@@ -20,6 +20,7 @@ import esContributions from '../src/locales/es/contributions.json';
  * contributions.json.
  */
 const USED_KEYS = [
+    'back',
     'banner.editors.cta',
     'banner.editors.description',
     'banner.editors.title',
@@ -29,7 +30,6 @@ const USED_KEYS = [
     'banner.photos.title',
     'banner.photosListing.description',
     'banner.photosListing.title',
-    'editors.backToHub',
     'editors.description',
     'editors.form.heading',
     'editors.form.hint',
@@ -72,7 +72,6 @@ const USED_KEYS = [
     'hub.subtitle',
     'hub.tagline',
     'hub.title',
-    'photos.backToHub',
     'photos.description',
     'photos.form.heading',
     'photos.form.termsNoteLink',
@@ -91,7 +90,6 @@ const USED_KEYS = [
     'photos.terms.item3',
     'photos.terms.item4',
     'photos.title',
-    'report.backToHub',
     'report.description',
     'report.heading',
     'report.subtitle',

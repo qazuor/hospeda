@@ -19,13 +19,13 @@
  * @rendering SSG (prerender)
  */
 
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
 import { ContributionForm } from '@/components/contributions/ContributionForm.client';
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-import { ArrowLeftIcon, CheckCircleIcon } from '@repo/icons';
+import { CheckCircleIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 export const prerender = true;
@@ -37,8 +37,6 @@ export const getStaticPaths = (() => {
 const { lang } = Astro.params;
 const locale = lang as SupportedLocale;
 const { t } = createTranslations(locale);
-
-const hubUrl = buildUrl({ locale, path: 'colaborar' });
 
 // Delivery mechanics (FR-4): the page must close the expectation loop for a
 // textual form — how do the photos actually reach the team.
@@ -88,16 +86,7 @@ const termsItems = [
 >
     <section class="fotos section">
         <div class="fotos__container">
-            <a
-                href={hubUrl}
-                class="fotos__back"
-            >
-                <ArrowLeftIcon
-                    size="sm"
-                    weight="bold"
-                />
-                {t('contributions.photos.backToHub', 'Volver a Colaborá')}
-            </a>
+            <ContributionBackLink locale={locale} />
 
             <div data-reveal="up">
                 <SectionHeader
@@ -193,24 +182,6 @@ const termsItems = [
         max-width: 760px;
         margin: 0 auto;
         padding: 0 var(--space-container-x);
-    }
-
-    .fotos__back {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2, 0.5rem);
-        margin-bottom: var(--space-5, 1.25rem);
-        font-family: var(--font-sans);
-        font-size: var(--text-body-sm);
-        font-weight: 600;
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-fast) ease;
-    }
-
-    .fotos__back:hover,
-    .fotos__back:focus-visible {
-        color: var(--brand-accent);
     }
 
     .fotos__subheading {

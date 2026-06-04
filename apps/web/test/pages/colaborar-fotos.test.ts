@@ -87,8 +87,8 @@ describe('colaborar/fotos/index.astro (photo call page, FR-4)', () => {
     });
 
     describe('navigation', () => {
-        it('links back to the contribution hub', () => {
-            expect(src).toContain("path: 'colaborar'");
+        it('mounts the smart back link (history-aware, hub fallback)', () => {
+            expect(src).toContain('<ContributionBackLink');
         });
     });
 });

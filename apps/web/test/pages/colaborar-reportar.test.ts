@@ -61,8 +61,8 @@ describe('colaborar/reportar/index.astro (report form page, FR-3)', () => {
     });
 
     describe('navigation', () => {
-        it('links back to the contribution hub', () => {
-            expect(src).toContain("path: 'colaborar'");
+        it('mounts the smart back link (history-aware, hub fallback)', () => {
+            expect(src).toContain('<ContributionBackLink');
         });
     });
 });

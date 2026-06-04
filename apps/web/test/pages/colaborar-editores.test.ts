@@ -48,8 +48,8 @@ describe('colaborar/editores/index.astro (editor recruitment page, FR-5)', () =>
     });
 
     describe('navigation', () => {
-        it('links back to the contribution hub', () => {
-            expect(src).toContain("path: 'colaborar'");
+        it('mounts the smart back link (history-aware, hub fallback)', () => {
+            expect(src).toContain('<ContributionBackLink');
         });
     });
 });

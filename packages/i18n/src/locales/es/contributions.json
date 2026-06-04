@@ -1,4 +1,5 @@
 {
+    "back": "Volver",
     "hub": {
         "title": "Colaborá con Hospeda",
         "description": "Ayudanos a mejorar Hospeda: reportá errores, aportá fotos de los destinos o sumate como editor del blog y los eventos.",
@@ -26,8 +27,7 @@
         "description": "¿Encontraste un dato incorrecto o desactualizado en un destino? Contanos y lo corregimos.",
         "tagline": "Ayudanos a mejorar",
         "heading": "Reportá información incorrecta",
-        "subtitle": "¿Viste un dato que no cierra en un destino? Contanos qué encontraste y el equipo lo revisa. Si llegaste desde la página de un destino, ya lo dejamos indicado en el mensaje.",
-        "backToHub": "Volver a Colaborá"
+        "subtitle": "¿Viste un dato que no cierra en un destino? Contanos qué encontraste y el equipo lo revisa. Si llegaste desde la página de un destino, ya lo dejamos indicado en el mensaje."
     },
     "photos": {
         "title": "Aportá tus fotos de los destinos",
@@ -35,7 +35,6 @@
         "tagline": "Convocatoria abierta",
         "heading": "Aportá tus fotos",
         "subtitle": "Muchos destinos del Litoral todavía no tienen fotos que les hagan justicia. Si tenés buenas tomas, esta es tu página.",
-        "backToHub": "Volver a Colaborá",
         "how": {
             "heading": "¿Cómo lo hacemos?",
             "step1": "Contanos de qué destino son tus fotos y qué muestran.",
@@ -62,7 +61,6 @@
         "tagline": "Convocatoria abierta",
         "heading": "Sumate como editor",
         "subtitle": "El blog y la agenda de eventos crecen con gente que conoce y quiere al Litoral. Si te gusta escribir o curar contenido, postulate.",
-        "backToHub": "Volver a Colaborá",
         "role": {
             "heading": "¿Qué hace un editor?",
             "item1": "Escribir o revisar artículos del blog sobre los destinos del Litoral.",
