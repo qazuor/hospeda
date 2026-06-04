@@ -148,43 +148,43 @@
             "id": "T-005",
             "title": "Build ContributionForm.client.tsx locked-type form island",
             "description": "Create apps/web/src/components/contributions/ContributionForm.client.tsx (+ colocated module.css) per D-3. Reuses ContactForm's mechanics WITHOUT modifying it: ContactSubmitSchema.safeParse validation, POST ${PUBLIC_API_URL}/api/v1/public/contact, honeypot website field, 429-specific friendly error. Props: presetType (locked contact type — NO type select rendered), locale. Client-side useEffect reads ?destino= from window.location.search (page is SSG): seeds message with 'Reporte sobre el destino: <slug>. ' and keeps the slug in state. On 2xx fires the matching contribution_*_submitted trackEvent: report → { destino?, locale }; photo/editor → { locale }. Success state shows contribution-specific copy (contributions namespace keys with inline fallbacks until T-014). ContactForm.client.tsx and CONTACT_TYPE_OPTIONS MUST NOT change (non-goal 7). Tests (testing-library in apps/web/test/): no type select rendered + payload type equals presetType; ?destino= seeding into message + state; submit-success fires correct event with destino; contribution success copy shown; 429 friendly message; honeypot field present; guard test asserting ContactForm's CONTACT_TYPE_OPTIONS still has exactly its 9 entries (no contribution types).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003"],
             "blocks": ["T-007", "T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "ContributionForm island: locked presetType, no select, honeypot, 429 handling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Client-side ?destino= reading + message seeding + state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Submit-success trackEvent per contribution type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Contribution-specific success state (contributions namespace)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Testing-library tests + CONTACT_TYPE_OPTIONS guard test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "components", "forms", "analytics"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T17:30:00.000Z",
+                "completed": "2026-06-04T17:45:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.1
     }
