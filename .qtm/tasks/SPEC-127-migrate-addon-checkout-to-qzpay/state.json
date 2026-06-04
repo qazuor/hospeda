@@ -486,7 +486,7 @@
             "id": "T-015",
             "title": "Open PR to staging and merge on green CI",
             "description": "Before pushing: gh pr list --head spec/SPEC-127-migrate-addon-checkout-to-qzpay --state all (orphan-commit guard). Open PR targeting staging. PR description MUST note: (1) sandbox→prod init-point preference change, (2) external_reference now qzpay session UUID + order_id in metadata, (3) dual-resolve bugfix at both sites, (4) absorbed SPEC-192 catalog cutover, (5) addon polling fallback, (6) smoke deferred to SPEC-193 batch with link to pending list entry. Merge ONLY via gh pr merge --merge after CI fully green (gh pr view N --json statusCheckRollup). Never --admin. After merge: update spec status to completed in both indexes (index-sync) + engram session summary.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-014"],
             "blocks": [],
@@ -497,32 +497,32 @@
                 },
                 {
                     "title": "CI green verification + merge",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Index sync + engram closeout",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
                 "started": "2026-06-04T19:28:43Z",
-                "completed": null
+                "completed": "2026-06-04T20:14:52Z"
             }
         }
     ],
     "summary": {
         "total": 15,
         "pending": 0,
-        "inProgress": 1,
-        "completed": 14,
+        "inProgress": 0,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.1
     }

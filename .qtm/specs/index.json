@@ -83,7 +83,7 @@
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
             "type": "refactor",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-193",
@@ -91,7 +91,9 @@
             "phase": "E",
             "dependsOn": ["SPEC-125"],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-06-04"
         },
         {
             "specId": "SPEC-128",

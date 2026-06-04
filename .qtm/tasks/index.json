@@ -151,9 +151,12 @@
         {
             "specId": "SPEC-127",
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
-            "status": "in-progress",
-            "progress": "14/15",
-            "path": "SPEC-127-migrate-addon-checkout-to-qzpay"
+            "status": "completed",
+            "progress": "15/15",
+            "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "note": "PR #1448 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)"
         },
         {
             "specId": "SPEC-166",

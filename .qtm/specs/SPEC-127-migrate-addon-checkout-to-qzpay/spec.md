@@ -3,7 +3,7 @@ spec-id: SPEC-127
 title: Migrate addon.checkout.ts to qzpay path (Phase E)
 type: refactor
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-15T00:00:00Z
 effort_estimate_hours: 8-12
 tags: [hospeda, addons, refactor, qzpay-migration, bugfix]
