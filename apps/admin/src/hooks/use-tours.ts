@@ -211,7 +211,10 @@ export interface UseWelcomeTourPendingReturn {
      * `suppressed` to `WhatsNewAutoTrigger`) consume this flag — keeping the logic
      * in one place prevents drift (D12).
      *
-     * Returns `false` while `useAdminTourState` is still loading.
+     * Returns `true` (pessimistic) while `useAdminTourState` is still loading
+     * and the role has a welcome tour in the catalog — this closes the D12
+     * loading-order race where the What's New modal could fire before the
+     * tour seen-state resolved.
      */
     readonly welcomeTourPending: boolean;
 }
@@ -246,8 +249,18 @@ export function useWelcomeTourPending(): UseWelcomeTourPendingReturn {
     const { isLoading, hasSeen } = useAdminTourState();
 
     const welcomeTourPending = useMemo(() => {
-        if (isLoading) return false;
+        // No welcome tour in the catalog for this role → nothing can ever be
+        // pending. The catalog is synchronous config, so this is decidable
+        // even while the seen-state query is loading.
         if (!welcomeTour) return false;
+        // PESSIMISTIC while loading (D12 race guard): until the tour seen-state
+        // resolves we don't know whether the welcome tour will fire. Suppress
+        // the What's New auto-modal during that window so the two auto-opening
+        // surfaces can never stack on a first login when the whats-new query
+        // settles before the settings query. Once loaded, this flips to the
+        // real value and WhatsNewAutoTrigger re-evaluates (its latch is only
+        // set when it actually fires).
+        if (isLoading) return true;
         return !hasSeen({ tourId: welcomeTour.id, version: welcomeTour.version });
     }, [isLoading, welcomeTour, hasSeen]);
 

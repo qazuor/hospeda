@@ -41,6 +41,7 @@ import {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
     useRef,
     useState
@@ -372,10 +373,18 @@ export function TourProvider({ children }: TourProviderProps) {
     // Cleanup on unmount
     // -------------------------------------------------------------------------
 
-    // Note: useEffect cleanup is intentionally NOT used here to avoid a React
-    // strict-mode double-mount issue. The driverRef.current.destroy() is called
-    // by launchDriver's onDestroyStarted and by stopTour/re-launch. This is safe
-    // because the provider lives at AppLayout level and only unmounts on sign-out.
+    // Destroy any active driver instance on provider unmount (e.g. sign-out
+    // mid-tour) so driver.js DOM/keyboard listeners never leak. Strict-mode
+    // double-mount is safe: on the first synthetic unmount driverRef.current
+    // is null (no tour can have started yet), so the cleanup is a no-op.
+    useEffect(() => {
+        return () => {
+            if (driverRef.current) {
+                driverRef.current.destroy();
+                driverRef.current = null;
+            }
+        };
+    }, []);
 
     // -------------------------------------------------------------------------
     // Context value

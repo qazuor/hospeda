@@ -154,6 +154,27 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Controllable mocks for useWelcomeTourPending dependencies (D12 gate)
+// ---------------------------------------------------------------------------
+
+let mockAuthRole: string | null = null;
+let mockTourStateLoading = false;
+let mockHasSeenResult = false;
+
+vi.mock('@/hooks/use-auth-context', () => ({
+    useAuthContext: () => ({ user: mockAuthRole ? { id: 'u1', role: mockAuthRole } : null })
+}));
+
+vi.mock('@/hooks/use-admin-tour-state', () => ({
+    useAdminTourState: () => ({
+        isLoading: mockTourStateLoading,
+        error: null,
+        hasSeen: () => mockHasSeenResult,
+        markSeen: () => undefined
+    })
+}));
+
+// ---------------------------------------------------------------------------
 // Import the hooks AFTER all mocks
 // ---------------------------------------------------------------------------
 
@@ -161,7 +182,8 @@ import {
     useContextualTourForRoute,
     useTourById,
     useToursForRole,
-    useWelcomeTourForRole
+    useWelcomeTourForRole,
+    useWelcomeTourPending
 } from '@/hooks/use-tours';
 
 // ---------------------------------------------------------------------------
@@ -349,5 +371,69 @@ describe('useContextualTourForRoute', () => {
         const { result } = renderHook(() => useContextualTourForRoute({ pathname: '/dashboard' }));
 
         expect(result.current?.id).toBe('for-all');
+    });
+});
+
+describe('useWelcomeTourPending (D12 gate)', () => {
+    beforeEach(() => {
+        mockAuthRole = null;
+        mockTourStateLoading = false;
+        mockHasSeenResult = false;
+    });
+
+    it('is pessimistically TRUE while the tour state is loading and a welcome tour exists (D12 race guard)', () => {
+        // Arrange
+        mockAuthRole = 'HOST';
+        mockTourStateLoading = true;
+
+        // Act
+        const { result } = renderHook(() => useWelcomeTourPending());
+
+        // Assert: suppress What's New until the seen-state is known.
+        expect(result.current.welcomeTourPending).toBe(true);
+    });
+
+    it('is FALSE while loading when the role has no welcome tour in the catalog', () => {
+        // Arrange: EDITOR has no welcome tour in this fixture config.
+        mockAuthRole = 'EDITOR';
+        mockTourStateLoading = true;
+
+        // Act
+        const { result } = renderHook(() => useWelcomeTourPending());
+
+        // Assert: nothing can ever be pending — no need to suppress.
+        expect(result.current.welcomeTourPending).toBe(false);
+    });
+
+    it('is TRUE when loaded and the welcome tour is unseen', () => {
+        // Arrange
+        mockAuthRole = 'HOST';
+        mockHasSeenResult = false;
+
+        // Act
+        const { result } = renderHook(() => useWelcomeTourPending());
+
+        // Assert
+        expect(result.current.welcomeTourPending).toBe(true);
+    });
+
+    it('is FALSE when loaded and the welcome tour was already seen', () => {
+        // Arrange
+        mockAuthRole = 'HOST';
+        mockHasSeenResult = true;
+
+        // Act
+        const { result } = renderHook(() => useWelcomeTourPending());
+
+        // Assert
+        expect(result.current.welcomeTourPending).toBe(false);
+    });
+
+    it('is FALSE when there is no authenticated user', () => {
+        // Act
+        const { result } = renderHook(() => useWelcomeTourPending());
+
+        // Assert
+        expect(result.current.welcomeTourPending).toBe(false);
     });
 });

@@ -32,6 +32,7 @@
 import { fetchApi } from '@/lib/api/client';
 import type { TourProgressBody, UserProtected, UserSettings } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 import { useAuthContext } from './use-auth-context';
 
 // ---------------------------------------------------------------------------
@@ -281,13 +282,20 @@ export function useAdminTourState(): UseAdminTourStateReturn {
     /**
      * Returns true when the stored seenVersion >= the given version.
      * Missing entry (never seen) returns false.
+     *
+     * Memoized on `data` so consumers (TourAutoTrigger's effect deps,
+     * useWelcomeTourPending's useMemo) only re-evaluate when the settings
+     * actually change, not on every render.
      */
-    const hasSeen = ({ tourId, version }: { tourId: string; version: number }): boolean => {
-        const adminTours = extractAdminTours(data?.settings);
-        const seenVersion = adminTours[tourId];
-        if (seenVersion === undefined) return false;
-        return seenVersion >= version;
-    };
+    const hasSeen = useCallback(
+        ({ tourId, version }: { tourId: string; version: number }): boolean => {
+            const adminTours = extractAdminTours(data?.settings);
+            const seenVersion = adminTours[tourId];
+            if (seenVersion === undefined) return false;
+            return seenVersion >= version;
+        },
+        [data]
+    );
 
     /**
      * Marks a tour as seen at the given config version, applying an optimistic update.
