@@ -147,6 +147,14 @@
             "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
             "archived": true,
             "archivedAt": "2026-06-04"
+        },
+        {
+            "specId": "SPEC-166",
+            "title": "Review Moderation State",
+            "status": "in-progress",
+            "progress": "0/27",
+            "path": "SPEC-166-review-moderation-state",
+            "branch": "spec/SPEC-166-review-moderation-state"
         }
     ],
     "standalone": {
