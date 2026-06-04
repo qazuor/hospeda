@@ -567,14 +567,15 @@
             "specId": "SPEC-191",
             "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "type": "feature",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
             "base": "staging",
             "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04"
         },
         {
             "specId": "SPEC-192",

@@ -38,9 +38,11 @@ import {
 	toDestinationFaqs,
 	toEventCardProps
 } from '@/lib/api/transforms';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { AlertTriangleIcon } from '@repo/icons';
 import { renderContent } from '@/lib/render-content';
 import { getDestinationSameAs } from '@/lib/destination-sameas';
 import { Image } from 'astro:assets';
@@ -417,6 +419,15 @@ const safeDescriptionHtml = renderContent({
 			</div>
 		)}
 
+		<!-- Report incorrect info (SPEC-191 FR-7): inline link after the
+		     description, deep-linking the report form with this destination. -->
+		<p class="dest-detail__report-link">
+			<AlertTriangleIcon size={16} weight="fill" aria-hidden="true" />
+			<a href={`${buildUrl({ locale, path: 'colaborar/reportar' })}?destino=${encodeURIComponent(slug)}`}>
+				{t('contributions.reportLink.inline', '¿Viste información incorrecta o desactualizada? Reportala')}
+			</a>
+		</p>
+
 		<!-- Photo gallery (extras beyond the hero) -->
 		{galleryImages.length > 0 && (
 			<div class="dest-detail__section">
@@ -428,6 +439,22 @@ const safeDescriptionHtml = renderContent({
 				/>
 			</div>
 		)}
+
+		<!-- Photo-contribution banner (SPEC-191 FR-8): after the gallery —
+		     the visitor just saw this destination's photos (or their absence). -->
+		<div class="dest-detail__section">
+			<ContributionBanner
+				title={t('contributions.banner.photos.title', '¿Tenés fotos de este destino?')}
+				description={t(
+					'contributions.banner.photos.description',
+					'Compartilas con la comunidad y ayudá a mostrarlo como se merece.'
+				)}
+				ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
+				ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
+				source="destination_detail"
+				variant="photos"
+			/>
+		</div>
 
 		<!-- Reviews + per-dimension rating (combined) -->
 		<div class="dest-detail__section">
@@ -610,6 +637,26 @@ const safeDescriptionHtml = renderContent({
 	}
 	.dest-detail__description :global(p:last-child) {
 		margin-bottom: 0;
+	}
+
+	.dest-detail__report-link {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		margin: -1rem 0 2rem;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-xs);
+		color: var(--core-muted-foreground);
+	}
+	.dest-detail__report-link a {
+		color: var(--brand-primary);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.dest-detail__report-link a:hover,
+	.dest-detail__report-link a:focus-visible {
+		color: var(--brand-accent);
+		text-decoration: underline;
 	}
 
 	.dest-detail__section {
