@@ -48,6 +48,7 @@ vi.mock('../src/config/resolver.js', async (importOriginal) => {
     const original = await importOriginal<typeof import('../src/config/resolver.js')>();
     return {
         ...original,
+        resolveConfig: vi.fn(),
         resolveFeatureConfig: vi.fn(),
         getProviderOrder: vi.fn(),
         isFeatureKillSwitched: vi.fn()
@@ -56,6 +57,7 @@ vi.mock('../src/config/resolver.js', async (importOriginal) => {
 
 import * as configResolver from '../src/config/resolver.js';
 
+const mockResolveConfig = configResolver.resolveConfig as ReturnType<typeof vi.fn>;
 const mockResolveFeatureConfig = configResolver.resolveFeatureConfig as ReturnType<typeof vi.fn>;
 const mockIsFeatureKillSwitched = configResolver.isFeatureKillSwitched as ReturnType<typeof vi.fn>;
 const mockGetProviderOrder = configResolver.getProviderOrder as ReturnType<typeof vi.fn>;
@@ -147,6 +149,9 @@ function makeEngine(providers: Map<string, AiProvider>, events?: AiEngineEvent[]
 beforeEach(() => {
     vi.clearAllMocks();
     // Default: feature is enabled, provider order = [openai, anthropic]
+    // resolveConfig returns an empty providers map so no provider kill-switches
+    // are active — preserving all existing test expectations.
+    mockResolveConfig.mockResolvedValue({ providers: {}, features: {} });
     mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_ENABLED);
     mockIsFeatureKillSwitched.mockImplementation((cfg: AiFeatureConfig) => !cfg.enabled);
     mockGetProviderOrder.mockImplementation(

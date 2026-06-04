@@ -10,7 +10,9 @@
  * Error
  *   └── AiEngineError          (base, adds engineCode)
  *         ├── AiFeatureDisabledError   (kill-switch active, AC-9)
- *         └── AiEngineExhaustedError   (all providers failed, AC-2)
+ *         ├── AiEngineExhaustedError   (all providers failed, AC-2)
+ *         ├── AiCeilingHitError        (cost ceiling breached, AC-8, T-017)
+ *         └── AiNoEnabledProviderError (all providers kill-switched off, T-017)
  * ```
  *
  * `AiFeatureNotConfiguredError` (from the config resolver) is NOT re-exported
@@ -153,5 +155,119 @@ export class AiEngineExhaustedError extends AiEngineError {
         // Safe: the engine only creates this error when at least one provider
         // was tried; `attempts` is always non-empty here.
         this.lastError = attempts[attempts.length - 1]?.error ?? new Error('unknown');
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Cost-ceiling error (AC-8, T-017)
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown when accumulated AI spend for the current calendar month has reached
+ * or exceeded the configured ceiling (AC-8, SPEC-173 T-017).
+ *
+ * The engine propagates this error without retrying any provider — a ceiling
+ * breach is a hard stop until the admin raises the limit or the month resets.
+ *
+ * `scope` distinguishes global breaches from per-feature breaches so callers
+ * can produce accurate user-facing messages and metrics labels.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await engine.generateText({ feature: 'chat', ... });
+ * } catch (err) {
+ *   if (err instanceof AiCeilingHitError) {
+ *     logger.warn('AI cost ceiling hit', {
+ *       scope: err.scope,
+ *       feature: err.feature,
+ *       spent: err.spentMicroUsd,
+ *       ceiling: err.ceilingMicroUsd,
+ *     });
+ *     return { error: 'AI service temporarily suspended (cost limit reached).' };
+ *   }
+ * }
+ * ```
+ */
+export class AiCeilingHitError extends AiEngineError {
+    /**
+     * Whether the ceiling that was breached is the global monthly ceiling or a
+     * per-feature ceiling.
+     */
+    readonly scope: 'global' | 'feature';
+
+    /**
+     * The specific AI feature whose spend triggered a per-feature ceiling.
+     * Only set when `scope === 'feature'`; `undefined` for global ceiling hits.
+     */
+    readonly feature: AiFeature | undefined;
+
+    /** Accumulated spend for the current month in integer µUSD. */
+    readonly spentMicroUsd: number;
+
+    /** The configured ceiling value in integer µUSD. */
+    readonly ceilingMicroUsd: number;
+
+    constructor(input: {
+        readonly scope: 'global' | 'feature';
+        readonly feature?: AiFeature;
+        readonly spentMicroUsd: number;
+        readonly ceilingMicroUsd: number;
+    }) {
+        const { scope, feature, spentMicroUsd, ceilingMicroUsd } = input;
+        const scopeLabel =
+            scope === 'feature' && feature !== undefined ? `per-feature ('${feature}')` : 'global';
+        super(
+            `AI cost ceiling hit (${scopeLabel}): spent ${spentMicroUsd} µUSD >= ceiling ${ceilingMicroUsd} µUSD this calendar month.`,
+            'CEILING_HIT'
+        );
+        this.name = 'AiCeilingHitError';
+        this.scope = scope;
+        this.feature = feature;
+        this.spentMicroUsd = spentMicroUsd;
+        this.ceilingMicroUsd = ceilingMicroUsd;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// No-enabled-provider error (T-017)
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown when every provider in a feature's routing chain (primary +
+ * fallback) has been filtered out because their `config.providers[id].enabled`
+ * is `false` (T-017 provider kill-switch, SPEC-173).
+ *
+ * This is distinct from `AiEngineExhaustedError` (which means providers were
+ * tried but all failed at the network / API level). Here, no provider was
+ * called at all — they were all administratively disabled.
+ *
+ * The condition is: a provider id exists in the providers config map AND its
+ * `enabled` field is `false`. Provider ids that have NO entry in the map are
+ * NOT skipped (preserving the original routing behaviour so existing tests
+ * remain green).
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await engine.generateText({ feature: 'text_improve', ... });
+ * } catch (err) {
+ *   if (err instanceof AiNoEnabledProviderError) {
+ *     return { error: `All AI providers for '${err.feature}' are currently disabled.` };
+ *   }
+ * }
+ * ```
+ */
+export class AiNoEnabledProviderError extends AiEngineError {
+    /** The feature for which no enabled provider could be found. */
+    readonly feature: AiFeature;
+
+    constructor(feature: AiFeature) {
+        super(
+            `No enabled AI provider available for feature '${feature}': every provider in the routing chain has been disabled via config.providers[id].enabled = false. Enable at least one provider to restore the feature.`,
+            'NO_ENABLED_PROVIDER'
+        );
+        this.name = 'AiNoEnabledProviderError';
+        this.feature = feature;
     }
 }

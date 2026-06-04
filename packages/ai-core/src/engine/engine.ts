@@ -72,10 +72,15 @@ import type { ZodType } from 'zod';
 import {
     getProviderOrder,
     isFeatureKillSwitched,
+    resolveConfig,
     resolveFeatureConfig
 } from '../config/resolver.js';
 import type { AiProvider, StreamTextResult } from '../providers/ai-provider.interface.js';
-import { AiEngineExhaustedError, AiFeatureDisabledError } from './errors.js';
+import {
+    AiEngineExhaustedError,
+    AiFeatureDisabledError,
+    AiNoEnabledProviderError
+} from './errors.js';
 import type { ProviderAttempt } from './errors.js';
 import { MAX_ATTEMPTS_PER_PROVIDER, isRetryableError, withRetry } from './retry.js';
 
@@ -251,6 +256,51 @@ export interface CreateAiEngineInput {
      * supporting moderation may be wired through feature-config in V2.
      */
     readonly moderationProviderId?: AiProviderId;
+
+    /**
+     * Optional cost-ceiling check hook (T-017, AC-8).
+     *
+     * When provided, the engine calls `await checkCeiling({ feature, now })`
+     * BEFORE invoking any provider (after the feature kill-switch check).
+     * If it throws — typically `AiCeilingHitError` — the error propagates
+     * directly to the caller without retrying or falling back.
+     *
+     * When absent (the default for all existing tests), the ceiling check is
+     * simply skipped so no existing tests are affected.
+     *
+     * **`now` threading**: the engine pairs this hook with `getNow`. When both
+     * are provided the engine calls `await checkCeiling({ feature, now: getNow() })`
+     * before routing each call.  `apps/api` (T-019) supplies both fields from
+     * the request context.  When either is absent the ceiling check is skipped
+     * for that call.
+     *
+     * * **Decision (owner-approved 2026-06-04):** The ceiling hook is AWAITED
+     * (unlike the fire-and-forget `recordEvent`), because a ceiling breach MUST
+     * block the call — it is a control-flow concern, not a side-effect.
+     * It lives in `usage/ceiling.ts` which accesses accumulated spend via
+     * `aggregateAiUsageByMonth` (storage layer only, no direct `@repo/db` import
+     * inside the engine — AC-4).
+     */
+    readonly checkCeiling?: (input: {
+        readonly feature: AiFeature;
+        readonly now: Date;
+    }) => Promise<void>;
+
+    /**
+     * Optional clock factory that supplies the current instant for ceiling checks.
+     *
+     * The engine calls `getNow()` once per capability call when `checkCeiling` is
+     * also set. This keeps `now` out of the schema request types and avoids
+     * making `checkCeiling` responsible for capturing the clock itself.
+     *
+     * `apps/api` (T-019) wires this as `() => new Date()` (or a request-scoped
+     * timestamp) when it injects `checkCeiling`.  Tests that do not test ceiling
+     * behaviour omit both fields and are unaffected.
+     *
+     * When absent, the ceiling check is silently skipped (same as when
+     * `checkCeiling` is absent).
+     */
+    readonly getNow?: () => Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -342,8 +392,38 @@ export interface AiEngine {
 // ---------------------------------------------------------------------------
 
 /**
- * Core routing loop: resolve provider order, try each provider with retry
- * policy, emit fallback events, throw on exhaustion.
+ * Filters an ordered provider list by removing any provider whose
+ * `config.providers[id].enabled` is explicitly `false`.
+ *
+ * **Only skip when an entry EXISTS and `enabled === false`.**  A provider id
+ * with NO entry in the providers map is kept in the chain — this preserves the
+ * existing routing behaviour (all current tests pass providers without explicit
+ * config map entries and must not be affected).
+ *
+ * Decision (owner-approved 2026-06-04): provider kill-switch uses SKIP
+ * semantics; if skipping empties the chain the caller throws
+ * `AiNoEnabledProviderError`.
+ *
+ * @param providers - Ordered provider IDs from the strategy.
+ * @param providersConfig - The `config.providers` partial map from `resolveConfig`.
+ * @returns Filtered list with explicitly-disabled providers removed.
+ */
+function filterDisabledProviders(
+    providers: readonly AiProviderId[],
+    providersConfig: Record<string, { readonly enabled: boolean } | undefined>
+): readonly AiProviderId[] {
+    return providers.filter((id) => {
+        const entry = providersConfig[id];
+        // Only skip when the entry EXISTS and enabled is explicitly false.
+        // Missing entries (undefined) are NOT skipped.
+        return entry === undefined || entry.enabled !== false;
+    });
+}
+
+/**
+ * Core routing loop: resolve provider order, filter disabled providers,
+ * try each remaining provider with retry policy, emit fallback events,
+ * throw on exhaustion.
  *
  * This function is the heart of the engine. All capability methods delegate
  * to it — the only thing that varies per capability is the `call` lambda.
@@ -354,8 +434,10 @@ export interface AiEngine {
  * @param getProvider - Provider factory (injected from engine options).
  * @param selectProviderOrder - Strategy to determine provider order.
  * @param recordEvent - Optional event sink.
+ * @param providersConfig - The `config.providers` map for kill-switch filtering.
  * @returns The result from the first provider that succeeds.
- * @throws {AiEngineExhaustedError} When all providers fail.
+ * @throws {AiNoEnabledProviderError} When all providers are disabled via kill-switch.
+ * @throws {AiEngineExhaustedError} When all (non-disabled) providers fail.
  * @throws Non-retryable errors from any provider (without fallback).
  */
 async function routeWithFallback<T>(
@@ -364,9 +446,19 @@ async function routeWithFallback<T>(
     call: (provider: AiProvider) => Promise<T>,
     getProvider: (id: AiProviderId) => AiProvider,
     selectProviderOrder: ProviderOrderStrategy,
-    recordEvent: ((event: AiEngineEvent) => void) | undefined
+    recordEvent: ((event: AiEngineEvent) => void) | undefined,
+    providersConfig: Record<string, { readonly enabled: boolean } | undefined>
 ): Promise<T> {
-    const providerOrder = selectProviderOrder({ feature, featureConfig });
+    const rawOrder = selectProviderOrder({ feature, featureConfig });
+
+    // Filter out providers that have an explicit config entry with enabled:false.
+    // Provider ids with NO entry in the map are kept (preserves existing behaviour).
+    const providerOrder = filterDisabledProviders(rawOrder, providersConfig);
+
+    if (providerOrder.length === 0 && rawOrder.length > 0) {
+        // All providers in the chain are explicitly disabled.
+        throw new AiNoEnabledProviderError(feature);
+    }
 
     if (providerOrder.length === 0) {
         // Defensive: schema requires at least a primaryProvider, but be safe.
@@ -485,8 +577,24 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
         getProvider,
         recordEvent,
         selectProviderOrder = defaultProviderOrderStrategy,
-        moderationProviderId = 'openai'
+        moderationProviderId = 'openai',
+        checkCeiling,
+        getNow
     } = input;
+
+    /**
+     * Resolves `config.providers` (the per-provider kill-switch map) using the
+     * cached config.  Both `resolveConfig` and `resolveFeatureConfig` share the
+     * same in-memory TTL cache so this is effectively a single DB read per
+     * request even though we call both.
+     */
+    async function getProvidersConfig(): Promise<
+        Record<string, { readonly enabled: boolean } | undefined>
+    > {
+        const config = await resolveConfig();
+        // Cast: AiProvidersMap is z.partialRecord so values may be undefined.
+        return config.providers as Record<string, { readonly enabled: boolean } | undefined>;
+    }
 
     return {
         // -----------------------------------------------------------------------
@@ -501,13 +609,23 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 throw new AiFeatureDisabledError(req.feature);
             }
 
+            // Ceiling hook: awaited so a breach hard-stops the call (T-017, AC-8).
+            // Only invoked when both checkCeiling and getNow are provided.
+            // apps/api (T-019) supplies both; tests that omit them bypass the check.
+            if (checkCeiling !== undefined && getNow !== undefined) {
+                await checkCeiling({ feature: req.feature, now: getNow() });
+            }
+
+            const providersConfig = await getProvidersConfig();
+
             return routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.generateText(req),
                 getProvider,
                 selectProviderOrder,
-                recordEvent
+                recordEvent,
+                providersConfig
             );
         },
 
@@ -523,13 +641,21 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 throw new AiFeatureDisabledError(req.feature);
             }
 
+            // Ceiling hook: awaited (T-017, AC-8).
+            if (checkCeiling !== undefined && getNow !== undefined) {
+                await checkCeiling({ feature: req.feature, now: getNow() });
+            }
+
+            const providersConfig = await getProvidersConfig();
+
             return routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.streamText(req),
                 getProvider,
                 selectProviderOrder,
-                recordEvent
+                recordEvent,
+                providersConfig
             );
         },
 
@@ -548,13 +674,21 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 throw new AiFeatureDisabledError(req.feature);
             }
 
+            // Ceiling hook: awaited (T-017, AC-8).
+            if (checkCeiling !== undefined && getNow !== undefined) {
+                await checkCeiling({ feature: req.feature, now: getNow() });
+            }
+
+            const providersConfig = await getProvidersConfig();
+
             return routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.generateObject(req, outputSchema),
                 getProvider,
                 selectProviderOrder,
-                recordEvent
+                recordEvent,
+                providersConfig
             );
         },
 
@@ -570,13 +704,21 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 throw new AiFeatureDisabledError(feature);
             }
 
+            // Ceiling hook: awaited (T-017, AC-8).
+            if (checkCeiling !== undefined && getNow !== undefined) {
+                await checkCeiling({ feature, now: getNow() });
+            }
+
+            const providersConfig = await getProvidersConfig();
+
             return routeWithFallback(
                 feature,
                 featureConfig,
                 (provider) => provider.extractIntent(req),
                 getProvider,
                 selectProviderOrder,
-                recordEvent
+                recordEvent,
+                providersConfig
             );
         },
 

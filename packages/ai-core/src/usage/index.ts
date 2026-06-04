@@ -34,3 +34,6 @@ export {
     type GetUtcMonthRangeInput,
     type UtcMonthRange
 } from './reporting/index.js';
+
+// Cost-ceiling check (SPEC-173 T-017)
+export { checkCostCeiling, type CheckCostCeilingInput } from './ceiling.js';

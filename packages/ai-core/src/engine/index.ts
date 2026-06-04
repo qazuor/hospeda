@@ -33,7 +33,13 @@ export type {
     ProviderOrderStrategyInput
 } from './engine.js';
 
-export { AiEngineError, AiEngineExhaustedError, AiFeatureDisabledError } from './errors.js';
+export {
+    AiCeilingHitError,
+    AiEngineError,
+    AiEngineExhaustedError,
+    AiFeatureDisabledError,
+    AiNoEnabledProviderError
+} from './errors.js';
 export type { ProviderAttempt } from './errors.js';
 
 export {
