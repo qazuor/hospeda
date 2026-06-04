@@ -44,3 +44,20 @@ export {
     sleep
 } from './retry.js';
 export type { WithRetryInput } from './retry.js';
+
+// ---------------------------------------------------------------------------
+// AiService (T-015) — public facade
+// ---------------------------------------------------------------------------
+
+export { createAiService } from './ai-service.js';
+export type {
+    AiFeature,
+    AiService,
+    CreateAiServiceInput,
+    EmbedInput,
+    EmbedOutput,
+    ExtractIntentCapabilityInput,
+    GenerateObjectCapabilityInput,
+    GenerateTextCapabilityInput,
+    ModerateCapabilityInput
+} from './ai-service.js';
