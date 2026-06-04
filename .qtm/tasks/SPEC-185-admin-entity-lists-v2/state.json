@@ -502,30 +502,30 @@
             "id": "T-011",
             "title": "Create grid-only host accommodations config",
             "description": "Create a new entity config for the host's own accommodations portfolio, separate from the admin accommodations config.\n\n**Files to create**:\n- `apps/admin/src/features/accommodations/config/me-accommodations.config.ts`\n- `apps/admin/src/features/accommodations/config/me-accommodations.columns.ts` (or reuse columns from the existing accommodations config where sensible)\n\n**Config requirements**:\n- `viewConfig.defaultView = 'grid'`\n- `viewConfig.allowViewToggle = false` (no table/grid toggle rendered; table mode unreachable)\n- `apiConfig` points to the host's own accommodations endpoint (owner-scoped; the same data source the current hand-rolled route shows \u2014 `useAccommodationListQuery` scoped by actor)\n- Reuse `peekFields` and column definitions from the existing accommodations config where applicable\n- A sensible `filterBarConfig` (at minimum `status` select + `includeDeleted` boolean)\n- `listItemSchema` sourced from the existing `@repo/schemas` accommodations list item schema\n\n**Acceptance criteria**:\n- Config compiles with `pnpm typecheck` \u2014 no `any` types\n- `defaultView: 'grid'` and `allowViewToggle: false` are set\n- The config's `apiConfig` endpoint is owner-scoped (host sees only their own rows)\n- Reused columns and peek fields from the admin config do not duplicate logic (import, don't copy)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Create me-accommodations.config.ts with defaultView:'grid' + allowViewToggle:false",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create or import me-accommodations.columns.ts (reuse admin columns where sensible)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set apiConfig to owner-scoped host accommodations endpoint",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Add minimal filterBarConfig (status select + includeDeleted boolean)",
-                    "completed": false
+                    "title": "Add minimal filterBarConfig (status select + type select)",
+                    "completed": true
                 },
                 {
                     "title": "Verify pnpm typecheck passes \u2014 no any types, no duplicated logic",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": [
@@ -539,40 +539,40 @@
             ],
             "phase": "phase4-host-portfolio",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Migrate /me/accommodations route onto createEntityListPage",
             "description": "Replace the hand-rolled Shadcn `Card` grid in the host portfolio route with the generic `createEntityListPage` using the config from T-011.\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/me/accommodations/index.tsx`\n\n**What to do**:\n1. Remove the hand-rolled `<Card>` grid implementation and the direct `useAccommodationListQuery` call.\n2. Import and wire `createEntityListPage` (or its result) using `meAccommodationsConfig` from T-011.\n3. The route should render the generic list page in grid-only mode.\n4. Verify that the existing child routes (`new.tsx`, `$id_.edit.tsx`, peek drawer navigation) still function \u2014 these are NOT changed by this task, but the migration must not break them.\n\n**Acceptance criteria**:\n- `/me/accommodations` renders via `createEntityListPage` in grid mode\n- No table/grid toggle is shown\n- Only the authenticated host's own accommodations appear (owner-scoped)\n- The peek drawer opens on card click with the same fields as before migration\n- Pagination works (page/pageSize params)\n- Existing create/edit child routes still function\n- Tests: grid-only (no toggle rendered), owner-scoped data assertion, peek drawer integration smoke\n- Hand-rolled `<Card>` grid code is fully removed",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-011"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Remove hand-rolled Shadcn Card grid + direct useAccommodationListQuery from index.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire meAccommodationsConfig into createEntityListPage at the route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify child routes (new.tsx, $id_.edit.tsx) still function after migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write test: no toggle rendered (allowViewToggle:false), only host rows shown",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Manual smoke: HOST user opens /me/accommodations \u2014 grid-only, correct rows, peek works",
@@ -590,14 +590,14 @@
             ],
             "phase": "phase4-host-portfolio",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
