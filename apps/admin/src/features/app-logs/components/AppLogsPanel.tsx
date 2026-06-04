@@ -98,6 +98,10 @@ const LOG_COLUMNS: ColumnDef<AppLogEntry>[] = [
             <AppLogMessageCell
                 message={row.original.message}
                 data={row.original.data}
+                requestId={row.original.requestId}
+                userId={row.original.userId}
+                method={row.original.method}
+                path={row.original.path}
             />
         )
     }

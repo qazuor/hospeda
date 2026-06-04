@@ -46,6 +46,18 @@ function buildQueryString(filter: AppLogEntryFilter): string {
             filter.toDate instanceof Date ? filter.toDate.toISOString() : filter.toDate
         );
     }
+    if (filter.requestId) {
+        params.set('requestId', filter.requestId);
+    }
+    if (filter.userId) {
+        params.set('userId', filter.userId);
+    }
+    if (filter.method) {
+        params.set('method', filter.method);
+    }
+    if (filter.path) {
+        params.set('path', filter.path);
+    }
     return params.toString();
 }
 

@@ -103,6 +103,122 @@ describe('admin app-logs list route (SPEC-184)', () => {
             expect(callArg.filter.pageSize).toBe(25);
         });
 
+        it('forwards requestId filter to the service', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act
+            await handler(fakeCtx, undefined, undefined, {
+                requestId: 'req-abc-123'
+            });
+
+            // Assert
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                filter: Record<string, unknown>;
+            };
+            expect(callArg.filter.requestId).toBe('req-abc-123');
+        });
+
+        it('forwards userId filter to the service', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+            const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act
+            await handler(fakeCtx, undefined, undefined, { userId });
+
+            // Assert
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                filter: Record<string, unknown>;
+            };
+            expect(callArg.filter.userId).toBe(userId);
+        });
+
+        it('forwards method filter to the service', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act
+            await handler(fakeCtx, undefined, undefined, { method: 'DELETE' });
+
+            // Assert
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                filter: Record<string, unknown>;
+            };
+            expect(callArg.filter.method).toBe('DELETE');
+        });
+
+        it('forwards path filter to the service', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act
+            await handler(fakeCtx, undefined, undefined, { path: '/api/v1/admin' });
+
+            // Assert
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                filter: Record<string, unknown>;
+            };
+            expect(callArg.filter.path).toBe('/api/v1/admin');
+        });
+
+        it('rejects an invalid userId (non-UUID) via schema validation', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act + Assert — AppLogEntryFilterSchema.parse throws ZodError for bad UUID
+            await expect(
+                handler(fakeCtx, undefined, undefined, { userId: 'not-a-uuid' })
+            ).rejects.toThrow();
+        });
+
+        it('rejects a requestId longer than 64 characters via schema validation', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act + Assert
+            await expect(
+                handler(fakeCtx, undefined, undefined, { requestId: 'x'.repeat(65) })
+            ).rejects.toThrow();
+        });
+
+        it('forwards all four new request-context filters together', async () => {
+            // Arrange
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+            const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+
+            // Act
+            await handler(fakeCtx, undefined, undefined, {
+                requestId: 'req-combo',
+                userId,
+                method: 'PATCH',
+                path: '/api/v1/protected'
+            });
+
+            // Assert
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                filter: Record<string, unknown>;
+            };
+            expect(callArg.filter.requestId).toBe('req-combo');
+            expect(callArg.filter.userId).toBe(userId);
+            expect(callArg.filter.method).toBe('PATCH');
+            expect(callArg.filter.path).toBe('/api/v1/protected');
+        });
+
         it('throws when the service returns an error', async () => {
             mockListEntries.mockResolvedValue({
                 error: { code: 'INTERNAL_ERROR', message: 'boom' }
