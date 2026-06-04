@@ -142,7 +142,7 @@ import '../../../src/routes/billing/plan-change';
 
 describe('plan-change route — idempotency middleware wiring (T-018)', () => {
     it('router.use is called with /change-plan path', () => {
-        const paths = mockRouterUse.mock.calls.map(([path]: [string, ...unknown[]]) => path);
+        const paths = (mockRouterUse.mock.calls as unknown[][]).map((call) => call[0] as string);
         expect(paths).toContain('/change-plan');
     });
 
