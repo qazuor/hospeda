@@ -108,49 +108,8 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchasesTable
 }));
 
-// Mock @repo/billing to provide a known addon definition and an empty plan list.
-// ALL_PLANS is imported at the top level of addon.checkout.ts and must be present
-// in the mock to avoid a TypeError when confirmAddonPurchase calls ALL_PLANS.find().
-// An empty array is sufficient because the code uses optional chaining when
-// accessing plan limits (canonicalPlan?.limits.find(...)).
-vi.mock('@repo/billing', () => ({
-    ALL_PLANS: [],
-    getAddonBySlug: vi.fn((slug: string) => {
-        if (slug === 'extra-photos-20') {
-            return {
-                slug: 'extra-photos-20',
-                name: 'Extra Photos 20',
-                description: 'Add 20 extra photos',
-                billingType: 'recurring' as const,
-                priceArs: 5000,
-                durationDays: null,
-                isActive: true,
-                targetCategories: ['owner'] as const,
-                sortOrder: 1,
-                affectsLimitKey: 'max_photos_per_accommodation',
-                limitIncrease: 20,
-                grantsEntitlement: null
-            };
-        }
-        if (slug === 'visibility-boost-7d') {
-            return {
-                slug: 'visibility-boost-7d',
-                name: 'Visibility Boost 7d',
-                description: 'Boost visibility for 7 days',
-                billingType: 'one_time' as const,
-                priceArs: 3000,
-                durationDays: 7,
-                isActive: true,
-                targetCategories: ['owner', 'complex'] as const,
-                sortOrder: 2,
-                affectsLimitKey: null,
-                limitIncrease: null,
-                grantsEntitlement: 'featured_listing'
-            };
-        }
-        return null;
-    })
-}));
+// @repo/billing import has been fully removed from addon.checkout.ts (SPEC-127 T-003).
+// The mock below is intentionally absent.
 
 // Mock logger to suppress output in tests
 vi.mock('../../src/utils/logger', () => ({
@@ -218,16 +177,17 @@ vi.mock('../../src/services/promo-code.service', () => ({
     }))
 }));
 
-// SPEC-127 T-001: PlanService mock — prepared for the T-002 fix that replaces
-// ALL_PLANS.find(slug===planId) with dual-resolve via PlanService.getById +
-// getBySlug fallback (see addon-plan-change.service.ts:66 for the pattern).
-// addon.checkout.ts does NOT yet import @repo/service-core, so this mock has
-// no effect on current code. Once T-002 wires in PlanService, the tests below
-// will use these mocks to supply plan data for UUID planIds.
-const { mockPlanServiceGetById, mockPlanServiceGetBySlug } = vi.hoisted(() => ({
-    mockPlanServiceGetById: vi.fn(),
-    mockPlanServiceGetBySlug: vi.fn()
-}));
+// SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
+// Both are instantiated at module level in addon.checkout.ts and must be mocked
+// here via the importOriginal-spread style to preserve RoleEnum and other
+// transitively-used symbols from the real @repo/service-core module.
+const { mockPlanServiceGetById, mockPlanServiceGetBySlug, mockAddonCatalogGetBySlug } = vi.hoisted(
+    () => ({
+        mockPlanServiceGetById: vi.fn(),
+        mockPlanServiceGetBySlug: vi.fn(),
+        mockAddonCatalogGetBySlug: vi.fn()
+    })
+);
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
@@ -236,6 +196,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         PlanService: vi.fn().mockImplementation(() => ({
             getById: mockPlanServiceGetById,
             getBySlug: mockPlanServiceGetBySlug
+        })),
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug
         }))
     };
 });
@@ -296,6 +259,53 @@ describe('confirmAddonPurchase', () => {
         vi.clearAllMocks();
         mockBilling = createMockBilling(activeSubscriptions);
         mockEntitlementService = createMockEntitlementService();
+
+        // Default AddonCatalogService mock: returns known addon definitions by slug.
+        // Tests that need a different addon or a NOT_FOUND override individually.
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            if (slug === 'visibility-boost-7d') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'visibility-boost-7d',
+                        name: 'Visibility Boost 7d',
+                        description: 'Boost visibility for 7 days',
+                        billingType: 'one_time' as const,
+                        priceArs: 3000,
+                        durationDays: 7,
+                        isActive: true,
+                        targetCategories: ['owner', 'complex'] as const,
+                        sortOrder: 2,
+                        affectsLimitKey: null,
+                        limitIncrease: null,
+                        grantsEntitlement: 'featured_listing'
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
 
         // Default PlanService mocks: NOT_FOUND for both lookups → soft-skip with previousValue = 0.
         // Tests that need a resolved plan override these individually.
@@ -908,6 +918,52 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
         });
         // Restore the default deterministic UUID after clearAllMocks.
         mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        // Default AddonCatalogService mock: returns known addon definitions by slug.
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            if (slug === 'visibility-boost-7d') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'visibility-boost-7d',
+                        name: 'Visibility Boost 7d',
+                        description: 'Boost visibility for 7 days',
+                        billingType: 'one_time' as const,
+                        priceArs: 3000,
+                        durationDays: 7,
+                        isActive: true,
+                        targetCategories: ['owner', 'complex'] as const,
+                        sortOrder: 2,
+                        affectsLimitKey: null,
+                        limitIncrease: null,
+                        grantsEntitlement: 'featured_listing'
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
 
         // Default PlanService mocks: NOT_FOUND for both lookups → resolvePlanByIdOrSlug
         // returns null → targetCategories gate short-circuits (allows checkout).

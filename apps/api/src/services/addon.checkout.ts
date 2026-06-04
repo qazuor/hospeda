@@ -9,7 +9,6 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { BillingPlanResponse } from '@repo/schemas';
@@ -19,7 +18,7 @@ import type {
     PurchaseAddonResult,
     ServiceResult
 } from '@repo/service-core';
-import { PlanService } from '@repo/service-core';
+import { AddonCatalogService, PlanService } from '@repo/service-core';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -35,6 +34,11 @@ import { PromoCodeService } from './promo-code.service';
 // Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
 // legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
 const planService = new PlanService();
+
+// ─── Addon catalog service (DB-backed addon reads — SPEC-127 T-003) ───────────
+// Replaces `getAddonBySlug` from `@repo/billing` (config catalog).
+// Instantiated once at module level; stateless, no DB connection held.
+const addonCatalogService = new AddonCatalogService();
 
 /**
  * Resolves a billing plan from the DB using dual-resolve:
@@ -205,14 +209,16 @@ export async function createAddonCheckout(
     input: PurchaseAddonInput
 ): Promise<ServiceResult<PurchaseAddonResult>> {
     try {
-        const addon = getAddonBySlug(input.addonSlug);
+        const addonResult = await addonCatalogService.getBySlug(input.addonSlug);
 
-        if (!addon) {
+        if (!addonResult.success) {
             return {
                 success: false,
                 error: { code: 'NOT_FOUND', message: `Add-on '${input.addonSlug}' not found` }
             };
         }
+
+        const addon = addonResult.data;
 
         if (!addon.isActive) {
             return {
@@ -499,14 +505,16 @@ export async function confirmAddonPurchase(
     input: ConfirmPurchaseInput & { tx?: DrizzleClient }
 ): Promise<ServiceResult<void>> {
     try {
-        const addon = getAddonBySlug(input.addonSlug);
+        const addonResult = await addonCatalogService.getBySlug(input.addonSlug);
 
-        if (!addon) {
+        if (!addonResult.success) {
             return {
                 success: false,
                 error: { code: 'NOT_FOUND', message: `Add-on '${input.addonSlug}' not found` }
             };
         }
+
+        const addon = addonResult.data;
 
         const subscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
 
