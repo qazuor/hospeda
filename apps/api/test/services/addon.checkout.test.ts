@@ -218,6 +218,28 @@ vi.mock('../../src/services/promo-code.service', () => ({
     }))
 }));
 
+// SPEC-127 T-001: PlanService mock — prepared for the T-002 fix that replaces
+// ALL_PLANS.find(slug===planId) with dual-resolve via PlanService.getById +
+// getBySlug fallback (see addon-plan-change.service.ts:66 for the pattern).
+// addon.checkout.ts does NOT yet import @repo/service-core, so this mock has
+// no effect on current code. Once T-002 wires in PlanService, the tests below
+// will use these mocks to supply plan data for UUID planIds.
+const { mockPlanServiceGetById, mockPlanServiceGetBySlug } = vi.hoisted(() => ({
+    mockPlanServiceGetById: vi.fn(),
+    mockPlanServiceGetBySlug: vi.fn()
+}));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        PlanService: vi.fn().mockImplementation(() => ({
+            getById: mockPlanServiceGetById,
+            getBySlug: mockPlanServiceGetBySlug
+        }))
+    };
+});
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -274,6 +296,14 @@ describe('confirmAddonPurchase', () => {
         vi.clearAllMocks();
         mockBilling = createMockBilling(activeSubscriptions);
         mockEntitlementService = createMockEntitlementService();
+
+        // Default PlanService mocks: NOT_FOUND for both lookups → soft-skip with previousValue = 0.
+        // Tests that need a resolved plan override these individually.
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
 
         // Reset default: successful insert returning a known purchaseId
         mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_abc' }]);
@@ -535,13 +565,23 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).not.toHaveBeenCalled();
         });
 
-        it('should still succeed when the subscription planId is not found in ALL_PLANS', async () => {
-            // G-025: confirmAddonPurchase now resolves plan limits from the static ALL_PLANS
-            // array (not billing.plans.get). When the planId is not in ALL_PLANS the code
-            // falls back to previousValue = 0 via optional chaining and continues normally.
-            // This is intentional: an unknown planId is not a fatal error.
+        it('should still succeed when the subscription planId cannot be resolved by PlanService', async () => {
+            // G-025 (updated for SPEC-127 T-002): confirmAddonPurchase resolves plan limits via
+            // PlanService (DB-backed, dual-resolve). When both getById and getBySlug fail for the
+            // planId, the code falls back to previousValue = 0 via optional chaining and continues
+            // normally. An unresolvable planId is not a fatal error — purchase proceeds.
 
-            // Act - activeSubscription has planId: 'plan_basico' which is not in ALL_PLANS: []
+            // Arrange - make both PlanService lookups return failure
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            // Act - activeSubscription has planId: 'plan_basico' which PlanService cannot resolve
             const result = await confirmAddonPurchase(
                 mockBilling,
                 mockEntitlementService,
@@ -569,6 +609,69 @@ describe('confirmAddonPurchase', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+
+        // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+        it('should record limitAdjustments with plan baseline when planId is a UUID (not a slug)', async () => {
+            // Arrange
+            // Post-SPEC-168: subscriptions may carry a billing_plans UUID as planId.
+            // The owner-basico plan has max_photos_per_accommodation = 5 baseline.
+            // extra-photos-20 has limitIncrease = 20, so expectedNewValue = 5 + 20 = 25.
+            // Bug: ALL_PLANS.find(p => p.slug === uuid) returns undefined →
+            //   previousValue falls back to 0 → newValue = 0 + 20 = 20 (WRONG).
+            // Fix will use PlanService.getById(uuid) → correct baseline.
+            const planUuid = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+            mockBilling = createMockBilling([
+                { id: 'sub_uuid', status: 'active', planId: planUuid }
+            ]);
+
+            // PlanService.getById will return the plan with the correct baseline limit.
+            // BillingPlanResponse.limits is Record<string, number> (DB shape, not LimitDefinition[]).
+            mockPlanServiceGetById.mockResolvedValue({
+                success: true,
+                data: {
+                    id: planUuid,
+                    slug: 'owner-basico',
+                    category: 'owner',
+                    limits: { max_photos_per_accommodation: 5 }
+                }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_limit_test' }]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert — purchase must succeed
+            expect(result.success).toBe(true);
+
+            // The values passed to the DB insert must reflect the real plan baseline (5),
+            // not the fallback-to-zero that happens when the UUID planId is unresolved.
+            expect(mockDbInsertValues).toHaveBeenCalledOnce();
+            const calls = mockDbInsertValues.mock.calls as unknown as Array<[unknown]>;
+            const insertedValues = calls[0]![0] as {
+                limitAdjustments: Array<{
+                    limitKey: string;
+                    increase: number;
+                    previousValue: number;
+                    newValue: number;
+                }>;
+            };
+            expect(insertedValues.limitAdjustments).toHaveLength(1);
+            expect(insertedValues.limitAdjustments[0]).toMatchObject({
+                limitKey: 'max_photos_per_accommodation',
+                increase: 20,
+                previousValue: 5,
+                newValue: 25
+            });
         });
     });
 
@@ -805,6 +908,15 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
         });
         // Restore the default deterministic UUID after clearAllMocks.
         mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        // Default PlanService mocks: NOT_FOUND for both lookups → resolvePlanByIdOrSlug
+        // returns null → targetCategories gate short-circuits (allows checkout).
+        // Tests that need a specific plan category override these individually.
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
     });
 
     afterEach(() => {
@@ -1059,6 +1171,63 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             expect(first.requestOptions?.idempotencyKey).not.toBe(
                 second.requestOptions?.idempotencyKey
             );
+        });
+    });
+
+    // =========================================================================
+    // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+    // =========================================================================
+
+    describe('targetCategories gate with UUID planId (SPEC-127 dual-resolve regression)', () => {
+        // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+        it('should reject checkout when UUID planId resolves to an excluded plan category', async () => {
+            // Arrange
+            // Post-SPEC-168: subscriptions may carry a billing_plans UUID as planId.
+            // The addon extra-photos-20 has targetCategories: ['owner'].
+            // This subscription's planId is a UUID that maps to category 'complex' —
+            // which is excluded from the addon's targetCategories.
+            //
+            // Bug: ALL_PLANS.find(p => p.slug === uuid) returns undefined because
+            // UUIDs never match slugs. So customerPlan is undefined, the guard
+            //   if (customerPlan && !addon.targetCategories.includes(customerPlan.category))
+            // evaluates to false (short-circuit on undefined), and the checkout
+            // proceeds silently — INCORRECTLY allowing the restricted addon.
+            //
+            // Fix (T-002) will replace the ALL_PLANS.find with PlanService dual-resolve:
+            // getById(uuid) → real plan with category 'complex' → gate fires → rejected.
+            const planUuid = 'f1e2d3c4-b5a6-7890-fedc-ba9876543210';
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'complex@example.com',
+                    metadata: { name: 'Complex Owner' }
+                },
+                subscription: { id: 'sub_complex', status: 'active', planId: planUuid }
+            });
+
+            // PlanService.getById will return a 'complex' category plan.
+            // BillingPlanResponse.limits is Record<string, number> (DB shape, not LimitDefinition[]).
+            mockPlanServiceGetById.mockResolvedValue({
+                success: true,
+                data: {
+                    id: planUuid,
+                    slug: 'complex-basico',
+                    category: 'complex',
+                    limits: { max_photos_per_accommodation: 10 }
+                }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            // Act
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            // Assert — extra-photos-20 is owner-only; a 'complex' plan should be rejected.
+            // Currently FAILS: current code silently allows it (customerPlan = undefined).
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('ADDON_NOT_AVAILABLE_FOR_PLAN');
         });
     });
 });

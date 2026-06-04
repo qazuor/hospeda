@@ -9,15 +9,17 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import type { BillingPlanResponse } from '@repo/schemas';
 import type {
     ConfirmPurchaseInput,
     PurchaseAddonInput,
     PurchaseAddonResult,
     ServiceResult
 } from '@repo/service-core';
+import { PlanService } from '@repo/service-core';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -26,6 +28,35 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { PromoCodeService } from './promo-code.service';
+
+// ─── Plan service (DB-backed plan reads — SPEC-127 T-002) ─────────────────────
+// Instantiated once at module level; stateless, no DB connection held.
+//
+// Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
+// legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
+const planService = new PlanService();
+
+/**
+ * Resolves a billing plan from the DB using dual-resolve:
+ * 1. Try `getById(planId)` — succeeds for UUID planIds.
+ * 2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
+ *
+ * Returns `null` if neither lookup succeeds.
+ *
+ * @param planId - UUID or slug of the billing plan
+ * @returns Resolved plan or `null` when not found
+ */
+async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanResponse | null> {
+    const byId = await planService.getById(planId);
+    if (byId.success) {
+        return byId.data;
+    }
+    const bySlug = await planService.getBySlug(planId);
+    if (bySlug.success) {
+        return bySlug.data;
+    }
+    return null;
+}
 
 // TODO: Extend @repo/billing adapter to support preference creation.
 // Once the billing adapter has a createPreference() method, replace
@@ -228,9 +259,11 @@ export async function createAddonCheckout(
             };
         }
 
-        // Validate addon is available for the customer's plan category
+        // Validate addon is available for the customer's plan category.
+        // Post-SPEC-168, planId may be a UUID or a legacy slug — use dual-resolve
+        // via PlanService (DB-backed) rather than the static ALL_PLANS config.
         if (addon.targetCategories && addon.targetCategories.length > 0) {
-            const customerPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
+            const customerPlan = await resolvePlanByIdOrSlug(activeSubscription.planId);
             if (customerPlan && !addon.targetCategories.includes(customerPlan.category)) {
                 return {
                     success: false,
@@ -498,11 +531,11 @@ export async function confirmAddonPurchase(
             };
         }
 
-        // Resolve plan limits from the canonical ALL_PLANS config rather than
-        // fetching them from the billing SDK. The canonical config is the
-        // single source of truth for plan definitions and avoids an extra
-        // network round-trip to QZPay for data we already have locally.
-        const canonicalPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
+        // Resolve plan limits via PlanService (DB-backed, dual-resolve).
+        // Post-SPEC-168, planId may be a UUID or a legacy slug — PlanService handles
+        // both. The DB `limits` field is `Record<string, number>` (key → value map).
+        // When the plan cannot be resolved, limit baseline defaults to 0 (soft-skip).
+        const canonicalPlan = await resolvePlanByIdOrSlug(activeSubscription.planId);
 
         // Compute limit adjustments
         const limitAdjustments: Array<{
@@ -513,8 +546,7 @@ export async function confirmAddonPurchase(
         }> = [];
 
         if (addon.affectsLimitKey && addon.limitIncrease) {
-            const limitDef = canonicalPlan?.limits.find((l) => l.key === addon.affectsLimitKey);
-            const previousValue = limitDef?.value ?? 0;
+            const previousValue = canonicalPlan?.limits[addon.affectsLimitKey] ?? 0;
             const newValue = previousValue + addon.limitIncrease;
 
             limitAdjustments.push({
