@@ -1,10 +1,11 @@
 /**
  * Supported filter control types.
  * 'select' and 'boolean' are implemented in SPEC-054.
+ * 'text' is implemented in feat/entity-list-text-filter.
  * Additional types ('relation', 'number-range', 'date-range') will be
  * defined in future specs when implemented.
  */
-export type FilterControlType = 'select' | 'boolean';
+export type FilterControlType = 'select' | 'boolean' | 'text';
 
 /**
  * Base configuration shared by all filter control types.
@@ -46,10 +47,29 @@ export type BooleanFilterConfig = BaseFilterConfig & {
 };
 
 /**
+ * Configuration for a free-text input filter control.
+ * Renders a debounced text input that writes its value directly to the URL param.
+ * Empty or whitespace-only values remove the param entirely (treated as cleared).
+ */
+export type TextFilterConfig = BaseFilterConfig & {
+    /** Discriminant: text filter type */
+    readonly type: 'text';
+    /** i18n key for the input placeholder. Falls back to the labelKey when omitted. */
+    readonly placeholderKey?: string;
+    /**
+     * Debounce delay in milliseconds before the URL param is updated.
+     * @default 400
+     */
+    readonly debounceMs?: number;
+    /** Maximum number of characters accepted by the input. */
+    readonly maxLength?: number;
+};
+
+/**
  * Configuration for a single filter control in the filter bar.
  * Discriminated union on the `type` field.
  */
-export type FilterControlConfig = SelectFilterConfig | BooleanFilterConfig;
+export type FilterControlConfig = SelectFilterConfig | BooleanFilterConfig | TextFilterConfig;
 
 /** Sentinel value used for the "All" option in Radix Select, which does not support empty strings. */
 export const FILTER_ALL_VALUE = '__all__' as const;

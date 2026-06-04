@@ -10,6 +10,7 @@ export type {
     FilterControlType,
     SelectFilterConfig,
     BooleanFilterConfig,
+    TextFilterConfig,
     FilterBarConfig,
     ActiveFilters,
     FilterChipData
