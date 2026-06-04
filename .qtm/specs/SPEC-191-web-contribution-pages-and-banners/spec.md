@@ -3,7 +3,7 @@ specId: SPEC-191
 title: Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners
 slug: web-contribution-pages-and-banners
 type: feature
-status: draft
+status: in-progress
 complexity: medium
 owner: qazuor
 created: 2026-06-02
@@ -131,6 +131,10 @@ page, and **the click-through must be measurable** so we can judge the campaign.
    contact submissions land today (email + logs). See §6 risk on traceability and the
    conditional follow-up flag — but do NOT build a DB table in this spec.
 6. **Any `apps/admin` changes.**
+7. **Modifying `ContactForm.client.tsx` or `CONTACT_TYPE_OPTIONS`.** The /contacto form
+   and its type select stay exactly as they are; the three new contact types are NOT
+   surfaced in the /contacto dropdown (the contribution forms are the only UI entry
+   points for them).
 
 ## 4. Functional requirements & acceptance criteria
 
@@ -185,19 +189,24 @@ Given the visitor switches locale to /en/colaborar/ or /pt/colaborar/
 
 ### FR-3 — `/colaborar/reportar/` report form, pre-filled with destination context (BETA-69)
 
-Create `apps/web/src/pages/[lang]/colaborar/reportar/index.astro` (SSG) that mounts the
-contact form **preset to `report_destination_info`** and reads a destination-context
+Create `apps/web/src/pages/[lang]/colaborar/reportar/index.astro` (SSG) that mounts
+`ContributionForm` **preset to `report_destination_info`** and reads a destination-context
 query param. Locked param name: **`?destino=<slug>`** (a human-readable slug, consistent
-with how destination URLs are addressed on web). The page passes the slug into the form
-so the submission's `message` is seeded with the destination context (e.g.
-`"Reporte sobre el destino: <slug>. "`), giving the team the "which destination" answer.
+with how destination URLs are addressed on web). Because the page is SSG, the slug is
+read **client-side by the form island** (the same proven pattern as `ContactForm`'s
+`?type=`/`?message=` `useEffect`): `ContributionForm` reads `?destino=` from
+`window.location.search`, seeds the `message` with the destination context (e.g.
+`"Reporte sobre el destino: <slug>. "`), and keeps the slug in state for the submit
+analytics event — giving the team the "which destination" answer.
 
-Reuse `ContactForm` via its existing deep-link mechanism — the simplest path is to
-navigate to it with `?type=report_destination_info&message=<seeded text>` — OR a thin
-variant `ContributionForm.client.tsx` that hard-locks `type` and hides the type select
-while keeping the same validation + POST. Step-1 confirms `ContactForm` already honors
-`?type=` and `?message=`, so the reuse path is viable without a new component; choose the
-thinner option at build time (see §10 D-3).
+The form is a thin variant `ContributionForm.client.tsx` (locked — see §10 D-3): it
+reuses `ContactForm`'s validation (`ContactSubmitSchema.safeParse`), POST, honeypot
+field and 429 handling, but hard-locks `type` via a `presetType` prop (no type select
+rendered), accepts an optional `destino` prop (forwarded to analytics, FR-9) and a
+seeded initial message, and shows a contribution-specific success confirmation from
+the `contributions` namespace. `ContactForm` itself is NOT modified (see §3 non-goals
+— its `?type=` allowlist comes from `CONTACT_TYPE_OPTIONS`, not the schema, so the
+deep-link reuse path was rejected; rationale in D-3).
 
 ```
 Given a visitor opens /es/colaborar/reportar?destino=colon
@@ -208,7 +217,7 @@ Given a visitor opens /es/colaborar/reportar?destino=colon
 Given the report form has the destination context seeded
   When the visitor completes name/email/message and submits
   Then it POSTs to /api/v1/public/contact with type "report_destination_info"
-  And on success the inline success confirmation is shown
+  And on success the contribution success confirmation is shown (contributions namespace copy)
 
 Given /colaborar/reportar is opened with no destino param
   When the form renders
@@ -222,30 +231,42 @@ copy, an explicit **usage / license terms** section, and a submission form prese
 `photo_submission`. The license copy is product/legal content sourced from i18n (see §6
 content dependency — owner/legal must sign off on the exact terms before launch).
 
+The form is textual (no file upload — out of scope, §8), so the page must close the
+expectation loop explicitly: the copy tells the visitor to describe which destination
+the photos are of and to paste links (Drive, Dropbox, etc.) in the message if the
+photos are already online; otherwise the team replies to the submitter's email to
+coordinate delivery. Above the submit button, a short line states "by submitting you
+accept the photo usage terms", anchor-linked to the terms section on the same page.
+No consent checkbox is added (it would require a schema change; if legal later
+requires explicitly recorded consent, that escalates to the flagged persistence
+follow-up in §8).
+
 ```
 Given a visitor opens /es/colaborar/fotos/
   When the page renders
   Then it shows the photo-call copy AND a clearly-labelled usage/license terms section
-  And it mounts a contact form preset to type "photo_submission"
+  And it mounts ContributionForm preset to type "photo_submission"
+  And the copy explains how photos are delivered (links in the message, or email follow-up)
+  And a line above the submit button links to the usage-terms section ("by submitting you accept...")
 
 Given the visitor submits the photo form
   When the submission succeeds
-  Then it POSTs type "photo_submission" to /api/v1/public/contact and shows the success confirmation
+  Then it POSTs type "photo_submission" to /api/v1/public/contact and shows the contribution success confirmation
 ```
 
 ### FR-5 — `/colaborar/editores/` editor-recruitment page (BETA-65)
 
 Create `apps/web/src/pages/[lang]/colaborar/editores/index.astro` (SSG): recruitment copy
-plus a form preset to `editor_application`.
+plus `ContributionForm` preset to `editor_application`.
 
 ```
 Given a visitor opens /es/colaborar/editores/
   When the page renders
-  Then it shows recruitment copy and a contact form preset to type "editor_application"
+  Then it shows recruitment copy and ContributionForm preset to type "editor_application"
 
 Given the visitor submits the editor form
   When the submission succeeds
-  Then it POSTs type "editor_application" to /api/v1/public/contact and shows the success confirmation
+  Then it POSTs type "editor_application" to /api/v1/public/contact and shows the contribution success confirmation
 ```
 
 ### FR-6 — `ContributionBanner.astro` reusable component (BETA-68/65)
@@ -301,15 +322,30 @@ Given the visitor clicks the report link
 
 ### FR-8 — Banner mount points
 
-Mount `ContributionBanner` on the four surfaces (locked):
+Mount `ContributionBanner` on the four surfaces, with placement locked per surface:
 
-- `/colaborar/fotos` banner (`variant: 'photos'`) on: destination **detail**
-  (`destinos/[...path].astro`, `source: 'destination_detail'`) and destination **listing**
-  (`destinos/index.astro` + `destinos/page/[page].astro`, `source: 'destination_listing'`).
-- `/colaborar/editores` banner (`variant: 'editors'`) on: blog listing
-  (`publicaciones/index.astro` + `publicaciones/page/[page].astro`,
-  `source: 'blog_listing'`) and events listing (`eventos/index.astro` +
-  `eventos/page/[page].astro`, `source: 'events_listing'`).
+- `/colaborar/fotos` banner (`variant: 'photos'`):
+  - Destination **detail** (`destinos/[...path].astro`, `source: 'destination_detail'`) —
+    mounted **after the photo gallery block** (`DestinationGallery`), before the reviews
+    section. Thematic fit: the visitor just saw the destination's photos (or their
+    absence), and it stays clear of the FR-7 inline report link after the description.
+  - Destination **listing** (`destinos/index.astro`, `source: 'destination_listing'`) —
+    mounted **after the destination card grid**.
+- `/colaborar/editores` banner (`variant: 'editors'`):
+  - Blog listing (`publicaciones/index.astro`, `source: 'blog_listing'`) — mounted
+    **after the article grid, before pagination** (a reader reaching the end of the
+    list is the best editor candidate; it doesn't push content for everyone else).
+  - Events listing (`eventos/index.astro`, `source: 'events_listing'`) — same placement
+    (**after the events grid, before pagination**).
+
+**Single mount file per listing (verified):** `destinos/page/[page].astro` is a 301
+redirect to `/destinos/`, and `publicaciones/page/[page].astro` /
+`eventos/page/[page].astro` are `Astro.rewrite`s to their `index.astro` — so one mount
+in each `index.astro` covers every page; the `page/[page].astro` files are NOT touched.
+
+**Placement convention (locked):** listing surfaces mount the banner after the results
+grid (before pagination where it exists); the destination detail mounts it after the
+gallery.
 
 ```
 Given the destination listing page renders
@@ -335,7 +371,10 @@ Add to `WebEvents` in `apps/web/src/lib/analytics/events.ts` (snake_case,
 Banner clicks fire `contribution_banner_clicked` (FR-6). Each form's success path fires
 its submit event via `trackEvent`. Server-side calls are no-ops (the wrapper guards
 `window`); banner click tracking lives in the component's hoisted `<script>` (mirrors
-`WhatsAppCTA`); form submit tracking lives in the React island after a 2xx response.
+`WhatsAppCTA`); form submit tracking lives in `ContributionForm` after a 2xx response.
+On the report page, `ContributionForm` reads the `?destino=` slug client-side (the page
+is SSG) and keeps it in state, so `contribution_report_submitted` carries `destino`
+directly (never parsed back out of the message text).
 
 ```
 Given the banner CTA is clicked
@@ -354,9 +393,10 @@ Given any contribution analytics call runs during SSG/SSR (no window)
 ### FR-10 — i18n es/en/pt (`contributions` namespace)
 
 Create `packages/i18n/src/locales/{es,en,pt}/contributions.json` with all copy for the
-hub, the three pages (incl. the photo license terms text), the banners, and the report
-link. es is authoritative; en and pt fall back to es until translated (the `t(key,
-fallback)` mechanism + missing-key fallback already handle this).
+hub, the three pages (incl. the photo license terms text and the delivery-mechanics
+copy), the banners, the report link, the form labels and the contribution-specific
+success confirmations. es is authoritative; en and pt fall back to es until translated
+(the `t(key, fallback)` mechanism + missing-key fallback already handle this).
 
 ```
 Given the contributions namespace exists with es keys
@@ -418,9 +458,9 @@ of surfaces, and i18n/closeout land last, each at a natural pause point.
 7. `/colaborar/index.astro` hub landing (SSG).
 8. `/colaborar/reportar/index.astro` (preset `report_destination_info`, `?destino=`
    seeding), `/colaborar/fotos/index.astro` (+ license terms), `/colaborar/editores/index.astro`.
-9. Decide and implement the form-reuse path (deep-link existing `ContactForm` vs. a thin
-   `ContributionForm.client.tsx` that locks `type`); wire each form's submit-success
-   `trackEvent`.
+9. Build `ContributionForm.client.tsx` (locked `type` via `presetType`, no type select,
+   optional `destino` prop + seeded message, contribution-specific success copy); wire
+   each form's submit-success `trackEvent`.
 10. Tests: each page prerenders for es/en/pt; form preset/seed behavior;
     submit-success event fired.
 
@@ -453,7 +493,7 @@ of surfaces, and i18n/closeout land last, each at a natural pause point.
 | **Public-form spam** — three new public entry points. | They reuse the existing endpoint, inheriting the honeypot + 5/60 s rate limit unchanged (FR-11). No new attack surface beyond more referrers; no CAPTCHA added (out of scope). |
 | **Photo-license legal copy** — the usage/license terms on `/colaborar/fotos` are legal/product content, not a code decision. | Treated as a **content dependency**: owner/legal must sign off on the exact license text before launch. Engineering ships the i18n keys + layout; the final wording is filled/approved separately. Launch of `/colaborar/fotos` is gated on that sign-off. |
 | **SSG page with a client form island (hydration)** | Mirror the proven `/contacto` pattern (`prerender = true` page + `client:visible` ContactForm). The form is the only interactive island; the rest is static. Manual smoke confirms hydration + submit per locale. |
-| **Deep-link prefill misuse** — `?destino=` / `?message=` are attacker-controllable. | `ContactForm` already caps `?message` to 2000 chars and validates `?type` against the allowed set; the seeded message is plain text rendered into a textarea (no HTML injection). The API sanitizes all fields (`sanitizeString` STRICT) before the email template. |
+| **Deep-link prefill misuse** — `?destino=` is attacker-controllable. | `ContributionForm` treats the slug as plain text seeded into a textarea (length-capped to the schema bound, no HTML injection surface); `type` is a locked prop, never read from the URL. The API sanitizes all fields (`sanitizeString` STRICT) before the email template. |
 
 ## 7. Testing strategy
 
@@ -464,9 +504,10 @@ Per the project's Test-Informed Development rules (Vitest, AAA, ≥90% coverage)
   compatibility); contact handler test for the new label + audit on a
   `report_destination_info` submission.
 - **Components — tests alongside:** `ContributionBanner` renders per variant; CTA click
-  fires `contribution_banner_clicked` with `source`/`variant`; responsive reflow. If a
-  `ContributionForm.client.tsx` variant is built, test its locked `type` + hidden select
-  + submit-success event; otherwise test the deep-link preset path on `ContactForm`.
+  fires `contribution_banner_clicked` with `source`/`variant`; responsive reflow.
+  `ContributionForm` tests: locked `type` (no select rendered), seeded message,
+  `destino` prop forwarded to the submit event, contribution success copy, 429
+  handling; plus a guard that `ContactForm` / `CONTACT_TYPE_OPTIONS` are untouched.
 - **Page integration:** each /colaborar page prerenders for es/en/pt and mounts the
   correct form preset; the report link on the destination detail carries
   `?destino=<slug>`; each banner mount passes the correct `variant`/`source`/`ctaHref`.
@@ -494,19 +535,19 @@ Per the project's Test-Informed Development rules (Vitest, AAA, ≥90% coverage)
 |------|-----------|
 | `packages/schemas/src/contact/submit.ts` | Append the three new contact types (additive-only) |
 | `apps/api/src/routes/contact/submit.ts` | Add Spanish labels for the new types to `CONTACT_TYPE_LABELS` (pipeline otherwise unchanged) |
-| `apps/web/src/components/ContactForm.client.tsx` | Reuse via `?type=`/`?message=` deep-link, or base for a thin locked-type variant |
+| `apps/web/src/components/ContactForm.client.tsx` | Reference base for `ContributionForm` (validation + POST + honeypot + 429 handling). NOT modified |
 | `apps/web/src/components/contributions/ContributionBanner.astro` (NEW) | Reusable banner; model on `WhatsAppCTA.astro` |
 | `apps/web/src/components/contributions/ContributionBanner.module.css` (NEW) | Banner styling (vanilla CSS) |
-| `apps/web/src/components/contributions/ContributionForm.client.tsx` (OPTIONAL NEW) | Thin locked-type form variant, if the deep-link path is not chosen |
+| `apps/web/src/components/contributions/ContributionForm.client.tsx` (NEW) | Thin locked-type form variant used by all three /colaborar forms (D-3) |
 | `apps/web/src/pages/[lang]/colaborar/index.astro` (NEW) | Hub landing (SSG) |
 | `apps/web/src/pages/[lang]/colaborar/reportar/index.astro` (NEW) | BETA-69 report form, `?destino=` seeded |
 | `apps/web/src/pages/[lang]/colaborar/fotos/index.astro` (NEW) | BETA-68 photo call + license terms |
 | `apps/web/src/pages/[lang]/colaborar/editores/index.astro` (NEW) | BETA-65 editor recruitment |
 | `apps/web/src/components/destination/DestinationSidebarCtas.astro` | Add the report row |
 | `apps/web/src/pages/[lang]/destinos/[...path].astro` | Inline report link after description + fotos banner mount |
-| `apps/web/src/pages/[lang]/destinos/index.astro`, `destinos/page/[page].astro` | Fotos banner mount (`destination_listing`) |
-| `apps/web/src/pages/[lang]/publicaciones/index.astro`, `publicaciones/page/[page].astro` | Editores banner mount (`blog_listing`) |
-| `apps/web/src/pages/[lang]/eventos/index.astro`, `eventos/page/[page].astro` | Editores banner mount (`events_listing`) |
+| `apps/web/src/pages/[lang]/destinos/index.astro` | Fotos banner mount after the card grid (`destination_listing`). `page/[page].astro` is a 301 redirect — not touched |
+| `apps/web/src/pages/[lang]/publicaciones/index.astro` | Editores banner mount after the grid, before pagination (`blog_listing`). `page/[page].astro` is a rewrite — not touched |
+| `apps/web/src/pages/[lang]/eventos/index.astro` | Editores banner mount after the grid, before pagination (`events_listing`). `page/[page].astro` is a rewrite — not touched |
 | `apps/web/src/lib/analytics/events.ts` | Add the four `contribution_*` event names |
 | `apps/web/src/lib/analytics/posthog-client.ts` | `trackEvent` used by banner + form submits |
 | `packages/i18n/src/locales/{es,en,pt}/contributions.json` (NEW) | All contribution copy + license terms |
@@ -524,11 +565,21 @@ Per the project's Test-Informed Development rules (Vitest, AAA, ≥90% coverage)
    contact pipeline can carry these (additive enum value + label, same validation,
    honeypot, rate limit, email dispatch). A new endpoint would duplicate the spam
    mitigation and notification wiring for no benefit.
-3. **D-3 — Forms reuse `ContactForm` via the existing `?type=`/`?message=` deep-link**,
-   preset to the right contribution type. A thin `ContributionForm.client.tsx` that
-   locks `type` and hides the select is an allowed alternative if hiding the type select
-   matters for UX; the deep-link reuse is the default (less new code, `ContactForm`
-   already validates `?type` against the allowed set).
+3. **D-3 — Forms use a thin `ContributionForm.client.tsx` variant; `ContactForm` is
+   untouched.** The deep-link reuse path was evaluated and rejected on three verified
+   blockers: (a) `ContactForm`'s `?type=` allowlist comes from `CONTACT_TYPE_OPTIONS`
+   (component constant), NOT the schema — the new enum values would be silently rejected
+   unless added to the /contacto select, polluting it with contribution-only entries;
+   (b) FR-3 requires the type to be locked / not user-changeable, but `ContactForm`
+   always renders an editable select; (c) FR-9 requires `contribution_*_submitted`
+   events on success (plus a structured `destino` prop), which `ContactForm` does not
+   and should not fire. The variant reuses the same Zod validation, POST, honeypot and
+   429 handling; props: `presetType` (locked contact type), `locale`, optional
+   destination-context handling (reads `?destino=` from the URL client-side on the
+   report page — the page is SSG, so the server cannot read query params), optional
+   seeded initial message. Its success state uses
+   contribution-specific copy from the `contributions` namespace (not the generic
+   contact success).
 4. **D-4 — Report destination context uses `?destino=<slug>`** (human-readable slug,
    consistent with web destination addressing), seeded into the message body so the
    submission carries "which destination" without a DB join.
