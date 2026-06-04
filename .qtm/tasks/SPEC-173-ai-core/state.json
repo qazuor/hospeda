@@ -8,39 +8,39 @@
             "id": "T-001",
             "title": "Scaffold @repo/ai-core package skeleton",
             "description": "Create packages/ai-core with package.json (name @repo/ai-core, ESM, named exports), tsconfig extending @repo/typescript-config, vitest config, and src/index.ts barrel. Add empty src dirs: providers, engine, capabilities, config, usage, safety, storage, types. Wire into pnpm workspace + turbo. Verify: pnpm typecheck passes on empty package. Tests: trivial src/index.test.ts asserting the barrel imports without error.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-012"],
             "subtasks": [
                 {
                     "title": "Create package.json + tsconfig + vitest config",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create empty src module dirs + index.ts barrel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register in workspace + turbo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write barrel smoke test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["setup", "package", "ai-core"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T05:08:40.000Z",
+                "completed": "2026-06-04T05:12:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 42,
+        "pending": 41,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.5
     }
