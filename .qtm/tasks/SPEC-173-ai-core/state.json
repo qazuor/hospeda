@@ -647,35 +647,35 @@
             "id": "T-018",
             "title": "Implement usage reporting query helpers",
             "description": "Create src/usage/reporting — query helpers aggregating ai_usage per user / feature / month (counts, tokens, cost centavos) backing the admin reporting endpoints (FR-7). Read-only via storage. RO-RO, JSDoc. Tests: unit tests with stubbed db asserting aggregation by user/feature/month buckets.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016", "T-006"],
             "blocks": ["T-023", "T-033"],
             "subtasks": [
                 {
                     "title": "Aggregation by user/feature/month",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Read-only query helpers via storage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write reporting unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "usage", "reporting", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:05:00.000Z",
+                "completed": "2026-06-04T18:50:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.5
     }
