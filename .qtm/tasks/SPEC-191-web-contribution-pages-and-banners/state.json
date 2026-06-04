@@ -506,39 +506,39 @@
             "id": "T-015",
             "title": "Manual smoke es/en/pt (pages, funnels, submits, analytics) + regression fixes",
             "description": "Run web + api locally (worktree dev servers). Verify in es/en/pt: each /colaborar page renders and hydrates; one real submit per contribution type reaches the contact pipeline (email dispatch visible in dev logs, correct Spanish label); report funnel from a destination detail carries ?destino= and seeds the form; all four banner mounts link correctly per surface; contribution_banner_clicked + contribution_*_submitted events fire (PostHog debug/network tab); honeypot fake-success and 429 behavior intact. Any bug found gets a reproducing regression test BEFORE the fix (project rule). NOTE for the owner: /colaborar/fotos launch remains gated on legal sign-off of the license copy (D-9) — flag it if still pending.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Smoke all /colaborar pages + hydration per locale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Real submit per contribution type (pipeline + label verified)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Funnel links + analytics events verified per surface",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Regression tests for any finding",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["qa", "smoke", "analytics"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T21:00:00.000Z",
+                "completed": "2026-06-04T21:55:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.1
     }
