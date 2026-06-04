@@ -16,11 +16,26 @@
  * Tests must provide the UNION of all sibling permissions.
  */
 
+import { setDb } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
+
+// ─── Mock DB client ───────────────────────────────────────────────────────────
+// setDb() injects a mock DrizzleClient so getDb() works without a real DB.
+// Each test that calls getDb() controls the query result via mockDbWhereResult.
+// Regular functions (NOT vi.fn()) are used so vi.clearAllMocks() does not reset
+// the chain and cause "cannot read property 'from' of undefined" errors.
+let mockDbWhereResult: unknown[] = [];
+const mockDbClient = {
+    select: () => ({
+        from: () => ({
+            where: () => Promise.resolve(mockDbWhereResult)
+        })
+    })
+} as unknown as Parameters<typeof setDb>[0];
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
@@ -46,7 +61,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
-    return { ...actual };
+    // importOriginal() does not reliably resolve re-exported `export *` named bindings
+    // in Vitest for ES modules. Import `users` from its canonical source file directly.
+    const { users } = await import(
+        '/home/qazuor/projects/WEBS/hospeda-SPEC-185-admin-entity-lists-v2/packages/db/src/schemas/user/user.dbschema.ts'
+    );
+    return { ...actual, users };
 });
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -113,10 +133,14 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
+        // Inject the mock DB client so getDb() works without a real database.
+        setDb(mockDbClient);
         app = initApp();
     });
 
     beforeEach(() => {
+        // Reset the DB query result to empty before each test.
+        mockDbWhereResult = [];
         vi.clearAllMocks();
     });
 
@@ -174,6 +198,65 @@ describe('Admin USER tag moderation routes (SPEC-086 T-026)', () => {
                     expect(queryArg.type).toBe('USER');
                 }
             }
+        });
+
+        it('should enrich list items with owner displayName, email, and role', async () => {
+            // Arrange
+            const actor = buildAdminActor(ALL_MODERATION_PERMISSIONS);
+            mockTagService.adminList.mockResolvedValue({
+                data: { items: [USER_TAG], total: 1 }
+            });
+
+            // Set the DB query result to return the owner row for OWNER_ID
+            mockDbWhereResult = [
+                {
+                    id: OWNER_ID,
+                    displayName: 'Test Owner',
+                    email: 'owner@example.com',
+                    role: 'USER'
+                }
+            ];
+
+            // Act
+            const res = await app.request('/api/v1/admin/tags/user', {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const firstItem = (body as { data: { items: Record<string, unknown>[] } }).data
+                .items[0];
+            expect(firstItem).toBeDefined();
+            expect(firstItem?.ownerDisplayName).toBe('Test Owner');
+            expect(firstItem?.ownerEmail).toBe('owner@example.com');
+            expect(firstItem?.ownerRole).toBe('USER');
+        });
+
+        it('should set owner fields to null when owner does not exist in users table', async () => {
+            // Arrange
+            const actor = buildAdminActor(ALL_MODERATION_PERMISSIONS);
+            mockTagService.adminList.mockResolvedValue({
+                data: { items: [USER_TAG], total: 1 }
+            });
+
+            // mockDbWhereResult is empty by default (set in beforeEach) — owner not found
+
+            // Act
+            const res = await app.request('/api/v1/admin/tags/user', {
+                method: 'GET',
+                headers: actorHeaders(actor)
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const firstItem = (body as { data: { items: Record<string, unknown>[] } }).data
+                .items[0];
+            expect(firstItem?.ownerDisplayName).toBeNull();
+            expect(firstItem?.ownerEmail).toBeNull();
+            expect(firstItem?.ownerRole).toBeNull();
         });
     });
 
