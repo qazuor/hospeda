@@ -9,9 +9,9 @@ Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 | Metric | Value |
 |--------|-------|
 | Total tasks | 17 |
-| Completed | 11 |
+| Completed | 14 |
 | In progress | 0 |
-| Pending | 6 |
+| Pending | 3 |
 | Avg complexity | 3.1 |
 
 ## Phase Breakdown
@@ -22,7 +22,7 @@ Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 | Phase 2 — Filter backfill (FR-1 targets + FR-2) | T-005, T-006, T-007 | completed (2026-06-04) |
 | Phase 3 — GridCard polish + per-entity override (FR-3) | T-008, T-009, T-010 | in-progress (T-008+T-009 done, T-010 pending visual smoke) |
 | Phase 4 — Host portfolio migration (FR-4, BETA-76) | T-011, T-012 | completed (2026-06-04) |
-| Phase 5 — Tags migration (FR-5) | T-013, T-014, T-015 | pending |
+| Phase 5 — Tags migration (FR-5) | T-013, T-014, T-015 | completed (2026-06-04) |
 | Phase 6 — Closeout | T-016, T-017 | pending |
 
 ## Critical Path
@@ -88,9 +88,9 @@ T-002 and T-003 both depend on T-001 and can proceed in parallel. T-004 depends 
 | T-010 | Quality gate — Phase 3 grid tests green and visual smoke done | pending | 1 | T-009 |
 | T-011 | Create grid-only host accommodations config | completed | 3 | T-010 |
 | T-012 | Migrate /me/accommodations route onto createEntityListPage | completed | 4 | T-011 |
-| T-013 | Migrate post-tags list onto createEntityListPage | pending | 4 | T-012 |
-| T-014 | Migrate internal tags list onto createEntityListPage | pending | 4 | T-013 |
-| T-015 | Migrate user-moderation tags list onto createEntityListPage | pending | 4 | T-014 |
+| T-013 | Migrate post-tags list onto createEntityListPage | completed | 4 | T-012 |
+| T-014 | Migrate internal tags list onto createEntityListPage | completed | 4 | T-013 |
+| T-015 | Migrate user-moderation tags list onto createEntityListPage | completed | 4 | T-014 |
 | T-016 | Full test suite, manual admin smoke, and PR open | pending | 2 | T-015 |
 | T-017 | Post-merge: flip spec + task indexes to completed and close Linear issues | pending | 1 | T-016 |
 

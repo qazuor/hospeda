@@ -604,129 +604,129 @@
             "id": "T-013",
             "title": "Migrate post-tags list onto createEntityListPage",
             "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/tags/post-tags/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/post-tags/config/post-tags.config.ts`\n- `apps/admin/src/features/tags/post-tags/config/post-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/tags/post-tags/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the existing `@repo/schemas` post-tag schema\n- `createColumns` defining at minimum: name, slug, usage count (if available), createdAt\n- `filterBarConfig` with at minimum `includeDeleted` (boolean); add status/type select if the tag schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Preserve the create/edit navigation \u2014 `new.tsx` and `$id_.edit.tsx` routes must still work after migration. Do NOT change those route files.\n\n**Acceptance criteria**:\n- post-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results\n- Applied filter survives page reload (URL state)\n- Existing `new.tsx` and `$id_.edit.tsx` navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed from `index.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Create post-tags.config.ts with listItemSchema, columns, filterBarConfig (includeDeleted), peekFields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create post-tags.columns.ts with name, slug, createdAt columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace hand-rolled table in post-tags/index.tsx with createEntityListPage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify new.tsx and $id_.edit.tsx routes unaffected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "post-tags"],
             "phase": "phase5-tags-migration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Migrate internal tags list onto createEntityListPage",
             "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/platform/tags/internal/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/internal/config/internal-tags.config.ts`\n- `apps/admin/src/features/tags/internal/config/internal-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/platform/tags/internal/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the internal tag schema in `@repo/schemas`\n- `createColumns` with at minimum: name, slug, context/scope (if present), createdAt\n- `filterBarConfig` with `includeDeleted` (boolean); add `category`/`type` select if the schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Each tag list migrates in its own commit to bound regression blast radius (per spec \u00a710 decision 6). Preserve any existing create/edit child routes.\n\n**Acceptance criteria**:\n- internal-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results and survives page reload\n- Existing create/edit navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Create internal-tags.config.ts with listItemSchema, columns, filterBarConfig, peekFields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create internal-tags.columns.ts with name, slug, context columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace hand-rolled table in platform/tags/internal/index.tsx with createEntityListPage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing create/edit child routes unaffected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "internal-tags"],
             "phase": "phase5-tags-migration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Migrate user-moderation tags list onto createEntityListPage",
             "description": "Replace the hand-rolled `<table>` at `apps/admin/src/routes/_authed/tags/user-moderation/index.tsx` with `createEntityListPage`.\n\n**Files to create**:\n- `apps/admin/src/features/tags/user-moderation/config/user-moderation-tags.config.ts`\n- `apps/admin/src/features/tags/user-moderation/config/user-moderation-tags.columns.ts`\n\n**Files to modify**:\n- `apps/admin/src/routes/_authed/tags/user-moderation/index.tsx`\n\n**Config requirements**:\n- `listItemSchema` sourced from the user-moderation tag schema in `@repo/schemas`\n- `createColumns` with at minimum: name, slug, severity/type (if present), createdAt\n- `filterBarConfig` with `includeDeleted` (boolean); add any severity/category select if the schema exposes one\n- `peekFields` covering tag metadata\n- `viewConfig.defaultView = 'table'` with `allowViewToggle: true`\n\n**Important**: Each tag list migrates in its own commit. Preserve any existing create/edit child routes.\n\n**Acceptance criteria**:\n- user-moderation-tags list renders via `createEntityListPage` with FilterBar, grid view, and peek drawer\n- `includeDeleted` filter narrows results and survives page reload\n- Existing create/edit navigation still works\n- Tests: FilterBar renders, filter application, URL state persistence\n- Hand-rolled `<table>` markup removed",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Create user-moderation-tags.config.ts with listItemSchema, columns, filterBarConfig, peekFields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create user-moderation-tags.columns.ts with name, slug, severity columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace hand-rolled table in tags/user-moderation/index.tsx with createEntityListPage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing create/edit child routes unaffected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write tests: FilterBar presence, includeDeleted filter, URL state persistence",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-5", "admin", "tags", "migration", "user-moderation-tags"],
             "phase": "phase5-tags-migration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
