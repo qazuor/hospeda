@@ -104,6 +104,42 @@ describe('TourStepTargetSchema', () => {
         // The regex requires at least one char in [a-z0-9-]+ after the colon
         expect(TourStepTargetSchema.safeParse('data-tour:').success).toBe(false);
     });
+
+    // Section-prefix branch (camelCase section ids)
+    it("accepts 'data-tour:main-menu-section-catalogo' (lowercase section id)", () => {
+        expect(TourStepTargetSchema.safeParse('data-tour:main-menu-section-catalogo').success).toBe(
+            true
+        );
+    });
+
+    it("accepts 'data-tour:main-menu-section-misAlojamientos' (camelCase section id)", () => {
+        expect(
+            TourStepTargetSchema.safeParse('data-tour:main-menu-section-misAlojamientos').success
+        ).toBe(true);
+    });
+
+    it("accepts 'data-tour:main-menu-section-miFacturacion' (camelCase section id)", () => {
+        expect(
+            TourStepTargetSchema.safeParse('data-tour:main-menu-section-miFacturacion').success
+        ).toBe(true);
+    });
+
+    it("passes schema for 'data-tour:main-menu-section-' (Zod-level only — §T1 cross-check catches unknown section)", () => {
+        // 'main-menu-section-' ends with a hyphen which the static [a-z0-9-]+ accepts.
+        // The Zod schema itself allows this; the §T1 cross-check in AdminIAConfigSchema
+        // is responsible for rejecting it at boot time when no matching section exists.
+        expect(TourStepTargetSchema.safeParse('data-tour:main-menu-section-').success).toBe(true);
+    });
+
+    it("rejects 'data-tour:UPPER' (uppercase non-section target still rejected)", () => {
+        // camelCase is only allowed WITH the section prefix; bare uppercase is invalid
+        expect(TourStepTargetSchema.safeParse('data-tour:UPPER').success).toBe(false);
+    });
+
+    it("rejects 'data-tour:misAlojamientos' (camelCase without section prefix rejected)", () => {
+        // camelCase without the full main-menu-section- prefix must be rejected
+        expect(TourStepTargetSchema.safeParse('data-tour:misAlojamientos').success).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

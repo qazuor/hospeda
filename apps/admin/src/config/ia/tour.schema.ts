@@ -101,7 +101,7 @@ export const KNOWN_DATA_TOUR_IDS: ReadonlySet<string> = new Set([
 // ============================================================================
 
 /**
- * Pattern that a `data-tour:<id>` step target must match.
+ * Pattern that a static `data-tour:<id>` step target must match.
  *
  * The id part (after the `data-tour:` prefix) must consist of lowercase
  * alphanumeric characters and hyphens only — matching the HTML `data-tour`
@@ -110,29 +110,58 @@ export const KNOWN_DATA_TOUR_IDS: ReadonlySet<string> = new Set([
  * Examples:
  * - `data-tour:main-menu` — valid
  * - `data-tour:sidebar` — valid
- * - `data-tour:UPPER` — INVALID (uppercase rejected)
+ * - `data-tour:UPPER` — INVALID (uppercase rejected by this regex; use the
+ *   section-prefix branch for camelCase section targets)
  * - `data-tour:has_underscore` — INVALID (underscore rejected)
  */
 const DATA_TOUR_TARGET_REGEX = /^data-tour:[a-z0-9-]+$/;
 
 /**
- * Validated step target — one of two forms:
+ * Pattern for dynamic per-section `data-tour` targets.
+ *
+ * Section targets are constructed at render time by `MainMenu.tsx` as
+ * `data-tour:main-menu-section-<sectionId>` where `<sectionId>` is the key
+ * from `sections` in the IA config. Section IDs use camelCase (e.g.
+ * `misAlojamientos`, `miFacturacion`) so the id part after the prefix must
+ * allow both lowercase and uppercase letters.
+ *
+ * Examples:
+ * - `data-tour:main-menu-section-catalogo` — valid (all-lowercase section id)
+ * - `data-tour:main-menu-section-misAlojamientos` — valid (camelCase section id)
+ * - `data-tour:main-menu-section-` — INVALID (empty suffix)
+ * - `data-tour:UPPER` — INVALID (must start with the section prefix)
+ */
+const DATA_TOUR_SECTION_TARGET_REGEX = new RegExp(
+    `^data-tour:${DATA_TOUR_SECTION_PREFIX}[A-Za-z0-9-]+$`
+);
+
+/**
+ * Validated step target — one of three forms:
  *
  * - `'center'` — the step is shown centered on the viewport with no element
  *   highlight (driver.js `element` is omitted / set to null).
- * - `'data-tour:<id>'` — the step spotlights the DOM element whose
- *   `data-tour` attribute equals `<id>`. The id part must match
- *   `[a-z0-9-]+`. Cross-reference validation (§T1) in `schema.ts` checks
- *   that the id resolves to a known layout target.
+ * - `'data-tour:<id>'` (static) — the step spotlights the DOM element whose
+ *   `data-tour` attribute equals `<id>`. The id part must match `[a-z0-9-]+`
+ *   (strict lowercase). Cross-reference validation (§T1) in `schema.ts`
+ *   checks that the id resolves to a known layout target.
+ * - `'data-tour:main-menu-section-<sectionId>'` (dynamic) — the step
+ *   spotlights the menu item rendered by `MainMenu.tsx` for the given section.
+ *   The `<sectionId>` suffix may contain camelCase characters (e.g.
+ *   `misAlojamientos`). Cross-reference validation (§T1) verifies that the
+ *   suffix resolves to a known section id in `config.sections`.
  *
  * @example
  * ```ts
  * const center: TourStepTarget = 'center';
  * const element: TourStepTarget = 'data-tour:main-menu';
+ * const section: TourStepTarget = 'data-tour:main-menu-section-misAlojamientos';
  * ```
  */
 export const TourStepTargetSchema = z.union([
     z.literal('center'),
+    z.string().regex(DATA_TOUR_SECTION_TARGET_REGEX, {
+        message: `target must be "center", "data-tour:<id>" (lowercase only), or "data-tour:${DATA_TOUR_SECTION_PREFIX}<sectionId>" (allows camelCase)`
+    }),
     z.string().regex(DATA_TOUR_TARGET_REGEX, {
         message: 'target must be "center" or "data-tour:<id>" where <id> matches [a-z0-9-]+'
     })
