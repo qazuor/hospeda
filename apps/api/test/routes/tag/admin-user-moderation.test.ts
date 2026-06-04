@@ -61,11 +61,11 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
-    // importOriginal() does not reliably resolve re-exported `export *` named bindings
-    // in Vitest for ES modules. Import `users` from its canonical source file directly.
-    const { users } = await import(
-        '/home/qazuor/projects/WEBS/hospeda-SPEC-185-admin-entity-lists-v2/packages/db/src/schemas/user/user.dbschema.ts'
-    );
+    // `users` is re-exported from @repo/db via `export *`, but Vitest's importOriginal()
+    // does not always resolve transitive `export *` bindings in ESM. Use a portable
+    // relative import to the canonical source file instead of an absolute path.
+    // Path from apps/api/test/routes/tag/ → repo-root/packages/db/src/schemas/user/
+    const { users } = await import('../../../../../packages/db/src/schemas/user/user.dbschema');
     return { ...actual, users };
 });
 
