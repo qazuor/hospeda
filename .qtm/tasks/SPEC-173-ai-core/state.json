@@ -386,35 +386,35 @@
             "id": "T-011",
             "title": "Implement AI config resolver + cache invalidation",
             "description": "Create src/config/ — resolveConfig() reads the ai_settings blob via storage, resolves per-feature model+params+fallback chain+flags+quotas, with an in-memory cache invalidated on write (mind R-7 / billing 300s gotcha — invalidate explicitly on write, not just TTL). RO-RO, JSDoc. Tests: unit tests asserting resolution of per-feature config and that a write invalidates the cache (no stale read).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-014", "T-027", "T-034"],
             "subtasks": [
                 {
                     "title": "resolveConfig() per-feature resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "In-memory cache + explicit invalidate-on-write",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write resolver + cache-invalidation unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "config", "cache", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T08:30:00.000Z",
+                "completed": "2026-06-04T08:42:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 31,
+        "pending": 30,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5
     }
