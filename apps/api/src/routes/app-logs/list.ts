@@ -75,7 +75,10 @@ function parseSortParam(sort?: string): { field: AllowedSortField; direction: 'a
  *   - path: string (substring match)
  *   - sort: 'loggedAt:asc' | 'loggedAt:desc' | 'level:asc' | 'level:desc'
  *   - page: number (default 1)
- *   - pageSize: number (default 50, max 100)
+ *   - pageSize: number (max 100). NOTE: raw API callers omitting pageSize get
+ *     the framework default of 20 (PaginationQuerySchema is merged first by
+ *     createAdminListRoute and wins over this schema's default of 50). The
+ *     admin UI always sends pageSize=50 explicitly via its validateSearch.
  */
 export const listAppLogsRoute = createAdminListRoute({
     method: 'get',

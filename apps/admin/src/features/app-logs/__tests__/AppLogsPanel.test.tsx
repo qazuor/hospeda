@@ -9,9 +9,8 @@
  *   - AppLogLevelBadge   — badge styling per log level
  *   - AppLogMessageCell  — expandable message with request-context detail
  *
- * The request-cell Widget (RequestCell) lives inside app-logs.columns.ts
- * as a module-private component; its markup is indirectly covered by the
- * cell integration path.
+ *   - RequestCell        — compact "METHOD /path" column widget
+ *     (exported from app-logs.columns.ts for direct unit testing)
  *
  * References: SPEC-184 T-013 / T-014 migration
  */
@@ -236,5 +235,51 @@ describe('AppLogMessageCell', () => {
 
         fireEvent.click(toggle); // collapse
         expect(screen.queryByTestId('log-request-context')).not.toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RequestCell (column widget)
+// ---------------------------------------------------------------------------
+
+import { RequestCell } from '../config/app-logs.columns';
+import type { AppLogItem } from '../config/app-logs.config';
+
+/** Minimal valid AppLogEntry row for RequestCell tests. */
+const makeLogRow = (overrides: Partial<AppLogItem> = {}): AppLogItem =>
+    ({
+        id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+        level: 'ERROR',
+        category: 'API',
+        label: null,
+        message: 'boom',
+        data: null,
+        loggedAt: new Date('2026-06-04T10:00:00.000Z'),
+        createdAt: new Date('2026-06-04T10:00:00.100Z'),
+        ...overrides
+    }) as AppLogItem;
+
+describe('RequestCell', () => {
+    it('renders method badge and path when both are present', () => {
+        render(
+            <RequestCell row={makeLogRow({ method: 'POST', path: '/api/auth/sign-in/email' })} />
+        );
+        const cell = screen.getByTestId('log-request-cell');
+        expect(cell).toHaveTextContent('POST');
+        expect(cell).toHaveTextContent('/api/auth/sign-in/email');
+        // Full path available on hover via title
+        expect(screen.getByTitle('/api/auth/sign-in/email')).toBeInTheDocument();
+    });
+
+    it('renders only the path when method is absent', () => {
+        render(<RequestCell row={makeLogRow({ path: '/api/v1/public/health' })} />);
+        const cell = screen.getByTestId('log-request-cell');
+        expect(cell).toHaveTextContent('/api/v1/public/health');
+        expect(cell.querySelector('.font-mono')).toBeNull();
+    });
+
+    it('renders the em-dash placeholder when method and path are both absent', () => {
+        render(<RequestCell row={makeLogRow()} />);
+        expect(screen.getByTestId('log-request-cell')).toHaveTextContent('—');
     });
 });

@@ -83,6 +83,11 @@ describe('admin app-logs list route (SPEC-184)', () => {
             expect(res.items).toHaveLength(1);
             expect(res.pagination.total).toBe(1);
             expect(res.pagination.page).toBe(1);
+            // NOTE: 50 is AppLogEntryFilterSchema's own default, observable here
+            // because this test invokes the handler directly with no query. In
+            // production, Hono's validation layer (createAdminListRoute merges
+            // PaginationQuerySchema first) fills pageSize=20 before the handler
+            // runs, so raw API callers omitting pageSize get 20, not 50.
             expect(res.pagination.pageSize).toBe(50);
             expect(res.pagination.totalPages).toBe(1);
             expect(res.pagination.hasNextPage).toBe(false);

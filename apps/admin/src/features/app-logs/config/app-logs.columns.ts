@@ -34,8 +34,10 @@ function formatTimestamp(value: Date | string): string {
 /**
  * Renders the request cell: compact "METHOD /path" display.
  * Reuses the markup from the bespoke AppLogsPanel request column.
+ * Exported for direct unit testing (module-private components are
+ * unreachable through the framework column pipeline in jsdom).
  */
-function RequestCell({ row }: { readonly row: AppLogEntry }) {
+export function RequestCell({ row }: { readonly row: AppLogEntry }) {
     const { method, path } = row;
     if (!method && !path) {
         return createElement(
