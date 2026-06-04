@@ -8,163 +8,303 @@
             "id": "T-001",
             "title": "Design subscription status transition table + guard helper",
             "description": "Spec §2 T-194-01. Create the validated transition table for SubscriptionStatusEnum and a single guard helper all status writes will route through (reject illegal transitions with typed error). Mirror the existing addon pattern: packages/service-core/src/services/billing/addon/addon-status-transitions.ts. Must cover: active→past_due→cancelled, trialing→active|cancelled, pending_provider→active|abandoned (incl. the SPEC-127 polling-timeout path). Place per the addon precedent (service-core billing dir). Unit tests for every legal/illegal edge (TDD: table is pure logic).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
-                { "title": "Transition table + typed guard helper", "completed": false },
-                { "title": "Exhaustive unit tests (legal + illegal edges)", "completed": false }
+                {
+                    "title": "Transition table + typed guard helper",
+                    "completed": true
+                },
+                {
+                    "title": "Exhaustive unit tests (legal + illegal edges)",
+                    "completed": true
+                }
             ],
             "tags": ["state-machine", "foundation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T20:35:20Z",
+                "completed": "2026-06-04T20:44:59Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Migrate the 6 free-form status-write sites onto the guard",
-            "description": "Spec §2 T-194-01. Route every update(billingSubscriptions) status write (webhook handlers, crons, services — enumerate via grep, drift-report counted 6 direct sites) through the T-001 helper behind a thin shim. No behavior change for currently-legal transitions; illegal ones log + reject. Regression tests per migrated site (existing test files get the new mock/assertion).",
-            "status": "pending",
+            "description": "Spec §2 T-194-01. Route every update(billingSubscriptions) status write (webhook handlers, crons, services — enumerate via grep, drift-report counted 6 direct sites) through the T-001 helper behind a thin shim. No behavior change for currently-legal transitions; illegal ones log + reject. Regression tests per migrated site (existing test files get the new mock/assertion). [T-001 survey: direct write sites are payment-logic.ts:185 (pending_provider→active), subscription-logic.ts:435 (generic webhook mapping), abandoned-pending-subs.job.ts:113 (writes incomplete_expired — normalize at the shim until T-003). Dunning + pause/resume do NOT write directly (qzpay→webhook reflection).]",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-006", "T-007", "T-008", "T-011"],
             "subtasks": [
-                { "title": "Enumerate + migrate all write sites", "completed": false },
-                { "title": "Per-site regression tests", "completed": false }
+                {
+                    "title": "Enumerate + migrate all write sites",
+                    "completed": true
+                },
+                {
+                    "title": "Per-site regression tests",
+                    "completed": true
+                }
             ],
             "tags": ["state-machine", "foundation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T20:44:59Z",
+                "completed": "2026-06-04T20:57:05Z"
+            }
         },
         {
             "id": "T-003",
             "title": "Canonicalize ABANDONED vocab (incomplete_expired → abandoned)",
-            "description": "Spec §5 T-194-13 folded into the state machine. abandoned-pending-subs.job.ts:60 writes 'incomplete_expired' while SubscriptionStatusEnum.ABANDONED='abandoned' (mapping documented at subscription-status.ts:114). Pick 'abandoned' as canonical: cron writes it via the T-001 guard; add a data backfill path for existing rows (migration or runtime mapping — check volume first; coordinate with the two-carriles migration policy) and keep read-compat for the legacy value. Tests: direct query on 'abandoned' finds the cron-written rows.",
-            "status": "pending",
+            "description": "Spec §5 T-194-13 folded into the state machine. abandoned-pending-subs.job.ts:60 writes 'incomplete_expired' while SubscriptionStatusEnum.ABANDONED='abandoned' (mapping documented at subscription-status.ts:114). Pick 'abandoned' as canonical: cron writes it via the T-001 guard; add a data backfill path for existing rows (migration or runtime mapping — check volume first; coordinate with the two-carriles migration policy) and keep read-compat for the legacy value. Tests: direct query on 'abandoned' finds the cron-written rows. [DEPLOY NOTE: extras migration 010-abandoned-status.data-migration.sql must run via db:apply-extras (hops db-apply-extras --target=staging|prod) before/with promotion — register in T-030 PR description.]",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
-                { "title": "Cron writes canonical value via guard", "completed": false },
-                { "title": "Backfill/compat for legacy rows", "completed": false },
-                { "title": "Regression test", "completed": false }
+                {
+                    "title": "Cron writes canonical value via guard",
+                    "completed": true
+                },
+                {
+                    "title": "Backfill/compat for legacy rows",
+                    "completed": true
+                },
+                {
+                    "title": "Regression test",
+                    "completed": true
+                }
             ],
             "tags": ["state-machine", "vocab"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T20:57:05Z",
+                "completed": "2026-06-04T21:05:36Z"
+            }
         },
         {
             "id": "T-004",
             "title": "Red regression test: trial-expiry advisory lock guards nothing",
             "description": "Spec §3 T-194-02. Write a failing test demonstrating blockExpiredTrials (trial.service.ts:357-376) releases advisory lock 1004 before the processing loop (two concurrent invocations both process). Test the claim mechanism that SHOULD exist (claimed-row guard). Red-first per bug policy.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
-            "subtasks": [{ "title": "Failing concurrency/claim test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Failing concurrency/claim test",
+                    "completed": true
+                }
+            ],
             "tags": ["bugfix", "tdd", "trial"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:05:36Z",
+                "completed": "2026-06-04T21:16:42Z"
+            }
         },
         {
             "id": "T-005",
             "title": "Fix blockExpiredTrials lock structure (ADR-019)",
             "description": "Spec §3 T-194-02. Restructure: lock guards the CLAIM of rows; per-sub external (QZPay/MP) calls run in their own short txns with a claimed-row guard. No external calls inside the lock-holding tx (ADR-019). T-004 test goes green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Claim-under-lock restructure", "completed": false },
-                { "title": "External calls in short txns", "completed": false }
+                {
+                    "title": "Claim-under-lock restructure",
+                    "completed": true
+                },
+                {
+                    "title": "External calls in short txns",
+                    "completed": true
+                }
             ],
             "tags": ["bugfix", "trial", "cron"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:05:36Z",
+                "completed": "2026-06-04T21:16:42Z"
+            }
         },
         {
             "id": "T-006",
             "title": "Red regression tests: refund revokes nothing (admin + webhook)",
             "description": "Spec §3 T-194-03/04. Failing tests: (a) onAfterPaymentRefund (qzpay-admin-hooks.ts:407-437) must transition sub via state machine + revoke entitlements + clearEntitlementCache on full refund; (b) MP webhook refund (payment-logic.ts:498, subscription-payment-handler.ts:75) same policy. Today both only log/flip payment status. Red-first.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
-                { "title": "Failing admin-refund tests", "completed": false },
-                { "title": "Failing webhook-refund tests", "completed": false }
+                {
+                    "title": "Failing admin-refund tests",
+                    "completed": true
+                },
+                {
+                    "title": "Failing webhook-refund tests",
+                    "completed": true
+                }
             ],
             "tags": ["bugfix", "tdd", "refund"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:16:42Z",
+                "completed": "2026-06-04T21:28:48Z"
+            }
         },
         {
             "id": "T-007",
             "title": "Refund (admin) revokes access + clears cache + transitions state",
             "description": "Spec §3 T-194-03. onAfterPaymentRefund: full refund → transition to cancelled via T-001 guard, revoke entitlements, clearEntitlementCache(customerId); partial refund → keep sub, audit only (modeling in T-019). T-006(a) green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "Full-refund revoke path", "completed": false },
-                { "title": "Partial-refund audit branch", "completed": false }
+                {
+                    "title": "Full-refund revoke path",
+                    "completed": true
+                },
+                {
+                    "title": "Partial-refund audit branch",
+                    "completed": true
+                }
             ],
             "tags": ["bugfix", "refund"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:16:42Z",
+                "completed": "2026-06-04T21:28:48Z"
+            }
         },
         {
             "id": "T-008",
             "title": "Refund (MP webhook) applies the same policy",
             "description": "Spec §3 T-194-04. payment-logic.ts:498 + subscription-payment-handler.ts:75: apply the T-007 policy (state transition + revoke + cache clear) on webhook-sourced refunds. Reuse the same service-level implementation — no duplicated policy. T-006(b) green. Mock-sweep note: payment-logic.ts factories were touched by SPEC-127; re-check its test mocks.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "Webhook refund wiring to shared policy", "completed": false },
-                { "title": "Tests green incl. SPEC-127-touched mocks", "completed": false }
+                {
+                    "title": "Webhook refund wiring to shared policy",
+                    "completed": true
+                },
+                {
+                    "title": "Tests green incl. SPEC-127-touched mocks",
+                    "completed": true
+                }
             ],
             "tags": ["bugfix", "refund", "webhook"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:28:48Z",
+                "completed": "2026-06-04T21:44:04Z"
+            }
         },
         {
             "id": "T-009",
             "title": "Dunning non-payment cancellation clears entitlement cache",
             "description": "Spec §4 T-194-05. dunning.job.ts:261-313 subscription.canceled_nonpayment: add clearEntitlementCache (INV-1) + regression test.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
-            "subtasks": [{ "title": "Cache clear + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Cache clear + test",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "dunning", "cache"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:44:04Z",
+                "completed": null
+            }
         },
         {
             "id": "T-010",
             "title": "Trial-expiry notifications fire (inject sender)",
             "description": "Spec §4 T-194-06. trial-expiry.ts:60 builds TrialService without the notification sender → TRIAL_EXPIRED never sends. Inject the sender (match how other crons wire it) + regression test asserting the send.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Sender injection + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Sender injection + test",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "trial", "notifications"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": "2026-06-04T21:44:04Z",
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -175,13 +315,27 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Red double-apply test", "completed": false },
-                { "title": "Atomic applied-stamp fix", "completed": false }
+                {
+                    "title": "Red double-apply test",
+                    "completed": false
+                },
+                {
+                    "title": "Atomic applied-stamp fix",
+                    "completed": false
+                }
             ],
             "tags": ["bugfix", "cron", "idempotency"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -192,13 +346,27 @@
             "blockedBy": [],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Detection + re-apply reconciliation", "completed": false },
-                { "title": "Tests (split-state fixture)", "completed": false }
+                {
+                    "title": "Detection + re-apply reconciliation",
+                    "completed": false
+                },
+                {
+                    "title": "Tests (split-state fixture)",
+                    "completed": false
+                }
             ],
             "tags": ["bugfix", "addon", "reconciliation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -208,11 +376,24 @@
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
-            "subtasks": [{ "title": "Terminal handling + regression test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Terminal handling + regression test",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "polling", "addon"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -222,11 +403,24 @@
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-015"],
-            "subtasks": [{ "title": "Single-fetch fix + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Single-fetch fix + test",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "addon", "cron"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -236,11 +430,24 @@
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
-            "subtasks": [{ "title": "Batching + scale test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Batching + scale test",
+                    "completed": false
+                }
+            ],
             "tags": ["perf", "cron", "addon"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -250,11 +457,24 @@
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": [],
-            "subtasks": [{ "title": "Pagination + scale test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Pagination + scale test",
+                    "completed": false
+                }
+            ],
             "tags": ["perf", "trial"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -264,11 +484,24 @@
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Normalized compare + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Normalized compare + test",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "downgrade"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -278,11 +511,24 @@
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Middleware + double-submit test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Middleware + double-submit test",
+                    "completed": false
+                }
+            ],
             "tags": ["idempotency", "route"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -293,14 +539,31 @@
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "refunded_amount writes", "completed": false },
-                { "title": "Audit event rows", "completed": false },
-                { "title": "Tests (admin/webhook × full/partial)", "completed": false }
+                {
+                    "title": "refunded_amount writes",
+                    "completed": false
+                },
+                {
+                    "title": "Audit event rows",
+                    "completed": false
+                },
+                {
+                    "title": "Tests (admin/webhook × full/partial)",
+                    "completed": false
+                }
             ],
             "tags": ["refund", "audit"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -310,11 +573,24 @@
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Lock + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Lock + test",
+                    "completed": false
+                }
+            ],
             "tags": ["cron", "concurrency"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -325,13 +601,27 @@
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Reader audit + stop writing", "completed": false },
-                { "title": "Tests", "completed": false }
+                {
+                    "title": "Reader audit + stop writing",
+                    "completed": false
+                },
+                {
+                    "title": "Tests",
+                    "completed": false
+                }
             ],
             "tags": ["cleanup", "addon"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -341,11 +631,24 @@
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
-            "subtasks": [{ "title": "Notification + test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Notification + test",
+                    "completed": false
+                }
+            ],
             "tags": ["notifications", "cron"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -355,11 +658,24 @@
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Guard + tests", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Guard + tests",
+                    "completed": false
+                }
+            ],
             "tags": ["bugfix", "pause"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -369,11 +685,24 @@
             "complexity": 1,
             "blockedBy": ["T-011"],
             "blocks": [],
-            "subtasks": [{ "title": "Pinning test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Pinning test",
+                    "completed": false
+                }
+            ],
             "tags": ["tests", "cron"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -383,11 +712,24 @@
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
-            "subtasks": [{ "title": "Locale threading + tests", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Locale threading + tests",
+                    "completed": false
+                }
+            ],
             "tags": ["i18n", "checkout"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -398,13 +740,27 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Pinning test", "completed": false },
-                { "title": "Runbook doc", "completed": false }
+                {
+                    "title": "Pinning test",
+                    "completed": false
+                },
+                {
+                    "title": "Runbook doc",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "dispute"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -433,13 +789,27 @@
             ],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Sweep + fixes", "completed": false },
-                { "title": "Targeted re-runs", "completed": false }
+                {
+                    "title": "Sweep + fixes",
+                    "completed": false
+                },
+                {
+                    "title": "Targeted re-runs",
+                    "completed": false
+                }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-028",
@@ -450,13 +820,27 @@
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Gates green", "completed": false },
-                { "title": "Adversarial review + fixes", "completed": false }
+                {
+                    "title": "Gates green",
+                    "completed": false
+                },
+                {
+                    "title": "Adversarial review + fixes",
+                    "completed": false
+                }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-029",
@@ -466,11 +850,24 @@
             "complexity": 1,
             "blockedBy": ["T-028"],
             "blocks": ["T-030"],
-            "subtasks": [{ "title": "Smoke list entry", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Smoke list entry",
+                    "completed": false
+                }
+            ],
             "tags": ["docs", "tracking"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-030",
@@ -481,21 +878,38 @@
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
-                { "title": "PR strategy decision with owner", "completed": false },
-                { "title": "Push + PR + CI + merge", "completed": false },
-                { "title": "Closeout (indexes + engram)", "completed": false }
+                {
+                    "title": "PR strategy decision with owner",
+                    "completed": false
+                },
+                {
+                    "title": "Push + PR + CI + merge",
+                    "completed": false
+                },
+                {
+                    "title": "Closeout (indexes + engram)",
+                    "completed": false
+                }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T20:32:33Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T20:32:33Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 30,
-        "pending": 30,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 20,
+        "inProgress": 2,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.2
     }

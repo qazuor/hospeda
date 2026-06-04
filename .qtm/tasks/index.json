@@ -169,8 +169,8 @@
         {
             "specId": "SPEC-194",
             "title": "Billing Lifecycle Robustness & Bug Fixes",
-            "status": "draft",
-            "progress": "0/30",
+            "status": "in-progress",
+            "progress": "8/30",
             "path": "SPEC-194-billing-lifecycle-robustness",
             "branch": "spec/SPEC-194-billing-lifecycle-robustness"
         }

@@ -3,7 +3,7 @@ spec-id: SPEC-194
 title: Billing Lifecycle Robustness & Bug Fixes
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-03T00:00:00Z
 effort_estimate_hours: 50-80
 tags: [billing, lifecycle, refunds, dunning, trials, crons, state-machine, robustness, bugfix]
