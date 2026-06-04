@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { AiFeatureNotConfiguredError } from '../src/config/index.js';
 import { createAiService } from '../src/engine/ai-service.js';
 import type { AiService } from '../src/engine/ai-service.js';
+import { AiCeilingHitError } from '../src/engine/errors.js';
 import { NotImplementedError } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
@@ -488,5 +489,90 @@ describe('error propagation', () => {
         await expect(
             service.generateText({ feature: 'text_improve', prompt: 'Test' })
         ).rejects.toThrow(AiFeatureNotConfiguredError);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkCeiling / getNow forwarding (T-043 / T-019)
+// ---------------------------------------------------------------------------
+
+describe('checkCeiling and getNow forwarding', () => {
+    it('should forward checkCeiling to createAiEngine and propagate AiCeilingHitError', async () => {
+        // Arrange — a checkCeiling hook that always throws a ceiling breach.
+        const checkCeiling = vi.fn().mockRejectedValue(
+            new AiCeilingHitError({
+                scope: 'feature',
+                feature: 'text_improve',
+                spentMicroUsd: 1_000_000,
+                ceilingMicroUsd: 500_000
+            })
+        );
+        const getNow = vi.fn().mockReturnValue(new Date('2026-06-01T12:00:00Z'));
+
+        const stub = new StubProvider();
+        const service = createAiService({
+            getProvider: () => stub,
+            checkCeiling,
+            getNow
+        });
+
+        // Act + Assert — ceiling breach propagates through the service facade.
+        await expect(
+            service.generateText({ feature: 'text_improve', prompt: 'Hello' })
+        ).rejects.toThrow(AiCeilingHitError);
+    });
+
+    it('should call checkCeiling with the feature and a Date from getNow', async () => {
+        // Arrange — a checkCeiling hook that records its arguments and resolves.
+        const capturedCalls: Array<{ feature: string; now: Date }> = [];
+        const checkCeiling = vi
+            .fn()
+            .mockImplementation(async (input: { feature: string; now: Date }) => {
+                capturedCalls.push({ feature: input.feature, now: input.now });
+            });
+        const fixedNow = new Date('2026-06-05T00:00:00Z');
+        const getNow = vi.fn().mockReturnValue(fixedNow);
+
+        const stub = new StubProvider();
+        const service = createAiService({
+            getProvider: () => stub,
+            checkCeiling,
+            getNow,
+            defaultLocale: 'es'
+        });
+
+        // Act
+        await service.generateText({ feature: 'text_improve', prompt: 'Hello' });
+
+        // Assert — hook was invoked with the correct feature and the Date from getNow.
+        expect(capturedCalls).toHaveLength(1);
+        expect(capturedCalls[0]?.feature).toBe('text_improve');
+        expect(capturedCalls[0]?.now).toBe(fixedNow);
+    });
+
+    it('should NOT call checkCeiling when it is absent (existing tests unaffected)', async () => {
+        // Arrange — service without checkCeiling or getNow (the standard test setup).
+        const stub = new StubProvider();
+        const service = createAiService({ getProvider: () => stub });
+
+        // Act + Assert — call proceeds without any ceiling error.
+        await expect(
+            service.generateText({ feature: 'text_improve', prompt: 'Hello' })
+        ).resolves.toBeDefined();
+    });
+
+    it('should forward getNow to createAiEngine; getNow alone (no checkCeiling) must not throw', async () => {
+        // Arrange — getNow provided but checkCeiling absent.
+        // Per engine contract: ceiling check is skipped when either is absent.
+        const getNow = vi.fn().mockReturnValue(new Date());
+        const stub = new StubProvider();
+        const service = createAiService({ getProvider: () => stub, getNow });
+
+        // Act + Assert — call proceeds normally; getNow is not invoked without checkCeiling.
+        await expect(
+            service.generateText({ feature: 'text_improve', prompt: 'Hello' })
+        ).resolves.toBeDefined();
+        // Engine does not call getNow when checkCeiling is absent.
+        expect(getNow).not.toHaveBeenCalled();
     });
 });

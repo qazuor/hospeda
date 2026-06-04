@@ -133,6 +133,41 @@ export interface CreateAiServiceInput {
      * Forwarded to `createAiEngine`. Defaults to `'openai'`.
      */
     readonly moderationProviderId?: AiProviderId;
+
+    /**
+     * Optional cost-ceiling check hook, wired by `apps/api` (T-043 / T-019).
+     *
+     * Forwarded directly to `createAiEngine`. When provided, the engine awaits
+     * this hook BEFORE invoking any provider on each capability call. If the hook
+     * throws (typically `AiCeilingHitError`) the error propagates to the caller
+     * without retrying or falling back.
+     *
+     * When absent (the default for all existing tests), the ceiling check is
+     * simply skipped — no existing tests are affected.
+     *
+     * See `CreateAiEngineInput.checkCeiling` for the full contract.
+     *
+     * Decision (owner-approved 2026-06-05): forwarded here so `apps/api` can wire
+     * `checkCostCeiling` (from `@repo/ai-core`) + `createAiCostThresholdAlertHook`
+     * (from `apps/api`) into a single configured service at startup.
+     */
+    readonly checkCeiling?: CreateAiEngineInput['checkCeiling'];
+
+    /**
+     * Optional clock factory, wired by `apps/api` (T-043 / T-019).
+     *
+     * Forwarded directly to `createAiEngine`. Paired with `checkCeiling` — the
+     * engine calls `getNow()` once per capability call to supply the current
+     * instant to `checkCeiling`. When either field is absent the ceiling check
+     * is skipped for that call.
+     *
+     * See `CreateAiEngineInput.getNow` for the full contract.
+     *
+     * Decision (owner-approved 2026-06-05): wired alongside `checkCeiling` so
+     * `apps/api` owns the `() => new Date()` clock and the engine stays
+     * deterministic / testable without a global clock.
+     */
+    readonly getNow?: CreateAiEngineInput['getNow'];
 }
 
 // ---------------------------------------------------------------------------
@@ -277,14 +312,18 @@ export function createAiService(input: CreateAiServiceInput): AiService {
         recordEvent,
         defaultLocale = 'es',
         selectProviderOrder,
-        moderationProviderId
+        moderationProviderId,
+        checkCeiling,
+        getNow
     } = input;
 
     const engine: AiEngine = createAiEngine({
         getProvider,
         recordEvent,
         selectProviderOrder,
-        moderationProviderId
+        moderationProviderId,
+        checkCeiling,
+        getNow
     });
 
     return {
