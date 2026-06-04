@@ -509,14 +509,16 @@
             "specId": "SPEC-185",
             "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "type": "feature",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
             "base": "staging",
             "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Delivered in 6 phases + 1 refactor + smoke fixes via PRs #1429/#1432/#1433/#1435/#1436/#1439/#1443 (all merged to staging). Phase 6 closeout #1443 merged 2026-06-04 (merge commit 2621fa54f)."
         },
         {
             "specId": "SPEC-186",
