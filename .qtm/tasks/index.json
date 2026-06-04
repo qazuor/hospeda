@@ -167,8 +167,8 @@
         {
             "specId": "SPEC-127",
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
-            "status": "draft",
-            "progress": "0/15",
+            "status": "in-progress",
+            "progress": "6/15",
             "path": "SPEC-127-migrate-addon-checkout-to-qzpay"
         }
     ],

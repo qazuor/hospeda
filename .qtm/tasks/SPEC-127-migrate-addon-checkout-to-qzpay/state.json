@@ -8,157 +8,246 @@
             "id": "T-001",
             "title": "Write failing regression tests for the dual-resolve planId bug (both sites)",
             "description": "In apps/api/test/services/addon.checkout.test.ts, add regression tests that reproduce the live bug with a UUID planId (post-SPEC-168): (1) createAddonCheckout category gate (addon.checkout.ts:233) — an addon with targetCategories must be REJECTED for a customer whose plan category is excluded, even when activeSubscription.planId is a UUID (today the gate is silently skipped); (2) confirmAddonPurchase limit baseline (addon.checkout.ts:505) — limit adjustments must use the plan's baseline limit, not previousValue=0, when planId is a UUID. Tests MUST fail against current code (bug-fix policy: regression test first). Unit tests only; use the existing fixtures. Run: pnpm --filter @repo/api test -- addon.checkout (targeted).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
                 {
                     "title": "Failing test: UUID planId skips targetCategories gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Failing test: UUID planId computes limit adjustments from 0",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "tests", "tdd"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T17:34:55Z",
+                "completed": "2026-06-04T17:39:19Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Implement dual-resolve via PlanService at both ALL_PLANS sites",
             "description": "In apps/api/src/services/addon.checkout.ts, add a module-level dual-resolve helper following resolvePlanByIdOrSlug from apps/api/src/services/addon-plan-change.service.ts:66 (PlanService.getById → getBySlug fallback, returns null when neither resolves). Apply it at the line-233 category gate (createAddonCheckout) and the line-505 limit baseline (confirmAddonPurchase), removing both ALL_PLANS.find calls. Update the line-538 test ('should still succeed when the subscription planId is not found in ALL_PLANS') deliberately: with dual-resolve a truly-unknown planId still soft-skips (plan null), but UUID planIds now resolve — assert the new behavior. T-001 regression tests must pass. Keep ServiceResult error shapes unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-005"],
             "subtasks": [
-                { "title": "Add PlanService dual-resolve helper", "completed": false },
+                {
+                    "title": "Add PlanService dual-resolve helper",
+                    "completed": true
+                },
                 {
                     "title": "Replace ALL_PLANS.find at line 233 (category gate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace ALL_PLANS.find at line 505 (limit baseline)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update line-538 silent-skip test for fixed behavior",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "service"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T17:39:19Z",
+                "completed": "2026-06-04T17:51:09Z"
+            }
         },
         {
             "id": "T-003",
             "title": "Cut over catalog reads to AddonCatalogService.getBySlug",
             "description": "Absorbed SPEC-192 deferred cutover (see .qtm/specs/SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md). In apps/api/src/services/addon.checkout.ts replace getAddonBySlug(input.addonSlug) with AddonCatalogService.getBySlug() at BOTH entry points (createAddonCheckout ~line 177, confirmAddonPurchase ~line 469). Dual-resolve NOT needed here — checkout input is always a slug. AddonCatalogService lives at packages/service-core/src/services/billing/addon/addon-catalog.service.ts. Update catalog mocks in addon.checkout.test.ts from @repo/billing's getAddonBySlug to the service. Handle the service's Result<T> shape (vs the config function's direct return) — map NOT_FOUND to the existing error responses.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
-                { "title": "Cut over createAddonCheckout entry point (~177)", "completed": false },
-                { "title": "Cut over confirmAddonPurchase entry point (~469)", "completed": false },
-                { "title": "Migrate catalog mocks in addon.checkout.test.ts", "completed": false }
+                {
+                    "title": "Cut over createAddonCheckout entry point (~177)",
+                    "completed": true
+                },
+                {
+                    "title": "Cut over confirmAddonPurchase entry point (~469)",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate catalog mocks in addon.checkout.test.ts",
+                    "completed": true
+                }
             ],
             "tags": ["cutover", "catalog", "service"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T17:51:09Z",
+                "completed": "2026-06-04T17:56:42Z"
+            }
         },
         {
             "id": "T-004",
             "title": "Add catalog-cutover parity regression test",
             "description": "Add a parity regression test mirroring the SPEC-192 FR-2 cutover tests, pattern: apps/api/test/routes/billing/admin/hooks/qzpay-admin-hooks.cutover.test.ts. The test asserts addon.checkout resolves addons through AddonCatalogService (DB-backed) and NOT through the @repo/billing config catalog — guard against regression to config reads. Place it alongside the existing cutover tests or in apps/api/test/services/ following the established naming (addon.checkout.cutover.test.ts).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Parity test: catalog reads go through AddonCatalogService",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cutover", "tests"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T17:56:42Z",
+                "completed": "2026-06-04T18:00:49Z"
+            }
         },
         {
             "id": "T-005",
             "title": "Drop @repo/billing catalog imports from addon.checkout.ts",
-            "description": "After T-002 (ALL_PLANS gone) and T-003 (getAddonBySlug gone), remove the import { ALL_PLANS, getAddonBySlug } from '@repo/billing' line from apps/api/src/services/addon.checkout.ts entirely. Grep-verify no other @repo/billing catalog symbol remains in the file. Typecheck apps/api.",
-            "status": "pending",
+            "description": "After T-002 (ALL_PLANS gone) and T-003 (getAddonBySlug gone), remove the import { ALL_PLANS, getAddonBySlug } from '@repo/billing' line from apps/api/src/services/addon.checkout.ts entirely. Grep-verify no other @repo/billing catalog symbol remains in the file. Typecheck apps/api. [NOTE: became a verification no-op — T-003 removed the entire import line; grep-verified clean 2026-06-04]",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Remove @repo/billing import line", "completed": false },
-                { "title": "Grep + typecheck verification", "completed": false }
+                {
+                    "title": "Remove @repo/billing import line",
+                    "completed": true
+                },
+                {
+                    "title": "Grep + typecheck verification",
+                    "completed": true
+                }
             ],
             "tags": ["cutover", "cleanup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T17:56:42Z",
+                "completed": "2026-06-04T17:56:42Z"
+            }
         },
         {
             "id": "T-006",
             "title": "Migrate createAddonCheckout to billing.checkout.create()",
-            "description": "Core migration (FR-1) in apps/api/src/services/addon.checkout.ts. Replace createMercadoPagoPreference with billing.checkout.create() using the exact target shape in spec.md §Implementation details (verified against QZPayCreateCheckoutInput): mode 'payment'; lineItems[0] = { unitAmount: finalPrice (CENTAVOS — do NOT pre-divide; the MP adapter divides by 100), currency 'ARS', quantity 1, title: addon.name, description: addon.description, categoryId: 'services' }; successUrl/cancelUrl as today; customerId/customerEmail; customerName from customer.metadata.name when present (extractPayerInfo and MercadoPagoPayerInfo and MP_ITEM_CATEGORY_ID are removed — the adapter covers the splitting and email local-part fallback); notificationUrl; idempotencyKey: checkoutUuid; statementDescriptor from env; expiresInMinutes: 30; metadata = existing dual-format keys + order_id: orderId. checkoutUrl = result.providerInitPoint ?? result.providerSandboxInitPoint (intentional behavior change from sandbox-first — note for PR description). Remove the mercadopago imports and the env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN guard if the qzpay billing instance owns credentials (verify how subscription-checkout.service.ts handles it). Keep orderId generation and the PurchaseAddonResult contract unchanged.",
-            "status": "pending",
+            "description": "Core migration (FR-1) in apps/api/src/services/addon.checkout.ts. Replace createMercadoPagoPreference with billing.checkout.create() using the exact target shape in spec.md §Implementation details (verified against QZPayCreateCheckoutInput): mode 'payment'; lineItems[0] = { unitAmount: finalPrice (CENTAVOS — do NOT pre-divide; the MP adapter divides by 100), currency 'ARS', quantity 1, title: addon.name, description: addon.description, categoryId: 'services' }; successUrl/cancelUrl as today; customerId/customerEmail; customerName from customer.metadata.name when present (extractPayerInfo and MercadoPagoPayerInfo and MP_ITEM_CATEGORY_ID are removed — the adapter covers the splitting and email local-part fallback); notificationUrl; idempotencyKey: checkoutUuid; statementDescriptor from env; expiresInMinutes: 30; metadata = existing dual-format keys + order_id: orderId. checkoutUrl = result.providerInitPoint ?? result.providerSandboxInitPoint (intentional behavior change from sandbox-first — note for PR description). Remove the mercadopago imports and the env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN guard if the qzpay billing instance owns credentials (verify how subscription-checkout.service.ts handles it). Keep orderId generation and the PurchaseAddonResult contract unchanged. [NOTE: source change left uncommitted by design — commits together with T-007 test migration. Also removed mercadopago from package.json (T-008 partial).]",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-007", "T-008", "T-009", "T-010"],
             "subtasks": [
                 {
                     "title": "Replace preference creation with billing.checkout.create",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove extractPayerInfo, MercadoPagoPayerInfo, MP_ITEM_CATEGORY_ID",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add order_id to metadata; keep dual-format keys", "completed": false },
+                {
+                    "title": "Add order_id to metadata; keep dual-format keys",
+                    "completed": true
+                },
                 {
                     "title": "Switch checkoutUrl to providerInitPoint preference",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Remove mercadopago imports from the file", "completed": false }
+                {
+                    "title": "Remove mercadopago imports from the file",
+                    "completed": true
+                }
             ],
             "tags": ["qzpay", "migration", "service"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T18:00:49Z",
+                "completed": "2026-06-04T18:07:15Z"
+            }
         },
         {
             "id": "T-007",
             "title": "Migrate addon.checkout.test.ts mocks to billing.checkout.create",
             "description": "FR-6: in apps/api/test/services/addon.checkout.test.ts remove vi.mock('mercadopago', ...) and mockPreferenceCreate; mock billing.checkout.create on the qzpay billing fixture instead (resolve { id, providerInitPoint, providerSandboxInitPoint, ... }). Re-target all 32 existing assertions to the create-input shape: payer via customerEmail/customerName (the explicit first_name/last_name split and email local-part fallback tests now assert what hospeda PASSES to qzpay, not the final MP payer block — the adapter owns that logic and tests it in its own repo), lineItems[0].unitAmount in centavos (no /100), idempotencyKey, statementDescriptor, expiresInMinutes, metadata keys incl. order_id, providerInitPoint-based checkoutUrl, CHECKOUT_ERROR when both init points are missing. All 32 tests + T-001 regressions green.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-008", "T-012"],
             "subtasks": [
-                { "title": "Remove mercadopago SDK mock and helpers", "completed": false },
-                { "title": "Add billing.checkout.create mock to fixture", "completed": false },
+                {
+                    "title": "Remove mercadopago SDK mock and helpers",
+                    "completed": false
+                },
+                {
+                    "title": "Add billing.checkout.create mock to fixture",
+                    "completed": false
+                },
                 {
                     "title": "Re-target createAddonCheckout assertions (incl. payer suite)",
                     "completed": false
                 },
-                { "title": "Verify all 32 tests + regressions pass", "completed": false }
+                {
+                    "title": "Verify all 32 tests + regressions pass",
+                    "completed": false
+                }
             ],
             "tags": ["qzpay", "tests"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": "2026-06-04T18:07:15Z",
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -173,12 +262,23 @@
                     "title": "Grep verify no remaining importer (src + test + subpaths)",
                     "completed": false
                 },
-                { "title": "Remove dep + update lockfile + typecheck", "completed": false }
+                {
+                    "title": "Remove dep + update lockfile + typecheck",
+                    "completed": false
+                }
             ],
             "tags": ["cleanup", "dependencies"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -189,13 +289,27 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "Update fallback + warn logging", "completed": false },
-                { "title": "Unit tests for legacy and new reference shapes", "completed": false }
+                {
+                    "title": "Update fallback + warn logging",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for legacy and new reference shapes",
+                    "completed": false
+                }
             ],
             "tags": ["webhook", "observability"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -206,17 +320,31 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Reuse/extract polling scheduling helper", "completed": false },
+                {
+                    "title": "Reuse/extract polling scheduling helper",
+                    "completed": false
+                },
                 {
                     "title": "Schedule job with addon metadata after checkout create",
                     "completed": false
                 },
-                { "title": "Unit tests (shape + non-fatal failure)", "completed": false }
+                {
+                    "title": "Unit tests (shape + non-fatal failure)",
+                    "completed": false
+                }
             ],
             "tags": ["polling", "qzpay", "service"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -227,17 +355,31 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "Add addon dispatch branch (metadata-driven)", "completed": false },
+                {
+                    "title": "Add addon dispatch branch (metadata-driven)",
+                    "completed": false
+                },
                 {
                     "title": "Wire idempotent addon confirmation (reuse webhook path)",
                     "completed": false
                 },
-                { "title": "Unit tests for both dispatch branches", "completed": false }
+                {
+                    "title": "Unit tests for both dispatch branches",
+                    "completed": false
+                }
             ],
             "tags": ["polling", "cron"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -248,14 +390,31 @@
             "blockedBy": ["T-007", "T-009", "T-011"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Grep all vi.mock sites of touched modules", "completed": false },
-                { "title": "Fix stale enumerated factories", "completed": false },
-                { "title": "Run affected test files (targeted)", "completed": false }
+                {
+                    "title": "Grep all vi.mock sites of touched modules",
+                    "completed": false
+                },
+                {
+                    "title": "Fix stale enumerated factories",
+                    "completed": false
+                },
+                {
+                    "title": "Run affected test files (targeted)",
+                    "completed": false
+                }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -266,14 +425,31 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Per-package typecheck (touched packages)", "completed": false },
-                { "title": "Lint clean", "completed": false },
-                { "title": "Targeted test files green (sequential)", "completed": false }
+                {
+                    "title": "Per-package typecheck (touched packages)",
+                    "completed": false
+                },
+                {
+                    "title": "Lint clean",
+                    "completed": false
+                },
+                {
+                    "title": "Targeted test files green (sequential)",
+                    "completed": false
+                }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -284,13 +460,27 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Append smoke sections to SPEC-193 pending list", "completed": false },
-                { "title": "Sign-off in deferred-checkout-cutover.md", "completed": false }
+                {
+                    "title": "Append smoke sections to SPEC-193 pending list",
+                    "completed": false
+                },
+                {
+                    "title": "Sign-off in deferred-checkout-cutover.md",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "tracking"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -305,20 +495,34 @@
                     "title": "Orphan-commit guard + push + PR with behavior notes",
                     "completed": false
                 },
-                { "title": "CI green verification + merge", "completed": false },
-                { "title": "Index sync + engram closeout", "completed": false }
+                {
+                    "title": "CI green verification + merge",
+                    "completed": false
+                },
+                {
+                    "title": "Index sync + engram closeout",
+                    "completed": false
+                }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T17:26:29Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T17:26:29Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 15,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 8,
+        "inProgress": 1,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     }

@@ -3,7 +3,7 @@
     "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
     "type": "refactor",
     "complexity": "medium",
-    "status": "draft",
+    "status": "in-progress",
     "created": "2026-05-15T00:00:00Z",
     "approved": null,
     "completed": null,
