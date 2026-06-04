@@ -228,7 +228,7 @@
             "id": "T-011",
             "title": "Implement WhatsNewModal (highlight list + single-entry mode)",
             "description": "apps/admin/src/components/whats-new/WhatsNewModal.tsx per spec §7.2: shadcn Dialog (sm:max-w-lg desktop, full-screen mobile); scrollable list of unseen highlight entries (title + markdown body + optional image); optional entryId prop for single-entry mode (card/panel click); 'Entendido' primary action; close (button or ESC) -> markSeen(shownIds). Markdown rendering: resolve TBD-1 (TipTap read-only generateHTML with restricted schema vs react-markdown) — consult owner if not already decided. PostHog: admin.whats_new.modal.shown/closed. A11y: Radix focus trap, aria-labelledby. Tests per §12.4: renders entries; Entendido calls markSeen; ESC closes + marks; entryId single mode; does not render when no unseen highlights.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-012", "T-014", "T-017", "T-020"],
@@ -236,21 +236,21 @@
             "tags": ["admin", "ui", "phase-admin-ui"],
             "phase": "admin-ui",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:17:00.000Z",
-                "completed": null
+                "completed": "2026-06-04T06:47:59.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Implement WhatsNewPanel (Sheet with list + mark-all-read)",
             "description": "apps/admin/src/components/whats-new/WhatsNewPanel.tsx per spec §7.4: shadcn Sheet right side (modality = spec Q3 — consult owner if undecided); header 'Últimas novedades' + 'Marcar todo como leído' (disabled when unseenCount === 0, calls markAllSeen); entry list newest-first, unseen = bold + accent dot, seen = muted; row click opens WhatsNewModal with entryId; empty state from i18n. PostHog: admin.whats_new.panel.opened. Tests per §12.4: mark-all wiring + disabled state; empty state; row click opens modal.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010", "T-011"],
             "blocks": ["T-013", "T-017", "T-020"],
@@ -258,21 +258,21 @@
             "tags": ["admin", "ui", "phase-admin-ui"],
             "phase": "admin-ui",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:17:00.000Z",
-                "completed": null
+                "completed": "2026-06-04T06:47:59.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Implement WhatsNewBadge + Header wiring",
             "description": "apps/admin/src/components/whats-new/WhatsNewBadge.tsx per spec §7.3: icon button from @repo/icons (spec Q2 — verify GiftIcon/SparkleIcon exists in @repo/icons exports; consult owner on final pick if both available), count pill when unseenCount > 0 (min-width 1.25rem), aria-label with count interpolation, icon-river-header class, click opens WhatsNewPanel. Insert in Header.tsx between Notifications and Profile. Tests per §12.4: count shown/hidden; click opens panel; aria-label.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010", "T-012"],
             "blocks": ["T-020"],
@@ -280,21 +280,21 @@
             "tags": ["admin", "ui", "header", "phase-admin-ui"],
             "phase": "admin-ui",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:17:00.000Z",
-                "completed": null
+                "completed": "2026-06-04T06:47:59.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Implement WhatsNewAutoTrigger + AppLayout mount",
             "description": "apps/admin/src/components/whats-new/WhatsNewAutoTrigger.tsx (headless, renders null) per spec §7.2/§7.6: mounted in AppLayout.tsx inside _authed guard; useEffect keyed [isLoaded, userId]; bail while loading; open WhatsNewModal once when hasUnseenHighlights (T-008); useRef latch for strict-mode double-mount. NOTE D17 (cross-spec, owner-locked): when SPEC-174 lands, this trigger must defer to an unseen welcome tour — leave a documented seam (e.g. a suppress condition param) but do NOT implement tour awareness now. Tests per §12.4: no fire while loading; fires once; latch prevents double-fire.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-009", "T-011"],
             "blocks": ["T-020"],
@@ -302,21 +302,21 @@
             "tags": ["admin", "ui", "phase-admin-ui"],
             "phase": "admin-ui",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:17:00.000Z",
-                "completed": null
+                "completed": "2026-06-04T06:47:59.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Extend ListWidget config: footerLink + onItemClick",
             "description": "Per spec Q4/Q5 (recommended option 1 in both — confirm with owner before starting per decision protocol): add optional footerLink ({ label: I18nLabel, action }) and optional onItemClick callback to ListWidgetConfig in the dashboard widget system (apps/admin). Keep both strictly optional and backward-compatible — existing dashboards unchanged. Tests: footerLink renders + fires action; onItemClick fires with item; absent config renders exactly as before (regression).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-017"],
@@ -330,7 +330,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T06:47:59.000Z",
                 "completed": null
             }
         },
@@ -338,7 +338,7 @@
             "id": "T-016",
             "title": "Register whats-new.recent dashboard source (4 role files)",
             "description": "Add whats-new.recent source to apps/admin/src/lib/dashboard-sources/{host,editor,admin,super}.ts per spec §7.5: queryFn calls GET /api/v1/protected/whats-new via fetchApi, maps to ListItem[] (title as label, publishedAt as meta, unseen -> statusBadge { label: 'Nuevo', variant: 'success' }, seen -> none). Query key ['dashboard', 'whats-new', userId] per existing convention. Tests: mapping seen/unseen -> badge; maxItems respected.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-001", "T-006"],
             "blocks": ["T-017"],
@@ -352,7 +352,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T06:47:59.000Z",
                 "completed": null
             }
         },
@@ -360,7 +360,7 @@
             "id": "T-017",
             "title": "Add whats-new widget to all four role dashboards",
             "description": "Add the 'whats-new' list widget to HOST/EDITOR/ADMIN/SUPER dashboards in apps/admin/src/config/ia/dashboards.ts per spec §7.5 (gridSpan cols 2, scope protected, source whats-new.recent, maxItems 4, accent sky, icon per Q2 resolution, empty states). Wire footerLink 'Ver todas' -> opens WhatsNewPanel and onItemClick -> opens WhatsNewModal(entryId) using T-015 extensions. Config boot validation stays green. Tests: widget present for the four roles; click + footer wiring.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-011", "T-012", "T-015", "T-016"],
             "blocks": ["T-020"],
@@ -374,7 +374,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T06:47:59.000Z",
                 "completed": null
             }
         },
@@ -382,7 +382,7 @@
             "id": "T-018",
             "title": "Add CSP image-origin allowlist test (TBD-2 guard)",
             "description": "Vitest test per spec §9/T-016-orig: every image URL in apps/api/src/data/whats-new/whats-new.ts must match an approved-origin allowlist (initially empty array colocated with the test or data file — any image URL fails until an origin is approved and added to the admin CSP img-src). Document in the data file header: do NOT publish an image-bearing entry before the CSP origin is added (TBD-2 is an owner/ops decision). Test: entry with unapproved origin fails; entries without image pass.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
@@ -396,7 +396,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T06:47:59.000Z",
                 "completed": null
             }
         },
@@ -447,9 +447,9 @@
     ],
     "summary": {
         "total": 20,
-        "pending": 6,
+        "pending": 2,
         "inProgress": 4,
-        "completed": 10,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.3
     }
