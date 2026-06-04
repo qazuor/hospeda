@@ -478,6 +478,20 @@ export const ApiEnvBaseSchema = z.object({
     /** Lockout window in milliseconds (default: 900000 = 15 min) */
     HOSPEDA_AUTH_LOCKOUT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
 
+    // Content moderation blocklists (SPEC-166)
+    /**
+     * Comma-separated list of word substrings to block in user-generated text
+     * (messages, reviews, posts). Case-insensitive substring match.
+     * Parsed at startup by @repo/content-moderation. Example: "badword,spam,forbidden"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_WORDS: z.string().optional(),
+    /**
+     * Comma-separated list of domain names to block when they appear in URLs
+     * inside user-generated text. Matches exact hostname and sub-domain suffixes.
+     * Parsed at startup by @repo/content-moderation. Example: "spam.com,evil.org"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_DOMAINS: z.string().optional(),
+
     // Infrastructure
     HOSPEDA_REDIS_URL: z.string().optional(),
 
