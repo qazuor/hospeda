@@ -826,35 +826,35 @@
             "id": "T-023",
             "title": "Add AI_SETTINGS_MANAGE permission + seed wiring",
             "description": "Add PermissionEnum.AI_SETTINGS_MANAGE (SUPER_ADMIN only, following SPEC-164 super-only pattern, §5.6). Wire into role-permission seed for SUPER_ADMIN. Enum is push/seed-managed per repo convention. Tests: unit/seed test asserting SUPER_ADMIN has the permission and lower roles do not.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018", "T-022"],
             "blocks": ["T-026", "T-027", "T-028"],
             "subtasks": [
                 {
                     "title": "Add AI_SETTINGS_MANAGE to PermissionEnum",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Seed permission to SUPER_ADMIN only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write permission seed test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "auth", "permission", "seed"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:25:00.000Z",
+                "completed": "2026-06-04T23:45:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.5
     }
