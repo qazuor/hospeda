@@ -15,6 +15,7 @@
 
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { TrialService } from '../../services/trial.service.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -56,8 +57,13 @@ export const trialExpiryJob: CronJobDefinition = {
                 };
             }
 
-            // Create trial service
-            const trialService = new TrialService(billing);
+            // Create trial service with notification sender so TRIAL_EXPIRED emails
+            // fire when blockExpiredTrials cancels a subscription (INV-2).
+            const trialService = new TrialService(billing, (payload) => {
+                sendNotification(payload).catch(() => {
+                    // Fire-and-forget: failures are already logged inside sendNotification
+                });
+            });
 
             if (dryRun) {
                 // Dry run mode - count how many trials would be expired
