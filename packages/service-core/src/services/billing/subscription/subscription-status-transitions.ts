@@ -11,14 +11,13 @@
  * `billing_subscriptions.status` column constraint. Contrast with addon
  * purchases which use American 'canceled' (1 L) per their DB column.
  *
- * ABANDONED vocab (GAP-13 / T-194-13):
- * The abandoned-pending-subs cron currently writes the qzpay-vocabulary
- * value `incomplete_expired` to the DB. The canonical Hospeda enum value
- * is `abandoned`. T-194-13 will fold the vocabulary into one canonical
- * value; until that migration runs BOTH values must be treated as
- * equivalent source states by call sites. The transition table here uses
- * only `abandoned` (the enum value); the cron shim is responsible for the
- * `incomplete_expired` → `abandoned` normalisation at read time.
+ * ABANDONED vocab (SPEC-194 T-003):
+ * The abandoned-pending-subs cron now writes canonical `abandoned`
+ * (SubscriptionStatusEnum.ABANDONED) to the DB. Legacy rows that held
+ * `incomplete_expired` are normalised by the `010-abandoned-status`
+ * extras data migration. The transition table uses only `abandoned`; the
+ * qzpay→Hospeda mapping in subscription-status.ts keeps the
+ * `incomplete_expired` entry to handle qzpay SDK responses.
  *
  * @module services/subscription-status-transitions
  */

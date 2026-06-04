@@ -16,9 +16,9 @@
  *   - `created_at < now - 30 minutes` — matches the 30min `expiresAt`
  *     window the start-paid route returns to the front,
  *   - `deleted_at IS NULL`.
- * - Updates each row to `incomplete_expired` (qzpay vocabulary). The
- *   status mapping at the polling endpoint surfaces this as Hospeda
- *   `ABANDONED` so the front-end sees a single terminal state.
+ * - Updates each row to canonical `abandoned` (Hospeda enum vocabulary).
+ *   Legacy `incomplete_expired` rows written before this fix are handled
+ *   by the `010-abandoned-status.data-migration.sql` extras migration.
  * - A process-level advisory lock (`pg_try_advisory_xact_lock(1006)`)
  *   prevents overlapping runs across replicas.
  *
@@ -54,12 +54,12 @@ const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
 const PENDING_STATUSES = ['incomplete', 'pending_provider'] as const;
 
 /**
- * Terminal status written by the reaper. qzpay vocabulary is used so the
- * row stays consistent with how qzpay-core writes status; the polling
- * endpoint maps `incomplete_expired` -> Hospeda `ABANDONED` at the
- * response boundary.
+ * Terminal status written by the reaper. Uses the canonical Hospeda enum
+ * value so DB queries for `status = 'abandoned'` find all abandoned rows.
+ * Legacy rows that were written as `incomplete_expired` before this fix are
+ * handled by the `010-abandoned-status.data-migration.sql` extras migration.
  */
-const ABANDONED_STATUS = 'incomplete_expired';
+const ABANDONED_STATUS = SubscriptionStatusEnum.ABANDONED;
 
 type CronTransactionResult = { skipped: true } | { skipped: false; abandoned: number };
 
@@ -116,16 +116,9 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                 // PENDING_STATUSES so the `from` status is known. We use
                 // `pending_provider` as the representative source status (the only
                 // Hospeda-vocabulary pending status in PENDING_STATUSES; `incomplete`
-                // is the qzpay-vocabulary synonym handled by T-003).
-                //
-                // TODO(SPEC-194 T-003): once `incomplete_expired` is folded into
-                // `abandoned` in the DB, update ABANDONED_STATUS here and remove this
-                // shim note.
-                //
-                // Keep writing `incomplete_expired` (ABANDONED_STATUS) — the polling
-                // endpoint maps it to Hospeda `ABANDONED` at the response boundary.
-                // Behaviour is unchanged; the guard only catches a future regression
-                // where the transition table removes this edge.
+                // is the qzpay-vocabulary synonym for it).
+                // The guard only catches a future regression where the transition
+                // table removes this edge.
                 const guardCheck = checkSubscriptionStatusTransition({
                     from: SubscriptionStatusEnum.PENDING_PROVIDER,
                     to: SubscriptionStatusEnum.ABANDONED

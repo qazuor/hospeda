@@ -50,6 +50,12 @@ describe('statusTranslationKey (T-034)', () => {
             'admin-pages.billing.subscription.status.unknown'
         );
     });
+
+    it('maps canonical abandoned to admin-pages.billing.subscription.status.abandoned (SPEC-194 T-003)', () => {
+        expect(statusTranslationKey('abandoned')).toBe(
+            'admin-pages.billing.subscription.status.abandoned'
+        );
+    });
 });
 
 describe('statusBadgeVariant (T-034)', () => {
@@ -58,11 +64,13 @@ describe('statusBadgeVariant (T-034)', () => {
         expect(statusBadgeVariant('trialing')).toBe('default');
     });
 
-    it('marks past_due + canceled + incomplete_expired as destructive tone', () => {
+    it('marks past_due + canceled + incomplete_expired + abandoned as destructive tone', () => {
         expect(statusBadgeVariant('past_due')).toBe('destructive');
         expect(statusBadgeVariant('canceled')).toBe('destructive');
         expect(statusBadgeVariant('cancelled')).toBe('destructive');
         expect(statusBadgeVariant('incomplete_expired')).toBe('destructive');
+        // SPEC-194 T-003: canonical abandoned status must render destructive
+        expect(statusBadgeVariant('abandoned')).toBe('destructive');
     });
 
     it('falls back to outline for unknown statuses', () => {

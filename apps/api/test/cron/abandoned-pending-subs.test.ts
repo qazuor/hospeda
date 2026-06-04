@@ -87,11 +87,12 @@ describe('abandoned-pending-subs internals', () => {
         expect(_internals.PENDING_STATUSES).toContain('pending_provider');
     });
 
-    it('writes incomplete_expired (qzpay vocabulary) as the terminal status', () => {
-        // The polling endpoint maps incomplete_expired -> Hospeda ABANDONED
-        // at the response boundary, so we keep the qzpay vocabulary at
-        // rest to stay consistent with rows written by qzpay-core.
-        expect(_internals.ABANDONED_STATUS).toBe('incomplete_expired');
+    it('writes canonical abandoned (Hospeda enum) as the terminal status', () => {
+        // SPEC-194 T-003: the cron now writes the canonical Hospeda enum value
+        // so direct DB queries for status='abandoned' find all abandoned rows.
+        // Legacy incomplete_expired rows are normalised by the 010-abandoned-status
+        // extras migration.
+        expect(_internals.ABANDONED_STATUS).toBe('abandoned');
     });
 });
 
@@ -185,5 +186,32 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         expect(mockTx.update).toHaveBeenCalled();
         expect(ctx.logger.error).not.toHaveBeenCalled();
         expect(result.processed).toBe(1);
+    });
+
+    it('regression SPEC-194 T-003: cron writes canonical "abandoned" not "incomplete_expired"', async () => {
+        // Arrange: capture the value passed to tx.update().set()
+        let capturedSetArg: Record<string, unknown> | undefined;
+        const returningChain = {
+            where: vi
+                .fn()
+                .mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'sub-1' }]) })
+        };
+        const setChain = {
+            set: vi.fn().mockImplementation((arg: Record<string, unknown>) => {
+                capturedSetArg = arg;
+                return returningChain;
+            })
+        };
+        mockTx.update.mockReturnValue(setChain);
+
+        const ctx = makeCronCtx(false);
+
+        // Act
+        await abandonedPendingSubsJob.handler(ctx);
+
+        // Assert: the DB write uses canonical Hospeda vocabulary, not qzpay vocabulary.
+        // If this flips back to 'incomplete_expired' then direct DB queries for
+        // status='abandoned' will silently find nothing.
+        expect(capturedSetArg?.status).toBe('abandoned');
     });
 });
