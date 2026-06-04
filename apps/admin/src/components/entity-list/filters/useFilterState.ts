@@ -151,7 +151,7 @@ export const useFilterState = ({
                 // Range bounds have no defaultValue — clear by removing the param
                 onUpdateSearch((prev) => ({
                     ...prev,
-                    [paramKey]: value ?? undefined,
+                    [paramKey]: value,
                     page: 1
                 }));
                 return;
