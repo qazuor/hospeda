@@ -40,7 +40,36 @@ and reference it from the PR description.
 
 | Date | Executor | PR | Sections run | Result | Notes |
 |------|----------|----|--------------|--------|-------|
-| _pending_ | | | | | |
+| _deferred_ | owner | #1428 | MP-dependent sections (1.1, 1.2, 1.7, 1.8–1.11, 2.5 timing) | DEFERRED | Owner decision 2026-06-04: staging smoke batched at the end of the SPEC-193 billing series, before the staging → main promotion. `main` stays frozen for billing until then. |
+
+## Local complementary evidence (2026-06-04, executor: claude + owner approval, PR #1428)
+
+MP-independent sections were executed locally against the worktree (API :3011,
+admin :3013, web :4321, dev DB) with seeded test users. This does NOT replace
+the staging smoke for MP-dependent sections — it narrows what the batched
+staging run must cover.
+
+| Section | Result | Evidence |
+|---------|--------|----------|
+| 1.14 — Entitlement load | ✅ PASS (local) | `GET /users/me/entitlements` as `host-basico@local.test` returns exactly the owner-basico matrix: 6 entitlements (publish, edit, basic stats, respond reviews, calendar, whatsapp display) + limits `{max_accommodations: 1, max_active_promotions: 0, max_photos_per_accommodation: 5}` resolved from the DB plan. Second call served warm (24ms vs 93ms). |
+| 1.15-A1 — MAX_ACCOMMODATIONS=1 | ✅ PASS (local) | 1st `POST /accommodations/draft` → 201; 2nd → 403 `LIMIT_REACHED` with `details: {limitKey: max_accommodations, currentCount: 1, maxAllowed: 1, usagePercent: 100}` and localized message. Smoke row removed afterwards. |
+| 1.15-A3 — MAX_ACTIVE_PROMOTIONS=0 | ✅ PASS (local) | `POST /owner-promotions` → 403 `LIMIT_REACHED` `{limitKey: max_active_promotions, maxAllowed: 0}`. |
+| 1.15-A2 — MAX_PHOTOS | ⏭️ SKIPPED (local) | Requires real media upload infra (Cloudinary); deferred to staging batch. |
+| 1.15-B5/B7 — stats/calendar endpoints | ⚠️ N/A | Endpoints do not exist under `/protected/accommodations` — consistent with the documented gate-wiring hypothesis (engram `billing/entitlement-enforcement-gap-hypothesis`, SPEC-145 scope). Not a SPEC-192 regression. |
+| 3.1 — Promo codes (read path) | ✅ PASS (local) | `GET /protected/billing/promo-codes` returns the 4 seeded codes from DB incl. `HOSPEDA_FREE` (T-029 startup path). Apply-at-checkout deferred to staging (MP). |
+| 3.5 — Admin addon ops | ✅ PASS (local) | Full cycle via admin UI as SUPER_ADMIN: create → deactivate → soft-delete → show-deleted → restore → soft-delete → hard-delete. All toasts/dialogs correct (new i18n keys verified). `billing_audit_logs` recorded all 6 actions (`addon_created/deactivated/soft_deleted/restored/soft_deleted/hard_deleted`). Catalog restored to its original 5 addons. SPEC-182 auth flow (web signin → admin) also exercised. |
+
+**Environmental findings during local run (NOT SPEC-192, for owner awareness):**
+
+1. Dev DB schema drift vs branch: `user_permission` lacks the `effect` column
+   (SPEC-170 migration unapplied) — logs a DB error per request, graceful
+   fallback; and `accommodations.findOneWithRelations` fails on newer columns
+   (soft-delete via API 500s locally). Fix: run `pnpm db:migrate` on the dev DB.
+2. Local API needs `HOSPEDA_MERCADO_PAGO_*` (prefixed) env vars; the dev
+   `.env.local` still has the unprefixed legacy names, so billing-gated routes
+   503 until provided (SPEC-035 no-aliasing policy).
+3. Admin local dev now requires `VITE_ADMIN_URL` (post-SPEC-180/182 sync) and
+   has no own signin page (SPEC-182): login happens on the web app.
 
 ## Production sections required (billing CORE gate, go-live)
 
