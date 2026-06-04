@@ -7,6 +7,8 @@
  * instead of the DB layer (@repo/db). The ExchangeRateFetcher,
  * DolarApiClient, and ExchangeRateApiClient from service-core handle
  * all data access, so we mock them at the service boundary.
+ * `@repo/db` is mocked for `withTransaction` (advisory lock guard) and
+ * `sql` tag (used to build the lock probe query).
  *
  * @module test/cron/exchange-rate-fetch
  */
@@ -16,6 +18,21 @@ import type { Mock } from 'vitest';
 import { exchangeRateFetchJob } from '../../src/cron/jobs/exchange-rate-fetch.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 
+// ---------------------------------------------------------------------------
+// Hoisted: build the tx stub and withTransaction mock before vi.mock() runs
+// ---------------------------------------------------------------------------
+
+const { mockWithTransaction, _mockTx } = vi.hoisted(() => {
+    const tx = {
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+    };
+    const withTx = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => callback(tx));
+    return {
+        mockWithTransaction: withTx,
+        _mockTx: tx
+    };
+});
+
 // Mock env module
 vi.mock('../../src/utils/env.js', () => ({
     env: {
@@ -23,11 +40,26 @@ vi.mock('../../src/utils/env.js', () => ({
     }
 }));
 
-// Mock @repo/db only to satisfy the ExchangeRateModel import resolution.
-// The model is passed to ExchangeRateFetcher which is itself fully mocked,
-// so no DB behavior is needed here.
+// Mock @repo/db for ExchangeRateModel, withTransaction, and sql.
+// withTransaction drives the advisory lock guard added in SPEC-194 T-020.
 vi.mock('@repo/db', () => ({
-    ExchangeRateModel: vi.fn()
+    ExchangeRateModel: vi.fn(),
+    withTransaction: mockWithTransaction,
+    sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+        __sql: true,
+        strings,
+        values
+    }))
+}));
+
+// Mock apiLogger so we can assert on the lock-skip warn
+vi.mock('../../src/utils/logger.js', () => ({
+    apiLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
 }));
 
 // Mock service layer: these classes encapsulate all data fetching and storage.
@@ -78,6 +110,9 @@ describe('Exchange Rate Fetch Cron Job', () => {
             startedAt: new Date('2024-01-01T00:00:00Z'),
             dryRun: false
         };
+
+        // Default: advisory lock acquired
+        _mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
     });
 
     afterEach(() => {
@@ -197,6 +232,53 @@ describe('Exchange Rate Fetch Cron Job', () => {
                     error: 'Test API failure',
                     stack: expect.any(String)
                 })
+            );
+        });
+    });
+
+    describe('Advisory lock (SPEC-194 T-020)', () => {
+        it('skips without fetching when lock is not acquired', async () => {
+            // Arrange: simulate another replica holding the lock
+            vi.mocked(mockWithTransaction).mockImplementationOnce(
+                async (callback: (tx: typeof _mockTx) => Promise<unknown>) => {
+                    const txStub = {
+                        execute: vi.fn().mockResolvedValueOnce({ rows: [{ acquired: false }] })
+                    };
+                    return callback(txStub);
+                }
+            );
+            const { ExchangeRateFetcher } = await import('@repo/service-core');
+
+            // Act
+            const result = await exchangeRateFetchJob.handler(mockContext);
+
+            // Assert: job skips without touching the fetcher
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBe(0);
+            expect(result.message).toContain('advisory lock not acquired');
+            expect(result.details).toMatchObject({ skipped: true, reason: 'lock_not_acquired' });
+            expect(ExchangeRateFetcher).not.toHaveBeenCalled();
+        });
+
+        it('logs a warning when the advisory lock is not acquired', async () => {
+            // Arrange
+            vi.mocked(mockWithTransaction).mockImplementationOnce(
+                async (callback: (tx: typeof _mockTx) => Promise<unknown>) => {
+                    const txStub = {
+                        execute: vi.fn().mockResolvedValueOnce({ rows: [{ acquired: false }] })
+                    };
+                    return callback(txStub);
+                }
+            );
+            const { apiLogger } = await import('../../src/utils/logger.js');
+
+            // Act
+            await exchangeRateFetchJob.handler(mockContext);
+
+            // Assert
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.stringContaining('previous run still holds advisory lock')
             );
         });
     });
