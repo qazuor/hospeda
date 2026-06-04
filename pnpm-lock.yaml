@@ -53,6 +53,7 @@ overrides:
   '@types/react': 19.1.10
   '@types/react-dom': 19.1.7
   '@vitejs/plugin-react': ^4.7.0
+  turbo-stream: '>=3.0.0'
 
 patchedDependencies:
   '@tanstack/start-plugin-core@1.131.26':
@@ -10009,8 +10010,8 @@ packages:
     cpu: [arm64]
     os: [linux]
 
-  turbo-stream@2.4.1:
-    resolution: {integrity: sha512-v8kOJXpG3WoTN/+at8vK7erSzo6nW6CIaeOvNOkHQVDajfz1ZVeSxCbc6tOH4hrGZW7VUCV0TOXd8CPzYnYkrw==}
+  turbo-stream@3.2.0:
+    resolution: {integrity: sha512-EK+bZ9UVrVh7JLslVFOV0GEMsociOqVOvEMTAd4ixMyffN5YNIEdLZWXUx5PJqDbTxSIBWw04HS9gCY4frYQDQ==}
 
   turbo-windows-64@2.5.6:
     resolution: {integrity: sha512-FyRsVpgaj76It0ludwZsNN40ytHN+17E4PFJyeliBEbxrGTc5BexlXVpufB7XlAaoaZVxbS6KT8RofLfDRyEPg==}
@@ -13617,7 +13618,7 @@ snapshots:
       cookie: 1.1.1
       set-cookie-parser: 2.7.1
       source-map: 0.7.6
-      turbo-stream: 2.4.1
+      turbo-stream: 3.2.0
     optionalDependencies:
       typescript: 5.7.2
 
@@ -20588,7 +20589,7 @@ snapshots:
   turbo-linux-arm64@2.5.6:
     optional: true
 
-  turbo-stream@2.4.1: {}
+  turbo-stream@3.2.0: {}
 
   turbo-windows-64@2.5.6:
     optional: true
