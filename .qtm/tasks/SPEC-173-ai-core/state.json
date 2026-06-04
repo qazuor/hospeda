@@ -752,35 +752,35 @@
             "id": "T-021",
             "title": "Implement AES-256-GCM vault crypto util in apps/api",
             "description": "Create apps/api/src/utils/ai-vault.ts: encrypt/decrypt AES-256-GCM using HOSPEDA_AI_VAULT_MASTER_KEY (read only here, §5.5). Round-trip encrypt → store ciphertext+iv, decrypt → plaintext. Package never touches this (AC-4). RO-RO, JSDoc. Tests: unit tests asserting ciphertext != plaintext, round-trip equality with a throwaway key, and tamper detection (auth tag).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-005"],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "AES-256-GCM encrypt/decrypt with master key",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ciphertext+iv+authTag handling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write crypto round-trip + tamper unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "security", "vault", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:10:00.000Z",
+                "completed": "2026-06-04T22:35:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
     }
