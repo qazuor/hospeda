@@ -347,39 +347,39 @@
             "id": "T-010",
             "title": "Implement @repo/ai-core storage module",
             "description": "Create src/storage/ — the ONLY module touching @repo/db (AC-4 isolation). Implement read/write of ai_settings blob + ai_prompt_versions + ai_usage insert + ai_request_log insert via getDb(). RO-RO, named exports, JSDoc. Validate config reads against the @repo/schemas ai-settings schema. Tests: unit tests with a stubbed db asserting reads parse via schema and writes shape rows correctly.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-008"],
             "blocks": ["T-011", "T-016"],
             "subtasks": [
                 {
                     "title": "settings + prompt read/write via getDb()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_usage + ai_request_log insert helpers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validate reads against @repo/schemas",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write storage unit tests (stubbed db)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "storage", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T08:10:00.000Z",
+                "completed": "2026-06-04T08:24:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 32,
+        "pending": 31,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     }
