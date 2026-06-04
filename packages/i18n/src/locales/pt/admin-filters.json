@@ -88,5 +88,21 @@
     },
     "includeDeleted": {
         "label": "Mostrar excluídos"
+    },
+    "rangeMin": "Mín",
+    "rangeMax": "Máx",
+    "rangeFrom": "De",
+    "rangeTo": "Até",
+    "unit": {
+        "ars": "ARS"
+    },
+    "price": {
+        "label": "Preço"
+    },
+    "createdAt": {
+        "label": "Criação"
+    },
+    "startDate": {
+        "label": "Data de início"
     }
 }

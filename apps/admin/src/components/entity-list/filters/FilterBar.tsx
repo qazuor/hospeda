@@ -9,6 +9,8 @@ import { type ReactNode, useMemo } from 'react';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { FilterActions } from './FilterActions';
 import { FilterBoolean } from './FilterBoolean';
+import { FilterDateRange } from './FilterDateRange';
+import { FilterNumberRange } from './FilterNumberRange';
 import { FilterSelect } from './FilterSelect';
 import type { ActiveFilters, FilterBarConfig, FilterChipData } from './filter-types';
 
@@ -102,6 +104,34 @@ export function FilterBar({
                                 config={filterConfig}
                                 value={value}
                                 onChange={(val) => onFilterChange(filterConfig.paramKey, val)}
+                            />
+                        );
+                    }
+
+                    if (filterConfig.type === 'number-range') {
+                        return (
+                            <FilterNumberRange
+                                key={filterConfig.paramKey}
+                                config={filterConfig}
+                                valueMin={activeFilters[filterConfig.paramKeyMin]}
+                                valueMax={activeFilters[filterConfig.paramKeyMax]}
+                                onChangeMin={(val) => onFilterChange(filterConfig.paramKeyMin, val)}
+                                onChangeMax={(val) => onFilterChange(filterConfig.paramKeyMax, val)}
+                            />
+                        );
+                    }
+
+                    if (filterConfig.type === 'date-range') {
+                        return (
+                            <FilterDateRange
+                                key={filterConfig.paramKey}
+                                config={filterConfig}
+                                valueFrom={activeFilters[filterConfig.paramKeyFrom]}
+                                valueTo={activeFilters[filterConfig.paramKeyTo]}
+                                onChangeFrom={(val) =>
+                                    onFilterChange(filterConfig.paramKeyFrom, val)
+                                }
+                                onChangeTo={(val) => onFilterChange(filterConfig.paramKeyTo, val)}
                             />
                         );
                     }
