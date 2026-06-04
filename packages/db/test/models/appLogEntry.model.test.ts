@@ -72,6 +72,54 @@ describe('AppLogEntryModel', () => {
             expect(conditions).toBeUndefined();
         });
 
+        it('should use loggedAt desc by default (no sort input)', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({});
+
+            // Assert
+            const [, options] = findAll.mock.calls[0] ?? [];
+            expect(options).toMatchObject({ sortBy: 'loggedAt', sortOrder: 'desc' });
+        });
+
+        it('should propagate sort loggedAt:asc to findAll', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ sort: { field: 'loggedAt', direction: 'asc' } });
+
+            // Assert
+            const [, options] = findAll.mock.calls[0] ?? [];
+            expect(options).toMatchObject({ sortBy: 'loggedAt', sortOrder: 'asc' });
+        });
+
+        it('should propagate sort level:desc to findAll', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ sort: { field: 'level', direction: 'desc' } });
+
+            // Assert
+            const [, options] = findAll.mock.calls[0] ?? [];
+            expect(options).toMatchObject({ sortBy: 'level', sortOrder: 'desc' });
+        });
+
+        it('should propagate sort level:asc to findAll', async () => {
+            // Arrange
+            const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await model.listEntries({ sort: { field: 'level', direction: 'asc' } });
+
+            // Assert
+            const [, options] = findAll.mock.calls[0] ?? [];
+            expect(options).toMatchObject({ sortBy: 'level', sortOrder: 'asc' });
+        });
+
         it('should include requestId in the equality where clause', async () => {
             // Arrange
             const findAll = vi.spyOn(model, 'findAll').mockResolvedValue({ items: [], total: 0 });

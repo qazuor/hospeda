@@ -85,6 +85,11 @@
             "singular": "Reseña",
             "plural": "Reseñas",
             "description": "Gestiona reseñas y calificaciones"
+        },
+        "appLog": {
+            "singular": "Registro",
+            "plural": "Registros de aplicación",
+            "description": "Registros de eventos WARN y ERROR emitidos por los servicios del sistema"
         }
     },
     "columns": {
@@ -175,7 +180,15 @@
         "banned": "Baneado",
         "banReason": "Razón de Baneo",
         "banExpires": "Baneo Expira",
-        "avatar": "Avatar"
+        "avatar": "Avatar",
+        "appLog": {
+            "loggedAt": "Fecha/Hora",
+            "level": "Nivel",
+            "category": "Categoría",
+            "label": "Etiqueta",
+            "request": "Solicitud",
+            "message": "Mensaje"
+        }
     },
     "actions": {
         "view": "Ver",

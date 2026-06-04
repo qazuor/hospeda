@@ -106,6 +106,40 @@
     "startDate": {
         "label": "Start date"
     },
+    "appLog": {
+        "level": {
+            "label": "Level",
+            "warn": "WARN",
+            "error": "ERROR"
+        },
+        "method": {
+            "label": "HTTP Method",
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE"
+        },
+        "category": {
+            "label": "Category",
+            "placeholder": "e.g. BILLING"
+        },
+        "requestId": {
+            "label": "Request ID",
+            "placeholder": "Correlation ID"
+        },
+        "userId": {
+            "label": "User ID",
+            "placeholder": "User UUID"
+        },
+        "path": {
+            "label": "Path",
+            "placeholder": "e.g. /api/v1/admin"
+        },
+        "loggedAt": {
+            "label": "Log date"
+        }
+    },
     "endDate": {
         "label": "End date"
     },

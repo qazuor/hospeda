@@ -5,7 +5,7 @@
  * WARN → amber/yellow styling, ERROR → destructive (red).
  */
 import { Badge } from '@/components/ui/badge';
-import type { AppLogEntryLevel } from '../types';
+import type { AppLogEntryLevel } from '@repo/schemas';
 
 /** Props for AppLogLevelBadge */
 export interface AppLogLevelBadgeProps {
