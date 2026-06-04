@@ -109,39 +109,39 @@
             "id": "T-004",
             "title": "Build ContributionBanner.astro component (variants + click tracking)",
             "description": "Create apps/web/src/components/contributions/ContributionBanner.astro + ContributionBanner.module.css modeled on WhatsAppCTA.astro (FR-6). Locked props: title, description, ctaLabel, ctaHref, source, variant?: 'photos' | 'editors' (icon from @repo/icons + accent styling per variant). Vanilla CSS module with design tokens only (var(--brand-*), var(--radius-*)), dark-mode safe, reflows without horizontal overflow on narrow viewports. Hoisted <script> fires contribution_banner_clicked via trackEvent with { source, variant } on CTA click; navigation to ctaHref proceeds. Tests (Astro source-file assertion pattern in apps/web/test/): renders icon/title/description/CTA per variant; click script fires the event with source/variant; module CSS + tokens used (no hardcoded colors).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-011", "T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "ContributionBanner.astro with locked props + variant icon/accent",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ContributionBanner.module.css (tokens, responsive stack)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hoisted click-tracking script (contribution_banner_clicked)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests (variants, event, tokens)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "components", "banners", "analytics"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T17:10:00.000Z",
+                "completed": "2026-06-04T17:25:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     }
