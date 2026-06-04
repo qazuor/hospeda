@@ -87,8 +87,13 @@ vi.mock('../../src/utils/notification-helper', () => ({
 
 // Mock service-core addon-user-addons module for cancelAddonPurchaseRecord.
 // After migration, the non-limit cancel path delegates to this function.
-const { mockCancelAddonPurchaseRecord } = vi.hoisted(() => ({
-    mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1)
+const { mockCancelAddonPurchaseRecord, mockAddonCatalogGetBySlug } = vi.hoisted(() => ({
+    mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
+    // DB-backed catalog mock — returns NOT_FOUND by default; tests override per-case.
+    mockAddonCatalogGetBySlug: vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+    })
 }));
 
 vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user-addons', () => ({
@@ -99,14 +104,19 @@ vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user
 }));
 
 // Mock @repo/service-core to prevent real module initialization (DB connection attempts).
-// Only BILLING_EVENT_TYPES and cancelAddonPurchaseRecord are used in addon.user-addons.ts static imports.
+// AddonCatalogService is added for the SPEC-192 T-011 cutover: addon.user-addons.ts
+// now resolves addon definitions via the DB-backed catalog instead of @repo/billing.
 vi.mock('@repo/service-core', () => ({
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATIONS_PENDING: 'addon_revocations_pending'
     },
     cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
     queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false })
+    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        getBySlug: mockAddonCatalogGetBySlug,
+        list: vi.fn().mockResolvedValue({ success: true, data: [] })
+    }))
 }));
 
 // ─── Hoisted DB mock ──────────────────────────────────────────────────────────
@@ -287,8 +297,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     describe('T-029-1: recalc fails → cancel committed (SPEC-064 post-commit behavior)', () => {
         it('should return success even when recalc fails (SPEC-064: recalc is post-commit)', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -320,8 +329,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
 
         it('should persist status=canceled in DB even when recalc fails (commit-then-recalc)', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -373,8 +381,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     describe('T-029-2: recalc succeeds → purchase is marked canceled and result is success', () => {
         it('should return success and call tx.update with status=canceled when recalc succeeds', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -414,8 +421,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
 
         it('should call recalculateAddonLimitsForCustomer with correct args when recalc succeeds', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -451,8 +457,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     describe('T-029-3: recalc fails → Sentry.captureException called', () => {
         it('should call Sentry.captureException with the recalc error when outcome=failed', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -496,8 +501,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
 
         it('should NOT call Sentry.captureException when recalc succeeds', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'
@@ -529,8 +533,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     describe('T-029-4: non-limit addon → cancelAddonPurchaseRecord, no transaction', () => {
         it('should use cancelAddonPurchaseRecord (no transaction) for addons without affectsLimitKey', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(nonLimitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: nonLimitAddonDef });
 
             mockSelectReturningPurchase(activeNonLimitAddonPurchase);
 
@@ -557,8 +560,7 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     describe('T-029-5: recalc outcome=skipped → no rollback, returns success', () => {
         it('should return success when recalc returns outcome=skipped (unlimited plan)', async () => {
             // Arrange
-            const { getAddonBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue(limitAddonDef);
+            mockAddonCatalogGetBySlug.mockResolvedValue({ success: true, data: limitAddonDef });
 
             const { recalculateAddonLimitsForCustomer } = await import(
                 '../../src/services/addon-limit-recalculation.service'

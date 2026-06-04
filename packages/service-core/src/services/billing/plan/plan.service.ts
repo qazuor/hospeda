@@ -22,6 +22,7 @@ import { getRevalidationService } from '../../../revalidation/revalidation-init.
 import {
     createPlan,
     getPlanById,
+    getPlanBySlug,
     hardDeletePlan,
     listPlans,
     restorePlan,
@@ -146,6 +147,32 @@ export class PlanService {
      */
     async getById(id: string, ctx?: QueryContext) {
         return getPlanById(id, ctx);
+    }
+
+    /**
+     * Gets a single billing plan by its slug (stored as `billing_plans.name`).
+     *
+     * Soft-deleted plans return NOT_FOUND. This is the primary lookup used
+     * when resolving a plan from a subscription's `plan_id` field or from
+     * the `owner-basico` entitlement fallback (SPEC-192 FR-4).
+     *
+     * Alias: this method also serves as `getByName` since the DB column
+     * `billing_plans.name` is the slug per SPEC-168 convention.
+     *
+     * @param slug - Plan slug (e.g. `'owner-basico'`)
+     * @param ctx - Optional query context carrying a transaction client
+     * @returns Plan response or NOT_FOUND error
+     *
+     * @example
+     * ```ts
+     * const result = await planService.getBySlug('owner-basico');
+     * if (result.success) {
+     *   console.log(result.data.entitlements); // string[]
+     * }
+     * ```
+     */
+    async getBySlug(slug: string, ctx?: QueryContext) {
+        return getPlanBySlug(slug, ctx);
     }
 
     /**

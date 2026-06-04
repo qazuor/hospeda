@@ -298,6 +298,59 @@ export async function getPlanById(id: string, ctx?: QueryContext) {
 }
 
 /**
+ * Gets a single billing plan by its slug (stored as `billing_plans.name`).
+ *
+ * Returns a typed NOT_FOUND error for plans that do not exist or are
+ * soft-deleted (deletedAt IS NOT NULL). Matches the `name` column directly
+ * (the slug is the plan's canonical DB identifier per SPEC-168 convention).
+ *
+ * @param slug - Plan slug (stored in `billing_plans.name`)
+ * @param ctx - Optional query context carrying a transaction client
+ * @returns Plan response or NOT_FOUND / INTERNAL_ERROR
+ *
+ * @example
+ * ```ts
+ * const result = await getPlanBySlug('owner-basico');
+ * if (result.success) {
+ *   console.log(result.data.entitlements);
+ * }
+ * ```
+ */
+export async function getPlanBySlug(slug: string, ctx?: QueryContext) {
+    try {
+        const db = ctx?.tx ?? getDb();
+
+        const [planRow] = await db
+            .select()
+            .from(billingPlans)
+            .where(and(eq(billingPlans.name, slug), isNull(billingPlans.deletedAt)))
+            .limit(1);
+
+        if (!planRow) {
+            return {
+                success: false as const,
+                error: { code: ServiceErrorCode.NOT_FOUND, message: `Plan not found: ${slug}` }
+            };
+        }
+
+        const priceRows = await db
+            .select()
+            .from(billingPrices)
+            .where(and(eq(billingPrices.planId, planRow.id), eq(billingPrices.active, true)));
+
+        return { success: true as const, data: mapDbToPlan(planRow, priceRows) };
+    } catch (_error) {
+        return {
+            success: false as const,
+            error: {
+                code: ServiceErrorCode.INTERNAL_ERROR,
+                message: `Failed to retrieve plan by slug: ${slug}`
+            }
+        };
+    }
+}
+
+/**
  * Gets a plan by ID without soft-delete filtering (for internal use only).
  * Used by update/toggle/delete operations to fetch the current state.
  */

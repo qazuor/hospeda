@@ -30,6 +30,8 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-026](ADR-026-collections-limit-strategy.md) | Collections Limit Strategy | Accepted |
 | [ADR-027](ADR-027-newsletter-dispatch-architecture.md) | Newsletter Dispatch Architecture | Accepted |
 | [ADR-028](ADR-028-role-permission-own-scoping.md) | Role Permission Audit + Owner-Scoped Data Access | Accepted |
+| [ADR-029](ADR-029-versioned-migration-strategy.md) | Versioned Migration Strategy (generate + migrate + two carriles) | Accepted |
+| [ADR-030](ADR-030-billing-catalog-vs-structural-definitions.md) | Billing Catalog vs. Structural Definitions | Accepted |
 
 ## Format
 

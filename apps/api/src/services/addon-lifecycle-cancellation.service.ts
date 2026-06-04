@@ -12,16 +12,19 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { billingSubscriptionEvents, withTransaction } from '@repo/db';
-import { BILLING_EVENT_TYPES } from '@repo/service-core';
+import { AddonCatalogService, BILLING_EVENT_TYPES } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { RevocationResult } from './addon-lifecycle.service';
 import { revokeAddonForSubscriptionCancellation } from './addon-lifecycle.service';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-014) ─────────────────
+// Instantiated once at module level; stateless, no DB connection held.
+const catalogService = new AddonCatalogService();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -71,8 +74,9 @@ export interface HandleCancellationAddonsInput {
  *    overwhelming QZPay and to ensure partial progress is preserved atomically
  *    per purchase.
  * 3. For each purchase:
- *    - Resolves the addon definition via `getAddonBySlug` (may be `undefined`
- *      for retired addons — handled gracefully by `revokeAddonForSubscriptionCancellation`).
+ *    - Resolves the addon definition via `AddonCatalogService.getBySlug` (DB-backed,
+ *      SPEC-192 T-014). NOT_FOUND → `undefined`, handled gracefully by
+ *      `revokeAddonForSubscriptionCancellation` as the "unknown/retired" addon path.
  *    - Calls `revokeAddonForSubscriptionCancellation` to remove QZPay grants.
  *    - On **success**: updates the purchase row to `status='canceled'` and sets
  *      `canceledAt` to the current timestamp. Adds to `succeeded` list.
@@ -175,7 +179,11 @@ export async function handleSubscriptionCancellationAddons(
     // ── 4. Sequential processing — NOT Promise.all ───────────────────────────
     for (const purchase of activePurchases) {
         const { id: purchaseId, addonSlug } = purchase;
-        const addonDef = getAddonBySlug(addonSlug);
+        // SPEC-192 T-014: resolve addon definition from DB-backed catalog.
+        // NOT_FOUND → addonDef=undefined (triggers "unknown/retired" path in revoke helper,
+        // same semantics as the old config getAddonBySlug returning undefined).
+        const catalogResult = await catalogService.getBySlug(addonSlug);
+        const addonDef = catalogResult.success ? catalogResult.data : undefined;
 
         try {
             // Delegate actual QZPay revocation to the single-purchase helper

@@ -8,7 +8,6 @@
  * @module services/addon.admin
  */
 
-import { ALL_ADDONS, getAddonBySlug } from '@repo/billing';
 import {
     type DrizzleClient,
     billingAddonPurchases,
@@ -17,11 +16,16 @@ import {
     safeIlike,
     withTransaction
 } from '@repo/db';
+import { AddonCatalogService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { type SQL, and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
 
 /**
  * Input parameters for listing customer add-on purchases
@@ -194,8 +198,12 @@ export class AdminAddonService {
                 'Admin retrieved customer add-on purchases'
             );
 
-            // Build catalog Map once per request — O(1) lookup per row
-            const catalogBySlug = new Map(ALL_ADDONS.map((a) => [a.slug, a]));
+            // Build catalog Map once per request — O(1) lookup per row.
+            // Reads from the DB-backed catalog service (SPEC-192 T-009 cutover).
+            const catalogListResult = await catalogService.list();
+            const catalogBySlug = new Map(
+                (catalogListResult.success ? catalogListResult.data : []).map((a) => [a.slug, a])
+            );
 
             const data: CustomerAddonRow[] = results.map((row) => {
                 const catalog = catalogBySlug.get(row.addonSlug) ?? null;
@@ -353,7 +361,9 @@ export class AdminAddonService {
                 lockedPurchase = row;
 
                 // ── 2. Calculate new expiresAt ────────────────────────────────
-                const addon = getAddonBySlug(row.addonSlug);
+                // Resolve addon definition from the DB-backed catalog service.
+                const addonCatalogResult = await catalogService.getBySlug(row.addonSlug);
+                const addon = addonCatalogResult.success ? addonCatalogResult.data : null;
                 const now = new Date();
 
                 if (
@@ -540,7 +550,9 @@ export class AdminAddonService {
                 };
             }
 
-            const catalog = getAddonBySlug(row.addonSlug) ?? null;
+            // Resolve from DB-backed catalog service (SPEC-192 T-009 cutover).
+            const catalogResult = await catalogService.getBySlug(row.addonSlug);
+            const catalog = catalogResult.success ? catalogResult.data : null;
 
             return {
                 success: true,

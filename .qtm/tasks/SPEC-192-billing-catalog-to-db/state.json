@@ -1,0 +1,1330 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-192",
+    "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+    "created": "2026-06-03T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add addon CRUD Zod schemas to @repo/schemas",
+            "description": "Extend `packages/schemas/src/api/billing/addon.schema.ts` with CRUD schemas mirroring `billing-plan.schema.ts`: CreateAddonSchema, UpdateAddonSchema, AdminAddonListQuerySchema, AdminAddonResponseSchema. Include slug, name, billingType, priceArs (integer centavos), durationDays, affectsLimitKey, limitIncrease, grantsEntitlement, targetCategories, isActive, sortOrder. Tests: write unit tests in `packages/schemas/src/api/billing/__tests__/addon.schema.test.ts` covering valid input, invalid billingType enum, negative price, missing required fields. Files: 1 schema file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-010", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Add CreateAddonSchema with all required fields",
+                    "completed": true
+                },
+                {
+                    "title": "Add UpdateAddonSchema (all fields optional for PATCH)",
+                    "completed": true
+                },
+                {
+                    "title": "Add AdminAddonListQuerySchema with page+pageSize",
+                    "completed": true
+                },
+                {
+                    "title": "Write schema unit tests (valid / invalid / boundary)",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "billing", "addon", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T17:05:00.000Z",
+                "completed": "2026-06-03T17:19:52.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Build AddonCatalogService list() and getBySlug() methods (DB-backed)",
+            "description": "Create `packages/service-core/src/services/billing/addon/addon-catalog.service.ts`. Implement `list(filter?)` reading from `billing_addons` with filters (billingType, targetCategory, active), sorted by `sortOrder` from metadata. Implement `getBySlug(slug)` querying `metadata.slug`. Both return `Result<T>`. Import table from `@repo/db`. Tests in `packages/service-core/src/services/billing/addon/__tests__/addon-catalog.service.test.ts`: list with no filter returns all active addons sorted; getBySlug returns correct addon; getBySlug with unknown slug returns NOT_FOUND. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Implement list() with billingType/targetCategory/active filters + sortOrder",
+                    "completed": true
+                },
+                {
+                    "title": "Implement getBySlug() querying metadata.slug",
+                    "completed": true
+                },
+                {
+                    "title": "Map billing_addons row to AddonDefinition shape",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for list/getBySlug/NOT_FOUND/filter parity",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "catalog", "fr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T17:30:00.000Z",
+                "completed": "2026-06-03T17:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Build AddonCatalogService row-to-AddonDefinition mapper with field-for-field parity test",
+            "description": "In the same service file or a sibling `addon-catalog.mapper.ts`, implement the `mapRowToAddonDefinition(row)` function that unpacks `billing_addons` columns + `metadata` JSONB into the `AddonDefinition` shape (slug, name, description, billingType, priceArs, durationDays, affectsLimitKey, limitIncrease, grantsEntitlement, targetCategories, isActive, sortOrder). Write a parity test in `__tests__/addon-catalog.mapper.test.ts` asserting field-for-field equality against the static `ALL_ADDONS` config for every seeded addon slug. Files: 1 mapper file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Implement mapRowToAddonDefinition extracting columns + metadata JSONB fields",
+                    "completed": true
+                },
+                {
+                    "title": "Handle optional fields gracefully (null vs undefined)",
+                    "completed": true
+                },
+                {
+                    "title": "Write field-for-field parity test against ALL_ADDONS for every seeded slug",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "mapper", "fr-1", "parity"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T17:50:00.000Z",
+                "completed": "2026-06-03T18:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Rewrite addon.catalog.ts to delegate to AddonCatalogService",
+            "description": "Rewrite `packages/service-core/src/services/billing/addon/addon.catalog.ts` so `listAvailableAddons()` and `getAddonCatalogEntry()` delegate to `AddonCatalogService.list()` and `AddonCatalogService.getBySlug()`. Public API signatures stay unchanged (behavior-preserving — downstream consumers untouched). Tests: update existing tests in `addon.catalog.test.ts` (if present) or create them, asserting the public API returns the same results as before for the same filter inputs. Files: 1 existing file rewritten + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": [
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017"
+            ],
+            "subtasks": [
+                {
+                    "title": "Replace ALL_ADDONS/getAddonBySlug calls with service delegation",
+                    "completed": true
+                },
+                {
+                    "title": "Verify public API signatures unchanged",
+                    "completed": true
+                },
+                {
+                    "title": "Write/update tests asserting behavior parity",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "catalog", "fr-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T18:05:00.000Z",
+                "completed": "2026-06-03T18:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Confirm billingAddons.seed.ts idempotency and verify row schema match",
+            "description": "Inspect `packages/seed/src/required/billingAddons.seed.ts`: confirm skip-by-name logic is correct, that `metadata.slug` is written during seed, and that all `AddonDefinition` fields are stored in the right columns vs metadata JSONB. Run `pnpm db:fresh-dev` locally and verify `SELECT count(*) FROM billing_addons` equals `ALL_ADDONS.length` (5). Write a simple verification test in `packages/seed/src/required/__tests__/billingAddons.seed.test.ts` asserting idempotency (run twice, count unchanged). Files: 1 seed file (minor fix if needed) + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Verify skip-by-name logic and metadata.slug write",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm all AddonDefinition fields stored correctly",
+                    "completed": true
+                },
+                {
+                    "title": "Write idempotency test (run twice, row count unchanged)",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "billing", "addon", "fr-7", "fr-8"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T18:30:00.000Z",
+                "completed": "2026-06-03T18:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Write billing_addons backfill runbook and verify env row count",
+            "description": "Create `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/backfill-runbook.md` documenting: (1) run `hops db-seed --target=staging` (and prod), (2) verify `SELECT count(*) FROM billing_addons` equals ALL_ADDONS.length (5), (3) confirm the cutover deploy ordering (backfill BEFORE cutover). Mark billing_addons as FR-8 complete when row count verified locally. No DDL required (data-only backfill via idempotent seed). Files: 1 runbook doc + no code change.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Write backfill runbook with step-by-step commands",
+                    "completed": true
+                },
+                {
+                    "title": "Document pre-cutover verification (row count check)",
+                    "completed": true
+                },
+                {
+                    "title": "Note that DDL is not required (data-only seed)",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "billing", "addon", "fr-8", "backfill"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T18:45:00.000Z",
+                "completed": "2026-06-03T18:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Cut over addon-user-addons.ts (service-core) from getAddonBySlug to AddonCatalogService",
+            "description": "In `packages/service-core/src/services/billing/addon/addon-user-addons.ts`, replace every call to `getAddonBySlug()` / `ALL_ADDONS` from config with `AddonCatalogService.getBySlug()` / `AddonCatalogService.list()`. Behavior-preserving. Write parity regression test in `__tests__/addon-user-addons.cutover.test.ts`: for each seeded slug, DB-resolved addon equals config-resolved addon (entitlement, limit, price, duration). Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Replace getAddonBySlug/ALL_ADDONS calls with AddonCatalogService",
+                    "completed": true
+                },
+                {
+                    "title": "Handle async service calls (await Result)",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test per seeded slug",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Cut over addon-limit-recalculation.service.ts from config to AddonCatalogService",
+            "description": "In `packages/service-core/src/services/billing/addon/addon-limit-recalculation.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `__tests__/addon-limit-recalculation.cutover.test.ts`: DB-resolved addon fields equal config-resolved for each seeded slug. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Handle async service calls (await Result)",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Cut over addon-admin.ts (api/services) from config to AddonCatalogService",
+            "description": "In `apps/api/src/services/addon.admin.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-admin.cutover.test.ts`. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Cut over admin addons.ts route (api) from config read to DB-backed AddonCatalogService",
+            "description": "In `apps/api/src/routes/billing/admin/addons.ts`, replace `ALL_ADDONS` config reads in GET endpoints with `AddonCatalogService.list()` and `.getBySlug()`. Keep BILLING_READ_ALL permission gate. No CRUD write endpoints yet (that is FR-3, T-018+). Write integration test in `apps/api/src/routes/billing/admin/__tests__/addons.cutover.test.ts` asserting list and slug endpoints return correct DB data. Files: 1 route file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Replace ALL_ADDONS reads with AddonCatalogService.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Replace getAddonBySlug reads with AddonCatalogService.getBySlug()",
+                    "completed": true
+                },
+                {
+                    "title": "Write integration test for DB-backed list and slug endpoints",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Cut over addon-user-addons.ts (api/services) from config to AddonCatalogService",
+            "description": "In `apps/api/src/services/addon.user-addons.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-user-addons.cutover.test.ts`. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Cut over addon-entitlement.service.ts (api/services) from config to AddonCatalogService",
+            "description": "In `apps/api/src/services/addon-entitlement.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-entitlement.cutover.test.ts`. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:00:00.000Z",
+                "completed": "2026-06-03T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Cut over addon-plan-change.service.ts (api/services) from config to AddonCatalogService",
+            "description": "In `apps/api/src/services/addon-plan-change.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-plan-change.cutover.test.ts`. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Cut over addon-lifecycle.service.ts and addon-lifecycle-cancellation.service.ts from config",
+            "description": "In `apps/api/src/services/addon-lifecycle.service.ts` and `addon-lifecycle-cancellation.service.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-lifecycle.cutover.test.ts` covering both files. Files: 2 service files + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Cutover addon-lifecycle.service.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Cutover addon-lifecycle-cancellation.service.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test for both lifecycle services",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover", "money-handling"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Cut over addon-expiry.job.ts (cron) from config to AddonCatalogService",
+            "description": "In `apps/api/src/cron/jobs/addon-expiry.job.ts`, replace `ALL_ADDONS` iteration with `AddonCatalogService.list()`. Behavior-preserving — same addon set processed. Write parity regression test in `apps/api/src/cron/jobs/__tests__/addon-expiry.cutover.test.ts` asserting the DB-resolved addon list equals the config-resolved list (same slugs, same fields). Files: 1 cron job file + 1 test file. HIGH RISK: this file runs against real money flows.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Replace ALL_ADDONS iteration with AddonCatalogService.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Handle async service result in cron context",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test: DB-resolved list equals config list",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover", "cron", "money-handling"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Cut over payment-logic.ts webhook from config to AddonCatalogService",
+            "description": "In `apps/api/src/routes/webhooks/mercadopago/payment-logic.ts`, replace `getAddonBySlug` config call with `AddonCatalogService.getBySlug()`. Behavior-preserving — resolved addon must equal config-resolved for same slug. Write parity regression test in `apps/api/src/routes/webhooks/mercadopago/__tests__/payment-logic.cutover.test.ts`. Files: 1 webhook file + 1 test file. HIGHEST RISK: real money, requires staging smoke before merge.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Replace getAddonBySlug config call with AddonCatalogService.getBySlug()",
+                    "completed": true
+                },
+                {
+                    "title": "Handle NOT_FOUND case gracefully (error path unchanged)",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test for all seeded slugs",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover", "webhook", "money-handling"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Cut over qzpay-admin-hooks.ts from config to AddonCatalogService",
+            "description": "In `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`, replace `ALL_ADDONS` / `getAddonBySlug` config reads with `AddonCatalogService`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/billing/admin/__tests__/qzpay-admin-hooks.cutover.test.ts`. NOTE: `addon.checkout.ts` cutover is intentionally excluded from this chain — it must run AFTER SPEC-127 (qzpay migration). See T-037 for the deferred cutover task. Files: 1 file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Replace config reads with AddonCatalogService calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test",
+                    "completed": true
+                },
+                {
+                    "title": "Document addon.checkout.ts exclusion (SPEC-127 dependency)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-2", "cutover", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:45:00.000Z",
+                "completed": "2026-06-03T20:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add addon CRUD write methods and audit logging to AddonCatalogService (FR-3)",
+            "description": "Extend `packages/service-core/src/services/billing/addon/addon-catalog.service.ts` with: create(input), update(id, input), toggleActive(id), softDelete(id), restore(id), hardDelete(id). HardDelete must query `billing_subscription_addons` and return ALREADY_EXISTS if referenced. Add audit logging mirroring `plan.audit.ts`. Tests in `__tests__/addon-catalog.crud.test.ts`: create inserts row + audit; update changes field; toggleActive flips isActive; softDelete sets deletedAt; restore clears deletedAt; hardDelete blocked when subscription_addons row exists. Files: 1 service file extended + 1 audit file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement create/update/toggleActive write methods",
+                    "completed": true
+                },
+                {
+                    "title": "Implement softDelete/restore/hardDelete with subscription guard",
+                    "completed": true
+                },
+                {
+                    "title": "Add audit logging (mirror plan.audit.ts)",
+                    "completed": true
+                },
+                {
+                    "title": "Write CRUD unit tests including hard-delete-blocked guard",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "addon", "fr-3", "crud", "audit"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Convert admin addons.ts route to full CRUD (FR-3)",
+            "description": "In `apps/api/src/routes/billing/admin/addons.ts`, add POST / PATCH /:id / DELETE /:id / POST /:id/restore endpoints backed by AddonCatalogService write methods. Permission split: BILLING_READ_ALL (GET) / BILLING_MANAGE (write). Error-code→HTTP mapping: VALIDATION_ERROR→422, NOT_FOUND→404, ALREADY_EXISTS→409. Use createAdminListRoute for list with page+pageSize. Write integration tests in `apps/api/src/routes/billing/admin/__tests__/addons.crud.test.ts`: create/update/toggle/softDelete/restore/hardDelete; permission rejection (403); pagination. Files: 1 route file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Add POST/PATCH/DELETE/restore endpoints with BILLING_MANAGE gate",
+                    "completed": true
+                },
+                {
+                    "title": "Implement error-code→HTTP mapping (422/404/409)",
+                    "completed": true
+                },
+                {
+                    "title": "Wire createAdminListRoute with page+pageSize",
+                    "completed": true
+                },
+                {
+                    "title": "Write integration tests including 403 permission rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "addon", "fr-3", "crud", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add getBySlug/getByName method to PlanService (enables FR-4 plan cutover)",
+            "description": "Add `getBySlug(slug: string)` (and optionally `getByName(name: string)`) to `packages/service-core/src/services/billing/plan/plan.service.ts` (or `plan.crud.ts`). PlanService already exists but may lack this lookup method. Slug resolves via `billing_plans.name` (SPEC-168 convention: slug stored as name). Return `Result<PlanRow>`. Tests in `__tests__/plan-service.get-by-slug.test.ts`: resolves known slug; returns NOT_FOUND for unknown. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-022", "T-023", "T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Add getBySlug() querying billing_plans.name === slug",
+                    "completed": true
+                },
+                {
+                    "title": "Return Result<PlanRow> with NOT_FOUND on miss",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests: known slug resolves; unknown returns NOT_FOUND",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "plan", "fr-4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build admin addon management UI (TanStack Form + Zod) in apps/admin (FR-3)",
+            "description": "In `apps/admin/src/features/billing-addons/`, create a list page and create/edit form mirroring `apps/admin/src/features/billing-plans/**`. Use TanStack Form with Zod schema from T-001 for validation. Wire to the admin API CRUD endpoints (T-019). Write component tests in `__tests__/billing-addons.test.tsx` for: form validation errors, successful submit, list renders rows. Files: ~4 component files + 1 test file (UI scope). Blocked by T-019 (routes).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Create billing-addons list page mirroring billing-plans",
+                    "completed": true
+                },
+                {
+                    "title": "Create create/edit form with TanStack Form + Zod",
+                    "completed": true
+                },
+                {
+                    "title": "Wire to admin API endpoints (create/update/toggle/delete/restore)",
+                    "completed": true
+                },
+                {
+                    "title": "Write component tests for form validation and list render",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "billing", "addon", "fr-3", "ui", "tanstack-form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T19:30:00.000Z",
+                "completed": "2026-06-03T23:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Cut over public listPlans.ts route from ALL_PLANS config to PlanService (FR-4)",
+            "description": "In `apps/api/src/routes/billing/public/listPlans.ts`, replace `ALL_PLANS` config read with `PlanService.list()`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/billing/public/__tests__/listPlans.cutover.test.ts`: DB-resolved plan list equals config-resolved list for each plan slug (prices, entitlements, limits). Files: 1 route file + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Replace ALL_PLANS with PlanService.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Write DB-vs-config parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "plan", "fr-4", "cutover", "public"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Cut over protected subscription.ts and stats.ts routes from getPlanBySlug to PlanService (FR-4)",
+            "description": "In `apps/api/src/routes/user/protected/subscription.ts` and `stats.ts`, replace `getPlanBySlug` config calls with `PlanService.getBySlug()`. Behavior-preserving. Write parity regression test in `apps/api/src/routes/user/protected/__tests__/subscription-plan.cutover.test.ts` covering both files. Files: 2 route files + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Cutover subscription.ts plan lookup to PlanService.getBySlug()",
+                    "completed": true
+                },
+                {
+                    "title": "Cutover stats.ts plan lookup to PlanService.getBySlug()",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test for both routes",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "plan", "fr-4", "cutover", "protected"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Cut over entitlement.ts middleware plan lookup from getPlanBySlug to PlanService (FR-4)",
+            "description": "In `apps/api/src/middlewares/entitlement.ts`, replace the plan-lookup portion using `getPlanBySlug` / `ALL_PLANS` config with `PlanService.getBySlug()`. Do NOT touch `getDefaultEntitlements` / `getUnlimitedEntitlements` — those stay in code (FR-6). Write parity regression test in `apps/api/src/middlewares/__tests__/entitlement-plan.cutover.test.ts`. Files: 1 middleware file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Identify and replace only the plan-lookup portion (not structural defs)",
+                    "completed": true
+                },
+                {
+                    "title": "Replace getPlanBySlug with PlanService.getBySlug()",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test asserting getDefaultEntitlements unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "plan", "fr-4", "cutover", "middleware"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T20:45:00.000Z",
+                "completed": "2026-06-03T21:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Fix addon-entitlement.service.ts:160 bug (ALL_PLANS.find by UUID instead of slug) (FR-4)",
+            "description": "HIGH PRIORITY BUG. In `apps/api/src/services/addon-entitlement.service.ts` line ~160: `ALL_PLANS.find(p => p.slug === activeSubscription.planId)` fails post-SPEC-168 because `planId` is now a UUID, not a slug — causing basePlanLimit to fall to 0. Fix: replace with `PlanService.getById(activeSubscription.planId)` (lookup by UUID, not slug). Write regression test in `apps/api/src/services/__tests__/addon-entitlement-plan-bug.test.ts` that reproduces the bug before the fix, then passes after. Files: 1 service file + 1 test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Write failing regression test reproducing basePlanLimit=0 bug",
+                    "completed": true
+                },
+                {
+                    "title": "Replace ALL_PLANS.find(slug) with PlanService.getById(UUID)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify regression test now passes with correct basePlanLimit",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "billing", "plan", "fr-4", "bugfix", "addon-entitlement"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Cut over addon-plan-change.helpers.ts (service-core) and addon-plan-change.service.ts (api) plan reads to PlanService (FR-4)",
+            "description": "In `packages/service-core/src/services/billing/addon/addon-plan-change.helpers.ts` and `apps/api/src/services/addon-plan-change.service.ts`, replace `ALL_PLANS` / `getPlanBySlug` config reads with `PlanService.getBySlug()`. Behavior-preserving. Write parity regression test in `apps/api/src/services/__tests__/addon-plan-change-plan.cutover.test.ts`. Files: 2 files + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Cutover addon-plan-change.helpers.ts plan reads to PlanService",
+                    "completed": true
+                },
+                {
+                    "title": "Cutover addon-plan-change.service.ts plan reads to PlanService",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test for both files",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "api", "billing", "plan", "fr-4", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Cut over billing-subscriptions/utils.ts (admin) and addon-limit-recalculation.service.ts plan reads to PlanService (FR-4)",
+            "description": "In `apps/admin/src/features/billing-subscriptions/utils.ts` and `packages/service-core/src/services/billing/addon/addon-limit-recalculation.service.ts` (for plan-read portion), replace `ALL_PLANS` / `getPlanBySlug` config reads with `PlanService`. Behavior-preserving. Write parity regression test in `apps/admin/src/features/billing-subscriptions/__tests__/utils-plan.cutover.test.ts`. Files: 2 files + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Cutover billing-subscriptions/utils.ts plan reads to PlanService",
+                    "completed": true
+                },
+                {
+                    "title": "Cutover addon-limit-recalculation.service.ts plan-read portion to PlanService",
+                    "completed": true
+                },
+                {
+                    "title": "Write parity regression test",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "service-core", "billing", "plan", "fr-4", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Verify fetch-plans.ts (web) calls DB-backed endpoint and add parity assertion (FR-4)",
+            "description": "In `apps/web/src/lib/billing/fetch-plans.ts`, verify that the public API endpoint it calls (`/api/v1/public/billing/plans`) is now DB-backed (after T-022). If `fetch-plans.ts` itself has a hardcoded fallback to config, remove it. Write a test in `apps/web/src/lib/billing/__tests__/fetch-plans.test.ts` asserting the function calls the correct endpoint and handles the DB-backed response. Files: 1 web file (verify/minor fix) + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Verify fetch-plans.ts calls /api/v1/public/billing/plans (DB-backed)",
+                    "completed": true
+                },
+                {
+                    "title": "Remove any config fallback if present",
+                    "completed": true
+                },
+                {
+                    "title": "Write test asserting correct endpoint and response handling",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "billing", "plan", "fr-4", "cutover"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-03T21:30:00.000Z",
+                "completed": "2026-06-03T22:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Relocate DEFAULT_PROMO_CODES to seed-only scope (FR-5)",
+            "description": "In `packages/service-core/src/services/billing/promo-code/promo-code-defaults.ts`, confirm `DEFAULT_PROMO_CODES` is only referenced by `ensureDefaultPromoCodes` (startup path) and dev tools (`config-validator`). If any request-time promo catalog read references it, redirect to `PromoCodeService`. Optionally move the const to `packages/seed/` to make seed-only intent unambiguous. Write test in `__tests__/promo-defaults.test.ts` asserting startup idempotency (run twice, code not duplicated). Files: 1-2 files + 1 test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "Audit all references to DEFAULT_PROMO_CODES",
+                    "completed": true
+                },
+                {
+                    "title": "Redirect any request-time read to PromoCodeService",
+                    "completed": true
+                },
+                {
+                    "title": "Write startup idempotency test (skip-by-code)",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "billing", "promo", "fr-5"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Evaluate structural-defs visibility and rename/relocate within @repo/billing if beneficial (FR-6)",
+            "description": "Audit `packages/billing/src/config/entitlements.config.ts` and `limits.config.ts`. Evaluate whether a clearer sub-path (e.g. `structural/` or `definitions/`) improves discoverability without breaking barrel exports or breaking consumers. If relocation is done: update barrel `src/index.ts` and verify all consumer imports compile. Write a typecheck-only task (no new test file needed unless exports change). Files: 0-3 files depending on decision. No DB move.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "Audit current entitlements.config.ts and limits.config.ts locations",
+                    "completed": true
+                },
+                {
+                    "title": "Decide on relocation (mechanical, behavior-preserving)",
+                    "completed": true
+                },
+                {
+                    "title": "Update barrel exports if relocated, verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "structural-defs", "fr-6"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Write boundary ADR (ADR-030) for billing catalog vs structural definitions (FR-6)",
+            "description": "Create `docs/decisions/ADR-030-billing-catalog-vs-structural-definitions.md`. Content: (1) DB-backed catalog = plans, prices, addons, promo codes — editable at runtime, seeded from config; (2) code-level structural definitions = ENTITLEMENT_DEFINITIONS, LIMIT_METADATA, getDefaultEntitlements, getUnlimitedEntitlements — enum-coupled, must stay in code; (3) rationale: type-safety, drift avoidance, packaging constraints; (4) BETA-58 supersession (repo-root move rejected, packaging); (5) SPEC-168 lineage. Add entry to `docs/decisions/README.md`. Files: 1 ADR file + 1 README update.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Write ADR-030 covering catalog-vs-structural boundary and rationale",
+                    "completed": true
+                },
+                {
+                    "title": "Document BETA-58 supersession and SPEC-168 lineage",
+                    "completed": true
+                },
+                {
+                    "title": "Add ADR-030 entry to docs/decisions/README.md",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "adr", "billing", "fr-6"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Write cross-cutting integration tests for addon catalog read path end-to-end (FR-1/FR-2 testing phase)",
+            "description": "Write integration tests spanning the full read path: `billing_addons` table → AddonCatalogService → addon.catalog.ts → consumer. Test in `packages/service-core/src/__tests__/integration/addon-catalog-read-path.test.ts`: (1) seeded billing_addons returns all addons; (2) getBySlug returns correct row for each seeded slug; (3) unknown slug returns NOT_FOUND; (4) filter by billingType returns correct subset. Uses test DB (vitest). Files: 1 integration test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-031"],
+            "blocks": ["T-033"],
+            "subtasks": [
+                {
+                    "title": "Set up test DB fixture with seeded billing_addons",
+                    "completed": true
+                },
+                {
+                    "title": "Test full read path for list, getBySlug, filter, NOT_FOUND",
+                    "completed": true
+                },
+                {
+                    "title": "Assert DB-resolved results equal config baseline for all 5 addons",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "billing", "addon", "integration", "fr-1", "fr-2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Write cross-cutting integration tests for plan reader cutover end-to-end (FR-4 testing phase)",
+            "description": "Write integration tests asserting every plan-reader cutover resolves consistently from DB. Test in `packages/service-core/src/__tests__/integration/plan-reader-cutover.test.ts`: for each seeded plan slug, PlanService.getBySlug() returns same slug, prices, entitlements, limits as previous config-resolved plan. Includes regression test for the addon-entitlement bug fix (T-025): verify basePlanLimit > 0 when planId is UUID. Files: 1 integration test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-032"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "Test PlanService.getBySlug() for each seeded slug against config baseline",
+                    "completed": true
+                },
+                {
+                    "title": "Test addon-entitlement basePlanLimit fix (UUID lookup returns correct limit)",
+                    "completed": true
+                },
+                {
+                    "title": "Assert all plan fields match DB to config for slug, prices, entitlements",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "billing", "plan", "integration", "fr-4"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Write integration tests for admin addon CRUD routes end-to-end (FR-3 testing phase)",
+            "description": "Write integration tests for the full admin CRUD route stack in `apps/api/src/routes/billing/admin/__tests__/addons.integration.test.ts`: (1) create addon (POST) returns 201 + audit row; (2) update addon (PATCH) persists change; (3) toggleActive changes isActive; (4) softDelete sets deletedAt; (5) restore clears deletedAt; (6) hardDelete rejected (409) when billing_subscription_addons row exists; (7) unauthorized writes return 403; (8) list pagination uses page+pageSize. Files: 1 integration test file.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                {
+                    "title": "Test CRUD lifecycle: create/update/toggle/softDelete/restore",
+                    "completed": true
+                },
+                {
+                    "title": "Test hard-delete blocked when subscription_addons row exists (409)",
+                    "completed": true
+                },
+                {
+                    "title": "Test permission rejection for write endpoints (403) and read-only (200)",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "billing", "addon", "integration", "fr-3", "crud"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Write promo defaults and structural defs integration tests (FR-5/FR-6 testing phase)",
+            "description": "Write integration tests in `packages/service-core/src/__tests__/integration/promo-and-structural.test.ts`: (1) ensureDefaultPromoCodes is idempotent (run twice, one row in billing_promo_codes for HOSPEDA_FREE); (2) no runtime code path reads DEFAULT_PROMO_CODES at request time; (3) ENTITLEMENT_DEFINITIONS and LIMIT_METADATA are unchanged and exported correctly from @repo/billing. Files: 1 integration test file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Test ensureDefaultPromoCodes idempotency (skip-by-code)",
+                    "completed": true
+                },
+                {
+                    "title": "Assert structural defs exported correctly from @repo/billing",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no runtime promo config read in any request handler",
+                    "completed": true
+                }
+            ],
+            "tags": [
+                "testing",
+                "billing",
+                "promo",
+                "structural-defs",
+                "integration",
+                "fr-5",
+                "fr-6"
+            ],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Document MercadoPago staging smoke and prod smoke sign-off requirement in PR template",
+            "description": "Add a PR checklist file at `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/smoke-signoff-checklist.md` enumerating the sections of SPEC-143 staging-smoke-checklist.md that must be executed before merging SPEC-192 PRs (addon checkout, addon purchase, webhook, cron addon-expiry, admin addon ops). Also list prod-smoke-checklist.md sections required (billing CORE gate). Reference `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md` and `prod-smoke-checklist.md`. Files: 1 doc file.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-021", "T-035"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "List staging smoke sections required for SPEC-192 PRs",
+                    "completed": true
+                },
+                {
+                    "title": "List prod smoke sections required (billing CORE gate)",
+                    "completed": true
+                },
+                {
+                    "title": "Reference SPEC-143 checklist files with relative paths",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "billing", "testing", "smoke", "fr-8"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Document deferred addon.checkout.ts cutover (blocked on SPEC-127) as a follow-up task",
+            "description": "Create `.qtm/specs/SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md` documenting: `apps/api/src/services/addon.checkout.ts` is intentionally NOT cut over in SPEC-192 because it must happen AFTER SPEC-127 (qzpay migration) to avoid merge conflicts. This cutover should be the first task of a follow-up SPEC-192 delta (or the first task in the SPEC-127 closeout checklist). Note the constraint: both touch `addon.checkout.ts` in different zones. Files: 1 doc file.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-036"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document the addon.checkout.ts exclusion rationale",
+                    "completed": true
+                },
+                {
+                    "title": "Describe the ordering constraint: SPEC-127 must land first",
+                    "completed": true
+                },
+                {
+                    "title": "Suggest follow-up: first task in SPEC-127 closeout or SPEC-192 delta",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "billing", "addon", "checkout", "deferred", "spec-127"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-03T00:00:00.000Z",
+                "started": "2026-06-04T01:30:00.000Z",
+                "completed": "2026-06-04T02:30:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 37,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 37,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

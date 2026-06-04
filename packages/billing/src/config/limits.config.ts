@@ -1,9 +1,43 @@
+/**
+ * Structural limit metadata for the Hospeda billing system.
+ *
+ * ---
+ * STRUCTURAL DEFINITION — CODE-LEVEL ONLY (SPEC-192 T-030 / ADR-030)
+ *
+ * `LIMIT_METADATA` is NOT DB-backed and is intentionally NOT part of the
+ * billing catalog that was migrated to the database in SPEC-168 / SPEC-192.
+ *
+ * It is tightly coupled to the `LimitKey` TypeScript enum. Each entry in
+ * this `Record<LimitKey, ...>` is exhaustively type-checked against the enum
+ * — a new limit key is a compilation error until its metadata is added here.
+ *
+ * Rationale:
+ *   - Limit keys appear in plan entitlement checks, addon recalculation, and
+ *     usage-tracking service display names. A DB-only registry would lose
+ *     compile-time exhaustiveness.
+ *   - Actual per-plan limit *values* live in `plans.config.ts` (code-level,
+ *     seeded to DB). This file holds only human-readable metadata (name,
+ *     description) for each key — the admin UI and usage service consume it.
+ *   - The seeder (`packages/seed/src/required/billingLimits.seed.ts`) reads
+ *     this record to populate the `billing_limits` lookup table, but that
+ *     table reflects this file — not an independent source.
+ *
+ * Consumers:
+ *   - Seed package (divergence-respecting, never overwrites runtime edits)
+ *   - Admin UI (`PlanDialog.tsx` limit picker)
+ *   - API usage-tracking service (display names in threshold notifications)
+ *   - `plans.config.ts` (getDefaultEntitlements / getUnlimitedEntitlements helpers)
+ * ---
+ *
+ * @module config/limits
+ */
+
 import { LimitKey } from '../types/plan.types.js';
 
 /**
- * All limit definitions for the Hospeda billing system.
- * Values are defined per plan in plans.config.ts.
- * This file defines the metadata for each limit key.
+ * Human-readable metadata for each structural limit key.
+ *
+ * Exhaustively typed against `LimitKey` — see module JSDoc banner above.
  */
 export const LIMIT_METADATA: Record<LimitKey, { name: string; description: string }> = {
     [LimitKey.MAX_ACCOMMODATIONS]: {

@@ -291,6 +291,61 @@ describe('filterPlansByCategory', () => {
     });
 });
 
+/**
+ * SPEC-192 T-028 lock: verify fetch-plans.ts calls the DB-backed public endpoint
+ * with no hardcoded config fallback.
+ *
+ * The endpoint `/api/v1/public/plans` is backed by the `billing_plans` DB table
+ * (DB-backed since SPEC-168/T-022). This describe block locks:
+ * 1. The exact URL path used (no accidental rollback to a config-only endpoint).
+ * 2. That on HTTP error or network error, `ok:false` is returned — no config
+ *    fallback is performed.
+ */
+describe('SPEC-192 T-028: DB-backed endpoint lock (no config fallback)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('calls the DB-backed public plans endpoint at /api/v1/public/plans', async () => {
+        // Arrange
+        mockFetchOk([]);
+
+        // Act
+        await fetchPublicPlans();
+
+        // Assert — the exact DB-backed endpoint is called
+        expect(global.fetch).toHaveBeenCalledWith(
+            'http://api.test/api/v1/public/plans',
+            expect.objectContaining({ headers: { Accept: 'application/json' } })
+        );
+    });
+
+    it('returns ok:false on HTTP error without a config fallback', async () => {
+        // Arrange — simulate the plans endpoint being down
+        mockFetchHttpError(503);
+
+        // Act
+        const result = await fetchPublicPlans();
+
+        // Assert — no config fallback: ok:false is returned
+        expect(result.ok).toBe(false);
+        // No ALL_PLANS or static config was used as a fallback
+    });
+
+    it('returns ok:false on network error without a config fallback', async () => {
+        // Arrange
+        mockFetchNetworkError('Connection refused');
+
+        // Act
+        const result = await fetchPublicPlans();
+
+        // Assert — no config fallback: ok:false is returned
+        expect(result.ok).toBe(false);
+        if (result.ok) throw new Error('Expected ok:false');
+        expect(result.error).toBe('Connection refused');
+    });
+});
+
 describe('cache constants', () => {
     it('PRICING_CACHE_MAX_AGE_SECONDS is a positive number', () => {
         expect(typeof PRICING_CACHE_MAX_AGE_SECONDS).toBe('number');

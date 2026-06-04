@@ -1,12 +1,145 @@
 import { fetchApi } from '@/lib/api/client';
+import { ApiError, reportError } from '@/lib/errors';
+import { AdminAddonResponseSchema } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import type {
+    AddonCatalogFilters,
     CreateAddonPayload,
+    ParsedAddonRecord,
     PurchasedAddon,
     PurchasedAddonFilters,
     PurchasedAddonsResponse,
     UpdateAddonPayload
 } from './types';
+
+// ---------------------------------------------------------------------------
+// Catalog (admin addon definition) — NEW in T-021
+// ---------------------------------------------------------------------------
+
+/**
+ * Zod schema for the catalog list-endpoint envelope.
+ * GET /api/v1/admin/billing/addons → { success, data: { items, pagination }, metadata }
+ */
+const AddonCatalogListResponseSchema = z.object({
+    success: z.boolean(),
+    data: z.object({
+        items: z.array(z.unknown()),
+        pagination: z.record(z.string(), z.unknown())
+    })
+});
+
+/**
+ * Transforms a raw API record to a ParsedAddonRecord.
+ * Validates against AdminAddonResponseSchema and surfaces mismatches as ApiError.
+ */
+function transformAddonRecord(record: unknown): ParsedAddonRecord {
+    const parseResult = AdminAddonResponseSchema.safeParse(record);
+
+    if (!parseResult.success) {
+        const apiError = new ApiError('Addon record failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST',
+            details: { zodIssues: parseResult.error.issues }
+        });
+        reportError({
+            error: apiError,
+            source: 'billing-addons/transformAddonRecord',
+            tags: { feature: 'billing', stage: 'response-parse' }
+        });
+        throw apiError;
+    }
+
+    const a = parseResult.data;
+
+    return {
+        id: a.id,
+        slug: a.slug,
+        name: a.name,
+        description: a.description,
+        billingType: a.billingType,
+        priceArs: a.priceArs,
+        durationDays: a.durationDays,
+        affectsLimitKey: a.affectsLimitKey,
+        limitIncrease: a.limitIncrease,
+        grantsEntitlement: a.grantsEntitlement,
+        targetCategories: a.targetCategories,
+        isActive: a.isActive,
+        sortOrder: a.sortOrder,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+        isDeleted: a.deletedAt !== null,
+        deletedAt: a.deletedAt
+    };
+}
+
+/**
+ * Fetches the add-on catalog (admin definitions) with filters and pagination.
+ *
+ * Calls GET /api/v1/admin/billing/addons with the new paginated admin list endpoint.
+ */
+async function fetchAddonCatalog(filters: AddonCatalogFilters = {}) {
+    const params = new URLSearchParams();
+
+    if (filters.billingType) params.append('billingType', filters.billingType);
+    if (filters.targetCategory) params.append('targetCategory', filters.targetCategory);
+    if (filters.isActive !== undefined) params.append('isActive', String(filters.isActive));
+    if (filters.includeDeleted) params.append('includeDeleted', 'true');
+    if (filters.search) params.append('search', filters.search);
+    if (filters.page) params.append('page', String(filters.page));
+    if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
+
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: unknown[]; pagination: Record<string, unknown> };
+    }>({
+        path: `/api/v1/admin/billing/addons?${params.toString()}`
+    });
+
+    const envelopeResult = AddonCatalogListResponseSchema.safeParse(result.data);
+    if (!envelopeResult.success) {
+        const apiError = new ApiError('Addon catalog list response failed schema validation', {
+            status: 502,
+            code: 'BAD_REQUEST',
+            details: { zodIssues: envelopeResult.error.issues }
+        });
+        reportError({
+            error: apiError,
+            source: 'billing-addons/fetchAddonCatalog',
+            tags: { feature: 'billing', stage: 'response-parse' }
+        });
+        throw apiError;
+    }
+
+    const items = envelopeResult.data.data.items.map(transformAddonRecord);
+    return { items, pagination: envelopeResult.data.data.pagination };
+}
+
+/**
+ * Restores a soft-deleted add-on by UUID.
+ *
+ * POST /api/v1/admin/billing/addons/{id}/restore
+ */
+async function restoreAddon(id: string): Promise<void> {
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/billing/addons/${id}/restore`,
+        method: 'POST'
+    });
+}
+
+/**
+ * Permanently deletes an add-on by UUID.
+ *
+ * DELETE /api/v1/admin/billing/addons/{id}/hard.
+ * The API returns 409 when the addon is still referenced by purchases;
+ * that surfaces as an ApiError with `status === 409`.
+ */
+async function hardDeleteAddon(id: string): Promise<void> {
+    await fetchApi<{ success: boolean }>({
+        path: `/api/v1/admin/billing/addons/${id}/hard`,
+        method: 'DELETE'
+    });
+}
 
 /**
  * Query keys for addon-related queries
@@ -120,13 +253,15 @@ async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
 }
 
 /**
- * Toggle add-on active status
+ * Toggle add-on active status.
+ *
+ * Uses `{ active: boolean }` body per the new CRUD admin route contract.
  */
 async function toggleAddonActive(id: string, isActive: boolean) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/admin/billing/addons/${id}`,
         method: 'PATCH',
-        body: { isActive }
+        body: { active: isActive }
     });
     return result.data.data;
 }
@@ -269,6 +404,61 @@ export const useForceActivatePurchasedAddonMutation = () => {
         mutationFn: (id: string) => forceActivatePurchasedAddon(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: addonQueryKeys.purchased.lists() });
+        }
+    });
+};
+
+// ---------------------------------------------------------------------------
+// Catalog management hooks — NEW in T-021
+// ---------------------------------------------------------------------------
+
+export type { ParsedAddonRecord } from './types';
+
+/**
+ * Hook to fetch the add-on catalog (admin definitions) with filters and pagination.
+ *
+ * Uses the new paginated admin list endpoint that returns AdminAddonResponse items.
+ * Falls back to an empty items array only when the API returns empty;
+ * schema mismatches are surfaced as query errors.
+ */
+export const useAddonCatalogQuery = (filters: AddonCatalogFilters = {}) => {
+    return useQuery({
+        queryKey: addonQueryKeys.addons.list(filters as Record<string, unknown>),
+        queryFn: () => fetchAddonCatalog(filters),
+        staleTime: 60_000
+    });
+};
+
+/**
+ * Hook to restore a soft-deleted add-on by UUID.
+ *
+ * On success invalidates the catalog list query so the restored addon reappears.
+ */
+export const useRestoreAddonMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => restoreAddon(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: addonQueryKeys.addons.lists() });
+        }
+    });
+};
+
+/**
+ * Hook to permanently delete an add-on by UUID.
+ *
+ * On success invalidates the catalog list query. A 409 from the API (addon still
+ * referenced by purchases) propagates as an ApiError so the caller can show a
+ * specific "blocked" toast; the list is left untouched in that case.
+ */
+export const useHardDeleteAddonMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: string) => hardDeleteAddon(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: addonQueryKeys.addons.lists() });
         }
     });
 };

@@ -25,6 +25,30 @@ import { addonExpiryJob } from '../../src/cron/jobs/addon-expiry.job';
 import type { CronJobContext } from '../../src/cron/types';
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Mock: AddonCatalogService (SPEC-192 T-015 cutover)
+// addon-expiry.job.ts uses AddonCatalogService for addon display names.
+// This hoisted function controls the per-test catalog responses.
+// ---------------------------------------------------------------------------
+const { mockAddonCatalogGetBySlug } = vi.hoisted(() => ({
+    mockAddonCatalogGetBySlug: vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+    })
+}));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug,
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        }))
+    };
+});
+
+// ---------------------------------------------------------------------------
 // Mock: wasNotificationSent's DB dependency (no service layer exists for this)
 // ---------------------------------------------------------------------------
 const mockDbLimit = vi.fn();
@@ -231,6 +255,13 @@ describe('Add-on Expiry Cron Job', () => {
                 cancel: vi.fn().mockResolvedValue(undefined)
             }
         } as never);
+
+        // Default: AddonCatalogService.getBySlug returns NOT_FOUND (fallback to addonSlug).
+        // Tests that verify display names configure this to return { success:true, data:{name} }.
+        mockAddonCatalogGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+        });
     });
 
     describe('Job Definition', () => {
@@ -1547,10 +1578,12 @@ describe('Add-on Expiry Cron Job', () => {
             vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
             vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
-            vi.mocked(getAddonBySlug).mockReturnValue({
-                slug: 'extra-listings',
-                name: 'Extra Listings'
-            } as never);
+            // SPEC-192 T-015: production resolves display names via AddonCatalogService,
+            // not getAddonBySlug from @repo/billing. Configure the catalog mock here.
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: { slug: 'extra-listings', name: 'Extra Listings' }
+            });
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'expired@example.com',
                 name: 'Expired Customer',
