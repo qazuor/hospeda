@@ -78,31 +78,31 @@
             "id": "T-003",
             "title": "Add contribution_* event names to the WebEvents analytics catalog",
             "description": "Add four typed event names to WebEvents in apps/web/src/lib/analytics/events.ts following the snake_case <entity>_<verb_past> convention (FR-9): contribution_banner_clicked, contribution_report_submitted, contribution_photo_submitted, contribution_editor_submitted. Extend the existing events test (if present) or add a minimal catalog test asserting the names follow the convention and are exported in WebEventName.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Add the four event names to WebEvents",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update/add events catalog test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "analytics"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T17:00:00.000Z",
+                "completed": "2026-06-04T17:05:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.1
     }
