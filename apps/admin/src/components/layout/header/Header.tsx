@@ -14,6 +14,7 @@
  */
 
 import { CommandPalette } from '@/components/search/CommandPalette';
+import { WhatsNewBadge } from '@/components/whats-new/WhatsNewBadge';
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useTranslations } from '@/hooks/use-translations';
@@ -161,6 +162,9 @@ export function Header() {
                                 </div>
                             )}
                         </div>
+
+                        {/* What's New badge — between Notifications and Profile (SPEC-175) */}
+                        <WhatsNewBadge />
 
                         {/* Profile */}
                         <Link
