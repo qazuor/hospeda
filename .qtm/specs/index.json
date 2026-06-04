@@ -82,7 +82,7 @@
             "specId": "SPEC-127",
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
             "type": "refactor",
-            "complexity": "low",
+            "complexity": "medium",
             "status": "draft",
             "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
             "created": "2026-05-15T00:00:00Z",
