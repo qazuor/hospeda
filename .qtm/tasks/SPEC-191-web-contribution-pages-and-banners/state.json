@@ -335,35 +335,35 @@
             "id": "T-010",
             "title": "Add destination-detail report link (sidebar row + inline link after description)",
             "description": "FR-7, both placements point to buildUrl({ locale, path: 'colaborar/reportar' }) + '?destino=<slug>': (1) extend apps/web/src/components/destination/DestinationSidebarCtas.astro with a third row using the established icon+label+hint+arrow pattern ('Reportar información incorrecta'); (2) add an inline text link in apps/web/src/pages/[lang]/destinos/[...path].astro directly after the .dest-detail__description section. Copy via t() (contributions namespace keys, inline fallbacks). Tests (source assertions): both hrefs carry ?destino=<slug>; sidebar row follows the existing row pattern; inline link sits after the description block.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Report row in DestinationSidebarCtas.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Inline report link after .dest-detail__description",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests (?destino= in both hrefs)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "destinations", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:15:00.000Z",
+                "completed": "2026-06-04T19:30:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.1
     }
