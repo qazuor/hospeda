@@ -404,7 +404,7 @@
             "id": "T-019",
             "title": "API integration tests: GET + PATCH with real DB",
             "description": "Full integration tests for GET /protected/whats-new and PATCH /protected/users/me/whats-new-seen following the vitest e2e suite pattern from SPEC-143 (real DB): lazy-init persists baselineAt/seenIds; AC-17 SPEC-174 coexistence (pre-seeded adminTours preserved after seenIds write); role filtering with real seeded users; locale resolution via languageAdmin; idempotent PATCH; baseline semantics for pre-existing user (entries before baselineAt seen).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
@@ -412,21 +412,21 @@
             "tags": ["api", "integration-tests", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T07:16:11.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:35:09.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Admin component integration tests (Testing Library + MSW)",
             "description": "Cross-surface integration per spec §12.4/T-018-orig with MSW mocks: full flow modal auto-open -> close -> badge decrements (shared useWhatsNew state across surfaces, no independent fetches); panel mark-all -> badge 0 -> card badges update; card item click -> modal single-entry -> seen propagates. Verifies D10 (single shared hook) end-to-end in the component tree.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-017"],
             "blocks": [],
@@ -434,22 +434,22 @@
             "tags": ["admin", "integration-tests", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T07:16:11.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:35:09.000Z"
             }
         }
     ],
     "summary": {
         "total": 20,
         "pending": 0,
-        "inProgress": 2,
-        "completed": 18,
+        "inProgress": 0,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.3
     }

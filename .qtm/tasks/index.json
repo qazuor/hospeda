@@ -163,7 +163,7 @@
             "specId": "SPEC-175",
             "title": "Admin What's New / Release Notes Dialog",
             "status": "in-progress",
-            "progress": "0/20",
+            "progress": "20/20",
             "path": "SPEC-175-admin-whats-new",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
             "branch": "spec/SPEC-175-admin-whats-new",
