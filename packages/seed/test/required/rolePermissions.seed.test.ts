@@ -359,3 +359,32 @@ describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-173 T-023 — AI_SETTINGS_MANAGE is SUPER_ADMIN-only
+// ---------------------------------------------------------------------------
+
+describe('ROLE_PERMISSIONS — AI_SETTINGS_MANAGE is SUPER_ADMIN-only (SPEC-173 T-023)', () => {
+    type RoleKey = keyof typeof ROLE_PERMISSIONS;
+    const AI_SETTINGS_MANAGE = 'ai.settings.manage' as const;
+    const superAdminPerms = ROLE_PERMISSIONS[
+        SUPER_ADMIN as unknown as RoleKey
+    ] as readonly string[];
+
+    const nonSuperRoles: Array<readonly [string, readonly string[]]> = [
+        ['ADMIN', ROLE_PERMISSIONS[ADMIN as unknown as RoleKey] as readonly string[]],
+        ['EDITOR', ROLE_PERMISSIONS[EDITOR as unknown as RoleKey] as readonly string[]],
+        ['HOST', ROLE_PERMISSIONS['HOST' as unknown as RoleKey] as readonly string[]],
+        ['USER', ROLE_PERMISSIONS['USER' as unknown as RoleKey] as readonly string[]]
+    ];
+
+    it('grants AI_SETTINGS_MANAGE to SUPER_ADMIN', () => {
+        expect(superAdminPerms).toContain(AI_SETTINGS_MANAGE);
+    });
+
+    for (const [roleName, perms] of nonSuperRoles) {
+        it(`does NOT grant AI_SETTINGS_MANAGE to ${roleName}`, () => {
+            expect(perms).not.toContain(AI_SETTINGS_MANAGE);
+        });
+    }
+});

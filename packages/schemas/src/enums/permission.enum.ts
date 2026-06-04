@@ -825,5 +825,6 @@ export enum PermissionEnum {
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
     BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
     SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
-    USER_UPDATE_SELF = 'user.update.self' // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
+    USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
+    AI_SETTINGS_MANAGE = 'ai.settings.manage' // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
 }
