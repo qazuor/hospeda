@@ -30,7 +30,9 @@ vi.mock('../../../../src/utils/logger', () => ({
     }
 }));
 
+import { ContactTypeEnumSchema } from '@repo/schemas';
 import { initApp } from '../../../../src/app.js';
+import { CONTACT_TYPE_LABELS } from '../../../../src/routes/contact/submit.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
 const URL = '/api/v1/public/contact';
@@ -145,6 +147,107 @@ describe('POST /api/v1/public/contact (T-033)', () => {
                         call[1] === 'Contact form submission received'
                 );
                 expect(receivedCall).toBeUndefined();
+            }
+        });
+    });
+
+    // ----------------------------------------------------------------------
+    // Contribution types (SPEC-191)
+    // ----------------------------------------------------------------------
+
+    describe('Contribution types (SPEC-191)', () => {
+        it('accepts a report_destination_info submission and audits it without PII beyond the email domain', async () => {
+            const res = await app.request(URL, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'vitest',
+                    accept: 'application/json'
+                },
+                body: JSON.stringify({
+                    ...VALID_BODY,
+                    type: 'report_destination_info',
+                    message: 'Reporte sobre el destino: colon. El mapa apunta a otra ciudad.'
+                })
+            });
+
+            expect([200, 429]).toContain(res.status);
+
+            if (res.status === 200) {
+                const body = (await res.json()) as { success?: boolean };
+                expect(body.success).toBe(true);
+
+                const receivedCall = loggerInfo.mock.calls.find(
+                    (call) =>
+                        typeof call[1] === 'string' &&
+                        call[1] === 'Contact form submission received'
+                );
+                expect(receivedCall).toBeDefined();
+
+                const logged = receivedCall?.[0] as Record<string, unknown>;
+                expect(logged.contactType).toBe('report_destination_info');
+                expect(logged.emailDomain).toBe('example.com');
+                // No full email and no name in the audit entry.
+                expect(JSON.stringify(logged)).not.toContain('ada@example.com');
+                expect(JSON.stringify(logged)).not.toContain('Ada');
+            }
+        });
+
+        it('accepts photo_submission and editor_application submissions', async () => {
+            for (const type of ['photo_submission', 'editor_application'] as const) {
+                const res = await app.request(URL, {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        'user-agent': 'vitest',
+                        accept: 'application/json'
+                    },
+                    body: JSON.stringify({ ...VALID_BODY, type })
+                });
+
+                expect([200, 429]).toContain(res.status);
+            }
+        });
+
+        it('still drops honeypot-flagged submissions with a contribution type (fake-success)', async () => {
+            const res = await app.request(URL, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'vitest',
+                    accept: 'application/json'
+                },
+                body: JSON.stringify({
+                    ...VALID_BODY,
+                    type: 'photo_submission',
+                    website: 'https://spam.example.com'
+                })
+            });
+
+            expect([200, 429]).toContain(res.status);
+
+            if (res.status === 200) {
+                const body = (await res.json()) as { success?: boolean };
+                expect(body.success).toBe(true);
+
+                const honeypotCall = loggerInfo.mock.calls.find(
+                    (call) => typeof call[1] === 'string' && call[1].includes('honeypot')
+                );
+                expect(honeypotCall).toBeDefined();
+            }
+        });
+
+        it('maps the three contribution types to Spanish triage labels', () => {
+            expect(CONTACT_TYPE_LABELS.report_destination_info).toBe(
+                'Reporte de información de destino'
+            );
+            expect(CONTACT_TYPE_LABELS.photo_submission).toBe('Aporte de fotos');
+            expect(CONTACT_TYPE_LABELS.editor_application).toBe('Postulación de editor');
+        });
+
+        it('has a label for every contact type in the enum (no slug fallback in the inbox)', () => {
+            for (const type of ContactTypeEnumSchema.options) {
+                expect(CONTACT_TYPE_LABELS[type], `missing label for "${type}"`).toBeTruthy();
             }
         });
     });
