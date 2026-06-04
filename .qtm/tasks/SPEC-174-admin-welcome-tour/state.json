@@ -338,7 +338,7 @@
             "id": "T-016",
             "title": "Author the 15 contextual mini-tours content (es/en/pt)",
             "description": "Complete tours.ts with the 15 contextual tours per spec §9 table (host: misAlojamientos/consultas/miFacturacion/miCuenta; editor: editorial/analisis/miCuenta; admin: catalogo/editorial/comunidad/comercial/plataforma/analisis; superAdmin: plataforma/analisis variants — D14). Confirm every route against sections.ts; add per-section data-tour anchors where a mini-tour needs them (extend T-012 registry accordingly). Friendly, non-technical es content (en/pt translations); steps follow D7 (inline I18nLabel). Config boot validation green; cross-check tests still pass.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-012"],
             "blocks": ["T-018"],
@@ -346,14 +346,14 @@
             "tags": ["admin", "content", "i18n", "phase-content"],
             "phase": "content",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T18:42:52.000Z",
-                "completed": null
+                "completed": "2026-06-04T18:58:17.000Z"
             }
         },
         {
@@ -382,7 +382,7 @@
             "id": "T-018",
             "title": "Admin integration tests: full tour flows (cross-surface)",
             "description": "Testing Library integration per spec §14: welcome auto-fires once on dashboard when unseen (driver.js mocked); D13 redirect from non-dashboard route; suppressed WhatsNewAutoTrigger while welcome unseen, releases after finish/skip (D12 end-to-end in component tree); contextual fires on first section visit; version bump re-offers; manual replay ignores version; markSeen wiring. SWEEP RULE (SPEC-175 lesson): before finishing, rg -l every touched component/config symbol over apps/admin/test and src __tests__ dirs and run ALL matching pre-existing suites, not just new files.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-013", "T-014", "T-015", "T-016"],
             "blocks": [],
@@ -396,16 +396,16 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T18:58:17.000Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 18,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 1,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.4
     }
