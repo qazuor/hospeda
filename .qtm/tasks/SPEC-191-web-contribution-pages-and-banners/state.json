@@ -261,39 +261,39 @@
             "id": "T-008",
             "title": "Create /colaborar/fotos page (license terms + delivery mechanics + preset photo_submission)",
             "description": "Create apps/web/src/pages/[lang]/colaborar/fotos/index.astro (FR-4): SSG; call-for-photos copy; clearly-labelled usage/license terms section (i18n keys with placeholder copy — final wording is a content dependency gated on owner/legal sign-off, D-9); delivery-mechanics copy (describe the destination, paste Drive/Dropbox links in the message, or the team replies by email to coordinate); a line above the submit button 'by submitting you accept the photo usage terms' anchor-linked to the terms section on the same page (NO consent checkbox); ContributionForm preset photo_submission. Tests (source assertions): prerender + locales; terms section present and labelled; anchor line above submit; form preset photo_submission.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-011", "T-012", "T-014"],
             "subtasks": [
                 {
                     "title": "Fotos page SSG with call copy + ContributionForm (photo_submission)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "License/usage terms section (placeholder copy, anchor id)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delivery-mechanics copy + 'you accept the terms' line above submit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages", "forms", "legal"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:40:00.000Z",
+                "completed": "2026-06-04T18:55:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.1
     }
