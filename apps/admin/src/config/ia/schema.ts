@@ -24,135 +24,22 @@
 import { z } from 'zod';
 
 // ============================================================================
-// CORE PRIMITIVES
+// CORE PRIMITIVES (re-exported from primitives.ts for backward compatibility)
+//
+// These four primitives have been extracted to `primitives.ts` so that
+// `tour.schema.ts` (SPEC-174) can import them without creating an ESM cycle
+// with this file. All existing imports of these types from `@/config/ia/schema`
+// continue to work unchanged — the names are imported here for use in the
+// schemas below, then re-exported so all consumers see them through this module.
 // ============================================================================
-
-/**
- * Tri-locale label required on every user-facing navigation string.
- *
- * All three locales (es, en, pt) must be supplied and non-empty. This prevents
- * the "we forgot to translate to pt" regression that the Phase-1 i18n audit
- * surfaced (SPEC-154 §11.3 — documented SSOT exception for admin IA labels).
- *
- * @example
- * ```ts
- * const label: I18nLabel = { es: 'Inicio', en: 'Home', pt: 'Início' };
- * ```
- */
-export const I18nLabelSchema = z.object({
-    es: z.string().min(1),
-    en: z.string().min(1),
-    pt: z.string().min(1)
-});
-
-/**
- * Inferred TypeScript type for {@link I18nLabelSchema}.
- *
- * @example
- * ```ts
- * const label: I18nLabel = { es: 'Catálogo', en: 'Catalog', pt: 'Catálogo' };
- * ```
- */
-export type I18nLabel = z.infer<typeof I18nLabelSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * A single permission expression — one of three forms:
- *
- * - **Exact**: an uppercase `PermissionEnum` value like `ACCOMMODATION_VIEW_ALL`.
- *   Pattern: `[A-Z][A-Z0-9_]+` with no trailing `*`.
- * - **Prefix wildcard**: a namespace prefix followed by `_*`, like `ACCOMMODATION_*`.
- *   At runtime `expandPermissions()` resolves this to all matching `PermissionEnum` values.
- * - **Universal wildcard**: the single character `*`.
- *   Resolved by `expandPermissions()` to all known `PermissionEnum` values.
- *
- * **Rejected examples**:
- * - `foo` — lowercase is always invalid.
- * - `FOO*` — wildcard must use underscore separator (`FOO_*`).
- * - `` (empty) — the regex requires at least one character.
- *
- * @example
- * ```ts
- * const expr: PermissionExpression = 'ACCOMMODATION_VIEW_ALL'; // exact
- * const wild: PermissionExpression = 'ACCOMMODATION_*';         // prefix wildcard
- * const all:  PermissionExpression = '*';                       // universal wildcard
- * ```
- */
-export const PermissionExpressionSchema = z
-    .string()
-    .regex(
-        /^(\*|[A-Z][A-Z0-9_]+(_\*)?|[A-Z][A-Z0-9_]+)$/,
-        'Permission must be an exact PermissionEnum value, a prefix wildcard (FOO_*), or "*"'
-    );
-
-/**
- * Inferred TypeScript type for {@link PermissionExpressionSchema}.
- *
- * @example
- * ```ts
- * const p: PermissionExpression = 'BILLING_*';
- * ```
- */
-export type PermissionExpression = z.infer<typeof PermissionExpressionSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * An OR-logic permission gate: the user passes if they hold **at least one**
- * of the listed permission expressions.
- *
- * Rules:
- * - Must contain at least one entry (empty gates are a config error).
- * - Each entry must be a valid {@link PermissionExpression}.
- * - Wildcard expressions are expanded at runtime via `expandPermissions()`.
- *
- * @example
- * ```ts
- * // User sees the item if they have either permission:
- * const gate: PermissionGate = ['CONVERSATION_VIEW_OWN', 'CONVERSATION_VIEW_ALL'];
- * ```
- */
-export const PermissionGateSchema = z.array(PermissionExpressionSchema).min(1);
-
-/**
- * Inferred TypeScript type for {@link PermissionGateSchema}.
- *
- * @example
- * ```ts
- * const gate: PermissionGate = ['ACCOMMODATION_VIEW_OWN'];
- * ```
- */
-export type PermissionGate = z.infer<typeof PermissionGateSchema>;
-
-// ----------------------------------------------------------------------------
-
-/**
- * Behavior when the current user lacks the permissions required to access a
- * navigation item (per SPEC-154 §8 cherry-pick rule).
- *
- * - `'disable'` — item renders greyed-out with a tooltip "Requiere permiso X".
- *   Default when the field is omitted on sidebar items.
- * - `'hide'`    — item is omitted from the DOM entirely (structurally inaccessible
- *   items like "Configuración crítica" for non-SUPER_ADMIN roles).
- *
- * @example
- * ```ts
- * const behavior: OnMissing = 'hide';   // item won't appear for unauthorized users
- * const fallback: OnMissing = 'disable'; // item appears but is non-interactive
- * ```
- */
-export const OnMissingSchema = z.enum(['disable', 'hide']);
-
-/**
- * Inferred TypeScript type for {@link OnMissingSchema}.
- *
- * @example
- * ```ts
- * const b: OnMissing = 'disable';
- * ```
- */
-export type OnMissing = z.infer<typeof OnMissingSchema>;
+import {
+    I18nLabelSchema,
+    OnMissingSchema,
+    PermissionExpressionSchema,
+    PermissionGateSchema
+} from './primitives';
+export type { I18nLabel, OnMissing, PermissionExpression, PermissionGate } from './primitives';
+export { I18nLabelSchema, OnMissingSchema, PermissionExpressionSchema, PermissionGateSchema };
 
 // ============================================================================
 // SECTIONS (T-002)
