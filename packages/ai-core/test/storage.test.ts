@@ -382,7 +382,7 @@ describe('insertAiUsage', () => {
         model: 'gpt-4o-mini',
         tokensIn: 250,
         tokensOut: 180,
-        costEstimateCentavos: 3,
+        costEstimateMicroUsd: 146,
         latencyMs: 820,
         status: 'success',
         createdAt: new Date()
@@ -401,14 +401,14 @@ describe('insertAiUsage', () => {
                 model: 'gpt-4o-mini',
                 tokensIn: 250,
                 tokensOut: 180,
-                costEstimateCentavos: 3,
+                costEstimateMicroUsd: 146,
                 latencyMs: 820,
                 status: 'success'
             });
 
             // Assert
             expect(result.id).toBe(USAGE_ROW.id);
-            expect(result.costEstimateCentavos).toBe(3);
+            expect(result.costEstimateMicroUsd).toBe(146);
             expect(result.status).toBe('success');
         });
 
@@ -425,7 +425,7 @@ describe('insertAiUsage', () => {
                 model: 'gpt-4o-mini',
                 tokensIn: 10,
                 tokensOut: 10,
-                costEstimateCentavos: 0,
+                costEstimateMicroUsd: 0,
                 latencyMs: 100,
                 status: 'success'
             });
@@ -434,9 +434,9 @@ describe('insertAiUsage', () => {
             expect(result.userId).toBeNull();
         });
 
-        it('should accept integer centavos (money convention)', async () => {
+        it('should accept integer micro-USD (money convention)', async () => {
             // Arrange
-            const row = { ...USAGE_ROW, costEstimateCentavos: 100 };
+            const row = { ...USAGE_ROW, costEstimateMicroUsd: 450_000 };
             mockGetDb.mockReturnValue({ insert: buildInsertChain([row]) });
 
             // Act
@@ -447,13 +447,13 @@ describe('insertAiUsage', () => {
                 model: 'claude-3-5-sonnet-20241022',
                 tokensIn: 500,
                 tokensOut: 300,
-                costEstimateCentavos: 100,
+                costEstimateMicroUsd: 450_000,
                 latencyMs: 1200,
                 status: 'success'
             });
 
             // Assert
-            expect(result.costEstimateCentavos).toBe(100);
+            expect(result.costEstimateMicroUsd).toBe(450_000);
         });
     });
 
@@ -471,7 +471,7 @@ describe('insertAiUsage', () => {
                     model: 'gpt-4o-mini',
                     tokensIn: 1,
                     tokensOut: 1,
-                    costEstimateCentavos: 0,
+                    costEstimateMicroUsd: 0,
                     latencyMs: 50,
                     status: 'error'
                 })
@@ -492,7 +492,7 @@ describe('insertAiUsage', () => {
                 model: 'gpt-4o-mini',
                 tokensIn: 250,
                 tokensOut: 180,
-                costEstimateCentavos: 3,
+                costEstimateMicroUsd: 146,
                 latencyMs: 820,
                 status: 'success',
                 tx: fakeTx as never

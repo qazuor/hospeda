@@ -126,19 +126,59 @@ export type AiFeaturesMap = z.infer<typeof AiFeaturesMapSchema>;
 // Cost ceilings (§5.8)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Per-model rate (decision A: hybrid in-code + optional DB override)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-model pricing expressed as integer µUSD per 1,000,000 tokens.
+ *
+ * Public provider pricing is conventionally quoted per 1M tokens, so this
+ * unit eliminates conversion loss and keeps all values as safe integers.
+ *
+ * **Unit**: micro-USD (µUSD) — integer millionths of a US dollar.
+ *   1 USD = 1,000,000 µUSD. NEVER store a float here.
+ *
+ * @example
+ * // gpt-4o-mini at $0.15 input / $0.60 output per 1M tokens:
+ * { inputMicroUsdPerMillionTokens: 150_000, outputMicroUsdPerMillionTokens: 600_000 }
+ */
+export const AiModelRateSchema = z
+    .object({
+        /**
+         * Cost of 1,000,000 input (prompt) tokens in integer µUSD.
+         * Example: 150_000 = $0.15 per 1M tokens.
+         */
+        inputMicroUsdPerMillionTokens: z.number().int().min(0),
+        /**
+         * Cost of 1,000,000 output (completion) tokens in integer µUSD.
+         * Example: 600_000 = $0.60 per 1M tokens.
+         */
+        outputMicroUsdPerMillionTokens: z.number().int().min(0)
+    })
+    .strict();
+
+/** TypeScript type for a per-model cost rate. */
+export type AiModelRate = z.infer<typeof AiModelRateSchema>;
+
+// ---------------------------------------------------------------------------
+// Cost ceilings (§5.8)
+// ---------------------------------------------------------------------------
+
 /**
  * Admin-set monthly cost ceilings (§5.8).
  *
- * All monetary values are **integer centavos** (project money convention —
- * never float). The engine compares accumulated spend (also in centavos) from
- * `ai_usage` against these ceilings.
+ * All monetary values are **integer micro-USD** (µUSD — millionths of a US
+ * dollar; 1 USD = 1,000,000 µUSD; NEVER float). USD native — no FX conversion.
+ * The engine compares accumulated spend (also in µUSD) from `ai_usage` against
+ * these ceilings.
  *
- * Both fields are optional: omitting `globalMonthlyCentavos` means no global
- * ceiling; omitting a feature key inside `perFeatureMonthlyCentavos` means no
+ * Both fields are optional: omitting `globalMonthlyMicroUsd` means no global
+ * ceiling; omitting a feature key inside `perFeatureMonthlyMicroUsd` means no
  * ceiling for that feature. A ceiling of `0` would hard-stop immediately (valid
  * but probably unintentional — the admin UI should warn).
  *
- * **Decision (owner-approved 2026-06-04)**: `perFeatureMonthlyCentavos` uses
+ * **Decision (owner-approved 2026-06-04)**: `perFeatureMonthlyMicroUsd` uses
  * `z.partialRecord(AiFeatureSchema, ...)` so the map is partial — only features
  * with a configured ceiling need to be present. A feature without a key has no
  * per-feature ceiling (the global ceiling, if set, still applies).
@@ -146,18 +186,22 @@ export type AiFeaturesMap = z.infer<typeof AiFeaturesMapSchema>;
 export const AiCostCeilingsSchema = z
     .object({
         /**
-         * Global monthly spend ceiling in integer centavos.
+         * Global monthly spend ceiling in integer µUSD (micro-USD).
          * When cumulative spend across ALL features and providers crosses this
          * value, ALL AI calls are hard-stopped until the ceiling resets or is
          * raised (§AC-8).
+         *
+         * Example: 5_000_000_000 = $5,000 / month.
          */
-        globalMonthlyCentavos: z.number().int().min(0).optional(),
+        globalMonthlyMicroUsd: z.number().int().min(0).optional(),
         /**
-         * Per-feature monthly spend ceiling in integer centavos.
+         * Per-feature monthly spend ceiling in integer µUSD (micro-USD).
          * Keyed by `AiFeature`; only features that need a ceiling must be present
          * (uses `z.partialRecord` — Zod 4 — so missing features are allowed).
+         *
+         * Example: { chat: 1_000_000_000 } = $1,000 / month for the chat feature.
          */
-        perFeatureMonthlyCentavos: z
+        perFeatureMonthlyMicroUsd: z
             .partialRecord(AiFeatureSchema, z.number().int().min(0))
             .optional()
     })
@@ -197,11 +241,26 @@ export const AiSettingsValueSchema = z
          */
         features: AiFeaturesMapSchema,
         /**
-         * Optional monthly cost ceilings (global + per-feature) in centavos.
+         * Optional monthly cost ceilings (global + per-feature) in µUSD.
          * Absence means no ceilings are enforced. Hard-stop behavior on breach
          * is implemented in the engine's cost-ceiling checker (§5.8).
          */
-        costCeilings: AiCostCeilingsSchema.optional()
+        costCeilings: AiCostCeilingsSchema.optional(),
+        /**
+         * HYBRID per-model cost rate overrides.
+         *
+         * `@repo/ai-core` ships in-code default `MODEL_RATES` for all supported
+         * models. Entries here override or extend those defaults per model id
+         * (e.g. `'gpt-4o-mini'`) without requiring a redeploy (decision A,
+         * owner-approved 2026-06-04).
+         *
+         * The in-code defaults are the mandatory fallback — a missing key here
+         * does NOT brick metering; the engine falls back to `MODEL_RATES`.
+         *
+         * Keys are model identifier strings (e.g. `'gpt-4o-mini'`, `'claude-3-5-sonnet-20241022'`).
+         * Values are {@link AiModelRateSchema} objects (µUSD per 1M tokens).
+         */
+        modelRates: z.record(z.string(), AiModelRateSchema).optional()
     })
     .strict();
 

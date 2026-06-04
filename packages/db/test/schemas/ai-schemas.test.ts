@@ -246,15 +246,15 @@ describe('ai_usage schema', () => {
         expect(sqlNames).toContain('model');
         expect(sqlNames).toContain('tokens_in');
         expect(sqlNames).toContain('tokens_out');
-        expect(sqlNames).toContain('cost_estimate_centavos');
+        expect(sqlNames).toContain('cost_estimate_micro_usd');
         expect(sqlNames).toContain('latency_ms');
         expect(sqlNames).toContain('status');
         expect(sqlNames).toContain('created_at');
     });
 
-    it('cost_estimate_centavos must be integer type (never float/numeric)', () => {
+    it('cost_estimate_micro_usd must be integer type (never float/numeric)', () => {
         // Arrange + Act
-        const costCol = col(aiUsage, 'cost_estimate_centavos');
+        const costCol = col(aiUsage, 'cost_estimate_micro_usd');
         // Assert — PgInteger (never PgNumeric / PgDoublePrecision / PgReal)
         expect(costCol?.columnType).toBe('PgInteger');
     });

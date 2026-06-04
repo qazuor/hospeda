@@ -2421,8 +2421,8 @@
                     "primaryKey": false,
                     "notNull": true
                 },
-                "cost_estimate_centavos": {
-                    "name": "cost_estimate_centavos",
+                "cost_estimate_micro_usd": {
+                    "name": "cost_estimate_micro_usd",
                     "type": "integer",
                     "primaryKey": false,
                     "notNull": true

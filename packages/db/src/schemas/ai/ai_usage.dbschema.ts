@@ -11,8 +11,9 @@ import { users } from '../user/user.dbschema.ts';
  * Every call is recorded regardless of tier — this is the authoritative source
  * for per-user / per-feature / per-month reporting.
  *
- * **Money convention**: `costEstimateCentavos` is stored as an integer number
- * of centavos (project-wide money convention — never float/numeric).
+ * **Money convention**: `costEstimateMicroUsd` is stored as an integer number
+ * of micro-USD (millionths of a US dollar; 1 USD = 1,000,000 µUSD). USD native,
+ * no FX conversion — never float/numeric.
  *
  * The `feature` and `provider` columns store AI identifiers as varchar,
  * matching `AiFeature` and `AiProviderId` from `@repo/schemas`. See the
@@ -70,11 +71,12 @@ export const aiUsage = pgTable(
         tokensOut: integer('tokens_out').notNull(),
 
         /**
-         * Estimated cost of this call in integer centavos.
+         * Estimated cost of this call in integer micro-USD
+         * (millionths of a US dollar; 1 USD = 1,000,000 µUSD).
          * Computed by the cost calculator from token counts × provider rates.
-         * Project money convention: NEVER float or numeric.
+         * USD native, no FX conversion. NEVER float or numeric.
          */
-        costEstimateCentavos: integer('cost_estimate_centavos').notNull(),
+        costEstimateMicroUsd: integer('cost_estimate_micro_usd').notNull(),
 
         /** End-to-end latency of the AI call in milliseconds. */
         latencyMs: integer('latency_ms').notNull(),

@@ -33,3 +33,7 @@ export {
     type InsertAiUsageInput,
     type InsertAiRequestLogInput
 } from './usage.storage.js';
+
+// Re-export DB result types so usage/ sub-module can type its return value
+// without importing @repo/db directly (AC-4 isolation rule).
+export type { SelectAiUsage } from '@repo/db';

@@ -2,7 +2,8 @@
  * AI usage + request-log storage helpers (SPEC-173 T-010).
  *
  * Both tables are APPEND-ONLY — rows are never updated or soft-deleted.
- * Cost values MUST be integer centavos (project money convention; never float).
+ * Cost values MUST be integer micro-USD (µUSD — millionths of a US dollar;
+ * 1 USD = 1,000,000 µUSD). USD native, no FX conversion. NEVER float.
  *
  * PII policy (§5.10): the CALLER is responsible for redacting emails, phone
  * numbers, payment card numbers, and any other PII from `requestMetadata`
@@ -48,10 +49,10 @@ export interface InsertAiUsageInput {
     /** Number of output (completion) tokens generated. */
     readonly tokensOut: number;
     /**
-     * Estimated call cost in **integer centavos** (project money convention).
-     * NEVER pass a float here.
+     * Estimated call cost in **integer micro-USD** (µUSD — millionths of a US dollar;
+     * 1 USD = 1,000,000 µUSD). USD native, no FX conversion. NEVER pass a float here.
      */
-    readonly costEstimateCentavos: number;
+    readonly costEstimateMicroUsd: number;
     /** End-to-end latency of the AI call in milliseconds. */
     readonly latencyMs: number;
     /** Call outcome: `success | error | fallback | quota_exceeded | ceiling_hit | kill_switch`. */
@@ -78,7 +79,7 @@ export interface InsertAiUsageInput {
  *   model: 'gpt-4o-mini',
  *   tokensIn: 250,
  *   tokensOut: 180,
- *   costEstimateCentavos: 3,
+ *   costEstimateMicroUsd: 146,
  *   latencyMs: 820,
  *   status: 'success',
  * });
@@ -95,7 +96,7 @@ export async function insertAiUsage(input: InsertAiUsageInput): Promise<SelectAi
         model: rest.model,
         tokensIn: rest.tokensIn,
         tokensOut: rest.tokensOut,
-        costEstimateCentavos: rest.costEstimateCentavos,
+        costEstimateMicroUsd: rest.costEstimateMicroUsd,
         latencyMs: rest.latencyMs,
         status: rest.status
     };

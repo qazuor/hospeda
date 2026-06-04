@@ -84,7 +84,7 @@ CREATE TABLE "ai_usage" (
 	"model" varchar(100) NOT NULL,
 	"tokens_in" integer NOT NULL,
 	"tokens_out" integer NOT NULL,
-	"cost_estimate_centavos" integer NOT NULL,
+	"cost_estimate_micro_usd" integer NOT NULL,
 	"latency_ms" integer NOT NULL,
 	"status" varchar(30) NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL

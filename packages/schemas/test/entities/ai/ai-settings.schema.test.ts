@@ -5,8 +5,10 @@
  *   - AiProviderConfigSchema: valid, missing enabled, unknown key rejected (.strict).
  *   - AiFeatureConfigSchema: valid, missing required fields, unknown key rejected.
  *   - AiCostCeilingsSchema: valid full/partial/empty; negative values rejected.
+ *   - AiModelRateSchema: valid rate; negative rate rejected.
  *   - AiSettingsValueSchema (full blob): valid minimal; valid with ceilings;
- *     unknown top-level key rejected; bad provider config; bad feature config.
+ *     valid with modelRates; unknown top-level key rejected; bad provider config;
+ *     bad feature config.
  *   - AiSettingsResponseSchema: valid envelope; bad updatedBy UUID.
  *
  * @module test/entities/ai/ai-settings.schema.test
@@ -16,6 +18,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AiCostCeilingsSchema,
     AiFeatureConfigSchema,
+    AiModelRateSchema,
     AiProviderConfigSchema,
     AiSettingsResponseSchema,
     AiSettingsValueSchema
@@ -177,50 +180,127 @@ describe('AiCostCeilingsSchema', () => {
     });
 
     it('accepts a global ceiling only', () => {
-        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyCentavos: 20000 });
+        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyMicroUsd: 5_000_000_000 });
         expect(result.success).toBe(true);
     });
 
     it('accepts per-feature ceilings only', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            perFeatureMonthlyCentavos: { chat: 5000, text_improve: 2000 }
+            perFeatureMonthlyMicroUsd: { chat: 1_000_000_000, text_improve: 500_000_000 }
         });
         expect(result.success).toBe(true);
     });
 
     it('accepts a ceiling of 0 (intentional hard-stop)', () => {
-        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyCentavos: 0 });
+        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyMicroUsd: 0 });
         expect(result.success).toBe(true);
     });
 
-    it('rejects negative globalMonthlyCentavos', () => {
-        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyCentavos: -1 });
+    it('rejects negative globalMonthlyMicroUsd', () => {
+        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyMicroUsd: -1 });
         expect(result.success).toBe(false);
     });
 
-    it('rejects non-integer globalMonthlyCentavos', () => {
-        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyCentavos: 100.5 });
+    it('rejects non-integer globalMonthlyMicroUsd', () => {
+        const result = AiCostCeilingsSchema.safeParse({ globalMonthlyMicroUsd: 100.5 });
         expect(result.success).toBe(false);
     });
 
     it('rejects negative per-feature ceiling', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            perFeatureMonthlyCentavos: { chat: -500 }
+            perFeatureMonthlyMicroUsd: { chat: -500 }
         });
         expect(result.success).toBe(false);
     });
 
-    it('rejects an unknown feature key in perFeatureMonthlyCentavos', () => {
+    it('rejects an unknown feature key in perFeatureMonthlyMicroUsd', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            perFeatureMonthlyCentavos: { translate: 1000 }
+            perFeatureMonthlyMicroUsd: { translate: 1000 }
         });
         expect(result.success).toBe(false);
     });
 
     it('rejects unknown top-level keys (.strict enforcement)', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            globalMonthlyCentavos: 1000,
-            perProviderMonthlyCentavos: {}
+            globalMonthlyMicroUsd: 1000,
+            perProviderMonthlyMicroUsd: {}
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AiModelRateSchema
+// ---------------------------------------------------------------------------
+
+describe('AiModelRateSchema', () => {
+    it('accepts a valid rate with both fields as non-negative integers', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000,
+            outputMicroUsdPerMillionTokens: 600_000
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts zero rates (free model)', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 0,
+            outputMicroUsdPerMillionTokens: 0
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a negative inputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: -1,
+            outputMicroUsdPerMillionTokens: 600_000
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a negative outputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000,
+            outputMicroUsdPerMillionTokens: -1
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a float inputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000.5,
+            outputMicroUsdPerMillionTokens: 600_000
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a float outputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000,
+            outputMicroUsdPerMillionTokens: 600_000.9
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects unknown extra keys (.strict enforcement)', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000,
+            outputMicroUsdPerMillionTokens: 600_000,
+            cacheReadMicroUsdPerMillionTokens: 75_000
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects missing inputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            outputMicroUsdPerMillionTokens: 600_000
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects missing outputMicroUsdPerMillionTokens', () => {
+        const result = AiModelRateSchema.safeParse({
+            inputMicroUsdPerMillionTokens: 150_000
         });
         expect(result.success).toBe(false);
     });
@@ -240,8 +320,8 @@ describe('AiSettingsValueSchema', () => {
         const result = AiSettingsValueSchema.safeParse({
             ...minimalSettingsValue,
             costCeilings: {
-                globalMonthlyCentavos: 20000,
-                perFeatureMonthlyCentavos: { chat: 5000 }
+                globalMonthlyMicroUsd: 5_000_000_000,
+                perFeatureMonthlyMicroUsd: { chat: 1_000_000_000 }
             }
         });
         expect(result.success).toBe(true);
@@ -253,6 +333,37 @@ describe('AiSettingsValueSchema', () => {
             costCeilings: {}
         });
         expect(result.success).toBe(true);
+    });
+
+    it('accepts a valid blob with modelRates override map', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            modelRates: {
+                'gpt-4o-mini': {
+                    inputMicroUsdPerMillionTokens: 150_000,
+                    outputMicroUsdPerMillionTokens: 600_000
+                }
+            }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts blob without modelRates (optional field)', () => {
+        const result = AiSettingsValueSchema.safeParse(minimalSettingsValue);
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects modelRates with an invalid rate (negative input rate)', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            modelRates: {
+                'gpt-4o-mini': {
+                    inputMicroUsdPerMillionTokens: -1,
+                    outputMicroUsdPerMillionTokens: 600_000
+                }
+            }
+        });
+        expect(result.success).toBe(false);
     });
 
     it('rejects an unknown top-level key (.strict enforcement)', () => {
@@ -312,7 +423,7 @@ describe('AiSettingsValueSchema', () => {
     it('rejects negative cost ceiling inside the blob', () => {
         const result = AiSettingsValueSchema.safeParse({
             ...minimalSettingsValue,
-            costCeilings: { globalMonthlyCentavos: -100 }
+            costCeilings: { globalMonthlyMicroUsd: -100 }
         });
         expect(result.success).toBe(false);
     });
