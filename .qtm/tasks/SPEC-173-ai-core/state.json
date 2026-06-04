@@ -47,31 +47,31 @@
             "id": "T-002",
             "title": "Add Vercel AI SDK dependencies to @repo/ai-core",
             "description": "Add ai, @ai-sdk/openai, @ai-sdk/anthropic as dependencies of packages/ai-core (per §5.2, MIT, runs on VPS, no Vercel account). Pin versions. Do NOT add to apps directly. Verify: pnpm install clean, package builds. No new code logic. Tests: none (dependency-only setup task).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
                 {
                     "title": "Add ai + @ai-sdk/openai + @ai-sdk/anthropic deps",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pin versions and run pnpm install",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["setup", "dependencies", "ai-core"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T05:14:00.000Z",
+                "completed": "2026-06-04T05:16:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 41,
+        "pending": 40,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.5
     }
