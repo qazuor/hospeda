@@ -10,7 +10,16 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
+import {
+    and,
+    billingAddonPurchases,
+    billingPayments,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNull,
+    sql
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonCatalogService } from '@repo/service-core';
@@ -18,6 +27,7 @@ import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
+import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
@@ -487,6 +497,151 @@ async function confirmPlanUpgrade(input: {
     return { confirmed: true };
 }
 
+// ─── Webhook refund lifecycle helpers (SPEC-194 T-008) ───────────────────────
+
+/**
+ * Resolved local payment record fields needed by {@link applyRefundLifecycle}.
+ */
+interface LocalPaymentRecord {
+    readonly id: string;
+    readonly customerId: string;
+    readonly subscriptionId: string | null;
+    readonly amount: number;
+}
+
+/**
+ * Apply the refund lifecycle policy for a webhook-sourced MP payment refund.
+ *
+ * Flow:
+ *  1. Resolve the local `billing_payments` row via a JSONB lookup on
+ *     `providerPaymentIds->>'mercadopago'`. A single `getDb()` scope is used
+ *     for both this select and the optional addon-purchase check so tests can
+ *     drive each select's result via the standard per-`getDb()` counter.
+ *     If no row found → log warn + skip (refund for unknown/unrecorded payment).
+ *  2. If `payment.subscriptionId` is null AND the addon-purchase check finds a
+ *     matching `billing_addon_purchases.paymentId` → log structured warn + skip.
+ *     (Addon refund revocation is deferred to TODO(SPEC-194 T-012/T-019).)
+ *     If no addon purchase found → fall through to `applyRefundLifecycle` (its
+ *     own no-subscription guard will log and return gracefully).
+ *  3. Call `applyRefundLifecycle({ payment, refundAmount: undefined,
+ *     adminUserId: 'webhook' })`. `refundAmount = undefined` is intentional:
+ *     MP `payment.updated` events do not reliably carry a
+ *     `transaction_amount_refunded` field, and Checkout Pro refunds via the
+ *     MP admin are typically full refunds. `applyRefundLifecycle` treats
+ *     `undefined` as a full refund.
+ *     TODO(SPEC-194 T-019): parse `transaction_amount_refunded` from the MP
+ *     payload and pass it as `refundAmount` once the partial-refund audit path
+ *     is implemented.
+ *
+ * The entire function is fail-safe: step failures are caught and logged so a
+ * transient DB error does not propagate as a webhook 500 — MP would then retry
+ * the event indefinitely.
+ *
+ * @param mpPaymentId - The MP payment ID extracted from `data.id`.
+ * @param source      - Caller label for log messages (webhook | polling).
+ */
+async function applyWebhookRefundLifecycle({
+    mpPaymentId,
+    source
+}: {
+    readonly mpPaymentId: string;
+    readonly source: string;
+}): Promise<void> {
+    const db = getDb();
+
+    // Step 1: resolve the local payment record (select index 0 in this db scope).
+    let payment: LocalPaymentRecord | null;
+    try {
+        const rows = await db
+            .select({
+                id: billingPayments.id,
+                customerId: billingPayments.customerId,
+                subscriptionId: billingPayments.subscriptionId,
+                amount: billingPayments.amount
+            })
+            .from(billingPayments)
+            .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${mpPaymentId}`)
+            .limit(1);
+        payment = rows[0] ?? null;
+    } catch (err) {
+        apiLogger.error(
+            { mpPaymentId, source, err },
+            'Webhook refund lifecycle: DB error resolving local payment — lifecycle skipped'
+        );
+        return;
+    }
+
+    if (!payment) {
+        apiLogger.warn(
+            { mpPaymentId, source },
+            'Webhook refund lifecycle: local payment not found for MP payment id — lifecycle skipped'
+        );
+        return;
+    }
+
+    // Step 2: guard against cancelling a subscription because an addon payment
+    // was refunded (select index 1 in this db scope, only when subscriptionId
+    // is null).
+    if (payment.subscriptionId === null) {
+        let addonRefund = false;
+        try {
+            const addonRows = await db
+                .select({ id: billingAddonPurchases.id })
+                .from(billingAddonPurchases)
+                .where(eq(billingAddonPurchases.paymentId, mpPaymentId))
+                .limit(1);
+            addonRefund = addonRows.length > 0;
+        } catch (err) {
+            apiLogger.error(
+                { mpPaymentId, source, paymentId: payment.id, err },
+                'Webhook refund lifecycle: DB error checking addon purchase — treating as non-addon, continuing'
+            );
+        }
+
+        if (addonRefund) {
+            // TODO(SPEC-194 T-012/T-019): implement addon revocation on refund.
+            apiLogger.warn(
+                { mpPaymentId, source, paymentId: payment.id, customerId: payment.customerId },
+                'Webhook refund lifecycle: addon payment refunded — subscription cancellation skipped (T-019 follow-up)'
+            );
+            return;
+        }
+    }
+
+    // Step 3: apply the refund lifecycle (subscription cancellation, cache clear).
+    // refundAmount=undefined → treated as full refund (see function JSDoc above).
+    try {
+        await applyRefundLifecycle({
+            payment: {
+                id: payment.id,
+                customerId: payment.customerId,
+                subscriptionId: payment.subscriptionId,
+                amount: payment.amount,
+                // Fields required by QZPayPayment but not needed by applyRefundLifecycle's
+                // logic — set to safe defaults so the type is satisfied without a DB join.
+                invoiceId: null,
+                currency: 'ARS',
+                status: 'refunded',
+                paymentMethodId: null,
+                providerPaymentIds: { mercadopago: mpPaymentId },
+                failureCode: null,
+                failureMessage: null,
+                metadata: {},
+                livemode: true,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            },
+            refundAmount: undefined,
+            adminUserId: 'webhook'
+        });
+    } catch (err) {
+        apiLogger.error(
+            { mpPaymentId, source, paymentId: payment.id, customerId: payment.customerId, err },
+            'Webhook refund lifecycle: applyRefundLifecycle threw unexpectedly — lifecycle effects may be incomplete'
+        );
+    }
+}
+
 /**
  * Process a payment.updated event's business logic.
  *
@@ -540,6 +695,27 @@ export async function processPaymentUpdated({
                 failureReason,
                 billing
             );
+        }
+    }
+
+    // SPEC-194 T-008: webhook refund lifecycle.
+    //
+    // When MP reports a refunded payment, apply the Hospeda-side subscription
+    // cancellation policy. This block fires after the failure notification so
+    // the customer is always notified regardless of lifecycle outcome.
+    //
+    // Guard: only fires for `refunded` status (not `rejected` / `cancelled`).
+    // Control then falls through to the annual/plan-upgrade/addon dispatch —
+    // refunded events are mutually exclusive with those activation paths in
+    // practice, but `applyWebhookRefundLifecycle` is self-contained and safe
+    // to run even if other metadata is present (the activation guards below
+    // short-circuit on non-approved statuses anyway).
+    if (paymentInfo?.status === 'refunded') {
+        const mpPaymentId =
+            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+        if (mpPaymentId) {
+            await applyWebhookRefundLifecycle({ mpPaymentId, source });
         }
     }
 

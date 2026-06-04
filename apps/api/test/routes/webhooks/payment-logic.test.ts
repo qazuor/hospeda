@@ -36,7 +36,18 @@ vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
 // a live Postgres. Each test overrides the per-call rows via the queue
 // helpers below.
 const annualDbState: {
-    subRows: Array<{ id: string; customerId: string; status: string }>;
+    /**
+     * Rows for select index 0 within a `getDb()` scope. Used by:
+     *   - annual/plan-upgrade flows: `{ id, customerId, status }`
+     *   - webhook refund flow (T-008): `{ id, customerId, subscriptionId, amount }`
+     */
+    subRows: Array<{
+        id: string;
+        customerId: string;
+        status?: string;
+        subscriptionId?: string | null;
+        amount?: number;
+    }>;
     paymentDedupeRows: Array<{ id: string }>;
     updateCalls: Array<{ table: unknown; values: unknown; whereCond: unknown }>;
 } = {
@@ -93,12 +104,23 @@ vi.mock('@repo/db', () => {
             deletedAt: 'DELETED_AT'
         },
         // billingPayments columns are read by confirmAnnualSubscription
-        // (payment dedupe lookup) and confirmPlanUpgrade. The mocked select
-        // chain ignores the column object shape — these are just sentinels
-        // so the SQL template literal does not throw on property access.
+        // (payment dedupe lookup), confirmPlanUpgrade, and the webhook refund
+        // lifecycle (T-008 local payment lookup). The mocked select chain
+        // ignores the column object shape — these are just sentinels so the
+        // SQL template literal does not throw on property access.
         billingPayments: {
             id: 'PAYMENT_ID',
+            customerId: 'CUSTOMER_ID',
+            subscriptionId: 'SUBSCRIPTION_ID',
+            amount: 'AMOUNT',
             providerPaymentIds: 'PROVIDER_PAYMENT_IDS'
+        },
+        // billingAddonPurchases.paymentId is read by the webhook refund
+        // lifecycle (T-008) to detect addon payments and avoid cancelling
+        // a subscription on an addon refund.
+        billingAddonPurchases: {
+            id: 'ADDON_PURCHASE_ID',
+            paymentId: 'PAYMENT_ID_COL'
         },
         and: (...args: unknown[]) => ({ _and: args }),
         eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
@@ -128,6 +150,12 @@ vi.mock('../../../src/services/addon-plan-change.service', () => ({
 
 vi.mock('../../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
+}));
+
+// SPEC-194 T-008: mock applyRefundLifecycle so the webhook refund lifecycle
+// tests can verify call arguments without running the full service logic.
+vi.mock('../../../src/services/refund-lifecycle.service', () => ({
+    applyRefundLifecycle: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock('../../../src/services/addon.service', () => {
@@ -169,6 +197,7 @@ import {
     extractPlanChangeUpgradeMetadata
 } from '../../../src/routes/webhooks/mercadopago/utils';
 import { AddonService } from '../../../src/services/addon.service';
+import { applyRefundLifecycle } from '../../../src/services/refund-lifecycle.service';
 
 /** Helper to get the mocked confirmPurchase fn from the hoisted AddonService mock */
 function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
@@ -1093,6 +1122,273 @@ describe('processPaymentUpdated', () => {
             });
             expect(fallbackWarns).toHaveLength(0);
         });
+    });
+});
+
+// ─── SPEC-194 T-008: webhook refund lifecycle wiring ─────────────────────────
+//
+// When MP fires a `payment.updated` event with status `refunded`, the webhook
+// path MUST call `applyRefundLifecycle` so the linked subscription is
+// cancelled (or the call is a no-op when the payment has no subscription).
+//
+// Mock strategy:
+//   - `applyRefundLifecycle` is mocked at module level (see vi.mock near the
+//     top of the file, alongside the other service mocks).
+//   - The new DB selects inside `processPaymentUpdated` reuse the existing
+//     `annualDbState.subRows` (select index 0 within a `getDb()` scope =
+//     the local payment lookup) and `annualDbState.paymentDedupeRows` (select
+//     index 1 = the addon purchase check), which are reset in `beforeEach`.
+describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', () => {
+    const MP_PAYMENT_ID = 'mp-refund-pay-9001';
+    const LOCAL_PAYMENT_ID = 'local-pay-uuid-001';
+    const CUSTOMER_ID = 'cust-refund-99';
+    const SUBSCRIPTION_ID = 'sub-refund-abc';
+    const PAYMENT_AMOUNT_CENTAVOS = 150_000; // 1500 ARS in centavos
+
+    function refundedPaymentData(
+        overrides: Partial<Record<string, unknown>> = {}
+    ): Record<string, unknown> {
+        return {
+            id: MP_PAYMENT_ID,
+            metadata: { customerId: CUSTOMER_ID },
+            ...overrides
+        };
+    }
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        resetAnnualDbState();
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 1500,
+            currency: 'ARS',
+            status: 'refunded',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue(null);
+        vi.mocked(extractAddonFromReference).mockReturnValue(null);
+        vi.mocked(extractAnnualSubscriptionMetadata).mockReturnValue(null);
+        vi.mocked(extractPlanChangeUpgradeMetadata).mockReturnValue(null);
+        getMockConfirmPurchase().mockResolvedValue({ success: true });
+        vi.mocked(applyRefundLifecycle).mockResolvedValue(undefined);
+    });
+
+    it('calls applyRefundLifecycle with the resolved payment when status=refunded', async () => {
+        // Arrange: first select (index 0) returns the local payment row;
+        // second select (index 1) returns no addon purchase row.
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = []; // no addon purchase
+
+        const result = await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).toHaveBeenCalledOnce();
+        expect(applyRefundLifecycle).toHaveBeenCalledWith({
+            payment: expect.objectContaining({
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }),
+            refundAmount: undefined,
+            adminUserId: 'webhook'
+        });
+    });
+
+    it('skips applyRefundLifecycle when no local payment row is found for the MP payment id', async () => {
+        // Arrange: payment lookup returns nothing
+        annualDbState.subRows = [];
+        annualDbState.paymentDedupeRows = [];
+
+        const { apiLogger } = await import('../../../src/utils/logger');
+
+        const result = await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+        expect(apiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ mpPaymentId: MP_PAYMENT_ID }),
+            expect.stringContaining('local payment not found')
+        );
+    });
+
+    it('skips refund lifecycle when data.id is missing (no MP payment id)', async () => {
+        // data.id absent: cannot resolve the local payment
+        annualDbState.subRows = [];
+        annualDbState.paymentDedupeRows = [];
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { customerId: CUSTOMER_ID } }, // no id
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('guards addon payment: warns and does NOT call applyRefundLifecycle', async () => {
+        // Arrange: payment has no subscriptionId (addon payment),
+        // and the addon purchase check finds a matching row.
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: null,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [{ id: 'addon-purchase-uuid' }]; // addon purchase found
+
+        const { apiLogger } = await import('../../../src/utils/logger');
+
+        const result = await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+        expect(apiLogger.warn).toHaveBeenCalledWith(
+            expect.objectContaining({ mpPaymentId: MP_PAYMENT_ID }),
+            expect.stringContaining('addon payment')
+        );
+    });
+
+    it('still calls applyRefundLifecycle when payment has no subscriptionId but is NOT an addon payment', async () => {
+        // Payment has subscriptionId=null AND no addon purchase found.
+        // applyRefundLifecycle is still called; it will no-op internally
+        // (its own guard handles payments with no subscriptionId).
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: null,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = []; // no addon purchase
+
+        await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        // applyRefundLifecycle IS called (its no-sub guard handles the rest).
+        expect(applyRefundLifecycle).toHaveBeenCalledOnce();
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({ payment: expect.objectContaining({ subscriptionId: null }) })
+        );
+    });
+
+    it('does NOT call applyRefundLifecycle for a cancelled (non-refunded) payment', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 1500,
+            currency: 'ARS',
+            status: 'cancelled',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('does NOT call applyRefundLifecycle for a rejected payment', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 1500,
+            currency: 'ARS',
+            status: 'rejected',
+            statusDetail: 'cc_rejected_other_reason',
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(result.success).toBe(true);
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('does not crash when applyRefundLifecycle throws (fail-safe)', async () => {
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+        vi.mocked(applyRefundLifecycle).mockRejectedValue(new Error('db offline'));
+
+        const { apiLogger } = await import('../../../src/utils/logger');
+
+        await expect(
+            processPaymentUpdated({
+                data: refundedPaymentData(),
+                billing: mockBilling,
+                source: 'webhook'
+            })
+        ).resolves.toMatchObject({ success: true });
+
+        expect(apiLogger.error).toHaveBeenCalledWith(
+            expect.objectContaining({ mpPaymentId: MP_PAYMENT_ID }),
+            expect.stringContaining('applyRefundLifecycle')
+        );
+    });
+
+    it('still sends failure notification alongside the refund lifecycle call', async () => {
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await processPaymentUpdated({
+            data: refundedPaymentData(),
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+            CUSTOMER_ID,
+            1500,
+            'ARS',
+            'refunded',
+            mockBilling
+        );
+        expect(applyRefundLifecycle).toHaveBeenCalledOnce();
     });
 });
 
