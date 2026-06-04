@@ -43,6 +43,7 @@
     },
     "dependencies": {
         "@repo/billing": "workspace:*",
+        "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
