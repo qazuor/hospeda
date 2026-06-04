@@ -931,105 +931,105 @@
             "id": "T-026",
             "title": "Create admin AI credential vault routes",
             "description": "Create apps/api admin routes /api/v1/admin/ai/credentials* (list/create/rotate/delete) via createAdminRoute, guarded by AI_SETTINGS_MANAGE, calling the credential service (T-022). Never return plaintext keys. ResponseFactory contract. Tests: route unit tests asserting non-super rejected (403), create returns ciphertext-masked response, and an audit row is written.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022", "T-023"],
             "blocks": ["T-033", "T-037"],
             "subtasks": [
                 {
                     "title": "list/create/rotate/delete admin credential routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AI_SETTINGS_MANAGE guard + masked responses",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write credential-route unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "admin", "security"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T00:05:00.000Z",
+                "completed": "2026-06-05T01:10:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Create admin AI settings routes",
             "description": "Create apps/api admin routes /api/v1/admin/ai/settings* (get/update the ai_settings blob: providers on/off, fallback order, per-feature model+params, feature flags, quotas) via createAdminRoute, guarded by AI_SETTINGS_MANAGE (§5.6/FR-5). Validate body against the @repo/schemas ai-settings schema; invalidate config cache on write. Tests: route unit tests asserting update persists, cache invalidates (AC-1 swap path), invalid blob → 422, non-super → 403.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-023", "T-011"],
             "blocks": ["T-033", "T-038"],
             "subtasks": [
                 {
                     "title": "get/update ai_settings admin routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schema validation + cache invalidation on write",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write settings-route unit tests (AC-1)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "admin", "config"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T00:05:00.000Z",
+                "completed": "2026-06-05T01:10:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Create admin AI prompt-version routes",
             "description": "Create apps/api admin routes /api/v1/admin/ai/prompts* (list/create/activate versioned per-feature prompts in ai_prompt_versions) via createAdminRoute, guarded by AI_SETTINGS_MANAGE (§5.6.3/FR-5). Activating a version flips is_active. Engine must still fall back to in-code default on empty/invalid (AC-12, verified in T-034). Tests: route unit tests asserting version create/activate and non-super → 403.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-034"],
             "subtasks": [
                 {
                     "title": "list/create/activate prompt-version routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "is_active flip on activate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write prompt-route unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "admin", "config"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T00:05:00.000Z",
+                "completed": "2026-06-05T01:10:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 20,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.5
     }
