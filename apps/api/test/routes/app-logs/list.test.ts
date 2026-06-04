@@ -22,7 +22,7 @@ const { mockActor } = vi.hoisted(() => ({
 }));
 
 vi.mock('../../../src/utils/route-factory', () => ({
-    createAdminRoute: vi.fn((config: { path: string; handler: CapturedHandler }) => {
+    createAdminListRoute: vi.fn((config: { path: string; handler: CapturedHandler }) => {
         capturedHandlers.set(config.path, config.handler);
         return config.handler;
     })
@@ -49,7 +49,7 @@ vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-// Importing the module runs createAdminRoute and captures the handler.
+// Importing the module runs createAdminListRoute and captures the handler.
 await import('../../../src/routes/app-logs/list');
 
 const fakeCtx = {} as unknown;
@@ -63,24 +63,82 @@ describe('admin app-logs list route (SPEC-184)', () => {
         expect(capturedHandlers.has('/')).toBe(true);
     });
 
-    describe('GET /', () => {
-        it('returns items + total with default pagination echoed back', async () => {
+    describe('GET / — standard envelope', () => {
+        it('returns items + full pagination metadata with default params', async () => {
             mockListEntries.mockResolvedValue({ data: { items: [{ id: 'a' }], total: 1 } });
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
             const res = (await handler(fakeCtx, undefined, undefined, undefined)) as {
                 items: unknown[];
-                total: number;
-                page: number;
-                pageSize: number;
+                pagination: {
+                    page: number;
+                    pageSize: number;
+                    total: number;
+                    totalPages: number;
+                    hasNextPage: boolean;
+                    hasPreviousPage: boolean;
+                };
             };
 
-            expect(res.total).toBe(1);
             expect(res.items).toHaveLength(1);
-            expect(res.page).toBe(1);
-            expect(res.pageSize).toBe(50);
+            expect(res.pagination.total).toBe(1);
+            expect(res.pagination.page).toBe(1);
+            expect(res.pagination.pageSize).toBe(50);
+            expect(res.pagination.totalPages).toBe(1);
+            expect(res.pagination.hasNextPage).toBe(false);
+            expect(res.pagination.hasPreviousPage).toBe(false);
         });
 
+        it('calculates totalPages correctly for multi-page result', async () => {
+            mockListEntries.mockResolvedValue({
+                data: { items: Array(10).fill({ id: 'x' }), total: 55 }
+            });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            const res = (await handler(fakeCtx, undefined, undefined, {
+                page: '2',
+                pageSize: '10'
+            })) as {
+                pagination: { totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean };
+            };
+
+            expect(res.pagination.totalPages).toBe(6);
+            expect(res.pagination.hasNextPage).toBe(true);
+            expect(res.pagination.hasPreviousPage).toBe(true);
+        });
+
+        it('hasNextPage is false on the last page', async () => {
+            mockListEntries.mockResolvedValue({
+                data: { items: Array(5).fill({ id: 'x' }), total: 15 }
+            });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            const res = (await handler(fakeCtx, undefined, undefined, {
+                page: '3',
+                pageSize: '5'
+            })) as {
+                pagination: { hasNextPage: boolean; hasPreviousPage: boolean; totalPages: number };
+            };
+
+            expect(res.pagination.totalPages).toBe(3);
+            expect(res.pagination.hasNextPage).toBe(false);
+            expect(res.pagination.hasPreviousPage).toBe(true);
+        });
+
+        it('hasPreviousPage is false on the first page', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [{ id: 'a' }], total: 20 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            const res = (await handler(fakeCtx, undefined, undefined, {
+                page: '1',
+                pageSize: '10'
+            })) as { pagination: { hasPreviousPage: boolean } };
+
+            expect(res.pagination.hasPreviousPage).toBe(false);
+        });
+    });
+
+    describe('GET / — filters', () => {
         it('forwards level/category/date filters to the service', async () => {
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
 
@@ -104,17 +162,11 @@ describe('admin app-logs list route (SPEC-184)', () => {
         });
 
         it('forwards requestId filter to the service', async () => {
-            // Arrange
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, { requestId: 'req-abc-123' });
 
-            // Act
-            await handler(fakeCtx, undefined, undefined, {
-                requestId: 'req-abc-123'
-            });
-
-            // Assert
             const callArg = mockListEntries.mock.calls[0]?.[0] as {
                 filter: Record<string, unknown>;
             };
@@ -122,16 +174,12 @@ describe('admin app-logs list route (SPEC-184)', () => {
         });
 
         it('forwards userId filter to the service', async () => {
-            // Arrange
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
             const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act
             await handler(fakeCtx, undefined, undefined, { userId });
 
-            // Assert
             const callArg = mockListEntries.mock.calls[0]?.[0] as {
                 filter: Record<string, unknown>;
             };
@@ -139,15 +187,11 @@ describe('admin app-logs list route (SPEC-184)', () => {
         });
 
         it('forwards method filter to the service', async () => {
-            // Arrange
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act
             await handler(fakeCtx, undefined, undefined, { method: 'DELETE' });
 
-            // Assert
             const callArg = mockListEntries.mock.calls[0]?.[0] as {
                 filter: Record<string, unknown>;
             };
@@ -155,53 +199,22 @@ describe('admin app-logs list route (SPEC-184)', () => {
         });
 
         it('forwards path filter to the service', async () => {
-            // Arrange
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act
             await handler(fakeCtx, undefined, undefined, { path: '/api/v1/admin' });
 
-            // Assert
             const callArg = mockListEntries.mock.calls[0]?.[0] as {
                 filter: Record<string, unknown>;
             };
             expect(callArg.filter.path).toBe('/api/v1/admin');
         });
 
-        it('rejects an invalid userId (non-UUID) via schema validation', async () => {
-            // Arrange
-            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
-
-            const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act + Assert — AppLogEntryFilterSchema.parse throws ZodError for bad UUID
-            await expect(
-                handler(fakeCtx, undefined, undefined, { userId: 'not-a-uuid' })
-            ).rejects.toThrow();
-        });
-
-        it('rejects a requestId longer than 64 characters via schema validation', async () => {
-            // Arrange
-            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
-
-            const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act + Assert
-            await expect(
-                handler(fakeCtx, undefined, undefined, { requestId: 'x'.repeat(65) })
-            ).rejects.toThrow();
-        });
-
-        it('forwards all four new request-context filters together', async () => {
-            // Arrange
+        it('forwards all four request-context filters together', async () => {
             mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
             const userId = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 
             const handler = capturedHandlers.get('/') as CapturedHandler;
-
-            // Act
             await handler(fakeCtx, undefined, undefined, {
                 requestId: 'req-combo',
                 userId,
@@ -209,7 +222,6 @@ describe('admin app-logs list route (SPEC-184)', () => {
                 path: '/api/v1/protected'
             });
 
-            // Assert
             const callArg = mockListEntries.mock.calls[0]?.[0] as {
                 filter: Record<string, unknown>;
             };
@@ -219,6 +231,121 @@ describe('admin app-logs list route (SPEC-184)', () => {
             expect(callArg.filter.path).toBe('/api/v1/protected');
         });
 
+        it('rejects an invalid userId (non-UUID) via schema validation', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await expect(
+                handler(fakeCtx, undefined, undefined, { userId: 'not-a-uuid' })
+            ).rejects.toThrow();
+        });
+
+        it('rejects a requestId longer than 64 characters via schema validation', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await expect(
+                handler(fakeCtx, undefined, undefined, { requestId: 'x'.repeat(65) })
+            ).rejects.toThrow();
+        });
+    });
+
+    describe('GET / — sort param', () => {
+        it('uses loggedAt desc by default (no sort param)', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, undefined);
+
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                sort: { field: string; direction: string };
+            };
+            expect(callArg.sort.field).toBe('loggedAt');
+            expect(callArg.sort.direction).toBe('desc');
+        });
+
+        it('accepts loggedAt:asc sort', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, { sort: 'loggedAt:asc' });
+
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                sort: { field: string; direction: string };
+            };
+            expect(callArg.sort.field).toBe('loggedAt');
+            expect(callArg.sort.direction).toBe('asc');
+        });
+
+        it('accepts loggedAt:desc sort', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, { sort: 'loggedAt:desc' });
+
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                sort: { field: string; direction: string };
+            };
+            expect(callArg.sort.field).toBe('loggedAt');
+            expect(callArg.sort.direction).toBe('desc');
+        });
+
+        it('accepts level:asc sort', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, { sort: 'level:asc' });
+
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                sort: { field: string; direction: string };
+            };
+            expect(callArg.sort.field).toBe('level');
+            expect(callArg.sort.direction).toBe('asc');
+        });
+
+        it('accepts level:desc sort', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, undefined, { sort: 'level:desc' });
+
+            const callArg = mockListEntries.mock.calls[0]?.[0] as {
+                sort: { field: string; direction: string };
+            };
+            expect(callArg.sort.field).toBe('level');
+            expect(callArg.sort.direction).toBe('desc');
+        });
+
+        it('rejects an invalid sort field (not in whitelist)', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            // 'message' is not a whitelisted field — schema regex rejects it
+            await expect(
+                handler(fakeCtx, undefined, undefined, { sort: 'message:desc' })
+            ).rejects.toThrow();
+        });
+
+        it('rejects an invalid sort direction', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await expect(
+                handler(fakeCtx, undefined, undefined, { sort: 'loggedAt:random' })
+            ).rejects.toThrow();
+        });
+
+        it('rejects a sort value with no colon separator', async () => {
+            mockListEntries.mockResolvedValue({ data: { items: [], total: 0 } });
+
+            const handler = capturedHandlers.get('/') as CapturedHandler;
+            await expect(
+                handler(fakeCtx, undefined, undefined, { sort: 'loggedAt' })
+            ).rejects.toThrow();
+        });
+    });
+
+    describe('GET / — error handling', () => {
         it('throws when the service returns an error', async () => {
             mockListEntries.mockResolvedValue({
                 error: { code: 'INTERNAL_ERROR', message: 'boom' }
