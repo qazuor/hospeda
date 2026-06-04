@@ -495,39 +495,39 @@
             "id": "T-014",
             "title": "Implement engine routing + fallback + retries",
             "description": "Create src/engine/ — routing layer selecting per-feature primary provider + fallback chain from resolved config (§5.3), with retries and automatic fallback on timeout/5xx/rate-limit, recording the fallback event. Leave a V2 hook for cost-based/ensemble/AB routing without API change. RO-RO, JSDoc. Tests: unit tests with StubProvider asserting primary success, fallback on simulated 5xx (AC-2), and fallback-event recording.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Per-feature primary + fallback chain routing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Retries + automatic fallback + event recording",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "V2 routing hook (no API change)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write routing/fallback unit tests (AC-2)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "engine", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T08:48:00.000Z",
+                "completed": "2026-06-04T09:08:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 30,
+        "pending": 29,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.5
     }
