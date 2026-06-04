@@ -6,6 +6,8 @@
  *   `/start-paid` route's expiresAt and from sibling cron lock keys.
  * - Job definition shape (name, schedule, enabled, timeout).
  * - Transition guard: illegal guard result skips the bulk write (SPEC-194 T-002).
+ * - User notification: each abandoned sub triggers a best-effort
+ *   SUBSCRIPTION_CANCELLED notification (SPEC-194 T-022).
  *
  * @module test/cron/abandoned-pending-subs
  */
@@ -16,6 +18,14 @@ import {
     _internals,
     abandonedPendingSubsJob
 } from '../../src/cron/jobs/abandoned-pending-subs.job';
+
+// ─── Hoisted mocks (must be before vi.mock calls) ─────────────────────────────
+
+const { mockBillingCustomersGet, mockBillingPlansGet, mockSendNotification } = vi.hoisted(() => ({
+    mockBillingCustomersGet: vi.fn(),
+    mockBillingPlansGet: vi.fn(),
+    mockSendNotification: vi.fn().mockResolvedValue(undefined)
+}));
 
 // ─── DB mock ──────────────────────────────────────────────────────────────────
 // Minimal mock for @repo/db so the handler can acquire the advisory lock and
@@ -45,7 +55,9 @@ vi.mock('@repo/db', async (importOriginal) => {
             status: 'STATUS',
             createdAt: 'CREATED_AT',
             deletedAt: 'DELETED_AT',
-            updatedAt: 'UPDATED_AT'
+            updatedAt: 'UPDATED_AT',
+            customerId: 'CUSTOMER_ID',
+            planId: 'PLAN_ID'
         },
         sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
             _sql: { strings, values }
@@ -53,6 +65,19 @@ vi.mock('@repo/db', async (importOriginal) => {
         withTransaction: vi.fn(async (cb: (tx: typeof mockTx) => Promise<unknown>) => cb(mockTx))
     };
 });
+
+// ─── Billing + notification mocks (T-022) ─────────────────────────────────────
+
+vi.mock('../../src/middlewares/billing.js', () => ({
+    getQZPayBilling: vi.fn(() => ({
+        customers: { get: mockBillingCustomersGet },
+        plans: { get: mockBillingPlansGet }
+    }))
+}));
+
+vi.mock('../../src/utils/notification-helper.js', () => ({
+    sendNotification: mockSendNotification
+}));
 
 /** Builds a minimal CronJobContext for the handler */
 function makeCronCtx(dryRun = false) {
@@ -134,6 +159,14 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         };
         const setChain = { set: vi.fn().mockReturnValue(returningChain) };
         mockTx.update.mockReturnValue(setChain);
+        // Default billing/notification stubs (T-022)
+        mockBillingCustomersGet.mockResolvedValue({
+            id: 'cust-1',
+            email: 'user@example.com',
+            metadata: { name: 'Test User' }
+        });
+        mockBillingPlansGet.mockResolvedValue({ id: 'plan-1', name: 'Owner Básico' });
+        mockSendNotification.mockResolvedValue(undefined);
     });
 
     it('skips bulk UPDATE and logs error when guard returns invalid (spy)', async () => {
@@ -171,7 +204,13 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         const returningChain = {
             where: vi
                 .fn()
-                .mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'sub-1' }]) })
+                .mockReturnValue({
+                    returning: vi
+                        .fn()
+                        .mockResolvedValue([
+                            { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }
+                        ])
+                })
         };
         const setChain = { set: vi.fn().mockReturnValue(returningChain) };
         mockTx.update.mockReturnValue(setChain);
@@ -194,7 +233,13 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         const returningChain = {
             where: vi
                 .fn()
-                .mockReturnValue({ returning: vi.fn().mockResolvedValue([{ id: 'sub-1' }]) })
+                .mockReturnValue({
+                    returning: vi
+                        .fn()
+                        .mockResolvedValue([
+                            { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }
+                        ])
+                })
         };
         const setChain = {
             set: vi.fn().mockImplementation((arg: Record<string, unknown>) => {
@@ -213,5 +258,163 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         // If this flips back to 'incomplete_expired' then direct DB queries for
         // status='abandoned' will silently find nothing.
         expect(capturedSetArg?.status).toBe('abandoned');
+    });
+});
+
+// ─── User notification tests (SPEC-194 T-022) ─────────────────────────────────
+
+describe('abandonedPendingSubsJob handler — user notifications (SPEC-194 T-022)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockTx.execute.mockResolvedValue({ rows: [{ acquired: true }] });
+        const selectChain = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue([])
+        };
+        mockTx.select.mockReturnValue(selectChain);
+        mockBillingCustomersGet.mockResolvedValue({
+            id: 'cust-1',
+            email: 'owner@example.com',
+            metadata: { name: 'Ana García' }
+        });
+        mockBillingPlansGet.mockResolvedValue({ id: 'plan-1', name: 'Owner Básico' });
+        mockSendNotification.mockResolvedValue(undefined);
+    });
+
+    it('sends SUBSCRIPTION_CANCELLED notification for each abandoned sub', async () => {
+        const returningChain = {
+            where: vi.fn().mockReturnValue({
+                returning: vi
+                    .fn()
+                    .mockResolvedValue([{ id: 'sub-abc', customerId: 'cust-1', planId: 'plan-1' }])
+            })
+        };
+        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
+        mockTx.update.mockReturnValue(setChain);
+
+        const ctx = makeCronCtx(false);
+        const result = await abandonedPendingSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(mockSendNotification).toHaveBeenCalledOnce();
+        expect(mockSendNotification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                type: 'subscription_cancelled',
+                recipientEmail: 'owner@example.com',
+                recipientName: 'Ana García',
+                customerId: 'cust-1',
+                planName: 'Owner Básico',
+                idempotencyKey: 'abandoned-sub-sub-abc'
+            })
+        );
+    });
+
+    it('does NOT send notifications in dry-run mode', async () => {
+        const selectChain = {
+            from: vi.fn().mockReturnThis(),
+            where: vi.fn().mockResolvedValue([{ id: 'sub-dry' }])
+        };
+        mockTx.select.mockReturnValue(selectChain);
+
+        const ctx = makeCronCtx(true);
+        await abandonedPendingSubsJob.handler(ctx);
+
+        expect(mockSendNotification).not.toHaveBeenCalled();
+    });
+
+    it('continues sweep when one notification fails (non-fatal)', async () => {
+        const returningChain = {
+            where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue([
+                    { id: 'sub-ok', customerId: 'cust-1', planId: 'plan-1' },
+                    { id: 'sub-fail', customerId: 'cust-2', planId: 'plan-1' }
+                ])
+            })
+        };
+        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
+        mockTx.update.mockReturnValue(setChain);
+
+        mockBillingCustomersGet
+            .mockResolvedValueOnce({
+                id: 'cust-1',
+                email: 'ok@example.com',
+                metadata: { name: 'OK User' }
+            })
+            .mockResolvedValueOnce({
+                id: 'cust-2',
+                email: 'fail@example.com',
+                metadata: {}
+            });
+
+        mockSendNotification
+            .mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new Error('SMTP timeout'));
+
+        const ctx = makeCronCtx(false);
+        const result = await abandonedPendingSubsJob.handler(ctx);
+
+        // Job still reports success despite one notification failure
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(2);
+        expect(mockSendNotification).toHaveBeenCalledTimes(2);
+        expect(ctx.logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining('Failed to send abandoned-sub notification'),
+            expect.objectContaining({ subscriptionId: 'sub-fail' })
+        );
+    });
+
+    it('falls back to email prefix when customer metadata.name is absent', async () => {
+        const returningChain = {
+            where: vi.fn().mockReturnValue({
+                returning: vi
+                    .fn()
+                    .mockResolvedValue([
+                        { id: 'sub-noname', customerId: 'cust-noname', planId: 'plan-1' }
+                    ])
+            })
+        };
+        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
+        mockTx.update.mockReturnValue(setChain);
+
+        mockBillingCustomersGet.mockResolvedValueOnce({
+            id: 'cust-noname',
+            email: 'juanperez@example.com',
+            metadata: {}
+        });
+
+        const ctx = makeCronCtx(false);
+        await abandonedPendingSubsJob.handler(ctx);
+
+        expect(mockSendNotification).toHaveBeenCalledWith(
+            expect.objectContaining({
+                recipientName: 'juanperez'
+            })
+        );
+    });
+
+    it('warns and skips notification when customer is not found', async () => {
+        const returningChain = {
+            where: vi.fn().mockReturnValue({
+                returning: vi
+                    .fn()
+                    .mockResolvedValue([
+                        { id: 'sub-ghost', customerId: 'cust-ghost', planId: 'plan-1' }
+                    ])
+            })
+        };
+        const setChain = { set: vi.fn().mockReturnValue(returningChain) };
+        mockTx.update.mockReturnValue(setChain);
+
+        mockBillingCustomersGet.mockResolvedValueOnce(null);
+
+        const ctx = makeCronCtx(false);
+        const result = await abandonedPendingSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(mockSendNotification).not.toHaveBeenCalled();
+        expect(ctx.logger.warn).toHaveBeenCalledWith(
+            expect.stringContaining('Customer not found'),
+            expect.objectContaining({ subscriptionId: 'sub-ghost' })
+        );
     });
 });
