@@ -595,12 +595,13 @@ export async function processPaymentUpdated({
     const addonInfo = extractAddonMetadata(data.metadata);
 
     if (!addonInfo) {
-        const addonSlug = extractAddonFromReference(data.external_reference);
+        // ── Legacy warn: pre-qzpay-migration payments carry addon_SLUG_TIMESTAMP ──
+        const legacyAddonSlug = extractAddonFromReference(data.external_reference);
 
-        if (addonSlug) {
+        if (legacyAddonSlug) {
             apiLogger.warn(
                 {
-                    addonSlug,
+                    addonSlug: legacyAddonSlug,
                     externalReference: data.external_reference,
                     hasMetadata: !!data.metadata,
                     metadataKeys: data.metadata ? Object.keys(data.metadata as object) : [],
@@ -610,6 +611,30 @@ export async function processPaymentUpdated({
                 },
                 'Found add-on slug in external_reference but missing customerId - addon purchase may not be confirmed properly'
             );
+        } else {
+            // ── qzpay-era second-chance diagnostic ────────────────────────────────
+            // After SPEC-127 migration, new addon MP payments have a bare qzpay
+            // session UUID as external_reference (set by qzpay-core internally).
+            // If metadata is absent or malformed this payment cannot be correlated
+            // to an addon — emit a diagnostic so operators can match the qzpay
+            // checkout session via externalReference.
+            const extRef = data.external_reference;
+            const isBareuuid =
+                typeof extRef === 'string' &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extRef);
+
+            if (isBareuuid) {
+                apiLogger.warn(
+                    {
+                        externalReference: extRef,
+                        paymentId: data.id,
+                        paymentStatus: data.status,
+                        metadataKeys: data.metadata ? Object.keys(data.metadata as object) : [],
+                        source
+                    },
+                    'Payment has bare UUID external_reference (qzpay session id) but no addon metadata - possible qzpay-era addon payment missing metadata; correlate via qzpay checkout session'
+                );
+            }
         }
 
         return { success: true, addonConfirmed: false };
