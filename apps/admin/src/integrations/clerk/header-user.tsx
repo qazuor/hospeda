@@ -83,6 +83,7 @@ export function HeaderUser() {
                 onClick={() => setIsOpen((v) => !v)}
                 className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="User menu"
+                data-tour="user-menu"
             >
                 <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
                     {user.avatar ? (

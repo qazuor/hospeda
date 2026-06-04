@@ -113,7 +113,11 @@ export function Header() {
                         <QuickCreate />
 
                         {/* Command Palette search — shown when topbar.showSearch is true */}
-                        {showSearch && <CommandPalette />}
+                        {showSearch && (
+                            <span data-tour="command-palette">
+                                <CommandPalette />
+                            </span>
+                        )}
 
                         {/* Notifications */}
                         <div
@@ -135,6 +139,7 @@ export function Header() {
                                 title={t('admin-nav.topbar.notifications' as TranslationKey)}
                                 className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary"
                                 onClick={() => setShowNotifications((v) => !v)}
+                                data-tour="notifications"
                             >
                                 <NotificationIcon className="icon-river-header h-5 w-5" />
                             </button>
