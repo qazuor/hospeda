@@ -534,239 +534,239 @@
             "id": "T-019",
             "title": "Partial-refund modeling + refund audit trail",
             "description": "Spec §6 T-194-14. Write the never-written refunded_amount integer column (centavos) on refunds; insert a billing_subscription_events audit row for every refund (admin + webhook sources). Partial vs full discrimination feeds T-007's branch. Tests for both sources and both refund kinds.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "refunded_amount writes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Audit event rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests (admin/webhook × full/partial)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["refund", "audit"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": "2026-06-04T22:42:28Z",
-                "completed": null
+                "completed": "2026-06-04T22:57:05Z"
             }
         },
         {
             "id": "T-020",
             "title": "Advisory lock for exchange-rate cron",
             "description": "Spec §6 T-194-15. exchange-rate-fetch.job.ts has no advisory lock; two replicas can write concurrently. Add one per ADR-019 conventions (new lock key, registered wherever lock keys are catalogued). Note coordination with SPEC-150 (FX).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Lock + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cron", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:57:05Z",
+                "completed": "2026-06-04T23:08:46Z"
             }
         },
         {
             "id": "T-021",
             "title": "Stop writing deprecated addonAdjustments metadata",
             "description": "Spec §6 T-194-16. addon-entitlement.service.ts:293-298 still writes the deprecated addonAdjustments JSON (billing_addon_purchases table is authoritative). Stop writing; verify no reader depends on it (grep readers first — if any remain, migrate them to the table in this task). Tests updated.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Reader audit + stop writing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "addon"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:08:46Z",
+                "completed": "2026-06-04T23:27:13Z"
             }
         },
         {
             "id": "T-022",
             "title": "Abandoned-sub user notification",
             "description": "Spec §6 T-194-17. abandoned-pending-subs.job.ts: add an optional user notification when a sub is marked abandoned (existing notification conventions). Test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Notification + test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "cron"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:08:46Z",
+                "completed": "2026-06-04T23:27:13Z"
             }
         },
         {
             "id": "T-023",
             "title": "Guard annual-sub pause behavior",
             "description": "Spec §6 T-194-18. subscription-pause.ts:78 calls MP preapproval pause; annual one-time subs have no preapproval. Define + guard (reject or no-op with clear typed error — pick per how the route consumes it; consult subscription metadata billingInterval). Test both sub kinds.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Guard + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["bugfix", "pause"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:57:05Z",
+                "completed": "2026-06-04T23:08:46Z"
             }
         },
         {
             "id": "T-024",
             "title": "Pin scheduled-change CronJobResult error contract",
             "description": "Spec §6 T-194-19 (narrowed by realign — error count already surfaced at apply-scheduled-plan-changes.ts:183,400-408). Add a pinning test asserting MAX_APPLY_ATTEMPTS exhaustion yields failed>0 / success=false in CronJobResult, so SPEC-149's Sentry wiring can rely on it.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Pinning test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "cron"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:57:05Z",
+                "completed": "2026-06-04T23:08:46Z"
             }
         },
         {
             "id": "T-025",
             "title": "Thread customer locale into return URLs",
             "description": "Spec §6 T-194-20. start-paid.ts:55 hardcodes RETURN_URL_LOCALE='es'. Thread the customer locale (source: user/customer record or request context — follow i18n conventions). Test es + en. Note: candidate fold into SPEC-150 if it lands first — verify 150 hasn't.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Locale threading + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "checkout"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:08:46Z",
+                "completed": "2026-06-04T23:27:13Z"
             }
         },
         {
             "id": "T-026",
             "title": "Dispute manual-contract pinning test + runbook",
             "description": "Spec §7 T-194-21 (narrowed by realign — admin notification already wired at dispute-logic.ts:38-87). Remaining: a test pinning the manual contract (no auto-cancel on dispute) + the ops runbook doc (where ops docs live — check docs/ structure).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Pinning test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Runbook doc",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "dispute"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:08:46Z",
+                "completed": "2026-06-04T23:27:13Z"
             }
         },
         {
             "id": "T-027",
             "title": "Post-change mock sweep + per-package typecheck",
             "description": "Mandatory sweep (SPEC-192/127 precedent): grep ALL test files mocking the touched modules (trial.service, qzpay-admin-hooks, payment-logic, dunning/addon-expiry/apply-scheduled-plan-changes/trial-expiry/exchange-rate/abandoned-pending-subs/subscription-poll jobs, subscription-downgrade, addon-entitlement, subscription-pause, plan-change, the new state-machine module). Fix stale enumerated vi.mock factories. Targeted sequential runs only.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": [
                 "T-003",
@@ -807,7 +807,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
+                "started": "2026-06-04T23:27:13Z",
                 "completed": null
             }
         },
@@ -907,9 +907,9 @@
     ],
     "summary": {
         "total": 30,
-        "pending": 8,
+        "pending": 3,
         "inProgress": 1,
-        "completed": 18,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.2
     }
