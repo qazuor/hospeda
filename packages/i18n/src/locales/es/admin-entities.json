@@ -187,6 +187,7 @@
             "category": "Categoría",
             "label": "Etiqueta",
             "request": "Solicitud",
+            "userId": "Usuario",
             "message": "Mensaje"
         }
     },
@@ -670,7 +671,9 @@
         "premiumCta": "Mejorar plan",
         "goToSection": "Ir a la sección",
         "signals": {
-            "featuredImage": { "label": "Imagen principal cargada" },
+            "featuredImage": {
+                "label": "Imagen principal cargada"
+            },
             "galleryPhotos": {
                 "label": "Al menos {target} fotos en la galería",
                 "hint": "{current} de {target} cargadas"
@@ -683,28 +686,56 @@
                 "label": "Descripción detallada",
                 "hint": "{current} de {target} caracteres"
             },
-            "summary": { "label": "Resumen corto" },
-            "locationPin": { "label": "Ubicación marcada en el mapa" },
-            "contact": { "label": "Al menos un canal de contacto" },
+            "summary": {
+                "label": "Resumen corto"
+            },
+            "locationPin": {
+                "label": "Ubicación marcada en el mapa"
+            },
+            "contact": {
+                "label": "Al menos un canal de contacto"
+            },
             "services": {
                 "label": "Servicios cargados",
                 "hint": "{current} de {target} marcados"
             },
-            "price": { "label": "Precio cargado" },
-            "videoGallery": { "label": "Galería con videos" },
-            "virtualTour": { "label": "Tour virtual 360°" },
-            "dates": { "label": "Fechas del evento" },
-            "organizer": { "label": "Organizador asignado" },
-            "category": { "label": "Categoría seleccionada" },
-            "location": { "label": "Lugar del evento" },
+            "price": {
+                "label": "Precio cargado"
+            },
+            "videoGallery": {
+                "label": "Galería con videos"
+            },
+            "virtualTour": {
+                "label": "Tour virtual 360°"
+            },
+            "dates": {
+                "label": "Fechas del evento"
+            },
+            "organizer": {
+                "label": "Organizador asignado"
+            },
+            "category": {
+                "label": "Categoría seleccionada"
+            },
+            "location": {
+                "label": "Lugar del evento"
+            },
             "content": {
                 "label": "Cuerpo del artículo",
                 "hint": "{current} de {target} caracteres"
             },
-            "readingTime": { "label": "Tiempo de lectura cargado" },
-            "author": { "label": "Autor asignado" },
-            "relatedEntity": { "label": "Relacionado con otra entidad" },
-            "publishedAt": { "label": "Fecha de publicación" }
+            "readingTime": {
+                "label": "Tiempo de lectura cargado"
+            },
+            "author": {
+                "label": "Autor asignado"
+            },
+            "relatedEntity": {
+                "label": "Relacionado con otra entidad"
+            },
+            "publishedAt": {
+                "label": "Fecha de publicación"
+            }
         }
     }
 }
