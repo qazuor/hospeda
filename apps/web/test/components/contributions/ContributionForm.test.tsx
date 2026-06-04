@@ -225,6 +225,27 @@ describe('ContributionForm', () => {
         });
     });
 
+    describe('children slot (FR-4 terms note)', () => {
+        it('renders children above the submit button', () => {
+            render(
+                <ContributionForm
+                    presetType="photo_submission"
+                    locale="es"
+                >
+                    <p>Al enviar aceptás los términos de uso</p>
+                </ContributionForm>
+            );
+
+            const note = screen.getByText(/Al enviar aceptás/);
+            const submit = screen.getByRole('button');
+            expect(note).toBeInTheDocument();
+            // The note precedes the submit button in DOM order.
+            expect(
+                note.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+    });
+
     describe('success and error states', () => {
         it('shows the contribution-specific success copy on 2xx', async () => {
             mockFetch();

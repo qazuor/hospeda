@@ -1,0 +1,288 @@
+---
+/**
+ * @file colaborar/fotos/index.astro
+ * @description Call-for-photos page (SPEC-191 FR-4, BETA-68): community photo
+ * contribution with explicit usage/license terms and a submission form locked
+ * to `photo_submission`.
+ *
+ * The form is textual (no file upload — out of scope): the copy tells the
+ * visitor to describe the destination and paste links (Drive, Dropbox, etc.)
+ * in the message if the photos are already online; otherwise the team replies
+ * to the submitter's email to coordinate delivery.
+ *
+ * NOTE (D-9): the usage/license terms below ship with placeholder copy. The
+ * final wording is a content dependency requiring owner/legal sign-off BEFORE
+ * this page launches publicly. The i18n keys + layout are final; only the
+ * terms text changes on sign-off.
+ *
+ * @route /{lang}/colaborar/fotos/
+ * @rendering SSG (prerender)
+ */
+
+import { ContributionForm } from '@/components/contributions/ContributionForm.client';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { ArrowLeftIcon, CheckCircleIcon } from '@repo/icons';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const hubUrl = buildUrl({ locale, path: 'colaborar' });
+
+// Delivery mechanics (FR-4): the page must close the expectation loop for a
+// textual form — how do the photos actually reach the team.
+const howSteps = [
+    t(
+        'contributions.photos.how.step1',
+        'Contanos de qué destino son tus fotos y qué muestran.'
+    ),
+    t(
+        'contributions.photos.how.step2',
+        'Si ya las tenés online (Drive, Dropbox, etc.), pegá los links en el mensaje.'
+    ),
+    t(
+        'contributions.photos.how.step3',
+        'Si no, te respondemos por email para coordinar el envío.'
+    )
+];
+
+// Usage/license terms (D-9): placeholder copy pending owner/legal sign-off.
+const termsItems = [
+    t(
+        'contributions.photos.terms.item1',
+        'Las fotos que envíes deben ser de tu autoría o contar con autorización del autor.'
+    ),
+    t(
+        'contributions.photos.terms.item2',
+        'Al enviarlas, autorizás a Hospeda a publicarlas en el sitio y sus redes, siempre con crédito al autor.'
+    ),
+    t(
+        'contributions.photos.terms.item3',
+        'Conservás los derechos sobre tus fotos: podés pedirnos que las retiremos cuando quieras.'
+    ),
+    t(
+        'contributions.photos.terms.item4',
+        'No envíes fotos con personas identificables sin su consentimiento.'
+    )
+];
+---
+
+<DefaultLayout
+    locale={locale}
+    title={t('contributions.photos.title', 'Aportá tus fotos de los destinos')}
+    description={t(
+        'contributions.photos.description',
+        'Sumá tus mejores fotos de los destinos del Litoral. Mirá los términos de uso y mandanos tu aporte.'
+    )}
+>
+    <section class="fotos section">
+        <div class="fotos__container">
+            <a
+                href={hubUrl}
+                class="fotos__back"
+            >
+                <ArrowLeftIcon
+                    size="sm"
+                    weight="bold"
+                />
+                {t('contributions.photos.backToHub', 'Volver a Colaborá')}
+            </a>
+
+            <div data-reveal="up">
+                <SectionHeader
+                    tagline={t('contributions.photos.tagline', 'Convocatoria abierta')}
+                    title={t('contributions.photos.heading', 'Aportá tus fotos')}
+                    subtitle={t(
+                        'contributions.photos.subtitle',
+                        'Muchos destinos del Litoral todavía no tienen fotos que les hagan justicia. Si tenés buenas tomas, esta es tu página.'
+                    )}
+                />
+            </div>
+
+            <!-- ───── How it works (delivery mechanics, FR-4) ─────────────── -->
+            <div
+                class="fotos__how"
+                data-reveal="up"
+            >
+                <h2 class="fotos__subheading">
+                    {t('contributions.photos.how.heading', '¿Cómo lo hacemos?')}
+                </h2>
+                <ol class="fotos__steps">
+                    {
+                        howSteps.map((step) => (
+                            <li class="fotos__step">
+                                <span
+                                    class="fotos__step-icon"
+                                    aria-hidden="true"
+                                >
+                                    <CheckCircleIcon
+                                        size="sm"
+                                        weight="fill"
+                                    />
+                                </span>
+                                <span>{step}</span>
+                            </li>
+                        ))
+                    }
+                </ol>
+            </div>
+        </div>
+    </section>
+
+    <!-- ───── Usage / license terms (D-9: placeholder pending legal) ─────── -->
+    <section
+        class="fotos-terms section section--warm"
+        id="terminos"
+    >
+        <div class="fotos__container">
+            <h2 class="fotos__subheading">
+                {t('contributions.photos.terms.heading', 'Términos de uso de las fotos')}
+            </h2>
+            <p class="fotos-terms__intro">
+                {t(
+                    'contributions.photos.terms.intro',
+                    'Antes de enviar tus fotos, leé estas condiciones. Son cortas y claras:'
+                )}
+            </p>
+            <ul class="fotos-terms__list">
+                {termsItems.map((item) => <li class="fotos-terms__item">{item}</li>)}
+            </ul>
+        </div>
+    </section>
+
+    <!-- ───── Submission form ────────────────────────────────────────────── -->
+    <section class="fotos-form section">
+        <div class="fotos__container">
+            <h2 class="fotos__subheading">
+                {t('contributions.photos.form.heading', 'Mandanos tu aporte')}
+            </h2>
+            <div data-reveal="up">
+                <ContributionForm
+                    presetType="photo_submission"
+                    locale={locale}
+                    client:visible
+                >
+                    <p class="fotos-form__terms-note">
+                        {t('contributions.photos.form.termsNotePrefix', 'Al enviar aceptás los')}
+                        <a href="#terminos">
+                            {t(
+                                'contributions.photos.form.termsNoteLink',
+                                'términos de uso de las fotos'
+                            )}
+                        </a>.
+                    </p>
+                </ContributionForm>
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
+
+<style>
+    .fotos__container {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+
+    .fotos__back {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        margin-bottom: var(--space-5, 1.25rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .fotos__back:hover,
+    .fotos__back:focus-visible {
+        color: var(--brand-accent);
+    }
+
+    .fotos__subheading {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+    }
+
+    .fotos__how {
+        margin-top: var(--space-6, 1.5rem);
+    }
+
+    .fotos__steps {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+    }
+
+    .fotos__step {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-2, 0.5rem);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+    }
+
+    .fotos__step-icon {
+        display: inline-flex;
+        color: var(--brand-accent);
+        flex-shrink: 0;
+        margin-top: 0.2em;
+    }
+
+    .fotos-terms__intro {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+        line-height: 1.6;
+    }
+
+    .fotos-terms__list {
+        margin: 0;
+        padding-left: var(--space-5, 1.25rem);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 0.5rem);
+    }
+
+    .fotos-terms__item {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-foreground);
+        line-height: 1.6;
+    }
+
+    .fotos-form__terms-note {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .fotos-form__terms-note a {
+        color: var(--brand-primary);
+        font-weight: 600;
+    }
+</style>

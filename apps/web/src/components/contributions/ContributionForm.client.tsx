@@ -28,7 +28,7 @@ import { createTranslations } from '@/lib/i18n';
 import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import styles from '../ContactForm.module.css';
 
 // API base URL — must be absolute because the web app and the API live on
@@ -53,6 +53,12 @@ interface ContributionFormProps {
     readonly presetType: ContributionType;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
+    /**
+     * Optional static content rendered directly above the submit button —
+     * used by /colaborar/fotos for the "by submitting you accept the photo
+     * usage terms" note (FR-4). Astro passes this as serialized children.
+     */
+    readonly children?: ReactNode;
 }
 
 type FormFields = Omit<ContactSubmitInput, 'website' | 'type' | 'accommodationId'> & {
@@ -101,7 +107,7 @@ function extractFieldErrors(error: import('zod').ZodError): FieldErrors {
  * Submission: POST /api/v1/public/contact with the locked presetType.
  * Success: contribution-specific confirmation + typed analytics event.
  */
-export function ContributionForm({ presetType, locale }: ContributionFormProps) {
+export function ContributionForm({ presetType, locale, children }: ContributionFormProps) {
     const { t } = createTranslations(locale);
 
     const [fields, setFields] = useState<FormFields>(INITIAL_FIELDS);
@@ -428,6 +434,9 @@ export function ContributionForm({ presetType, locale }: ContributionFormProps) 
                     {formError}
                 </p>
             )}
+
+            {/* Optional pre-submit note (e.g. photo usage-terms acceptance, FR-4) */}
+            {children}
 
             <button
                 type="submit"
