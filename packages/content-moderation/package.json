@@ -18,9 +18,9 @@
         "lint": "biome check .",
         "format": "biome format --write .",
         "check": "biome check --write .",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --passWithNoTests --coverage",
         "clean": "rm -rf node_modules && rm -rf dist"
     },
     "dependencies": {
