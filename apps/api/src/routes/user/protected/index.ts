@@ -11,6 +11,7 @@ import { userReviewsRoute } from './reviews';
 import { userStatsRoute } from './stats';
 import { userSubscriptionRoute } from './subscription';
 import { protectedUpdateUserRoute } from './update';
+import { whatsNewSeenRoute } from './whatsNewSeen';
 
 const app = createRouter();
 
@@ -37,5 +38,9 @@ app.route('/', protectedUpdateUserRoute);
 
 // PATCH /:id - Patch user
 app.route('/', protectedPatchUserRoute);
+
+// PATCH /me/whats-new-seen - Mark What's New entries as seen (SPEC-175)
+// Registered BEFORE /:id to avoid the route being captured by the UUID param matcher.
+app.route('/', whatsNewSeenRoute);
 
 export { app as protectedUserRoutes };

@@ -1105,9 +1105,9 @@ export const superAdminOnlySection: DashboardInput = {
  * dashboards.superAdminDashboard.widgets.length; // 9 (7 base + 2 super-only)
  * ```
  */
-const superAdminDashboard: DashboardInput = {
-    widgets: [...adminBaseDashboard.widgets, ...superAdminOnlySection.widgets]
-};
+// NOTE: superAdminDashboard (the original without whatsNew) is now replaced
+// by superAdminDashboardWithWn below. It is kept here as a comment reference
+// only: widgets: [...adminBaseDashboard.widgets, ...superAdminOnlySection.widgets]
 
 // ============================================================================
 // Registry export
@@ -1135,10 +1135,81 @@ const superAdminDashboard: DashboardInput = {
  * const allWidgets = dashboards['superAdminDashboard'].widgets; // 9 widgets
  * ```
  */
+// ============================================================================
+// Shared What's New widget (SPEC-175 T-017)
+// ============================================================================
+
+/**
+ * "Últimas novedades" list widget — present on ALL FOUR role dashboards.
+ *
+ * Source: `whats-new.recent` (registered in dashboard-sources/whats-new.ts).
+ * Scope: `'all'` — the endpoint only requires an authenticated session;
+ *   the role filter is applied server-side, not client-side.
+ *
+ * Footer 'Ver todas' → opens WhatsNewPanel (via `'whats-new-panel'` action key
+ *   resolved by WhatsNewDashboardController via WidgetActionHandlersContext).
+ * Per-item 'Ver' → opens WhatsNewModal for that entry (via `'whats-new-entry'`
+ *   action key, same resolution path).
+ *
+ * Callbacks are NOT in this config (it is serializable TypeScript). They are
+ * registered at runtime by WhatsNewDashboardController in AppLayout.tsx.
+ */
+const whatsNewWidget = {
+    id: 'whats-new',
+    type: 'list',
+    label: {
+        es: 'Últimas novedades',
+        en: "What's New",
+        pt: 'Novidades'
+    },
+    // Half-width (2 of 6 columns at lg) — wide enough for entry titles.
+    gridSpan: { cols: 2 },
+    scope: 'all',
+    config: {
+        source: 'whats-new.recent',
+        maxItems: 4,
+        accent: 'sky',
+        icon: 'SparkleIcon',
+        emptyText: 'Sin novedades',
+        emptyDescription: 'No hay novedades para tu rol todavía.',
+        errorText: 'No pudimos cargar las novedades',
+        errorDescription: 'Probá actualizar el panel.',
+        actionPerItem: {
+            label: { es: 'Ver', en: 'View', pt: 'Ver' }
+            // No hrefTemplate → renders as button, dispatched to 'whats-new-entry'.
+        },
+        footerLink: {
+            label: { es: 'Ver todas', en: 'See all', pt: 'Ver todas' },
+            action: 'whats-new-panel'
+        }
+    }
+} as const satisfies import('./schema').DashboardInput['widgets'][number];
+
+// Append the widget to each role dashboard.
+// The spread is necessary because the dashboards are const objects.
+const hostDashboardWithWn: DashboardInput = {
+    widgets: [...hostDashboard.widgets, whatsNewWidget]
+};
+
+const editorDashboardWithWn: DashboardInput = {
+    widgets: [...editorDashboard.widgets, whatsNewWidget]
+};
+
+const adminBaseDashboardWithWn: DashboardInput = {
+    widgets: [...adminBaseDashboard.widgets, whatsNewWidget]
+};
+
+// Built from the WithWn base so the structural invariant holds:
+// superAdminDashboard.widgets === adminBaseDashboard(.registry).widgets + superAdminOnlySection.widgets
+// (t039-super-gating.test.ts asserts this concatenation by id order).
+const superAdminDashboardWithWn: DashboardInput = {
+    widgets: [...adminBaseDashboardWithWn.widgets, ...superAdminOnlySection.widgets]
+};
+
 export const dashboards: Record<string, DashboardInput> = {
-    hostDashboard,
-    editorDashboard,
-    adminBaseDashboard,
+    hostDashboard: hostDashboardWithWn,
+    editorDashboard: editorDashboardWithWn,
+    adminBaseDashboard: adminBaseDashboardWithWn,
     superAdminOnlySection,
-    superAdminDashboard
+    superAdminDashboard: superAdminDashboardWithWn
 };

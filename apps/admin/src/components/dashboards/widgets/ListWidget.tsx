@@ -50,6 +50,7 @@
 
 import type { I18nLabel, Widget } from '@/config/ia/schema';
 import { useDashboardResolver } from '@/contexts/dashboard-resolver-context';
+import { useWidgetActionHandlers } from '@/contexts/widget-action-handlers-context';
 import { cn } from '@/lib/utils';
 import { AlertTriangleIcon, ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { useQuery } from '@tanstack/react-query';
@@ -166,9 +167,44 @@ export interface ListWidgetActionConfig {
 }
 
 /**
+ * Footer link config for the list widget (SPEC-175 T-015).
+ *
+ * When present, renders a small "see all" link below the item list.
+ * The `action` field is a declarative key — the renderer maps it to a
+ * callback registered by the parent (e.g. `'whats-new-panel'`).
+ *
+ * @example
+ * ```ts
+ * footerLink: {
+ *   label: { es: 'Ver todas', en: 'See all', pt: 'Ver todas' },
+ *   action: 'whats-new-panel'
+ * }
+ * ```
+ */
+export interface ListWidgetFooterLinkConfig {
+    /** Display label. Accepts plain string or tri-locale I18nLabel. */
+    readonly label: string | I18nLabel;
+    /**
+     * Declarative action key resolved at render time via `onFooterLinkClick`.
+     * The `ListWidget` component itself does not interpret this value — it
+     * passes it to the `onFooterLinkClick` callback so callers can handle it.
+     */
+    readonly action: string;
+}
+
+/**
  * List-widget-specific fields that may live inside `widget.config`.
  *
  * All fields are optional — the renderer degrades gracefully when absent.
+ *
+ * ## Callback fields (SPEC-175 T-015)
+ *
+ * `onItemClick` and `onFooterLinkClick` are callback functions that cannot be
+ * stored in a JSON-serializable config. They are valid here because `widget.config`
+ * is TypeScript (not JSON-serialized), and Zod validates unknown values without
+ * stripping function references. Dashboard configs in `dashboards.ts` may assign
+ * these directly as function literals, or callers may inject them at render time
+ * (e.g. via `ListWidget` when used standalone outside the `DashboardRenderer`).
  */
 export interface ListWidgetConfig {
     /** Source ID for the resolver registry. */
@@ -225,6 +261,38 @@ export interface ListWidgetConfig {
     readonly errorText?: string;
     /** Card-specific error-state description. */
     readonly errorDescription?: string;
+    /**
+     * Optional footer link rendered below the item list (SPEC-175 T-015).
+     *
+     * When present, a small "see all" button appears at the bottom of the card.
+     * The `action` key is passed to `onFooterLinkClick` so callers can decide
+     * what to do (e.g. open a sheet panel). Widgets without this config render
+     * exactly as before — fully backward-compatible.
+     */
+    readonly footerLink?: ListWidgetFooterLinkConfig;
+    /**
+     * Optional callback fired when a list row button is clicked (SPEC-175 T-015).
+     *
+     * Only applies to `actionPerItem` entries whose `hrefTemplate` is absent
+     * (the "button" case). When present, the row button calls this instead of
+     * being a no-op. The `item` argument is the full `ListItem` for the row.
+     *
+     * Widgets without `onItemClick` remain fully backward-compatible — the
+     * button renders as before with no visible change in behaviour.
+     *
+     * NOTE: This is a function reference. It cannot live in a JSON-serialized
+     * config; assign it in TypeScript dashboard configs or inject it at render.
+     */
+    readonly onItemClick?: (item: ListItem) => void;
+    /**
+     * Optional callback fired when the footer link button is clicked (SPEC-175 T-015).
+     *
+     * Receives the `action` string from `footerLink.action` so one handler can
+     * dispatch multiple actions. Widgets without `footerLink` never call this.
+     *
+     * NOTE: Function reference — same constraint as `onItemClick` above.
+     */
+    readonly onFooterLinkClick?: (action: string) => void;
 }
 
 // ============================================================================
@@ -401,13 +469,15 @@ function ItemRow({
     index,
     actionCfg,
     variant,
-    additionalActionsPerItem
+    additionalActionsPerItem,
+    onItemClick
 }: {
     readonly item: ListItem;
     readonly index: number;
     readonly actionCfg?: ListWidgetActionConfig;
     readonly variant: 'default' | 'stars' | 'pending-count';
     readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
+    readonly onItemClick?: (item: ListItem) => void;
 }) {
     const itemKey = item.id ?? String(index);
     const href = actionCfg ? resolveItemHref(item, index, actionCfg) : undefined;
@@ -538,6 +608,7 @@ function ItemRow({
                         className="rounded-md border px-2 py-1 text-xs hover:bg-accent hover:text-accent-foreground"
                         data-testid="list-item-action-button"
                         aria-label={`${actionLabelText}: ${labelText}`}
+                        onClick={onItemClick ? () => onItemClick(item) : undefined}
                     >
                         {actionLabelText}
                     </button>
@@ -633,12 +704,14 @@ function CollapsibleGroupList({
     items,
     actionCfg,
     variant,
-    additionalActionsPerItem
+    additionalActionsPerItem,
+    onItemClick
 }: {
     readonly items: ReadonlyArray<ListItem>;
     readonly actionCfg?: ListWidgetActionConfig;
     readonly variant: 'default' | 'stars' | 'pending-count';
     readonly additionalActionsPerItem?: ReadonlyArray<ListWidgetActionConfig>;
+    readonly onItemClick?: (item: ListItem) => void;
 }) {
     const groups = buildItemGroups(items);
     // Open-panel state keyed by group label. Empty set ⇒ all collapsed (default).
@@ -723,6 +796,7 @@ function CollapsibleGroupList({
                                         actionCfg={actionCfg}
                                         variant={variant}
                                         additionalActionsPerItem={additionalActionsPerItem}
+                                        onItemClick={onItemClick}
                                     />
                                 ))}
                             </ul>
@@ -781,6 +855,13 @@ export function ListWidget({ widget }: ListWidgetProps) {
 
     // -- 3. Fetch with TanStack Query ----------------------------------------
     const { data, isLoading, error, refetch } = useQuery(options);
+
+    // -- 3b. Widget action handlers context (always before any early return) --
+    // Callbacks for footerLink and onItemClick can come from:
+    //   (1) explicit functions in config (direct assignment in dashboards.ts), or
+    //   (2) WidgetActionHandlersContext (for action keys like 'whats-new-panel').
+    // MUST be called unconditionally — Rules of Hooks.
+    const actionHandlers = useWidgetActionHandlers();
 
     // Derive display label (admin locale = 'es').
     const displayLabel = widget.label.es;
@@ -862,6 +943,22 @@ export function ListWidget({ widget }: ListWidgetProps) {
 
     const actionCfg = config.actionPerItem;
     const variant = config.variant ?? 'default';
+    const footerLink = config.footerLink;
+
+    // Explicit config functions take precedence over context handlers.
+    const onItemClick =
+        typeof config.onItemClick === 'function'
+            ? config.onItemClick
+            : config.actionPerItem && !config.actionPerItem.hrefTemplate
+              ? actionHandlers.getItemHandler('whats-new-entry') // resolved by action key convention
+              : undefined;
+
+    const onFooterLinkClick =
+        typeof config.onFooterLinkClick === 'function'
+            ? config.onFooterLinkClick
+            : footerLink
+              ? actionHandlers.getFooterHandler(footerLink.action)
+              : undefined;
 
     // Variant-specific transformations:
     //  - 'pending-count': lift items[0].badge into a header pill; strip the
@@ -892,6 +989,8 @@ export function ListWidget({ widget }: ListWidgetProps) {
         }
     }
 
+    const footerLinkLabel = footerLink ? resolveLabelText(footerLink.label) : '';
+
     return (
         <WidgetCard
             label={displayLabel}
@@ -908,6 +1007,7 @@ export function ListWidget({ widget }: ListWidgetProps) {
                     actionCfg={actionCfg}
                     variant={variant}
                     additionalActionsPerItem={config.additionalActionsPerItem}
+                    onItemClick={onItemClick}
                 />
             ) : (
                 /* Flat list with optional static group headers (legacy default). */
@@ -929,6 +1029,7 @@ export function ListWidget({ widget }: ListWidgetProps) {
                                 actionCfg={actionCfg}
                                 variant={variant}
                                 additionalActionsPerItem={config.additionalActionsPerItem}
+                                onItemClick={onItemClick}
                             />
                         );
 
@@ -948,6 +1049,24 @@ export function ListWidget({ widget }: ListWidgetProps) {
                         return row;
                     })}
                 </ul>
+            )}
+
+            {/* Footer link — optional "see all" CTA (SPEC-175 T-015). */}
+            {footerLink && onFooterLinkClick && (
+                <div
+                    className="mt-2 flex justify-end border-border border-t pt-2"
+                    data-testid="list-widget-footer"
+                >
+                    <button
+                        type="button"
+                        className="text-muted-foreground text-xs hover:text-foreground hover:underline"
+                        data-testid="list-widget-footer-link"
+                        aria-label={footerLinkLabel}
+                        onClick={() => onFooterLinkClick(footerLink.action)}
+                    >
+                        {footerLinkLabel}
+                    </button>
+                </div>
             )}
         </WidgetCard>
     );

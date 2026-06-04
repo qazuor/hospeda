@@ -232,6 +232,7 @@ vi.mock('@repo/icons', () => {
         CancelIcon: stub('CancelIcon'),
         ChatIcon: stub('ChatIcon'),
         CompassIcon: stub('CompassIcon'),
+        SparkleIcon: stub('SparkleIcon'),
         StarIcon: stub('StarIcon'),
         ArrowRightIcon: stub('ArrowRightIcon'),
         TrendingDownIcon: stub('TrendingDownIcon'),

@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-175",
+    "title": "Admin What's New / Release Notes Dialog",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-05-29T00:00:00Z",
+    "approved": "2026-06-03T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "admin",
+        "onboarding",
+        "whats-new",
+        "release-notes",
+        "config-driven",
+        "i18n",
+        "frontend",
+        "api",
+        "ux"
+    ]
+}

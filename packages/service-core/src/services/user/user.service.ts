@@ -30,6 +30,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
+import type { UserOnboardingWhatsNew } from '@repo/schemas';
 import { type SQL, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -1086,6 +1087,170 @@ export class UserService extends BaseCrudService<
                     );
                 }
                 return this.model.getAdminStats(execCtx?.tx);
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-175 — What's New seen-state methods
+    // -----------------------------------------------------------------------
+
+    /**
+     * Marks one or more What's New entry ids as seen for the authenticated user.
+     *
+     * Performs a **defensive read-modify-write** at the service level regardless
+     * of the underlying JSONB column's replace/merge behaviour. The `settings`
+     * column in `UserModel` does NOT declare `mergeableJsonbColumns` for
+     * `settings`, so `model.update` would REPLACE the whole column. This method
+     * therefore reads the current settings first, computes the union of existing
+     * and new seenIds via `Set`, and writes back only the merged object — keeping
+     * ALL sibling keys (`theme`, `language`, `notifications`, `newsletter`,
+     * `onboarding.adminTours`, `onboarding.whatsNew.baselineAt`) intact.
+     *
+     * Idempotent: calling twice with overlapping ids is safe — Set union never
+     * produces duplicates.
+     *
+     * @param actor - The authenticated actor performing the action (self-only).
+     * @param input - `{ ids }` — non-empty array of entry ids to mark as seen.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async markWhatsNewSeen(
+        actor: Actor,
+        input: { ids: string[] },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ success: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markWhatsNewSeen',
+            input: { ...input, actor },
+            schema: z.object({
+                ids: z.array(z.string().min(1)).min(1)
+            }),
+            ctx,
+            execute: async ({ ids }, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                // Shallow-cast JSONB to typed settings. settings may be null/undefined.
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+
+                // Safely navigate the onboarding.whatsNew namespace.
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentWhatsNew =
+                    (currentOnboarding.whatsNew as UserOnboardingWhatsNew) ?? {};
+                const currentSeenIds: string[] = currentWhatsNew.seenIds ?? [];
+
+                // Set-union: idempotent, no duplicates.
+                const newSeenIds = Array.from(new Set([...currentSeenIds, ...ids]));
+
+                // Deep-merge preserving ALL sibling keys.
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        whatsNew: {
+                            ...currentWhatsNew,
+                            seenIds: newSeenIds
+                        }
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update whats-new seenIds'
+                    );
+                }
+
+                return { success: true as const };
+            }
+        });
+    }
+
+    /**
+     * Lazily initialises the `onboarding.whatsNew` namespace in the actor's
+     * settings when it is absent.
+     *
+     * Sets `baselineAt = now().toISOString()` and `seenIds = []`, preserving
+     * all sibling keys. If the namespace already exists, this is a no-op and
+     * returns success without writing to the database.
+     *
+     * Used by `GET /api/v1/protected/whats-new` to ensure every user has a
+     * baseline timestamp after their first request — entries published before
+     * `baselineAt` are automatically treated as seen, preventing pre-existing
+     * users from being flooded on feature deploy.
+     *
+     * @param actor - The authenticated actor performing the action (self-only).
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ initialized: boolean }` — `true` when a write occurred, `false` when already present.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async initWhatsNewBaseline(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ initialized: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'initWhatsNewBaseline',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentWhatsNew = currentOnboarding.whatsNew as
+                    | UserOnboardingWhatsNew
+                    | undefined;
+
+                // No-op if already initialized.
+                if (currentWhatsNew !== undefined) {
+                    return { initialized: false };
+                }
+
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        whatsNew: {
+                            baselineAt: new Date().toISOString(),
+                            seenIds: [] as string[]
+                        } satisfies UserOnboardingWhatsNew
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to initialise whats-new baseline'
+                    );
+                }
+
+                return { initialized: true };
             }
         });
     }

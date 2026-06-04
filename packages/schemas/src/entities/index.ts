@@ -28,3 +28,4 @@ export * from './user/index.js';
 export * from './userBookmark/index.js';
 export * from './userBookmarkCollection/index.js';
 export * from './revalidation/index.js';
+export * from './whats-new/index.js';
