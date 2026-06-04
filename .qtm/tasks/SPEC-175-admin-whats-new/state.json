@@ -316,7 +316,7 @@
             "id": "T-015",
             "title": "Extend ListWidget config: footerLink + onItemClick",
             "description": "Per spec Q4/Q5 (recommended option 1 in both — confirm with owner before starting per decision protocol): add optional footerLink ({ label: I18nLabel, action }) and optional onItemClick callback to ListWidgetConfig in the dashboard widget system (apps/admin). Keep both strictly optional and backward-compatible — existing dashboards unchanged. Tests: footerLink renders + fires action; onItemClick fires with item; absent config renders exactly as before (regression).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-017"],
@@ -324,21 +324,21 @@
             "tags": ["admin", "dashboard", "list-widget", "phase-dashboard"],
             "phase": "dashboard",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:47:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:16:11.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Register whats-new.recent dashboard source (4 role files)",
             "description": "Add whats-new.recent source to apps/admin/src/lib/dashboard-sources/{host,editor,admin,super}.ts per spec §7.5: queryFn calls GET /api/v1/protected/whats-new via fetchApi, maps to ListItem[] (title as label, publishedAt as meta, unseen -> statusBadge { label: 'Nuevo', variant: 'success' }, seen -> none). Query key ['dashboard', 'whats-new', userId] per existing convention. Tests: mapping seen/unseen -> badge; maxItems respected.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-006"],
             "blocks": ["T-017"],
@@ -346,21 +346,21 @@
             "tags": ["admin", "dashboard", "phase-dashboard"],
             "phase": "dashboard",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:47:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:16:11.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Add whats-new widget to all four role dashboards",
             "description": "Add the 'whats-new' list widget to HOST/EDITOR/ADMIN/SUPER dashboards in apps/admin/src/config/ia/dashboards.ts per spec §7.5 (gridSpan cols 2, scope protected, source whats-new.recent, maxItems 4, accent sky, icon per Q2 resolution, empty states). Wire footerLink 'Ver todas' -> opens WhatsNewPanel and onItemClick -> opens WhatsNewModal(entryId) using T-015 extensions. Config boot validation stays green. Tests: widget present for the four roles; click + footer wiring.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011", "T-012", "T-015", "T-016"],
             "blocks": ["T-020"],
@@ -368,21 +368,21 @@
             "tags": ["admin", "dashboard", "config-ia", "phase-dashboard"],
             "phase": "dashboard",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:47:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:16:11.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Add CSP image-origin allowlist test (TBD-2 guard)",
             "description": "Vitest test per spec §9/T-016-orig: every image URL in apps/api/src/data/whats-new/whats-new.ts must match an approved-origin allowlist (initially empty array colocated with the test or data file — any image URL fails until an origin is approved and added to the admin CSP img-src). Document in the data file header: do NOT publish an image-bearing entry before the CSP origin is added (TBD-2 is an owner/ops decision). Test: entry with unapproved origin fails; entries without image pass.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
@@ -390,21 +390,21 @@
             "tags": ["api", "csp", "ops", "phase-ops"],
             "phase": "ops",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
                 "started": "2026-06-04T06:47:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T07:16:11.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "API integration tests: GET + PATCH with real DB",
             "description": "Full integration tests for GET /protected/whats-new and PATCH /protected/users/me/whats-new-seen following the vitest e2e suite pattern from SPEC-143 (real DB): lazy-init persists baselineAt/seenIds; AC-17 SPEC-174 coexistence (pre-seeded adminTours preserved after seenIds write); role filtering with real seeded users; locale resolution via languageAdmin; idempotent PATCH; baseline semantics for pre-existing user (entries before baselineAt seen).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
@@ -418,7 +418,7 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T07:16:11.000Z",
                 "completed": null
             }
         },
@@ -426,7 +426,7 @@
             "id": "T-020",
             "title": "Admin component integration tests (Testing Library + MSW)",
             "description": "Cross-surface integration per spec §12.4/T-018-orig with MSW mocks: full flow modal auto-open -> close -> badge decrements (shared useWhatsNew state across surfaces, no independent fetches); panel mark-all -> badge 0 -> card badges update; card item click -> modal single-entry -> seen propagates. Verifies D10 (single shared hook) end-to-end in the component tree.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-017"],
             "blocks": [],
@@ -440,16 +440,16 @@
             },
             "timestamps": {
                 "created": "2026-06-03T23:30:00.000Z",
-                "started": null,
+                "started": "2026-06-04T07:16:11.000Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 20,
-        "pending": 2,
-        "inProgress": 4,
-        "completed": 14,
+        "pending": 0,
+        "inProgress": 2,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.3
     }
