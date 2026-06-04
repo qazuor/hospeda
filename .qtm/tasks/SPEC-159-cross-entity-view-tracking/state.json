@@ -1,0 +1,349 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-159",
+    "title": "Cross-Entity View Tracking",
+    "created": "2026-06-04T23:03:02.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create entityView Zod schemas in @repo/schemas",
+            "description": "Create packages/schemas/src/entities/entityView/ (follow existing entity schema layout): EntityViewCaptureSchema ({ entityType: ACCOMMODATION|POST|EVENT subset of EntityTypeEnumSchema, entityId: uuid }), EntityViewWindowEnumSchema ('7d'|'30d'), EntityViewQuerySchema ({ window }), EntityViewStatsSchema ({ entityId, unique, total }) and response array schemas. Export from package index. Tests (write first — pure logic): packages/schemas/test/entities/entityView/*.test.ts — valid/invalid entityType (reject DESTINATION etc.), invalid uuid, window enum validation, type inference.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007", "T-008"],
+            "subtasks": [
+                { "title": "Capture/query/stats/window schemas", "completed": false },
+                { "title": "Package exports", "completed": false },
+                { "title": "Unit tests (test-first)", "completed": false }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create entity_views lean dbschema + migration",
+            "description": "Create packages/db/src/schemas/analytics/entity_view.dbschema.ts: LEAN append-only table (APPROVED deviation — NO BaseModel audit/soft-delete columns): id uuid PK defaultRandom, entityType EntityTypePgEnum NOT NULL, entityId uuid NOT NULL (polymorphic, no DB FK — same as user_bookmarks), visitorHash text NOT NULL, isAuthenticated boolean NOT NULL default false, viewedAt timestamptz NOT NULL defaultNow. Declare indexes on the Drizzle model: (entity_type, entity_id, viewed_at) and (viewed_at). Register in schema barrel. Run pnpm db:generate and commit the migration (drift guard blocks CI otherwise). Tests: schema shape test consistent with how other dbschemas are tested.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-004", "T-011"],
+            "subtasks": [
+                { "title": "Drizzle table definition (lean)", "completed": false },
+                { "title": "Indexes on model", "completed": false },
+                { "title": "db:generate migration committed", "completed": false }
+            ],
+            "tags": ["database", "drizzle", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add entity_views indexes to migrations/extras",
+            "description": "Create packages/db/src/migrations/extras/NNN-entity-views.indexes.sql (next free number) mirroring the model indexes per the two-carriles rule, following 008-bookmark.indexes.sql exactly: idx_entity_views_entity_time (entity_type, entity_id, viewed_at), idx_entity_views_time (viewed_at). Idempotent (CREATE INDEX IF NOT EXISTS). Verify pnpm db:apply-extras runs clean.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Idempotent extras SQL", "completed": false },
+                { "title": "db:apply-extras verified", "completed": false }
+            ],
+            "tags": ["database", "migration", "extras"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create EntityViewModel with insert + windowed aggregation",
+            "description": "Create packages/db/src/models/analytics/entity-view.model.ts: insertView (single indexed insert, no synchronous dedup read), getStatsForEntities({ entityType, entityIds, windowDays }) returning per-entity { unique: COUNT(DISTINCT visitor_hash), total: windowed-deduped visit count } using 30-min dedup bucketing (insert-always + dedup-at-aggregation, query-time for V1), purgeOlderThan({ days }). NOTE: lean table — model may not fit BaseModel's soft-delete assumptions; follow whatever pattern fits (BaseModel subset or standalone model), document choice. Tests (write first): packages/db tests with seeded rows across 7d/30d boundaries asserting unique vs total, dedup window collapsing repeated views, purge deletes only old rows.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006", "T-007", "T-011"],
+            "subtasks": [
+                { "title": "insertView", "completed": false },
+                {
+                    "title": "getStatsForEntities (7d/30d, unique+total, dedup window)",
+                    "completed": false
+                },
+                { "title": "purgeOlderThan", "completed": false },
+                { "title": "Unit/integration tests (test-first)", "completed": false }
+            ],
+            "tags": ["database", "model", "aggregation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement server-side visitorHash util + env var",
+            "description": "Create apps/api/src/utils/visitor-hash.ts: computeVisitorHash({ ip, userAgent, date }) = sha256(dailySalt + truncatedIp + userAgent) using Node crypto; dailySalt = hmac(HOSPEDA_VIEWS_HASH_SECRET, yyyy-mm-dd). Authenticated visitors use 'user:<uuid>' instead. Raw IP must NEVER be stored or logged. Env var workflow (ALL steps): register HOSPEDA_VIEWS_HASH_SECRET in packages/config/src/env-registry.*.ts, Zod validation in apps/api/src/utils/env.ts, .env.example placeholder, then STOP and tell the user to set it in Coolify. Tests (write first): same visitor same day -> same hash; cross-day -> different hash; different UA/IP -> different hash; output contains no raw IP substring.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "computeVisitorHash util", "completed": false },
+                { "title": "Env var registry + env.ts + .env.example", "completed": false },
+                { "title": "Unit tests (test-first)", "completed": false },
+                { "title": "Notify user: set secret in Coolify", "completed": false }
+            ],
+            "tags": ["api", "privacy", "env"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create EntityViewService capture path",
+            "description": "Create packages/service-core/src/services/entityView/entity-view.service.ts (extend BaseCrudService or minimal service per what fits a lean entity — follow service-core conventions, Result<T>, runWithLoggingAndValidation): capture({ entityType, entityId, visitorHash, isAuthenticated }) validating against EntityViewCaptureSchema and inserting via EntityViewModel. Restrict entityType to ACCOMMODATION/POST/EVENT. Tests (write first): valid capture inserts; invalid entityType rejected with typed error; Result error paths.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Service skeleton per service-core conventions", "completed": false },
+                { "title": "capture() with validation", "completed": false },
+                { "title": "Unit tests (test-first)", "completed": false }
+            ],
+            "tags": ["service-core", "capture"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add EntityViewService scoped aggregation methods",
+            "description": "Extend EntityViewService: getStatsForHostAccommodations({ actor, window }) — resolves the actor's OWN accommodation ids internally (anti-peeking: never accept ownerId param; precedent conversations/protected/response-rate.ts), permission ACCOMMODATION_VIEW_OWN; getStatsForEditorEntities({ actor, entityType, entityIds, window }) — permission POST_VIEW_ALL / EVENT_VIEW_ALL per entityType. Both return EntityViewStatsSchema arrays via EntityViewModel.getStatsForEntities. PermissionEnum only (never roles). Tests (write first): host A cannot see host B's stats; editor without permission rejected; window mapping 7d/30d correct.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                { "title": "getStatsForHostAccommodations (own-scoped)", "completed": false },
+                { "title": "getStatsForEditorEntities (permission-gated)", "completed": false },
+                { "title": "Unit tests (test-first)", "completed": false }
+            ],
+            "tags": ["service-core", "aggregation", "permissions"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create POST /api/v1/public/views capture route",
+            "description": "Create apps/api/src/routes/views/public/capture.ts following contact/submit.ts: createSimpleRoute + skipAuth + customRateLimit({ requests: 30, windowMs: 60000 }). Flow: bot UA denylist regex (bot|crawl|spider|preview|curl|wget...) -> fake 202 accept (indistinguishable drop, like contact honeypot); compute visitorHash server-side from headers (T-005); resolve userId opportunistically from session if present; service.capture; return 202 { accepted: true } immediately (fire-and-forget). Register route. Integration tests: 202 on valid; 400 invalid entityType/uuid; 429 rate-limited; bot UA gets 202 but inserts nothing; response never blocks on aggregation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-005", "T-006"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Route with skipAuth + rate limit", "completed": false },
+                { "title": "Bot denylist with fake-accept", "completed": false },
+                { "title": "Server-side hash + opportunistic auth", "completed": false },
+                { "title": "Integration tests", "completed": false }
+            ],
+            "tags": ["api", "public", "capture"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create GET /protected/views/accommodations/me route",
+            "description": "Create apps/api/src/routes/views/protected/accommodations-me.ts: GET /api/v1/protected/views/accommodations/me?window=7d|30d, auth user session, permission ACCOMMODATION_VIEW_OWN, cacheTTL: 60 + customRateLimit (precedent response-rate.ts). Calls service.getStatsForHostAccommodations. Response: [{ entityId, unique, total }]. Integration tests: host sees only own accommodations; window validation (reject 90d); unauthenticated 401.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Protected route + caching", "completed": false },
+                { "title": "Integration tests", "completed": false }
+            ],
+            "tags": ["api", "protected", "host"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create GET /protected/views/posts and /protected/views/events routes",
+            "description": "Create apps/api/src/routes/views/protected/{posts,events}.ts: GET /api/v1/protected/views/posts?window=&entityIds= (permission POST_VIEW_ALL) and same for events (EVENT_VIEW_ALL), cacheTTL: 60 + customRateLimit. Calls service.getStatsForEditorEntities. Integration tests: editor with permission gets stats for requested ids; user without permission 403; entityIds validation (uuid array, bounded size); window validation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Posts route", "completed": false },
+                { "title": "Events route", "completed": false },
+                { "title": "Integration tests", "completed": false }
+            ],
+            "tags": ["api", "protected", "editor"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create entity_views retention purge cron",
+            "description": "Create apps/api/src/cron/jobs/entity-views-purge.job.ts mirroring search-index-refresh.job.ts structure + recordCronRun: nightly DELETE of rows with viewed_at older than 95 days via EntityViewModel.purgeOlderThan. Register in the cron scheduler. Tests: purge deletes only rows older than threshold; run is recorded via cron_runs; no-op when nothing to delete.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Cron job + registration", "completed": false },
+                { "title": "Tests", "completed": false }
+            ],
+            "tags": ["api", "cron", "retention"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add web view-capture beacon + extend accommodation tracker",
+            "description": "Create apps/web/src/lib/analytics/view-capture.ts: sendViewBeacon({ entityType, entityId }) using navigator.sendBeacon to POST /api/v1/public/views (fallback fetch keepalive). Extend apps/web/src/components/analytics/AccommodationViewTracker.client.tsx to ALSO call sendViewBeacon (existing PostHog accommodation_viewed event keeps firing unchanged — additive). MUST handle the astro:page-load rebinding gotcha from SPEC-191 (View Transitions lose listeners; fire once per page view, no double-fire). Tests: beacon called once per page load with correct payload; rebinds after VT navigation; PostHog event unaffected.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "sendViewBeacon util", "completed": false },
+                { "title": "Extend AccommodationViewTracker", "completed": false },
+                { "title": "VT rebind handling + tests", "completed": false }
+            ],
+            "tags": ["web", "analytics", "beacon"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add post and event view trackers on detail pages",
+            "description": "Create PostViewTracker.client.tsx + EventViewTracker.client.tsx (or one generic EntityViewTracker with props) mounted client:idle on post and event detail pages, calling sendViewBeacon({ entityType: POST|EVENT, entityId }). Optionally also fire new PostHog post_viewed/event_viewed events for product-analytics parity (additive, follow events.ts catalog conventions). Tests: tracker fires once per detail page view with correct entity id; VT rebind works on both page types.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Post detail tracker", "completed": false },
+                { "title": "Event detail tracker", "completed": false },
+                { "title": "Tests", "completed": false }
+            ],
+            "tags": ["web", "analytics", "post", "event"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "End-to-end verification + full quality pass",
+            "description": "Cross-cutting verification: seed entity_views fixtures across 7d/30d boundaries and assert widget-shaped responses end-to-end (capture -> read routes return consistent unique/total). Manual smoke on local dev servers (worktree ports): visit accommodation/post/event detail pages, verify rows inserted with hashed visitor (no raw IP), verify HOST/EDITOR read endpoints. Run full pnpm typecheck + lint + test, 90% coverage on new code, no .only/.skip.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010", "T-011", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "E2E aggregation correctness fixtures", "completed": false },
+                { "title": "Manual smoke (3 entity types, scoping)", "completed": false },
+                { "title": "Full green: typecheck + lint + test + coverage", "completed": false }
+            ],
+            "tags": ["testing", "e2e", "smoke"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Document view tracking + close out spec",
+            "description": "Docs: update apps/api/docs/route-architecture.md with the new public/protected views routes; add a short privacy note (unique visitors are APPROXIMATE, cookieless daily-salted hash, no raw IP, 95-day retention) in the relevant docs/ guide; document the lean-table convention deviation where dbschema conventions are described. Update spec.md next-steps checklist, flip task tracking, prepare PR description referencing the approved decisions.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "route-architecture.md", "completed": false },
+                { "title": "Privacy + deviation notes", "completed": false },
+                { "title": "Spec close-out", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-04T23:03:02.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
