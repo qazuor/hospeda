@@ -3,9 +3,12 @@
  * @description Unit tests for the web-native PasswordField component.
  *
  * Covers: show/hide toggle, strength levels at boundary values, error display,
- * hint display, required + disabled states, and rule checklist rendering.
+ * hint display, required + disabled states, rule checklist rendering, and
+ * mobile touch-target size regression (BETA-84).
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PasswordField } from '../../../src/components/ui/PasswordField.client';
@@ -366,5 +369,54 @@ describe('PasswordField', () => {
             'autocomplete',
             'current-password'
         );
+    });
+
+    // ── BETA-84 regression: mobile touch target ───────────────────────────────
+    // Root cause: .eyeBtn had padding:0 and relied on the 18px icon for its
+    // click area, giving an ~18×18px touch target — well below the 44×44px
+    // minimum required for reliable mobile taps.
+
+    describe('BETA-84: eye button functional toggle (non-regression)', () => {
+        it('toggles input from password to text when the eye button is clicked', () => {
+            // Arrange
+            render(<PasswordField {...baseProps} />);
+            const input = screen.getByLabelText('Password') as HTMLInputElement;
+            const eyeBtn = screen.getByRole('button', { name: 'Show password' });
+
+            // Assert initial state
+            expect(input.type).toBe('password');
+
+            // Act
+            fireEvent.click(eyeBtn);
+
+            // Assert toggled state
+            expect(input.type).toBe('text');
+        });
+    });
+
+    describe('BETA-84: eye button CSS touch target (regression guard)', () => {
+        // Read the raw CSS Module source so we can assert on the property values
+        // without needing a browser renderer (CSS Modules classes are identity-
+        // mapped in Vitest via css.modules.classNameStrategy: 'non-scoped').
+        const cssSrc = readFileSync(
+            resolve(__dirname, '../../../src/components/ui/PasswordField.module.css'),
+            'utf8'
+        );
+
+        it('.eyeBtn declares min-height of 44px for WCAG touch target', () => {
+            // Arrange: locate the .eyeBtn rule block in the raw CSS
+            const eyeBtnBlock = cssSrc.match(/\.eyeBtn\s*\{([^}]+)\}/s)?.[1] ?? '';
+
+            // Assert: min-height must be 44px
+            expect(eyeBtnBlock).toMatch(/min-height\s*:\s*44px/);
+        });
+
+        it('.eyeBtn declares min-width of 44px for WCAG touch target', () => {
+            // Arrange: locate the .eyeBtn rule block in the raw CSS
+            const eyeBtnBlock = cssSrc.match(/\.eyeBtn\s*\{([^}]+)\}/s)?.[1] ?? '';
+
+            // Assert: min-width must be 44px
+            expect(eyeBtnBlock).toMatch(/min-width\s*:\s*44px/);
+        });
     });
 });
