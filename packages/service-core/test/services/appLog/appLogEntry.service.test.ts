@@ -89,6 +89,58 @@ describe('AppLogEntryService', () => {
             expect(arg.data.messageFull).toBe(longMessage);
         });
 
+        it('forwards request-context fields to createQuiet when present', async () => {
+            // Regression guard: recordEntry builds the createQuiet payload by
+            // hand, so new optional schema fields must be forwarded explicitly.
+            asMock(modelMock.createQuiet).mockResolvedValue(makeRow());
+
+            await service.recordEntry({
+                data: {
+                    level: 'ERROR',
+                    message: 'request-scoped failure',
+                    loggedAt: new Date('2026-06-03T10:00:00.000Z'),
+                    requestId: 'req-abc-123',
+                    userId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+                    method: 'POST',
+                    path: '/api/v1/public/accommodations'
+                }
+            });
+
+            const arg = asMock(modelMock.createQuiet).mock.calls[0]?.[0] as {
+                requestId: string | null;
+                userId: string | null;
+                method: string | null;
+                path: string | null;
+            };
+            expect(arg.requestId).toBe('req-abc-123');
+            expect(arg.userId).toBe('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+            expect(arg.method).toBe('POST');
+            expect(arg.path).toBe('/api/v1/public/accommodations');
+        });
+
+        it('passes null request-context fields when recorded outside a request scope', async () => {
+            asMock(modelMock.createQuiet).mockResolvedValue(makeRow());
+
+            await service.recordEntry({
+                data: {
+                    level: 'WARN',
+                    message: 'startup warning',
+                    loggedAt: new Date()
+                }
+            });
+
+            const arg = asMock(modelMock.createQuiet).mock.calls[0]?.[0] as {
+                requestId: string | null;
+                userId: string | null;
+                method: string | null;
+                path: string | null;
+            };
+            expect(arg.requestId).toBeNull();
+            expect(arg.userId).toBeNull();
+            expect(arg.method).toBeNull();
+            expect(arg.path).toBeNull();
+        });
+
         it('rejects a non-persistable level (volume guard)', async () => {
             await expect(
                 service.recordEntry({

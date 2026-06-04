@@ -20,7 +20,7 @@ import {
     useUserProfile
 } from '@/hooks/use-user-profile';
 import { BellIcon } from '@repo/icons';
-import type { LanguageEnum, ThemeEnum, UserSettings } from '@repo/schemas';
+import type { LanguageEnum, ThemeEnum, UserNotifications, UserSettings } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback } from 'react';
 
@@ -93,7 +93,7 @@ function MyNotificationsPage() {
     );
 
     const handleNotificationChange = useCallback(
-        (field: keyof UserSettings['notifications'], value: boolean) => {
+        (field: keyof UserNotifications, value: boolean) => {
             const updated = { ...notifications, [field]: value };
             if (field === 'enabled' && !value) {
                 updated.allowEmails = false;

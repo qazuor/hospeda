@@ -17,6 +17,10 @@ export type AppLogEntryLevel = z.infer<typeof AppLogEntryLevelEnum>;
  * (SPEC-184 / BETA-82). Append-only observability data surfaced in the admin
  * log viewer. General application logs only — audit/security logs are a
  * separate domain (SPEC-162).
+ *
+ * Request-context fields (`requestId`, `userId`, `method`, `path`) are nullable
+ * because entries emitted outside a request scope (startup, cron) carry no
+ * per-request data.
  */
 export const AppLogEntrySchema = z.object({
     /** Unique identifier for this log entry */
@@ -34,7 +38,27 @@ export const AppLogEntrySchema = z.object({
     /** When the log entry was emitted */
     loggedAt: z.coerce.date(),
     /** Timestamp when this row was created */
-    createdAt: z.coerce.date()
+    createdAt: z.coerce.date(),
+    /**
+     * Correlation ID from AsyncLocalStorage request context.
+     * Null for entries emitted outside a request scope (startup, cron).
+     */
+    requestId: z.string().max(64).nullable().optional(),
+    /**
+     * Authenticated user ID at the time of the log entry.
+     * Null for unauthenticated requests or non-request-scoped entries.
+     */
+    userId: z.string().uuid().nullable().optional(),
+    /**
+     * HTTP method of the in-flight request (e.g. 'GET', 'POST').
+     * Null for non-request-scoped entries.
+     */
+    method: z.string().max(10).nullable().optional(),
+    /**
+     * Request path (e.g. '/api/v1/public/accommodations').
+     * Null for non-request-scoped entries.
+     */
+    path: z.string().nullable().optional()
 });
 
 /** A single persisted app log entry */
