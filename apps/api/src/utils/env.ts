@@ -495,7 +495,18 @@ export const ApiEnvBaseSchema = z.object({
      * Used by `UserBookmarkCollectionService._canCreate` to enforce the limit.
      * Default: 10. Range: 1–10000.
      */
-    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10)
+    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10),
+
+    // AI / Credential Vault
+    // Decision (owner-approved 2026-06-04): optional (NOT required) so the API
+    // does not fail at boot in envs where the AI feature is not yet active.
+    // The vault crypto (T-021) will throw at runtime with a clear error when
+    // the key is accessed-but-missing. Promote to required once AI is wired
+    // everywhere and the key is set in Coolify for all environments.
+    HOSPEDA_AI_VAULT_MASTER_KEY: z
+        .string()
+        .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
+        .optional()
 });
 
 /**

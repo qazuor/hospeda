@@ -463,6 +463,27 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // AI / Credential Vault
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AI_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the AI credential vault (apps/api only). Encrypts/decrypts provider API keys at rest. Min 32 chars (Zod). Optional until AI features are wired everywhere.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales de IA (solo apps/api). Cifra/descifra las API keys de proveedores en reposo. Mínimo 32 caracteres (Zod). Opcional hasta que las features de IA estén cableadas en todos los entornos.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
+        apps: ['api'],
+        category: 'ai',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
+    },
+
+    // -------------------------------------------------------------------------
     // Email
     // -------------------------------------------------------------------------
     {
