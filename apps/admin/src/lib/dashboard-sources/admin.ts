@@ -611,3 +611,9 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
 //
 // Card E — maintenance-mode flag: 🟡 confirm the SYSTEM_MAINTENANCE_MODE flag
 //   is readable. Once confirmed, add it to the admin.system.health queryFn above.
+
+// ============================================================================
+// NOTE — WHATS NEW RECENT (SPEC-175 T-016)
+// ============================================================================
+// `whats-new.recent` is registered in `./whats-new.ts` (imported via index.ts).
+// Shared across all four roles — see apps/admin/src/lib/dashboard-sources/index.ts.

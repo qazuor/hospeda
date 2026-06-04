@@ -184,3 +184,9 @@ registerDataSource('super.billing.stats', (ctx) => ({
 //   registerDataSource('super.audit.log.actions', (ctx) => ({ ... }));
 //   registerDataSource('super.audit.log.security', (ctx) => ({ ... }));
 //   registerDataSource('super.audit.log.sentry', (ctx) => ({ ... }));
+
+// ============================================================================
+// NOTE — WHATS NEW RECENT (SPEC-175 T-016)
+// ============================================================================
+// `whats-new.recent` is registered in `./whats-new.ts` (imported via index.ts).
+// Shared across all four roles — see apps/admin/src/lib/dashboard-sources/index.ts.

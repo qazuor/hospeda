@@ -195,8 +195,13 @@ export function useWhatsNew(): UseWhatsNewReturn {
         },
 
         // On settle (success or error): invalidate so the server state is re-fetched.
+        // Also invalidate the dashboard source cache (`whats-new.recent`) so the
+        // dashboard card reflects the updated seen state (SPEC-175 T-016 note).
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey });
+            // Prefix invalidation matches all ['dashboard', 'whats-new.recent', ...]
+            // query keys registered by the dashboard source (any role / scope).
+            queryClient.invalidateQueries({ queryKey: ['dashboard', 'whats-new.recent'] });
         }
     });
 

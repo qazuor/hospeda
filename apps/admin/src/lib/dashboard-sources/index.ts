@@ -35,3 +35,6 @@ import './host';
 import './editor';
 import './admin';
 import './super';
+// Shared sources (span all four roles) — must be imported last to avoid
+// duplicate-registration errors in DEV if a role file accidentally re-registers.
+import './whats-new';
