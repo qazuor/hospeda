@@ -30,7 +30,7 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import type { UserOnboardingWhatsNew } from '@repo/schemas';
+import type { UserOnboarding, UserOnboardingWhatsNew } from '@repo/schemas';
 import { type SQL, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -1251,6 +1251,93 @@ export class UserService extends BaseCrudService<
                 }
 
                 return { initialized: true };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-174 — Admin tour seen-state method
+    // -----------------------------------------------------------------------
+
+    /**
+     * Records that the authenticated user has seen (or skipped) a specific
+     * admin tour at the given config version.
+     *
+     * Performs a **defensive read-modify-write** at the service level, mirroring
+     * the approach used by {@link markWhatsNewSeen}. The `settings` column in
+     * `UserModel` is REPLACE-mode (no `mergeableJsonbColumns` declared for
+     * `settings`), so this method reads the current settings, sets
+     * `settings.onboarding.adminTours[tourId] = version`, and writes back the
+     * full merged object — keeping ALL sibling keys intact:
+     * - `theme*`, `language*`, `notifications`, `newsletter`
+     * - `onboarding.whatsNew` (baselineAt + seenIds untouched)
+     * - Any other `onboarding.adminTours` entries for other tour ids.
+     *
+     * Calling this method twice with the same `tourId` simply overwrites the
+     * stored version with the same value (idempotent).
+     *
+     * @param actor - The authenticated actor performing the action (self-only: `me` endpoint).
+     * @param input - `{ tourId, version }` — the catalog id and config version being acknowledged.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async markAdminTourSeen(
+        actor: Actor,
+        input: { tourId: string; version: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ success: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markAdminTourSeen',
+            input: { ...input, actor },
+            schema: z.object({
+                tourId: z.string().min(1).max(100),
+                version: z.number().int().nonnegative()
+            }),
+            ctx,
+            execute: async ({ tourId, version }, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                // Shallow-cast JSONB to typed settings. settings may be null/undefined.
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+
+                // Safely navigate the onboarding namespace, preserving all sibling keys.
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentAdminTours =
+                    (currentOnboarding.adminTours as UserOnboarding['adminTours']) ?? {};
+
+                // Deep-merge: update only the specific tourId, keep all other keys.
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        adminTours: {
+                            ...currentAdminTours,
+                            [tourId]: version
+                        }
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update admin tour seen state'
+                    );
+                }
+
+                return { success: true as const };
             }
         });
     }
