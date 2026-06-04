@@ -2,7 +2,8 @@
  * AppLogFilters
  *
  * Filter bar for the app log viewer: level select, category text input,
- * and from/to date inputs.  Changing any filter resets the page to 1 via
+ * from/to date inputs, and request-context filters (requestId, userId,
+ * method, path).  Changing any filter resets the page to 1 via
  * the provided `onChange` callback.
  */
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,12 @@ export interface AppLogFiltersProps {
 
 /** Sentinel value used in the level <Select> to represent "no filter". */
 const ALL_LEVELS = '__all__';
+
+/** Sentinel value used in the method <Select> to represent "no filter". */
+const ALL_METHODS = '__all__';
+
+/** Common HTTP verb options surfaced in the method filter select. */
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 
 /**
  * Renders the filter controls bar for the app log viewer.
@@ -51,6 +58,26 @@ export function AppLogFilters({ filter, onChange }: AppLogFiltersProps) {
     const handleToDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const toDate = e.target.value ? new Date(e.target.value) : undefined;
         onChange({ ...filter, toDate, page: 1 });
+    };
+
+    const handleRequestIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const requestId = e.target.value.trim() || undefined;
+        onChange({ ...filter, requestId, page: 1 });
+    };
+
+    const handleUserIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const userId = e.target.value.trim() || undefined;
+        onChange({ ...filter, userId, page: 1 });
+    };
+
+    const handleMethodChange = (value: string) => {
+        const method = value === ALL_METHODS ? undefined : value;
+        onChange({ ...filter, method, page: 1 });
+    };
+
+    const handlePathChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const path = e.target.value.trim() || undefined;
+        onChange({ ...filter, path, page: 1 });
     };
 
     /** Converts a Date or undefined to an ISO date-input value (YYYY-MM-DD). */
@@ -120,6 +147,76 @@ export function AppLogFilters({ filter, onChange }: AppLogFiltersProps) {
                     type="date"
                     value={toDateInputValue(filter.toDate)}
                     onChange={handleToDateChange}
+                    className="h-9 text-sm"
+                />
+            </div>
+
+            {/* Request ID filter */}
+            <div className="flex min-w-52 flex-col gap-1">
+                <Label htmlFor="log-filter-request-id">Request ID</Label>
+                <Input
+                    id="log-filter-request-id"
+                    data-testid="log-filter-request-id"
+                    type="text"
+                    placeholder="ID de correlación"
+                    defaultValue={filter.requestId ?? ''}
+                    onChange={handleRequestIdChange}
+                    className="h-9 text-sm"
+                />
+            </div>
+
+            {/* User ID filter */}
+            <div className="flex min-w-52 flex-col gap-1">
+                <Label htmlFor="log-filter-user-id">User ID</Label>
+                <Input
+                    id="log-filter-user-id"
+                    data-testid="log-filter-user-id"
+                    type="text"
+                    placeholder="UUID del usuario"
+                    defaultValue={filter.userId ?? ''}
+                    onChange={handleUserIdChange}
+                    className="h-9 text-sm"
+                />
+            </div>
+
+            {/* HTTP Method filter */}
+            <div className="flex min-w-36 flex-col gap-1">
+                <Label htmlFor="log-filter-method">Método HTTP</Label>
+                <Select
+                    value={filter.method ?? ALL_METHODS}
+                    onValueChange={handleMethodChange}
+                >
+                    <SelectTrigger
+                        id="log-filter-method"
+                        data-testid="log-filter-method"
+                        className="h-9 text-sm"
+                    >
+                        <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value={ALL_METHODS}>Todos</SelectItem>
+                        {HTTP_METHODS.map((verb) => (
+                            <SelectItem
+                                key={verb}
+                                value={verb}
+                            >
+                                {verb}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Path filter */}
+            <div className="flex min-w-52 flex-col gap-1">
+                <Label htmlFor="log-filter-path">Path</Label>
+                <Input
+                    id="log-filter-path"
+                    data-testid="log-filter-path"
+                    type="text"
+                    placeholder="Ej: /api/v1/admin"
+                    defaultValue={filter.path ?? ''}
+                    onChange={handlePathChange}
                     className="h-9 text-sm"
                 />
             </div>

@@ -261,6 +261,77 @@ describe('FilterBar', () => {
         expect(screen.getByText('(admin-filters.defaultBadge)')).toBeInTheDocument();
     });
 
+    // Text filter: renders a text input for 'text' type filters
+    it('renders a text input for text-type filters', () => {
+        // Arrange
+        const configWithText: FilterBarConfig = {
+            filters: [
+                {
+                    paramKey: 'search',
+                    labelKey: 'filters.search',
+                    type: 'text',
+                    order: 1
+                }
+            ]
+        };
+
+        // Act
+        render(
+            <FilterBar
+                {...defaultProps}
+                config={configWithText}
+            />
+        );
+
+        // Assert — text input is rendered (by aria role)
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
+
+    // Text filter: chip shows truncated value and can be cleared
+    it('renders chip for text filter with a value and removes it on click', async () => {
+        // Arrange
+        const onFilterChange = vi.fn();
+        const configWithText: FilterBarConfig = {
+            filters: [
+                {
+                    paramKey: 'search',
+                    labelKey: 'filters.search',
+                    type: 'text',
+                    order: 1
+                }
+            ]
+        };
+        const chips: ReadonlyArray<FilterChipData> = [
+            {
+                paramKey: 'search',
+                labelKey: 'filters.search',
+                value: 'hotel boutique',
+                displayValue: 'hotel boutique',
+                isDefault: false
+            }
+        ];
+
+        render(
+            <FilterBar
+                {...defaultProps}
+                config={configWithText}
+                onFilterChange={onFilterChange}
+                chips={chips}
+                hasActiveFilters={true}
+            />
+        );
+
+        // Assert — chip value is visible
+        expect(screen.getByText('hotel boutique')).toBeInTheDocument();
+
+        // Act — remove chip
+        const removeButton = screen.getByRole('button', { name: /^Remove filter/ });
+        await userEvent.click(removeButton);
+
+        // Assert
+        expect(onFilterChange).toHaveBeenCalledWith('search', undefined);
+    });
+
     // GAP-054-047: Sort order respected
     it('renders filters in order defined by config order field', () => {
         // Arrange — reverse the order values

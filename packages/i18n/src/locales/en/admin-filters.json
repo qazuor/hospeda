@@ -7,6 +7,7 @@
     "resetDefaults": "Reset to defaults",
     "activeFilters": "Active filters",
     "noResults": "No results match the current filters",
+    "textPlaceholder": "Search…",
     "status": {
         "label": "Status",
         "draft": "Draft",
@@ -88,5 +89,48 @@
     },
     "includeDeleted": {
         "label": "Show deleted"
+    },
+    "rangeMin": "Min",
+    "rangeMax": "Max",
+    "rangeFrom": "From",
+    "rangeTo": "To",
+    "unit": {
+        "ars": "ARS"
+    },
+    "price": {
+        "label": "Price"
+    },
+    "createdAt": {
+        "label": "Created"
+    },
+    "startDate": {
+        "label": "Start date"
+    },
+    "endDate": {
+        "label": "End date"
+    },
+    "isBuiltin": {
+        "label": "Built-in"
+    },
+    "clientType": {
+        "label": "Client type",
+        "postSponsor": "Post sponsor",
+        "advertiser": "Advertiser",
+        "host": "Host"
+    },
+    "amenityType": {
+        "label": "Amenity type",
+        "climateControl": "Climate control",
+        "connectivity": "Connectivity",
+        "entertainment": "Entertainment",
+        "kitchen": "Kitchen",
+        "bedAndBath": "Bed & bath",
+        "outdoors": "Outdoors",
+        "accessibility": "Accessibility",
+        "services": "Services",
+        "safety": "Safety",
+        "familyFriendly": "Family-friendly",
+        "workFriendly": "Work-friendly",
+        "generalAppliances": "General appliances"
     }
 }

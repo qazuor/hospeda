@@ -7,6 +7,7 @@
     "resetDefaults": "Restablecer predeterminados",
     "activeFilters": "Filtros activos",
     "noResults": "No hay resultados con los filtros actuales",
+    "textPlaceholder": "Buscar…",
     "status": {
         "label": "Estado",
         "draft": "Borrador",
@@ -88,5 +89,48 @@
     },
     "includeDeleted": {
         "label": "Mostrar eliminados"
+    },
+    "rangeMin": "Mín",
+    "rangeMax": "Máx",
+    "rangeFrom": "Desde",
+    "rangeTo": "Hasta",
+    "unit": {
+        "ars": "ARS"
+    },
+    "price": {
+        "label": "Precio"
+    },
+    "createdAt": {
+        "label": "Creación"
+    },
+    "startDate": {
+        "label": "Fecha de inicio"
+    },
+    "endDate": {
+        "label": "Fecha de fin"
+    },
+    "isBuiltin": {
+        "label": "Incorporado"
+    },
+    "clientType": {
+        "label": "Tipo de cliente",
+        "postSponsor": "Patrocinador de post",
+        "advertiser": "Anunciante",
+        "host": "Anfitrión"
+    },
+    "amenityType": {
+        "label": "Tipo de amenidad",
+        "climateControl": "Clima",
+        "connectivity": "Conectividad",
+        "entertainment": "Entretenimiento",
+        "kitchen": "Cocina",
+        "bedAndBath": "Cama y baño",
+        "outdoors": "Exterior",
+        "accessibility": "Accesibilidad",
+        "services": "Servicios",
+        "safety": "Seguridad",
+        "familyFriendly": "Apto familias",
+        "workFriendly": "Apto trabajo",
+        "generalAppliances": "Electrodomésticos"
     }
 }

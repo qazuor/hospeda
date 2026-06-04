@@ -14,6 +14,7 @@ import { entitlementMiddleware } from '../middlewares/entitlement';
 import { loggerMiddleware } from '../middlewares/logger';
 import { metricsMiddleware } from '../middlewares/metrics';
 import { rateLimitMiddleware } from '../middlewares/rate-limit';
+import { requestContextMiddleware } from '../middlewares/request-context';
 import { createErrorHandler, responseFormattingMiddleware } from '../middlewares/response';
 import { responseValidatorMiddleware } from '../middlewares/response-validator';
 import { originVerificationMiddleware, securityHeadersMiddleware } from '../middlewares/security';
@@ -117,6 +118,10 @@ export function createApp() {
 
     // Early stage: Request setup and logging
     app.use(wrapMiddleware(requestId()))
+        // Establish per-request AsyncLocalStorage scope immediately after requestId
+        // so every downstream handler (including shared packages) can call
+        // getRequestContext() without access to Hono's Context.
+        .use(wrapMiddleware(requestContextMiddleware()))
         .use(serveEmojiFavicon('📝'))
         .use(wrapMiddleware(sentryMiddleware()))
         .use(wrapMiddleware(loggerMiddleware))
@@ -208,6 +213,8 @@ export function createDocApp() {
 
     // Essential middlewares for documentation endpoints (Swagger UI, Scalar, etc.)
     app.use(wrapMiddleware(requestId()));
+    // Establish per-request AsyncLocalStorage scope immediately after requestId.
+    app.use(wrapMiddleware(requestContextMiddleware()));
     app.use(serveEmojiFavicon('📝'));
     app.use(wrapMiddleware(loggerMiddleware)); // Needed for request logging
     app.use(wrapMiddleware(corsMiddleware())); // Needed for cross-origin requests and assets

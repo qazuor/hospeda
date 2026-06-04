@@ -13,6 +13,24 @@ export const featuresConfig: EntityConfig<Feature> = {
     // API
     apiEndpoint: '/api/v1/admin/features',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'isBuiltin',
+                labelKey: 'admin-filters.isBuiltin.label',
+                type: 'boolean',
+                order: 1
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/content/accommodation-features',
     detailPath: '/content/accommodation-features/[id]',

@@ -1,4 +1,10 @@
-import type { ActiveFilters, FilterBarConfig, FilterChipData } from './filter-types';
+import type {
+    ActiveFilters,
+    DateRangeFilterConfig,
+    FilterBarConfig,
+    FilterChipData,
+    NumberRangeFilterConfig
+} from './filter-types';
 
 /** Sentinel value indicating a filter was explicitly cleared by the user */
 export const FILTER_CLEARED_SENTINEL = '__cleared__' as const;
@@ -27,6 +33,21 @@ export const FILTER_CLEARED_SENTINEL = '__cleared__' as const;
  * // { status: 'active' }  — 'type' was cleared, no default applied
  * ```
  */
+/**
+ * Extracts the value of a single URL param applying 3-state semantics.
+ * Returns the string value if present, undefined if cleared/absent.
+ * Does not apply defaults (range filters have no defaultValue per bound).
+ */
+function extractSingleRangeBound(
+    searchParams: Readonly<Record<string, unknown>>,
+    paramKey: string
+): string | undefined {
+    const raw = searchParams[paramKey];
+    if (raw === FILTER_CLEARED_SENTINEL) return undefined;
+    if (typeof raw === 'string' && raw !== '') return raw;
+    return undefined;
+}
+
 export const extractActiveFilters = ({
     searchParams,
     filterBarConfig
@@ -37,6 +58,24 @@ export const extractActiveFilters = ({
     const result: Record<string, string> = {};
 
     for (const filter of filterBarConfig.filters) {
+        // --- Range filters: each bound is an independent URL param ---
+        if (filter.type === 'number-range') {
+            const minVal = extractSingleRangeBound(searchParams, filter.paramKeyMin);
+            const maxVal = extractSingleRangeBound(searchParams, filter.paramKeyMax);
+            if (minVal !== undefined) result[filter.paramKeyMin] = minVal;
+            if (maxVal !== undefined) result[filter.paramKeyMax] = maxVal;
+            continue;
+        }
+
+        if (filter.type === 'date-range') {
+            const fromVal = extractSingleRangeBound(searchParams, filter.paramKeyFrom);
+            const toVal = extractSingleRangeBound(searchParams, filter.paramKeyTo);
+            if (fromVal !== undefined) result[filter.paramKeyFrom] = fromVal;
+            if (toVal !== undefined) result[filter.paramKeyTo] = toVal;
+            continue;
+        }
+
+        // --- Select / Boolean: single param with optional default ---
         const rawValue = searchParams[filter.paramKey];
 
         if (rawValue === FILTER_CLEARED_SENTINEL) {
@@ -153,6 +192,36 @@ export const filtersEqual = (a: ActiveFilters, b: ActiveFilters): boolean => {
  * //    displayValue: 'status.active', isDefault: true }]
  * ```
  */
+/**
+ * Finds the parent filter config for a range bound param key.
+ * Returns the config when `paramKey` matches either a `paramKeyMin`/`paramKeyMax` or
+ * `paramKeyFrom`/`paramKeyTo` of a range filter.
+ */
+function findRangeConfigForBound(
+    filterBarConfig: FilterBarConfig,
+    boundParamKey: string
+): { config: NumberRangeFilterConfig | DateRangeFilterConfig; boundRole: string } | undefined {
+    for (const filter of filterBarConfig.filters) {
+        if (filter.type === 'number-range') {
+            if (filter.paramKeyMin === boundParamKey) {
+                return { config: filter, boundRole: 'min' };
+            }
+            if (filter.paramKeyMax === boundParamKey) {
+                return { config: filter, boundRole: 'max' };
+            }
+        }
+        if (filter.type === 'date-range') {
+            if (filter.paramKeyFrom === boundParamKey) {
+                return { config: filter, boundRole: 'from' };
+            }
+            if (filter.paramKeyTo === boundParamKey) {
+                return { config: filter, boundRole: 'to' };
+            }
+        }
+    }
+    return undefined;
+}
+
 export const buildFilterChips = ({
     activeFilters,
     filterBarConfig,
@@ -167,40 +236,76 @@ export const buildFilterChips = ({
     const chips: FilterChipData[] = [];
 
     for (const [paramKey, activeValue] of Object.entries(activeFilters)) {
-        const config = filterBarConfig.filters.find((f) => f.paramKey === paramKey);
-        if (!config) continue; // Unknown filter — skip
+        // First try to find a simple (select/boolean) filter by its paramKey
+        const simpleConfig = filterBarConfig.filters.find(
+            (f) => f.paramKey === paramKey && f.type !== 'number-range' && f.type !== 'date-range'
+        );
 
-        let displayValue: string;
+        if (simpleConfig) {
+            let displayValue: string;
 
-        if (config.type === 'select') {
-            const option = config.options?.find((o) => o.value === activeValue);
-            displayValue = option ? t(option.labelKey) : activeValue;
-        } else if (config.type === 'boolean') {
-            if (activeValue === 'true') {
-                displayValue = t('admin-filters.booleanYes');
-            } else if (activeValue === 'false') {
-                displayValue = t('admin-filters.booleanNo');
+            if (simpleConfig.type === 'select') {
+                const option = simpleConfig.options?.find((o) => o.value === activeValue);
+                displayValue = option ? t(option.labelKey) : activeValue;
+            } else if (simpleConfig.type === 'boolean') {
+                if (activeValue === 'true') {
+                    displayValue = t('admin-filters.booleanYes');
+                } else if (activeValue === 'false') {
+                    displayValue = t('admin-filters.booleanNo');
+                } else {
+                    displayValue = activeValue;
+                }
+            } else if (simpleConfig.type === 'text') {
+                // Text filters use the raw string value as-is for chip display
+                displayValue = activeValue;
             } else {
-                displayValue = activeValue; // raw fallback for unexpected values
+                displayValue = activeValue;
             }
-        } else {
-            displayValue = activeValue;
+
+            chips.push({
+                paramKey,
+                labelKey: simpleConfig.labelKey,
+                value: activeValue,
+                displayValue,
+                isDefault: defaultFilters[paramKey] === activeValue
+            });
+            continue;
         }
 
-        chips.push({
-            paramKey,
-            labelKey: config.labelKey,
-            value: activeValue,
-            displayValue,
-            isDefault: defaultFilters[paramKey] === activeValue
-        });
+        // Then check if this is a range bound param key
+        const rangeMatch = findRangeConfigForBound(filterBarConfig, paramKey);
+        if (rangeMatch) {
+            const { config, boundRole } = rangeMatch;
+            // Build a descriptive display value: "Min: 1000" / "Max: 5000" / "From: 2026-01-01" / "To: 2026-03-31"
+            const roleSuffix =
+                boundRole === 'min'
+                    ? t('admin-filters.rangeMin')
+                    : boundRole === 'max'
+                      ? t('admin-filters.rangeMax')
+                      : boundRole === 'from'
+                        ? t('admin-filters.rangeFrom')
+                        : t('admin-filters.rangeTo');
+            chips.push({
+                paramKey,
+                labelKey: `${config.labelKey}.${boundRole}`,
+                value: activeValue,
+                displayValue: `${roleSuffix}: ${activeValue}`,
+                isDefault: false // range filters have no default values per bound
+            });
+        }
+        // Unknown param — skip silently
     }
 
-    // Sort ascending by filter order (undefined order defaults to 0)
+    // Sort ascending by filter order.
+    // For range bounds, use the parent filter's order.
     chips.sort((a, b) => {
-        const orderA = filterBarConfig.filters.find((f) => f.paramKey === a.paramKey)?.order ?? 0;
-        const orderB = filterBarConfig.filters.find((f) => f.paramKey === b.paramKey)?.order ?? 0;
-        return orderA - orderB;
+        const orderForParam = (pk: string): number => {
+            const simple = filterBarConfig.filters.find((f) => f.paramKey === pk);
+            if (simple) return simple.order ?? 0;
+            const rangeMatch = findRangeConfigForBound(filterBarConfig, pk);
+            return rangeMatch?.config.order ?? 0;
+        };
+        return orderForParam(a.paramKey) - orderForParam(b.paramKey);
     });
 
     return chips;

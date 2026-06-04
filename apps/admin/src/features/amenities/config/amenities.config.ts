@@ -13,6 +13,68 @@ export const amenitiesConfig: EntityConfig<Amenity> = {
     // API
     apiEndpoint: '/api/v1/admin/amenities',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'type',
+                labelKey: 'admin-filters.amenityType.label',
+                type: 'select',
+                order: 1,
+                options: [
+                    {
+                        value: 'CLIMATE_CONTROL',
+                        labelKey: 'admin-filters.amenityType.climateControl'
+                    },
+                    {
+                        value: 'CONNECTIVITY',
+                        labelKey: 'admin-filters.amenityType.connectivity'
+                    },
+                    {
+                        value: 'ENTERTAINMENT',
+                        labelKey: 'admin-filters.amenityType.entertainment'
+                    },
+                    { value: 'KITCHEN', labelKey: 'admin-filters.amenityType.kitchen' },
+                    {
+                        value: 'BED_AND_BATH',
+                        labelKey: 'admin-filters.amenityType.bedAndBath'
+                    },
+                    { value: 'OUTDOORS', labelKey: 'admin-filters.amenityType.outdoors' },
+                    {
+                        value: 'ACCESSIBILITY',
+                        labelKey: 'admin-filters.amenityType.accessibility'
+                    },
+                    { value: 'SERVICES', labelKey: 'admin-filters.amenityType.services' },
+                    { value: 'SAFETY', labelKey: 'admin-filters.amenityType.safety' },
+                    {
+                        value: 'FAMILY_FRIENDLY',
+                        labelKey: 'admin-filters.amenityType.familyFriendly'
+                    },
+                    {
+                        value: 'WORK_FRIENDLY',
+                        labelKey: 'admin-filters.amenityType.workFriendly'
+                    },
+                    {
+                        value: 'GENERAL_APPLIANCES',
+                        labelKey: 'admin-filters.amenityType.generalAppliances'
+                    }
+                ]
+            },
+            {
+                paramKey: 'isBuiltin',
+                labelKey: 'admin-filters.isBuiltin.label',
+                type: 'boolean',
+                order: 2
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/content/accommodation-amenities',
     detailPath: '/content/accommodation-amenities/[id]',

@@ -73,6 +73,7 @@ ENV HOSPEDA_SENTRY_RELEASE=$HOSPEDA_SENTRY_RELEASE \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=build /prod/api ./
+COPY --chown=node:node --from=build /prod/api ./
+USER node
 EXPOSE 3001
 CMD ["node", "dist/index.js"]

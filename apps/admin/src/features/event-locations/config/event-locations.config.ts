@@ -16,6 +16,18 @@ export const eventLocationsConfig: EntityConfig<EventLocation> = {
     // API
     apiEndpoint: '/api/v1/admin/event-locations',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/events/locations',
     detailPath: '/events/locations/[id]',
