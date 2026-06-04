@@ -162,7 +162,7 @@
             "specId": "SPEC-166",
             "title": "Review Moderation State",
             "status": "in-progress",
-            "progress": "2/27",
+            "progress": "6/27",
             "path": "SPEC-166-review-moderation-state",
             "branch": "spec/SPEC-166-review-moderation-state"
         }
