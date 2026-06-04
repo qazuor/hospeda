@@ -382,7 +382,7 @@
             "id": "T-018",
             "title": "Admin integration tests: full tour flows (cross-surface)",
             "description": "Testing Library integration per spec §14: welcome auto-fires once on dashboard when unseen (driver.js mocked); D13 redirect from non-dashboard route; suppressed WhatsNewAutoTrigger while welcome unseen, releases after finish/skip (D12 end-to-end in component tree); contextual fires on first section visit; version bump re-offers; manual replay ignores version; markSeen wiring. SWEEP RULE (SPEC-175 lesson): before finishing, rg -l every touched component/config symbol over apps/admin/test and src __tests__ dirs and run ALL matching pre-existing suites, not just new files.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-014", "T-015", "T-016"],
             "blocks": [],
@@ -390,22 +390,22 @@
             "tags": ["admin", "integration-tests", "phase-testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T18:58:17.000Z",
-                "completed": null
+                "completed": "2026-06-04T20:15:42.000Z"
             }
         }
     ],
     "summary": {
         "total": 18,
         "pending": 0,
-        "inProgress": 1,
-        "completed": 17,
+        "inProgress": 0,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.4
     }
