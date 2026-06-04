@@ -1,0 +1,120 @@
+{
+    "hub": {
+        "title": "Colabore com a Hospeda",
+        "description": "Ajude a melhorar a Hospeda: reporte erros, contribua com fotos dos destinos ou junte-se como editor do blog e dos eventos.",
+        "tagline": "Todos juntos",
+        "heading": "Colabore com a Hospeda",
+        "subtitle": "A Hospeda é construída por todos nós. Escolha como você quer ajudar.",
+        "report": {
+            "title": "Reporte informações incorretas",
+            "description": "Viu um dado desatualizado ou um erro em um destino? Avise e nós corrigimos.",
+            "cta": "Reportar um erro"
+        },
+        "photos": {
+            "title": "Contribua com suas fotos",
+            "description": "Envie suas melhores fotos dos destinos do Litoral e ajude a mostrá-los como merecem.",
+            "cta": "Compartilhar fotos"
+        },
+        "editors": {
+            "title": "Junte-se como editor",
+            "description": "Buscamos editores voluntários para o blog e a agenda de eventos. Candidate-se e escreva conosco.",
+            "cta": "Quero me candidatar"
+        }
+    },
+    "report": {
+        "title": "Reportar informações incorretas",
+        "description": "Encontrou um dado incorreto ou desatualizado em um destino? Conte para nós e corrigimos.",
+        "tagline": "Ajude a melhorar",
+        "heading": "Reporte informações incorretas",
+        "subtitle": "Viu algo estranho em um destino? Conte o que você encontrou e a equipe vai revisar. Se você chegou da página de um destino, já deixamos indicado na mensagem.",
+        "backToHub": "Voltar para Colabore"
+    },
+    "photos": {
+        "title": "Contribua com suas fotos dos destinos",
+        "description": "Envie suas melhores fotos dos destinos do Litoral. Veja os termos de uso e mande sua contribuição.",
+        "tagline": "Chamada aberta",
+        "heading": "Contribua com suas fotos",
+        "subtitle": "Muitos destinos do Litoral ainda não têm fotos que façam justiça a eles. Se você tem boas fotos, esta é a sua página.",
+        "backToHub": "Voltar para Colabore",
+        "how": {
+            "heading": "Como funciona?",
+            "step1": "Conte de qual destino são suas fotos e o que elas mostram.",
+            "step2": "Se já estiverem online (Drive, Dropbox, etc.), cole os links na mensagem.",
+            "step3": "Caso contrário, respondemos por email para combinar o envio."
+        },
+        "terms": {
+            "heading": "Termos de uso das fotos",
+            "intro": "Antes de enviar suas fotos, leia estas condições. São curtas e claras:",
+            "item1": "As fotos enviadas devem ser de sua autoria ou contar com autorização do autor.",
+            "item2": "Ao enviá-las, você autoriza a Hospeda a publicá-las no site e em suas redes, sempre com crédito ao autor.",
+            "item3": "Você mantém os direitos sobre suas fotos: pode pedir que as removamos quando quiser.",
+            "item4": "Não envie fotos com pessoas identificáveis sem o consentimento delas."
+        },
+        "form": {
+            "heading": "Envie sua contribuição",
+            "termsNotePrefix": "Ao enviar você aceita os",
+            "termsNoteLink": "termos de uso das fotos"
+        }
+    },
+    "editors": {
+        "title": "Junte-se como editor",
+        "description": "Buscamos editores voluntários para o blog e a agenda de eventos da Hospeda. Candidate-se e escreva conosco.",
+        "tagline": "Chamada aberta",
+        "heading": "Junte-se como editor",
+        "subtitle": "O blog e a agenda de eventos crescem com pessoas que conhecem e amam o Litoral. Se você gosta de escrever ou curar conteúdo, candidate-se.",
+        "backToHub": "Voltar para Colabore",
+        "role": {
+            "heading": "O que faz um editor?",
+            "item1": "Escrever ou revisar artigos do blog sobre os destinos do Litoral.",
+            "item2": "Cadastrar e curar eventos da agenda: datas, locais, descrições.",
+            "item3": "Sugerir temas e ajudar a manter o conteúdo atualizado."
+        },
+        "form": {
+            "heading": "Candidate-se",
+            "hint": "Conte quem você é, sobre o que gostaria de escrever e se tem experiência (não é obrigatório)."
+        }
+    },
+    "form": {
+        "ariaLabel": "Formulário de colaboração",
+        "firstName": "Nome",
+        "firstNameError": "O nome é obrigatório",
+        "lastName": "Sobrenome",
+        "lastNameError": "O sobrenome é obrigatório",
+        "email": "Email",
+        "emailError": "Digite um email válido",
+        "message": "Mensagem",
+        "messageError": "A mensagem deve ter pelo menos 10 caracteres",
+        "messagePlaceholder": "Conte os detalhes da sua contribuição aqui...",
+        "reportSeedPrefix": "Reporte sobre o destino:",
+        "sending": "Enviando...",
+        "submit": "Enviar",
+        "successTitle": "Obrigado pela sua contribuição!",
+        "successMsg": "Vamos revisá-la e entramos em contato por email se precisarmos de mais detalhes.",
+        "errorGeneral": "Ocorreu um erro. Tente novamente.",
+        "errorRateLimit": "Muitas tentativas. Aguarde um minuto e tente novamente."
+    },
+    "banner": {
+        "photos": {
+            "title": "Tem fotos deste destino?",
+            "description": "Compartilhe com a comunidade e ajude a mostrá-lo como merece.",
+            "cta": "Contribuir fotos"
+        },
+        "photosListing": {
+            "title": "Tem fotos destes destinos?",
+            "description": "Adicione suas fotos e ajude a mostrar o Litoral como merece."
+        },
+        "editors": {
+            "title": "Você gosta de escrever?",
+            "description": "Buscamos editores voluntários para o blog e a agenda de eventos.",
+            "cta": "Junte-se como editor"
+        },
+        "editorsEvents": {
+            "description": "Buscamos editores voluntários para cadastrar e curar os eventos da agenda."
+        }
+    },
+    "reportLink": {
+        "label": "Reportar informações incorretas",
+        "hint": "Viu um erro? Avise a gente",
+        "inline": "Viu informações incorretas ou desatualizadas? Reporte"
+    }
+}

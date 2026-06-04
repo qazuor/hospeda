@@ -1,0 +1,120 @@
+{
+    "hub": {
+        "title": "Contribute to Hospeda",
+        "description": "Help us improve Hospeda: report errors, contribute destination photos or join as a blog and events editor.",
+        "tagline": "All together",
+        "heading": "Contribute to Hospeda",
+        "subtitle": "Hospeda is built by all of us. Choose how you want to help.",
+        "report": {
+            "title": "Report incorrect information",
+            "description": "Spotted outdated data or an error on a destination? Let us know and we'll fix it.",
+            "cta": "Report an error"
+        },
+        "photos": {
+            "title": "Contribute your photos",
+            "description": "Share your best photos of the Litoral destinations and help show them at their best.",
+            "cta": "Share photos"
+        },
+        "editors": {
+            "title": "Join as an editor",
+            "description": "We're looking for volunteer editors for the blog and the events calendar. Apply and write with us.",
+            "cta": "I want to apply"
+        }
+    },
+    "report": {
+        "title": "Report incorrect information",
+        "description": "Found incorrect or outdated information on a destination? Tell us and we'll fix it.",
+        "tagline": "Help us improve",
+        "heading": "Report incorrect information",
+        "subtitle": "Spotted something off on a destination? Tell us what you found and the team will review it. If you arrived from a destination page, we already noted it in the message.",
+        "backToHub": "Back to Contribute"
+    },
+    "photos": {
+        "title": "Contribute your destination photos",
+        "description": "Share your best photos of the Litoral destinations. Check the usage terms and send us your contribution.",
+        "tagline": "Open call",
+        "heading": "Contribute your photos",
+        "subtitle": "Many Litoral destinations still lack photos that do them justice. If you have good shots, this is your page.",
+        "backToHub": "Back to Contribute",
+        "how": {
+            "heading": "How does it work?",
+            "step1": "Tell us which destination your photos are from and what they show.",
+            "step2": "If they are already online (Drive, Dropbox, etc.), paste the links in the message.",
+            "step3": "Otherwise, we'll reply by email to coordinate the delivery."
+        },
+        "terms": {
+            "heading": "Photo usage terms",
+            "intro": "Before sending your photos, read these conditions. They are short and clear:",
+            "item1": "The photos you send must be your own work or have the author's permission.",
+            "item2": "By sending them, you authorize Hospeda to publish them on the site and its social media, always crediting the author.",
+            "item3": "You keep the rights to your photos: you can ask us to remove them at any time.",
+            "item4": "Do not send photos with identifiable people without their consent."
+        },
+        "form": {
+            "heading": "Send us your contribution",
+            "termsNotePrefix": "By submitting you accept the",
+            "termsNoteLink": "photo usage terms"
+        }
+    },
+    "editors": {
+        "title": "Join as an editor",
+        "description": "We're looking for volunteer editors for Hospeda's blog and events calendar. Apply and write with us.",
+        "tagline": "Open call",
+        "heading": "Join as an editor",
+        "subtitle": "The blog and the events calendar grow with people who know and love the Litoral. If you enjoy writing or curating content, apply.",
+        "backToHub": "Back to Contribute",
+        "role": {
+            "heading": "What does an editor do?",
+            "item1": "Write or review blog articles about the Litoral destinations.",
+            "item2": "Load and curate calendar events: dates, venues, descriptions.",
+            "item3": "Suggest topics and help keep the content up to date."
+        },
+        "form": {
+            "heading": "Apply",
+            "hint": "Tell us who you are, what you'd like to write about and whether you have experience (not required)."
+        }
+    },
+    "form": {
+        "ariaLabel": "Contribution form",
+        "firstName": "First name",
+        "firstNameError": "First name is required",
+        "lastName": "Last name",
+        "lastNameError": "Last name is required",
+        "email": "Email",
+        "emailError": "Enter a valid email",
+        "message": "Message",
+        "messageError": "The message must be at least 10 characters",
+        "messagePlaceholder": "Tell us the details of your contribution here...",
+        "reportSeedPrefix": "Report about the destination:",
+        "sending": "Sending...",
+        "submit": "Send",
+        "successTitle": "Thanks for your contribution!",
+        "successMsg": "We'll review it and contact you by email if we need more details.",
+        "errorGeneral": "Something went wrong. Please try again.",
+        "errorRateLimit": "Too many attempts. Wait a minute and try again."
+    },
+    "banner": {
+        "photos": {
+            "title": "Got photos of this destination?",
+            "description": "Share them with the community and help show it at its best.",
+            "cta": "Contribute photos"
+        },
+        "photosListing": {
+            "title": "Got photos of these destinations?",
+            "description": "Add your photos and help show the Litoral at its best."
+        },
+        "editors": {
+            "title": "Do you like writing?",
+            "description": "We're looking for volunteer editors for the blog and the events calendar.",
+            "cta": "Join as an editor"
+        },
+        "editorsEvents": {
+            "description": "We're looking for volunteer editors to load and curate the calendar events."
+        }
+    },
+    "reportLink": {
+        "label": "Report incorrect information",
+        "hint": "Spotted an error? Let us know",
+        "inline": "Spotted incorrect or outdated information? Report it"
+    }
+}

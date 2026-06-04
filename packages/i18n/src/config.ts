@@ -68,7 +68,9 @@ export const namespaces = [
     // Map components (SPEC-097)
     'maps',
     // What's New / Release Notes (admin panel only, SPEC-175)
-    'admin-whats-new'
+    'admin-whats-new',
+    // Contribution hub /colaborar (web only, SPEC-191)
+    'contributions'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -137,6 +139,7 @@ import blogEs from './locales/es/blog.json';
 import commentsEs from './locales/es/comments.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
+import contributionsEs from './locales/es/contributions.json';
 import conversationsEs from './locales/es/conversations.json';
 import cookieConsentEs from './locales/es/cookieConsent.json';
 import destinationEs from './locales/es/destination.json';
@@ -187,6 +190,7 @@ import blogEn from './locales/en/blog.json';
 import commentsEn from './locales/en/comments.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
+import contributionsEn from './locales/en/contributions.json';
 import conversationsEn from './locales/en/conversations.json';
 import cookieConsentEn from './locales/en/cookieConsent.json';
 import destinationEn from './locales/en/destination.json';
@@ -237,6 +241,7 @@ import blogPt from './locales/pt/blog.json';
 import commentsPt from './locales/pt/comments.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
+import contributionsPt from './locales/pt/contributions.json';
 import conversationsPt from './locales/pt/conversations.json';
 import cookieConsentPt from './locales/pt/cookieConsent.json';
 import destinationPt from './locales/pt/destination.json';
@@ -279,6 +284,7 @@ const rawTranslations = {
         comments: commentsEs,
         common: commonEs,
         contact: contactEs,
+        contributions: contributionsEs,
         destinations: destinationEs,
         error: errorEs,
         events: eventEs,
@@ -329,6 +335,7 @@ const rawTranslations = {
         comments: commentsEn,
         common: commonEn,
         contact: contactEn,
+        contributions: contributionsEn,
         destinations: destinationEn,
         error: errorEn,
         events: eventEn,
@@ -379,6 +386,7 @@ const rawTranslations = {
         comments: commentsPt,
         common: commonPt,
         contact: contactPt,
+        contributions: contributionsPt,
         destinations: destinationPt,
         error: errorPt,
         events: eventPt,
