@@ -9,6 +9,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import type {
+    FilterBarConfig,
+    FilterControlConfig
+} from '../../src/components/entity-list/filters/filter-types';
 import { accommodationsConfig } from '../../src/features/accommodations/config/accommodations.config';
 import { amenitiesConfig } from '../../src/features/amenities/config/amenities.config';
 import { attractionsConfig } from '../../src/features/attractions/config/attractions.config';
@@ -27,9 +31,9 @@ import { sponsorsConfig } from '../../src/features/sponsors/config/sponsors.conf
  * Returns the filter with the given paramKey from a filterBarConfig, or throws.
  */
 function findFilter(
-    config: { filterBarConfig?: { filters: ReadonlyArray<{ paramKey: string }> } },
+    config: { filterBarConfig?: FilterBarConfig },
     paramKey: string
-) {
+): FilterControlConfig {
     const filters = config.filterBarConfig?.filters ?? [];
     const match = filters.find((f) => f.paramKey === paramKey);
     if (!match) throw new Error(`Filter with paramKey '${paramKey}' not found`);
