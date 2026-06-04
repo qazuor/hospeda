@@ -1732,6 +1732,25 @@
             "archived": true,
             "archivedAt": "2026-06-04T17:30:00.000Z",
             "archiveNote": "Completed 22/22 (unified auth + host-mode access model). Was left in active index with archived=false; moved to archive 2026-06-04 for consistency with the index.archive.json pattern."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-174-admin-welcome-tour",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-174-admin-welcome-tour",
+            "base": "staging",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
+            "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15.",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-174-admin-welcome-tour",
+            "completed": "2026-06-04T00:00:00.000Z",
+            "archivedAt": "2026-06-04T23:03:21.000Z",
+            "completionRef": "PR #1451 merged 2026-06-04 — role-based guided welcome tour: driver.js engine (lazy), 19-tour Zod-validated catalog with boot cross-checks, protected tour-progress endpoint (RMW), D12 whats-new suppression + D13 dashboard redirect, Ver guia replay, i18n es/en/pt. 18/18 tasks, full browser smoke passed (all roles flows)."
         }
     ]
 }

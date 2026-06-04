@@ -746,6 +746,16 @@
             "completedAt": "2026-06-03",
             "archivedAt": "2026-06-04T17:30:00.000Z",
             "archiveNote": "Closeout: 22/22 tasks done; merged to staging. Was left in active index with archived=false; moved to archive 2026-06-04 for consistency with the index.archive.json pattern."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "archived": true,
+            "archivedAt": "2026-06-04T23:03:21.000Z",
+            "archiveNote": "All 18 tasks done; PR #1451 merged to staging 2026-06-04 after full browser smoke (welcome+contextual+replay+D12/D13 live). Owner-noted minor details deferred as follow-ups. Open: prod-promote consideration — tours auto-fire for ALL existing users on first post-deploy login (no baseline)."
         }
     ]
 }
