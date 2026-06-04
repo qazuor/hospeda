@@ -5,23 +5,38 @@
  * the admin panel (T-194-03) or the MP webhook (T-194-04 / T-008). Both
  * callers route through `applyRefundLifecycle` so the policy is defined once.
  *
- * Policy (per SPEC-194 §3 T-194-03):
- * - FULL refund   → transition the linked subscription to `cancelled` via the
- *                   SPEC-194 state machine, insert an audit event, and clear
- *                   the entitlement cache so the customer loses access
- *                   immediately.
- * - PARTIAL refund → keep the subscription active; log a structured
- *                    audit-intent warn.
- *                    TODO(SPEC-194 T-019): model refunded_amount / audit event.
+ * Policy (per SPEC-194 §3 T-194-03 / T-019):
+ * - FULL refund   → persist `refunded_amount` on billing_payments (full
+ *                   payment.amount), transition the linked subscription to
+ *                   `cancelled` via the SPEC-194 state machine, insert an
+ *                   audit event, and clear the entitlement cache so the
+ *                   customer loses access immediately.
+ * - PARTIAL refund → accumulate `refunded_amount` on billing_payments, insert
+ *                    a `payment.partial_refund` audit event, keep the
+ *                    subscription active (entitlement cache NOT cleared —
+ *                    partial refund does not affect entitlements). If the
+ *                    accumulated total reaches `payment.amount`, the full
+ *                    cancel+revoke path is taken instead.
  * - No subscription linked to the payment → log and return (no-op).
  * - Invalid transition (e.g. sub already cancelled) → log + skip the status
  *   write but still clear the cache (idempotent refunds must not error).
+ *
+ * ## Unit semantics (CRITICAL — money)
+ *
+ * All amounts in this service are in **centavos** (integer, smallest ARS unit):
+ *   - `payment.amount`   — centavos (stored that way in billing_payments)
+ *   - `refundAmount`     — centavos (callers MUST convert before passing)
+ *   - `refunded_amount`  — centavos (what this service writes to billing_payments)
+ *
+ * The webhook caller (`applyWebhookRefundLifecycle` in payment-logic.ts)
+ * converts MP's major-unit `transaction_amount_refunded` to centavos before
+ * calling this function: `Math.round(mpMajorAmount * 100)`.
  *
  * @module services/refund-lifecycle
  */
 
 import type { QZPayPayment } from '@qazuor/qzpay-core';
-import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
+import { billingPayments, billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
@@ -37,13 +52,23 @@ export interface ApplyRefundLifecycleInput {
     /** The QZPay payment that was refunded. Contains `subscriptionId` and `customerId`. */
     readonly payment: QZPayPayment;
     /**
-     * The refund amount in the smallest currency unit (centavos).
+     * The refund amount in **centavos** (smallest currency unit).
      * `undefined` means the refund API was called without an explicit amount,
      * which is treated as a full refund of `payment.amount`.
+     *
+     * **Callers are responsible for unit conversion.** The webhook caller
+     * (`applyWebhookRefundLifecycle` in payment-logic.ts) converts MP's
+     * major-unit `transaction_amount_refunded` via `Math.round(amount * 100)`.
      */
     readonly refundAmount: number | undefined;
-    /** The admin user ID that triggered the refund (for audit trail). */
+    /** The admin user ID or source label that triggered the refund (for audit trail). */
     readonly adminUserId: string;
+    /**
+     * Caller source for audit trail metadata — distinguishes admin panel from
+     * webhook and polling paths.
+     * @default 'admin'
+     */
+    readonly source?: 'admin' | 'webhook' | 'polling';
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -69,69 +94,155 @@ function isFullRefund(payment: QZPayPayment, refundAmount: number | undefined): 
 /**
  * Applies Hospeda-side lifecycle effects for a refunded payment.
  *
- * - Full refund: transitions the linked subscription to `cancelled`, inserts
- *   an audit event, and clears the entitlement cache.
- * - Partial refund: logs an audit-intent warning (entitlements unchanged).
+ * - Full refund: persists `refunded_amount` on billing_payments (full
+ *   payment.amount), transitions the linked subscription to `cancelled`,
+ *   inserts an audit event, and clears the entitlement cache.
+ * - Partial refund: accumulates `refunded_amount` on billing_payments, inserts
+ *   a `payment.partial_refund` audit event, keeps the subscription active (no
+ *   entitlement cache clear — partial refunds do not affect entitlements).
+ *   When accumulated partials reach `payment.amount`, the full cancel+revoke
+ *   path is applied automatically.
  * - No linked subscription: logs and returns without side effects.
  *
  * This function is intentionally fail-safe: individual step failures are
  * caught and logged so a transient DB error does not surface as a 500 on the
  * admin refund endpoint (the core refund has already committed in QZPay).
  *
- * @param input - Payment, refund amount, and admin actor context.
+ * @param input - Payment, refund amount (centavos), actor context, and source.
  *
  * @example
  * ```ts
  * // In onAfterPaymentRefund hook (admin tier):
- * await applyRefundLifecycle({ payment, refundAmount: amount, adminUserId: actor.id });
+ * await applyRefundLifecycle({ payment, refundAmount: amount, adminUserId: actor.id, source: 'admin' });
  *
- * // In MP webhook handler (T-008):
- * await applyRefundLifecycle({ payment, refundAmount: undefined, adminUserId: 'webhook' });
+ * // In MP webhook handler (T-008): amount converted major→centavos before call.
+ * await applyRefundLifecycle({ payment, refundAmount: centavosAmount, adminUserId: 'webhook', source: 'webhook' });
  * ```
  */
 export async function applyRefundLifecycle({
     payment,
     refundAmount,
-    adminUserId
+    adminUserId,
+    source = 'admin'
 }: ApplyRefundLifecycleInput): Promise<void> {
     const { id: paymentId, customerId, subscriptionId } = payment;
 
     // ── Guard: payment must be linked to a subscription ────────────────────────
     if (!subscriptionId) {
         apiLogger.info(
-            { paymentId, customerId, adminUserId },
+            { paymentId, customerId, adminUserId, source },
             'Refund lifecycle: payment has no linked subscription — no subscription state change'
         );
         return;
     }
 
-    const full = isFullRefund(payment, refundAmount);
+    const db = getDb();
 
-    // ── Partial refund: audit-intent only ─────────────────────────────────────
-    if (!full) {
-        // TODO(SPEC-194 T-019): model refunded_amount and insert a dedicated audit
-        // event when partial-refund audit is implemented.
-        apiLogger.warn(
-            {
-                paymentId,
-                customerId,
-                subscriptionId,
-                refundAmount,
-                originalAmount: payment.amount,
-                adminUserId
-            },
-            'Refund lifecycle: partial refund — subscription kept active; audit-intent logged (T-019 pending)'
-        );
-        return;
+    // ── Partial refund path ────────────────────────────────────────────────────
+    // Read, accumulate, persist refunded_amount; insert partial_refund audit
+    // event. When accumulated total reaches payment.amount, fall through to the
+    // full-refund cancel path. Entitlement cache is NOT cleared for partial
+    // refunds — they do not change subscription status or entitlements.
+
+    const isPartial = !isFullRefund(payment, refundAmount);
+
+    if (isPartial) {
+        // The effective partial amount: refundAmount is always defined here
+        // because isFullRefund returns false only when refundAmount is defined
+        // and < payment.amount.
+        const partialAmount = refundAmount as number;
+
+        // Read current accumulated refundedAmount to compute the new total.
+        let priorRefundedAmount = 0;
+        try {
+            const rows = await db
+                .select({ refundedAmount: billingPayments.refundedAmount })
+                .from(billingPayments)
+                .where(eq(billingPayments.id, paymentId));
+            priorRefundedAmount = rows[0]?.refundedAmount ?? 0;
+        } catch (err) {
+            apiLogger.error(
+                { paymentId, customerId, subscriptionId, err, adminUserId, source },
+                'Refund lifecycle: DB error reading current refunded_amount — using 0 as baseline'
+            );
+        }
+
+        const newAccumulated = priorRefundedAmount + partialAmount;
+        // Cap accumulation at the original payment amount.
+        const cappedAccumulated = Math.min(newAccumulated, payment.amount);
+
+        // Check if this partial brings us to a full refund.
+        const accumulatedIsFullRefund = cappedAccumulated >= payment.amount;
+
+        if (accumulatedIsFullRefund) {
+            apiLogger.info(
+                {
+                    paymentId,
+                    customerId,
+                    subscriptionId,
+                    partialAmount,
+                    priorRefundedAmount,
+                    cappedAccumulated,
+                    paymentAmount: payment.amount,
+                    adminUserId,
+                    source
+                },
+                'Refund lifecycle: accumulated partials reach full refund — taking full cancel path'
+            );
+            // Fall through to full-refund logic below (update refundedAmount
+            // there as well so the column reflects the full amount).
+        } else {
+            // Pure partial: write refunded_amount and insert audit event only.
+            try {
+                await db
+                    .update(billingPayments)
+                    .set({ refundedAmount: cappedAccumulated, updatedAt: new Date() })
+                    .where(eq(billingPayments.id, paymentId));
+
+                await db.insert(billingSubscriptionEvents).values({
+                    subscriptionId,
+                    triggerSource: 'partial-refund',
+                    metadata: {
+                        action: 'payment.partial_refund',
+                        paymentId,
+                        partialRefundAmount: partialAmount,
+                        priorRefundedAmount,
+                        newAccumulatedRefundedAmount: cappedAccumulated,
+                        paymentAmount: payment.amount,
+                        adminUserId,
+                        source
+                    }
+                });
+            } catch (err) {
+                apiLogger.error(
+                    { paymentId, customerId, subscriptionId, err, adminUserId, source },
+                    'Refund lifecycle: DB error persisting partial refund — subscription state unchanged'
+                );
+            }
+
+            apiLogger.info(
+                {
+                    paymentId,
+                    customerId,
+                    subscriptionId,
+                    partialRefundAmount: partialAmount,
+                    priorRefundedAmount,
+                    newAccumulatedRefundedAmount: cappedAccumulated,
+                    paymentAmount: payment.amount,
+                    adminUserId,
+                    source
+                },
+                'Refund lifecycle: partial refund recorded — subscription kept active'
+            );
+            return;
+        }
     }
 
     // ── Full refund: transition subscription to cancelled ─────────────────────
     apiLogger.info(
-        { paymentId, customerId, subscriptionId, refundAmount, adminUserId },
+        { paymentId, customerId, subscriptionId, refundAmount, adminUserId, source },
         'Refund lifecycle: full refund — transitioning subscription to cancelled'
     );
-
-    const db = getDb();
 
     // Look up the current subscription status before writing.
     let currentStatus: string | undefined;
@@ -144,7 +255,7 @@ export async function applyRefundLifecycle({
 
         if (!currentStatus) {
             apiLogger.warn(
-                { subscriptionId, paymentId, customerId, adminUserId },
+                { subscriptionId, paymentId, customerId, adminUserId, source },
                 'Refund lifecycle: subscription row not found — skipping status transition'
             );
             // Still clear cache: the user should not retain cached entitlements.
@@ -153,7 +264,7 @@ export async function applyRefundLifecycle({
         }
     } catch (err) {
         apiLogger.error(
-            { subscriptionId, paymentId, customerId, err, adminUserId },
+            { subscriptionId, paymentId, customerId, err, adminUserId, source },
             'Refund lifecycle: DB error reading subscription status — clearing cache and aborting transition'
         );
         clearEntitlementCache(customerId);
@@ -176,7 +287,8 @@ export async function applyRefundLifecycle({
                 from: currentStatus,
                 to: SubscriptionStatusEnum.CANCELLED,
                 reason: guard.reason,
-                adminUserId
+                adminUserId,
+                source
             },
             'Refund lifecycle: invalid status transition — skipping status write, still clearing cache'
         );
@@ -185,8 +297,18 @@ export async function applyRefundLifecycle({
         return;
     }
 
-    // Write: update subscription status + insert audit event.
+    // The effective refunded amount to persist: full payment.amount for a full
+    // refund (including accumulated-partials-reaching-full), or the explicit
+    // refundAmount if provided.
+    const effectiveRefundedAmount = refundAmount !== undefined ? refundAmount : payment.amount;
+
+    // Write: persist refunded_amount, update subscription status, insert audit event.
     try {
+        await db
+            .update(billingPayments)
+            .set({ refundedAmount: effectiveRefundedAmount, updatedAt: new Date() })
+            .where(eq(billingPayments.id, paymentId));
+
         await db
             .update(billingSubscriptions)
             .set({
@@ -202,14 +324,16 @@ export async function applyRefundLifecycle({
             newStatus: SubscriptionStatusEnum.CANCELLED,
             triggerSource: 'admin-refund',
             metadata: {
+                action: 'payment.full_refund',
                 paymentId,
-                refundAmount: refundAmount ?? payment.amount,
-                adminUserId
+                refundAmount: effectiveRefundedAmount,
+                adminUserId,
+                source
             }
         });
     } catch (err) {
         apiLogger.error(
-            { subscriptionId, paymentId, customerId, err, adminUserId },
+            { subscriptionId, paymentId, customerId, err, adminUserId, source },
             'Refund lifecycle: DB error during status write — clearing cache despite write failure'
         );
     }
@@ -220,7 +344,7 @@ export async function applyRefundLifecycle({
     clearEntitlementCache(customerId);
 
     apiLogger.info(
-        { subscriptionId, paymentId, customerId, adminUserId },
+        { subscriptionId, paymentId, customerId, adminUserId, source },
         'Refund lifecycle: subscription cancelled and entitlement cache cleared'
     );
 }

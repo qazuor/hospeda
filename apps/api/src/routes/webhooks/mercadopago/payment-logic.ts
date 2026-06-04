@@ -527,31 +527,36 @@ interface LocalPaymentRecord {
  *     If no row found → log warn + skip (refund for unknown/unrecorded payment).
  *  2. If `payment.subscriptionId` is null AND the addon-purchase check finds a
  *     matching `billing_addon_purchases.paymentId` → log structured warn + skip.
- *     (Addon refund revocation is deferred to TODO(SPEC-194 T-012/T-019).)
+ *     (Addon refund revocation is deferred to TODO(SPEC-194 T-012).)
  *     If no addon purchase found → fall through to `applyRefundLifecycle` (its
  *     own no-subscription guard will log and return gracefully).
- *  3. Call `applyRefundLifecycle({ payment, refundAmount: undefined,
- *     adminUserId: 'webhook' })`. `refundAmount = undefined` is intentional:
- *     MP `payment.updated` events do not reliably carry a
- *     `transaction_amount_refunded` field, and Checkout Pro refunds via the
- *     MP admin are typically full refunds. `applyRefundLifecycle` treats
- *     `undefined` as a full refund.
- *     TODO(SPEC-194 T-019): parse `transaction_amount_refunded` from the MP
- *     payload and pass it as `refundAmount` once the partial-refund audit path
- *     is implemented.
+ *  3. Call `applyRefundLifecycle`. When `data.transaction_amount_refunded` is
+ *     present and numeric in the MP payload, it is converted from major units
+ *     (ARS pesos, the unit MP uses) to centavos (integer, the unit Hospeda DB
+ *     uses) via `Math.round(majorAmount * 100)` and passed as `refundAmount`.
+ *     If absent, `refundAmount` is `undefined` → treated as full refund.
+ *
+ *     Unit conversion chain (SPEC-194 T-019):
+ *       MP payload: `transaction_amount_refunded` in major units (e.g. 150.00 ARS)
+ *       → `Math.round(150.00 * 100)` = 15000 centavos
+ *       → passed as `refundAmount: 15000`
+ *       → `billing_payments.refunded_amount` written as 15000 (centavos)
  *
  * The entire function is fail-safe: step failures are caught and logged so a
  * transient DB error does not propagate as a webhook 500 — MP would then retry
  * the event indefinitely.
  *
- * @param mpPaymentId - The MP payment ID extracted from `data.id`.
- * @param source      - Caller label for log messages (webhook | polling).
+ * @param mpPaymentId  - The MP payment ID extracted from `data.id`.
+ * @param data         - The full webhook payload (to read transaction_amount_refunded).
+ * @param source       - Caller label for log messages (webhook | polling).
  */
 async function applyWebhookRefundLifecycle({
     mpPaymentId,
+    data,
     source
 }: {
     readonly mpPaymentId: string;
+    readonly data: Record<string, unknown>;
     readonly source: string;
 }): Promise<void> {
     const db = getDb();
@@ -616,7 +621,18 @@ async function applyWebhookRefundLifecycle({
     }
 
     // Step 3: apply the refund lifecycle (subscription cancellation, cache clear).
-    // refundAmount=undefined → treated as full refund (see function JSDoc above).
+    //
+    // Parse transaction_amount_refunded from the MP payload (SPEC-194 T-019).
+    // MP sends this field in major units (ARS pesos). Convert to centavos so
+    // the service can compare with payment.amount (also centavos).
+    // If absent or non-numeric → undefined → applyRefundLifecycle treats as full refund.
+    const mpRefundedAmountMajor =
+        typeof data.transaction_amount_refunded === 'number'
+            ? data.transaction_amount_refunded
+            : null;
+    const refundAmountCentavos =
+        mpRefundedAmountMajor !== null ? Math.round(mpRefundedAmountMajor * 100) : undefined;
+
     try {
         await applyRefundLifecycle({
             payment: {
@@ -638,8 +654,9 @@ async function applyWebhookRefundLifecycle({
                 createdAt: new Date(),
                 updatedAt: new Date()
             },
-            refundAmount: undefined,
-            adminUserId: 'webhook'
+            refundAmount: refundAmountCentavos,
+            adminUserId: 'webhook',
+            source: 'webhook'
         });
     } catch (err) {
         apiLogger.error(
@@ -722,7 +739,7 @@ export async function processPaymentUpdated({
             typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
 
         if (mpPaymentId) {
-            await applyWebhookRefundLifecycle({ mpPaymentId, source });
+            await applyWebhookRefundLifecycle({ mpPaymentId, data, source });
         }
     }
 

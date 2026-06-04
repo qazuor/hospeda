@@ -1233,8 +1233,9 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
                 subscriptionId: SUBSCRIPTION_ID,
                 amount: PAYMENT_AMOUNT_CENTAVOS
             }),
-            refundAmount: undefined,
-            adminUserId: 'webhook'
+            refundAmount: undefined, // no transaction_amount_refunded in data
+            adminUserId: 'webhook',
+            source: 'webhook'
         });
     });
 
@@ -1421,6 +1422,118 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
             mockBilling
         );
         expect(applyRefundLifecycle).toHaveBeenCalledOnce();
+    });
+
+    // ── T-019: transaction_amount_refunded partial detection ──────────────
+    // When the MP payload carries transaction_amount_refunded, it is converted
+    // from major units (ARS pesos) to centavos and passed as refundAmount.
+
+    it('T-019: passes refundAmount in centavos when transaction_amount_refunded is present', async () => {
+        // MP sends 150.00 ARS (major units) → 15000 centavos
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await processPaymentUpdated({
+            data: {
+                ...refundedPaymentData(),
+                transaction_amount_refunded: 150.0 // major units
+            },
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                refundAmount: 15000, // 150.00 * 100 = 15000 centavos
+                source: 'webhook'
+            })
+        );
+    });
+
+    it('T-019: passes refundAmount=undefined when transaction_amount_refunded is absent', async () => {
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await processPaymentUpdated({
+            data: refundedPaymentData(), // no transaction_amount_refunded
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                refundAmount: undefined
+            })
+        );
+    });
+
+    it('T-019: passes refundAmount=undefined when transaction_amount_refunded is non-numeric', async () => {
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await processPaymentUpdated({
+            data: {
+                ...refundedPaymentData(),
+                transaction_amount_refunded: 'bad-value' // non-numeric
+            },
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                refundAmount: undefined
+            })
+        );
+    });
+
+    it('T-019: rounds fractional centavo amounts correctly (Math.round)', async () => {
+        // MP sends 150.005 ARS → Math.round(150.005 * 100) = 15001 (not 15000 or 15000.5)
+        annualDbState.subRows = [
+            {
+                id: LOCAL_PAYMENT_ID,
+                customerId: CUSTOMER_ID,
+                subscriptionId: SUBSCRIPTION_ID,
+                amount: PAYMENT_AMOUNT_CENTAVOS
+            }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await processPaymentUpdated({
+            data: {
+                ...refundedPaymentData(),
+                transaction_amount_refunded: 150.005
+            },
+            billing: mockBilling,
+            source: 'webhook'
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                refundAmount: Math.round(150.005 * 100) // 15001
+            })
+        );
     });
 });
 

@@ -453,7 +453,8 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
         await applyRefundLifecycle({
             payment,
             refundAmount: amount,
-            adminUserId: actor.id
+            adminUserId: actor.id,
+            source: 'admin'
         });
     } catch (err) {
         apiLogger.error(
