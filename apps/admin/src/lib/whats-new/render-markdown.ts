@@ -22,15 +22,17 @@
  * serialiser. The editor is never mounted in the DOM and is destroyed immediately
  * after `getHTML()` is called, so there is no DOM overhead.
  *
- * Isolated in its own module so tests can mock it without needing `@tiptap/core`
- * (a transitive dep that vitest cannot resolve in this worktree without an alias).
+ * Isolated in its own module so tests can mock it without pulling the TipTap
+ * runtime. `Editor` is imported from `@tiptap/react` (a declared dependency that
+ * re-exports it from `@tiptap/core`) so typecheck never depends on a transitive
+ * package.
  *
  * @module render-markdown
  * @see apps/admin/src/components/whats-new/WhatsNewModal.tsx — consumer
  * @see SPEC-175 §7.2, §12, AC-13
  */
 
-import { Editor } from '@tiptap/core';
+import { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import DOMPurify from 'dompurify';
 import { Markdown } from 'tiptap-markdown';
