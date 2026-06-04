@@ -214,259 +214,259 @@
             "id": "T-007",
             "title": "Migrate addon.checkout.test.ts mocks to billing.checkout.create",
             "description": "FR-6: in apps/api/test/services/addon.checkout.test.ts remove vi.mock('mercadopago', ...) and mockPreferenceCreate; mock billing.checkout.create on the qzpay billing fixture instead (resolve { id, providerInitPoint, providerSandboxInitPoint, ... }). Re-target all 32 existing assertions to the create-input shape: payer via customerEmail/customerName (the explicit first_name/last_name split and email local-part fallback tests now assert what hospeda PASSES to qzpay, not the final MP payer block — the adapter owns that logic and tests it in its own repo), lineItems[0].unitAmount in centavos (no /100), idempotencyKey, statementDescriptor, expiresInMinutes, metadata keys incl. order_id, providerInitPoint-based checkoutUrl, CHECKOUT_ERROR when both init points are missing. All 32 tests + T-001 regressions green.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-008", "T-012"],
             "subtasks": [
                 {
                     "title": "Remove mercadopago SDK mock and helpers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add billing.checkout.create mock to fixture",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Re-target createAddonCheckout assertions (incl. payer suite)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify all 32 tests + regressions pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["qzpay", "tests"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
                 "started": "2026-06-04T18:07:15Z",
-                "completed": null
+                "completed": "2026-06-04T18:15:09Z"
             }
         },
         {
             "id": "T-008",
             "title": "Remove mercadopago from apps/api dependencies",
             "description": "FR-2: grep apps/api (src AND test, including type-only subpath imports like mercadopago/dist/...) to confirm addon.checkout.ts was the last importer. Remove 'mercadopago' from apps/api/package.json dependencies, run pnpm install to update the lockfile, typecheck apps/api. If any unexpected importer appears, STOP and report instead of removing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Grep verify no remaining importer (src + test + subpaths)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove dep + update lockfile + typecheck",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "dependencies"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:15:09Z",
+                "completed": "2026-06-04T18:15:09Z"
             }
         },
         {
             "id": "T-009",
             "title": "Update extractAddonFromReference fallback for new external_reference semantics",
             "description": "Post-migration, MP external_reference is the qzpay checkout-session UUID (qzpay core sets session.id; not caller-configurable), no longer addon_<slug>_<uuid>. In apps/api/src/routes/webhooks/mercadopago/payment-logic.ts (~line 598) the warn-only extractAddonFromReference fallback stops matching new payments. Update it: keep matching legacy in-flight references (created pre-deploy) AND extend the warn log to surface metadata.order_id when present so operators can still trace. Do NOT change the metadata-based confirmation path (extractAddonMetadata at line 595). Update/add unit tests for the fallback behavior (legacy reference still warns; qzpay UUID reference without metadata warns with order_id context when available).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Update fallback + warn logging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests for legacy and new reference shapes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["webhook", "observability"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:15:09Z",
+                "completed": "2026-06-04T18:21:40Z"
             }
         },
         {
             "id": "T-010",
             "title": "Schedule one_time_payment polling job from addon checkout",
             "description": "FR-5a: after a successful billing.checkout.create() in createAddonCheckout, schedule a polling job mirroring the annual flow (schedulePollingForSubscription in apps/api/src/services/subscription-checkout.service.ts — extract/generalize the helper or add an addon-flavored sibling): resourceType 'one_time_payment', providerResourceId = checkout session id (result.id), subscriptionId = activeSubscription.id (addon purchase guarantees an active sub), metadata { type: 'addon_purchase', addonSlug, customerId, userId, orderId }. Scheduling failure must be non-fatal (log + continue — same convention as the annual flow if it logs; verify). Unit tests: job scheduled with correct shape on success; checkout still succeeds if scheduling throws.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Reuse/extract polling scheduling helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schedule job with addon metadata after checkout create",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (shape + non-fatal failure)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["polling", "qzpay", "service"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:21:40Z",
+                "completed": "2026-06-04T18:27:31Z"
             }
         },
         {
             "id": "T-011",
             "title": "Dispatch addon confirmations in runOneTimePaymentPoll",
             "description": "FR-5b: in apps/api/src/cron/jobs/subscription-poll.job.ts, runOneTimePaymentPoll (line ~197) hard-codes confirmAnnualSubscription for succeeded payments. Add an addon branch: when the job's metadata (or the matched payment's metadata) carries type 'addon_purchase' / addonSlug, confirm via the same idempotent path the webhook uses (confirmAddonPurchase through the billing + entitlement service wiring used by processPaymentUpdated — reuse, don't duplicate). The billingAddonPurchases.paymentId idempotency check already covers webhook/polling races. Annual jobs keep the existing branch (metadata.annualSubscriptionId / job fallback). Unit tests: addon job dispatches to addon confirmation; annual job unchanged; ambiguous/missing metadata logs and keeps the annual fallback behavior.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Add addon dispatch branch (metadata-driven)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire idempotent addon confirmation (reuse webhook path)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests for both dispatch branches",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["polling", "cron"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:27:31Z",
+                "completed": "2026-06-04T18:33:07Z"
             }
         },
         {
             "id": "T-012",
             "title": "Post-cutover mock sweep across the repo",
             "description": "Mandatory sweep (SPEC-192 paid 3 CI rounds for skipping it): grep ALL test files that vi.mock the touched modules — 'mercadopago', '@repo/billing' (catalog symbols), '../services/addon.checkout' / 'addon.checkout', 'subscription-poll', 'payment-logic'. Enumerated vi.mock factories break silently when the mocked module's export surface changes. Fix every stale factory. Run the affected test files individually (targeted vitest, NO full suite per owner constraint). List swept files in the task completion notes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-009", "T-011"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Grep all vi.mock sites of touched modules",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix stale enumerated factories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run affected test files (targeted)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:33:07Z",
+                "completed": "2026-06-04T19:11:03Z"
             }
         },
         {
             "id": "T-013",
             "title": "Quality gate: typecheck + lint + targeted test runs",
             "description": "Run per-package typecheck on every touched package (apps/api at minimum; packages/service-core if touched), pnpm lint (biome), and the targeted test files for addon.checkout, the cutover parity test, payment-logic fallback, and subscription-poll. NO full local suite, NO parallel heavy runs (owner constraint — sequential, targeted). All green before PR.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Per-package typecheck (touched packages)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Lint clean",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Targeted test files green (sequential)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:11:03Z",
+                "completed": "2026-06-04T19:11:03Z"
             }
         },
         {
             "id": "T-014",
             "title": "Register deferred smoke sections + cutover sign-off docs",
             "description": "Add SPEC-127's deferred staging-smoke sections (at minimum §1.7 addon purchase — billing CORE; review the SPEC-143 checklist for any other section this change exercises, e.g. webhook/polling sections) to .qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md following the list's existing entry format. File the deferral sign-off in .qtm/specs/SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md (cutover absorbed by SPEC-127, PR ref, date). Commit .qtm tracking separately from code (jq → biome format 4-space where JSON).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-013"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Append smoke sections to SPEC-193 pending list",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sign-off in deferred-checkout-cutover.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "tracking"],
@@ -478,22 +478,22 @@
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T19:28:43Z",
+                "completed": "2026-06-04T19:28:43Z"
             }
         },
         {
             "id": "T-015",
             "title": "Open PR to staging and merge on green CI",
             "description": "Before pushing: gh pr list --head spec/SPEC-127-migrate-addon-checkout-to-qzpay --state all (orphan-commit guard). Open PR targeting staging. PR description MUST note: (1) sandbox→prod init-point preference change, (2) external_reference now qzpay session UUID + order_id in metadata, (3) dual-resolve bugfix at both sites, (4) absorbed SPEC-192 catalog cutover, (5) addon polling fallback, (6) smoke deferred to SPEC-193 batch with link to pending list entry. Merge ONLY via gh pr merge --merge after CI fully green (gh pr view N --json statusCheckRollup). Never --admin. After merge: update spec status to completed in both indexes (index-sync) + engram session summary.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 1,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Orphan-commit guard + push + PR with behavior notes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CI green verification + merge",
@@ -513,16 +513,16 @@
             },
             "timestamps": {
                 "created": "2026-06-04T17:26:29Z",
-                "started": null,
+                "started": "2026-06-04T19:28:43Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 8,
+        "pending": 0,
         "inProgress": 1,
-        "completed": 6,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.1
     }
