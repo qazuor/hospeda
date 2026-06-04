@@ -23,8 +23,14 @@ export {
 
 export {
     getActivePrompt,
+    createPromptVersion,
+    activatePromptVersion,
+    listPromptVersionsByFeature,
     type GetActivePromptInput,
-    type GetActivePromptResult
+    type GetActivePromptResult,
+    type CreatePromptVersionInput,
+    type ActivatePromptVersionInput,
+    type ListPromptVersionsByFeatureInput
 } from './prompt.storage.js';
 
 export {
@@ -34,9 +40,9 @@ export {
     type InsertAiRequestLogInput
 } from './usage.storage.js';
 
-// Re-export DB result types so usage/ sub-module can type its return value
-// without importing @repo/db directly (AC-4 isolation rule).
-export type { SelectAiUsage } from '@repo/db';
+// Re-export DB result types so other sub-modules / consumers can type their
+// return values without importing @repo/db directly (AC-4 isolation rule).
+export type { SelectAiUsage, SelectAiPromptVersion } from '@repo/db';
 
 // Read-only aggregate reporting queries (SPEC-173 T-018)
 export {

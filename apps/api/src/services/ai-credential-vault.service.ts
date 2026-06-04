@@ -29,6 +29,7 @@
 
 import { aiCredentialAudit, aiProviderCredentials, getDb, withTransaction } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { AiCredentialMasked } from '@repo/schemas';
 import type { Actor, ServiceOutput } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { encryptSecret } from '../utils/ai-vault.js';
@@ -38,6 +39,14 @@ import { apiLogger } from '../utils/logger.js';
 // ---------------------------------------------------------------------------
 // Input types
 // ---------------------------------------------------------------------------
+
+/**
+ * Input for listing AI provider credentials (masked — no secrets).
+ */
+export interface ListAiProviderCredentialsInput {
+    /** When `true`, soft-deleted rows are included in the result. Default `false`. */
+    readonly includeDeleted?: boolean;
+}
 
 /**
  * Input for creating a new AI provider credential.
@@ -138,6 +147,83 @@ function errorOutput<T>(code: ServiceErrorCode, message: string): ServiceOutput<
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
+
+/**
+ * Lists AI provider credentials, returning only the masked (non-secret) subset.
+ *
+ * The fields `ciphertext`, `iv`, and `authTag` are NEVER included in the result.
+ * Only metadata safe to surface in the admin UI is returned.
+ *
+ * @param input - `{ includeDeleted?: boolean }` — defaults to active rows only.
+ * @returns `ServiceOutput` with `{ items, total }` on success.
+ *
+ * @example
+ * ```ts
+ * const result = await listAiProviderCredentials({ includeDeleted: false });
+ * if (result.data) {
+ *   console.log(result.data.total);
+ * }
+ * ```
+ */
+export async function listAiProviderCredentials(
+    input: ListAiProviderCredentialsInput
+): Promise<ServiceOutput<{ items: AiCredentialMasked[]; total: number }>> {
+    const { includeDeleted = false } = input;
+
+    try {
+        const db = getDb();
+
+        const condition = includeDeleted ? undefined : isNull(aiProviderCredentials.deletedAt);
+
+        // Select only masked fields — NEVER ciphertext, iv, or authTag.
+        const rows = condition
+            ? await db
+                  .select({
+                      id: aiProviderCredentials.id,
+                      providerId: aiProviderCredentials.providerId,
+                      label: aiProviderCredentials.label,
+                      metadata: aiProviderCredentials.metadata,
+                      createdAt: aiProviderCredentials.createdAt,
+                      updatedAt: aiProviderCredentials.updatedAt,
+                      deletedAt: aiProviderCredentials.deletedAt
+                  })
+                  .from(aiProviderCredentials)
+                  .where(condition)
+            : await db
+                  .select({
+                      id: aiProviderCredentials.id,
+                      providerId: aiProviderCredentials.providerId,
+                      label: aiProviderCredentials.label,
+                      metadata: aiProviderCredentials.metadata,
+                      createdAt: aiProviderCredentials.createdAt,
+                      updatedAt: aiProviderCredentials.updatedAt,
+                      deletedAt: aiProviderCredentials.deletedAt
+                  })
+                  .from(aiProviderCredentials);
+
+        // Serialize Date → ISO string to match AiCredentialMaskedSchema.
+        const items: AiCredentialMasked[] = rows.map((row) => ({
+            id: row.id,
+            providerId: row.providerId,
+            label: row.label ?? null,
+            metadata: row.metadata ?? null,
+            createdAt: row.createdAt.toISOString(),
+            updatedAt: row.updatedAt.toISOString(),
+            deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null
+        }));
+
+        return { data: { items, total: items.length } };
+    } catch (error) {
+        apiLogger.error(
+            { error: error instanceof Error ? error.message : String(error) },
+            'ai-credential-vault: unexpected error in listAiProviderCredentials'
+        );
+        return errorOutput<{ items: AiCredentialMasked[]; total: number }>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while listing credentials'
+        );
+    }
+}
 
 /**
  * Creates a new encrypted AI provider credential.

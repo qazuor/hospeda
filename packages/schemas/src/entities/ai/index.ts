@@ -1,6 +1,9 @@
 // AI provider + feature identifiers and model parameters
 export * from './ai-provider.schema.js';
 
+// Admin credential vault schemas (masked view + create/rotate inputs)
+export * from './ai-credential.schema.js';
+
 // Versioned system-prompt entity
 export * from './ai-prompt.schema.js';
 
