@@ -104,6 +104,7 @@ import {
     webhookHealthRoutes
 } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
+import { protectedWhatsNewRoutes } from './whats-new';
 
 import { ApiInfoSchema } from '@repo/schemas';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
@@ -257,6 +258,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Media (avatar uploads for authenticated users)
         app.route('/api/v1/protected/media', protectedMediaRoutes);
+
+        // What's New (SPEC-175 — role-filtered release-notes with seen state)
+        app.route('/api/v1/protected/whats-new', protectedWhatsNewRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at
