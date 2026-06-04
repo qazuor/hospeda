@@ -35,6 +35,8 @@
     "dependencies": {
         "@ai-sdk/anthropic": "^3.0.81",
         "@ai-sdk/openai": "^3.0.67",
-        "ai": "^6.0.196"
+        "@repo/schemas": "workspace:*",
+        "ai": "^6.0.196",
+        "zod": "^4.0.8"
     }
 }

@@ -835,9 +835,15 @@ importers:
       '@ai-sdk/openai':
         specifier: ^3.0.67
         version: 3.0.67(zod@4.4.3)
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       ai:
         specifier: ^6.0.196
         version: 6.0.196(zod@4.4.3)
+      zod:
+        specifier: ^4.0.8
+        version: 4.4.3
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
