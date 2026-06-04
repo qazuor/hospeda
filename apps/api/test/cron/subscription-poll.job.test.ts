@@ -91,8 +91,10 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic.js', () => ({
 }));
 
 const mockConfirmAnnualSubscription = vi.fn();
+const mockProcessPaymentUpdated = vi.fn();
 vi.mock('../../src/routes/webhooks/mercadopago/payment-logic.js', () => ({
-    confirmAnnualSubscription: (...args: unknown[]) => mockConfirmAnnualSubscription(...args)
+    confirmAnnualSubscription: (...args: unknown[]) => mockConfirmAnnualSubscription(...args),
+    processPaymentUpdated: (...args: unknown[]) => mockProcessPaymentUpdated(...args)
 }));
 
 // ---------- Imports under test (after mocks) ----------
@@ -156,6 +158,10 @@ describe('subscription-poll cron job', () => {
             statusChanged: true,
             newStatus: 'active'
         });
+        // Default: addon confirmation succeeds. Tests that do NOT exercise the
+        // addon path do not set this, so the mock stays safe but uncalled.
+        mockProcessPaymentUpdated.mockResolvedValue({ success: true, addonConfirmed: true });
+        mockConfirmAnnualSubscription.mockResolvedValue({ confirmed: true });
     });
 
     afterEach(() => {
@@ -527,13 +533,286 @@ describe('subscription-poll cron job', () => {
                     metadata: undefined
                 }
             ]);
-            mockConfirmAnnualSubscription.mockResolvedValueOnce({ confirmed: true });
 
             await subscriptionPollJob.handler(buildContext());
 
             expect(mockConfirmAnnualSubscription).toHaveBeenCalledWith(
                 expect.objectContaining({ annualSubscriptionId: job.subscriptionId })
             );
+        });
+    });
+
+    describe('Addon purchase dispatch (SPEC-127 T-011)', () => {
+        // The job discriminator is locked.metadata.type === 'addon_purchase'.
+        // Succeeded payments for these jobs go through processPaymentUpdated
+        // (not confirmAnnualSubscription) to reuse the webhook's idempotency
+        // and notification path.
+
+        function lockWithJob(job: QZPaySubscriptionPollingJob): void {
+            mockStorageUpdate.mockImplementation(async (input) => ({ ...job, ...input }));
+        }
+
+        it('addon job + succeeded payment → processPaymentUpdated called with synthetic payload, returns terminal succeeded', async () => {
+            const job = buildJob({
+                id: 'addon-job-1',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_uuid',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_aaa',
+                    userId: 'user_bbb',
+                    orderId: 'addon_extra-photos_cs_addon_uuid'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_123',
+                    status: 'succeeded',
+                    amount: 150000, // 1500 ARS in cents
+                    currency: 'ARS',
+                    metadata: {
+                        addonSlug: 'extra-photos',
+                        customerId: 'cust_aaa',
+                        userId: 'user_bbb',
+                        type: 'addon_purchase',
+                        order_id: 'addon_extra-photos_cs_addon_uuid'
+                    }
+                }
+            ]);
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBe(0);
+
+            // Must NOT call the annual subscription path.
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+
+            // Must call processPaymentUpdated with synthetic payload.
+            expect(mockProcessPaymentUpdated).toHaveBeenCalledTimes(1);
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown>; billing: unknown; source: string }
+            ];
+            expect(callArg.source).toBe('polling');
+            // id = MP payment id
+            expect(callArg.data.id).toBe('mp_pay_123');
+            // status must be 'approved' (MP canonical for succeeded)
+            expect(callArg.data.status).toBe('approved');
+            // transaction_amount in major units (150000 cents / 100 = 1500)
+            expect(callArg.data.transaction_amount).toBe(1500);
+            expect(callArg.data.currency_id).toBe('ARS');
+            // metadata must carry addonSlug + customerId for processPaymentUpdated
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.addonSlug).toBe('extra-photos');
+            expect(meta.customerId).toBe('cust_aaa');
+            // external_reference = checkout session UUID from job
+            expect(callArg.data.external_reference).toBe('cs_addon_uuid');
+
+            // Terminal succeeded update must be present.
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalUpdate).toBeDefined();
+        });
+
+        it('annual job (no addon discriminator) + succeeded payment → confirmAnnualSubscription called, NOT processPaymentUpdated', async () => {
+            const job = buildJob({
+                id: 'annual-job-6',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_annual_abc',
+                // metadata has no 'type' key — annual flow
+                metadata: {}
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_annual_999',
+                    status: 'succeeded',
+                    amount: 50000,
+                    currency: 'ARS',
+                    metadata: { annualSubscriptionId: job.subscriptionId }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockConfirmAnnualSubscription).toHaveBeenCalledTimes(1);
+            expect(mockProcessPaymentUpdated).not.toHaveBeenCalled();
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalUpdate).toBeDefined();
+        });
+
+        it('addon job + failed payment → terminal failure, processPaymentUpdated NOT called', async () => {
+            const job = buildJob({
+                id: 'addon-job-2',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_fail',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_ccc',
+                    userId: 'user_ddd',
+                    orderId: 'addon_extra-photos_cs_addon_fail'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                { id: 'mp_fail_777', status: 'failed', amount: 150000, currency: 'ARS' }
+            ]);
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBe(0);
+            expect(mockProcessPaymentUpdated).not.toHaveBeenCalled();
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'failed'
+            );
+            expect(terminalUpdate).toBeDefined();
+        });
+
+        it('addon job + no payment matches → non-terminal, keep polling, no confirmation called', async () => {
+            const job = buildJob({
+                id: 'addon-job-3',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_nomatches',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_eee',
+                    userId: 'user_fff',
+                    orderId: 'addon_extra-photos_cs_addon_nomatches'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            // No matches yet — user still on the checkout page.
+            mockSearch.mockResolvedValueOnce([]);
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.processed).toBe(1);
+            expect(result.errors).toBe(0);
+            expect(mockProcessPaymentUpdated).not.toHaveBeenCalled();
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+
+            // No terminal update.
+            const terminalUpdates = mockStorageUpdate.mock.calls.filter((call) => {
+                const status = (call[0] as { status?: string }).status;
+                return status === 'succeeded' || status === 'failed' || status === 'cancelled';
+            });
+            expect(terminalUpdates).toHaveLength(0);
+
+            // Reschedule fired (nextPollAt bumped).
+            const reschedule = mockStorageUpdate.mock.calls.find((call) => {
+                return (call[0] as { nextPollAt?: Date }).nextPollAt !== undefined;
+            });
+            expect(reschedule).toBeDefined();
+        });
+
+        it('addon job whose payment metadata carries annualSubscriptionId → addon path confirmed, annualSubscriptionId absent from synthetic payload', async () => {
+            // Regression guard for the whitelist fix: if a payment's metadata ever
+            // carries a dispatch-discriminator key (annualSubscriptionId), the addon
+            // path must still be taken and the key must NOT leak into the synthetic
+            // payload forwarded to processPaymentUpdated.
+            const job = buildJob({
+                id: 'addon-job-5',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_discriminator',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_iii',
+                    userId: 'user_jjj',
+                    orderId: 'addon_extra-photos_cs_addon_discriminator'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_disc',
+                    status: 'succeeded',
+                    amount: 150000,
+                    currency: 'ARS',
+                    // Malicious/erroneous: payment metadata contains a discriminator key
+                    // that would route to the annual subscription branch if not whitelisted.
+                    metadata: {
+                        addonSlug: 'extra-photos',
+                        customerId: 'cust_iii',
+                        userId: 'user_jjj',
+                        type: 'addon_purchase',
+                        order_id: 'addon_extra-photos_cs_addon_discriminator',
+                        annualSubscriptionId: 'should-never-appear-in-synthetic-payload'
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            // The addon path (processPaymentUpdated) must be called, not the annual path.
+            expect(mockProcessPaymentUpdated).toHaveBeenCalledTimes(1);
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+
+            // The synthetic metadata forwarded to processPaymentUpdated must NOT
+            // contain annualSubscriptionId — the whitelist must have stripped it.
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.annualSubscriptionId).toBeUndefined();
+            // The addon-specific keys must still be present.
+            expect(meta.addonSlug).toBe('extra-photos');
+            expect(meta.customerId).toBe('cust_iii');
+        });
+
+        it('addon job + processPaymentUpdated returns success=false → job retries (error path)', async () => {
+            const job = buildJob({
+                id: 'addon-job-4',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_err',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_ggg',
+                    userId: 'user_hhh',
+                    orderId: 'addon_extra-photos_cs_addon_err'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_bad',
+                    status: 'succeeded',
+                    amount: 150000,
+                    currency: 'ARS',
+                    metadata: { addonSlug: 'extra-photos', customerId: 'cust_ggg' }
+                }
+            ]);
+            // processPaymentUpdated returns success=false → polling should treat as error
+            mockProcessPaymentUpdated.mockResolvedValueOnce({
+                success: false,
+                addonConfirmed: false
+            });
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            // The error should have caused a retry reschedule (not terminal succeeded).
+            expect(result.errors).toBe(1);
+            expect(result.success).toBe(false);
+            const terminalSucceeded = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalSucceeded).toBeUndefined();
         });
     });
 });

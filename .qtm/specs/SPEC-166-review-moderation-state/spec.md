@@ -118,6 +118,7 @@ export function moderateText(input: ModerateTextInput): Promise<ModerationResult
 ```
 
 Design notes:
+
 - **Returns data, not a decision.** Each consumer maps `score`/`categories` to its own action (messaging blocks; reviews → PENDING/REJECTED). Owner-confirmed.
 - **Async** even though the stub is synchronous internally — locks the contract against the future engine.
 - RORO, named exports, JSDoc, Zod-validated input — per project standards.

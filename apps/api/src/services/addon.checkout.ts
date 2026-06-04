@@ -1,7 +1,7 @@
 /**
  * Add-on Checkout Module
  *
- * Handles creation of Mercado Pago checkout sessions for add-on purchases
+ * Handles creation of qzpay-managed checkout sessions for add-on purchases
  * and confirmation of purchases after payment webhook callbacks.
  *
  * @module services/addon.checkout
@@ -9,17 +9,16 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import type { BillingPlanResponse } from '@repo/schemas';
 import type {
     ConfirmPurchaseInput,
     PurchaseAddonInput,
     PurchaseAddonResult,
     ServiceResult
 } from '@repo/service-core';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
-import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
+import { AddonCatalogService, PlanService } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -27,121 +26,146 @@ import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { PromoCodeService } from './promo-code.service';
 
-// TODO: Extend @repo/billing adapter to support preference creation.
-// Once the billing adapter has a createPreference() method, replace
-// createMercadoPagoPreference() below with the adapter call.
+// ─── Polling fallback (SPEC-127 T-010) ────────────────────────────────────────
 
 /**
- * Creates a MercadoPago preference using the raw SDK.
+ * Input for the addon checkout polling job enqueue.
  *
- * This is a thin wrapper that centralizes raw SDK usage to a single place,
- * making future migration to the billing adapter straightforward.
- *
- * The `idempotencyKey` is forwarded to MercadoPago via the `X-Idempotency-Key`
- * header. MP guarantees that two calls made with the same key (within their
- * dedup window) return the same preference, which makes retries safe and
- * prevents duplicate preferences from double-clicks or transient network
- * errors.
- *
- * @param accessToken - MercadoPago API access token
- * @param preferenceData - Preference creation data
- * @param idempotencyKey - UUID forwarded as MP's X-Idempotency-Key header
- * @returns Created preference object
+ * Kept local because the subscription-checkout.service.ts helper requires
+ * `planSlug` (subscription-specific) and `sourceLabel` in a shape that
+ * does not cleanly fit addon purchases. We call the storage layer directly
+ * here, matching the pattern used by `initiatePaidAnnualSubscription`.
  */
-async function createMercadoPagoPreference({
-    accessToken,
-    preferenceData,
-    idempotencyKey
-}: {
-    accessToken: string;
-    preferenceData: PreferenceCreateData;
-    idempotencyKey: string;
-}) {
-    const mpClient = new MercadoPagoConfig({ accessToken });
-    const preferenceClient = new Preference(mpClient);
-    return preferenceClient.create({
-        ...preferenceData,
-        requestOptions: {
-            ...preferenceData.requestOptions,
-            idempotencyKey
+interface ScheduleAddonPollingInput {
+    readonly billing: QZPayBilling;
+    readonly subscriptionId: string;
+    readonly checkoutSessionId: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+    readonly orderId: string;
+    readonly userId: string;
+}
+
+/**
+ * Enqueue a polling fallback for an addon checkout session.
+ *
+ * MP Preferences only deliver legacy IPN webhooks that the marker filter
+ * drops (SPEC-143 Finding #21), so one-time addon payments need a polling
+ * fallback — the same reason `initiatePaidAnnualSubscription` schedules one.
+ *
+ * Non-fatal: a failure here is logged as a warning and does not block the
+ * checkout response (SPEC-127 FR-5). The checkout session was already
+ * created successfully; the webhook remains the primary activation path,
+ * and this polling job is the secondary path.
+ *
+ * Skipped silently when:
+ * - `HOSPEDA_BILLING_POLLING_ENABLED` is off (test/legacy environments).
+ * - The storage adapter does not expose `subscriptionPollingJobs`.
+ * - The checkout session id is empty (defensive guard).
+ */
+async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): Promise<void> {
+    const { billing, subscriptionId, checkoutSessionId, customerId, addonSlug, orderId, userId } =
+        input;
+
+    if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
+        return;
+    }
+
+    if (!checkoutSessionId) {
+        apiLogger.warn(
+            { subscriptionId, customerId, addonSlug },
+            'Skipping addon polling enqueue — checkout session id is empty'
+        );
+        return;
+    }
+
+    const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+    if (!pollingStorage) {
+        return;
+    }
+
+    try {
+        const job = await pollingStorage.create({
+            subscriptionId,
+            providerResourceId: checkoutSessionId,
+            resourceType: 'one_time_payment',
+            provider: 'mercadopago',
+            metadata: {
+                type: 'addon_purchase',
+                addonSlug,
+                customerId,
+                userId,
+                orderId
+            }
+        });
+        if (job) {
+            apiLogger.debug(
+                {
+                    jobId: job.id,
+                    subscriptionId,
+                    checkoutSessionId,
+                    addonSlug,
+                    nextPollAt: job.nextPollAt.toISOString()
+                },
+                'Scheduled addon checkout polling fallback'
+            );
+        } else {
+            apiLogger.warn(
+                { subscriptionId, checkoutSessionId, addonSlug },
+                'Active polling job already exists for subscription — skipping addon enqueue'
+            );
         }
-    });
-}
-
-/**
- * MercadoPago category id for digital services / SaaS subscriptions.
- *
- * Set on every `items[].category_id`. MP's fraud engine uses this to model
- * approval rate; populating it (instead of leaving it blank) is one of the
- * 14 mandatory items in MP's quality checklist.
- */
-const MP_ITEM_CATEGORY_ID = 'services';
-
-/**
- * Payer fields required by MercadoPago Checkout Pro for quality compliance.
- *
- * MP rejects empty strings on `payer.last_name`, so callers must always
- * supply a non-empty value (a single space is acceptable as a fallback).
- */
-interface MercadoPagoPayerInfo {
-    readonly email: string;
-    readonly first_name: string;
-    readonly last_name: string;
-}
-
-/**
- * Derive `payer` fields for a MercadoPago preference from a billing customer.
- *
- * MercadoPago Checkout Pro's quality checklist requires `payer.email`,
- * `payer.first_name`, and `payer.last_name` to be populated. We source them
- * from the QZPay billing customer:
- *
- * - `email` comes directly from `customer.email`.
- * - `first_name` and `last_name` are split from `customer.metadata.name` on
- *   the first space. When `metadata.name` is missing or empty, we fall back
- *   to the local-part of the email for `first_name` and a single space for
- *   `last_name` (MP rejects empty strings).
- *
- * @param customer - Billing customer with `email` and optional `metadata.name`
- * @returns Payer info ready to embed in the preference body
- */
-function extractPayerInfo(customer: {
-    readonly email: string;
-    readonly metadata?: Record<string, unknown> | null;
-}): MercadoPagoPayerInfo {
-    const rawName =
-        typeof customer.metadata?.name === 'string' ? customer.metadata.name.trim() : '';
-    const emailLocalPart = customer.email.split('@')[0] || customer.email;
-
-    if (rawName.length === 0) {
-        return {
-            email: customer.email,
-            first_name: emailLocalPart,
-            last_name: ' '
-        };
+    } catch (error) {
+        // Non-fatal per SPEC-127 FR-5: the checkout succeeded; failing to schedule
+        // polling means we rely entirely on the webhook for activation.
+        apiLogger.warn(
+            {
+                customerId,
+                addonSlug,
+                checkoutSessionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Failed to enqueue addon checkout polling job — webhook is the only activation path now'
+        );
     }
+}
 
-    const firstSpaceIdx = rawName.indexOf(' ');
-    if (firstSpaceIdx === -1) {
-        return {
-            email: customer.email,
-            first_name: rawName,
-            last_name: ' '
-        };
+// ─── Plan service (DB-backed plan reads — SPEC-127 T-002) ─────────────────────
+// Instantiated once at module level; stateless, no DB connection held.
+//
+// Post-SPEC-168, `planId` may be a `billing_plans` UUID (new rows) or a
+// legacy slug (older rows/seeds). Use `resolvePlanByIdOrSlug` for dual-resolve.
+const planService = new PlanService();
+
+// ─── Addon catalog service (DB-backed addon reads — SPEC-127 T-003) ───────────
+// Replaces `getAddonBySlug` from `@repo/billing` (config catalog).
+// Instantiated once at module level; stateless, no DB connection held.
+const addonCatalogService = new AddonCatalogService();
+
+/**
+ * Resolves a billing plan from the DB using dual-resolve:
+ * 1. Try `getById(planId)` — succeeds for UUID planIds.
+ * 2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
+ *
+ * Returns `null` if neither lookup succeeds.
+ *
+ * @param planId - UUID or slug of the billing plan
+ * @returns Resolved plan or `null` when not found
+ */
+async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanResponse | null> {
+    const byId = await planService.getById(planId);
+    if (byId.success) {
+        return byId.data;
     }
-
-    const firstName = rawName.slice(0, firstSpaceIdx);
-    const lastName = rawName.slice(firstSpaceIdx + 1).trim() || ' ';
-
-    return {
-        email: customer.email,
-        first_name: firstName,
-        last_name: lastName
-    };
+    const bySlug = await planService.getBySlug(planId);
+    if (bySlug.success) {
+        return bySlug.data;
+    }
+    return null;
 }
 
 /**
- * Create a Mercado Pago checkout session for an add-on purchase.
+ * Create a qzpay-managed checkout session for an add-on purchase.
  *
  * Validates that:
  * - The add-on exists and is active
@@ -149,8 +173,8 @@ function extractPayerInfo(customer: {
  * - The customer has an active or trialing subscription
  * - The promo code (if provided) is valid
  *
- * Then creates a Mercado Pago Preference with a 30-minute expiration window and
- * records promo code usage if applicable.
+ * Then creates a checkout session via `billing.checkout.create()` with a
+ * 30-minute expiration window and records promo code usage if applicable.
  *
  * @param billing - QZPay billing instance
  * @param input - Purchase request details
@@ -174,14 +198,16 @@ export async function createAddonCheckout(
     input: PurchaseAddonInput
 ): Promise<ServiceResult<PurchaseAddonResult>> {
     try {
-        const addon = getAddonBySlug(input.addonSlug);
+        const addonResult = await addonCatalogService.getBySlug(input.addonSlug);
 
-        if (!addon) {
+        if (!addonResult.success) {
             return {
                 success: false,
                 error: { code: 'NOT_FOUND', message: `Add-on '${input.addonSlug}' not found` }
             };
         }
+
+        const addon = addonResult.data;
 
         if (!addon.isActive) {
             return {
@@ -228,9 +254,11 @@ export async function createAddonCheckout(
             };
         }
 
-        // Validate addon is available for the customer's plan category
+        // Validate addon is available for the customer's plan category.
+        // Post-SPEC-168, planId may be a UUID or a legacy slug — use dual-resolve
+        // via PlanService (DB-backed) rather than the static ALL_PLANS config.
         if (addon.targetCategories && addon.targetCategories.length > 0) {
-            const customerPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
+            const customerPlan = await resolvePlanByIdOrSlug(activeSubscription.planId);
             if (customerPlan && !addon.targetCategories.includes(customerPlan.category)) {
                 return {
                     success: false,
@@ -275,22 +303,14 @@ export async function createAddonCheckout(
             }
         }
 
-        const mpAccessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
-        if (!mpAccessToken) {
-            return {
-                success: false,
-                error: {
-                    code: 'PAYMENT_NOT_CONFIGURED',
-                    message: 'Payment system is not configured'
-                }
-            };
-        }
-
-        // SPEC-109 fix #5/#6: use a UUID for the external_reference AND as the
-        // MP X-Idempotency-Key. A retry from the same logical checkout reuses
-        // the same UUID, so MP returns the existing preference instead of
-        // creating a duplicate. The `addon_<slug>_` prefix is kept for human
-        // traceability inside the MP dashboard.
+        // SPEC-109 fix #5/#6: use a UUID as the idempotency key. A retry from
+        // the same logical checkout reuses the same UUID, so the provider
+        // returns the existing session instead of creating a duplicate. The
+        // `addon_<slug>_` prefix on orderId is kept for human traceability in
+        // the provider dashboard. There is NO access-token guard here: qzpay
+        // owns MP credentials (configured at billing adapter init) and throws
+        // internally when the adapter is misconfigured — matching the pattern
+        // used in the annual subscription flow in subscription-checkout.service.ts.
         const checkoutUuid = randomUUID();
         const orderId = `addon_${addon.slug}_${checkoutUuid}`;
         const webUrl = env.HOSPEDA_SITE_URL;
@@ -314,82 +334,117 @@ export async function createAddonCheckout(
             };
         }
 
-        const payer = extractPayerInfo(customer);
+        // customerName is passed as a plain string so the qzpay adapter can
+        // derive payer.first_name / payer.last_name via its built-in split logic.
+        const customerName =
+            typeof customer.metadata?.name === 'string'
+                ? customer.metadata.name.trim() || undefined
+                : undefined;
 
-        const preference = await createMercadoPagoPreference({
-            accessToken: mpAccessToken,
-            idempotencyKey: checkoutUuid,
-            preferenceData: {
-                body: {
-                    items: [
-                        {
-                            id: addon.slug,
-                            title: addon.name,
-                            description: addon.description,
-                            category_id: MP_ITEM_CATEGORY_ID,
-                            quantity: 1,
-                            // Convert centavos to whole ARS units (MercadoPago expects ARS, not cents)
-                            unit_price: finalPrice / 100,
-                            currency_id: 'ARS'
-                        }
-                    ],
-                    payer,
+        const result = await billing.checkout.create({
+            mode: 'payment',
+            lineItems: [
+                {
                     /**
-                     * Metadata is intentionally sent in both snake_case and camelCase formats
-                     * for backward compatibility.
-                     *
-                     * - snake_case keys (e.g. `addon_slug`, `customer_id`): consumed by the
-                     *   Mercado Pago webhook handler, which receives the raw MP payment object
-                     *   where metadata arrives in snake_case.
-                     * - camelCase keys (e.g. `addonSlug`, `customerId`): consumed by internal
-                     *   services (e.g. confirmAddonPurchase) that work with the JS-normalized
-                     *   representation.
-                     *
-                     * Do NOT remove either format without coordinating with the webhook handler
-                     * and any downstream consumers.
+                     * unitAmount is in centavos (smallest currency unit). The MP adapter
+                     * divides by 100 internally when building the preference body — do NOT
+                     * pre-divide here.
                      */
-                    metadata: {
-                        addon_slug: addon.slug,
-                        addonSlug: addon.slug,
-                        customer_id: input.customerId,
-                        customerId: input.customerId,
-                        user_id: input.userId,
-                        userId: input.userId,
-                        type: 'addon_purchase',
-                        promo_code: input.promoCode || null,
-                        promo_code_id: promoCodeId || null,
-                        discount_amount: discountAmount,
-                        original_price: addon.priceArs
-                    },
-                    external_reference: orderId,
-                    back_urls: {
-                        success: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
-                        failure: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
-                        pending: `${webUrl}/mi-cuenta/addons?status=pending&addon=${addon.slug}`
-                    },
-                    auto_return: 'approved',
-                    notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
-                    statement_descriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
-                    expires: true,
-                    expiration_date_from: new Date().toISOString(),
-                    expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                    unitAmount: finalPrice,
+                    currency: 'ARS',
+                    quantity: 1,
+                    title: addon.name,
+                    description: addon.description,
+                    /**
+                     * 'services' is the canonical MP category_id for digital SaaS.
+                     * Now passed via qzpay's `categoryId` field — the adapter maps it
+                     * to `items[].category_id` on the MP preference body.
+                     */
+                    categoryId: 'services'
                 }
+            ],
+            successUrl: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
+            cancelUrl: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
+            customerId: input.customerId,
+            customerEmail: customer.email,
+            ...(customerName !== undefined ? { customerName } : {}),
+            notificationUrl: `${apiUrl}/api/v1/webhooks/mercadopago`,
+            idempotencyKey: checkoutUuid,
+            ...(env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                ? { statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR }
+                : {}),
+            expiresInMinutes: 30,
+            /**
+             * Metadata is intentionally sent in both snake_case and camelCase formats
+             * for backward compatibility.
+             *
+             * - snake_case keys (e.g. `addon_slug`, `customer_id`): consumed by the
+             *   MercadoPago webhook handler, which receives the raw MP payment object
+             *   where metadata arrives in snake_case.
+             * - camelCase keys (e.g. `addonSlug`, `customerId`): consumed by internal
+             *   services (e.g. confirmAddonPurchase) that work with the JS-normalized
+             *   representation.
+             *
+             * Do NOT remove either format without coordinating with the webhook handler
+             * and any downstream consumers.
+             *
+             * `order_id` is added here (not in the original MP path) so the webhook
+             * handler can correlate back to the orderId for tracing.
+             */
+            metadata: {
+                addon_slug: addon.slug,
+                addonSlug: addon.slug,
+                customer_id: input.customerId,
+                customerId: input.customerId,
+                user_id: input.userId,
+                userId: input.userId,
+                type: 'addon_purchase',
+                order_id: orderId,
+                promo_code: input.promoCode || null,
+                promo_code_id: promoCodeId || null,
+                discount_amount: discountAmount,
+                original_price: addon.priceArs
             }
         });
 
-        const checkoutUrl = preference.sandbox_init_point || preference.init_point || '';
+        // Intentionally prod-first (init_point before sandbox_init_point).
+        // The original direct-MP path was sandbox-first; this aligns with the
+        // qzpay convention used in the annual subscription flow.
+        const checkoutUrl = result.providerInitPoint ?? result.providerSandboxInitPoint;
 
         if (!checkoutUrl) {
             return {
                 success: false,
                 error: {
                     code: 'CHECKOUT_ERROR',
-                    message: 'Failed to get checkout URL from Mercado Pago'
+                    message: 'Failed to get checkout URL from payment provider'
                 }
             };
         }
 
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+        // Use the session's own expiresAt (qzpay sets it from expiresInMinutes).
+        const expiresAt = result.expiresAt ?? new Date(Date.now() + 30 * 60 * 1000);
+
+        // SPEC-143 Finding #21 fallback + SPEC-127 FR-5: enqueue a polling job
+        // that activates the addon purchase if the payment webhook fails to arrive.
+        // MP Preferences only deliver legacy IPN that the marker filter drops, so
+        // the poll cron is the secondary activation path. Non-fatal — a scheduling
+        // failure is warned but does not block the checkout response.
+        // NOTE: subscriptionId here is a duplicate-job lookup key and lineage
+        // reference stored on the polling job — it is NOT the subscription being
+        // activated. The addon confirmation (confirmAddonPurchase) re-resolves the
+        // active subscription independently at confirmation time. This semantics
+        // differs from the annual flow where subscriptionId IS the subscription
+        // being activated.
+        await scheduleAddonCheckoutPolling({
+            billing,
+            subscriptionId: activeSubscription.id,
+            checkoutSessionId: result.id,
+            customerId: input.customerId,
+            addonSlug: addon.slug,
+            orderId,
+            userId: input.userId
+        });
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
         // NOT recorded here. It is recorded in confirmAddonPurchase() after payment
@@ -405,9 +460,9 @@ export async function createAddonCheckout(
                 discountAmount,
                 promoCode: input.promoCode,
                 orderId,
-                preferenceId: preference.id
+                checkoutSessionId: result.id
             },
-            'Created add-on checkout with Mercado Pago'
+            'Created add-on checkout via qzpay billing'
         );
 
         return {
@@ -466,14 +521,16 @@ export async function confirmAddonPurchase(
     input: ConfirmPurchaseInput & { tx?: DrizzleClient }
 ): Promise<ServiceResult<void>> {
     try {
-        const addon = getAddonBySlug(input.addonSlug);
+        const addonResult = await addonCatalogService.getBySlug(input.addonSlug);
 
-        if (!addon) {
+        if (!addonResult.success) {
             return {
                 success: false,
                 error: { code: 'NOT_FOUND', message: `Add-on '${input.addonSlug}' not found` }
             };
         }
+
+        const addon = addonResult.data;
 
         const subscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
 
@@ -498,11 +555,11 @@ export async function confirmAddonPurchase(
             };
         }
 
-        // Resolve plan limits from the canonical ALL_PLANS config rather than
-        // fetching them from the billing SDK. The canonical config is the
-        // single source of truth for plan definitions and avoids an extra
-        // network round-trip to QZPay for data we already have locally.
-        const canonicalPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
+        // Resolve plan limits via PlanService (DB-backed, dual-resolve).
+        // Post-SPEC-168, planId may be a UUID or a legacy slug — PlanService handles
+        // both. The DB `limits` field is `Record<string, number>` (key → value map).
+        // When the plan cannot be resolved, limit baseline defaults to 0 (soft-skip).
+        const canonicalPlan = await resolvePlanByIdOrSlug(activeSubscription.planId);
 
         // Compute limit adjustments
         const limitAdjustments: Array<{
@@ -513,8 +570,7 @@ export async function confirmAddonPurchase(
         }> = [];
 
         if (addon.affectsLimitKey && addon.limitIncrease) {
-            const limitDef = canonicalPlan?.limits.find((l) => l.key === addon.affectsLimitKey);
-            const previousValue = limitDef?.value ?? 0;
+            const previousValue = canonicalPlan?.limits[addon.affectsLimitKey] ?? 0;
             const newValue = previousValue + addon.limitIncrease;
 
             limitAdjustments.push({

@@ -525,9 +525,6 @@ importers:
       lru-cache:
         specifier: ^11.1.0
         version: 11.2.6
-      mercadopago:
-        specifier: ^2.12.0
-        version: 2.12.0
       pg:
         specifier: ^8.16.3
         version: 8.16.3

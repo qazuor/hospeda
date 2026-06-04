@@ -37,21 +37,25 @@ Two pillars:
 A full spec must define details. Starting boundaries:
 
 **Scoring engine**:
+
 - Provider abstraction (interface) so the engine can be OpenAI Moderation API, a future self-hosted model, or the local word-list — selected by config, swappable.
 - Map provider output → the frozen `ModerationResult` shape (`score`, `categories`, `matchedTerms`).
 - Timeout + fallback: provider error/timeout → fall back to the DB word-list path; never block content creation on a provider outage.
 - Caching/cost: dedupe identical text within a short window; respect provider rate limits.
 
 **DB-backed word lists**:
+
 - New table (e.g. `content_moderation_terms`): `term`, `kind` (word | domain), `category`, `severity/weight`, `enabled`, audit columns. Soft-delete per project convention.
 - Model (BaseModel) + service (BaseCrudService) + admin CRUD endpoints + admin UI page.
 - Seed migration: import the current env-var values as the initial corpus.
 - Deprecate `HOSPEDA_MESSAGING_BLOCKED_WORDS` / `_BLOCKED_DOMAINS` once the DB path is live (keep a one-release fallback, then remove).
 
 **Threshold configuration**:
+
 - `PENDING_THRESHOLD` / `REJECT_THRESHOLD` become real, configurable (likely DB or config), per-context if needed (messaging may block at a different bar than reviews).
 
 **Permissions**:
+
 - A moderation-terms management permission for the admin word-list CRUD (verify naming against the entity-specific convention; add to ADMIN/SUPER_ADMIN).
 
 ## 4. Out of scope

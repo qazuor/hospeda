@@ -149,6 +149,13 @@
             "archivedAt": "2026-06-04"
         },
         {
+            "specId": "SPEC-127",
+            "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
+            "status": "in-progress",
+            "progress": "14/15",
+            "path": "SPEC-127-migrate-addon-checkout-to-qzpay"
+        },
+        {
             "specId": "SPEC-166",
             "title": "Review Moderation State",
             "status": "in-progress",

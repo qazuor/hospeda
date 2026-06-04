@@ -21,7 +21,10 @@ import { createMercadoPagoAdapter } from '@repo/billing';
 import { sql, withTransaction } from '@repo/db';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
-import { confirmAnnualSubscription } from '../../routes/webhooks/mercadopago/payment-logic.js';
+import {
+    confirmAnnualSubscription,
+    processPaymentUpdated
+} from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import { env } from '../../utils/env.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -174,19 +177,34 @@ async function runSubscriptionPoll(params: {
 }
 
 /**
- * One-time-payment poll (SPEC-143 Finding #21): the polling job's
- * `providerResourceId` is the local checkout session id (also set as
- * MP `external_reference`), and we resolve the actual MP payment id
- * by searching the payments collection.
+ * One-time-payment poll (SPEC-143 Finding #21 + SPEC-127 T-011): the polling
+ * job's `providerResourceId` is the local checkout session id (also set as
+ * MP `external_reference`), and we resolve the actual MP payment id by
+ * searching the payments collection.
  *
- * Decision matrix per attempt:
+ * Decision matrix per attempt (shared across both sub-flows):
  * - No matching payment yet (user still on checkout page) → keep polling.
- * - Found `succeeded` payment → call {@link confirmAnnualSubscription}
- *   (idempotent — webhook and polling race for the same payment without
- *   risk). Returns terminal `succeeded`.
+ * - Found `succeeded` payment → dispatch confirmation (see below).
+ *   Returns terminal `succeeded`.
  * - Found `failed`/`canceled` only → terminal failure; the abandoned-
  *   pending-subs reaper picks up the local sub via TTL.
  * - Other intermediate states → keep polling.
+ *
+ * Dispatch branching on succeeded payment (SPEC-127 T-011):
+ * - **Addon jobs** (`locked.metadata?.type === 'addon_purchase'`): call
+ *   {@link processPaymentUpdated} with a synthetic payment payload built
+ *   from the search result. This reuses the webhook's full confirmation
+ *   path — idempotency check (`billing_addon_purchases.paymentId`),
+ *   notification, entitlement cache invalidation — for free.
+ *   The synthetic `data.metadata` is assembled from the payment's own
+ *   metadata first (carries camelCase `addonSlug`/`customerId` set by
+ *   the qzpay checkout) then falls back to the job row's metadata for
+ *   keys the payment may lack. `transaction_amount` is in MAJOR units
+ *   (`succeeded.amount / 100`) because `extractPaymentInfo` reads that
+ *   field as major units; `currency_id` maps to `succeeded.currency`.
+ * - **Annual jobs** (no addon discriminator): call
+ *   {@link confirmAnnualSubscription} as before (idempotent — webhook
+ *   and polling can race for the same payment).
  *
  * Requires the configured payment adapter to expose `search()`. MP's
  * adapter implements it natively; if a future provider does not, this
@@ -231,6 +249,112 @@ async function runOneTimePaymentPoll(params: {
     // the authoritative one for this checkout session.
     const succeeded = matches.find((p) => p.status === 'succeeded');
     if (succeeded) {
+        // Discriminate: was this checkout job created by the addon flow?
+        const isAddonJob =
+            locked.metadata !== null &&
+            typeof locked.metadata === 'object' &&
+            (locked.metadata as Record<string, unknown>).type === 'addon_purchase';
+
+        if (isAddonJob) {
+            // ── Addon confirmation via processPaymentUpdated ────────────────
+            //
+            // Builds a synthetic payment payload that mirrors what the
+            // live webhook handler receives so processPaymentUpdated can
+            // run its full path: idempotency check on
+            // billing_addon_purchases.paymentId, addonService.confirmPurchase,
+            // notification dispatch, and entitlement cache invalidation.
+            //
+            // Field mapping:
+            //   id              → succeeded.id (MP payment id, used as paymentId)
+            //   status          → 'approved' (MP canonical for succeeded)
+            //   transaction_amount → succeeded.amount / 100 (cents → major units;
+            //                     extractPaymentInfo reads transaction_amount as
+            //                     major units from the MP payload shape)
+            //   currency_id     → succeeded.currency
+            //   metadata        → payment metadata merged with job metadata as
+            //                     fallback for any key the payment may lack
+            //                     (addonSlug, customerId, userId, order_id)
+            //   external_reference → locked.providerResourceId (checkout session UUID)
+            const jobMeta = locked.metadata as Record<string, unknown>;
+            const paymentMeta =
+                succeeded.metadata !== null &&
+                typeof succeeded.metadata === 'object' &&
+                !Array.isArray(succeeded.metadata)
+                    ? (succeeded.metadata as Record<string, unknown>)
+                    : {};
+
+            // Whitelist only the keys the addon confirm path needs.
+            // Dispatch-discriminator keys (annualSubscriptionId, planChangeUpgradeId)
+            // must NEVER leak into this payload — processPaymentUpdated branches on
+            // their presence and would fire the annual/upgrade path instead of the
+            // addon path if either key accidentally appears here.
+            //
+            // Keys sourced from paymentMeta first, falling back to jobMeta:
+            //   addonSlug    — consumed by extractAddonMetadata in payment-logic
+            //   customerId   — consumed by extractAddonMetadata in payment-logic
+            //   userId       — forwarded for logging / traceability
+            //   order_id     — external_reference fallback used by logging
+            //   orderId      — camelCase alias forwarded for traceability
+            //   type         — dispatch discriminator (must equal 'addon_purchase')
+            const syntheticMetadata: Record<string, unknown> = {
+                addonSlug: paymentMeta.addonSlug ?? jobMeta.addonSlug,
+                customerId: paymentMeta.customerId ?? jobMeta.customerId,
+                userId: paymentMeta.userId ?? jobMeta.userId,
+                order_id:
+                    paymentMeta.order_id ??
+                    paymentMeta.orderId ??
+                    jobMeta.order_id ??
+                    jobMeta.orderId,
+                orderId: paymentMeta.orderId ?? jobMeta.orderId,
+                type: paymentMeta.type ?? jobMeta.type
+            };
+
+            const syntheticPayload: Record<string, unknown> = {
+                id: succeeded.id,
+                status: 'approved',
+                // extractPaymentInfo reads transaction_amount as MAJOR units.
+                // The adapter returns amount in cents, so divide by 100.
+                transaction_amount: succeeded.amount / 100,
+                currency_id: succeeded.currency,
+                metadata: syntheticMetadata,
+                external_reference: locked.providerResourceId
+            };
+
+            try {
+                const result = await processPaymentUpdated({
+                    data: syntheticPayload,
+                    billing,
+                    source: 'polling'
+                });
+
+                if (!result.success) {
+                    logger.error('subscription-poll: processPaymentUpdated failed for addon job', {
+                        jobId: locked.id,
+                        paymentId: succeeded.id,
+                        addonSlug: syntheticMetadata.addonSlug,
+                        customerId: syntheticMetadata.customerId
+                    });
+                    throw new Error('processPaymentUpdated returned success=false for addon job');
+                }
+            } catch (err) {
+                logger.error('subscription-poll: addon confirmation threw', {
+                    jobId: locked.id,
+                    paymentId: succeeded.id,
+                    error: err instanceof Error ? err.message : String(err)
+                });
+                throw err;
+            }
+
+            return {
+                terminal: true,
+                status: 'succeeded',
+                providerStatus: 'approved',
+                error: null
+            };
+        }
+
+        // ── Annual subscription confirmation (default branch) ───────────
+        //
         // amount comes from the adapter in cents (smallest currency unit);
         // confirmAnnualSubscription expects MAJOR units (it converts back
         // to cents internally when recording the payment row). Mirror the

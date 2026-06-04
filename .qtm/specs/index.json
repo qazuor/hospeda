@@ -82,8 +82,8 @@
             "specId": "SPEC-127",
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
             "type": "refactor",
-            "complexity": "low",
-            "status": "draft",
+            "complexity": "medium",
+            "status": "in-progress",
             "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-193",
@@ -644,7 +644,10 @@
             "extractedFrom": "SPEC-166",
             "archived": false,
             "extractionReason": "Spun off from SPEC-166 2026-06-04: @repo/content-moderation ships with a frozen public API but a stub engine. This spec implements the internals only (real scoring engine + DB-backed editable word lists), no consumer changes.",
-            "enables": ["SPEC-166 graded REJECTED/PENDING decisions via real scoring", "redeploy-free moderation word list (env var to DB)"],
+            "enables": [
+                "SPEC-166 graded REJECTED/PENDING decisions via real scoring",
+                "redeploy-free moderation word list (env var to DB)"
+            ],
             "tags": ["moderation", "content", "shared-package", "backend", "admin", "phase-2"]
         }
     ]
