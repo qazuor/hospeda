@@ -91,6 +91,43 @@ const LOG_COLUMNS: ColumnDef<AppLogEntry>[] = [
         )
     },
     {
+        id: 'request',
+        header: 'Solicitud',
+        cell: ({ row }) => {
+            const { method, path } = row.original;
+            if (!method && !path) {
+                return (
+                    <span
+                        className="text-xs"
+                        data-testid="log-request-cell"
+                    >
+                        —
+                    </span>
+                );
+            }
+            return (
+                <span
+                    className="flex max-w-[220px] items-center gap-1.5 text-xs"
+                    data-testid="log-request-cell"
+                >
+                    {method && (
+                        <span className="shrink-0 rounded bg-muted px-1 py-0.5 font-mono font-semibold text-foreground">
+                            {method}
+                        </span>
+                    )}
+                    {path && (
+                        <span
+                            className="truncate text-muted-foreground"
+                            title={path}
+                        >
+                            {path}
+                        </span>
+                    )}
+                </span>
+            );
+        }
+    },
+    {
         id: 'message',
         header: 'Mensaje',
         accessorKey: 'message',
