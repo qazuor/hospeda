@@ -588,6 +588,130 @@ describe('applyScheduledPlanChangesJob.handler', () => {
 });
 
 // ---------------------------------------------------------------------------
+// CronJobResult error-contract pin (SPEC-194 T-024)
+//
+// Purpose: verifies that the handler's CronJobResult has `failed > 0` AND
+// `success = false` whenever MAX_APPLY_ATTEMPTS is exhausted for at least one
+// row.  SPEC-149's Sentry wiring will rely on this contract
+// (success=false triggers capture; errors>0 carries the count).
+// ---------------------------------------------------------------------------
+
+describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('single row exhausted: result.failed > 0 AND result.success = false', async () => {
+        // Arrange: changePlan always throws and the row starts at
+        // attemptCount = MAX_APPLY_ATTEMPTS - 1 = 4 so the next failure
+        // exhausts the budget.
+        const { billing } = makeBilling({ changePlanThrows: new Error('provider down') });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-exhausted',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 }) // 4 + 1 = 5 = MAX
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert — error contract pinned for SPEC-149 Sentry wiring
+        expect(result.success).toBe(false);
+        expect(result.errors).toBeGreaterThan(0);
+        expect(result.details).toMatchObject({ failed: 1 });
+    });
+
+    it('all rows exhausted: result.failed equals row count AND result.success = false', async () => {
+        // Arrange: two rows, both start at attemptCount=4 (one tick from budget end).
+        const { billing } = makeBilling({ changePlanThrows: new Error('storage offline') });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-a',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            },
+            {
+                subscriptionId: 'sub-b',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(2);
+        expect(result.details).toMatchObject({ failed: 2, applied: 0, retried: 0 });
+    });
+
+    it('errors field equals the failed count (not total rows)', async () => {
+        // Arrange: one row exhausted, one row applied cleanly — only the
+        // exhausted row must appear in errors.
+        const changePlanResults: Promise<unknown>[] = [
+            Promise.resolve({ subscription: { id: 'sub-ok', planId: NEW_PLAN_ID } }),
+            Promise.reject(new Error('exhausted'))
+        ];
+        let callIdx = 0;
+        const changePlan = vi.fn(() => changePlanResults[callIdx++] ?? Promise.resolve({}));
+        const billing = {
+            subscriptions: {
+                changePlan,
+                update: vi.fn().mockResolvedValue({})
+            },
+            getPaymentAdapter: vi.fn(() => null)
+        } as unknown as QZPayBilling;
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-ok',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 0 })
+            },
+            {
+                subscriptionId: 'sub-exhausted',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(1); // only the exhausted row
+        expect(result.processed).toBe(2); // both rows processed
+        expect(result.details).toMatchObject({ applied: 1, failed: 1, retried: 0 });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // CronJobDefinition shape
 // ---------------------------------------------------------------------------
 
