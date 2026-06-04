@@ -53,9 +53,12 @@
         {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
-            "status": "pending",
-            "progress": "0/15",
-            "path": "SPEC-188-vitest-test-performance"
+            "status": "completed",
+            "progress": "9/21",
+            "path": "SPEC-188-vitest-test-performance",
+            "archived": true,
+            "archivedAt": "2026-06-04T00:00:00Z",
+            "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
         },
         {
             "specId": "SPEC-182",
