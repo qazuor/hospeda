@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Scaffold @repo/content-moderation package",
             "description": "Create packages/content-moderation with package.json (name @repo/content-moderation, ESM, exports), tsconfig extending @repo/typescript-config, build wiring, and a vitest config. Add to pnpm workspace. No logic yet, just the buildable shell with a src/index.ts barrel. Tests: a smoke test that the package builds and the barrel imports.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -19,24 +19,35 @@
             "tags": ["package", "scaffold", "setup"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-002",
             "title": "Define frozen public contract types + Zod input schema",
             "description": "In @repo/content-moderation define the FINAL public API types: ModerationCategory union, ModerationResult ({score, categories, matchedTerms} all readonly), ModerateTextInput ({text, context?}), and moderateTextInputSchema (Zod). Export the async function signature moderateText(input): Promise<ModerationResult>. JSDoc everything. Tests: Zod schema accepts/rejects sample inputs; type-level export check.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Types: ModerationCategory, ModerationResult, ModerateTextInput", "completed": false },
+                {
+                    "title": "Types: ModerationCategory, ModerationResult, ModerateTextInput",
+                    "completed": false
+                },
                 { "title": "moderateTextInputSchema Zod + JSDoc", "completed": false }
             ],
             "tags": ["package", "contract", "zod", "types"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-003",
@@ -48,12 +59,19 @@
             "blocks": ["T-004", "T-010", "T-011"],
             "subtasks": [
                 { "title": "parseBlocklist + module-load env parse", "completed": false },
-                { "title": "substring + domain scan -> ModerationResult mapping", "completed": false }
+                {
+                    "title": "substring + domain scan -> ModerationResult mapping",
+                    "completed": false
+                }
             ],
             "tags": ["package", "moderation", "stub", "core"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -70,7 +88,11 @@
             "tags": ["package", "tests"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -87,7 +109,11 @@
             "tags": ["env", "config", "api"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -104,7 +130,11 @@
             "tags": ["database", "schema", "enum"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -121,7 +151,11 @@
             "tags": ["database", "schema", "reviews"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -138,7 +172,11 @@
             "tags": ["database", "schema", "reviews"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -156,7 +194,11 @@
             "tags": ["database", "migration"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -173,7 +215,11 @@
             "tags": ["service-core", "moderation", "core"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -191,7 +237,11 @@
             "tags": ["service-core", "messaging", "refactor"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -209,7 +259,11 @@
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -227,7 +281,11 @@
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -245,7 +303,11 @@
             "tags": ["service-core", "reviews", "moderation", "permissions"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -263,7 +325,11 @@
             "tags": ["service-core", "reviews", "moderation", "permissions"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -280,7 +346,11 @@
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -297,7 +367,11 @@
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -314,7 +388,11 @@
             "tags": ["seed", "permissions"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -332,7 +410,11 @@
             "tags": ["api", "admin", "reviews"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -350,7 +432,11 @@
             "tags": ["api", "admin", "reviews", "moderation"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -367,7 +453,11 @@
             "tags": ["api", "admin", "reviews"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -384,7 +474,11 @@
             "tags": ["service-core", "reviews", "visibility"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -401,7 +495,11 @@
             "tags": ["service-core", "reviews", "visibility"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -418,7 +516,11 @@
             "tags": ["service-core", "reviews", "host", "visibility"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -436,7 +538,11 @@
             "tags": ["testing", "integration", "e2e"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -453,7 +559,11 @@
             "tags": ["testing", "coverage"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -470,14 +580,18 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-04T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-04T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 27,
-        "pending": 27,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.2
     }
