@@ -9,9 +9,9 @@ Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 | Metric | Value |
 |--------|-------|
 | Total tasks | 17 |
-| Completed | 4 |
+| Completed | 7 |
 | In progress | 0 |
-| Pending | 13 |
+| Pending | 10 |
 | Avg complexity | 3.1 |
 
 ## Phase Breakdown
@@ -19,7 +19,7 @@ Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 | Phase | Tasks | Status |
 |-------|-------|--------|
 | Phase 1 — Filter infrastructure (FR-1) | T-001, T-002, T-003, T-004 | completed (2026-06-04) |
-| Phase 2 — Filter backfill (FR-1 targets + FR-2) | T-005, T-006, T-007 | pending |
+| Phase 2 — Filter backfill (FR-1 targets + FR-2) | T-005, T-006, T-007 | completed (2026-06-04) |
 | Phase 3 — GridCard polish + per-entity override (FR-3) | T-008, T-009, T-010 | pending |
 | Phase 4 — Host portfolio migration (FR-4, BETA-76) | T-011, T-012 | pending |
 | Phase 5 — Tags migration (FR-5) | T-013, T-014, T-015 | pending |
@@ -76,13 +76,13 @@ T-002 and T-003 both depend on T-001 and can proceed in parallel. T-004 depends 
 
 | ID | Title | Status | Complexity | Blocked By |
 |----|-------|--------|-----------|------------|
-| T-001 | Extend FilterControlType union and add range config types | pending | 2 | — |
-| T-002 | Build FilterNumberRange and FilterDateRange UI controls | pending | 4 | T-001 |
-| T-003 | Extend useFilterState for two-param range URL serialization | pending | 3 | T-001 |
-| T-004 | Extend createEntityApi to forward range bounds and wire backend range filters | pending | 5 | T-002, T-003 |
-| T-005 | Wire number-range and date-range filters into entity configs | pending | 3 | T-002, T-003, T-004 |
-| T-006 | Add filter bars to the six previously-unfiltered entity lists | pending | 5 | T-005 |
-| T-007 | Quality gate — Phase 1 + Phase 2 all tests green | pending | 1 | T-006 |
+| T-001 | Extend FilterControlType union and add range config types | completed | 2 | — |
+| T-002 | Build FilterNumberRange and FilterDateRange UI controls | completed | 4 | T-001 |
+| T-003 | Extend useFilterState for two-param range URL serialization | completed | 3 | T-001 |
+| T-004 | Extend createEntityApi to forward range bounds and wire backend range filters | completed | 5 | T-002, T-003 |
+| T-005 | Wire number-range and date-range filters into entity configs | completed | 3 | T-002, T-003, T-004 |
+| T-006 | Add filter bars to the six previously-unfiltered entity lists | completed | 5 | T-005 |
+| T-007 | Quality gate — Phase 1 + Phase 2 all tests green | completed | 1 | T-006 |
 | T-008 | Polish the generic GridCard component | pending | 4 | T-007 |
 | T-009 | Add gridConfig.renderCard and GridCardRenderProps to EntityConfig | pending | 3 | T-008 |
 | T-010 | Quality gate — Phase 3 grid tests green and visual smoke done | pending | 1 | T-009 |
