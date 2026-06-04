@@ -11,6 +11,8 @@
  * - {@link useWelcomeTourForRole} — the welcome tour for a role (first match).
  * - {@link useContextualTourForRoute} — contextual tour matching the current route
  *   via `useCurrentSection()` (route comparison against section's canonical route).
+ * - {@link useWelcomeTourPending} — shared D12 suppression gate: `true` when the
+ *   role's welcome tour exists and has not yet been seen.
  *
  * **D14 — SUPER_ADMIN reuse:** The selectors check `tour.roles` membership, not
  * equality. Tours authored with `roles: ['ADMIN', 'SUPER_ADMIN']` are returned by
@@ -20,12 +22,14 @@
  * @see apps/admin/src/config/ia/tour.schema.ts — Tour / TourRole types
  * @see apps/admin/src/config/ia/validate.ts     — validatedConfig
  * @see apps/admin/src/hooks/use-current-section.ts — useCurrentSection
- * @see SPEC-174 §7.2, D14
+ * @see SPEC-174 §7.2, D12, D14
  */
 
 import type { Tour, TourRole } from '@/config/ia/tour.schema';
 import { validatedConfig } from '@/config/ia/validate';
 import { useMemo } from 'react';
+import { useAdminTourState } from './use-admin-tour-state';
+import { useAuthContext } from './use-auth-context';
 import { useCurrentSection } from './use-current-section';
 
 // ============================================================================
@@ -188,4 +192,64 @@ export function useContextualTourForRoute({
             (tour) => tour.kind === 'contextual' && tour.route === canonicalRoute
         );
     }, [activeSection]);
+}
+
+// ============================================================================
+// useWelcomeTourPending — D12 suppression gate
+// ============================================================================
+
+/**
+ * Return type of {@link useWelcomeTourPending}.
+ */
+export interface UseWelcomeTourPendingReturn {
+    /**
+     * `true` when:
+     * - The current user's role has a welcome tour in the catalog.
+     * - The user has NOT yet seen that tour at its current version.
+     *
+     * Both `TourAutoTrigger` (which fires the tour) and `AppLayout` (which passes
+     * `suppressed` to `WhatsNewAutoTrigger`) consume this flag — keeping the logic
+     * in one place prevents drift (D12).
+     *
+     * Returns `false` while `useAdminTourState` is still loading.
+     */
+    readonly welcomeTourPending: boolean;
+}
+
+/**
+ * Shared D12 suppression gate.
+ *
+ * Returns `true` when the current user's welcome tour is both defined in the
+ * catalog and unseen (eligible for auto-trigger). Used by `TourAutoTrigger` to
+ * decide whether to fire, and by `AppLayout` to suppress `WhatsNewAutoTrigger`
+ * while the welcome tour is still pending for a new user.
+ *
+ * Reads from `useAuthContext`, `useWelcomeTourForRole`, and `useAdminTourState`.
+ * Returns `false` while the tour state is still loading.
+ *
+ * @returns {@link UseWelcomeTourPendingReturn}
+ *
+ * @example
+ * ```tsx
+ * const { welcomeTourPending } = useWelcomeTourPending();
+ * <WhatsNewAutoTrigger suppressed={welcomeTourPending} />
+ * ```
+ *
+ * @see apps/admin/src/components/tour/TourAutoTrigger.tsx — T-013 consumer
+ * @see apps/admin/src/components/layout/AppLayout.tsx — D12 wiring
+ * @see SPEC-174 §5 D12
+ */
+export function useWelcomeTourPending(): UseWelcomeTourPendingReturn {
+    const { user } = useAuthContext();
+    const role = (user?.role as TourRole | null | undefined) ?? null;
+    const welcomeTour = useWelcomeTourForRole({ role });
+    const { isLoading, hasSeen } = useAdminTourState();
+
+    const welcomeTourPending = useMemo(() => {
+        if (isLoading) return false;
+        if (!welcomeTour) return false;
+        return !hasSeen({ tourId: welcomeTour.id, version: welcomeTour.version });
+    }, [isLoading, welcomeTour, hasSeen]);
+
+    return { welcomeTourPending };
 }
