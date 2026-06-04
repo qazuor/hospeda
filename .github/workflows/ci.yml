@@ -264,6 +264,12 @@ jobs:
     # suites) rather than just raising the cap again.
     timeout-minutes: 30
     needs: build
+    # Raise fork count on CI: each shard runs in an isolated VM so the
+    # machine-safety ceiling that applies locally (maxForks=3) does not
+    # constrain here. VITEST_MAX_FORKS=4 gives a small throughput boost.
+    # See docs/guides/test-performance.md for the full rationale.
+    env:
+      VITEST_MAX_FORKS: 4
     strategy:
       fail-fast: false
       matrix:

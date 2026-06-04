@@ -476,10 +476,13 @@
         {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-188-vitest-test-performance",
-            "created": "2026-06-02T17:44:49Z"
+            "created": "2026-06-02T17:44:49Z",
+            "archived": true,
+            "archivedAt": "2026-06-04T00:00:00Z",
+            "archiveNote": "Track A (concurrency cap) merged. B2 (9% gain) implemented on branch spec/SPEC-188 but not merged — rebase cost > value. Four levers dead-ended (threads SIGSEGV, isolate:false breaks api, alias-to-dist deferred, deps.optimizer no-op)."
         },
         {
             "specId": "SPEC-182",
