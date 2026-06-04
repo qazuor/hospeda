@@ -38,6 +38,7 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import {
     resolveOwnerUserId,
     setOwnerServiceSuspension
@@ -400,9 +401,18 @@ const onAfterSubscriptionTrialExtended: NonNullable<
 };
 
 /**
- * After-refund hook: emit a Sentry breadcrumb + structured log entry for
- * the admin refund. There is no dedicated audit table for payment-level
- * actions; subscription audit log only covers subscription lifecycle.
+ * After-refund hook: emit a Sentry breadcrumb, then apply the refund lifecycle
+ * policy via {@link applyRefundLifecycle}:
+ *
+ * - Full refund  → transition the linked subscription to `cancelled`, revoke
+ *                  entitlements, and clear the entitlement cache (SPEC-194 T-003).
+ * - Partial refund → audit-intent log only; subscription state unchanged.
+ *                    (T-019 will model partial-refund events when ready.)
+ *
+ * The `applyRefundLifecycle` call is wrapped in a try/catch so a transient DB
+ * error does not surface as a 500 — the core refund has already committed in
+ * QZPay, so qzpay-hono has returned 200. The error is logged for Sentry
+ * alerting via the logger integration.
  */
 const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPaymentRefund']> = async ({
     payment,
@@ -434,6 +444,28 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
         },
         'Admin refund hook: refund committed'
     );
+
+    // Apply subscription state change + entitlement revocation (SPEC-194 T-003).
+    // Wrapped in try/catch: lifecycle errors must not fail the refund response
+    // (the QZPay write already committed; qzpay-hono wraps after-hooks but we
+    // guard defensively here too).
+    try {
+        await applyRefundLifecycle({
+            payment,
+            refundAmount: amount,
+            adminUserId: actor.id
+        });
+    } catch (err) {
+        apiLogger.error(
+            {
+                paymentId: payment.id,
+                customerId: payment.customerId,
+                adminUserId: actor.id,
+                err
+            },
+            'Admin refund hook: applyRefundLifecycle threw unexpectedly — lifecycle effects may be incomplete'
+        );
+    }
 };
 
 /**
