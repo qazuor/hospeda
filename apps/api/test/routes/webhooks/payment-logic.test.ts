@@ -989,4 +989,98 @@ describe('processPaymentUpdated', () => {
             expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
         });
     });
+
+    // -----------------------------------------------------------------------
+    // SPEC-127: addon external_reference fallback warn branch
+    // Tests the no-metadata diagnostic path for both legacy and qzpay-era payments.
+    // -----------------------------------------------------------------------
+
+    describe('addon external_reference fallback warn branch (SPEC-127)', () => {
+        it('legacy addon_SLUG_TIMESTAMP reference without metadata fires legacy warn', async () => {
+            const { apiLogger } = await import('../../../src/utils/logger');
+            vi.mocked(extractAddonMetadata).mockReturnValue(null);
+            vi.mocked(extractAddonFromReference).mockReturnValue('visibility-boost-7d');
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: 'mp-legacy-1',
+                    external_reference: 'addon_visibility-boost-7d_1700000000000',
+                    status: 'approved',
+                    metadata: null
+                },
+                billing: mockBilling
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.addonConfirmed).toBe(false);
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    addonSlug: 'visibility-boost-7d'
+                }),
+                'Found add-on slug in external_reference but missing customerId - addon purchase may not be confirmed properly'
+            );
+        });
+
+        it('bare UUID external_reference without addon metadata fires qzpay-era warn', async () => {
+            const { apiLogger } = await import('../../../src/utils/logger');
+            vi.mocked(extractAddonMetadata).mockReturnValue(null);
+            vi.mocked(extractAddonFromReference).mockReturnValue(null);
+
+            const qzpaySessionId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+            const result = await processPaymentUpdated({
+                data: {
+                    id: 'mp-qzpay-1',
+                    external_reference: qzpaySessionId,
+                    status: 'approved',
+                    metadata: {}
+                },
+                billing: mockBilling
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.addonConfirmed).toBe(false);
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    externalReference: qzpaySessionId,
+                    paymentId: 'mp-qzpay-1',
+                    paymentStatus: 'approved',
+                    metadataKeys: []
+                }),
+                'Payment has bare UUID external_reference (qzpay session id) but no addon metadata - possible qzpay-era addon payment missing metadata; correlate via qzpay checkout session'
+            );
+        });
+
+        it('payment WITH addon metadata goes through normal confirm path without any fallback warn', async () => {
+            const { apiLogger } = await import('../../../src/utils/logger');
+            vi.mocked(extractAddonMetadata).mockReturnValue({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust-1'
+            });
+            vi.mocked(extractAddonFromReference).mockReturnValue(null);
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: 'mp-with-meta-1',
+                    external_reference: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                    metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+                },
+                billing: mockBilling
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.addonConfirmed).toBe(true);
+            // No fallback warn emitted
+            const warnCalls = (apiLogger.warn as ReturnType<typeof vi.fn>).mock
+                .calls as unknown[][];
+            const fallbackWarns = warnCalls.filter((args) => {
+                const msg = args[1];
+                return (
+                    msg ===
+                        'Found add-on slug in external_reference but missing customerId - addon purchase may not be confirmed properly' ||
+                    (typeof msg === 'string' && msg.includes('qzpay session id'))
+                );
+            });
+            expect(fallbackWarns).toHaveLength(0);
+        });
+    });
 });

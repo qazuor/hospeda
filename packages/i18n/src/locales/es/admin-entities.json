@@ -302,6 +302,15 @@
             "rowsPerPage": "Filas por página"
         }
     },
+    "grid": {
+        "statistics": "Estadísticas",
+        "moreFields": "campos más",
+        "actions": {
+            "peek": "Ver",
+            "edit": "Editar",
+            "delete": "Eliminar"
+        }
+    },
     "detail": {
         "title": "{entity} - Detalle",
         "sections": {

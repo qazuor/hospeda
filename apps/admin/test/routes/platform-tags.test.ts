@@ -8,6 +8,11 @@
  *
  * `/tags/post-tags` and `/tags/user-moderation` stay at their original
  * paths; only sidebar refs change (T-026).
+ *
+ * NOTE (SPEC-185 T-014): The `internal` index route was migrated onto
+ * `createEntityListPage`. The Link references for create/edit navigation
+ * moved from `index.tsx` into the columns config file. The assertions for
+ * those routes now scan the columns config instead of the route index.
  */
 
 import { readFileSync } from 'node:fs';
@@ -32,6 +37,35 @@ describe('platform/tags/{internal,system} (T-025)', () => {
                 'utf8'
             );
 
+            // For the 'internal' namespace the index is migrated to the framework
+            // (SPEC-185 T-014) — create link lives in the config file, edit link
+            // in the columns config. For 'system' (not yet migrated) both stay in index.tsx.
+            const internalConfigSrc =
+                ns === 'internal'
+                    ? readFileSync(
+                          resolve(
+                              __dirname,
+                              '../../src/features/tags/internal/config/internal-tags.config.ts'
+                          ),
+                          'utf8'
+                      )
+                    : null;
+            const internalColumnsSrc =
+                ns === 'internal'
+                    ? readFileSync(
+                          resolve(
+                              __dirname,
+                              '../../src/features/tags/internal/config/internal-tags.columns.ts'
+                          ),
+                          'utf8'
+                      )
+                    : null;
+            // Combined source for nav assertions (index + config + columns for migrated lists)
+            const listNavSrc =
+                ns === 'internal'
+                    ? `${internalConfigSrc ?? ''}\n${internalColumnsSrc ?? ''}`
+                    : indexSrc;
+
             it('registers the index route at the new path', () => {
                 expect(indexSrc).toContain(`createFileRoute('/_authed/platform/tags/${ns}/')`);
             });
@@ -47,11 +81,23 @@ describe('platform/tags/{internal,system} (T-025)', () => {
             });
 
             it('list -> create Link points at the new namespace path', () => {
-                expect(indexSrc).toContain(`to="/platform/tags/${ns}/new"`);
+                // For migrated lists the link lives in the columns config (createElement
+                // calls use single-quoted TS strings); for un-migrated, JSX double-quoted.
+                const createLinkJsx = `to="/platform/tags/${ns}/new"`;
+                const createLinkTs = `'/platform/tags/${ns}/new'`;
+                expect(
+                    listNavSrc.includes(createLinkJsx) || listNavSrc.includes(createLinkTs)
+                ).toBe(true);
             });
 
             it('list -> edit Link uses the new namespace path with $id placeholder', () => {
-                expect(indexSrc).toContain(`to="/platform/tags/${ns}/$id/edit"`);
+                // For migrated lists the link lives in the columns config (single-quoted TS);
+                // for un-migrated, JSX double-quoted.
+                const editLinkJsx = `to="/platform/tags/${ns}/$id/edit"`;
+                const editLinkTs = `'/platform/tags/${ns}/$id/edit'`;
+                expect(listNavSrc.includes(editLinkJsx) || listNavSrc.includes(editLinkTs)).toBe(
+                    true
+                );
             });
 
             it('create cancel + post-submit redirect target the new list path', () => {

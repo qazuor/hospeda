@@ -14,6 +14,12 @@ import { useCallback } from 'react';
 export type DataTableToolbarProps = {
     readonly view: 'table' | 'grid';
     readonly onViewChange: (next: 'table' | 'grid') => void;
+    /**
+     * When false, the table/grid toggle buttons are hidden entirely.
+     * The view is fixed to `view` and cannot be changed from the toolbar.
+     * Defaults to true (toggle shown).
+     */
+    readonly showViewToggle?: boolean;
 
     readonly columnVisibility: Record<string, boolean>;
     readonly onColumnVisibilityChange: (visibility: Record<string, boolean>) => void;
@@ -26,6 +32,7 @@ export type DataTableToolbarProps = {
 export const DataTableToolbar = ({
     view,
     onViewChange,
+    showViewToggle = true,
     columnVisibility,
     onColumnVisibilityChange,
     availableColumns
@@ -40,44 +47,46 @@ export const DataTableToolbar = ({
     const { t } = useTranslations();
     return (
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="inline-flex overflow-hidden rounded-md border">
-                <button
-                    type="button"
-                    aria-label={t('ui.accessibility.tableView')}
-                    aria-pressed={view === 'table'}
-                    className={cn(
-                        'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
-                        view === 'table'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-accent/40'
-                    )}
-                    onClick={() => onViewChange('table')}
-                >
-                    <ListIcon
-                        weight={view === 'table' ? 'fill' : 'regular'}
-                        className="h-4 w-4"
-                    />
-                    {t('ui.table.tableView')}
-                </button>
-                <button
-                    type="button"
-                    aria-label={t('ui.accessibility.gridView')}
-                    aria-pressed={view === 'grid'}
-                    className={cn(
-                        'inline-flex items-center gap-1.5 border-l px-3 py-1.5 text-sm',
-                        view === 'grid'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'hover:bg-accent/40'
-                    )}
-                    onClick={() => onViewChange('grid')}
-                >
-                    <GridIcon
-                        weight={view === 'grid' ? 'fill' : 'regular'}
-                        className="h-4 w-4"
-                    />
-                    {t('ui.table.gridView')}
-                </button>
-            </div>
+            {showViewToggle && (
+                <div className="inline-flex overflow-hidden rounded-md border">
+                    <button
+                        type="button"
+                        aria-label={t('ui.accessibility.tableView')}
+                        aria-pressed={view === 'table'}
+                        className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
+                            view === 'table'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent/40'
+                        )}
+                        onClick={() => onViewChange('table')}
+                    >
+                        <ListIcon
+                            weight={view === 'table' ? 'fill' : 'regular'}
+                            className="h-4 w-4"
+                        />
+                        {t('ui.table.tableView')}
+                    </button>
+                    <button
+                        type="button"
+                        aria-label={t('ui.accessibility.gridView')}
+                        aria-pressed={view === 'grid'}
+                        className={cn(
+                            'inline-flex items-center gap-1.5 border-l px-3 py-1.5 text-sm',
+                            view === 'grid'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent/40'
+                        )}
+                        onClick={() => onViewChange('grid')}
+                    >
+                        <GridIcon
+                            weight={view === 'grid' ? 'fill' : 'regular'}
+                            className="h-4 w-4"
+                        />
+                        {t('ui.table.gridView')}
+                    </button>
+                </div>
+            )}
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>

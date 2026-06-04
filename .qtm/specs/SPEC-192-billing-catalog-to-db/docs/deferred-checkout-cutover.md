@@ -52,3 +52,19 @@ Scope of the follow-up:
 Both SPEC-127 and this follow-up touch `addon.checkout.ts` in different
 zones. Whoever lands second must rebase over the first and re-run the
 parity test plus the staging smoke. Do NOT parallelize the two changes.
+
+## Resolution sign-off (2026-06-04)
+
+**RESOLVED — cutover absorbed by SPEC-127** (option 2: same PR that
+rewrites the file). PR [#1448](https://github.com/qazuor/hospeda/pull/1448),
+branch `spec/SPEC-127-migrate-addon-checkout-to-qzpay`:
+
+- `getAddonBySlug` → `AddonCatalogService.getBySlug()` at both entry
+  points (commit `b7a1dcee1`); `@repo/billing` catalog imports fully
+  removed from the file.
+- Parity regression test added per the FR-2 pattern:
+  `apps/api/test/services/addon.checkout.cutover.test.ts` (commit `8c6b6e862`).
+- Staging smoke §1.7 (addon purchase): **deferred to the SPEC-193
+  end-of-series batch** per owner decision 2026-06-04 — registered in
+  [`SPEC-193 pending-staging-smoke`](../../SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md).
+  `main` stays frozen for billing until that batch passes.

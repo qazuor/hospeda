@@ -82,8 +82,8 @@
             "specId": "SPEC-127",
             "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
             "type": "refactor",
-            "complexity": "low",
-            "status": "draft",
+            "complexity": "medium",
+            "status": "completed",
             "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-193",
@@ -91,7 +91,9 @@
             "phase": "E",
             "dependsOn": ["SPEC-125"],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-06-04"
         },
         {
             "specId": "SPEC-128",
@@ -392,7 +394,7 @@
             "title": "Review Moderation State",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-166-review-moderation-state",
             "created": "2026-05-27T00:00:00.000Z",
             "extractedFrom": "SPEC-155",
@@ -460,17 +462,6 @@
             "archiveNote": "Track A (concurrency cap) merged. B2 (9% gain) implemented on branch spec/SPEC-188 but not merged — rebase cost > value. Four levers dead-ended (threads SIGSEGV, isolate:false breaks api, alias-to-dist deferred, deps.optimizer no-op)."
         },
         {
-            "specId": "SPEC-182",
-            "title": "Unified Authentication + Host-Mode Access Model",
-            "status": "completed",
-            "complexity": "high",
-            "path": "SPEC-182-unified-auth-host-access",
-            "created": "2026-06-02T00:00:00.000Z",
-            "archived": false,
-            "archivedAt": null,
-            "archiveNote": null
-        },
-        {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "type": "fix",
@@ -510,14 +501,16 @@
             "specId": "SPEC-185",
             "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "type": "feature",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
             "base": "staging",
             "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Delivered in 6 phases + 1 refactor + smoke fixes via PRs #1429/#1432/#1433/#1435/#1436/#1439/#1443 (all merged to staging). Phase 6 closeout #1443 merged 2026-06-04 (merge commit 2621fa54f)."
         },
         {
             "specId": "SPEC-186",
@@ -575,20 +568,21 @@
             "specId": "SPEC-191",
             "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "type": "feature",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
             "base": "staging",
             "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04"
         },
         {
             "specId": "SPEC-192",
             "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "type": "refactor",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-192-billing-catalog-to-db",
             "parent": "SPEC-193",
@@ -596,7 +590,9 @@
             "base": "staging",
             "linearIssues": ["BETA-58"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "PR #1428 merged to staging 2026-06-04. 37/37 tasks. MP-dependent staging smoke deferred to the SPEC-193 batch (see SPEC-193 docs/pending-staging-smoke.md); main frozen for billing until that batch passes."
         },
         {
             "specId": "SPEC-193",
@@ -640,6 +636,23 @@
             "base": "staging",
             "archived": false,
             "tags": ["billing", "lifecycle", "robustness", "bugfix"]
+        },
+        {
+            "specId": "SPEC-195",
+            "title": "Content Auto-Moderation Engine",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-195-content-auto-moderation",
+            "created": "2026-06-04T00:00:00.000Z",
+            "extractedFrom": "SPEC-166",
+            "archived": false,
+            "extractionReason": "Spun off from SPEC-166 2026-06-04: @repo/content-moderation ships with a frozen public API but a stub engine. This spec implements the internals only (real scoring engine + DB-backed editable word lists), no consumer changes.",
+            "enables": [
+                "SPEC-166 graded REJECTED/PENDING decisions via real scoring",
+                "redeploy-free moderation word list (env var to DB)"
+            ],
+            "tags": ["moderation", "content", "shared-package", "backend", "admin", "phase-2"]
         }
     ]
 }

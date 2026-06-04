@@ -1721,6 +1721,17 @@
             "completed": "2026-06-04T00:00:00.000Z",
             "archivedAt": "2026-06-04T08:56:41.000Z",
             "completionRef": "PR #1437 merged 2026-06-04 — What's New end to end: schemas + onboarding JSONB namespace, protected GET/PATCH with lazy-init baseline, curated boot-validated catalog, admin modal/panel/badge/auto-trigger + dashboard widget x4 roles, i18n es/en/pt. 20/20 tasks, ~40 commits, fresh review + 4 CI rounds."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "status": "completed",
+            "complexity": "high",
+            "path": "SPEC-182-unified-auth-host-access",
+            "created": "2026-06-02T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-04T17:30:00.000Z",
+            "archiveNote": "Completed 22/22 (unified auth + host-mode access model). Was left in active index with archived=false; moved to archive 2026-06-04 for consistency with the index.archive.json pattern."
         }
     ]
 }

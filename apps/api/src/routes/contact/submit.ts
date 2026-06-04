@@ -32,8 +32,11 @@ const FIELD_LIMITS = {
  * Human-readable Spanish labels for each contact type. Used in the email
  * subject so triage in the inbox is faster than parsing the raw slug.
  * Falls back to the slug if a new type is added and not yet mapped.
+ *
+ * Exported for test coverage: every `ContactTypeEnumSchema` value must have
+ * a label so no raw slug ever reaches the support inbox.
  */
-const CONTACT_TYPE_LABELS: Record<string, string> = {
+export const CONTACT_TYPE_LABELS: Record<string, string> = {
     general: 'Consulta general',
     support: 'Soporte técnico',
     publish_accommodation: 'Publicar alojamiento',
@@ -43,7 +46,10 @@ const CONTACT_TYPE_LABELS: Record<string, string> = {
     press: 'Prensa',
     partnerships: 'Alianzas comerciales',
     event_submission: 'Sumar evento',
-    accommodation: 'Consulta sobre alojamiento'
+    accommodation: 'Consulta sobre alojamiento',
+    report_destination_info: 'Reporte de información de destino',
+    photo_submission: 'Aporte de fotos',
+    editor_application: 'Postulación de editor'
 };
 
 /**

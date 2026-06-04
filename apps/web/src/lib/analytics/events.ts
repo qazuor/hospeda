@@ -38,7 +38,23 @@ export const WebEvents = {
     BookingInitiated: 'booking_initiated',
 
     /** Newsletter subscription form completed successfully. Props: `source` (footer | inline). */
-    NewsletterSubscribed: 'newsletter_subscribed'
+    NewsletterSubscribed: 'newsletter_subscribed',
+
+    /**
+     * Visitor clicked a ContributionBanner CTA (SPEC-191). Props: `source`
+     * (destination_detail | destination_listing | blog_listing | events_listing),
+     * `variant` (photos | editors).
+     */
+    ContributionBannerClicked: 'contribution_banner_clicked',
+
+    /** Destination-info report form submitted successfully (SPEC-191). Props: `destino?`, `locale`. */
+    ContributionReportSubmitted: 'contribution_report_submitted',
+
+    /** Photo-contribution form submitted successfully (SPEC-191). Props: `locale`. */
+    ContributionPhotoSubmitted: 'contribution_photo_submitted',
+
+    /** Editor-application form submitted successfully (SPEC-191). Props: `locale`. */
+    ContributionEditorSubmitted: 'contribution_editor_submitted'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */
