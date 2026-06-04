@@ -20,13 +20,130 @@ import { AddonService } from '../../src/services/addon.service';
 // Hoisted mock functions for service-core query functions (addon-user-addons).
 // After migration, queryUserAddons/queryAddonActive live in service-core and
 // import @repo/db directly. Mocking the resolved path intercepts the actual call.
-const { mockQueryUserAddons, mockQueryAddonActive, mockCancelAddonPurchaseRecord } = vi.hoisted(
-    () => ({
+const {
+    mockQueryUserAddons,
+    mockQueryAddonActive,
+    mockCancelAddonPurchaseRecord,
+    MOCK_ADDONS,
+    mockCatalogList,
+    mockCatalogGetBySlug
+} = vi.hoisted(() => {
+    const LimitKeyEnum = {
+        MAX_ACCOMMODATIONS: 'max_accommodations',
+        MAX_PHOTOS_PER_ACCOMMODATION: 'max_photos_per_accommodation',
+        MAX_ACTIVE_PROMOTIONS: 'max_active_promotions',
+        MAX_FAVORITES: 'max_favorites',
+        MAX_PROPERTIES: 'max_properties',
+        MAX_STAFF_ACCOUNTS: 'max_staff_accounts'
+    } as const;
+
+    const MOCK_ADDONS = [
+        {
+            slug: 'boost-7',
+            name: 'Boost 7 días',
+            description: 'Boost visibility for 7 days',
+            billingType: 'one_time' as const,
+            priceArs: 5000,
+            annualPriceArs: null,
+            durationDays: 7,
+            isActive: true,
+            targetCategories: ['owner', 'complex'] as const,
+            sortOrder: 1,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'extra-photos',
+            name: 'Pack fotos extra',
+            description: 'Extra photos pack',
+            billingType: 'recurring' as const,
+            priceArs: 5000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: true,
+            targetCategories: ['owner'] as const,
+            sortOrder: 2,
+            affectsLimitKey: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
+            limitIncrease: 20,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'inactive-addon',
+            name: 'Inactive',
+            description: 'Inactive addon',
+            billingType: 'one_time' as const,
+            priceArs: 1000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: false,
+            targetCategories: ['owner'] as const,
+            sortOrder: 99,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'complex-only',
+            name: 'Complex Only Addon',
+            description: 'Only for complexes',
+            billingType: 'one_time' as const,
+            priceArs: 10000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: true,
+            targetCategories: ['complex'] as const,
+            sortOrder: 3,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        }
+    ];
+
+    // Catalog service mocks — filter MOCK_ADDONS like the real service would.
+    const mockCatalogList = vi.fn().mockImplementation(
+        async (
+            input: {
+                billingType?: string;
+                targetCategory?: string;
+                active?: boolean;
+            } = {}
+        ) => {
+            let filtered = [...MOCK_ADDONS];
+            if (input.billingType !== undefined) {
+                filtered = filtered.filter((a) => a.billingType === input.billingType);
+            }
+            if (input.targetCategory !== undefined) {
+                filtered = filtered.filter((a) =>
+                    (a.targetCategories as readonly string[]).includes(input.targetCategory!)
+                );
+            }
+            if (input.active !== undefined) {
+                filtered = filtered.filter((a) => a.isActive === input.active);
+            }
+            filtered.sort((a, b) => a.sortOrder - b.sortOrder);
+            return { success: true, data: filtered };
+        }
+    );
+
+    const mockCatalogGetBySlug = vi.fn().mockImplementation(async (slug: string) => {
+        const addon = MOCK_ADDONS.find((a) => a.slug === slug);
+        if (addon) return { success: true, data: addon };
+        return {
+            success: false,
+            error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+        };
+    });
+
+    return {
         mockQueryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
         mockQueryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
-        mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1)
-    })
-);
+        mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
+        MOCK_ADDONS,
+        mockCatalogList,
+        mockCatalogGetBySlug
+    };
+});
 
 vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user-addons', () => ({
     queryUserAddons: mockQueryUserAddons,
@@ -36,6 +153,30 @@ vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user
     RevokeAllAddonsResult: {},
     RevokeAllAddonsInput: {}
 }));
+
+// Override global setup.ts mock for @repo/service-core to add:
+// - AddonCatalogService (SPEC-192 T-011): used by addon.user-addons.ts for addon resolution
+// - listAvailableAddons (SPEC-192 T-004): used by addon.service.ts listAvailable()
+// - getAddonCatalogEntry (SPEC-192 T-004): used by addon.service.ts getById()
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        // DB-backed catalog functions used by addon.service.ts (SPEC-192 T-004 cutover)
+        listAvailableAddons: mockCatalogList,
+        getAddonCatalogEntry: mockCatalogGetBySlug,
+        // DB-backed catalog service used by addon.user-addons.ts (SPEC-192 T-011 cutover)
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockCatalogGetBySlug,
+            list: mockCatalogList
+        })),
+        // cancelAddonPurchaseRecord from the path-specific mock takes precedence for the
+        // actual runtime path, but keeping it here ensures correct typing for consumers.
+        cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
+        queryUserAddons: mockQueryUserAddons,
+        queryAddonActive: mockQueryAddonActive
+    };
+});
 
 // Use vi.hoisted to define mock database utilities available before vi.mock runs
 // Only destructure the top-level values we need to pass to vi.mock
@@ -159,7 +300,9 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchases
 }));
 
-// Mock @repo/billing - Define mock data inline in factory to avoid hoisting issues
+// Mock @repo/billing — uses MOCK_ADDONS from hoisted block for consistency with
+// the DB-backed catalog mock. The getAddonBySlug function is kept for backward
+// compatibility with any remaining consumers (e.g. addon.checkout.ts).
 vi.mock('@repo/billing', () => {
     const LimitKeyEnum = {
         MAX_ACCOMMODATIONS: 'max_accommodations',
@@ -170,74 +313,15 @@ vi.mock('@repo/billing', () => {
         MAX_STAFF_ACCOUNTS: 'max_staff_accounts'
     } as const;
 
-    const mockAddons = [
-        {
-            slug: 'boost-7',
-            name: 'Boost 7 días',
-            description: 'Boost visibility for 7 days',
-            billingType: 'one_time' as const,
-            priceArs: 5000,
-            durationDays: 7,
-            isActive: true,
-            targetCategories: ['owner', 'complex'] as const,
-            sortOrder: 1,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'extra-photos',
-            name: 'Pack fotos extra',
-            description: 'Extra photos pack',
-            billingType: 'recurring' as const,
-            priceArs: 5000,
-            durationDays: null,
-            isActive: true,
-            targetCategories: ['owner'] as const,
-            sortOrder: 2,
-            affectsLimitKey: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
-            limitIncrease: 20,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'inactive-addon',
-            name: 'Inactive',
-            description: 'Inactive addon',
-            billingType: 'one_time' as const,
-            priceArs: 1000,
-            durationDays: null,
-            isActive: false,
-            targetCategories: ['owner'] as const,
-            sortOrder: 99,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'complex-only',
-            name: 'Complex Only Addon',
-            description: 'Only for complexes',
-            billingType: 'one_time' as const,
-            priceArs: 10000,
-            durationDays: null,
-            isActive: true,
-            targetCategories: ['complex'] as const,
-            sortOrder: 3,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        }
-    ];
-
     return {
-        ALL_ADDONS: mockAddons,
+        ALL_ADDONS: MOCK_ADDONS,
         // ALL_PLANS is imported at the top level of addon.checkout.ts (via confirmAddonPurchase).
         // An empty array is sufficient: the code uses optional chaining when accessing plan
         // limits (canonicalPlan?.limits.find(...)), so an unknown planId is non-fatal.
         ALL_PLANS: [],
         LimitKey: LimitKeyEnum,
         getAddonBySlug: vi.fn((slug: string) => {
-            return mockAddons.find((a) => a.slug === slug) || null;
+            return MOCK_ADDONS.find((a) => a.slug === slug) || null;
         })
     };
 });

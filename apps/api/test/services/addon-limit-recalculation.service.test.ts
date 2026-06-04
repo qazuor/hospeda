@@ -24,7 +24,14 @@ import { createMockBilling } from '../helpers/mock-factories';
 //
 // Must be hoisted so they are available when vi.mock factory functions run.
 
-const { mockTxExecute, mockWithTransaction, mockBillingAddonPurchasesSchema } = vi.hoisted(() => {
+const {
+    mockTxExecute,
+    mockWithTransaction,
+    mockBillingAddonPurchasesSchema,
+    mockAddonCatalogGetBySlug,
+    mockPlanServiceGetById,
+    mockPlanServiceGetBySlug
+} = vi.hoisted(() => {
     const mockTxExecute = vi.fn().mockResolvedValue({ rows: [] });
     const tx = { execute: mockTxExecute };
     const mockWithTransaction = vi.fn(async <T>(callback: (innerTx: typeof tx) => Promise<T>) => {
@@ -37,10 +44,30 @@ const { mockTxExecute, mockWithTransaction, mockBillingAddonPurchasesSchema } = 
         deletedAt: 'deletedAt'
     };
 
+    // DB-backed catalog mock — returns NOT_FOUND by default; tests override per-case.
+    const mockAddonCatalogGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+    });
+
+    // DB-backed plan service mocks — getById returns NOT_FOUND (planId is a slug,
+    // so the UUID lookup always misses); getBySlug is the effective lookup path.
+    const mockPlanServiceGetById = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+    const mockPlanServiceGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+
     return {
         mockTxExecute,
         mockWithTransaction,
-        mockBillingAddonPurchasesSchema
+        mockBillingAddonPurchasesSchema,
+        mockAddonCatalogGetBySlug,
+        mockPlanServiceGetById,
+        mockPlanServiceGetBySlug
     };
 });
 
@@ -68,14 +95,34 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchasesSchema
 }));
 
+// @repo/billing is no longer used for plan/addon resolution in the production
+// recalculation service (cutover SPEC-192 T-027). Keep a passthrough mock so
+// any remaining transitive imports don't break.
 vi.mock('@repo/billing', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/billing')>();
-    return {
-        ...actual,
-        getPlanBySlug: vi.fn(),
-        getAddonBySlug: vi.fn()
-    };
+    return { ...actual };
 });
+
+// DB-backed services: AddonCatalogService and PlanService are module-level
+// singletons in addon-limit-recalculation.service.ts (service-core source).
+// They are instantiated via RELATIVE imports, so we mock the specific files
+// rather than the @repo/service-core package alias.
+vi.mock(
+    '../../../../packages/service-core/src/services/billing/addon/addon-catalog.service',
+    () => ({
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug,
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        }))
+    })
+);
+
+vi.mock('../../../../packages/service-core/src/services/billing/plan/plan.service', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanServiceGetById,
+        getBySlug: mockPlanServiceGetBySlug
+    }))
+}));
 
 // drizzle helpers (eq, and, isNull) pass through unchanged
 vi.mock('drizzle-orm', async (importOriginal) => {
@@ -91,12 +138,14 @@ const PLAN_SLUG = 'owner-pro';
 
 /**
  * Plan with base limit of 10 for LIMIT_KEY.
+ * DB shape: limits is Record<string, number> (not an array).
  */
 const mockPlanWithLimit = {
+    id: 'plan-uuid-owner-pro',
     slug: PLAN_SLUG,
     name: 'Owner Pro',
     description: 'Pro plan',
-    category: 'owner',
+    category: 'owner' as const,
     monthlyPriceArs: 5000,
     annualPriceArs: null,
     monthlyPriceUsdRef: 5,
@@ -105,8 +154,10 @@ const mockPlanWithLimit = {
     isDefault: false,
     sortOrder: 2,
     entitlements: [],
-    limits: [{ key: LIMIT_KEY, value: 10, name: 'Max accommodations', description: 'Max' }],
-    isActive: true
+    limits: { [LIMIT_KEY]: 10 } as Record<string, number>,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
 };
 
 /**
@@ -114,15 +165,15 @@ const mockPlanWithLimit = {
  */
 const mockPlanUnlimited = {
     ...mockPlanWithLimit,
-    limits: [{ key: LIMIT_KEY, value: -1, name: 'Max accommodations', description: 'Unlimited' }]
+    limits: { [LIMIT_KEY]: -1 } as Record<string, number>
 };
 
 /**
- * Plan that does NOT have the limitKey in its limits array.
+ * Plan that does NOT have the limitKey in its limits map.
  */
 const mockPlanWithoutLimitKey = {
     ...mockPlanWithLimit,
-    limits: []
+    limits: {} as Record<string, number>
 };
 
 /**
@@ -200,10 +251,24 @@ describe('recalculateAddonLimitsForCustomer', () => {
             mockActiveSubscription
         ]);
 
-        // Default: plan found with base limit 10
-        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
-        (getPlanBySlug as unknown as MockInstance).mockReturnValue(mockPlanWithLimit);
-        (getAddonBySlug as unknown as MockInstance).mockReturnValue(mockAddonDefLimit20);
+        // Default: plan found with base limit 10 via DB-backed PlanService.
+        // The production code does dual-resolve: getById(planId) then getBySlug(planId).
+        // Since mockActiveSubscription.planId is a slug, getById returns NOT_FOUND and
+        // getBySlug is the effective resolution path.
+        mockPlanServiceGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Plan not found' }
+        });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: true,
+            data: mockPlanWithLimit
+        });
+
+        // Default: addon definition found with affectsLimitKey = LIMIT_KEY.
+        mockAddonCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: mockAddonDefLimit20
+        });
     });
 
     afterEach(() => {
@@ -348,12 +413,13 @@ describe('recalculateAddonLimitsForCustomer', () => {
 
         it('should call removeBySource when purchases exist but none match limitKey', async () => {
             // Arrange — purchase for a different limitKey
-            const { getAddonBySlug } = await import('@repo/billing');
-
-            // Make getAddonBySlug return a definition for a DIFFERENT limitKey
-            (getAddonBySlug as unknown as MockInstance).mockReturnValue({
-                ...mockAddonDefLimit20,
-                affectsLimitKey: 'max_photos_per_accommodation'
+            // Make catalogService.getBySlug return a definition for a DIFFERENT limitKey
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: {
+                    ...mockAddonDefLimit20,
+                    affectsLimitKey: 'max_photos_per_accommodation'
+                }
             });
 
             const db = setupDbWithPurchases([activePurchaseRow]);
@@ -383,8 +449,10 @@ describe('recalculateAddonLimitsForCustomer', () => {
     describe('T-019-4: unlimited base plan — recalculation skipped with outcome=skipped', () => {
         it('should return outcome=skipped and not call limits.set or removeBySource', async () => {
             // Arrange
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(mockPlanUnlimited);
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: true,
+                data: mockPlanUnlimited
+            });
 
             const db = setupDbWithPurchases([activePurchaseRow]);
 
@@ -409,11 +477,17 @@ describe('recalculateAddonLimitsForCustomer', () => {
     // =========================================================================
     // T-019-5: Plan not found in config — outcome='failed'
     // =========================================================================
-    describe('T-019-5: plan not found in canonical config — outcome=failed', () => {
-        it('should return outcome=failed when getPlanBySlug returns null', async () => {
-            // Arrange
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(null);
+    describe('T-019-5: plan not found in DB — outcome=failed', () => {
+        it('should return outcome=failed when plan not found in DB (getById + getBySlug both fail)', async () => {
+            // Arrange — both PlanService lookups return NOT_FOUND
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Plan not found' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Plan not found' }
+            });
 
             const db = setupDbWithPurchases([activePurchaseRow]);
 
@@ -434,10 +508,16 @@ describe('recalculateAddonLimitsForCustomer', () => {
             expect(billing.limits.removeBySource).not.toHaveBeenCalled();
         });
 
-        it('should return outcome=failed when getPlanBySlug returns undefined', async () => {
-            // Arrange
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(undefined);
+        it('should return outcome=failed when getBySlug also returns NOT_FOUND', async () => {
+            // Arrange — both lookups fail (covers old "undefined" fallback path)
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Plan not found' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'Plan not found' }
+            });
 
             const db = setupDbWithPurchases([]);
 
@@ -458,11 +538,13 @@ describe('recalculateAddonLimitsForCustomer', () => {
     // =========================================================================
     // T-019-6: limitKey not present in plan limits — basePlanLimit treated as 0
     // =========================================================================
-    describe('T-019-6: limitKey missing from plan limits array — basePlanLimit defaults to 0', () => {
+    describe('T-019-6: limitKey missing from plan limits map — basePlanLimit defaults to 0', () => {
         it('should treat basePlanLimit as 0 and still call limits.set with correct newMaxValue', async () => {
-            // Arrange — plan has no entry for LIMIT_KEY
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(mockPlanWithoutLimitKey);
+            // Arrange — plan has no entry for LIMIT_KEY in its limits map
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: true,
+                data: mockPlanWithoutLimitKey
+            });
 
             const db = setupDbWithPurchases([activePurchaseRow]);
 
@@ -484,9 +566,11 @@ describe('recalculateAddonLimitsForCustomer', () => {
         });
 
         it('should call removeBySource when no addons and limitKey is missing from plan', async () => {
-            // Arrange — plan without limitKey, no active purchases either
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(mockPlanWithoutLimitKey);
+            // Arrange — plan without limitKey in its limits map, no active purchases either
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: true,
+                data: mockPlanWithoutLimitKey
+            });
 
             const db = setupDbWithPurchases([]);
 
@@ -709,8 +793,10 @@ describe('recalculateAddonLimitsForCustomer', () => {
 
         it('should include reason field on skipped outcome', async () => {
             // Arrange — unlimited plan triggers skipped path
-            const { getPlanBySlug } = await import('@repo/billing');
-            (getPlanBySlug as unknown as MockInstance).mockReturnValue(mockPlanUnlimited);
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: true,
+                data: mockPlanUnlimited
+            });
             const db = setupDbWithPurchases([]);
 
             // Act

@@ -23,6 +23,17 @@ import { PlanService, mapDbToPlan } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
+// Override the global setup.ts mock for @repo/service-core so the REAL
+// PlanService class (with create/update/toggleActive/softDelete/hardDelete)
+// is used here. The global mock replaces PlanService with a read-only stub
+// (MockPlanService) which causes "service.create is not a function".
+// ---------------------------------------------------------------------------
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return { ...actual };
+});
+
+// ---------------------------------------------------------------------------
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
