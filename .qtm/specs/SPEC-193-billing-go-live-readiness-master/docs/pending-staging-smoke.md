@@ -17,6 +17,7 @@
 | Added by | PR | Sections | Notes |
 |----------|----|----------|-------|
 | SPEC-192 (catalog to DB) | #1428 | 1.1, 1.2 (checkout happy paths), 1.7 (addon purchase), 1.8–1.11 (webhooks: idempotency, signature, past_due, concurrency), 1.15-A2 (photo limit — needs media infra), 2.5 (addon-expiry cron, production-like timing), 3.1 (promo apply at checkout) | MP-independent sections (1.14, 1.15-A1/A3, 3.1 read path, 3.5 admin ops) already PASSED locally — see [SPEC-192 sign-off](../../SPEC-192-billing-catalog-to-db/docs/smoke-signoff-checklist.md). Highest risk: webhook `payment-logic.ts` + cron cutovers. |
+| SPEC-127 (addon checkout → qzpay) | #1448 | 1.7 (addon purchase — full flow: checkout create via qzpay, MP redirect, webhook confirm; verify metadata duals + `order_id` arrive, `external_reference` is the qzpay session UUID), 1.8 (webhook idempotency — addon paymentId dedup), 3.1 (promo apply on addon checkout incl. 100% discount → zero-amount preference acceptance), NEW: addon polling fallback (block the webhook, verify the `one_time_payment` polling job confirms the purchase within the poll window; verify webhook+polling race stays idempotent) | Billing CORE (checkout + webhook + cron paths rewritten). Intentional behavior changes to verify live: prod-first init point selection (sandbox URL must still be used in sandbox mode), removed `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` guard. Deferral sign-off: [SPEC-192 deferred-checkout-cutover](../../SPEC-192-billing-catalog-to-db/docs/deferred-checkout-cutover.md). |
 
 ## Go-live gate (prod smoke)
 
