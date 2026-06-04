@@ -191,35 +191,35 @@
             "id": "T-006",
             "title": "Create /colaborar hub landing page (SSG)",
             "description": "Create apps/web/src/pages/[lang]/colaborar/index.astro (FR-2): export const prerender = true + getStaticPaths over es/en/pt (mirror contacto/index.astro). Hero plus three cards/links (buildUrl) to colaborar/reportar, colaborar/fotos, colaborar/editores. SEOHead + breadcrumbs per sibling static pages. All copy via t() with inline fallbacks (contributions namespace keys; JSON lands in T-014). Vanilla CSS / scoped style with tokens. Tests (source assertions): prerender flag, getStaticPaths enumerates the three locales, the three links present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Hub page SSG with hero + three contribution cards",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "SEOHead + i18n keys with fallbacks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "pages", "i18n"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T18:00:00.000Z",
+                "completed": "2026-06-04T18:15:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     }
