@@ -515,6 +515,60 @@ describe('buildFilterChips', () => {
         // Assert — raw value used as displayValue
         expect(chips[0]?.displayValue).toBe('UNKNOWN_VALUE');
     });
+
+    // Text filter chip: displayValue equals the raw string value
+    it('uses raw string value as displayValue for text filter type', () => {
+        // Arrange
+        const textConfig: FilterBarConfig = {
+            filters: [
+                {
+                    paramKey: 'search',
+                    labelKey: 'filters.search',
+                    type: 'text',
+                    order: 1
+                }
+            ]
+        };
+
+        // Act
+        const chips = buildFilterChips({
+            activeFilters: { search: 'hotel boutique' },
+            filterBarConfig: textConfig,
+            defaultFilters: {},
+            t
+        });
+
+        // Assert
+        expect(chips).toHaveLength(1);
+        expect(chips[0]?.displayValue).toBe('hotel boutique');
+        expect(chips[0]?.paramKey).toBe('search');
+    });
+
+    // Text filter chip: isDefault is false when no defaultValue declared
+    it('marks text filter chip as isDefault false when no defaultValue is set', () => {
+        // Arrange
+        const textConfig: FilterBarConfig = {
+            filters: [
+                {
+                    paramKey: 'search',
+                    labelKey: 'filters.search',
+                    type: 'text',
+                    order: 1
+                }
+            ]
+        };
+
+        // Act
+        const chips = buildFilterChips({
+            activeFilters: { search: 'hotel' },
+            filterBarConfig: textConfig,
+            defaultFilters: {},
+            t
+        });
+
+        // Assert
+        expect(chips[0]?.isDefault).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------

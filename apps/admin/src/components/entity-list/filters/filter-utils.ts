@@ -255,6 +255,9 @@ export const buildFilterChips = ({
                 } else {
                     displayValue = activeValue;
                 }
+            } else if (simpleConfig.type === 'text') {
+                // Text filters use the raw string value as-is for chip display
+                displayValue = activeValue;
             } else {
                 displayValue = activeValue;
             }

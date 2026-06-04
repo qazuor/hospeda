@@ -7,6 +7,7 @@
     "resetDefaults": "Reset to defaults",
     "activeFilters": "Active filters",
     "noResults": "No results match the current filters",
+    "textPlaceholder": "Search…",
     "status": {
         "label": "Status",
         "draft": "Draft",

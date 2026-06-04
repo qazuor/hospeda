@@ -12,6 +12,7 @@ import { FilterBoolean } from './FilterBoolean';
 import { FilterDateRange } from './FilterDateRange';
 import { FilterNumberRange } from './FilterNumberRange';
 import { FilterSelect } from './FilterSelect';
+import { FilterText } from './FilterText';
 import type { ActiveFilters, FilterBarConfig, FilterChipData } from './filter-types';
 
 type FilterBarProps = {
@@ -132,6 +133,17 @@ export function FilterBar({
                                     onFilterChange(filterConfig.paramKeyFrom, val)
                                 }
                                 onChangeTo={(val) => onFilterChange(filterConfig.paramKeyTo, val)}
+                            />
+                        );
+                    }
+
+                    if (filterConfig.type === 'text') {
+                        return (
+                            <FilterText
+                                key={filterConfig.paramKey}
+                                config={filterConfig}
+                                value={value}
+                                onChange={(val) => onFilterChange(filterConfig.paramKey, val)}
                             />
                         );
                     }

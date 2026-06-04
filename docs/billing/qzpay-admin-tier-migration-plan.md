@@ -623,7 +623,7 @@ Realistic with debugging: **8-10h**. Single session feasible if focused.
 
 - [`docs/billing/ui-audit-2026.md`](./ui-audit-2026.md) — original Phase 1-4 plan (Phase 3 superseded by this doc)
 - [`apps/api/src/routes/billing/admin/index.ts`](../../apps/api/src/routes/billing/admin/index.ts) — current admin mount
-- [`apps/api/src/routes/billing/admin/subscription-cancel.ts`](../../apps/api/src/routes/billing/admin/subscription-cancel.ts) — to be deleted; lifecycle moves to hooks
+- `apps/api/src/routes/billing/admin/subscription-cancel.ts` — deleted; lifecycle was moved to `qzpay-admin-hooks.ts`
 - [`apps/api/src/middlewares/billing-ownership.middleware.ts`](../../apps/api/src/middlewares/billing-ownership.middleware.ts) — stays for `/protected/`
 - [`apps/api/src/middlewares/billing-admin-guard.middleware.ts`](../../apps/api/src/middlewares/billing-admin-guard.middleware.ts) — stays for `/protected/`; new `/admin/` mount uses its own simpler check
 - qzpay-hono repo: `/home/qazuor/projects/PACKAGES/qzpay/packages/hono/src/routes/admin.routes.ts`

@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 11,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     },
@@ -214,7 +214,7 @@
             "id": "T-010",
             "title": "[OWNER ACTION] Deploy Cloudflare Worker + configure route",
             "description": "OPERATOR ONLY — not automatable. Deploy the Worker: (1) cd infra/cloudflare/posthog-proxy, (2) wrangler deploy, (3) in Cloudflare dashboard add route hospeda.com.ar/ingest/* → posthog-proxy Worker (and optionally staging.hospeda.com.ar/ingest/* → same Worker). (4) Verify: curl https://hospeda.com.ar/ingest/e/ returns 200 from PostHog (or 400 if no payload — the key is that it proxies, not 404/522). Acceptance: Worker live, route active, curl verification passes BEFORE proceeding to T-011.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-011"],
@@ -228,15 +228,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T22:35:42.000Z",
+                "completed": "2026-06-03T22:35:42.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "[OWNER ACTION] Set PUBLIC_POSTHOG_HOST in Coolify + redeploy + manual smoke",
             "description": "OPERATOR ONLY — not automatable. ONLY after T-010 is verified: (1) In Coolify: hospeda-web-prod (and hospeda-web-staging) → Environment Variables → set PUBLIC_POSTHOG_HOST=https://hospeda.com.ar/ingest (or https://staging.hospeda.com.ar/ingest for staging). (2) Redeploy web app (atomic: CSP change from T-005 + env var change deploy together). (3) Manual smoke: open site with uBlock Origin enabled, open DevTools Network, verify /ingest/e/ requests return 200, verify events appear in PostHog live stream, verify no CSP violations in console. (4) Flip spec status to completed + sync indexes (T-011 triggers closeout). Acceptance: events flowing through proxy with ad-blocker enabled, no CSP violations, PostHog dashboard shows events.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006", "T-007", "T-008", "T-009", "T-010"],
             "blocks": [],
@@ -250,8 +250,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-03T22:35:42.000Z",
+                "completed": "2026-06-03T22:35:42.000Z"
             }
         }
     ]

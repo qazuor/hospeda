@@ -7,6 +7,7 @@
     "resetDefaults": "Restaurar padrões",
     "activeFilters": "Filtros ativos",
     "noResults": "Nenhum resultado com os filtros atuais",
+    "textPlaceholder": "Buscar…",
     "status": {
         "label": "Estado",
         "draft": "Rascunho",

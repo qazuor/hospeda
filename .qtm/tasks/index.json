@@ -35,27 +35,14 @@
             "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
         },
         {
-            "specId": "SPEC-181",
-            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
-            "status": "in-progress",
-            "progress": "9/11",
-            "path": "SPEC-181-posthog-reverse-proxy",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-181-posthog-reverse-proxy",
-            "branch": "spec/SPEC-181-posthog-reverse-proxy",
-            "base": "staging",
-            "driver": "Linear BETA-77",
-            "createdAt": "2026-06-02T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
-            "taskCount": 11,
-            "averageComplexity": 2.5,
-            "note": "11 tasks across 4 phases (avg complexity 2.5). phase-worker: T-001..T-004 (Worker script + wrangler.toml + README + unit test). phase-app: T-005..T-007 (CSP removal + env-registry update + CSP regression test). phase-docs: T-008..T-009 (proxy guide + SPEC-140 ref update). phase-verify: T-010..T-011 (owner ops: CF Worker deploy + Coolify env set + smoke). T-010 and T-011 are manual owner actions, not automatable. Critical coupling: T-010 (Worker live) must precede T-011 (env var + redeploy)."
-        },
-        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
-            "status": "pending",
-            "progress": "0/15",
-            "path": "SPEC-188-vitest-test-performance"
+            "status": "completed",
+            "progress": "9/21",
+            "path": "SPEC-188-vitest-test-performance",
+            "archived": true,
+            "archivedAt": "2026-06-04T00:00:00Z",
+            "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
         },
         {
             "specId": "SPEC-182",

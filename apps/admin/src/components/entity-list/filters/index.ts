@@ -12,6 +12,7 @@ export type {
     BooleanFilterConfig,
     NumberRangeFilterConfig,
     DateRangeFilterConfig,
+    TextFilterConfig,
     FilterBarConfig,
     ActiveFilters,
     FilterChipData

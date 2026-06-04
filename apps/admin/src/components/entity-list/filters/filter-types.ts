@@ -2,9 +2,10 @@
  * Supported filter control types.
  * - 'select' and 'boolean' were implemented in SPEC-054.
  * - 'number-range' and 'date-range' were added in SPEC-185 Phase 1.
+ * - 'text' (debounced free-input) was added alongside SPEC-185 (PR #1431).
  * - 'relation' remains deferred to a future spec.
  */
-export type FilterControlType = 'select' | 'boolean' | 'number-range' | 'date-range';
+export type FilterControlType = 'select' | 'boolean' | 'number-range' | 'date-range' | 'text';
 
 /**
  * Base configuration shared by all filter control types.
@@ -124,6 +125,25 @@ export type DateRangeFilterConfig = Omit<BaseFilterConfig, 'paramKey'> & {
 };
 
 /**
+ * Configuration for a free-text input filter control.
+ * Renders a debounced text input that writes its value directly to the URL param.
+ * Empty or whitespace-only values remove the param entirely (treated as cleared).
+ */
+export type TextFilterConfig = BaseFilterConfig & {
+    /** Discriminant: text filter type */
+    readonly type: 'text';
+    /** i18n key for the input placeholder. Falls back to the labelKey when omitted. */
+    readonly placeholderKey?: string;
+    /**
+     * Debounce delay in milliseconds before the URL param is updated.
+     * @default 400
+     */
+    readonly debounceMs?: number;
+    /** Maximum number of characters accepted by the input. */
+    readonly maxLength?: number;
+};
+
+/**
  * Configuration for a single filter control in the filter bar.
  * Discriminated union on the `type` field.
  */
@@ -131,7 +151,8 @@ export type FilterControlConfig =
     | SelectFilterConfig
     | BooleanFilterConfig
     | NumberRangeFilterConfig
-    | DateRangeFilterConfig;
+    | DateRangeFilterConfig
+    | TextFilterConfig;
 
 /** Sentinel value used for the "All" option in Radix Select, which does not support empty strings. */
 export const FILTER_ALL_VALUE = '__all__' as const;

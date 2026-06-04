@@ -7,6 +7,7 @@
     "resetDefaults": "Restablecer predeterminados",
     "activeFilters": "Filtros activos",
     "noResults": "No hay resultados con los filtros actuales",
+    "textPlaceholder": "Buscar…",
     "status": {
         "label": "Estado",
         "draft": "Borrador",

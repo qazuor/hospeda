@@ -1,28 +1,42 @@
-# Self-Hosted Runner for PR CI
+# Self-Hosted Runner (Optional)
 
-Hospeda's `ci.yml` runs PR jobs on a self-hosted runner on the owner's
-laptop instead of GitHub-hosted runners. This guide explains why, how
-to register and operate the runner, and how to trigger the on-demand E2E
-gate.
+> **Status as of 2026-06:** The repo is now **public**. GitHub-hosted runners
+> (`ubuntu-latest`) provide free, unlimited minutes for public repositories and
+> run all CI jobs in parallel. The self-hosted runner is therefore **optional**
+> — it is no longer the primary CI path. This guide is kept as a reference for
+> re-registering the runner when needed (cost-sensitive scenarios, offline
+> validation, or on-demand E2E gating).
 
-## Why self-hosted for PRs
+---
 
-The repo is **private**. GitHub's Free plan provides 2,000 Actions
-minutes/month for private repos. `ci.yml` fires roughly 40 times per day
-across 9 jobs, exhausting the quota quickly. Self-hosted runner minutes
-are **free and unlimited** on private repos — they do not count against
-the GitHub-hosted quota at all.
+## Background: why this runner existed
 
-Only PR jobs move to the laptop. Push-to-`main`/`staging` stays on
-GitHub-hosted runners so the validated baseline is always reachable even
-when the laptop is off.
+When the repo was **private**, GitHub's Free plan provided only 2,000 Actions
+minutes/month. With `ci.yml` firing roughly 40 times per day across 9 jobs,
+the quota was exhausted quickly. Routing PR jobs to a self-hosted runner on the
+owner's laptop kept minutes at zero, because self-hosted minutes are always
+free.
 
-| Event | Runner | Minutes charged |
-|---|---|---|
-| `pull_request` (non-draft, same repo) | `leo-laptop` (self-hosted) | 0 |
-| `push` to `main` or `staging` | `ubuntu-latest` (GitHub-hosted) | normal |
-| Draft PR | `ubuntu-latest` (GitHub-hosted) | normal |
-| Fork PR (if any) | `ubuntu-latest` (GitHub-hosted) | normal |
+Now that the repo is public, GitHub-hosted minutes are also free and unlimited,
+so all jobs run on `ubuntu-latest` by default (see `ci.yml`). The self-hosted
+path is retained as a documented option.
+
+---
+
+## Current CI routing
+
+All CI jobs currently use `ubuntu-latest`:
+
+| Event | Runner |
+|---|---|
+| `pull_request` (any state) | `ubuntu-latest` (GitHub-hosted) |
+| `push` to `main` or `staging` | `ubuntu-latest` (GitHub-hosted) |
+| `workflow_dispatch` (E2E gate) | `ubuntu-latest` (GitHub-hosted) |
+
+To re-enable self-hosted routing for PRs, add a dynamic `runs-on` expression
+back to `ci.yml` (for example, switching non-draft same-repo PRs to
+`[self-hosted, linux, x64, leo-laptop]`). That change is reversible and
+documented in the git history.
 
 ---
 
@@ -34,55 +48,90 @@ The runner must be registered with exactly these labels:
 self-hosted, linux, x64, leo-laptop
 ```
 
-The `leo-laptop` label pins jobs to this specific machine. If a second
-runner is added later, give it a different custom label so jobs route
-explicitly.
+The `leo-laptop` label pins jobs to this specific machine. If a second runner
+is added later, give it a different custom label so jobs route explicitly.
 
 ---
 
-## Registration
+## Re-registering the runner
 
-### 1. Open the registration page
+The runner was deregistered on 2026-06-04. These steps restore it.
 
-GitHub repo → Settings → Actions → Runners → **New self-hosted runner**
-→ select **Linux** and **x64**. GitHub displays a set of `./config.sh`
-commands with a one-time token. Keep this page open.
+### 1. Generate a new registration token
 
-### 2. Create a dedicated user
+```bash
+gh api -X POST repos/qazuor/hospeda/actions/runners/registration-token \
+  --jq .token
+```
 
-Run the runner under a separate Linux user, NOT your primary account.
-This limits the blast radius if a workflow ever runs unexpected code.
+Copy the token — it expires in one hour.
+
+### 2. Remove the stale local registration
+
+On the runner machine, as the `github-runner` user:
+
+```bash
+cd ~/actions-runner
+./config.sh remove
+```
+
+This clears the local `.runner` and `.credentials` files left over from the
+previous registration.
+
+### 3. Re-register with the new token
+
+```bash
+./config.sh \
+  --url https://github.com/qazuor/hospeda \
+  --token <TOKEN> \
+  --name leo-laptop \
+  --labels self-hosted,linux,x64,leo-laptop \
+  --replace
+```
+
+The `--replace` flag re-uses the runner name and removes any stale server-side
+record with the same name.
+
+### 4. Start the systemd service
+
+```bash
+sudo systemctl enable --now actions.runner.qazuor-hospeda.leo-laptop.service
+```
+
+Confirm it is listening:
+
+```bash
+sudo systemctl status actions.runner.qazuor-hospeda.leo-laptop.service
+```
+
+You should see `Listening for Jobs` in the logs.
+
+---
+
+## First-time setup (new machine)
+
+If the runner directory does not exist yet, follow these steps before the
+re-registration steps above.
+
+### 1. Create a dedicated user
+
+Run the runner under a separate Linux user, not your primary account. This
+limits the blast radius if a workflow ever runs unexpected code.
 
 ```bash
 sudo useradd -m -s /bin/bash github-runner
-sudo passwd github-runner          # set a password
+sudo passwd github-runner
 sudo usermod -aG docker github-runner   # needed for E2E service containers
 ```
 
-### 3. Download and configure the runner
+### 2. Download and configure the runner
 
-Switch to the `github-runner` user and follow GitHub's download commands
-exactly as shown on the registration page. Then configure:
+Switch to the `github-runner` user and follow GitHub's download commands as
+shown on the registration page (Settings → Actions → Runners → New
+self-hosted runner → Linux / x64), then configure using the command in
+step 3 of "Re-registering the runner" above.
 
-```bash
-su - github-runner
-
-# Download the runner tarball as shown on GitHub's registration page, then:
-./config.sh \
-  --url https://github.com/qazuor/hospeda \
-  --token <TOKEN_FROM_GITHUB_UI> \
-  --labels leo-laptop \
-  --name leo-laptop \
-  --unattended
-```
-
-The `--labels leo-laptop` flag is critical. Without it, `ci.yml` jobs
-will not route to this machine.
-
-### 4. Install the required toolchain
-
-The runner environment must match what GitHub-hosted runners provide for
-the build steps. Install these as the `github-runner` user (or system-wide):
+### 3. Install the required toolchain
 
 | Tool | Required version | Install |
 |---|---|---|
@@ -96,17 +145,14 @@ Verify:
 ```bash
 node --version   # v20.x.x
 pnpm --version   # 9.12.3
-docker info      # must not error (no sudo required for github-runner)
+docker info      # must not error (no sudo for github-runner)
 ```
 
 ---
 
-## Starting the runner
+## Starting the runner manually
 
-### Manual mode (start here)
-
-Test the runner interactively first before installing it as a service.
-Open a terminal as `github-runner` and run:
+Test the runner interactively before relying on the service:
 
 ```bash
 su - github-runner
@@ -114,49 +160,36 @@ cd ~/actions-runner
 ./run.sh
 ```
 
-You should see `Listening for Jobs`. Open a PR in the repo — the CI jobs
-should pick up on this machine instead of GitHub-hosted runners.
+You should see `Listening for Jobs`. Open or re-push a PR (if routing has been
+switched back to self-hosted) — jobs should appear on this machine.
 
-### Service mode (optional, for always-on operation)
+---
 
-Once you have confirmed the runner works correctly, install it as a
-systemd service so it starts automatically on boot:
+## Service management
 
 ```bash
-# As root or via sudo
+# Install and start
 sudo ./svc.sh install github-runner
 sudo ./svc.sh start
 
 # Check status
 sudo ./svc.sh status
-```
 
-To stop and uninstall:
-
-```bash
+# Stop and uninstall
 sudo ./svc.sh stop
 sudo ./svc.sh uninstall
 ```
 
----
-
-## Behavior when the laptop is offline
-
-When the runner is offline, PR jobs **queue and wait** (GitHub holds
-queued jobs for up to 24 hours). They do not fail immediately. Once the
-runner comes back online and `./run.sh` is running, the queued jobs
-execute automatically.
-
-Push-to-`main`/`staging` CI is unaffected — those jobs always run on
-GitHub-hosted runners.
+Alternatively, once the service is registered via `./config.sh`, use systemctl
+directly (see "Re-registering the runner" step 4).
 
 ---
 
 ## On-demand E2E gate
 
 The `e2e-local.self-hosted.yml` workflow runs the Playwright suite on the
-laptop on demand, consuming zero quota. Use it to validate a branch
-before opening a PR or promoting to staging.
+laptop on demand. It is useful for validating a branch before opening a PR or
+promoting to staging without waiting for the full CI queue.
 
 ### Trigger via CLI
 
@@ -173,28 +206,35 @@ gh workflow run e2e-local.self-hosted.yml \
 
 ### Trigger via Actions UI
 
-Actions → **E2E (Local / Self-Hosted)** → Run workflow → fill in
-`branch` (optional) and `scope` (p0 or full) → Run workflow.
+Actions → **E2E (Local / Self-Hosted)** → Run workflow → fill in `branch`
+(optional) and `scope` (`p0` or `full`) → Run workflow.
 
 ### Requirements
 
-Docker must be running on the laptop. The workflow starts postgres,
-redis, and mailpit as service containers (same configuration as
-`e2e-pr.yml` and `e2e-nightly.yml`).
+Docker must be running on the laptop. The workflow starts postgres, redis, and
+mailpit as service containers (same configuration as `e2e-pr.yml` and
+`e2e-nightly.yml`).
+
+---
+
+## Behavior when the runner is offline
+
+When the runner is offline and jobs are routed to it, those jobs **queue and
+wait** (GitHub holds queued jobs for up to 24 hours). They do not fail
+immediately. Once the runner comes back online, queued jobs execute
+automatically.
+
+With the current all-`ubuntu-latest` routing this is not a concern — jobs run
+immediately regardless of laptop state.
 
 ---
 
 ## Security considerations
 
-- The runner executes only on `workflow_dispatch` (E2E gate) and
-  `pull_request` events from the **same repository** (not forks).
-  The fork guard in `ci.yml` ensures fork PRs fall back to
-  `ubuntu-latest` and never reach the laptop.
-- Draft PRs are excluded from the self-hosted path. They run on
-  `ubuntu-latest` or can be skipped entirely by not opening them
-  as ready.
-- The `github-runner` user has no sudo access by default. Keep it
-  that way.
+- Keep the `github-runner` user without sudo access.
+- The fork guard in `ci.yml` ensures fork PRs always run on `ubuntu-latest`
+  and never reach the laptop, even if self-hosted routing is re-enabled for
+  same-repo PRs.
 - All `GITHUB_TOKEN` operations in `ci.yml` are scoped to
   `permissions: contents: read` (the workflow-level default).
 
@@ -204,19 +244,23 @@ redis, and mailpit as service containers (same configuration as
 
 **Jobs stay queued indefinitely.**
 The runner is not online. Start `./run.sh` (or the systemd service) as
-the `github-runner` user and confirm it shows `Listening for Jobs`.
+`github-runner` and confirm it shows `Listening for Jobs`.
 
 **Jobs fail with "native binding not found".**
-The `setup` action has a `--force` reinstall fallback for `@rolldown`
-bindings. If it fires repeatedly, run `pnpm install --frozen-lockfile
---force` manually as `github-runner` to warm the pnpm store.
+The `setup` action has a `--force` reinstall fallback for `@rolldown` bindings.
+If it fires repeatedly, run `pnpm install --frozen-lockfile --force` manually
+as `github-runner` to warm the pnpm store.
 
 **Docker service containers fail to start.**
-Confirm `github-runner` is in the `docker` group (`groups github-runner`)
-and that the Docker daemon is running (`systemctl status docker`). A
-group change requires the user to log out and back in to take effect.
+Confirm `github-runner` is in the `docker` group (`groups github-runner`) and
+that the Docker daemon is running (`systemctl status docker`). A group change
+requires the user to log out and back in to take effect.
 
 **E2E steps error on port 5433/6380/1025 already in use.**
-A previous run left a container running. Check `docker ps` and remove
-stale containers with `docker rm -f <id>`. GitHub Actions cleans up
-service containers at job end, but a runner kill mid-job can leave them.
+A previous run left a container running. Check `docker ps` and remove stale
+containers with `docker rm -f <id>`. GitHub Actions cleans up service
+containers at job end, but a runner kill mid-job can leave them.
+
+**`./config.sh remove` fails with "service is running".**
+Stop the service first: `sudo systemctl stop actions.runner.qazuor-hospeda.leo-laptop.service`,
+then re-run `./config.sh remove`.
