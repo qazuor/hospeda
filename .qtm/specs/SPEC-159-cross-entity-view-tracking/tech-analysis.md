@@ -22,11 +22,10 @@ There is no `viewsCount` column anywhere in the schema.
 
 ### The core decision (spec §4)
 
-Two viable approaches, **NOT yet decided** — analyzed in §7 and recommended at the end, but the
-final pick is **PENDING USER APPROVAL**:
+Two viable approaches were analyzed in §7. **Option 1 was APPROVED by the user on 2026-06-04.**
 
-1. **Own `entity_views` DB table + first-party server-side capture.**
-2. **Query the PostHog API server-side** (PostHog stays source of truth).
+1. **Own `entity_views` DB table + first-party server-side capture.** ✅ APPROVED
+2. **Query the PostHog API server-side** (PostHog stays source of truth). ❌ Rejected
 
 ### Technical Complexity
 
