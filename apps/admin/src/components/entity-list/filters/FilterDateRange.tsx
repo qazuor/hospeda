@@ -88,9 +88,14 @@ export function FilterDateRange({
                 'flex items-center gap-1 rounded-md border px-2 py-1 text-sm',
                 isActive ? 'border-primary border-solid' : 'border-dashed'
             )}
-            aria-label={label}
         >
-            <span className="shrink-0 text-muted-foreground text-xs">{label}:</span>
+            <legend className="sr-only">{label}</legend>
+            <span
+                aria-hidden="true"
+                className="shrink-0 text-muted-foreground text-xs"
+            >
+                {label}:
+            </span>
             <Input
                 type="date"
                 value={valueFrom ?? ''}
