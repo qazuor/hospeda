@@ -13,6 +13,29 @@ export const sponsorsConfig: EntityConfig<Sponsor> = {
     // API
     apiEndpoint: '/api/v1/admin/post-sponsors',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'type',
+                labelKey: 'admin-filters.clientType.label',
+                type: 'select',
+                order: 1,
+                options: [
+                    { value: 'POST_SPONSOR', labelKey: 'admin-filters.clientType.postSponsor' },
+                    { value: 'ADVERTISER', labelKey: 'admin-filters.clientType.advertiser' },
+                    { value: 'HOST', labelKey: 'admin-filters.clientType.host' }
+                ]
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/sponsors',
     detailPath: '/sponsors/[id]',
