@@ -12,6 +12,7 @@
 
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 import { BottomNav } from '@/components/layout/mobile-nav/BottomNav';
+import { WhatsNewAutoTrigger } from '@/components/whats-new/WhatsNewAutoTrigger';
 import { SidebarProvider } from '@/contexts/sidebar-context';
 import type { ReactNode } from 'react';
 import { Header } from './header';
@@ -53,6 +54,18 @@ function AppLayoutInner({ children }: AppLayoutProps) {
 
             {/* Mobile bottom navigation (hidden on md+) */}
             <BottomNav />
+
+            {/*
+             * What's New auto-trigger (SPEC-175 §7.6 / T-014).
+             * Headless — renders null until unseen highlight entries are found,
+             * then opens WhatsNewModal once. Mounted here (inside the authed area)
+             * so `useWhatsNew()` always has an authenticated user.
+             *
+             * D17 seam: pass `suppressed={tourStillPending}` from SPEC-174's
+             * welcome-tour component when it lands. Do NOT wire tour awareness here
+             * now — leave `suppressed` at its default (false) until SPEC-174 ships.
+             */}
+            <WhatsNewAutoTrigger />
         </div>
     );
 }
