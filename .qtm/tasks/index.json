@@ -90,7 +90,7 @@
             "specId": "SPEC-185",
             "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "status": "in-progress",
-            "progress": "0/17",
+            "progress": "4/17",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
             "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],

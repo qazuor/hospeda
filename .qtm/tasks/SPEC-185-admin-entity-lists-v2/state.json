@@ -43,180 +43,196 @@
             "id": "T-001",
             "title": "Extend FilterControlType union and add range config types",
             "description": "Extend the filter type system with two new discriminated union members.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/filter-types.ts`\n\n**What to implement**:\n1. Change `FilterControlType` from `'select' | 'boolean'` to `'select' | 'boolean' | 'number-range' | 'date-range'`.\n2. Add `NumberRangeFilterConfig` interface:\n   - `type: 'number-range'`\n   - `paramKeyMin: string` (e.g. `'priceMin'`)\n   - `paramKeyMax: string` (e.g. `'priceMax'`)\n   - `min?: number`, `max?: number`, `step?: number`, `unitLabelKey?: string`\n3. Add `DateRangeFilterConfig` interface:\n   - `type: 'date-range'`\n   - `paramKeyFrom: string` (e.g. `'createdAtFrom'`)\n   - `paramKeyTo: string` (e.g. `'createdAtTo'`)\n   - Values serialize as ISO `YYYY-MM-DD` strings\n4. Update the `FilterConfig` discriminated union to include both new types.\n5. Add JSDoc on all new types.\n\n**Acceptance criteria**:\n- `FilterControlType` includes `'number-range'` and `'date-range'`\n- Both new config interfaces are exported and JSDoc-documented\n- Existing `SelectFilterConfig` and `BooleanFilterConfig` shapes are unchanged\n- `pnpm typecheck` passes in apps/admin\n- No existing list breaks (purely additive change)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
                 {
                     "title": "Change FilterControlType union to include 'number-range' and 'date-range'",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add NumberRangeFilterConfig interface with paramKeyMin/paramKeyMax + optional bounds",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add DateRangeFilterConfig interface with paramKeyFrom/paramKeyTo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update FilterConfig discriminated union to include new types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify pnpm typecheck passes — additive, no breakage",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-1", "admin", "filter-types", "typescript", "beta-75"],
             "phase": "phase1-filter-infrastructure",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Build FilterNumberRange and FilterDateRange UI controls",
             "description": "Implement the two new filter control React components and register them in FilterBar.\n\n**Files to create**:\n- `apps/admin/src/components/entity-list/filters/FilterNumberRange.tsx`\n- `apps/admin/src/components/entity-list/filters/FilterDateRange.tsx`\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/FilterBar.tsx`\n\n**FilterNumberRange.tsx**:\n- Receives `NumberRangeFilterConfig` + current min/max values from filter state\n- Two `<input type=\"number\">` fields (min, max), each independently clearable\n- Shows `unitLabelKey` label when provided (i18n-resolved)\n- Respects optional `min`/`max`/`step` props as HTML input attributes\n- On change: calls the state updater with the new bound value (empty = clear = sentinel)\n- Tailwind v4 styling (no CSS modules); Shadcn Input component for field styling\n\n**FilterDateRange.tsx**:\n- Receives `DateRangeFilterConfig` + current from/to values from filter state\n- Two `<input type=\"date\">` fields (from, to), each independently clearable\n- Values formatted as `YYYY-MM-DD` (HTML date input native format)\n- On change: calls the state updater with the date string value\n- Tailwind v4 styling; Shadcn Input for field styling\n\n**FilterBar.tsx registration**:\n- Add `case 'number-range'`: render `<FilterNumberRange>`\n- Add `case 'date-range'`: render `<FilterDateRange>`\n- Preserve existing `select` and `boolean` cases unchanged\n\n**Acceptance criteria**:\n- Both components render without console errors\n- Clearing a bound reverts to the sentinel model (independent per bound)\n- `pnpm typecheck` passes in apps/admin\n- Tests alongside: render test for each component (value set, clear, apply)\n- Tailwind v4 only — no CSS modules",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Create FilterNumberRange.tsx with dual independent number inputs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create FilterDateRange.tsx with dual independent date inputs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register both controls in FilterBar.tsx switch/case",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write render + apply + clear tests for FilterNumberRange",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write render + apply + clear tests for FilterDateRange",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["SPEC-185", "phase-1", "admin", "components", "filters", "react", "beta-75"],
             "phase": "phase1-filter-infrastructure",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Extend useFilterState for two-param range URL serialization",
             "description": "Extend the filter state hook to handle the new range filter types, each serializing as two independent URL params using the existing `FILTER_CLEARED_SENTINEL` 3-state model.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/filters/useFilterState.ts`\n\n**What to implement**:\n1. For `number-range` filters: serialize `paramKeyMin` and `paramKeyMax` as two independent URL params.\n   - Each bound can be set, cleared (sentinel), or absent (default/never touched).\n   - When a bound is absent from the query, omit it from the API request.\n   - When a bound is set to sentinel, clear it from the URL.\n2. For `date-range` filters: same pattern using `paramKeyFrom` and `paramKeyTo`.\n3. The existing serialization for `select` and `boolean` filters MUST be unchanged.\n4. The active-filter chip logic must render one chip per populated bound (so each bound is individually clearable).\n\n**Acceptance criteria**:\n- URL gains `priceMin=1000&priceMax=5000` when both bounds are set\n- URL gains `priceMin=1000` only when max is absent\n- Clearing one bound removes only its URL param (the other persists)\n- Existing `select` + `boolean` serialization is untouched (regression tests pass)\n- Tests: at minimum 6 unit tests — set-both, set-min-only, set-max-only, clear-min, clear-max, clear-both",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Add number-range serialization logic (paramKeyMin / paramKeyMax) to useFilterState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add date-range serialization logic (paramKeyFrom / paramKeyTo) to useFilterState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update active-filter chip logic so each bound is independently clearable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 6 unit tests: set-both, min-only, max-only, clear-min, clear-max, clear-both",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing select + boolean serialization tests still pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
-            "tags": ["SPEC-185", "phase-1", "admin", "filter-state", "url-serialization", "beta-75"],
+            "tags": [
+                "SPEC-185",
+                "phase-1",
+                "admin",
+                "filter-state",
+                "url-serialization",
+                "beta-75"
+            ],
             "phase": "phase1-filter-infrastructure",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Extend createEntityApi to forward range bounds and wire backend range filters",
             "description": "Wire the range params through the full vertical slice: API client forwards bounds, backend schemas declare them, services apply them.\n\n**Files to modify**:\n- `apps/admin/src/components/entity-list/api/createEntityApi.ts`\n- Relevant `packages/schemas/` admin list query schemas (accommodations, events, destinations)\n- Relevant `packages/service-core/` service filter methods\n\n**createEntityApi.ts**:\n- For each `number-range` filter config: include `paramKeyMin` and `paramKeyMax` in the request only when their values are present and non-sentinel.\n- For each `date-range` filter config: include `paramKeyFrom` and `paramKeyTo` the same way.\n- Existing `paramKey` forwarding for `select`/`boolean` is untouched.\n\n**Backend Zod schemas** (in `packages/schemas/`):\n- Add `priceMin?: number`, `priceMax?: number` to accommodations admin list schema.\n- Add `ratingMin?: number`, `ratingMax?: number` to accommodations admin list schema (rating filter).\n- Add `createdAtFrom?: string`, `createdAtTo?: string` to accommodations, destinations, and events list schemas.\n- Add `startDateFrom?: string`, `startDateTo?: string` to events list schema for event date filtering.\n- All new params are optional and declared explicitly so `createAdminListRoute` accepts them.\n\n**service-core service filters**:\n- AccommodationService.adminList: apply `WHERE price >= priceMin AND price <= priceMax` (centavo integers), `WHERE rating >= ratingMin AND rating <= ratingMax`, `WHERE created_at >= createdAtFrom AND created_at <= createdAtTo`.\n- EventService.adminList: apply `createdAt` range and `startDate` range filters.\n- DestinationService.adminList: apply `createdAt` range filter.\n- Each bound is optional: present → apply; absent → skip.\n\n**Acceptance criteria**:\n- `createEntityApi` only sends a bound param when it has a non-empty, non-sentinel value\n- Admin list route rejects an undeclared range param (proof: add a test with an unknown param)\n- Service tests: price range inclusive both ends, min-only, max-only, date range inclusive, single date bound\n- `pnpm typecheck` passes in apps/admin, packages/schemas, packages/service-core",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Extend createEntityApi.ts to forward range bound params when present",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add price/rating range params to accommodations admin list Zod schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add createdAt range params to accommodations, destinations, events Zod schemas",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add startDate range params to events Zod schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire price/rating/date range filters into AccommodationService.adminList",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire date/startDate range filters into EventService.adminList and DestinationService.adminList",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write service tests: boundary cases (inclusive min/max, single bound, empty, inverted range guard)",
-                    "completed": false
+                    "completed": true
                 }
             ],
-            "tags": ["SPEC-185", "phase-1", "admin", "api", "schemas", "service-core", "backend", "beta-75"],
+            "tags": [
+                "SPEC-185",
+                "phase-1",
+                "admin",
+                "api",
+                "schemas",
+                "service-core",
+                "backend",
+                "beta-75"
+            ],
             "phase": "phase1-filter-infrastructure",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:00:00.000Z",
+                "completed": "2026-06-04T00:00:00.000Z"
             }
         },
         {
@@ -300,7 +316,16 @@
                     "completed": false
                 }
             ],
-            "tags": ["SPEC-185", "phase-2", "admin", "entity-config", "filters", "schemas", "service-core", "beta-75"],
+            "tags": [
+                "SPEC-185",
+                "phase-2",
+                "admin",
+                "entity-config",
+                "filters",
+                "schemas",
+                "service-core",
+                "beta-75"
+            ],
             "phase": "phase2-filter-backfill",
             "qualityGate": {
                 "lint": null,
@@ -503,7 +528,15 @@
                     "completed": false
                 }
             ],
-            "tags": ["SPEC-185", "phase-4", "admin", "entity-config", "host", "accommodations", "beta-76"],
+            "tags": [
+                "SPEC-185",
+                "phase-4",
+                "admin",
+                "entity-config",
+                "host",
+                "accommodations",
+                "beta-76"
+            ],
             "phase": "phase4-host-portfolio",
             "qualityGate": {
                 "lint": null,
@@ -546,7 +579,15 @@
                     "completed": false
                 }
             ],
-            "tags": ["SPEC-185", "phase-4", "admin", "host", "accommodations", "migration", "beta-76"],
+            "tags": [
+                "SPEC-185",
+                "phase-4",
+                "admin",
+                "host",
+                "accommodations",
+                "migration",
+                "beta-76"
+            ],
             "phase": "phase4-host-portfolio",
             "qualityGate": {
                 "lint": null,
@@ -722,7 +763,17 @@
                     "completed": false
                 }
             ],
-            "tags": ["SPEC-185", "phase-6", "testing", "smoke", "pr", "closeout", "beta-75", "beta-72", "beta-76"],
+            "tags": [
+                "SPEC-185",
+                "phase-6",
+                "testing",
+                "smoke",
+                "pr",
+                "closeout",
+                "beta-75",
+                "beta-72",
+                "beta-76"
+            ],
             "phase": "phase6-closeout",
             "qualityGate": {
                 "lint": null,

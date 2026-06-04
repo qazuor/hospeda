@@ -1,6 +1,6 @@
 # SPEC-185 — Progress Tracker
 
-**Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration**
+Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration
 
 Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 
@@ -9,16 +9,16 @@ Generated: 2026-06-02 | Linear: BETA-75, BETA-72, BETA-76
 | Metric | Value |
 |--------|-------|
 | Total tasks | 17 |
-| Completed | 0 |
+| Completed | 4 |
 | In progress | 0 |
-| Pending | 17 |
+| Pending | 13 |
 | Avg complexity | 3.1 |
 
 ## Phase Breakdown
 
 | Phase | Tasks | Status |
 |-------|-------|--------|
-| Phase 1 — Filter infrastructure (FR-1) | T-001, T-002, T-003, T-004 | pending |
+| Phase 1 — Filter infrastructure (FR-1) | T-001, T-002, T-003, T-004 | completed (2026-06-04) |
 | Phase 2 — Filter backfill (FR-1 targets + FR-2) | T-005, T-006, T-007 | pending |
 | Phase 3 — GridCard polish + per-entity override (FR-3) | T-008, T-009, T-010 | pending |
 | Phase 4 — Host portfolio migration (FR-4, BETA-76) | T-011, T-012 | pending |

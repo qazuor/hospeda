@@ -3,7 +3,7 @@ specId: SPEC-185
 title: Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration
 slug: admin-entity-lists-v2
 type: feature
-status: draft
+status: in-progress
 complexity: high
 owner: qazuor
 created: 2026-06-02
