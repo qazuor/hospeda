@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ContactSubmitSchema } from '../../src/contact/submit.js';
+import { ContactSubmitSchema, ContactTypeEnumSchema } from '../../src/contact/submit.js';
 
 const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
 
@@ -227,6 +227,59 @@ describe('ContactSubmitSchema', () => {
             const { type: _type, ...rest } = VALID_GENERAL;
             const result = ContactSubmitSchema.safeParse(rest);
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe('contribution types (SPEC-191, additive-only)', () => {
+        const CONTRIBUTION_TYPES = [
+            'report_destination_info',
+            'photo_submission',
+            'editor_application'
+        ] as const;
+
+        /**
+         * The nine pre-SPEC-191 types plus the deprecated legacy value.
+         * Frozen here on purpose: if any of these stops parsing, the
+         * additive-only compatibility policy has been violated.
+         */
+        const PRE_EXISTING_TYPES = [
+            'general',
+            'support',
+            'publish_accommodation',
+            'subscriptions',
+            'suggestions',
+            'report',
+            'press',
+            'partnerships',
+            'event_submission',
+            'accommodation'
+        ] as const;
+
+        it.each(CONTRIBUTION_TYPES)('should accept the new contribution type "%s"', (type) => {
+            const result = ContactSubmitSchema.safeParse({ ...VALID_GENERAL, type });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.type).toBe(type);
+            }
+        });
+
+        it.each(PRE_EXISTING_TYPES)(
+            'should still accept the pre-existing type "%s" (historic-fixture compat)',
+            (type) => {
+                const result = ContactSubmitSchema.safeParse({ ...VALID_GENERAL, type });
+                expect(result.success).toBe(true);
+            }
+        );
+
+        it('should keep the pre-existing enum values in their original order (additive append only)', () => {
+            // Guards against reordering/removal: the first ten options must be
+            // exactly the pre-SPEC-191 list, with the new types appended after.
+            expect(ContactTypeEnumSchema.options.slice(0, PRE_EXISTING_TYPES.length)).toEqual([
+                ...PRE_EXISTING_TYPES
+            ]);
+            expect(ContactTypeEnumSchema.options.slice(PRE_EXISTING_TYPES.length)).toEqual([
+                ...CONTRIBUTION_TYPES
+            ]);
         });
     });
 
