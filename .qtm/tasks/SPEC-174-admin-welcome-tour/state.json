@@ -8,53 +8,65 @@
             "id": "T-001",
             "title": "Add tour-progress body schema to @repo/schemas",
             "description": "Add TourProgressBodySchema ({ tourId: z.string().min(1).max(100), version: z.number().int().nonnegative() }) next to the whats-new http schemas pattern (entities/user/ or a tour entity dir — match whats-new.http.schema.ts conventions). NOTE: UserSettingsSchema.onboarding.adminTours ALREADY EXISTS (SPEC-175 T-002) — no settings delta needed. Export inferred type + wire into the barrel. Tests: valid body parses; empty tourId rejects; negative/float version rejects.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-003", "T-009"],
             "subtasks": [],
             "tags": ["schemas", "phase-backend"],
             "phase": "backend",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Add markAdminTourSeen service method (RMW merge)",
             "description": "Add markAdminTourSeen({ actor, tourId, version }) to packages/service-core/src/services/user/user.service.ts MIRRORING markWhatsNewSeen (read current settings, set settings.onboarding.adminTours[tourId] = version preserving ALL siblings incl. onboarding.whatsNew). The settings JSONB column is REPLACE-mode (D16) — defensive read-modify-write mandatory. Tests per spec §6.3: siblings preserved (incl. whatsNew.baselineAt/seenIds); upsert overwrites version for same tourId; missing onboarding initializes cleanly; Result<T> error paths.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003"],
             "subtasks": [],
             "tags": ["service-core", "phase-backend"],
             "phase": "backend",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Implement PATCH /api/v1/protected/users/me/tour-progress",
             "description": "Route apps/api/src/routes/user/protected/tourProgress.ts + registration in routes/user/protected/index.ts, MIRRORING whatsNewSeen.ts: createProtectedRoute, USER_SETTINGS_UPDATE guard (D16), customRateLimit { requests: 30, windowMs: 60000 }, body TourProgressBodySchema, delegates to markAdminTourSeen. Tests per spec §14: invalid body 400; valid 200 + service called; merge does not clobber sibling settings; 401 unauthenticated.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-017"],
             "subtasks": [],
             "tags": ["api", "route", "phase-backend"],
             "phase": "backend",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:10:59.000Z",
                 "completed": null
             }
         },
@@ -62,35 +74,43 @@
             "id": "T-004",
             "title": "Extract config/ia/primitives.ts (I18nLabel + permission primitives)",
             "description": "Per spec §7.1: extract I18nLabelSchema + permission gate primitives from apps/admin/src/config/ia/schema.ts into NEW primitives.ts; schema.ts re-exports for backward compat (zero behavior change). Purpose: avoid ESM cycle with tour.schema.ts. ALL existing config tests must stay green (run test/config/ia/ + src/config/ia/__tests__/ — the full pre-existing suites, not just new files).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
             "subtasks": [],
             "tags": ["admin", "config-ia", "phase-config"],
             "phase": "config",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T15:53:37.000Z",
+                "completed": "2026-06-04T16:10:59.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Create tour.schema.ts with Tour/Step shapes + KNOWN_DATA_TOUR_IDS",
             "description": "NEW apps/admin/src/config/ia/tour.schema.ts per spec §7.1: Tour { id, roles: 'all'|RoleEnum[], kind: 'welcome'|'contextual', route?, version int>0, trigger: 'auto-first-visit'|'manual', showWelcomeModal, steps[] }; Step { id, target: 'center'|'data-tour:<id>', title/body I18nLabel, side?, align?, permissions? }; KNOWN_DATA_TOUR_IDS registry (initial set per §7.7: main-menu, main-menu-section-<id>, sidebar, dashboard-region, quick-create, command-palette, notifications, user-menu, bottom-nav). Imports from primitives.ts. Unit tests: valid tour parses; contextual requires route; welcome forbids route; unique step ids; bad target shape rejects.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007", "T-008", "T-011", "T-012"],
             "subtasks": [],
             "tags": ["admin", "config-ia", "zod", "phase-config"],
             "phase": "config",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:10:59.000Z",
                 "completed": null
             }
         },
@@ -105,7 +125,11 @@
             "subtasks": [],
             "tags": ["admin", "config-ia", "zod", "phase-config"],
             "phase": "config",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -123,7 +147,11 @@
             "subtasks": [],
             "tags": ["admin", "config-ia", "content", "phase-config"],
             "phase": "config",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -141,7 +169,11 @@
             "subtasks": [],
             "tags": ["admin", "pure-logic", "phase-engine"],
             "phase": "engine",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -152,17 +184,21 @@
             "id": "T-009",
             "title": "Implement use-admin-tour-state.ts (Query + PATCH mutation)",
             "description": "apps/admin/src/hooks/use-admin-tour-state.ts per spec §7.5: useQuery ['user','settings',userId] against the owner-scoped protected GET (NOT the dead admin-tier hooks); useMutation → PATCH /users/me/tour-progress with optimistic update + invalidate. Expose hasSeen(tourId, version) (seenVersion>=configVersion semantics via shouldOfferTour) and markSeen({ tourId, version }). Tests: load lifecycle; markSeen optimistic + correct body; rollback on failure.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-010", "T-013"],
             "subtasks": [],
             "tags": ["admin", "hook", "tanstack-query", "phase-engine"],
             "phase": "engine",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:10:59.000Z",
                 "completed": null
             }
         },
@@ -177,7 +213,11 @@
             "subtasks": [],
             "tags": ["admin", "engine", "driver-js", "phase-engine"],
             "phase": "engine",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -195,7 +235,11 @@
             "subtasks": [],
             "tags": ["admin", "hook", "phase-engine"],
             "phase": "engine",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -213,7 +257,11 @@
             "subtasks": [],
             "tags": ["admin", "layout", "phase-wiring"],
             "phase": "wiring",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -231,7 +279,11 @@
             "subtasks": [],
             "tags": ["admin", "auto-trigger", "cross-spec", "phase-wiring"],
             "phase": "wiring",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -249,7 +301,11 @@
             "subtasks": [],
             "tags": ["admin", "i18n", "entry-points", "phase-wiring"],
             "phase": "wiring",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -267,7 +323,11 @@
             "subtasks": [],
             "tags": ["admin", "a11y", "phase-wiring"],
             "phase": "wiring",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -285,7 +345,11 @@
             "subtasks": [],
             "tags": ["admin", "content", "i18n", "phase-content"],
             "phase": "content",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -303,7 +367,11 @@
             "subtasks": [],
             "tags": ["api", "integration-tests", "phase-testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -321,7 +389,11 @@
             "subtasks": [],
             "tags": ["admin", "integration-tests", "phase-testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": null,
@@ -331,9 +403,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 18,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 12,
+        "inProgress": 3,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.4
     }
