@@ -2,7 +2,7 @@
 id: SPEC-175
 slug: admin-whats-new
 title: Admin What's New / Release Notes Dialog
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-05-29
 relatedSpecs:

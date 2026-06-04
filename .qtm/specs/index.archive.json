@@ -1692,6 +1692,35 @@
             "completed": "2026-06-03T00:00:00.000Z",
             "archivedAt": "2026-06-03T22:35:55.000Z",
             "completionRef": "PR #1385 merged 2026-06-02 — Cloudflare Worker proxy (/ingest/* → PostHog Cloud US), CSP cleanup, env-registry update, docs. T-010/T-011 (Worker deploy + Coolify env + smoke) executed by owner 2026-06-03. 11/11 tasks."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feat",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-175-admin-whats-new",
+            "created": "2026-05-29T00:00:00.000Z",
+            "branch": "spec/SPEC-175-admin-whats-new",
+            "base": "staging",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-175-admin-whats-new",
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "tags": [
+                "admin",
+                "onboarding",
+                "whats-new",
+                "release-notes",
+                "config-driven",
+                "i18n",
+                "frontend",
+                "api",
+                "ux"
+            ],
+            "note": "Curated-in-repo release-notes feature for admin (v1). Trigger = content publish, NOT deploy/git SHA. Four entry points (auto modal for highlights, topbar badge, panel, dashboard card on all role dashboards) share ONE useWhatsNew() hook. Per-user state in UserSettings.onboarding.whatsNew {baselineAt, seenIds}, lazy-init on first GET (covers existing users, no migration). GET /api/v1/protected/whats-new (role-filtered + computed seen + unseenCount) + dedicated PATCH /api/v1/protected/users/me/whats-new-seen (server-side merge). Sibling of SPEC-174 (shares onboarding JSONB namespace + protected merge pattern, additive so parallel-safe). Content = Zod-validated TS file in apps/api, markdown body sanitized (TipTap read-only, TBD-1), images via CDN URL (TBD-2 origin + CSP img-src). 18 tasks T-001..T-018 across 9 phases. Open: Q1 PermissionEnum, Q2 icon, Q3 sheet modality, Q4/Q5 ListWidget callbacks, TBD-1 renderer, TBD-2 CDN origin.",
+            "completed": "2026-06-04T00:00:00.000Z",
+            "archivedAt": "2026-06-04T08:56:41.000Z",
+            "completionRef": "PR #1437 merged 2026-06-04 — What's New end to end: schemas + onboarding JSONB namespace, protected GET/PATCH with lazy-init baseline, curated boot-validated catalog, admin modal/panel/badge/auto-trigger + dashboard widget x4 roles, i18n es/en/pt. 20/20 tasks, ~40 commits, fresh review + 4 CI rounds."
         }
     ]
 }

@@ -3,10 +3,10 @@
     "title": "Admin What's New / Release Notes Dialog",
     "type": "feature",
     "complexity": "medium",
-    "status": "in-progress",
+    "status": "completed",
     "created": "2026-05-29T00:00:00Z",
     "approved": "2026-06-03T00:00:00Z",
-    "completed": null,
+    "completed": "2026-06-04T00:00:00Z",
     "planFileRef": null,
     "tags": [
         "admin",

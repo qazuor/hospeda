@@ -725,6 +725,16 @@
             "archived": true,
             "archivedAt": "2026-06-03T22:35:55.000Z",
             "archiveNote": "Code merged in PR #1385 (2026-06-02). Owner ops T-010 (CF Worker deploy + route) and T-011 (PUBLIC_POSTHOG_HOST in Coolify + redeploy + smoke) executed 2026-06-03. 11/11."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-175-admin-whats-new",
+            "archived": true,
+            "archivedAt": "2026-06-04T08:56:41.000Z",
+            "archiveNote": "All 20 tasks done; PR #1437 merged to staging 2026-06-04. Open: TBD-2 (CDN image origin) gated by allowlist test; D17 tour suppression seam wired when SPEC-174 ships. Catalog ships empty."
         }
     ]
 }
