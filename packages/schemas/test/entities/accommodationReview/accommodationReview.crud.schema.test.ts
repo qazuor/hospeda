@@ -10,6 +10,7 @@ import {
     AccommodationReviewUpdateInputSchema,
     AccommodationReviewUpdateOutputSchema
 } from '../../../src/entities/accommodationReview/accommodationReview.crud.schema.js';
+import { ModerationStatusEnum } from '../../../src/enums/moderation-status.enum.js';
 
 describe('AccommodationReview CRUD Schemas', () => {
     describe('AccommodationReviewCreateInputSchema', () => {
@@ -351,6 +352,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -383,6 +385,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -415,6 +418,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -444,6 +448,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                     location: 4
                 },
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
