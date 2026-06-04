@@ -1513,13 +1513,48 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-043",
+            "title": "Wire AiService runtime factory in apps/api",
+            "description": "Formalized atomization gap (added 2026-06-05): the spec never numbered the apps/api runtime wiring that the engine needs, yet T-037/T-038 assume it exists. Build in apps/api: (1) a provider factory getProvider(providerId) that decrypts the stored credential via getDecryptedAiProviderCredential (T-022) and instantiates the matching Vercel adapter (OpenAI/Anthropic) from @repo/ai-core with the key; (2) a createConfiguredAiService() factory that calls @repo/ai-core createAiService/createAiEngine injecting getProvider + checkCeiling (bound to checkCostCeiling, T-017) + getNow + onThresholdAlert (createAiCostThresholdAlertHook, T-025). AC-4: lives entirely in apps/api; @repo/ai-core stays SDK/credential-free. This is the runtime seam child feature specs (chat/search/support) consume and T-037/38 exercise with StubProvider. Tests: provider factory (decrypt → adapter) + service-factory wiring with StubProvider + a throwaway vault key.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015", "T-021", "T-022", "T-017", "T-025"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "getProvider factory: decrypt credential -> Vercel adapter",
+                    "completed": true
+                },
+                {
+                    "title": "createConfiguredAiService: inject getProvider + ceiling/alert/now hooks",
+                    "completed": true
+                },
+                {
+                    "title": "Write wiring unit tests (StubProvider + throwaway vault key)",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "api", "wiring", "ai-core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-05T01:30:00.000Z",
+                "started": "2026-06-05T01:30:00.000Z",
+                "completed": "2026-06-05T02:10:00.000Z"
+            }
         }
     ],
     "summary": {
-        "total": 42,
+        "total": 43,
         "pending": 17,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.5
     }
