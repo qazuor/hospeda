@@ -999,105 +999,105 @@
             "id": "T-029",
             "title": "Relocate DEFAULT_PROMO_CODES to seed-only scope (FR-5)",
             "description": "In `packages/service-core/src/services/billing/promo-code/promo-code-defaults.ts`, confirm `DEFAULT_PROMO_CODES` is only referenced by `ensureDefaultPromoCodes` (startup path) and dev tools (`config-validator`). If any request-time promo catalog read references it, redirect to `PromoCodeService`. Optionally move the const to `packages/seed/` to make seed-only intent unambiguous. Write test in `__tests__/promo-defaults.test.ts` asserting startup idempotency (run twice, code not duplicated). Files: 1-2 files + 1 test file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "Audit all references to DEFAULT_PROMO_CODES",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Redirect any request-time read to PromoCodeService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write startup idempotency test (skip-by-code)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "billing", "promo", "fr-5"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Evaluate structural-defs visibility and rename/relocate within @repo/billing if beneficial (FR-6)",
             "description": "Audit `packages/billing/src/config/entitlements.config.ts` and `limits.config.ts`. Evaluate whether a clearer sub-path (e.g. `structural/` or `definitions/`) improves discoverability without breaking barrel exports or breaking consumers. If relocation is done: update barrel `src/index.ts` and verify all consumer imports compile. Write a typecheck-only task (no new test file needed unless exports change). Files: 0-3 files depending on decision. No DB move.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-029"],
             "blocks": ["T-031"],
             "subtasks": [
                 {
                     "title": "Audit current entitlements.config.ts and limits.config.ts locations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Decide on relocation (mechanical, behavior-preserving)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update barrel exports if relocated, verify typecheck passes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "structural-defs", "fr-6"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Write boundary ADR (ADR-030) for billing catalog vs structural definitions (FR-6)",
             "description": "Create `docs/decisions/ADR-030-billing-catalog-vs-structural-definitions.md`. Content: (1) DB-backed catalog = plans, prices, addons, promo codes — editable at runtime, seeded from config; (2) code-level structural definitions = ENTITLEMENT_DEFINITIONS, LIMIT_METADATA, getDefaultEntitlements, getUnlimitedEntitlements — enum-coupled, must stay in code; (3) rationale: type-safety, drift avoidance, packaging constraints; (4) BETA-58 supersession (repo-root move rejected, packaging); (5) SPEC-168 lineage. Add entry to `docs/decisions/README.md`. Files: 1 ADR file + 1 README update.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-030"],
             "blocks": ["T-032"],
             "subtasks": [
                 {
                     "title": "Write ADR-030 covering catalog-vs-structural boundary and rationale",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document BETA-58 supersession and SPEC-168 lineage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add ADR-030 entry to docs/decisions/README.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "adr", "billing", "fr-6"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-03T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T00:30:00.000Z",
+                "completed": "2026-06-04T01:00:00.000Z"
             }
         },
         {
@@ -1321,9 +1321,9 @@
     ],
     "summary": {
         "total": 37,
-        "pending": 9,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 28,
+        "completed": 31,
         "blocked": 0,
         "averageComplexity": 2.4
     }

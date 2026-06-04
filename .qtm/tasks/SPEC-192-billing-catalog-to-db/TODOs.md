@@ -1,6 +1,6 @@
 # SPEC-192: Billing Catalog to DB
 
-## Progress: 28/37 tasks (76%)
+## Progress: 31/37 tasks (84%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-007 → T-008 → T-009 → T-010 → T-011 → T-012 → T-013 → T-014 → T-015 → T-016 → T-017 → T-020 → T-022 → T-023 → T-024 → T-025 → T-026 → T-027 → T-028 → T-029 → T-030 → T-031 → T-032 → T-033 → T-034 → T-035 → T-036 → T-037 (32 sequential steps)
@@ -172,14 +172,14 @@
 
 #### FR-5 Promo Defaults
 
-- [ ] **T-029** (complexity: 2) — Relocate DEFAULT_PROMO_CODES to seed-only scope (FR-5)
+- [x] **T-029** (complexity: 2) — Relocate DEFAULT_PROMO_CODES to seed-only scope (FR-5)
   - `promo-code-defaults.ts`; audit references; redirect any request-time read to PromoCodeService; startup idempotency test
   - Blocked by: T-028
   - Blocks: T-030
 
 #### FR-6 Structural Defs
 
-- [ ] **T-030** (complexity: 2) — Evaluate structural-defs visibility and rename/relocate within @repo/billing if beneficial (FR-6)
+- [x] **T-030** (complexity: 2) — Evaluate structural-defs visibility and rename/relocate within @repo/billing if beneficial (FR-6)
   - entitlements.config.ts and limits.config.ts; optional mechanical relocation; barrel exports updated; no DB move
   - Blocked by: T-029
   - Blocks: T-031
@@ -188,7 +188,7 @@
 
 ### Docs Phase
 
-- [ ] **T-031** (complexity: 2) — Write boundary ADR (ADR-030) for billing catalog vs structural definitions (FR-6)
+- [x] **T-031** (complexity: 2) — Write boundary ADR (ADR-030) for billing catalog vs structural definitions (FR-6)
   - `docs/decisions/ADR-030-billing-catalog-vs-structural-definitions.md`; catalog-vs-structural boundary; BETA-58 supersession; SPEC-168 lineage; link from README.md
   - Blocked by: T-030
   - Blocks: T-032
