@@ -283,12 +283,30 @@ async function runOneTimePaymentPoll(params: {
                     ? (succeeded.metadata as Record<string, unknown>)
                     : {};
 
-            // Merge: payment-side metadata is primary (it carries the
-            // camelCase keys set by createAddonCheckout); job-side
-            // metadata fills any gaps (addonSlug, customerId, userId).
+            // Whitelist only the keys the addon confirm path needs.
+            // Dispatch-discriminator keys (annualSubscriptionId, planChangeUpgradeId)
+            // must NEVER leak into this payload — processPaymentUpdated branches on
+            // their presence and would fire the annual/upgrade path instead of the
+            // addon path if either key accidentally appears here.
+            //
+            // Keys sourced from paymentMeta first, falling back to jobMeta:
+            //   addonSlug    — consumed by extractAddonMetadata in payment-logic
+            //   customerId   — consumed by extractAddonMetadata in payment-logic
+            //   userId       — forwarded for logging / traceability
+            //   order_id     — external_reference fallback used by logging
+            //   orderId      — camelCase alias forwarded for traceability
+            //   type         — dispatch discriminator (must equal 'addon_purchase')
             const syntheticMetadata: Record<string, unknown> = {
-                ...jobMeta,
-                ...paymentMeta
+                addonSlug: paymentMeta.addonSlug ?? jobMeta.addonSlug,
+                customerId: paymentMeta.customerId ?? jobMeta.customerId,
+                userId: paymentMeta.userId ?? jobMeta.userId,
+                order_id:
+                    paymentMeta.order_id ??
+                    paymentMeta.orderId ??
+                    jobMeta.order_id ??
+                    jobMeta.orderId,
+                orderId: paymentMeta.orderId ?? jobMeta.orderId,
+                type: paymentMeta.type ?? jobMeta.type
             };
 
             const syntheticPayload: Record<string, unknown> = {

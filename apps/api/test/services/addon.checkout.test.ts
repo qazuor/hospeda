@@ -1400,6 +1400,62 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
     // SPEC-127 T-010: polling fallback scheduling
     // =========================================================================
 
+    // =========================================================================
+    // Zero-amount checkout (promo discount >= priceArs)
+    // =========================================================================
+
+    describe('zero-amount checkout (full promo discount)', () => {
+        // When a promo discount equals or exceeds the addon price, finalPrice = 0.
+        // The billing adapter receives unitAmount === 0. MP-side rejection of a
+        // zero-amount preference would surface as CHECKOUT_ERROR and is covered by
+        // the staging smoke; from Hospeda's side the call should proceed normally.
+        //
+        // PromoCodeService is mocked at module level (vi.mock) so each `new
+        // PromoCodeService()` returns a stub; we override `validate` on the
+        // constructor mock for this specific test.
+
+        const customer = {
+            id: 'cust_abc',
+            email: 'zero@example.com',
+            metadata: { name: 'Zero Amount Test' }
+        };
+
+        it('calls billing.checkout.create with lineItems[0].unitAmount === 0 when promo discount equals priceArs', async () => {
+            // Arrange: promo discount = full addon price (5000 ARS cents).
+            // Override the module-level PromoCodeService mock constructor so the
+            // validate stub returns discountAmount = 5000 (= priceArs → finalPrice = 0).
+            const { PromoCodeService: MockedPromoCodeService } = await import(
+                '../../src/services/promo-code.service'
+            );
+            vi.mocked(MockedPromoCodeService).mockImplementationOnce(
+                () =>
+                    ({
+                        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
+                        getByCode: vi.fn().mockResolvedValue({
+                            success: true,
+                            data: { id: 'promo_full' }
+                        })
+                    }) as unknown as InstanceType<typeof MockedPromoCodeService>
+            );
+
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                ...defaultInput,
+                promoCode: 'FULL_DISCOUNT'
+            });
+
+            // Assert — checkout proceeds; unitAmount = 5000 - 5000 = 0
+            expect(result.success).toBe(true);
+            expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
+            const arg = mockBillingCheckoutCreate.mock.calls[0]?.[0] as {
+                lineItems: Array<{ unitAmount?: number }>;
+            };
+            expect(arg.lineItems[0]?.unitAmount).toBe(0);
+        });
+    });
+
     describe('polling fallback (SPEC-127 T-010)', () => {
         const customer = {
             id: 'cust_abc',

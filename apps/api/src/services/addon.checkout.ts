@@ -430,6 +430,12 @@ export async function createAddonCheckout(
         // MP Preferences only deliver legacy IPN that the marker filter drops, so
         // the poll cron is the secondary activation path. Non-fatal — a scheduling
         // failure is warned but does not block the checkout response.
+        // NOTE: subscriptionId here is a duplicate-job lookup key and lineage
+        // reference stored on the polling job — it is NOT the subscription being
+        // activated. The addon confirmation (confirmAddonPurchase) re-resolves the
+        // active subscription independently at confirmation time. This semantics
+        // differs from the annual flow where subscriptionId IS the subscription
+        // being activated.
         await scheduleAddonCheckoutPolling({
             billing,
             subscriptionId: activeSubscription.id,

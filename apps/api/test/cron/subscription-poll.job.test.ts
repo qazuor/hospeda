@@ -718,6 +718,62 @@ describe('subscription-poll cron job', () => {
             expect(reschedule).toBeDefined();
         });
 
+        it('addon job whose payment metadata carries annualSubscriptionId → addon path confirmed, annualSubscriptionId absent from synthetic payload', async () => {
+            // Regression guard for the whitelist fix: if a payment's metadata ever
+            // carries a dispatch-discriminator key (annualSubscriptionId), the addon
+            // path must still be taken and the key must NOT leak into the synthetic
+            // payload forwarded to processPaymentUpdated.
+            const job = buildJob({
+                id: 'addon-job-5',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_discriminator',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_iii',
+                    userId: 'user_jjj',
+                    orderId: 'addon_extra-photos_cs_addon_discriminator'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_disc',
+                    status: 'succeeded',
+                    amount: 150000,
+                    currency: 'ARS',
+                    // Malicious/erroneous: payment metadata contains a discriminator key
+                    // that would route to the annual subscription branch if not whitelisted.
+                    metadata: {
+                        addonSlug: 'extra-photos',
+                        customerId: 'cust_iii',
+                        userId: 'user_jjj',
+                        type: 'addon_purchase',
+                        order_id: 'addon_extra-photos_cs_addon_discriminator',
+                        annualSubscriptionId: 'should-never-appear-in-synthetic-payload'
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            // The addon path (processPaymentUpdated) must be called, not the annual path.
+            expect(mockProcessPaymentUpdated).toHaveBeenCalledTimes(1);
+            expect(mockConfirmAnnualSubscription).not.toHaveBeenCalled();
+
+            // The synthetic metadata forwarded to processPaymentUpdated must NOT
+            // contain annualSubscriptionId — the whitelist must have stripped it.
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.annualSubscriptionId).toBeUndefined();
+            // The addon-specific keys must still be present.
+            expect(meta.addonSlug).toBe('extra-photos');
+            expect(meta.customerId).toBe('cust_iii');
+        });
+
         it('addon job + processPaymentUpdated returns success=false → job retries (error path)', async () => {
             const job = buildJob({
                 id: 'addon-job-4',

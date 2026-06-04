@@ -94,16 +94,9 @@ vi.mock('@repo/db/schemas/billing', () => ({
     }
 }));
 
-vi.mock('mercadopago', () => ({
-    MercadoPagoConfig: vi.fn().mockImplementation(() => ({})),
-    Preference: vi.fn().mockImplementation(() => ({
-        create: vi.fn().mockResolvedValue({
-            id: 'pref_cutover_test',
-            init_point: 'https://www.mercadopago.com.ar/checkout/cutover',
-            sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/cutover'
-        })
-    }))
-}));
+// NOTE: vi.mock('mercadopago') is intentionally absent — the mercadopago SDK
+// is no longer imported by addon.checkout.ts after the SPEC-127 cutover and
+// was removed from apps/api deps. A dead mock here would mask future regressions.
 
 vi.mock('node:crypto', async () => {
     const actual = await vi.importActual<typeof import('node:crypto')>('node:crypto');
@@ -155,6 +148,9 @@ const STUB_ADDON = {
 };
 
 function makeBillingForCheckout(): QZPayBilling {
+    // HOSPEDA_BILLING_POLLING_ENABLED is intentionally absent from the env mock
+    // so the polling scheduling path short-circuits (scheduleAddonCheckoutPolling
+    // checks the flag and bails early), keeping these tests focused on catalog parity.
     return {
         customers: {
             get: vi.fn().mockResolvedValue({
@@ -167,7 +163,19 @@ function makeBillingForCheckout(): QZPayBilling {
             getByCustomerId: vi
                 .fn()
                 .mockResolvedValue([{ id: 'sub_cutover', status: 'active', planId: 'plan_basico' }])
-        }
+        },
+        checkout: {
+            create: vi.fn().mockResolvedValue({
+                id: 'session_cutover_test',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/cutover',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            })
+        },
+        getStorage: vi.fn().mockReturnValue({
+            subscriptionPollingJobs: {
+                create: vi.fn().mockResolvedValue({ id: 'poll_job_cutover' })
+            }
+        })
     } as unknown as QZPayBilling;
 }
 
