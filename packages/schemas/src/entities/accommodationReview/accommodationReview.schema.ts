@@ -8,6 +8,7 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ModerationStatusEnumSchema } from '../../enums/index.js';
 import { AccommodationRatingSchema } from '../accommodation/subtypes/accommodation.rating.schema.js';
 
 /**
@@ -39,6 +40,25 @@ export const AccommodationReviewSchema = z.object({
      * Drizzle mode:'number' on the DB column ensures JS number type at runtime.
      * createAverageRatingField() provides a defensive string-to-number transform for edge cases.
      */
-    averageRating: createAverageRatingField({ default: 0 })
+    averageRating: createAverageRatingField({ default: 0 }),
+    /**
+     * Moderation state (PENDING / APPROVED / REJECTED). Defaults to APPROVED for
+     * accommodation reviews because they publish immediately (spec §3.1).
+     * Set exclusively by the service/admin — not accepted from the HTTP request body.
+     */
+    moderationState: ModerationStatusEnumSchema,
+    /**
+     * UUID of the user who last performed a moderation action. Nullable until
+     * a moderator acts on the review.
+     */
+    moderatedById: UserIdSchema.nullish(),
+    /**
+     * Timestamp of the last moderation action. Nullable until first action.
+     */
+    moderatedAt: z.coerce.date().nullish(),
+    /**
+     * Free-text reason provided by the moderator. Nullable.
+     */
+    moderationReason: z.string().nullish()
 });
 export type AccommodationReview = z.infer<typeof AccommodationReviewSchema>;
