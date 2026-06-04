@@ -52,7 +52,7 @@
             "id": "T-003",
             "title": "Implement PATCH /api/v1/protected/users/me/tour-progress",
             "description": "Route apps/api/src/routes/user/protected/tourProgress.ts + registration in routes/user/protected/index.ts, MIRRORING whatsNewSeen.ts: createProtectedRoute, USER_SETTINGS_UPDATE guard (D16), customRateLimit { requests: 30, windowMs: 60000 }, body TourProgressBodySchema, delegates to markAdminTourSeen. Tests per spec §14: invalid body 400; valid 200 + service called; merge does not clobber sibling settings; 401 unauthenticated.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-017"],
@@ -60,14 +60,14 @@
             "tags": ["api", "route", "phase-backend"],
             "phase": "backend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T16:10:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T16:26:46.000Z"
             }
         },
         {
@@ -96,7 +96,7 @@
             "id": "T-005",
             "title": "Create tour.schema.ts with Tour/Step shapes + KNOWN_DATA_TOUR_IDS",
             "description": "NEW apps/admin/src/config/ia/tour.schema.ts per spec §7.1: Tour { id, roles: 'all'|RoleEnum[], kind: 'welcome'|'contextual', route?, version int>0, trigger: 'auto-first-visit'|'manual', showWelcomeModal, steps[] }; Step { id, target: 'center'|'data-tour:<id>', title/body I18nLabel, side?, align?, permissions? }; KNOWN_DATA_TOUR_IDS registry (initial set per §7.7: main-menu, main-menu-section-<id>, sidebar, dashboard-region, quick-create, command-palette, notifications, user-menu, bottom-nav). Imports from primitives.ts. Unit tests: valid tour parses; contextual requires route; welcome forbids route; unique step ids; bad target shape rejects.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007", "T-008", "T-011", "T-012"],
@@ -104,21 +104,21 @@
             "tags": ["admin", "config-ia", "zod", "phase-config"],
             "phase": "config",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T16:10:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T16:26:46.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Wire tours into AdminIAConfigSchema with cross-checks T1-T3",
             "description": "Modify apps/admin/src/config/ia/schema.ts: add tours: ToursRecordSchema to AdminIAConfigSchema + superRefine cross-checks per spec §7.1: T1 every non-center target ∈ KNOWN_DATA_TOUR_IDS; T2 roles !== 'all' → each role exists in config.roles and is enabled; T3 contextual route equals some section.route/defaultRoute. Negative tests for each cross-check (bad target / disabled role / unknown route fail safeParse). Run the FULL pre-existing config suites after.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
@@ -132,7 +132,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:26:46.000Z",
                 "completed": null
             }
         },
@@ -140,7 +140,7 @@
             "id": "T-007",
             "title": "Create tours.ts initial catalog + index.ts wiring",
             "description": "NEW apps/admin/src/config/ia/tours.ts typed z.input<typeof ToursRecordSchema> with the 4 WELCOME tours (host/editor/admin/superAdmin .welcome per spec §9 step outlines, real es/en/pt content for greeting + menu + dashboard + quick-create + help steps) and STUBS ready for the 15 contextual tours (added in T-016). Wire tours into rawConfig in config/ia/index.ts (validate.ts already parses all — boot validation must stay green). Confirm routes against sections.ts. Tests: catalog parses through full config; welcome tours resolve for each enabled role.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-011", "T-016"],
@@ -154,7 +154,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:26:46.000Z",
                 "completed": null
             }
         },
@@ -184,7 +184,7 @@
             "id": "T-009",
             "title": "Implement use-admin-tour-state.ts (Query + PATCH mutation)",
             "description": "apps/admin/src/hooks/use-admin-tour-state.ts per spec §7.5: useQuery ['user','settings',userId] against the owner-scoped protected GET (NOT the dead admin-tier hooks); useMutation → PATCH /users/me/tour-progress with optimistic update + invalidate. Expose hasSeen(tourId, version) (seenVersion>=configVersion semantics via shouldOfferTour) and markSeen({ tourId, version }). Tests: load lifecycle; markSeen optimistic + correct body; rollback on failure.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-010", "T-013"],
@@ -192,14 +192,14 @@
             "tags": ["admin", "hook", "tanstack-query", "phase-engine"],
             "phase": "engine",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
                 "started": "2026-06-04T16:10:59.000Z",
-                "completed": null
+                "completed": "2026-06-04T16:26:46.000Z"
             }
         },
         {
@@ -360,7 +360,7 @@
             "id": "T-017",
             "title": "Backend integration tests: tour-progress with real DB",
             "description": "vitest e2e suite (vitest.config.e2e.ts pattern, real DB, restore via afterEach per SPEC-175 lesson): PATCH persists tourId→version in settings.onboarding.adminTours; sibling preservation incl. whatsNew keys (mirror of SPEC-175 AC-17 from the other side); upsert same tourId; version semantics; 401/400 paths with real middleware.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
@@ -374,7 +374,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T16:00:00.000Z",
-                "started": null,
+                "started": "2026-06-04T16:26:46.000Z",
                 "completed": null
             }
         },
@@ -403,9 +403,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 12,
+        "pending": 9,
         "inProgress": 3,
-        "completed": 3,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }
