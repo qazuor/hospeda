@@ -66,7 +66,9 @@ export const namespaces = [
     // Tag system namespaces (admin panel only, per SPEC-086 D-024)
     'tags',
     // Map components (SPEC-097)
-    'maps'
+    'maps',
+    // What's New / Release Notes (admin panel only, SPEC-175)
+    'admin-whats-new'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -126,6 +128,7 @@ import adminNewsletterEs from './locales/es/admin-newsletter.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
+import adminWhatsNewEs from './locales/es/admin-whats-new.json';
 import apiEs from './locales/es/api.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
@@ -175,6 +178,7 @@ import adminNewsletterEn from './locales/en/admin-newsletter.json';
 import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
+import adminWhatsNewEn from './locales/en/admin-whats-new.json';
 import apiEn from './locales/en/api.json';
 import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
@@ -224,6 +228,7 @@ import adminNewsletterPt from './locales/pt/admin-newsletter.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
+import adminWhatsNewPt from './locales/pt/admin-whats-new.json';
 import apiPt from './locales/pt/api.json';
 import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
@@ -309,7 +314,8 @@ const rawTranslations = {
         validation: validationEs,
         revalidation: revalidationEs,
         tags: tagsEs,
-        maps: mapsEs
+        maps: mapsEs,
+        'admin-whats-new': adminWhatsNewEs
     },
     en: {
         about: aboutEn,
@@ -358,7 +364,8 @@ const rawTranslations = {
         validation: validationEn,
         revalidation: revalidationEn,
         tags: tagsEn,
-        maps: mapsEn
+        maps: mapsEn,
+        'admin-whats-new': adminWhatsNewEn
     },
     pt: {
         about: aboutPt,
@@ -407,7 +414,8 @@ const rawTranslations = {
         validation: validationPt,
         revalidation: revalidationPt,
         tags: tagsPt,
-        maps: mapsPt
+        maps: mapsPt,
+        'admin-whats-new': adminWhatsNewPt
     }
 };
 
