@@ -248,6 +248,85 @@ describe('AppLogsPanel', () => {
         expect(labelCells[0]).toHaveTextContent('—');
     });
 
+    // ── Request column ─────────────────────────────────────────────────────
+
+    it('renders method and path in the request cell when both are present', () => {
+        const entries = [makeEntry({ id: 'e1', method: 'POST', path: '/api/auth/sign-in/email' })];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        const cell = screen.getByTestId('log-request-cell');
+        expect(cell).toHaveTextContent('POST');
+        expect(cell).toHaveTextContent('/api/auth/sign-in/email');
+    });
+
+    it('renders "—" in the request cell when method and path are both null', () => {
+        const entries = [makeEntry({ id: 'e1', method: null, path: null })];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        const cell = screen.getByTestId('log-request-cell');
+        expect(cell).toHaveTextContent('—');
+    });
+
+    it('renders "—" in the request cell when method and path are both absent (no overrides)', () => {
+        // makeEntry defaults: method and path are not set (undefined), treated as absent
+        const entries = [makeEntry({ id: 'e1' })];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        const cell = screen.getByTestId('log-request-cell');
+        expect(cell).toHaveTextContent('—');
+    });
+
+    it('sets title attribute on the path span so the full path is visible on hover', () => {
+        const longPath = '/api/v1/admin/accommodations/some-very-long-slug/details';
+        const entries = [makeEntry({ id: 'e1', method: 'GET', path: longPath })];
+        mockUseAppLogsQuery.mockReturnValue({
+            data: { items: entries, total: 1, page: 1, pageSize: 50 },
+            isLoading: false,
+            error: null
+        });
+
+        render(
+            <TestWrapper>
+                <AppLogsPanel />
+            </TestWrapper>
+        );
+
+        const cell = screen.getByTestId('log-request-cell');
+        const pathSpan = cell.querySelector('[title]');
+        expect(pathSpan).not.toBeNull();
+        expect(pathSpan).toHaveAttribute('title', longPath);
+    });
+
     // ── Request-context in row detail (AppLogsPanel integration) ───────────
 
     it('shows request-context fields when expanded for an entry with context', () => {
