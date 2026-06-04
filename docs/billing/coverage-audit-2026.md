@@ -282,7 +282,7 @@ If a future audit needs per-package numbers for `@repo/billing` in isolation, ru
 
 ## 3. Functional audit — runbooks vs e2e test inventory
 
-Every operational scenario in [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) is cross-checked against the e2e test inventory at [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/). The audit covers the seven actionable runbook sections (§1–§7); §8–§10 are reference / metadata sections that do not map to test flows.
+Every operational scenario in [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) is cross-checked against the e2e test inventory at [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/smoke-plans.test.ts). The audit covers the seven actionable runbook sections (§1–§7); §8–§10 are reference / metadata sections that do not map to test flows.
 
 | Runbook § | Scenario | Covering e2e test(s) | Notes |
 | --------- | -------- | -------------------- | ----- |
@@ -389,8 +389,8 @@ The audit's recommendation: **leave the 43 lines uncovered, document why here, a
 ## Cross-references
 
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks (functional-audit input)
-- [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/) — e2e test inventory
-- [`.qtm/specs/SPEC-143-billing-testing-coverage/`](../../.qtm/specs/SPEC-143-billing-testing-coverage/) — spec + tasks state
-- [`.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/`](../../.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/) — forward spec (cron-lag grace + plan lifecycle, deferred from T-143-63)
-- [`.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/`](../../.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/) — forward spec (MP error propagation + Sentry + retry policy, deferred from T-143-59)
-- [`.qtm/specs/SPEC-150-billing-multi-currency-support/`](../../.qtm/specs/SPEC-150-billing-multi-currency-support/) — forward spec (multi-currency support, deferred from T-143-62)
+- [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/smoke-plans.test.ts) — e2e test inventory
+- [`.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/spec.md) — spec + tasks state
+- [`.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/spec.md`](../../.qtm/specs/SPEC-148-billing-grace-defensive-and-plan-lifecycle/spec.md) — forward spec (cron-lag grace + plan lifecycle, deferred from T-143-63)
+- [`.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/spec.md`](../../.qtm/specs/SPEC-149-billing-provider-error-propagation-and-sentry/spec.md) — forward spec (MP error propagation + Sentry + retry policy, deferred from T-143-59)
+- [`.qtm/specs/SPEC-150-billing-multi-currency-support/spec.md`](../../.qtm/specs/SPEC-150-billing-multi-currency-support/spec.md) — forward spec (multi-currency support, deferred from T-143-62)
