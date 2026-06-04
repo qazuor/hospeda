@@ -432,35 +432,35 @@
             "id": "T-013",
             "title": "Mount editores banner on blog + events listings (after grid, before pagination)",
             "description": "Mount ContributionBanner variant 'editors' with ctaHref to colaborar/editores on: apps/web/src/pages/[lang]/publicaciones/index.astro (source 'blog_listing') and apps/web/src/pages/[lang]/eventos/index.astro (source 'events_listing') — in the ListingLayout default slot AFTER the results grid, BEFORE the pagination slot (FR-8 locked placement). The page/[page].astro rewrites MUST NOT be touched. Tests (source assertions): each mount has the right source/variant/ctaHref and sits between grid and pagination.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-009"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Mount on publicaciones/index.astro (blog_listing)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mount on eventos/index.astro (events_listing)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Source-assertion tests for both",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "banners", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T20:05:00.000Z",
+                "completed": "2026-06-04T20:20:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.1
     }
