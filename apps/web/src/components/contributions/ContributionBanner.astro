@@ -1,0 +1,95 @@
+---
+/**
+ * @file ContributionBanner.astro
+ * @description Reusable contribution call-to-action banner (SPEC-191 FR-6).
+ * Funnels visitors into the /colaborar contribution pages from content
+ * surfaces (destination detail/listing, blog listing, events listing).
+ *
+ * Modeled on WhatsAppCTA.astro: icon + title + description + CTA anchor,
+ * scoped CSS module, hoisted click-tracking script. Callers pass
+ * already-translated copy (title/description/ctaLabel) and a locale-aware
+ * ctaHref (use buildUrl), mirroring the WhatsAppCTA contract.
+ *
+ * Analytics: clicking the CTA fires the typed `contribution_banner_clicked`
+ * PostHog event with the banner's `source` (surface identifier) and
+ * `variant`, so campaign performance is measurable per surface (BETA-65).
+ *
+ * Accessibility: aria-label on the wrapper and CTA, decorative icon hidden
+ * from assistive tech, information never conveyed by colour alone.
+ */
+import { EditIcon, ImageIcon } from '@repo/icons';
+import styles from './ContributionBanner.module.css';
+
+interface Props {
+    /** Banner headline (already translated by the caller). */
+    readonly title: string;
+    /** Supporting copy (already translated by the caller). */
+    readonly description: string;
+    /** CTA button label (already translated by the caller). */
+    readonly ctaLabel: string;
+    /** Internal target URL (locale-aware, e.g. buildUrl to /colaborar/fotos). */
+    readonly ctaHref: string;
+    /**
+     * Surface identifier forwarded to analytics, e.g. `destination_detail`,
+     * `destination_listing`, `blog_listing`, `events_listing`.
+     */
+    readonly source: string;
+    /** Selects the icon + accent styling. Defaults to `photos`. */
+    readonly variant?: 'photos' | 'editors';
+}
+
+const { title, description, ctaLabel, ctaHref, source, variant = 'photos' } = Astro.props;
+
+const Icon = variant === 'editors' ? EditIcon : ImageIcon;
+const variantClass = variant === 'editors' ? styles.editors : styles.photos;
+---
+
+<aside
+    class={`${styles.wrapper} ${variantClass}`}
+    aria-label={title}
+    data-contribution-banner
+    data-source={source}
+    data-variant={variant}
+>
+    <div class={styles.iconWrap} aria-hidden="true">
+        <Icon size={32} weight="duotone" />
+    </div>
+
+    <div class={styles.body}>
+        <h3 class={styles.title}>{title}</h3>
+        <p class={styles.description}>{description}</p>
+    </div>
+
+    <a
+        class={styles.cta}
+        href={ctaHref}
+        aria-label={ctaLabel}
+        data-contribution-banner-link
+    >
+        {ctaLabel}
+    </a>
+</aside>
+
+<script>
+    import { WebEvents } from '@/lib/analytics/events';
+    import { trackEvent } from '@/lib/analytics/posthog-client';
+
+    /**
+     * Wire the click-tracking event on every ContributionBanner CTA in the
+     * page. Hoisted by Astro into a single module-bundled script — no
+     * duplication when the component appears multiple times. trackEvent is
+     * a safe no-op before the PostHog SDK loads, and navigation to ctaHref
+     * proceeds normally (the listener does not preventDefault).
+     */
+    document
+        .querySelectorAll<HTMLAnchorElement>('[data-contribution-banner-link]')
+        .forEach((link) => {
+            link.addEventListener('click', () => {
+                const banner = link.closest<HTMLElement>('[data-contribution-banner]');
+                trackEvent(WebEvents.ContributionBannerClicked, {
+                    source: banner?.dataset.source ?? 'unknown',
+                    variant: banner?.dataset.variant ?? 'unknown'
+                });
+            });
+        });
+</script>
