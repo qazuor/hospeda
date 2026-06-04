@@ -612,17 +612,19 @@ export const createEntityListPage = <TData extends { id: string }>(
                                 rows.map((r) => {
                                     // Access renderCard from the original config (not the
                                     // DEFAULT_VIEW_CONFIG merge) to preserve its optional type.
+                                    // TData is propagated through ViewConfig<TData> so no casts
+                                    // are needed here — row is already typed as TData.
                                     const renderCard = config.viewConfig?.gridConfig?.renderCard;
                                     if (renderCard) {
                                         return renderCard({
-                                            row: r as unknown,
-                                            onPeek: (row: unknown) => setPeekRow(row as Row),
-                                            onEdit: (row: unknown) =>
+                                            row: r,
+                                            onPeek: (row) => setPeekRow(row as Row),
+                                            onEdit: (row) =>
                                                 navigate({
                                                     to: `${config.basePath}/$id/edit`,
                                                     params: { id: (row as Row).id }
                                                 } as DynamicNavigateOptions),
-                                            onDelete: (_row: unknown) => {
+                                            onDelete: (_row) => {
                                                 // Delete is handled externally; no-op here unless
                                                 // a future spec wires a delete handler into the config.
                                             }
