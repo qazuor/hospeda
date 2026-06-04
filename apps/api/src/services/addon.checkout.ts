@@ -1,7 +1,7 @@
 /**
  * Add-on Checkout Module
  *
- * Handles creation of Mercado Pago checkout sessions for add-on purchases
+ * Handles creation of qzpay-managed checkout sessions for add-on purchases
  * and confirmation of purchases after payment webhook callbacks.
  *
  * @module services/addon.checkout
@@ -19,8 +19,6 @@ import type {
     ServiceResult
 } from '@repo/service-core';
 import { AddonCatalogService, PlanService } from '@repo/service-core';
-import { MercadoPagoConfig, Preference } from 'mercadopago';
-import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -62,121 +60,8 @@ async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanRespons
     return null;
 }
 
-// TODO: Extend @repo/billing adapter to support preference creation.
-// Once the billing adapter has a createPreference() method, replace
-// createMercadoPagoPreference() below with the adapter call.
-
 /**
- * Creates a MercadoPago preference using the raw SDK.
- *
- * This is a thin wrapper that centralizes raw SDK usage to a single place,
- * making future migration to the billing adapter straightforward.
- *
- * The `idempotencyKey` is forwarded to MercadoPago via the `X-Idempotency-Key`
- * header. MP guarantees that two calls made with the same key (within their
- * dedup window) return the same preference, which makes retries safe and
- * prevents duplicate preferences from double-clicks or transient network
- * errors.
- *
- * @param accessToken - MercadoPago API access token
- * @param preferenceData - Preference creation data
- * @param idempotencyKey - UUID forwarded as MP's X-Idempotency-Key header
- * @returns Created preference object
- */
-async function createMercadoPagoPreference({
-    accessToken,
-    preferenceData,
-    idempotencyKey
-}: {
-    accessToken: string;
-    preferenceData: PreferenceCreateData;
-    idempotencyKey: string;
-}) {
-    const mpClient = new MercadoPagoConfig({ accessToken });
-    const preferenceClient = new Preference(mpClient);
-    return preferenceClient.create({
-        ...preferenceData,
-        requestOptions: {
-            ...preferenceData.requestOptions,
-            idempotencyKey
-        }
-    });
-}
-
-/**
- * MercadoPago category id for digital services / SaaS subscriptions.
- *
- * Set on every `items[].category_id`. MP's fraud engine uses this to model
- * approval rate; populating it (instead of leaving it blank) is one of the
- * 14 mandatory items in MP's quality checklist.
- */
-const MP_ITEM_CATEGORY_ID = 'services';
-
-/**
- * Payer fields required by MercadoPago Checkout Pro for quality compliance.
- *
- * MP rejects empty strings on `payer.last_name`, so callers must always
- * supply a non-empty value (a single space is acceptable as a fallback).
- */
-interface MercadoPagoPayerInfo {
-    readonly email: string;
-    readonly first_name: string;
-    readonly last_name: string;
-}
-
-/**
- * Derive `payer` fields for a MercadoPago preference from a billing customer.
- *
- * MercadoPago Checkout Pro's quality checklist requires `payer.email`,
- * `payer.first_name`, and `payer.last_name` to be populated. We source them
- * from the QZPay billing customer:
- *
- * - `email` comes directly from `customer.email`.
- * - `first_name` and `last_name` are split from `customer.metadata.name` on
- *   the first space. When `metadata.name` is missing or empty, we fall back
- *   to the local-part of the email for `first_name` and a single space for
- *   `last_name` (MP rejects empty strings).
- *
- * @param customer - Billing customer with `email` and optional `metadata.name`
- * @returns Payer info ready to embed in the preference body
- */
-function extractPayerInfo(customer: {
-    readonly email: string;
-    readonly metadata?: Record<string, unknown> | null;
-}): MercadoPagoPayerInfo {
-    const rawName =
-        typeof customer.metadata?.name === 'string' ? customer.metadata.name.trim() : '';
-    const emailLocalPart = customer.email.split('@')[0] || customer.email;
-
-    if (rawName.length === 0) {
-        return {
-            email: customer.email,
-            first_name: emailLocalPart,
-            last_name: ' '
-        };
-    }
-
-    const firstSpaceIdx = rawName.indexOf(' ');
-    if (firstSpaceIdx === -1) {
-        return {
-            email: customer.email,
-            first_name: rawName,
-            last_name: ' '
-        };
-    }
-
-    const firstName = rawName.slice(0, firstSpaceIdx);
-    const lastName = rawName.slice(firstSpaceIdx + 1).trim() || ' ';
-
-    return {
-        email: customer.email,
-        first_name: firstName,
-        last_name: lastName
-    };
-}
-
-/**
- * Create a Mercado Pago checkout session for an add-on purchase.
+ * Create a qzpay-managed checkout session for an add-on purchase.
  *
  * Validates that:
  * - The add-on exists and is active
@@ -184,8 +69,8 @@ function extractPayerInfo(customer: {
  * - The customer has an active or trialing subscription
  * - The promo code (if provided) is valid
  *
- * Then creates a Mercado Pago Preference with a 30-minute expiration window and
- * records promo code usage if applicable.
+ * Then creates a checkout session via `billing.checkout.create()` with a
+ * 30-minute expiration window and records promo code usage if applicable.
  *
  * @param billing - QZPay billing instance
  * @param input - Purchase request details
@@ -314,22 +199,14 @@ export async function createAddonCheckout(
             }
         }
 
-        const mpAccessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
-        if (!mpAccessToken) {
-            return {
-                success: false,
-                error: {
-                    code: 'PAYMENT_NOT_CONFIGURED',
-                    message: 'Payment system is not configured'
-                }
-            };
-        }
-
-        // SPEC-109 fix #5/#6: use a UUID for the external_reference AND as the
-        // MP X-Idempotency-Key. A retry from the same logical checkout reuses
-        // the same UUID, so MP returns the existing preference instead of
-        // creating a duplicate. The `addon_<slug>_` prefix is kept for human
-        // traceability inside the MP dashboard.
+        // SPEC-109 fix #5/#6: use a UUID as the idempotency key. A retry from
+        // the same logical checkout reuses the same UUID, so the provider
+        // returns the existing session instead of creating a duplicate. The
+        // `addon_<slug>_` prefix on orderId is kept for human traceability in
+        // the provider dashboard. There is NO access-token guard here: qzpay
+        // owns MP credentials (configured at billing adapter init) and throws
+        // internally when the adapter is misconfigured — matching the pattern
+        // used in the annual subscription flow in subscription-checkout.service.ts.
         const checkoutUuid = randomUUID();
         const orderId = `addon_${addon.slug}_${checkoutUuid}`;
         const webUrl = env.HOSPEDA_SITE_URL;
@@ -353,82 +230,96 @@ export async function createAddonCheckout(
             };
         }
 
-        const payer = extractPayerInfo(customer);
+        // customerName is passed as a plain string so the qzpay adapter can
+        // derive payer.first_name / payer.last_name via its built-in split logic.
+        const customerName =
+            typeof customer.metadata?.name === 'string'
+                ? customer.metadata.name.trim() || undefined
+                : undefined;
 
-        const preference = await createMercadoPagoPreference({
-            accessToken: mpAccessToken,
-            idempotencyKey: checkoutUuid,
-            preferenceData: {
-                body: {
-                    items: [
-                        {
-                            id: addon.slug,
-                            title: addon.name,
-                            description: addon.description,
-                            category_id: MP_ITEM_CATEGORY_ID,
-                            quantity: 1,
-                            // Convert centavos to whole ARS units (MercadoPago expects ARS, not cents)
-                            unit_price: finalPrice / 100,
-                            currency_id: 'ARS'
-                        }
-                    ],
-                    payer,
+        const result = await billing.checkout.create({
+            mode: 'payment',
+            lineItems: [
+                {
                     /**
-                     * Metadata is intentionally sent in both snake_case and camelCase formats
-                     * for backward compatibility.
-                     *
-                     * - snake_case keys (e.g. `addon_slug`, `customer_id`): consumed by the
-                     *   Mercado Pago webhook handler, which receives the raw MP payment object
-                     *   where metadata arrives in snake_case.
-                     * - camelCase keys (e.g. `addonSlug`, `customerId`): consumed by internal
-                     *   services (e.g. confirmAddonPurchase) that work with the JS-normalized
-                     *   representation.
-                     *
-                     * Do NOT remove either format without coordinating with the webhook handler
-                     * and any downstream consumers.
+                     * unitAmount is in centavos (smallest currency unit). The MP adapter
+                     * divides by 100 internally when building the preference body — do NOT
+                     * pre-divide here.
                      */
-                    metadata: {
-                        addon_slug: addon.slug,
-                        addonSlug: addon.slug,
-                        customer_id: input.customerId,
-                        customerId: input.customerId,
-                        user_id: input.userId,
-                        userId: input.userId,
-                        type: 'addon_purchase',
-                        promo_code: input.promoCode || null,
-                        promo_code_id: promoCodeId || null,
-                        discount_amount: discountAmount,
-                        original_price: addon.priceArs
-                    },
-                    external_reference: orderId,
-                    back_urls: {
-                        success: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
-                        failure: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
-                        pending: `${webUrl}/mi-cuenta/addons?status=pending&addon=${addon.slug}`
-                    },
-                    auto_return: 'approved',
-                    notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
-                    statement_descriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
-                    expires: true,
-                    expiration_date_from: new Date().toISOString(),
-                    expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                    unitAmount: finalPrice,
+                    currency: 'ARS',
+                    quantity: 1,
+                    title: addon.name,
+                    description: addon.description,
+                    /**
+                     * 'services' is the canonical MP category_id for digital SaaS.
+                     * Now passed via qzpay's `categoryId` field — the adapter maps it
+                     * to `items[].category_id` on the MP preference body.
+                     */
+                    categoryId: 'services'
                 }
+            ],
+            successUrl: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
+            cancelUrl: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
+            customerId: input.customerId,
+            customerEmail: customer.email,
+            ...(customerName !== undefined ? { customerName } : {}),
+            notificationUrl: `${apiUrl}/api/v1/webhooks/mercadopago`,
+            idempotencyKey: checkoutUuid,
+            ...(env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                ? { statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR }
+                : {}),
+            expiresInMinutes: 30,
+            /**
+             * Metadata is intentionally sent in both snake_case and camelCase formats
+             * for backward compatibility.
+             *
+             * - snake_case keys (e.g. `addon_slug`, `customer_id`): consumed by the
+             *   MercadoPago webhook handler, which receives the raw MP payment object
+             *   where metadata arrives in snake_case.
+             * - camelCase keys (e.g. `addonSlug`, `customerId`): consumed by internal
+             *   services (e.g. confirmAddonPurchase) that work with the JS-normalized
+             *   representation.
+             *
+             * Do NOT remove either format without coordinating with the webhook handler
+             * and any downstream consumers.
+             *
+             * `order_id` is added here (not in the original MP path) so the webhook
+             * handler can correlate back to the orderId for tracing.
+             */
+            metadata: {
+                addon_slug: addon.slug,
+                addonSlug: addon.slug,
+                customer_id: input.customerId,
+                customerId: input.customerId,
+                user_id: input.userId,
+                userId: input.userId,
+                type: 'addon_purchase',
+                order_id: orderId,
+                promo_code: input.promoCode || null,
+                promo_code_id: promoCodeId || null,
+                discount_amount: discountAmount,
+                original_price: addon.priceArs
             }
         });
 
-        const checkoutUrl = preference.sandbox_init_point || preference.init_point || '';
+        // Intentionally prod-first (init_point before sandbox_init_point).
+        // The original direct-MP path was sandbox-first; this aligns with the
+        // qzpay convention used in the annual subscription flow.
+        const checkoutUrl = result.providerInitPoint ?? result.providerSandboxInitPoint;
 
         if (!checkoutUrl) {
             return {
                 success: false,
                 error: {
                     code: 'CHECKOUT_ERROR',
-                    message: 'Failed to get checkout URL from Mercado Pago'
+                    message: 'Failed to get checkout URL from payment provider'
                 }
             };
         }
 
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+        // Use the session's own expiresAt (qzpay sets it from expiresInMinutes).
+        const expiresAt = result.expiresAt ?? new Date(Date.now() + 30 * 60 * 1000);
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
         // NOT recorded here. It is recorded in confirmAddonPurchase() after payment
@@ -444,9 +335,9 @@ export async function createAddonCheckout(
                 discountAmount,
                 promoCode: input.promoCode,
                 orderId,
-                preferenceId: preference.id
+                checkoutSessionId: result.id
             },
-            'Created add-on checkout with Mercado Pago'
+            'Created add-on checkout via qzpay billing'
         );
 
         return {
