@@ -12,3 +12,6 @@ export * from './ai-capability.schema.js';
 
 // Generic intent envelope for extractIntent (§5.11)
 export * from './ai-intent.schema.js';
+
+// Usage reporting aggregate response shapes (SPEC-173 T-018)
+export * from './ai-usage-report.schema.js';

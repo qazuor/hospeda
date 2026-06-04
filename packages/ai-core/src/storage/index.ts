@@ -37,3 +37,16 @@ export {
 // Re-export DB result types so usage/ sub-module can type its return value
 // without importing @repo/db directly (AC-4 isolation rule).
 export type { SelectAiUsage } from '@repo/db';
+
+// Read-only aggregate reporting queries (SPEC-173 T-018)
+export {
+    aggregateAiUsageByMonth,
+    aggregateAiUsageByUser,
+    aggregateAiUsageByFeature,
+    type AggregateAiUsageByMonthInput,
+    type AggregateAiUsageByUserInput,
+    type AggregateAiUsageByFeatureInput,
+    type AiUsageMonthlyAggRow,
+    type AiUsageByUserAggRow,
+    type AiUsageByFeatureAggRow
+} from './usage.queries.js';

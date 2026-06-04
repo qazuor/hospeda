@@ -21,3 +21,16 @@ export {
 } from './cost-calculator.js';
 
 export { recordAiUsage, type RecordAiUsageInput } from './usage-recorder.js';
+
+// Read-only usage reporting (SPEC-173 T-018)
+export {
+    getMonthlyUsage,
+    getUsageByUser,
+    getUsageByFeature,
+    getUtcMonthRange,
+    type GetMonthlyUsageInput,
+    type GetUsageByUserInput,
+    type GetUsageByFeatureInput,
+    type GetUtcMonthRangeInput,
+    type UtcMonthRange
+} from './reporting/index.js';
