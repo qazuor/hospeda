@@ -18,6 +18,7 @@
  */
 
 import type { Tour } from '@/config/ia/tour.schema';
+import type { IsPermissionGateGrantedInput } from '@/lib/nav/permission-visibility';
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -26,10 +27,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Must be declared before any module imports that depend on it.
 // ---------------------------------------------------------------------------
 
-const mockIsPermissionGateGranted = vi.fn((_input: unknown) => true);
+const mockIsPermissionGateGranted = vi.fn((_input: IsPermissionGateGrantedInput) => true);
 
 vi.mock('@/lib/nav/permission-visibility', () => ({
-    isPermissionGateGranted: (input: unknown) => mockIsPermissionGateGranted(input)
+    isPermissionGateGranted: (input: IsPermissionGateGrantedInput) =>
+        mockIsPermissionGateGranted(input)
 }));
 
 // ---------------------------------------------------------------------------
@@ -214,12 +216,10 @@ describe('buildDriverSteps', () => {
 
     it('includes a gated step when the user has permission', () => {
         // Arrange — mock grants the gated step
-        mockIsPermissionGateGranted.mockImplementation(
-            ({ gate }: { gate: string[] | undefined }) => {
-                if (!gate) return true;
-                return true; // grant all
-            }
-        );
+        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+            if (!gate) return true;
+            return true; // grant all
+        });
 
         const steps = buildDriverSteps({
             tour: GATED_TOUR,
@@ -233,12 +233,10 @@ describe('buildDriverSteps', () => {
 
     it('excludes a gated step when the user lacks permission', () => {
         // Arrange — deny the gated step (has permissions field), allow ungated
-        mockIsPermissionGateGranted.mockImplementation(
-            ({ gate }: { gate: string[] | undefined }) => {
-                if (!gate) return true;
-                return false; // deny gated
-            }
-        );
+        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+            if (!gate) return true;
+            return false; // deny gated
+        });
 
         const steps = buildDriverSteps({
             tour: GATED_TOUR,
@@ -287,11 +285,9 @@ describe('buildDriverSteps', () => {
 
     it('always includes ungated steps regardless of user permissions', () => {
         // Arrange — deny all gated steps
-        mockIsPermissionGateGranted.mockImplementation(
-            ({ gate }: { gate: string[] | undefined }) => {
-                return !gate; // ungated → true, gated → false
-            }
-        );
+        mockIsPermissionGateGranted.mockImplementation(({ gate }) => {
+            return !gate; // ungated → true, gated → false
+        });
 
         const steps = buildDriverSteps({
             tour: BASIC_TOUR,

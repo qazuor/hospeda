@@ -255,6 +255,32 @@ vi.mock('@repo/icons', () => ({
 }));
 
 // ---------------------------------------------------------------------------
+// Tour context mock (HeaderUser now calls useTour)
+// ---------------------------------------------------------------------------
+
+vi.mock('@/contexts/tour-context', () => ({
+    useTour: () => ({
+        isRunning: false,
+        activeTourId: null,
+        startTour: vi.fn(),
+        stopTour: vi.fn()
+    })
+}));
+
+vi.mock('@/hooks/use-tours', () => ({
+    useWelcomeTourForRole: () => undefined,
+    useContextualTourForRoute: () => undefined
+}));
+
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({ t: (k: string) => k, locale: 'es' })
+}));
+
+vi.mock('@/lib/avatar-utils', () => ({
+    getInitialsFromName: () => ({ initials: 'TU' })
+}));
+
+// ---------------------------------------------------------------------------
 // HeaderUser-specific mocks
 // ---------------------------------------------------------------------------
 

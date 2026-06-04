@@ -45,7 +45,7 @@ const mockDriverInstance = {
     destroy: mockDestroy,
     hasNextStep: mockHasNextStep
 };
-const mockDriverFactory = vi.fn(() => mockDriverInstance);
+const mockDriverFactory = vi.fn((_config: Record<string, unknown>) => mockDriverInstance);
 
 vi.mock('driver.js', () => ({
     driver: mockDriverFactory
