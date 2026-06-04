@@ -9,6 +9,11 @@
  *
  * @see apps/admin/src/features/tags/post-tags/config/post-tags.config.ts
  */
+
 import { PostTagsRoute } from '@/features/tags/post-tags/config/post-tags.config';
+import { createFileRoute } from '@tanstack/react-router';
+
+// TanStack Router requirement: bare reference prevents unused-import removal by bundler
+createFileRoute;
 
 export const Route = PostTagsRoute;

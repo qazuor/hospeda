@@ -134,7 +134,12 @@ export const createEntityListPage = <TData extends { id: string }>(
         const pageSize = paginationConfig.allowedPageSizes.includes(Number(search.pageSize))
             ? Number(search.pageSize)
             : paginationConfig.defaultPageSize;
-        const view = search.view === 'grid' ? 'grid' : 'table';
+        // Use URL value when explicitly set; otherwise fall back to the config's defaultView
+        // so that grid-only configs (allowViewToggle:false, defaultView:'grid') start in grid.
+        const view =
+            search.view === 'grid' || search.view === 'table'
+                ? search.view
+                : viewConfig.defaultView;
         const q = typeof search.q === 'string' ? search.q : '';
         const sort = typeof search.sort === 'string' ? search.sort : undefined;
         const cols = typeof search.cols === 'string' ? search.cols : undefined;
@@ -550,7 +555,8 @@ export const createEntityListPage = <TData extends { id: string }>(
                     <div className="space-y-3 rounded-md border bg-card p-4">
                         <DataTableToolbar
                             view={search.view}
-                            onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
+                            onViewChange={handleViewChange}
+                            showViewToggle={viewConfig.allowViewToggle}
                             columnVisibility={currentViewVisibility}
                             onColumnVisibilityChange={handleColsChange}
                             availableColumns={availableColumns}
