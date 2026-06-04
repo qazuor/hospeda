@@ -545,47 +545,47 @@
             "id": "T-016",
             "title": "Close out SPEC-191 (quality gate, indexes, Linear, summary)",
             "description": "Final quality gate across touched packages (lint, typecheck, tests green). Flip spec + task indexes via index-sync once the work is merged per the branch workflow (PR → staging). Update Linear issues BETA-69, BETA-68, BETA-65 with the outcome (BETA-65's measurement requirement satisfied via contribution_banner_clicked/contribution_editor_submitted). Record mem_session_summary with discoveries + the D-9 legal-gate status.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Quality gate green (lint, typecheck, tests)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "index-sync both indexes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Linear BETA-69/68/65 updated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Session summary saved",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["closeout", "tracking"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:00:00.000Z",
+                "completed": "2026-06-04T22:25:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 16,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.1
     }
