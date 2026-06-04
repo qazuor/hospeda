@@ -226,6 +226,7 @@ function WhatsNewEntryItem({ entry }: WhatsNewEntryItemProps) {
              */}
             <div
                 className="prose prose-sm max-w-none text-muted-foreground [&_a]:text-primary [&_a]:underline"
+                // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml -- double-sanitised: TipTap StarterKit schema allowlist + DOMPurify explicit ALLOWED_TAGS (renderMarkdownToHtml, AC-13); markdown source is curator-authored, not user-supplied
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitised by TipTap StarterKit allowlist + DOMPurify (see renderMarkdownToHtml above and AC-13)
                 dangerouslySetInnerHTML={{ __html: bodyHtml }}
             />

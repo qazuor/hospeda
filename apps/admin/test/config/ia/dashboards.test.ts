@@ -85,30 +85,32 @@ describe('schema validation', () => {
 describe('card counts (AC-4)', () => {
     /**
      * hostDashboard grew from 7 to 10 widgets through SPEC-155 additions
-     * (commits c94502f99 → 06b73c15c). The source comment now reads "// 10".
+     * (commits c94502f99 → 06b73c15c), then to 11 with the shared 'whats-new'
+     * widget added by SPEC-175 T-017.
      */
-    it('hostDashboard should have exactly 10 stub widgets', () => {
-        expect(dashboards.hostDashboard?.widgets).toHaveLength(10);
+    it('hostDashboard should have exactly 11 stub widgets', () => {
+        expect(dashboards.hostDashboard?.widgets).toHaveLength(11);
     });
 
     /**
      * editorDashboard grew from 8 to 11 widgets through SPEC-155 additions
-     * and the live recent-comments card (commit 06b73c15c). Source: "// 11".
+     * and the live recent-comments card (commit 06b73c15c), then to 12 with
+     * the shared 'whats-new' widget added by SPEC-175 T-017.
      */
-    it('editorDashboard should have exactly 11 stub widgets', () => {
-        expect(dashboards.editorDashboard?.widgets).toHaveLength(11);
+    it('editorDashboard should have exactly 12 stub widgets', () => {
+        expect(dashboards.editorDashboard?.widgets).toHaveLength(12);
     });
 
-    it('adminBaseDashboard should have exactly 7 stub widgets (cards A–G)', () => {
-        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(7);
+    it('adminBaseDashboard should have exactly 8 stub widgets (cards A–G + whats-new)', () => {
+        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(8);
     });
 
     it('superAdminOnlySection should have exactly 2 stub widgets (cards H–I)', () => {
         expect(dashboards.superAdminOnlySection?.widgets).toHaveLength(2);
     });
 
-    it('superAdminDashboard should have exactly 9 stub widgets (base 7 + super-only 2)', () => {
-        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(9);
+    it('superAdminDashboard should have exactly 10 stub widgets (base 7 + super-only 2 + whats-new)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(10);
     });
 });
 
@@ -117,16 +119,16 @@ describe('card counts (AC-4)', () => {
 // ---------------------------------------------------------------------------
 
 describe('role wiring (AC-8)', () => {
-    it('adminBaseDashboard has 7 widgets — ADMIN resolves to 7 cards', () => {
-        // AC-8: ADMIN role → adminBaseDashboard (7 cards)
+    it('adminBaseDashboard has 8 widgets — ADMIN resolves to 8 cards (7 original + whats-new)', () => {
+        // AC-8: ADMIN role → adminBaseDashboard (7 cards + 1 whats-new = 8, SPEC-175 T-017)
         const base = dashboards.adminBaseDashboard;
-        expect(base?.widgets).toHaveLength(7);
+        expect(base?.widgets).toHaveLength(8);
     });
 
-    it('superAdminDashboard has 9 widgets — SUPER_ADMIN resolves to base + section (9 cards)', () => {
-        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard + superAdminOnlySection = 9)
+    it('superAdminDashboard has 10 widgets — SUPER_ADMIN resolves to base + section + whats-new (10 cards)', () => {
+        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard 7 + superAdminOnlySection 2 + whats-new 1 = 10, SPEC-175 T-017)
         const assembled = dashboards.superAdminDashboard;
-        expect(assembled?.widgets).toHaveLength(9);
+        expect(assembled?.widgets).toHaveLength(10);
     });
 
     it('superAdminDashboard widgets include all adminBaseDashboard widget IDs', () => {
@@ -280,8 +282,12 @@ describe('widget integrity', () => {
 // ---------------------------------------------------------------------------
 
 describe('widget scope expectations', () => {
-    it('hostDashboard widgets should all have scope "own" (HOST-scoped)', () => {
+    it('hostDashboard widgets should all have scope "own" (HOST-scoped, except whats-new)', () => {
+        // SPEC-175 T-017: the 'whats-new' widget uses scope 'all' because the
+        // GET endpoint is session-scoped (server filters by authenticated user),
+        // not owner-scoped. Excluding it here is the correct behaviour.
         for (const widget of dashboards.hostDashboard?.widgets ?? []) {
+            if (widget.id === 'whats-new') continue;
             expect(
                 widget.scope,
                 `hostDashboard widget '${widget.id}' should have scope 'own'`
