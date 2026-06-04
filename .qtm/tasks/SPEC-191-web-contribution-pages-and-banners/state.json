@@ -43,35 +43,35 @@
             "id": "T-002",
             "title": "Add Spanish CONTACT_TYPE_LABELS for the new contact types in the API handler",
             "description": "Add labels to CONTACT_TYPE_LABELS in apps/api/src/routes/contact/submit.ts: 'Reporte de información de destino' (report_destination_info), 'Aporte de fotos' (photo_submission), 'Postulación de editor' (editor_application). Pipeline otherwise UNCHANGED (honeypot, 5/60s rate limit, email dispatch via @repo/notifications) — FR-1, FR-11, non-goal 4. Tests (existing contact route test location in apps/api): handler test asserting the email label + audit log contactType for a report_destination_info submission (no PII beyond email domain); confirm honeypot fake-success and 429 rate-limit still apply when submitting with a new type.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Add the three Spanish labels to CONTACT_TYPE_LABELS",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Handler test: label + audit for report_destination_info",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: honeypot fake-success + 429 still apply to new types",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "contact"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-04T16:24:51.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T16:45:00.000Z",
+                "completed": "2026-06-04T16:55:00.000Z"
             }
         },
         {
@@ -583,9 +583,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.1
     }
