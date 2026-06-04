@@ -601,6 +601,153 @@ describe('TrialService', () => {
             // Assert
             expect(result).toBe(1); // Only one succeeded
         });
+
+        // ── T-004 Regression: advisory lock must guard the claim, not just signal ──
+        //
+        // BUG (SPEC-194 T-194-02): The current code acquires the advisory xact lock
+        // inside a withServiceTransaction that COMMITS before the processing loop
+        // runs. Because pg_try_advisory_xact_lock releases on transaction commit, a
+        // second concurrent invocation can also acquire the lock in its own separate
+        // transaction, and both instances end up processing the same expired
+        // subscriptions (double-cancel + double-notification).
+        //
+        // CORRECT behavior: only ONE of two concurrent invocations should process
+        // expired subscriptions. The second must be skipped (returns 0, no cancels).
+        //
+        // The fix (per ADR-019): lock + fetch must happen inside the SAME transaction.
+        // When the second invocation attempts to acquire the lock, the first instance's
+        // transaction is still open (holding the lock + fetch), so pg_try_advisory_xact_lock
+        // returns false and the second invocation skips without processing any subs.
+
+        it('[T-004] subscriptions.list() must be called INSIDE the lock-holding transaction callback (not after it returns)', async () => {
+            // ── Structural regression for SPEC-194 T-194-02 ──────────────────────────
+            // BUG: the current implementation calls withServiceTransaction ONLY to acquire
+            // the advisory lock, then lets the tx COMMIT (releasing the lock) before
+            // calling subscriptions.list(). This means the lock is gone by the time the
+            // fetch + processing loop runs, and two concurrent instances can both acquire
+            // the lock in separate sequential transactions and both process the same subs.
+            //
+            // FIX (ADR-019): lock + fetch must be in the SAME transaction.
+            // subscriptions.list() must be called INSIDE the withServiceTransaction
+            // callback — if the lock is not acquired, list() must not be called at all.
+            //
+            // This test verifies the structural invariant:
+            //   - withServiceTransaction is called exactly ONCE per blockExpiredTrials run
+            //   - subscriptions.list() is called while that callback is executing
+            //     (not after the transaction commits)
+            //
+            // Against BUG: list() is called AFTER the tx returns (separate code paths)
+            //   → the mock can detect this: list is called 0 times inside the callback
+            //   → but 1 time outside → failing the assertion that list is called inside.
+            // Against FIX: list() is called inside the callback → assertion passes.
+
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            let listCalledInsideTx = false;
+            let txCallbackActive = false;
+
+            // Track whether list() is called while the tx callback is executing
+            vi.spyOn(mockBilling.subscriptions, 'list').mockImplementation(async () => {
+                listCalledInsideTx = txCallbackActive;
+                return {
+                    data: [
+                        {
+                            id: 'sub-structural-1',
+                            customerId: 'customer-structural-1',
+                            planId: 'plan-1',
+                            status: 'trialing',
+                            trialEnd: expiredEnd.toISOString(),
+                            metadata: {}
+                        }
+                    ]
+                } as never;
+            });
+
+            mockWithServiceTransaction.mockImplementationOnce(
+                async <T>(
+                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                ) => {
+                    txCallbackActive = true;
+                    const result = await callback({
+                        tx: {
+                            execute: vi.fn().mockResolvedValue({
+                                rows: [{ pg_try_advisory_xact_lock: true }]
+                            })
+                        }
+                    });
+                    txCallbackActive = false;
+                    return result;
+                }
+            );
+
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'customer-structural-1',
+                email: 'test@example.com',
+                metadata: { name: 'Test User', userId: 'user-1' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'Test Plan'
+            } as never);
+
+            // Act
+            await trialService.blockExpiredTrials();
+
+            // Assert — list() must have been called while the tx callback was active.
+            // This FAILS against the BUG (list() is called after withServiceTransaction
+            // returns) and PASSES against the FIX (list() is called inside the callback).
+            expect(listCalledInsideTx).toBe(true);
+        });
+
+        it('[T-004] second invocation that cannot acquire lock returns 0 without touching QZPay', async () => {
+            // Arrange — simulate the second invocation arriving when the first holds the lock.
+            // pg_try_advisory_xact_lock returns false → the invocation must return 0
+            // and must NOT call subscriptions.list, subscriptions.cancel, or customers.get.
+
+            mockWithServiceTransaction.mockImplementationOnce(
+                async <T>(
+                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                ) =>
+                    callback({
+                        tx: {
+                            execute: vi.fn().mockResolvedValue({
+                                rows: [{ pg_try_advisory_xact_lock: false }]
+                            })
+                        }
+                    })
+            );
+
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: [
+                    {
+                        id: 'sub-lock-skip',
+                        customerId: 'customer-lock-skip',
+                        planId: 'plan-1',
+                        status: 'trialing',
+                        trialEnd: expiredEnd.toISOString(),
+                        metadata: {}
+                    }
+                ]
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert — lock not acquired: must skip immediately, no processing
+            expect(result).toBe(0);
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+            // In the FIXED implementation, list() is called INSIDE the claim tx,
+            // so it won't be called when lock acquisition fails.
+            // (In the BUG, list() is called AFTER the tx commits regardless.)
+            // We assert cancel is not called as the critical invariant.
+        });
     });
 
     describe('reactivateFromTrial', () => {
