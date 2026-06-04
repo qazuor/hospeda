@@ -36,4 +36,4 @@ export type {
 
 export { moderateTextInputSchema } from './types.js';
 
-// moderateText implementation lands in T-003 (SPEC-166 core phase)
+export { moderateText } from './moderate-text.js';

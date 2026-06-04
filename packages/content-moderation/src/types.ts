@@ -172,5 +172,3 @@ const _assertSchemaCompat: _ModerateTextInputFromSchema extends ModerateTextInpu
         : never
     : never = true;
 void _assertSchemaCompat;
-
-// moderateText implementation lands in T-003 (SPEC-166 core phase)
