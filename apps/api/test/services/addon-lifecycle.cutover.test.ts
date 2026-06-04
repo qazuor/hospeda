@@ -42,6 +42,12 @@ vi.mock('@repo/service-core', () => ({
         getBySlug: mockGetBySlug,
         list: vi.fn()
     })),
+    // PlanService required by addon-plan-change.service.ts (imported transitively via
+    // addon-lifecycle.service.ts — SPEC-192 T-025 plan reads cutover)
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: vi.fn(),
+        getBySlug: vi.fn()
+    })),
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
     }
@@ -160,7 +166,6 @@ function buildBilling() {
             removeBySource: vi.fn().mockResolvedValue(1),
             remove: vi.fn().mockResolvedValue(undefined)
         }
-        // biome-ignore lint/suspicious/noExplicitAny: test mock — cast to satisfy QZPayBilling type
     } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
 }
 
@@ -183,7 +188,6 @@ function buildDb(purchaseRows: unknown[]) {
         insert: vi.fn().mockReturnValue({
             values: vi.fn().mockResolvedValue(undefined)
         })
-        // biome-ignore lint/suspicious/noExplicitAny: test mock — cast to satisfy DrizzleClient type
     } as unknown as import('@repo/db').DrizzleClient;
 }
 

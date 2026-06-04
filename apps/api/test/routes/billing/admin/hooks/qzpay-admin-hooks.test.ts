@@ -67,7 +67,20 @@ vi.mock('@repo/schemas', () => ({
     }
 }));
 
+// After SPEC-192 T-017 cutover, qzpay-admin-hooks.ts imports AddonCatalogService.
+// PlanService is also needed for the transitive addon-plan-change.service import.
 vi.mock('@repo/service-core', () => ({
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        getBySlug: vi.fn().mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'addon not found' }
+        }),
+        list: vi.fn()
+    })),
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: vi.fn(),
+        getBySlug: vi.fn()
+    })),
     BILLING_EVENT_TYPES: {
         ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
     }

@@ -167,50 +167,60 @@ describe('ensureDefaultPromoCodes idempotency (T-035)', () => {
 // ─── Tests: static guard — DEFAULT_PROMO_CODES not in barrel ──────────────
 
 describe('static guard: DEFAULT_PROMO_CODES not exported from service-core barrel (T-035)', () => {
-    it('DEFAULT_PROMO_CODES should not be a named export of the service-core package index', async () => {
-        // Rationale: DEFAULT_PROMO_CODES is a startup/seed-path-only const
-        // (see module JSDoc banner in promo-code-defaults.ts). It must stay
-        // private — request-time callers must use PromoCodeService.getByCode().
-        //
-        // Assertion strategy: dynamically import the service-core package index
-        // and verify the symbol is absent from the exported namespace.
-        //
-        // We use a dynamic import with the path alias; Vitest resolves it via
-        // the tsconfig paths plugin. If the alias is not available in this
-        // context we fall back to a relative-path import of the src/index.ts.
+    // Cold-importing the whole service-core barrel takes >5s on CI runners —
+    // raise the per-test timeout so the static guard does not flake.
+    it(
+        'DEFAULT_PROMO_CODES should not be a named export of the service-core package index',
+        { timeout: 30_000 },
+        async () => {
+            // Rationale: DEFAULT_PROMO_CODES is a startup/seed-path-only const
+            // (see module JSDoc banner in promo-code-defaults.ts). It must stay
+            // private — request-time callers must use PromoCodeService.getByCode().
+            //
+            // Assertion strategy: dynamically import the service-core package index
+            // and verify the symbol is absent from the exported namespace.
+            //
+            // We use a dynamic import with the path alias; Vitest resolves it via
+            // the tsconfig paths plugin. If the alias is not available in this
+            // context we fall back to a relative-path import of the src/index.ts.
 
-        let serviceCorePkg: Record<string, unknown>;
+            let serviceCorePkg: Record<string, unknown>;
 
-        try {
-            // Primary: use the package alias (resolved via tsconfig paths)
-            serviceCorePkg = (await import('@repo/service-core')) as Record<string, unknown>;
-        } catch {
-            // Fallback: relative path from this test file's location
-            serviceCorePkg = (await import('../../../src/index.js')) as Record<string, unknown>;
+            try {
+                // Primary: use the package alias (resolved via tsconfig paths)
+                serviceCorePkg = (await import('@repo/service-core')) as Record<string, unknown>;
+            } catch {
+                // Fallback: relative path from this test file's location
+                serviceCorePkg = (await import('../../../src/index.js')) as Record<string, unknown>;
+            }
+
+            // DEFAULT_PROMO_CODES must NOT appear in the exported namespace
+            expect('DEFAULT_PROMO_CODES' in serviceCorePkg).toBe(false);
+
+            // Sanity: the service-core barrel DOES export AddonCatalogService
+            // (confirms we actually loaded the right module)
+            expect('AddonCatalogService' in serviceCorePkg).toBe(true);
         }
+    );
 
-        // DEFAULT_PROMO_CODES must NOT appear in the exported namespace
-        expect('DEFAULT_PROMO_CODES' in serviceCorePkg).toBe(false);
+    it(
+        'getDefaultPromoCodeConfigs IS exported (needed for dev tooling)',
+        { timeout: 30_000 },
+        async () => {
+            // getDefaultPromoCodeConfigs is the intentional public API for accessing
+            // the config in tests and seed tooling — verify it is accessible.
+            let pkg: Record<string, unknown>;
 
-        // Sanity: the service-core barrel DOES export AddonCatalogService
-        // (confirms we actually loaded the right module)
-        expect('AddonCatalogService' in serviceCorePkg).toBe(true);
-    });
+            try {
+                pkg = (await import('@repo/service-core')) as Record<string, unknown>;
+            } catch {
+                pkg = (await import('../../../src/index.js')) as Record<string, unknown>;
+            }
 
-    it('getDefaultPromoCodeConfigs IS exported (needed for dev tooling)', async () => {
-        // getDefaultPromoCodeConfigs is the intentional public API for accessing
-        // the config in tests and seed tooling — verify it is accessible.
-        let pkg: Record<string, unknown>;
-
-        try {
-            pkg = (await import('@repo/service-core')) as Record<string, unknown>;
-        } catch {
-            pkg = (await import('../../../src/index.js')) as Record<string, unknown>;
+            // The function should be present in the barrel
+            expect(typeof pkg.getDefaultPromoCodeConfigs).toBe('function');
         }
-
-        // The function should be present in the barrel
-        expect(typeof pkg.getDefaultPromoCodeConfigs).toBe('function');
-    });
+    );
 });
 
 // ─── Tests: ENTITLEMENT_DEFINITIONS from @repo/billing ────────────────────

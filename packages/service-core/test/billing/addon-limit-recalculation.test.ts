@@ -2,16 +2,37 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // vi.hoisted() runs before vi.mock() factories so variables declared here can
 // be safely referenced inside mock factories without temporal dead zone issues.
-const { execRef } = vi.hoisted(() => {
+const { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug } = vi.hoisted(() => {
     // execRef.fn is replaced per-test to control what tx.execute() returns.
     const execRef = { fn: vi.fn().mockResolvedValue({ rows: [] }) };
-    return { execRef };
+    const mockPlanGetById = vi.fn();
+    const mockPlanGetBySlug = vi.fn();
+    const mockCatalogGetBySlug = vi.fn();
+    return { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug };
 });
 
 // Mock external dependencies before importing the module under test
+// (kept for the 3 passing tests that still reference getPlanBySlug/getAddonBySlug)
 vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn(),
     getPlanBySlug: vi.fn()
+}));
+
+// SPEC-192 T-027 cutover: recalculation service now uses DB-backed PlanService
+// and AddonCatalogService (internal package imports). Mock them via the paths
+// as the test loader resolves them from this file's location.
+vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanGetById,
+        getBySlug: mockPlanGetBySlug
+    }))
+}));
+
+vi.mock('../../src/services/billing/addon/addon-catalog.service.js', () => ({
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        getBySlug: mockCatalogGetBySlug,
+        list: vi.fn()
+    }))
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -56,11 +77,7 @@ vi.mock('drizzle-orm', () => ({
     )
 }));
 
-import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
 import { recalculateAddonLimitsForCustomer } from '../../src/services/billing/addon/addon-limit-recalculation.service.js';
-
-const mockGetAddonBySlug = getAddonBySlug as ReturnType<typeof vi.fn>;
-const mockGetPlanBySlug = getPlanBySlug as ReturnType<typeof vi.fn>;
 
 /**
  * Configure what tx.execute() returns for the current test.
@@ -105,6 +122,23 @@ describe('recalculateAddonLimitsForCustomer', () => {
         vi.clearAllMocks();
         // Default: no purchases
         setExecResult([]);
+
+        // Default plan resolution: getById returns NOT_FOUND → getBySlug fallback
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found by id' }
+        });
+        // Default: plan not found (each test overrides as needed)
+        mockPlanGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found' }
+        });
+
+        // Default: addon not found (each test overrides as needed)
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'addon not found' }
+        });
     });
 
     it('should return failed outcome when customer has no subscriptions', async () => {
@@ -144,10 +178,10 @@ describe('recalculateAddonLimitsForCustomer', () => {
     });
 
     it('should return failed outcome when plan is not found in canonical config', async () => {
-        // Arrange
+        // Arrange — after SPEC-192 T-027 cutover, plan resolution uses PlanService (DB-backed)
         setExecResult([]);
         const billing = buildMockBilling([{ status: 'active', planId: 'unknown-plan' }]);
-        mockGetPlanBySlug.mockReturnValue(undefined);
+        // Both getById and getBySlug return NOT_FOUND (default from beforeEach)
 
         // Act
         const result = await recalculateAddonLimitsForCustomer({
@@ -163,11 +197,16 @@ describe('recalculateAddonLimitsForCustomer', () => {
     });
 
     it('should return skipped outcome when base plan has unlimited (-1) for the limitKey', async () => {
-        // Arrange
+        // Arrange — after T-027 cutover, plan limits are Record<string,number> (not array)
         setExecResult([]);
         const billing = buildMockBilling([{ status: 'active', planId: 'enterprise' }]);
-        mockGetPlanBySlug.mockReturnValue({
-            limits: [{ key: 'max_accommodations', value: -1 }]
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-enterprise',
+                slug: 'enterprise',
+                limits: { max_accommodations: -1 }
+            }
         });
 
         // Act
@@ -198,9 +237,18 @@ describe('recalculateAddonLimitsForCustomer', () => {
         const billing = buildMockBilling([{ status: 'active', planId: 'starter' }], {
             setFn: mockSet
         });
-        mockGetAddonBySlug.mockReturnValue({ affectsLimitKey: 'max_accommodations' });
-        mockGetPlanBySlug.mockReturnValue({
-            limits: [{ key: 'max_accommodations', value: 5 }]
+        // After T-027 cutover: catalog returns addon def, plan service returns Record<string,number>
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-listings',
+                affectsLimitKey: 'max_accommodations',
+                limitIncrease: 10
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: { id: 'plan-uuid-starter', slug: 'starter', limits: { max_accommodations: 5 } }
         });
 
         // Act
@@ -239,9 +287,14 @@ describe('recalculateAddonLimitsForCustomer', () => {
         const billing = buildMockBilling([{ status: 'active', planId: 'starter' }], {
             removeBySourceFn: mockRemoveBySource
         });
-        mockGetAddonBySlug.mockReturnValue({ affectsLimitKey: 'max_photos' }); // different key
-        mockGetPlanBySlug.mockReturnValue({
-            limits: [{ key: 'max_accommodations', value: 5 }]
+        // After T-027 cutover: catalog returns addon with different key; plan has Record<string,number>
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: { slug: 'extra-photos', affectsLimitKey: 'max_photos', limitIncrease: 20 }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: { id: 'plan-uuid-starter', slug: 'starter', limits: { max_accommodations: 5 } }
         });
 
         // Act
@@ -277,14 +330,15 @@ describe('recalculateAddonLimitsForCustomer', () => {
     });
 
     it('should handle trialing subscription as active', async () => {
-        // Arrange
+        // Arrange — after T-027 cutover, plan limits via PlanService (Record<string,number>)
         const mockSet = vi.fn().mockResolvedValue(undefined);
         setExecResult([]);
         const billing = buildMockBilling([{ status: 'trialing', planId: 'starter' }], {
             setFn: mockSet
         });
-        mockGetPlanBySlug.mockReturnValue({
-            limits: [{ key: 'max_accommodations', value: 3 }]
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: { id: 'plan-uuid-starter', slug: 'starter', limits: { max_accommodations: 3 } }
         });
 
         // Act
