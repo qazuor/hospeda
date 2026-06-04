@@ -64,6 +64,13 @@ interface ProcessPaymentUpdatedResult {
     readonly annualSubscriptionConfirmed?: boolean;
     /** True when this event committed a plan-change upgrade (SPEC-141 D7). */
     readonly planUpgradeConfirmed?: boolean;
+    /**
+     * True when the addon purchase already existed (ADDON_ALREADY_ACTIVE).
+     * The purchase is present in the DB so this is a semantic success — the
+     * polling job must treat this as terminal 'succeeded' instead of
+     * error-backoff spinning (SPEC-194 T-013).
+     */
+    readonly addonAlreadyActive?: boolean;
 }
 
 /**
@@ -899,6 +906,23 @@ export async function processPaymentUpdated({
     });
 
     if (!result.success) {
+        // SPEC-194 T-013: ADDON_ALREADY_ACTIVE is a semantic success — the purchase
+        // already exists in the DB. Signal this explicitly so the polling job can
+        // mark the job terminal instead of error-backoff spinning. The async
+        // grant-reconciliation cron (Phase 7) handles any missing entitlement grants.
+        const errorCode =
+            result.error !== null && typeof result.error === 'object' && 'code' in result.error
+                ? (result.error as { code: string }).code
+                : null;
+
+        if (errorCode === 'ADDON_ALREADY_ACTIVE') {
+            apiLogger.info(
+                { addonSlug, customerId: addonCustomerId, source },
+                'Add-on purchase already active — idempotent success (SPEC-194 T-013)'
+            );
+            return { success: true, addonConfirmed: false, addonAlreadyActive: true };
+        }
+
         apiLogger.error(
             { addonSlug, customerId: addonCustomerId, error: result.error, source },
             'Failed to confirm add-on purchase'

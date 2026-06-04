@@ -340,7 +340,7 @@ describe('processPaymentUpdated', () => {
         expect(result.addonConfirmed).toBe(false);
     });
 
-    it('should return failure when addon confirmation fails', async () => {
+    it('should return failure when addon confirmation fails (generic error)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue(null);
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
@@ -359,6 +359,38 @@ describe('processPaymentUpdated', () => {
 
         expect(result.success).toBe(false);
         expect(result.addonConfirmed).toBe(false);
+        // Generic failure must NOT set addonAlreadyActive
+        expect((result as unknown as Record<string, unknown>).addonAlreadyActive).toBeUndefined();
+    });
+
+    // ── T-013: ADDON_ALREADY_ACTIVE → success=true, addonAlreadyActive=true ──
+    // When confirmPurchase returns ADDON_ALREADY_ACTIVE, the purchase already
+    // exists. processPaymentUpdated must signal this as a semantic success so
+    // the polling job can go terminal instead of error-backoff spinning.
+    it('ADDON_ALREADY_ACTIVE: returns success=true + addonAlreadyActive=true (SPEC-194 T-013)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'premium-photos',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({
+            success: false,
+            error: {
+                code: 'ADDON_ALREADY_ACTIVE',
+                message: 'Addon already active for this customer'
+            }
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { addonSlug: 'premium-photos', customerId: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        // Purchase already exists → this is a semantic success, not a real failure
+        expect(result.success).toBe(true);
+        expect(result.addonConfirmed).toBe(false);
+        expect((result as unknown as Record<string, unknown>).addonAlreadyActive).toBe(true);
     });
 
     it('should use source label in log messages', async () => {
