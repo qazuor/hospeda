@@ -12,7 +12,7 @@ import { describe, expect, it } from 'vitest';
 
 describe('rawConfig (T-017 composer)', () => {
     describe('top-level keys', () => {
-        it('should have all 6 required top-level keys', () => {
+        it('should have all 7 required top-level keys (including tours — SPEC-174 T-007)', () => {
             const keys = Object.keys(rawConfig);
             expect(keys).toContain('sections');
             expect(keys).toContain('sidebars');
@@ -20,6 +20,7 @@ describe('rawConfig (T-017 composer)', () => {
             expect(keys).toContain('tabs');
             expect(keys).toContain('createActions');
             expect(keys).toContain('roles');
+            expect(keys).toContain('tours');
         });
     });
 

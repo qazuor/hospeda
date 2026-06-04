@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-174",
+    "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+    "type": "feature",
+    "complexity": "medium-high",
+    "status": "in-progress",
+    "created": "2026-05-29T00:00:00Z",
+    "approved": "2026-06-04T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "admin",
+        "onboarding",
+        "ux",
+        "config-driven",
+        "i18n",
+        "frontend",
+        "api",
+        "driver-js",
+        "tours"
+    ]
+}

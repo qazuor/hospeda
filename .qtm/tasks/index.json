@@ -166,6 +166,21 @@
             "progress": "6/27",
             "path": "SPEC-166-review-moderation-state",
             "branch": "spec/SPEC-166-review-moderation-state"
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "in-progress",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-174-admin-welcome-tour",
+            "branch": "spec/SPEC-174-admin-welcome-tour",
+            "base": "staging",
+            "createdAt": "2026-05-29T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-04T15:53:00.000Z",
+            "taskCount": 18,
+            "averageComplexity": 2.4,
+            "note": "18 tasks, 6 phases (avg 2.4). backend T-001..T-003 (mirrors SPEC-175 whats-new-seen). config T-004..T-007 (primitives extraction, tour.schema, cross-checks T1-T3, 4 welcome tours). engine T-008..T-011 (pure lib incl D13 redirect, state hook, driver.js+context+modal, selectors). wiring T-012..T-015 (data-tour attrs, auto-trigger with D13 redirect + D12 whats-new suppression, Ver guia, a11y). content T-016 (15 contextual tours). testing T-017/T-018. All open questions resolved: D13 redirect-to-dashboard, D14 reuse admin.*, D15 no opt-out, D16 Q1/Q2 inherited from SPEC-175."
         }
     ],
     "standalone": {
