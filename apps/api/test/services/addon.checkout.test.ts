@@ -138,6 +138,17 @@ const { mockBillingCheckoutCreate } = vi.hoisted(() => ({
     })
 }));
 
+// SPEC-127 T-010: polling job storage mock.
+// `billing.getStorage().subscriptionPollingJobs.create()` is called after a
+// successful checkout. Default resolves with a minimal job so existing tests
+// don't break — scheduleAddonCheckoutPolling is non-fatal and logs on failure.
+const { mockPollingJobsCreate } = vi.hoisted(() => ({
+    mockPollingJobsCreate: vi.fn().mockResolvedValue({
+        id: 'poll_job_001',
+        nextPollAt: new Date('2030-01-01T00:00:30Z')
+    })
+}));
+
 // SPEC-127 T-007: deterministic UUID for orderId / idempotency key
 // assertions. The default returns a stable value; individual tests can override
 // via `mockRandomUUID.mockReturnValueOnce(...)`.
@@ -156,12 +167,14 @@ vi.mock('node:crypto', async () => {
 // SPEC-127 T-007: env values consumed by createAddonCheckout for the QZPay call,
 // the checkout return URLs, the webhook notification URL, and the statement
 // descriptor shown on the cardholder's bank statement.
+// SPEC-127 T-010: HOSPEDA_BILLING_POLLING_ENABLED=true so polling code runs.
 vi.mock('../../src/utils/env', () => ({
     env: {
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
         HOSPEDA_SITE_URL: 'https://hospeda.test',
         HOSPEDA_API_URL: 'https://api.hospeda.test',
-        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA'
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
+        HOSPEDA_BILLING_POLLING_ENABLED: true
     }
 }));
 
@@ -877,6 +890,7 @@ describe('confirmAddonPurchase', () => {
 /**
  * Builds a billing mock that returns a configurable customer and an active
  * subscription. Includes a checkout mock wired to `mockBillingCheckoutCreate`
+ * and a getStorage mock wired to `mockPollingJobsCreate` (SPEC-127 T-010)
  * so `createAddonCheckout` can be tested without hitting the real QZPay adapter.
  */
 function createBillingForCheckout({
@@ -899,7 +913,12 @@ function createBillingForCheckout({
         },
         checkout: {
             create: mockBillingCheckoutCreate
-        }
+        },
+        getStorage: vi.fn().mockReturnValue({
+            subscriptionPollingJobs: {
+                create: mockPollingJobsCreate
+            }
+        })
     } as unknown as QZPayBilling;
 }
 
@@ -921,6 +940,11 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         });
         // Restore the default deterministic UUID after clearAllMocks.
         mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+        // SPEC-127 T-010: restore default polling job create mock after clearAllMocks.
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
         mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
@@ -1369,6 +1393,88 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             // Currently FAILS: current code silently allows it (customerPlan = undefined).
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('ADDON_NOT_AVAILABLE_FOR_PLAN');
+        });
+    });
+
+    // =========================================================================
+    // SPEC-127 T-010: polling fallback scheduling
+    // =========================================================================
+
+    describe('polling fallback (SPEC-127 T-010)', () => {
+        const customer = {
+            id: 'cust_abc',
+            email: 'guest@example.com',
+            metadata: { name: 'Juan Perez' }
+        };
+
+        it('schedules a polling job with the correct shape after a successful checkout', async () => {
+            // Arrange
+            mockRandomUUID.mockReturnValue('dddddddd-eeee-ffff-0000-111111111111');
+            mockBillingCheckoutCreate.mockResolvedValue({
+                id: 'session_poll_test_456',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz'
+            });
+
+            // Assert — checkout succeeded and polling job was enqueued
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            expect(mockPollingJobsCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    resourceType: 'one_time_payment',
+                    providerResourceId: 'session_poll_test_456',
+                    subscriptionId: 'sub_001',
+                    metadata: expect.objectContaining({
+                        type: 'addon_purchase',
+                        addonSlug: 'extra-photos-20',
+                        customerId: 'cust_abc',
+                        userId: 'user_xyz',
+                        orderId: 'addon_extra-photos-20_dddddddd-eeee-ffff-0000-111111111111'
+                    })
+                })
+            );
+        });
+
+        it('still returns success when the polling job scheduling fails', async () => {
+            // Arrange — polling storage rejects; checkout should still succeed (non-fatal)
+            mockPollingJobsCreate.mockRejectedValue(new Error('storage unavailable'));
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            // Assert — checkout result is unaffected by polling failure
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.checkoutUrl).toBeDefined();
+            }
+            // Polling was attempted
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+        });
+
+        it('does NOT schedule a polling job when checkout fails before billing.checkout.create', async () => {
+            // Arrange — addon NOT_FOUND triggers early return before checkout
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'non-existent-addon-slug',
+                userId: 'user_xyz'
+            });
+
+            // Assert — early return, polling never attempted
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(mockPollingJobsCreate).not.toHaveBeenCalled();
         });
     });
 });

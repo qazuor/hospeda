@@ -26,6 +26,110 @@ import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { PromoCodeService } from './promo-code.service';
 
+// ─── Polling fallback (SPEC-127 T-010) ────────────────────────────────────────
+
+/**
+ * Input for the addon checkout polling job enqueue.
+ *
+ * Kept local because the subscription-checkout.service.ts helper requires
+ * `planSlug` (subscription-specific) and `sourceLabel` in a shape that
+ * does not cleanly fit addon purchases. We call the storage layer directly
+ * here, matching the pattern used by `initiatePaidAnnualSubscription`.
+ */
+interface ScheduleAddonPollingInput {
+    readonly billing: QZPayBilling;
+    readonly subscriptionId: string;
+    readonly checkoutSessionId: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+    readonly orderId: string;
+    readonly userId: string;
+}
+
+/**
+ * Enqueue a polling fallback for an addon checkout session.
+ *
+ * MP Preferences only deliver legacy IPN webhooks that the marker filter
+ * drops (SPEC-143 Finding #21), so one-time addon payments need a polling
+ * fallback — the same reason `initiatePaidAnnualSubscription` schedules one.
+ *
+ * Non-fatal: a failure here is logged as a warning and does not block the
+ * checkout response (SPEC-127 FR-5). The checkout session was already
+ * created successfully; the webhook remains the primary activation path,
+ * and this polling job is the secondary path.
+ *
+ * Skipped silently when:
+ * - `HOSPEDA_BILLING_POLLING_ENABLED` is off (test/legacy environments).
+ * - The storage adapter does not expose `subscriptionPollingJobs`.
+ * - The checkout session id is empty (defensive guard).
+ */
+async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): Promise<void> {
+    const { billing, subscriptionId, checkoutSessionId, customerId, addonSlug, orderId, userId } =
+        input;
+
+    if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
+        return;
+    }
+
+    if (!checkoutSessionId) {
+        apiLogger.warn(
+            { subscriptionId, customerId, addonSlug },
+            'Skipping addon polling enqueue — checkout session id is empty'
+        );
+        return;
+    }
+
+    const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+    if (!pollingStorage) {
+        return;
+    }
+
+    try {
+        const job = await pollingStorage.create({
+            subscriptionId,
+            providerResourceId: checkoutSessionId,
+            resourceType: 'one_time_payment',
+            provider: 'mercadopago',
+            metadata: {
+                type: 'addon_purchase',
+                addonSlug,
+                customerId,
+                userId,
+                orderId
+            }
+        });
+        if (job) {
+            apiLogger.debug(
+                {
+                    jobId: job.id,
+                    subscriptionId,
+                    checkoutSessionId,
+                    addonSlug,
+                    nextPollAt: job.nextPollAt.toISOString()
+                },
+                'Scheduled addon checkout polling fallback'
+            );
+        } else {
+            apiLogger.warn(
+                { subscriptionId, checkoutSessionId, addonSlug },
+                'Active polling job already exists for subscription — skipping addon enqueue'
+            );
+        }
+    } catch (error) {
+        // Non-fatal per SPEC-127 FR-5: the checkout succeeded; failing to schedule
+        // polling means we rely entirely on the webhook for activation.
+        apiLogger.warn(
+            {
+                customerId,
+                addonSlug,
+                checkoutSessionId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Failed to enqueue addon checkout polling job — webhook is the only activation path now'
+        );
+    }
+}
+
 // ─── Plan service (DB-backed plan reads — SPEC-127 T-002) ─────────────────────
 // Instantiated once at module level; stateless, no DB connection held.
 //
@@ -320,6 +424,21 @@ export async function createAddonCheckout(
 
         // Use the session's own expiresAt (qzpay sets it from expiresInMinutes).
         const expiresAt = result.expiresAt ?? new Date(Date.now() + 30 * 60 * 1000);
+
+        // SPEC-143 Finding #21 fallback + SPEC-127 FR-5: enqueue a polling job
+        // that activates the addon purchase if the payment webhook fails to arrive.
+        // MP Preferences only deliver legacy IPN that the marker filter drops, so
+        // the poll cron is the secondary activation path. Non-fatal — a scheduling
+        // failure is warned but does not block the checkout response.
+        await scheduleAddonCheckoutPolling({
+            billing,
+            subscriptionId: activeSubscription.id,
+            checkoutSessionId: result.id,
+            customerId: input.customerId,
+            addonSlug: addon.slug,
+            orderId,
+            userId: input.userId
+        });
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
         // NOT recorded here. It is recorded in confirmAddonPurchase() after payment
