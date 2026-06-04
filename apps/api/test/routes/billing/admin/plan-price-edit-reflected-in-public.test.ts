@@ -51,6 +51,7 @@ vi.mock('../../../../src/services/plan.service', () => ({
 // module (without the .js extension). The mock must export both so the module
 // can initialize without throwing "export is not defined".
 vi.mock('../../../../src/utils/route-factory', () => ({
+    createSimpleRoute: mockCreateSimpleRoute,
     createAdminRoute: mockCreateAdminRoute,
     createAdminListRoute: mockCreateAdminListRoute
 }));
