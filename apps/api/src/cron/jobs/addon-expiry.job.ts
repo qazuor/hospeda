@@ -6,11 +6,14 @@
  *
  * Features:
  * - Finds and expires add-ons that have passed their expiration date
+ * - Sends ADDON_EXPIRED notification for each expired add-on
  * - Sends ADDON_EXPIRATION_WARNING for add-ons expiring in 3 days
  * - Sends ADDON_EXPIRATION_WARNING for add-ons expiring in 1 day
  * - Uses idempotency keys to prevent duplicate notifications
  * - Fire-and-forget pattern for notification sending
- * - Processes in batches of 100 to avoid memory issues
+ * - Single-source-of-truth expiry: findExpiredAddons() is called once; the same
+ *   list drives both expireAddon() calls and the ADDON_EXPIRED notification loop,
+ *   eliminating the between-fetch gap (SPEC-194 T-014)
  * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions
  *
  * @module cron/jobs/addon-expiry
@@ -178,6 +181,7 @@ export const addonExpiryJob: CronJobDefinition = {
         // Service calls (AddonExpirationService, etc.) that internally call getDb() run outside
         // the tx scope — they are not part of the critical section but cannot be refactored here.
         let processed = 0;
+        let failed = 0;
         let errors = 0;
         let warningsSent = 0;
 
@@ -245,139 +249,181 @@ export const addonExpiryJob: CronJobDefinition = {
                         errors++;
                     }
                 } else {
-                    // Production mode - find expired add-ons first (needed for post-expiry notifications)
-                    const findBeforeExpiry = await addonExpirationService.findExpiredAddons();
-                    const addonsToExpire = findBeforeExpiry.success
-                        ? (findBeforeExpiry.data ?? [])
-                        : [];
+                    // Production mode — single-source-of-truth expiry (SPEC-194 T-014).
+                    // findExpiredAddons() is called ONCE. The resulting list drives both the
+                    // per-item expireAddon() calls AND the ADDON_EXPIRED notification loop,
+                    // so no addon can fall into the between-fetch gap that existed when
+                    // processExpiredAddons() ran its own internal findExpiredAddons() query.
+                    const findResult = await addonExpirationService.findExpiredAddons();
 
-                    // Actually expire add-ons
-                    const processResult = await addonExpirationService.processExpiredAddons();
+                    if (findResult.success) {
+                        const addonsToExpire = findResult.data ?? [];
 
-                    if (processResult.success) {
-                        const result = processResult.data;
-                        if (result) {
-                            processed += result.processed;
-                            errors += result.failed;
+                        logger.info('Found expired add-ons to process', {
+                            count: addonsToExpire.length
+                        });
 
-                            logger.info('Processed expired add-ons', {
-                                processed: result.processed,
-                                failed: result.failed,
-                                errorsDetails: result.errors
-                            });
+                        // Track which purchase IDs failed so we skip their notifications below.
+                        const failedPurchaseIds = new Set<string>();
 
-                            // Build set of purchase IDs that failed so we skip their notifications
-                            const failedPurchaseIds = new Set(
-                                result.errors.map((e: { purchaseId: string }) => e.purchaseId)
-                            );
+                        // Sequential per-item expiry (SPEC-194 T-014 fix).
+                        // Each addon is expired individually so one failure never aborts the rest.
+                        for (const addon of addonsToExpire) {
+                            try {
+                                const expireResult = await addonExpirationService.expireAddon({
+                                    purchaseId: addon.id
+                                });
 
-                            // Send ADDON_EXPIRED notification for each successfully expired add-on
-                            for (const expiredAddon of addonsToExpire) {
-                                if (failedPurchaseIds.has(expiredAddon.id)) {
-                                    continue;
-                                }
-
-                                try {
-                                    // Check idempotency via DB lookup (persists across cron runs)
-                                    if (
-                                        await wasNotificationSent(
-                                            NotificationType.ADDON_EXPIRED,
-                                            expiredAddon.customerId,
-                                            expiredAddon.addonSlug,
-                                            tx
-                                        )
-                                    ) {
-                                        logger.debug(
-                                            'Skipping duplicate ADDON_EXPIRED notification',
-                                            {
-                                                customerId: expiredAddon.customerId,
-                                                addonSlug: expiredAddon.addonSlug
-                                            }
-                                        );
-                                        continue;
-                                    }
-
-                                    // Look up customer details for notification.
-                                    // Reuse the billing instance already retrieved at job startup
-                                    // to avoid redundant getQZPayBilling() calls inside the loop.
-                                    const customerDetails = await lookupCustomerDetails(
-                                        billing,
-                                        expiredAddon.customerId
-                                    );
-                                    if (!customerDetails) {
-                                        logger.warn(
-                                            'Could not look up customer details, skipping ADDON_EXPIRED notification',
-                                            {
-                                                customerId: expiredAddon.customerId,
-                                                addonSlug: expiredAddon.addonSlug
-                                            }
-                                        );
-                                        continue;
-                                    }
-
-                                    // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
-                                    const addonCatalogExpired = await catalogService.getBySlug(
-                                        expiredAddon.addonSlug
-                                    );
-                                    const addonDisplayNameExpired = addonCatalogExpired.success
-                                        ? addonCatalogExpired.data.name
-                                        : expiredAddon.addonSlug;
-
-                                    // Fire-and-forget notification (the notification helper logs to billing_notification_log)
-                                    sendNotification({
-                                        type: NotificationType.ADDON_EXPIRED,
-                                        recipientEmail: customerDetails.email,
-                                        recipientName: customerDetails.name,
-                                        userId: customerDetails.userId,
-                                        customerId: expiredAddon.customerId,
-                                        addonName: addonDisplayNameExpired,
-                                        expirationDate: expiredAddon.expiresAt.toISOString(),
-                                        idempotencyKey: generateIdempotencyKey(
-                                            NotificationType.ADDON_EXPIRED,
-                                            expiredAddon.customerId,
-                                            expiredAddon.addonSlug
-                                        )
-                                    }).catch((notifError) => {
-                                        logger.warn('Add-on expired notification failed', {
-                                            customerId: expiredAddon.customerId,
-                                            addonSlug: expiredAddon.addonSlug,
-                                            error:
-                                                notifError instanceof Error
-                                                    ? notifError.message
-                                                    : String(notifError)
-                                        });
+                                if (expireResult.success) {
+                                    processed++;
+                                } else {
+                                    failed++;
+                                    errors++;
+                                    failedPurchaseIds.add(addon.id);
+                                    logger.warn('expireAddon returned failure', {
+                                        purchaseId: addon.id,
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug,
+                                        error: expireResult.error
                                     });
+                                }
+                            } catch (expireError) {
+                                failed++;
+                                errors++;
+                                failedPurchaseIds.add(addon.id);
+                                Sentry.captureException(expireError, {
+                                    tags: {
+                                        cronJob: 'addon-expiry',
+                                        phase: 'expire-addon'
+                                    },
+                                    extra: {
+                                        purchaseId: addon.id,
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug
+                                    }
+                                });
+                                logger.error('expireAddon threw unexpectedly', {
+                                    purchaseId: addon.id,
+                                    customerId: addon.customerId,
+                                    addonSlug: addon.addonSlug,
+                                    error:
+                                        expireError instanceof Error
+                                            ? expireError.message
+                                            : String(expireError)
+                                });
+                            }
+                        }
 
-                                    logger.debug('Sent ADDON_EXPIRED notification', {
+                        logger.info('Processed expired add-ons', {
+                            processed,
+                            failed
+                        });
+
+                        // Send ADDON_EXPIRED notification for each successfully expired add-on.
+                        // Iterates the SAME list that was just expired — no second DB fetch,
+                        // no between-fetch gap (SPEC-194 T-014 fix).
+                        for (const expiredAddon of addonsToExpire) {
+                            if (failedPurchaseIds.has(expiredAddon.id)) {
+                                continue;
+                            }
+
+                            try {
+                                // Check idempotency via DB lookup (persists across cron runs)
+                                if (
+                                    await wasNotificationSent(
+                                        NotificationType.ADDON_EXPIRED,
+                                        expiredAddon.customerId,
+                                        expiredAddon.addonSlug,
+                                        tx
+                                    )
+                                ) {
+                                    logger.debug('Skipping duplicate ADDON_EXPIRED notification', {
                                         customerId: expiredAddon.customerId,
                                         addonSlug: expiredAddon.addonSlug
                                     });
-                                } catch (notifLoopError) {
-                                    errors++;
-                                    Sentry.captureException(notifLoopError, {
-                                        tags: {
-                                            cronJob: 'addon-expiry',
-                                            phase: 'expired-notification'
-                                        },
-                                        extra: {
+                                    continue;
+                                }
+
+                                // Look up customer details for notification.
+                                // Reuse the billing instance already retrieved at job startup
+                                // to avoid redundant getQZPayBilling() calls inside the loop.
+                                const customerDetails = await lookupCustomerDetails(
+                                    billing,
+                                    expiredAddon.customerId
+                                );
+                                if (!customerDetails) {
+                                    logger.warn(
+                                        'Could not look up customer details, skipping ADDON_EXPIRED notification',
+                                        {
                                             customerId: expiredAddon.customerId,
                                             addonSlug: expiredAddon.addonSlug
                                         }
-                                    });
-                                    logger.error('Failed to send ADDON_EXPIRED notification', {
+                                    );
+                                    continue;
+                                }
+
+                                // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
+                                const addonCatalogExpired = await catalogService.getBySlug(
+                                    expiredAddon.addonSlug
+                                );
+                                const addonDisplayNameExpired = addonCatalogExpired.success
+                                    ? addonCatalogExpired.data.name
+                                    : expiredAddon.addonSlug;
+
+                                // Fire-and-forget notification (the notification helper logs to billing_notification_log)
+                                sendNotification({
+                                    type: NotificationType.ADDON_EXPIRED,
+                                    recipientEmail: customerDetails.email,
+                                    recipientName: customerDetails.name,
+                                    userId: customerDetails.userId,
+                                    customerId: expiredAddon.customerId,
+                                    addonName: addonDisplayNameExpired,
+                                    expirationDate: expiredAddon.expiresAt.toISOString(),
+                                    idempotencyKey: generateIdempotencyKey(
+                                        NotificationType.ADDON_EXPIRED,
+                                        expiredAddon.customerId,
+                                        expiredAddon.addonSlug
+                                    )
+                                }).catch((notifError) => {
+                                    logger.warn('Add-on expired notification failed', {
                                         customerId: expiredAddon.customerId,
                                         addonSlug: expiredAddon.addonSlug,
                                         error:
-                                            notifLoopError instanceof Error
-                                                ? notifLoopError.message
-                                                : String(notifLoopError)
+                                            notifError instanceof Error
+                                                ? notifError.message
+                                                : String(notifError)
                                     });
-                                }
+                                });
+
+                                logger.debug('Sent ADDON_EXPIRED notification', {
+                                    customerId: expiredAddon.customerId,
+                                    addonSlug: expiredAddon.addonSlug
+                                });
+                            } catch (notifLoopError) {
+                                errors++;
+                                Sentry.captureException(notifLoopError, {
+                                    tags: {
+                                        cronJob: 'addon-expiry',
+                                        phase: 'expired-notification'
+                                    },
+                                    extra: {
+                                        customerId: expiredAddon.customerId,
+                                        addonSlug: expiredAddon.addonSlug
+                                    }
+                                });
+                                logger.error('Failed to send ADDON_EXPIRED notification', {
+                                    customerId: expiredAddon.customerId,
+                                    addonSlug: expiredAddon.addonSlug,
+                                    error:
+                                        notifLoopError instanceof Error
+                                            ? notifLoopError.message
+                                            : String(notifLoopError)
+                                });
                             }
                         }
                     } else {
-                        logger.error('Failed to process expired add-ons', {
-                            error: processResult.error
+                        logger.error('Failed to find expired add-ons', {
+                            error: findResult.error
                         });
                         errors++;
                     }
