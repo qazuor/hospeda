@@ -313,6 +313,9 @@ function BillingAddonCatalogPage() {
                                   targetCategories: editingAddon.targetCategories,
                                   isActive: editingAddon.isActive,
                                   sortOrder: editingAddon.sortOrder
+                                  // TYPE-WORKAROUND: ParsedAddonRecord has all AddonDefinition fields
+                                  // but with plain string types instead of branded keys; the dialog
+                                  // only reads these values for form defaults, so the cast is safe.
                               } as unknown as AddonDefinition)
                             : null
                     }

@@ -625,11 +625,11 @@ export async function handlePlanChangeAddonRecalculation(
     // `newPlanDef` is now BillingPlanResponse (DB-backed, T-026). Cast to the
     // shape that detectAndNotifyDowngrades expects — it only reads `.name`,
     // which both PlanDefinition and BillingPlanResponse have.
-    // biome-ignore lint/suspicious/noExplicitAny: cross-package shape cast (name field compatible)
     await detectAndNotifyDowngrades({
         customerId,
         recalculations,
         billing,
+        // biome-ignore lint/suspicious/noExplicitAny: cross-package shape cast (name field compatible)
         newPlanDef: newPlanDef as any
     });
 
