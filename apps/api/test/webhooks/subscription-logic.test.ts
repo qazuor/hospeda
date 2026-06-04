@@ -9,6 +9,7 @@ import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import * as serviceCore from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as notificationsModule from '../../src/routes/webhooks/mercadopago/notifications.js';
@@ -1511,6 +1512,118 @@ describe('processSubscriptionUpdated', () => {
 
             // Assert: job still succeeds despite customer lookup failure
             expect(result.success).toBe(true);
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-194 T-002: Transition guard tests
+    // -----------------------------------------------------------------------
+    describe('transition guard (SPEC-194 T-002)', () => {
+        // TC-SPEC-194-T002-A: Illegal transition → logs error, skips write, returns statusChanged:false
+        it('should log error and skip status write when transition is invalid', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            // MP says 'active'; local sub is 'expired' (terminal — invalid transition)
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            // Force the guard to reject this specific transition
+            const guardSpy = vi
+                .spyOn(serviceCore, 'checkSubscriptionStatusTransition')
+                .mockReturnValue({
+                    valid: false,
+                    reason: 'Transition expired → active is not permitted by the subscription state machine'
+                });
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.EXPIRED });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t002-a'
+            });
+
+            // Assert: guard fires → write skipped → statusChanged false
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(false);
+            expect(dbMock.transaction).not.toHaveBeenCalled();
+            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionId: localSub.id,
+                    from: SubscriptionStatusEnum.EXPIRED,
+                    to: SubscriptionStatusEnum.ACTIVE
+                }),
+                expect.stringContaining('invalid status transition')
+            );
+
+            guardSpy.mockRestore();
+        });
+
+        // TC-SPEC-194-T002-B: Same-status redelivery (idempotent) → no-op, no invalid-transition log
+        it('should return statusChanged:false without any invalid-transition error log for same-status redelivery', async () => {
+            // Arrange: MP reports 'active', local sub is already 'active' (same-status webhook retry)
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t002-b'
+            });
+
+            // Assert: same-status short-circuit fires BEFORE the guard — no error logged
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(false);
+            expect(dbMock.transaction).not.toHaveBeenCalled();
+            const errorCalls = vi.mocked(apiLogger.error).mock.calls;
+            const transitionErrors = errorCalls.filter(
+                ([, msg]) => typeof msg === 'string' && msg.includes('invalid status transition')
+            );
+            expect(transitionErrors).toHaveLength(0);
+        });
+
+        // TC-SPEC-194-T002-C: Legal transition still writes (regression net)
+        it('should write status and return statusChanged:true for a legal transition', async () => {
+            // Arrange: active → cancelled (legal)
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            const dbMock = makeDbMock([localSub]);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t002-c'
+            });
+
+            // Assert: transition guard allows it → DB write + audit log
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).toHaveBeenCalled();
         });
     });
 });

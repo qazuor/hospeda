@@ -143,13 +143,24 @@ vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn().mockReturnValue({ name: 'Test Addon', slug: 'test-addon' })
 }));
 
+// Allow checkSubscriptionStatusTransition through from the real module, but
+// expose it as a spy so individual tests can override it to return invalid.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return { ...actual };
+});
+
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import * as serviceCore from '@repo/service-core';
 import { clearEntitlementCache } from '../../../src/middlewares/entitlement';
 import {
     sendPaymentFailureNotifications,
     sendPaymentSuccessNotification
 } from '../../../src/routes/webhooks/mercadopago/notifications';
-import { processPaymentUpdated } from '../../../src/routes/webhooks/mercadopago/payment-logic';
+import {
+    confirmAnnualSubscription,
+    processPaymentUpdated
+} from '../../../src/routes/webhooks/mercadopago/payment-logic';
 import {
     extractAddonFromReference,
     extractAddonMetadata,
@@ -1082,5 +1093,110 @@ describe('processPaymentUpdated', () => {
             });
             expect(fallbackWarns).toHaveLength(0);
         });
+    });
+});
+
+// ─── Transition guard tests (SPEC-194 T-002) ──────────────────────────────────
+// These tests exercise the checkSubscriptionStatusTransition guard added to
+// confirmAnnualSubscription directly (not through processPaymentUpdated) so
+// we can focus on the guard logic without the extra layer of event dispatch.
+
+describe('confirmAnnualSubscription — transition guard', () => {
+    const ANNUAL_SUB_ID = 'annual-guard-test-uuid';
+    const MP_PAYMENT_ID = '111222333';
+
+    const mockBillingForGuard = {
+        customers: { get: vi.fn() },
+        subscriptions: { getByCustomerId: vi.fn() },
+        plans: { list: vi.fn() },
+        payments: { record: vi.fn().mockResolvedValue({ id: 'pmt-uuid' }) },
+        getStorage: vi.fn().mockReturnValue({ subscriptionPollingJobs: null })
+    } as unknown as QZPayBilling;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Default: real checkSubscriptionStatusTransition (valid for pending_provider→active).
+        // Re-set the db mock state.
+        resetAnnualDbState();
+        // Re-apply db mock defaults after clearAllMocks wipes them.
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue(null);
+        vi.mocked(extractAddonFromReference).mockReturnValue(null);
+        vi.mocked(extractAnnualSubscriptionMetadata).mockReturnValue(null);
+        vi.mocked(extractPlanChangeUpgradeMetadata).mockReturnValue(null);
+        (mockBillingForGuard.payments.record as ReturnType<typeof vi.fn>).mockResolvedValue({
+            id: 'pmt-uuid'
+        });
+        vi.mocked(mockBillingForGuard.getStorage).mockReturnValue({
+            subscriptionPollingJobs: null
+        } as never);
+    });
+
+    it('legal transition (pending_provider → active): writes the status', async () => {
+        // Arrange
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        // Act
+        const result = await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: 100,
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test'
+        });
+
+        // Assert: confirmed and status flipped
+        expect(result.confirmed).toBe(true);
+        expect(annualDbState.updateCalls).toHaveLength(1);
+        const updateVals = annualDbState.updateCalls[0]?.values as Record<string, unknown>;
+        expect(updateVals.status).toBe('active');
+    });
+
+    it('guard returns invalid (spy): logs error and skips status write (defense-in-depth)', async () => {
+        const { apiLogger } = await import('../../../src/utils/logger');
+        // The existing early-exit at `status !== pending_provider` (lines ~121-132)
+        // already handles most illegal cases. This test verifies the guard catches
+        // any illegal case that *reaches* it (e.g. after future refactoring).
+        // We use a spy to force the guard to return invalid for a pending_provider sub,
+        // simulating a future state where the transition table is tightened.
+        const guardSpy = vi
+            .spyOn(serviceCore, 'checkSubscriptionStatusTransition')
+            .mockReturnValue({
+                valid: false,
+                reason: 'Transition pending_provider → active is not permitted (test override)'
+            });
+
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        // Act
+        const result = await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: 100,
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test'
+        });
+
+        // Assert: not confirmed, no DB write, error logged
+        expect(result.confirmed).toBe(false);
+        expect(annualDbState.updateCalls).toHaveLength(0);
+        expect(apiLogger.error).toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscriptionId: ANNUAL_SUB_ID,
+                from: 'pending_provider',
+                to: 'active'
+            }),
+            expect.stringContaining('invalid status transition')
+        );
+
+        guardSpy.mockRestore();
     });
 });

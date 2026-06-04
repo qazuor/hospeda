@@ -14,6 +14,7 @@ import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } fr
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import { AddonCatalogService } from '@repo/service-core';
+import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
@@ -173,6 +174,35 @@ export async function confirmAnnualSubscription(input: {
             { annualSubscriptionId, providerPaymentId, source },
             'Annual subscription confirmation: payment already recorded — skipping record'
         );
+    }
+
+    // Guard: verify pending_provider → active is a permitted transition before
+    // writing. Skip is safe here: the subscription already exists in the DB in
+    // a non-pending_provider state, which means a concurrent process already
+    // activated (or cancelled) it; either way, re-writing active would be
+    // incorrect. The `sub.status !== PENDING_PROVIDER` early-exit above
+    // (lines 121-132) already handles the expected idempotency case (active →
+    // skip); this guard catches any *other* unexpected status that slipped
+    // through (e.g. a race that wrote cancelled between our SELECT and here).
+    const transitionCheck = checkSubscriptionStatusTransition({
+        from: sub.status as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+        to: SubscriptionStatusEnum.ACTIVE,
+        subscriptionId: sub.id
+    });
+    if (!transitionCheck.valid) {
+        apiLogger.error(
+            {
+                annualSubscriptionId,
+                providerPaymentId,
+                source,
+                from: sub.status,
+                to: SubscriptionStatusEnum.ACTIVE,
+                subscriptionId: sub.id,
+                reason: transitionCheck.reason
+            },
+            'Annual subscription confirmation: invalid status transition — skipping status write'
+        );
+        return { confirmed: false };
     }
 
     // Flip the local subscription status from pending_provider to active.

@@ -14,7 +14,7 @@ import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
@@ -400,6 +400,43 @@ export async function processSubscriptionUpdated({
         apiLogger.debug(
             { subscriptionId: localSubscription.id, status: mappedStatus, source },
             `No status change for subscription ${localSubscription.id}: still ${mappedStatus}`
+        );
+        return { success: true, statusChanged: false };
+    }
+
+    // Step 6b: Guard — verify the transition is permitted by the state machine
+    // before writing. Idempotent webhook redeliveries with the same status are
+    // already short-circuited by the `previousStatus === mappedStatus` check in
+    // Step 6 (above), so by the time we reach here we know the statuses differ.
+    //
+    // If the guard fires it means MP sent a status we cannot legally transition
+    // to from the local state — log an error and skip the write. Skip is safe:
+    // the local subscription row remains authoritative; MP will NOT retry an
+    // event that we acknowledge (return 200). The mismatch should be investigated
+    // via Sentry / ops tooling.
+    //
+    // Side effects that depend on the status write (notifications, polling-job
+    // cleanup, addon cancellation, payment failure tracking) are gated below the
+    // transaction, so skipping the write correctly skips them all — they would
+    // otherwise act on a status that was never actually persisted.
+    const transitionGuard = checkSubscriptionStatusTransition({
+        from: previousStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+        to: mappedStatus,
+        subscriptionId: localSubscription.id
+    });
+    if (!transitionGuard.valid) {
+        apiLogger.error(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                from: previousStatus,
+                to: mappedStatus,
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                providerEventId,
+                source,
+                reason: transitionGuard.reason
+            },
+            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects'
         );
         return { success: true, statusChanged: false };
     }

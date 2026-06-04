@@ -26,6 +26,8 @@
  */
 
 import { billingSubscriptions, sql, withTransaction } from '@repo/db';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { and, inArray, isNull, lt } from 'drizzle-orm';
 import type { CronJobDefinition } from '../types.js';
 
@@ -106,6 +108,38 @@ export const abandonedPendingSubsJob: CronJobDefinition = {
                         );
 
                     return { skipped: false, abandoned: rows.length };
+                }
+
+                // Guard: verify pending_provider → abandoned is a permitted transition
+                // before writing. This is a static pre-condition check on the canonical
+                // transition; the WHERE clause already constrains affected rows to
+                // PENDING_STATUSES so the `from` status is known. We use
+                // `pending_provider` as the representative source status (the only
+                // Hospeda-vocabulary pending status in PENDING_STATUSES; `incomplete`
+                // is the qzpay-vocabulary synonym handled by T-003).
+                //
+                // TODO(SPEC-194 T-003): once `incomplete_expired` is folded into
+                // `abandoned` in the DB, update ABANDONED_STATUS here and remove this
+                // shim note.
+                //
+                // Keep writing `incomplete_expired` (ABANDONED_STATUS) — the polling
+                // endpoint maps it to Hospeda `ABANDONED` at the response boundary.
+                // Behaviour is unchanged; the guard only catches a future regression
+                // where the transition table removes this edge.
+                const guardCheck = checkSubscriptionStatusTransition({
+                    from: SubscriptionStatusEnum.PENDING_PROVIDER,
+                    to: SubscriptionStatusEnum.ABANDONED
+                });
+                if (!guardCheck.valid) {
+                    logger.error(
+                        'abandoned-pending-subs: invalid transition guard — skipping bulk status write',
+                        {
+                            from: SubscriptionStatusEnum.PENDING_PROVIDER,
+                            to: SubscriptionStatusEnum.ABANDONED,
+                            reason: guardCheck.reason
+                        }
+                    );
+                    return { skipped: false, abandoned: 0 };
                 }
 
                 const updated = await tx
