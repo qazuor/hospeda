@@ -787,39 +787,39 @@
             "id": "T-022",
             "title": "Implement credential vault service + audit writes",
             "description": "Create the credential service (apps/api or service-core extending BaseService, Result<T>) to create/rotate/delete provider keys: encrypt via T-021, store in ai_provider_credentials, and write an ai_credential_audit row (actor, action, providerId, ip) on every mutation (Q1, §5.5/FR-4). Rotation without redeploy. Tests: unit tests asserting each mutation writes an audit row and stored value is ciphertext (AC-3 store half).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-023", "T-026"],
             "subtasks": [
                 {
                     "title": "create/rotate/delete credential ops (encrypted)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_credential_audit row per mutation (Q1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Result<T> + runWithLoggingAndValidation",
-                    "completed": false
+                    "title": "Result<T> via ServiceOutput (plain module per owner; no BaseService wrapper)",
+                    "completed": true
                 },
                 {
                     "title": "Write credential-service unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "security", "vault", "service", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T22:45:00.000Z",
+                "completed": "2026-06-04T23:20:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.5
     }
