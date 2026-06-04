@@ -183,6 +183,9 @@ export const buildFilterChips = ({
             } else {
                 displayValue = activeValue; // raw fallback for unexpected values
             }
+        } else if (config.type === 'text') {
+            // Text filters use the raw string value as-is for chip display
+            displayValue = activeValue;
         } else {
             displayValue = activeValue;
         }
