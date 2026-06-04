@@ -1,0 +1,592 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-191",
+    "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
+    "created": "2026-06-04T16:24:51.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add three contribution contact types to ContactTypeEnumSchema (additive-only)",
+            "description": "Append report_destination_info, photo_submission, editor_application to ContactTypeEnumSchema in packages/schemas/src/contact/submit.ts — appended at the end, no reordering, existing values untouched (FR-1, D-6). TDD (pure logic — test first): additive schema test in the schemas package (place alongside existing contact schema tests): the three new types parse via ContactSubmitSchema; all nine existing types PLUS the deprecated 'accommodation' still parse (historic-fixture compatibility).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Write additive schema test first (new types parse, old types + deprecated accommodation still parse)",
+                    "completed": true
+                },
+                {
+                    "title": "Append the three enum values to ContactTypeEnumSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Run schemas package tests green",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "contact"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": "2026-06-04T16:24:51.000Z",
+                "completed": "2026-06-04T16:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add Spanish CONTACT_TYPE_LABELS for the new contact types in the API handler",
+            "description": "Add labels to CONTACT_TYPE_LABELS in apps/api/src/routes/contact/submit.ts: 'Reporte de información de destino' (report_destination_info), 'Aporte de fotos' (photo_submission), 'Postulación de editor' (editor_application). Pipeline otherwise UNCHANGED (honeypot, 5/60s rate limit, email dispatch via @repo/notifications) — FR-1, FR-11, non-goal 4. Tests (existing contact route test location in apps/api): handler test asserting the email label + audit log contactType for a report_destination_info submission (no PII beyond email domain); confirm honeypot fake-success and 429 rate-limit still apply when submitting with a new type.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Add the three Spanish labels to CONTACT_TYPE_LABELS",
+                    "completed": false
+                },
+                {
+                    "title": "Handler test: label + audit for report_destination_info",
+                    "completed": false
+                },
+                {
+                    "title": "Test: honeypot fake-success + 429 still apply to new types",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "contact"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add contribution_* event names to the WebEvents analytics catalog",
+            "description": "Add four typed event names to WebEvents in apps/web/src/lib/analytics/events.ts following the snake_case <entity>_<verb_past> convention (FR-9): contribution_banner_clicked, contribution_report_submitted, contribution_photo_submitted, contribution_editor_submitted. Extend the existing events test (if present) or add a minimal catalog test asserting the names follow the convention and are exported in WebEventName.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Add the four event names to WebEvents",
+                    "completed": false
+                },
+                {
+                    "title": "Update/add events catalog test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "analytics"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Build ContributionBanner.astro component (variants + click tracking)",
+            "description": "Create apps/web/src/components/contributions/ContributionBanner.astro + ContributionBanner.module.css modeled on WhatsAppCTA.astro (FR-6). Locked props: title, description, ctaLabel, ctaHref, source, variant?: 'photos' | 'editors' (icon from @repo/icons + accent styling per variant). Vanilla CSS module with design tokens only (var(--brand-*), var(--radius-*)), dark-mode safe, reflows without horizontal overflow on narrow viewports. Hoisted <script> fires contribution_banner_clicked via trackEvent with { source, variant } on CTA click; navigation to ctaHref proceeds. Tests (Astro source-file assertion pattern in apps/web/test/): renders icon/title/description/CTA per variant; click script fires the event with source/variant; module CSS + tokens used (no hardcoded colors).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-011", "T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "ContributionBanner.astro with locked props + variant icon/accent",
+                    "completed": false
+                },
+                {
+                    "title": "ContributionBanner.module.css (tokens, responsive stack)",
+                    "completed": false
+                },
+                {
+                    "title": "Hoisted click-tracking script (contribution_banner_clicked)",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests (variants, event, tokens)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "components", "banners", "analytics"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Build ContributionForm.client.tsx locked-type form island",
+            "description": "Create apps/web/src/components/contributions/ContributionForm.client.tsx (+ colocated module.css) per D-3. Reuses ContactForm's mechanics WITHOUT modifying it: ContactSubmitSchema.safeParse validation, POST ${PUBLIC_API_URL}/api/v1/public/contact, honeypot website field, 429-specific friendly error. Props: presetType (locked contact type — NO type select rendered), locale. Client-side useEffect reads ?destino= from window.location.search (page is SSG): seeds message with 'Reporte sobre el destino: <slug>. ' and keeps the slug in state. On 2xx fires the matching contribution_*_submitted trackEvent: report → { destino?, locale }; photo/editor → { locale }. Success state shows contribution-specific copy (contributions namespace keys with inline fallbacks until T-014). ContactForm.client.tsx and CONTACT_TYPE_OPTIONS MUST NOT change (non-goal 7). Tests (testing-library in apps/web/test/): no type select rendered + payload type equals presetType; ?destino= seeding into message + state; submit-success fires correct event with destino; contribution success copy shown; 429 friendly message; honeypot field present; guard test asserting ContactForm's CONTACT_TYPE_OPTIONS still has exactly its 9 entries (no contribution types).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-007", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "ContributionForm island: locked presetType, no select, honeypot, 429 handling",
+                    "completed": false
+                },
+                {
+                    "title": "Client-side ?destino= reading + message seeding + state",
+                    "completed": false
+                },
+                {
+                    "title": "Submit-success trackEvent per contribution type",
+                    "completed": false
+                },
+                {
+                    "title": "Contribution-specific success state (contributions namespace)",
+                    "completed": false
+                },
+                {
+                    "title": "Testing-library tests + CONTACT_TYPE_OPTIONS guard test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "components", "forms", "analytics"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create /colaborar hub landing page (SSG)",
+            "description": "Create apps/web/src/pages/[lang]/colaborar/index.astro (FR-2): export const prerender = true + getStaticPaths over es/en/pt (mirror contacto/index.astro). Hero plus three cards/links (buildUrl) to colaborar/reportar, colaborar/fotos, colaborar/editores. SEOHead + breadcrumbs per sibling static pages. All copy via t() with inline fallbacks (contributions namespace keys; JSON lands in T-014). Vanilla CSS / scoped style with tokens. Tests (source assertions): prerender flag, getStaticPaths enumerates the three locales, the three links present.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Hub page SSG with hero + three contribution cards",
+                    "completed": false
+                },
+                {
+                    "title": "SEOHead + i18n keys with fallbacks",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "pages", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create /colaborar/reportar page (preset report_destination_info, ?destino= context)",
+            "description": "Create apps/web/src/pages/[lang]/colaborar/reportar/index.astro (FR-3): SSG like the hub, mounts ContributionForm client:visible with presetType report_destination_info. The ?destino= slug is read client-side by the island (built in T-005) — works with no param too (generic report). Page copy explains what the report is for. Tests (source assertions): prerender + locales; ContributionForm mounted with presetType report_destination_info.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Report page SSG mounting ContributionForm (preset report_destination_info)",
+                    "completed": false
+                },
+                {
+                    "title": "Intro copy + SEOHead",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "pages", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create /colaborar/fotos page (license terms + delivery mechanics + preset photo_submission)",
+            "description": "Create apps/web/src/pages/[lang]/colaborar/fotos/index.astro (FR-4): SSG; call-for-photos copy; clearly-labelled usage/license terms section (i18n keys with placeholder copy — final wording is a content dependency gated on owner/legal sign-off, D-9); delivery-mechanics copy (describe the destination, paste Drive/Dropbox links in the message, or the team replies by email to coordinate); a line above the submit button 'by submitting you accept the photo usage terms' anchor-linked to the terms section on the same page (NO consent checkbox); ContributionForm preset photo_submission. Tests (source assertions): prerender + locales; terms section present and labelled; anchor line above submit; form preset photo_submission.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011", "T-012", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Fotos page SSG with call copy + ContributionForm (photo_submission)",
+                    "completed": false
+                },
+                {
+                    "title": "License/usage terms section (placeholder copy, anchor id)",
+                    "completed": false
+                },
+                {
+                    "title": "Delivery-mechanics copy + 'you accept the terms' line above submit",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "pages", "forms", "legal"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create /colaborar/editores recruitment page (preset editor_application)",
+            "description": "Create apps/web/src/pages/[lang]/colaborar/editores/index.astro (FR-5): SSG; recruitment copy for blog (publicaciones) + events volunteer editors; ContributionForm preset editor_application. Tests (source assertions): prerender + locales; recruitment copy keys; form preset editor_application.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Editores page SSG with recruitment copy + ContributionForm (editor_application)",
+                    "completed": false
+                },
+                {
+                    "title": "SEOHead + i18n keys with fallbacks",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "pages", "forms"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add destination-detail report link (sidebar row + inline link after description)",
+            "description": "FR-7, both placements point to buildUrl({ locale, path: 'colaborar/reportar' }) + '?destino=<slug>': (1) extend apps/web/src/components/destination/DestinationSidebarCtas.astro with a third row using the established icon+label+hint+arrow pattern ('Reportar información incorrecta'); (2) add an inline text link in apps/web/src/pages/[lang]/destinos/[...path].astro directly after the .dest-detail__description section. Copy via t() (contributions namespace keys, inline fallbacks). Tests (source assertions): both hrefs carry ?destino=<slug>; sidebar row follows the existing row pattern; inline link sits after the description block.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Report row in DestinationSidebarCtas.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Inline report link after .dest-detail__description",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests (?destino= in both hrefs)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "destinations", "wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Mount fotos banner on destination detail (after gallery)",
+            "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro, mount ContributionBanner with variant 'photos', source 'destination_detail', ctaHref buildUrl to colaborar/fotos, translated copy via t() — placed AFTER the DestinationGallery block, before the reviews section (FR-8 locked placement; thematic fit + clear of the FR-7 inline report link). Tests (source assertions): mount present with correct variant/source/ctaHref and positioned after the gallery block.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-008"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Mount banner after DestinationGallery with variant/source props",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion test (props + position)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "banners", "wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Mount fotos banner on destinations listing (after card grid)",
+            "description": "In apps/web/src/pages/[lang]/destinos/index.astro, mount ContributionBanner variant 'photos', source 'destination_listing', ctaHref to colaborar/fotos — placed AFTER the .dest-grid card grid (FR-8 locked placement). destinos/page/[page].astro is a 301 redirect and MUST NOT be touched. Tests (source assertions): mount with correct props after the grid; page/[page].astro unchanged.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-008"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Mount banner after the card grid",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "banners", "wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Mount editores banner on blog + events listings (after grid, before pagination)",
+            "description": "Mount ContributionBanner variant 'editors' with ctaHref to colaborar/editores on: apps/web/src/pages/[lang]/publicaciones/index.astro (source 'blog_listing') and apps/web/src/pages/[lang]/eventos/index.astro (source 'events_listing') — in the ListingLayout default slot AFTER the results grid, BEFORE the pagination slot (FR-8 locked placement). The page/[page].astro rewrites MUST NOT be touched. Tests (source assertions): each mount has the right source/variant/ctaHref and sits between grid and pagination.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-009"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Mount on publicaciones/index.astro (blog_listing)",
+                    "completed": false
+                },
+                {
+                    "title": "Mount on eventos/index.astro (events_listing)",
+                    "completed": false
+                },
+                {
+                    "title": "Source-assertion tests for both",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "banners", "wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create contributions i18n namespace (es/en/pt) and consolidate all copy",
+            "description": "Create packages/i18n/src/locales/{es,en,pt}/contributions.json (FR-10, D-7): all copy for the hub, the three pages (incl. photo license terms text — still subject to legal sign-off D-9 — and the delivery-mechanics copy), the banners (per-surface titles/descriptions/CTAs), the report link labels, form labels and the contribution-specific success confirmations. es is authoritative; en/pt fall back to es per the package's existing namespace convention (check how sibling namespaces like contact.json handle untranslated locales and mirror it). Register the namespace if the i18n package requires explicit registration. Sweep the pages/components from T-004..T-013 to ensure every key now resolves (inline fallbacks remain as safety only). Tests: key-presence test across es/en/pt for the contributions namespace (en/pt may fall back to es but must never surface a raw key).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010", "T-011", "T-012", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "contributions.json for es (authoritative, all keys)",
+                    "completed": false
+                },
+                {
+                    "title": "en/pt files per package fallback convention + namespace registration",
+                    "completed": false
+                },
+                {
+                    "title": "Sweep all new surfaces for key coverage",
+                    "completed": false
+                },
+                {
+                    "title": "Key-presence test across locales",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "content"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Manual smoke es/en/pt (pages, funnels, submits, analytics) + regression fixes",
+            "description": "Run web + api locally (worktree dev servers). Verify in es/en/pt: each /colaborar page renders and hydrates; one real submit per contribution type reaches the contact pipeline (email dispatch visible in dev logs, correct Spanish label); report funnel from a destination detail carries ?destino= and seeds the form; all four banner mounts link correctly per surface; contribution_banner_clicked + contribution_*_submitted events fire (PostHog debug/network tab); honeypot fake-success and 429 behavior intact. Any bug found gets a reproducing regression test BEFORE the fix (project rule). NOTE for the owner: /colaborar/fotos launch remains gated on legal sign-off of the license copy (D-9) — flag it if still pending.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Smoke all /colaborar pages + hydration per locale",
+                    "completed": false
+                },
+                {
+                    "title": "Real submit per contribution type (pipeline + label verified)",
+                    "completed": false
+                },
+                {
+                    "title": "Funnel links + analytics events verified per surface",
+                    "completed": false
+                },
+                {
+                    "title": "Regression tests for any finding",
+                    "completed": false
+                }
+            ],
+            "tags": ["qa", "smoke", "analytics"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Close out SPEC-191 (quality gate, indexes, Linear, summary)",
+            "description": "Final quality gate across touched packages (lint, typecheck, tests green). Flip spec + task indexes via index-sync once the work is merged per the branch workflow (PR → staging). Update Linear issues BETA-69, BETA-68, BETA-65 with the outcome (BETA-65's measurement requirement satisfied via contribution_banner_clicked/contribution_editor_submitted). Record mem_session_summary with discoveries + the D-9 legal-gate status.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Quality gate green (lint, typecheck, tests)",
+                    "completed": false
+                },
+                {
+                    "title": "index-sync both indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Linear BETA-69/68/65 updated",
+                    "completed": false
+                },
+                {
+                    "title": "Session summary saved",
+                    "completed": false
+                }
+            ],
+            "tags": ["closeout", "tracking"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-04T16:24:51.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}

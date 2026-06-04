@@ -574,7 +574,7 @@
             "specId": "SPEC-191",
             "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "type": "feature",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "medium",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
