@@ -1327,6 +1327,189 @@ export const addonExpiryJob: CronJobDefinition = {
                     });
                 }
 
+                // 7. Grant reconciliation: re-apply entitlements for active purchases
+                // where the QZPay grant failed during checkout confirmation (SPEC-194 T-012).
+                // These rows are flagged with `needsEntitlementSync = true` by
+                // `confirmAddonPurchase` when `applyAddonEntitlements` throws or returns a
+                // failure result. The purchase row is already `status='active'` and the
+                // payment is confirmed — only the QZPay entitlement grant is missing.
+                // Limited to 10 per run to stay within the 2-minute cron window.
+                let grantReconciled = 0;
+                let grantReconcileErrors = 0;
+
+                logger.info('Starting grant reconciliation phase for split-state purchases');
+
+                try {
+                    const db = tx;
+
+                    const pendingGrantSync = await db
+                        .select({
+                            id: billingAddonPurchases.id,
+                            customerId: billingAddonPurchases.customerId,
+                            addonSlug: billingAddonPurchases.addonSlug,
+                            needsEntitlementSync: billingAddonPurchases.needsEntitlementSync,
+                            metadata: billingAddonPurchases.metadata
+                        })
+                        .from(billingAddonPurchases)
+                        .where(
+                            and(
+                                eq(billingAddonPurchases.status, 'active'),
+                                isNull(billingAddonPurchases.deletedAt),
+                                eq(billingAddonPurchases.needsEntitlementSync, true)
+                            )
+                        )
+                        .limit(10);
+
+                    logger.info('Found active purchases with missing entitlement grants', {
+                        count: pendingGrantSync.length
+                    });
+
+                    for (const purchase of pendingGrantSync) {
+                        if (dryRun) {
+                            logger.info(
+                                'Dry run mode - would re-apply entitlement grant for split-state purchase',
+                                {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                }
+                            );
+                            grantReconciled++;
+                            continue;
+                        }
+
+                        try {
+                            const entitlementService = new AddonEntitlementService(billing);
+
+                            const applyResult = await entitlementService.applyAddonEntitlements({
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                purchaseId: purchase.id
+                            });
+
+                            const meta = (purchase.metadata ?? {}) as Record<string, unknown>;
+                            const retryCount =
+                                typeof meta.grantSyncRetries === 'number'
+                                    ? meta.grantSyncRetries
+                                    : 0;
+                            const newRetryCount = retryCount + 1;
+
+                            if (applyResult.success) {
+                                // Clear the sync flag and record the retry count
+                                await db
+                                    .update(billingAddonPurchases)
+                                    .set({
+                                        needsEntitlementSync: false,
+                                        metadata: { ...meta, grantSyncRetries: newRetryCount },
+                                        updatedAt: new Date()
+                                    })
+                                    .where(eq(billingAddonPurchases.id, purchase.id));
+
+                                grantReconciled++;
+                                clearEntitlementCache(purchase.customerId);
+
+                                logger.info('Grant reconciliation succeeded', {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                });
+                            } else {
+                                // Keep flag set; record retry count and escalate after 3 retries
+                                await db
+                                    .update(billingAddonPurchases)
+                                    .set({
+                                        metadata: { ...meta, grantSyncRetries: newRetryCount },
+                                        updatedAt: new Date()
+                                    })
+                                    .where(eq(billingAddonPurchases.id, purchase.id));
+
+                                grantReconcileErrors++;
+
+                                if (newRetryCount >= 3) {
+                                    Sentry.captureException(
+                                        new Error(
+                                            `Entitlement grant reconciliation failed after ${newRetryCount} retries`
+                                        ),
+                                        {
+                                            tags: {
+                                                cronJob: 'addon-expiry',
+                                                phase: 'grant-reconciliation'
+                                            },
+                                            extra: {
+                                                purchaseId: purchase.id,
+                                                customerId: purchase.customerId,
+                                                addonSlug: purchase.addonSlug,
+                                                retryCount: newRetryCount
+                                            }
+                                        }
+                                    );
+                                    logger.error(
+                                        'Grant reconciliation failed after 3 retries — Sentry alert sent',
+                                        {
+                                            purchaseId: purchase.id,
+                                            customerId: purchase.customerId,
+                                            addonSlug: purchase.addonSlug,
+                                            retryCount: newRetryCount
+                                        }
+                                    );
+                                } else {
+                                    logger.warn(
+                                        'Grant reconciliation retry failed, will retry next run',
+                                        {
+                                            purchaseId: purchase.id,
+                                            customerId: purchase.customerId,
+                                            addonSlug: purchase.addonSlug,
+                                            retryCount: newRetryCount
+                                        }
+                                    );
+                                }
+                            }
+                        } catch (grantErr) {
+                            grantReconcileErrors++;
+
+                            Sentry.captureException(grantErr, {
+                                tags: {
+                                    cronJob: 'addon-expiry',
+                                    phase: 'grant-reconciliation'
+                                },
+                                extra: {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                }
+                            });
+
+                            logger.error('Unexpected error during grant reconciliation', {
+                                purchaseId: purchase.id,
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                error:
+                                    grantErr instanceof Error ? grantErr.message : String(grantErr)
+                            });
+                        }
+                    }
+
+                    logger.info('Grant reconciliation phase completed', {
+                        grantReconciled,
+                        grantReconcileErrors
+                    });
+                } catch (grantPhaseError) {
+                    const errMsg =
+                        grantPhaseError instanceof Error
+                            ? grantPhaseError.message
+                            : String(grantPhaseError);
+
+                    errors++;
+
+                    Sentry.captureException(grantPhaseError, {
+                        tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation' }
+                    });
+
+                    logger.error('Grant reconciliation phase failed with unexpected error', {
+                        error: errMsg
+                    });
+                }
+
                 const durationMs = Date.now() - startedAt.getTime();
 
                 logger.info('Add-on expiry job completed', {
@@ -1339,13 +1522,15 @@ export const addonExpiryJob: CronJobDefinition = {
                     splitStateErrors,
                     entitlementReconciled,
                     entitlementReconcileErrors,
+                    grantReconciled,
+                    grantReconcileErrors,
                     durationMs
                 });
 
                 return {
                     skipped: false,
                     success: true,
-                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements (${errors} errors)`,
+                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements, reconciled ${grantReconciled} grants (${errors} errors)`,
                     processed: processed + warningsSent,
                     errors,
                     durationMs,
@@ -1358,6 +1543,8 @@ export const addonExpiryJob: CronJobDefinition = {
                         splitStateErrors,
                         entitlementReconciled,
                         entitlementReconcileErrors,
+                        grantReconciled,
+                        grantReconcileErrors,
                         dryRun
                     }
                 };

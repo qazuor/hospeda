@@ -733,24 +733,47 @@ export async function confirmAddonPurchase(
         // Clear entitlement cache so the new add-on is reflected immediately
         clearEntitlementCache(input.customerId);
 
-        // Apply entitlements to JSON metadata for backward compatibility.
-        // This uses the billing SDK (not direct DB), so it runs outside the
-        // transaction. Failure is non-fatal and logged as a warning.
-        const result = await entitlementService.applyAddonEntitlements({
+        // Apply entitlements via QZPay. This runs outside the transaction so a
+        // QZPay failure does not roll back the confirmed purchase row.
+        // On failure the row is flagged for async reconciliation via the
+        // addon-expiry cron's Phase 7 grant-reconciliation sweep (SPEC-194 T-012).
+        const grantResult = await entitlementService.applyAddonEntitlements({
             customerId: input.customerId,
             addonSlug: input.addonSlug,
             purchaseId
         });
 
-        if (!result.success) {
+        if (!grantResult.success) {
             apiLogger.warn(
                 {
                     customerId: input.customerId,
                     addonSlug: input.addonSlug,
-                    error: result.error
+                    purchaseId,
+                    error: grantResult.error
                 },
-                'Failed to apply add-on to JSON metadata (backward compat), but table insert succeeded'
+                'Entitlement grant failed after purchase insert; flagging purchase for async reconciliation'
             );
+
+            // Best-effort: mark the row so the cron reconciliation phase can retry
+            // the grant. A failure here is logged but must not roll back the purchase.
+            try {
+                const { getDb, eq } = await import('@repo/db');
+                const { billingAddonPurchases: bap } = await import('@repo/db/schemas/billing');
+                await getDb()
+                    .update(bap)
+                    .set({ needsEntitlementSync: true, updatedAt: new Date() })
+                    .where(eq(bap.id, purchaseId));
+            } catch (flagError) {
+                apiLogger.error(
+                    {
+                        purchaseId,
+                        customerId: input.customerId,
+                        addonSlug: input.addonSlug,
+                        error: flagError instanceof Error ? flagError.message : String(flagError)
+                    },
+                    'Failed to set needsEntitlementSync flag; manual reconciliation required'
+                );
+            }
         }
 
         // Record promo code usage now that payment is confirmed (GAP-043-049).

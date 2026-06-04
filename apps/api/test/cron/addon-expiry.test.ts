@@ -101,6 +101,7 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         metadata: 'metadata',
         entitlementRemovalPending: 'entitlement_removal_pending',
+        needsEntitlementSync: 'needs_entitlement_sync',
         deletedAt: 'deleted_at',
         canceledAt: 'canceled_at',
         updatedAt: 'updated_at'
@@ -172,6 +173,22 @@ vi.mock('@repo/billing', () => ({
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn(),
     entitlementMiddleware: vi.fn()
+}));
+
+// ---------------------------------------------------------------------------
+// Mock: AddonEntitlementService (used by Phase 6 and Phase 7)
+// Hoisted so tests can control per-call behaviour.
+// ---------------------------------------------------------------------------
+const { mockApplyAddonEntitlements, mockRemoveAddonEntitlements } = vi.hoisted(() => ({
+    mockApplyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined }),
+    mockRemoveAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
+}));
+
+vi.mock('../../src/services/addon-entitlement.service', () => ({
+    AddonEntitlementService: vi.fn().mockImplementation(() => ({
+        applyAddonEntitlements: mockApplyAddonEntitlements,
+        removeAddonEntitlements: mockRemoveAddonEntitlements
+    }))
 }));
 
 import { getAddonBySlug } from '@repo/billing';
@@ -262,6 +279,10 @@ describe('Add-on Expiry Cron Job', () => {
             success: false,
             error: { code: 'NOT_FOUND', message: 'Add-on not found' }
         });
+
+        // Default: AddonEntitlementService methods succeed (Phase 6 + Phase 7 happy path).
+        mockApplyAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
+        mockRemoveAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
     });
 
     describe('Job Definition', () => {
@@ -2026,6 +2047,247 @@ describe('Add-on Expiry Cron Job', () => {
             // Assert — message communicates that the run was skipped due to the lock
             expect(result.message).toContain('Skipped');
             expect(result.message).toContain('lock');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // unit: Phase 7 — grant reconciliation for active purchases with
+    //       needsEntitlementSync = true (SPEC-194 T-012)
+    // -------------------------------------------------------------------------
+
+    describe('Phase 7: Split-state grant reconciliation (SPEC-194 T-012)', () => {
+        /**
+         * Helper: creates a minimal default mock service that allows Phases 1-6
+         * to pass so Phase 7 can be tested in isolation.
+         */
+        function createDefaultMockService() {
+            return {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 0, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }
+
+        /**
+         * Builds a withTransaction stub whose DB select chain returns:
+         *  - empty rows for Phases 4, 5, and 6 (revocation/split-state/entitlement-removal)
+         *  - `phase7Rows` for the Phase 7 needs-entitlement-sync query
+         *  - empty rows for wasNotificationSent
+         *
+         * Phase 7 rows are distinguished by having `needsEntitlementSync` in the
+         * SELECT fields object passed to tx.select(). Phase 6 rows use
+         * `entitlementRemovalPending`. Phase 4 uses `innerJoin`.
+         */
+        function buildTxWithPhase7Rows(
+            phase7Rows: Array<{
+                id: string;
+                customerId: string;
+                addonSlug: string;
+                metadata: Record<string, unknown>;
+            }>
+        ) {
+            const phase7Limit = vi.fn().mockResolvedValue(phase7Rows);
+            const phase7Where = vi.fn().mockReturnValue({ limit: phase7Limit });
+
+            // Phase 4 (revocation retry): uses innerJoin
+            const phase4InnerJoin = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+
+            // Default where for notification checks + Phase 5 + Phase 6
+            const emptyWhere = vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([])
+            });
+
+            const selectMock = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const hasNeedsSync = fields && 'needsEntitlementSync' in fields;
+                if (hasNeedsSync) {
+                    return {
+                        from: vi
+                            .fn()
+                            .mockReturnValue({ where: phase7Where, innerJoin: phase4InnerJoin })
+                    };
+                }
+                return {
+                    from: vi.fn().mockReturnValue({ where: emptyWhere, innerJoin: phase4InnerJoin })
+                };
+            });
+
+            return {
+                select: selectMock,
+                update: mockDbUpdate,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+        }
+
+        it('re-applies entitlement grants for an active purchase with needsEntitlementSync=true', async () => {
+            // Arrange — split-state fixture: active row + missing grant
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-split-1',
+                customerId: 'cust-split-1',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Grant application succeeds on first attempt
+            mockApplyAddonEntitlements.mockResolvedValueOnce({ success: true, data: undefined });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — grant was re-applied
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(result.details?.grantReconcileErrors).toBe(0);
+
+            expect(mockApplyAddonEntitlements).toHaveBeenCalledWith({
+                customerId: 'cust-split-1',
+                addonSlug: 'extra-photos',
+                purchaseId: 'purch-split-1'
+            });
+
+            // needsEntitlementSync flag must be cleared on success
+            expect(mockDbUpdateSet).toHaveBeenCalledWith(
+                expect.objectContaining({ needsEntitlementSync: false })
+            );
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-split-1');
+        });
+
+        it('keeps needsEntitlementSync=true and increments retry counter when grant fails', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-split-2',
+                customerId: 'cust-split-2',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Grant application fails
+            mockApplyAddonEntitlements.mockResolvedValueOnce({
+                success: false,
+                error: { code: 'INTERNAL_ERROR', message: 'QZPay unavailable' }
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — error counted, needsEntitlementSync NOT cleared
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(0);
+            expect(result.details?.grantReconcileErrors).toBe(1);
+
+            // Must NOT have cleared the flag
+            const clearFlagCall = (
+                mockDbUpdateSet.mock.calls as Array<[Record<string, unknown>]>
+            ).find((call) => call[0].needsEntitlementSync === false);
+            expect(clearFlagCall).toBeUndefined();
+        });
+
+        it('processes each purchase in isolation so one failure does not block the rest', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const purchases = [
+                { id: 'purch-iso-1', customerId: 'cust-iso-1', addonSlug: 'addon-a', metadata: {} },
+                { id: 'purch-iso-2', customerId: 'cust-iso-2', addonSlug: 'addon-b', metadata: {} }
+            ];
+
+            const txStub = buildTxWithPhase7Rows(purchases);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // First fails, second succeeds
+            mockApplyAddonEntitlements
+                .mockResolvedValueOnce({
+                    success: false,
+                    error: { code: 'INTERNAL_ERROR', message: 'timeout' }
+                })
+                .mockResolvedValueOnce({ success: true, data: undefined });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — one reconciled, one error
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(result.details?.grantReconcileErrors).toBe(1);
+            expect(mockApplyAddonEntitlements).toHaveBeenCalledTimes(2);
+        });
+
+        it('skips real work in dry-run mode but reports count', async () => {
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-dry-1',
+                customerId: 'cust-dry-1',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — dry-run: no actual grant, no DB update, counter incremented
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
+        });
+
+        it('returns zero grantReconciled when no purchases need sync', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            // Phase 7 query returns empty (no split-state purchases)
+            const txStub = buildTxWithPhase7Rows([]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(0);
+            expect(result.details?.grantReconcileErrors).toBe(0);
+            expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
         });
     });
 });
