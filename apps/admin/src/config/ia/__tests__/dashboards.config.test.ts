@@ -88,7 +88,10 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'admin.moderation.pending',
 
     // T-021 SUPER (super.ts)
-    'super.billing.stats'
+    'super.billing.stats',
+
+    // SPEC-175 T-016: shared What's New recent source (dashboard-sources/whats-new.ts)
+    'whats-new.recent'
 ]);
 
 /**
@@ -165,24 +168,25 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
     // ── 2. Card counts ────────────────────────────────────────────────────────
 
     describe('Card counts', () => {
-        it('hostDashboard has exactly 10 widgets', () => {
-            expect(dashboards.hostDashboard.widgets).toHaveLength(10);
+        // SPEC-175 T-017: +1 'whats-new' widget on all four role dashboards.
+        it('hostDashboard has exactly 11 widgets (10 original + 1 whats-new)', () => {
+            expect(dashboards.hostDashboard.widgets).toHaveLength(11);
         });
 
-        it('editorDashboard has exactly 11 widgets', () => {
-            expect(dashboards.editorDashboard.widgets).toHaveLength(11);
+        it('editorDashboard has exactly 12 widgets (11 original + 1 whats-new)', () => {
+            expect(dashboards.editorDashboard.widgets).toHaveLength(12);
         });
 
-        it('adminBaseDashboard has exactly 7 widgets', () => {
-            expect(dashboards.adminBaseDashboard.widgets).toHaveLength(7);
+        it('adminBaseDashboard has exactly 8 widgets (7 original + 1 whats-new)', () => {
+            expect(dashboards.adminBaseDashboard.widgets).toHaveLength(8);
         });
 
         it('superAdminOnlySection has exactly 2 widgets', () => {
             expect(superAdminOnlySection.widgets).toHaveLength(2);
         });
 
-        it('superAdminDashboard has exactly 9 widgets (7 base + 2 super-only)', () => {
-            expect(dashboards.superAdminDashboard.widgets).toHaveLength(9);
+        it('superAdminDashboard has exactly 10 widgets (7 base + 2 super-only + 1 whats-new)', () => {
+            expect(dashboards.superAdminDashboard.widgets).toHaveLength(10);
         });
     });
 
@@ -257,16 +261,24 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             }
         });
 
-        it('superAdminDashboard widgets A–G come from adminBaseDashboard (ids match)', () => {
-            const baseIds = dashboards.adminBaseDashboard.widgets.map((w) => w.id);
+        it('superAdminDashboard widgets A–G come from adminBaseDashboard (excluding whats-new)', () => {
+            // adminBaseDashboard now includes the whats-new widget at the end.
+            // Slice to 7 to get the original base widgets (A–G).
+            const baseIds = dashboards.adminBaseDashboard.widgets.slice(0, 7).map((w) => w.id);
             const superIds = dashboards.superAdminDashboard.widgets.slice(0, 7).map((w) => w.id);
             expect(superIds).toEqual(baseIds);
         });
 
         it('superAdminDashboard widgets H–I come from superAdminOnlySection (ids match)', () => {
             const sectionIds = superAdminOnlySection.widgets.map((w) => w.id);
-            const superIds = dashboards.superAdminDashboard.widgets.slice(7).map((w) => w.id);
+            // Widgets 8–9 (0-indexed 7–8) are the super-only section; widget 10 is whats-new.
+            const superIds = dashboards.superAdminDashboard.widgets.slice(7, 9).map((w) => w.id);
             expect(superIds).toEqual(sectionIds);
+        });
+
+        it('superAdminDashboard last widget is whats-new', () => {
+            const last = dashboards.superAdminDashboard.widgets.at(-1);
+            expect(last?.id).toBe('whats-new');
         });
     });
 
@@ -293,8 +305,13 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
     // ── 6. Scope correctness ──────────────────────────────────────────────────
 
     describe('Scope correctness', () => {
-        it('all hostDashboard widgets use scope: own', () => {
+        it('all hostDashboard widgets (except shared cross-role ones) use scope: own', () => {
+            // The 'whats-new' widget uses scope: 'all' because the backend filters
+            // by the authenticated session, not by owner — this is the correct scope
+            // for a shared content widget (SPEC-175 T-017 decision).
+            const CROSS_ROLE_WIDGET_IDS = new Set(['whats-new']);
             for (const widget of dashboards.hostDashboard.widgets) {
+                if (CROSS_ROLE_WIDGET_IDS.has(widget.id)) continue;
                 expect(widget.scope, `Widget '${widget.id}' has wrong scope`).toBe('own');
             }
         });
@@ -418,6 +435,96 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
                 }
             }
             expect(violations, violations.join(', ')).toHaveLength(0);
+        });
+    });
+
+    // ── 9. What's New widget (SPEC-175 T-017) ─────────────────────────────────
+
+    describe("What's New widget (SPEC-175 T-017)", () => {
+        /**
+         * Returns the 'whats-new' widget from a dashboard, or undefined.
+         */
+        function findWnWidget(widgets: ReadonlyArray<{ id: string; [k: string]: unknown }>) {
+            return widgets.find((w) => w.id === 'whats-new');
+        }
+
+        it("'whats-new' widget is present in hostDashboard", () => {
+            expect(findWnWidget(dashboards.hostDashboard.widgets)).toBeDefined();
+        });
+
+        it("'whats-new' widget is present in editorDashboard", () => {
+            expect(findWnWidget(dashboards.editorDashboard.widgets)).toBeDefined();
+        });
+
+        it("'whats-new' widget is present in adminBaseDashboard", () => {
+            expect(findWnWidget(dashboards.adminBaseDashboard.widgets)).toBeDefined();
+        });
+
+        it("'whats-new' widget is present in superAdminDashboard", () => {
+            expect(findWnWidget(dashboards.superAdminDashboard.widgets)).toBeDefined();
+        });
+
+        it("'whats-new' widget has type 'list'", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            expect(widget?.type).toBe('list');
+        });
+
+        it("'whats-new' widget has source 'whats-new.recent'", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            const config = widget?.config as Record<string, unknown> | undefined;
+            expect(config?.source).toBe('whats-new.recent');
+        });
+
+        it("'whats-new' widget has maxItems: 4", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            const config = widget?.config as Record<string, unknown> | undefined;
+            expect(config?.maxItems).toBe(4);
+        });
+
+        it("'whats-new' widget has accent: 'sky'", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            const config = widget?.config as Record<string, unknown> | undefined;
+            expect(config?.accent).toBe('sky');
+        });
+
+        it("'whats-new' widget has gridSpan: { cols: 2 }", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            expect(widget?.gridSpan).toEqual({ cols: 2 });
+        });
+
+        it("'whats-new' widget labels include all three locales", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            const label = widget?.label as { es: string; en: string; pt: string } | undefined;
+            expect(label?.es).toBe('Últimas novedades');
+            expect(label?.en).toBe("What's New");
+            expect(label?.pt).toBe('Novidades');
+        });
+
+        it("'whats-new' widget footerLink carries 'whats-new-panel' action", () => {
+            const widget = findWnWidget(dashboards.hostDashboard.widgets);
+            const config = widget?.config as Record<string, unknown> | undefined;
+            const footerLink = config?.footerLink as { action: string } | undefined;
+            expect(footerLink?.action).toBe('whats-new-panel');
+        });
+
+        it("'whats-new' widget is the same object across all four dashboards (shared ref)", () => {
+            // The widget is defined once as `whatsNewWidget` and spread into all
+            // four dashboards — this test confirms the id is consistent.
+            const roleIds = [
+                'hostDashboard',
+                'editorDashboard',
+                'adminBaseDashboard',
+                'superAdminDashboard'
+            ] as const;
+            const wnWidgets = roleIds.map((key) =>
+                dashboards[key]?.widgets.find((w) => w.id === 'whats-new')
+            );
+            for (const w of wnWidgets) {
+                expect(w?.id).toBe('whats-new');
+                expect((w?.config as Record<string, unknown> | undefined)?.source).toBe(
+                    'whats-new.recent'
+                );
+            }
         });
     });
 });

@@ -13,6 +13,8 @@ export type { WhatsNewAutoTriggerProps } from './WhatsNewAutoTrigger';
 
 export { WhatsNewBadge } from './WhatsNewBadge';
 
+export { WhatsNewDashboardController } from './WhatsNewDashboardController';
+
 export { WhatsNewModal } from './WhatsNewModal';
 export type { WhatsNewModalProps } from './WhatsNewModal';
 
