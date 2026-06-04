@@ -50,6 +50,30 @@ export const eventsConfig: EntityConfig<Event> = {
                 order: 3
             },
             {
+                paramKey: 'startDate',
+                labelKey: 'admin-filters.startDate.label',
+                type: 'date-range',
+                paramKeyFrom: 'startDateAfter',
+                paramKeyTo: 'startDateBefore',
+                order: 4
+            },
+            {
+                paramKey: 'endDate',
+                labelKey: 'admin-filters.endDate.label',
+                type: 'date-range',
+                paramKeyFrom: 'endDateAfter',
+                paramKeyTo: 'endDateBefore',
+                order: 5
+            },
+            {
+                paramKey: 'createdAt',
+                labelKey: 'admin-filters.createdAt.label',
+                type: 'date-range',
+                paramKeyFrom: 'createdAfter',
+                paramKeyTo: 'createdBefore',
+                order: 6
+            },
+            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',

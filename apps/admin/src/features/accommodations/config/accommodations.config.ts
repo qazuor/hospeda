@@ -59,6 +59,25 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
                 order: 3
             },
             {
+                paramKey: 'price',
+                labelKey: 'admin-filters.price.label',
+                type: 'number-range',
+                paramKeyMin: 'minPrice',
+                paramKeyMax: 'maxPrice',
+                min: 0,
+                step: 100,
+                unitLabelKey: 'admin-filters.unit.ars',
+                order: 4
+            },
+            {
+                paramKey: 'createdAt',
+                labelKey: 'admin-filters.createdAt.label',
+                type: 'date-range',
+                paramKeyFrom: 'createdAfter',
+                paramKeyTo: 'createdBefore',
+                order: 5
+            },
+            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
