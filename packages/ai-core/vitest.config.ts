@@ -7,6 +7,11 @@ export default defineConfig({
     test: {
         globals: true,
         environment: 'node',
+        // Raised from default 5000ms: the barrel import (index.test.ts) triggers
+        // a cold-import of @repo/db (drizzle-orm + node-postgres) which can take
+        // up to ~8s on a cold fork. This mirrors the fix applied in apps/api
+        // (SPEC-188 / fix/api-testtimeout-coldimport).
+        testTimeout: 30000,
         pool: 'forks',
         poolOptions: {
             forks: {
