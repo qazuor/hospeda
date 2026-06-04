@@ -117,156 +117,156 @@
             "id": "T-004",
             "title": "Create ai_settings + ai_prompt_versions DB schemas",
             "description": "Create packages/db/src/schemas/ai/ai-settings.dbschema.ts (JSONB value blob keyed by key, mirroring platform_settings per Q7) and ai-prompt-versions.dbschema.ts (feature, version, content, is_active, history). Soft-delete + timestamps. Export from ai barrel. Per §5.4. Run pnpm db:generate. Tests: schema unit test asserting columns/defaults; migration file generated.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-010", "T-016"],
             "subtasks": [
                 {
                     "title": "ai_settings JSONB blob schema (platform_settings pattern)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_prompt_versions schema with is_active + history",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from ai barrel + generate migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "database", "schema", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T06:00:00.000Z",
+                "completed": "2026-06-04T06:32:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Create ai_provider_credentials + ai_credential_audit DB schemas",
             "description": "Create packages/db/src/schemas/ai/ai-provider-credentials.dbschema.ts (encrypted key ciphertext, iv, providerId, metadata) and ai-credential-audit.dbschema.ts (Q1: dedicated table — actor, action created/rotated/deleted, providerId, ip, timestamp; permanent, NOT soft-delete). Per §5.4/§5.5. Export from ai barrel, db:generate. Tests: schema unit tests asserting ciphertext column never stores plaintext shape and audit action enum.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "ai_provider_credentials encrypted-key schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_credential_audit dedicated append-only schema (Q1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from ai barrel + generate migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "database", "schema", "security", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T06:00:00.000Z",
+                "completed": "2026-06-04T06:32:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Create ai_usage + ai_request_log DB schemas",
             "description": "Create packages/db/src/schemas/ai/ai-usage.dbschema.ts (userId, feature, provider, model, tokensIn, tokensOut, costEstimate centavos integer, latencyMs, status, timestamp) and ai-request-log.dbschema.ts (PII-scrubbed request metadata). Soft-delete + timestamps; cost as integer centavos per money convention. Index by userId+feature+createdAt for reporting. Export from ai barrel, db:generate. Tests: schema unit tests asserting cost is integer and reporting index exists.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-016", "T-018"],
             "subtasks": [
                 {
                     "title": "ai_usage metering schema (centavos cost + indexes)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_request_log PII-scrubbed audit schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from ai barrel + generate migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "database", "schema", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T06:00:00.000Z",
+                "completed": "2026-06-04T06:32:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Create ai_conversations + ai_messages DB schemas",
             "description": "Create packages/db/src/schemas/ai/ai-conversations.dbschema.ts (generic multi-turn container, userId) and ai-messages.dbschema.ts (conversationId FK, role, content verbatim, tokens, provider). Soft-delete + timestamps. Per §5.4 (used by chat child spec). Export from ai barrel, db:generate. Tests: schema unit tests asserting FK relation and role enum.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "ai_conversations container schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ai_messages schema with conversation FK",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from ai barrel + generate migration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "database", "schema", "db"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T06:00:00.000Z",
+                "completed": "2026-06-04T06:32:00.000Z"
             }
         },
         {
@@ -1517,9 +1517,9 @@
     ],
     "summary": {
         "total": 42,
-        "pending": 38,
+        "pending": 34,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5
     }
