@@ -587,7 +587,7 @@
             "specId": "SPEC-192",
             "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "type": "refactor",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-192-billing-catalog-to-db",
             "parent": "SPEC-193",
@@ -595,7 +595,9 @@
             "base": "staging",
             "linearIssues": ["BETA-58"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "PR #1428 merged to staging 2026-06-04. 37/37 tasks. MP-dependent staging smoke deferred to the SPEC-193 batch (see SPEC-193 docs/pending-staging-smoke.md); main frozen for billing until that batch passes."
         },
         {
             "specId": "SPEC-193",
