@@ -11,6 +11,7 @@ import {
     AddonRenewalConfirmation,
     AdminPaymentFailure,
     AdminSystemEvent,
+    AiCostThresholdAlert,
     ContactSubmissionEmail,
     FeedbackReportEmail,
     PaymentFailure,
@@ -32,6 +33,7 @@ import type {
     AddonCancellationPayload,
     AddonEventPayload,
     AdminNotificationPayload,
+    AiCostThresholdAlertPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
     NotificationPayload,
@@ -528,6 +530,19 @@ export class NotificationService {
                 });
             }
 
+            case 'ai_cost_threshold_alert': {
+                const p = payload as AiCostThresholdAlertPayload;
+                return AiCostThresholdAlert({
+                    recipientName,
+                    scope: p.scope,
+                    feature: p.feature,
+                    thresholdPct: p.thresholdPct,
+                    spentMicroUsd: p.spentMicroUsd,
+                    ceilingMicroUsd: p.ceilingMicroUsd,
+                    period: p.period
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -587,6 +602,13 @@ export class NotificationService {
         if (payload.type === 'payment_retry_warning' && 'failureCount' in payload) {
             subjectData.failureCount = String(payload.failureCount);
             subjectData.maxRetries = String(payload.maxRetries);
+        }
+
+        // AI cost threshold alert specific fields
+        if (payload.type === 'ai_cost_threshold_alert' && 'thresholdPct' in payload) {
+            subjectData.thresholdPct = String(payload.thresholdPct);
+            subjectData.scope =
+                payload.scope === 'global' ? 'global' : `feature:${payload.feature ?? 'unknown'}`;
         }
 
         return getSubject(payload.type, subjectData);

@@ -45,6 +45,44 @@ import { getUtcMonthRange } from './reporting/month-range.js';
 // ---------------------------------------------------------------------------
 
 /**
+ * Input payload delivered to {@link ThresholdAlertHook} when a cost band is crossed.
+ *
+ * Decision (owner-approved 2026-06-04): ai-core declares only the hook TYPE and
+ * invokes it; the send/de-dup implementation lives in `apps/api`.
+ */
+export interface ThresholdAlertInput {
+    /** Whether this alert is for the global spend or a specific feature. */
+    readonly scope: 'global' | 'feature';
+    /**
+     * The AI feature that crossed the threshold.
+     * Only set when `scope === 'feature'`.
+     */
+    readonly feature?: AiFeature;
+    /** The cost band that was crossed (50%, 80%, or 100%). */
+    readonly thresholdPct: 50 | 80 | 100;
+    /** Accumulated spend for the current calendar month, in micro-USD. */
+    readonly spentMicroUsd: number;
+    /** Configured ceiling value, in micro-USD. */
+    readonly ceilingMicroUsd: number;
+    /**
+     * Calendar month identifier in `YYYY-MM` format (UTC).
+     *
+     * @example `'2026-06'`
+     */
+    readonly period: string;
+}
+
+/**
+ * Fire-and-forget hook invoked whenever a cost band (50 / 80 / 100 %) is crossed.
+ *
+ * **Contract:** this function MUST NOT throw.  Any async work (DB writes, email
+ * sends) should be enqueued internally and errors swallowed at the call site.
+ * The engine calls this hook without `await`, so a rejection would be an
+ * unhandled promise rejection — violating the fire-and-forget contract.
+ */
+export type ThresholdAlertHook = (input: ThresholdAlertInput) => void;
+
+/**
  * Input for {@link checkCostCeiling}.
  */
 export interface CheckCostCeilingInput {
@@ -72,6 +110,70 @@ export interface CheckCostCeilingInput {
      * When omitted the queries use `getDb()` (the module-level connection pool).
      */
     readonly tx?: AggregateAiUsageByMonthInput['tx'];
+
+    /**
+     * Optional fire-and-forget hook invoked whenever a cost band (50 / 80 / 100 %)
+     * is crossed.
+     *
+     * ai-core fires the hook at the point of detection; de-duplication (once per
+     * calendar month) is the responsibility of the `apps/api` factory
+     * (`createAiCostThresholdAlertHook`).
+     *
+     * The hook is called WITHOUT `await` — it must not throw.  If the hook needs
+     * async work (DB writes, email delivery) it must enqueue that work internally.
+     *
+     * Decision (owner-approved 2026-06-04): ai-core MUST NOT import
+     * `@repo/notifications` (transitive `@repo/db` pull).  Only this type and
+     * the invocation live here.
+     *
+     * @example
+     * ```ts
+     * await checkCostCeiling({
+     *   feature: 'chat',
+     *   now: requestTimestamp,
+     *   onThresholdAlert: createAiCostThresholdAlertHook()
+     * });
+     * ```
+     */
+    readonly onThresholdAlert?: ThresholdAlertHook;
+}
+
+// ---------------------------------------------------------------------------
+// checkCostCeiling
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Internal helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Derives the highest cost band crossed given the ratio of spend to ceiling.
+ *
+ * Returns `null` when the ratio is below 50%, meaning no alert band is crossed.
+ *
+ * @param spent - Accumulated spend in micro-USD.
+ * @param ceiling - Configured ceiling in micro-USD.
+ * @returns The highest crossed band (50 | 80 | 100), or `null` if below 50 %.
+ */
+function deriveCrossedBand(spent: number, ceiling: number): 50 | 80 | 100 | null {
+    const pct = spent / ceiling;
+    if (pct >= 1.0) return 100;
+    if (pct >= 0.8) return 80;
+    if (pct >= 0.5) return 50;
+    return null;
+}
+
+/**
+ * Fires the threshold-alert hook when a cost band is crossed.
+ *
+ * The hook is called WITHOUT `await` (fire-and-forget).  Any rejection is an
+ * unhandled promise — the hook contract prohibits throwing.
+ *
+ * @param hook - The alert hook to invoke.
+ * @param alertInput - Data describing the crossed threshold.
+ */
+function fireThresholdAlert(hook: ThresholdAlertHook, alertInput: ThresholdAlertInput): void {
+    hook(alertInput);
 }
 
 // ---------------------------------------------------------------------------
@@ -92,6 +194,12 @@ export interface CheckCostCeilingInput {
  *
  * The global check runs first; if it throws, the per-feature check is skipped.
  *
+ * When `onThresholdAlert` is provided, the hook is called (fire-and-forget)
+ * for the highest cost band crossed (50 / 80 / 100 %).  For the 100 % band the
+ * hook fires immediately BEFORE the hard-stop throw so the alert is always
+ * delivered even though the call is then blocked.  De-duplication (once per
+ * calendar month per threshold) is the responsibility of the hook implementation.
+ *
  * @param input - {@link CheckCostCeilingInput}
  * @returns `Promise<void>` — resolves silently when no ceiling is breached.
  * @throws {AiCeilingHitError} When a ceiling is at-or-over the configured value.
@@ -101,10 +209,17 @@ export interface CheckCostCeilingInput {
  * // In the engine checkCeiling hook (T-019 wiring):
  * await checkCostCeiling({ feature: 'chat', now: requestTimestamp });
  * // ^ throws AiCeilingHitError if the ceiling is hit; otherwise resolves.
+ *
+ * // With threshold alerts:
+ * await checkCostCeiling({
+ *   feature: 'chat',
+ *   now: requestTimestamp,
+ *   onThresholdAlert: createAiCostThresholdAlertHook()
+ * });
  * ```
  */
 export async function checkCostCeiling(input: CheckCostCeilingInput): Promise<void> {
-    const { feature, now, tx } = input;
+    const { feature, now, tx, onThresholdAlert } = input;
 
     // 1. Resolve config (uses in-memory TTL cache — fast path is a sync return).
     const config = await resolveConfig();
@@ -121,6 +236,8 @@ export async function checkCostCeiling(input: CheckCostCeilingInput): Promise<vo
     const year = now.getUTCFullYear();
     const month = now.getUTCMonth() + 1;
     const { monthStart, monthEnd } = getUtcMonthRange({ year, month });
+    // Build the period string once — shared by both scope checks below.
+    const period = `${String(year)}-${String(month).padStart(2, '0')}`;
 
     // 4. GLOBAL ceiling check.
     //    Comparison is >= (at-or-over blocks) per AC-8 boundary decision above.
@@ -135,6 +252,20 @@ export async function checkCostCeiling(input: CheckCostCeilingInput): Promise<vo
         // the current month, but we aggregate in case of edge-case duplicates.
         const globalSpent = globalRows.reduce((acc, row) => acc + row.costMicroUsd, 0);
         const globalCeiling = costCeilings.globalMonthlyMicroUsd;
+
+        // Fire threshold alert before the hard stop so the 100% alert is always sent.
+        if (onThresholdAlert !== undefined) {
+            const band = deriveCrossedBand(globalSpent, globalCeiling);
+            if (band !== null) {
+                fireThresholdAlert(onThresholdAlert, {
+                    scope: 'global',
+                    thresholdPct: band,
+                    spentMicroUsd: globalSpent,
+                    ceilingMicroUsd: globalCeiling,
+                    period
+                });
+            }
+        }
 
         if (globalSpent >= globalCeiling) {
             throw new AiCeilingHitError({
@@ -157,6 +288,21 @@ export async function checkCostCeiling(input: CheckCostCeilingInput): Promise<vo
         });
 
         const featureSpent = featureRows.reduce((acc, row) => acc + row.costMicroUsd, 0);
+
+        // Fire threshold alert before the hard stop so the 100% alert is always sent.
+        if (onThresholdAlert !== undefined) {
+            const band = deriveCrossedBand(featureSpent, featureCeiling);
+            if (band !== null) {
+                fireThresholdAlert(onThresholdAlert, {
+                    scope: 'feature',
+                    feature,
+                    thresholdPct: band,
+                    spentMicroUsd: featureSpent,
+                    ceilingMicroUsd: featureCeiling,
+                    period
+                });
+            }
+        }
 
         if (featureSpent >= featureCeiling) {
             throw new AiCeilingHitError({

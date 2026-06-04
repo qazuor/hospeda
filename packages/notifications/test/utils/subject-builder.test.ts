@@ -269,5 +269,55 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Notificación de Hospeda');
             });
         });
+
+        // AI cost threshold alert subjects (SPEC-173 T-025)
+        describe('AI cost threshold alert subjects', () => {
+            it('should return subject with thresholdPct and scope for global 50% alert', () => {
+                // Arrange
+                const data = { thresholdPct: '50', scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe('[Admin] Alerta de costo IA — 50% del presupuesto (global)');
+            });
+
+            it('should return subject with thresholdPct and scope for feature 80% alert', () => {
+                // Arrange
+                const data = { thresholdPct: '80', scope: 'feature:chat' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe(
+                    '[Admin] Alerta de costo IA — 80% del presupuesto (feature:chat)'
+                );
+            });
+
+            it('should return subject with thresholdPct=100 for 100% threshold', () => {
+                // Arrange
+                const data = { thresholdPct: '100', scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe('[Admin] Alerta de costo IA — 100% del presupuesto (global)');
+            });
+
+            it('should preserve placeholder text when thresholdPct is missing', () => {
+                // Arrange
+                const data = { scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert — placeholder preserved when variable missing
+                expect(result).toContain('{thresholdPct}');
+                expect(result).toContain('global');
+            });
+        });
     });
 });

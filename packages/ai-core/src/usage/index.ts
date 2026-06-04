@@ -36,4 +36,9 @@ export {
 } from './reporting/index.js';
 
 // Cost-ceiling check (SPEC-173 T-017)
-export { checkCostCeiling, type CheckCostCeilingInput } from './ceiling.js';
+export {
+    checkCostCeiling,
+    type CheckCostCeilingInput,
+    type ThresholdAlertHook,
+    type ThresholdAlertInput
+} from './ceiling.js';

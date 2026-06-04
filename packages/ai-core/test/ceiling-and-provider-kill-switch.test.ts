@@ -384,6 +384,288 @@ describe('checkCostCeiling', () => {
             expect(mockAggregateByMonth).toHaveBeenCalledTimes(1);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // onThresholdAlert hook tests (SPEC-173 T-025)
+    // -------------------------------------------------------------------------
+
+    describe('onThresholdAlert hook', () => {
+        // -----------------------------------------------------------------------
+        // 8. Hook called with 50% band for global scope
+        // -----------------------------------------------------------------------
+
+        describe('when global spend crosses the 50% band', () => {
+            it('should call the hook with thresholdPct=50 and scope="global"', async () => {
+                // Arrange — ceiling $200, spent $100 (exactly 50%)
+                const globalMonthlyMicroUsd = 200_000_000;
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { globalMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 10,
+                        tokensIn: 1000,
+                        tokensOut: 500,
+                        costMicroUsd: 100_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        scope: 'global',
+                        thresholdPct: 50,
+                        spentMicroUsd: 100_000_000,
+                        ceilingMicroUsd: 200_000_000,
+                        period: '2026-06'
+                    })
+                );
+                // No feature key on global scope
+                expect(hook.mock.calls[0]?.[0]?.feature).toBeUndefined();
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 9. Hook called with 80% band for global scope
+        // -----------------------------------------------------------------------
+
+        describe('when global spend crosses the 80% band', () => {
+            it('should call the hook with thresholdPct=80 and scope="global"', async () => {
+                // Arrange — ceiling $200, spent $160 (exactly 80%)
+                const globalMonthlyMicroUsd = 200_000_000;
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { globalMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 10,
+                        tokensIn: 1000,
+                        tokensOut: 500,
+                        costMicroUsd: 160_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook.mock.calls[0]?.[0]?.thresholdPct).toBe(80);
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 10. Hook called with 100% band for global scope AND error still throws
+        // -----------------------------------------------------------------------
+
+        describe('when global spend reaches 100%', () => {
+            it('should call the hook with thresholdPct=100 AND still throw AiCeilingHitError', async () => {
+                // Arrange — ceiling $200, spent $200 (exactly 100%)
+                const globalMonthlyMicroUsd = 200_000_000;
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { globalMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 10,
+                        tokensIn: 1000,
+                        tokensOut: 500,
+                        costMicroUsd: 200_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                let caughtErr: unknown;
+                try {
+                    await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+                } catch (err) {
+                    caughtErr = err;
+                }
+
+                // Assert — hook fired
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook.mock.calls[0]?.[0]?.thresholdPct).toBe(100);
+
+                // AND error still thrown
+                expect(caughtErr).toBeInstanceOf(AiCeilingHitError);
+                expect((caughtErr as AiCeilingHitError).scope).toBe('global');
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 11. Hook called for feature scope with correct feature value
+        // -----------------------------------------------------------------------
+
+        describe('when per-feature spend crosses 50%', () => {
+            it('should call the hook with scope="feature" and the feature name', async () => {
+                // Arrange — feature ceiling $100, spent $50 (50%)
+                const perFeatureMonthlyMicroUsd = { chat: 100_000_000 };
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { perFeatureMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 5,
+                        tokensIn: 500,
+                        tokensOut: 250,
+                        costMicroUsd: 50_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        scope: 'feature',
+                        feature: 'chat',
+                        thresholdPct: 50,
+                        spentMicroUsd: 50_000_000,
+                        ceilingMicroUsd: 100_000_000,
+                        period: '2026-06'
+                    })
+                );
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 12. Hook called with 100% band for feature scope AND error still throws
+        // -----------------------------------------------------------------------
+
+        describe('when per-feature spend reaches 100%', () => {
+            it('should call the hook with thresholdPct=100 AND still throw AiCeilingHitError', async () => {
+                // Arrange — feature ceiling $50, spent $50 (100%)
+                const perFeatureMonthlyMicroUsd = { chat: 50_000_000 };
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { perFeatureMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 5,
+                        tokensIn: 500,
+                        tokensOut: 250,
+                        costMicroUsd: 50_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                let caughtErr: unknown;
+                try {
+                    await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+                } catch (err) {
+                    caughtErr = err;
+                }
+
+                // Assert — hook fired before throw
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook.mock.calls[0]?.[0]?.thresholdPct).toBe(100);
+
+                // AND error still thrown
+                expect(caughtErr).toBeInstanceOf(AiCeilingHitError);
+                expect((caughtErr as AiCeilingHitError).scope).toBe('feature');
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 13. Hook NOT called when spend is below 50%
+        // -----------------------------------------------------------------------
+
+        describe('when global spend is below 50%', () => {
+            it('should NOT call the hook', async () => {
+                // Arrange — ceiling $200, spent $80 (40%)
+                const globalMonthlyMicroUsd = 200_000_000;
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { globalMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-06',
+                        calls: 5,
+                        tokensIn: 500,
+                        tokensOut: 250,
+                        costMicroUsd: 80_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert
+                expect(hook).not.toHaveBeenCalled();
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 14. Hook NOT called when no ceilings configured
+        // -----------------------------------------------------------------------
+
+        describe('when no ceilings are configured', () => {
+            it('should NOT call the hook', async () => {
+                // Arrange
+                mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert
+                expect(hook).not.toHaveBeenCalled();
+            });
+        });
+
+        // -----------------------------------------------------------------------
+        // 15. Correct period string format YYYY-MM
+        // -----------------------------------------------------------------------
+
+        describe('period string format', () => {
+            it('should format period as YYYY-MM with zero-padded month', async () => {
+                // Arrange — use a date with single-digit month (January = month 1)
+                const nowJanuary = new Date('2026-01-15T12:00:00.000Z');
+                const globalMonthlyMicroUsd = 100_000_000;
+                mockResolveConfig.mockResolvedValue(
+                    makeSettingsValue({}, { globalMonthlyMicroUsd })
+                );
+                mockAggregateByMonth.mockResolvedValue([
+                    {
+                        month: '2026-01',
+                        calls: 5,
+                        tokensIn: 500,
+                        tokensOut: 250,
+                        costMicroUsd: 50_000_000
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({
+                    feature: 'chat',
+                    now: nowJanuary,
+                    onThresholdAlert: hook
+                });
+
+                // Assert
+                expect(hook).toHaveBeenCalledOnce();
+                expect(hook.mock.calls[0]?.[0]?.period).toBe('2026-01');
+            });
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
