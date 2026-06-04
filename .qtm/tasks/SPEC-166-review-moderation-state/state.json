@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Scaffold @repo/content-moderation package",
             "description": "Create packages/content-moderation with package.json (name @repo/content-moderation, ESM, exports), tsconfig extending @repo/typescript-config, build wiring, and a vitest config. Add to pnpm workspace. No logic yet, just the buildable shell with a src/index.ts barrel. Tests: a smoke test that the package builds and the barrel imports.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -29,7 +29,7 @@
             "id": "T-002",
             "title": "Define frozen public contract types + Zod input schema",
             "description": "In @repo/content-moderation define the FINAL public API types: ModerationCategory union, ModerationResult ({score, categories, matchedTerms} all readonly), ModerateTextInput ({text, context?}), and moderateTextInputSchema (Zod). Export the async function signature moderateText(input): Promise<ModerationResult>. JSDoc everything. Tests: Zod schema accepts/rejects sample inputs; type-level export check.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
@@ -589,9 +589,9 @@
     ],
     "summary": {
         "total": 27,
-        "pending": 27,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.2
     }
