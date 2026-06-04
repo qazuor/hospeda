@@ -85,6 +85,11 @@
             "singular": "Review",
             "plural": "Reviews",
             "description": "Manage reviews and ratings"
+        },
+        "appLog": {
+            "singular": "Log entry",
+            "plural": "Application logs",
+            "description": "WARN and ERROR events emitted by system services"
         }
     },
     "columns": {
@@ -175,7 +180,15 @@
         "banned": "Banned",
         "banReason": "Ban Reason",
         "banExpires": "Ban Expires",
-        "avatar": "Avatar"
+        "avatar": "Avatar",
+        "appLog": {
+            "loggedAt": "Date/Time",
+            "level": "Level",
+            "category": "Category",
+            "label": "Label",
+            "request": "Request",
+            "message": "Message"
+        }
     },
     "actions": {
         "view": "View",

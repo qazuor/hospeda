@@ -85,6 +85,11 @@
             "singular": "Avaliação",
             "plural": "Avaliações",
             "description": "Gerencie avaliações e classificações"
+        },
+        "appLog": {
+            "singular": "Registro",
+            "plural": "Registros de aplicação",
+            "description": "Eventos WARN e ERROR emitidos pelos serviços do sistema"
         }
     },
     "columns": {
@@ -175,7 +180,15 @@
         "banned": "Banido",
         "banReason": "Motivo do Banimento",
         "banExpires": "Banimento Expira",
-        "avatar": "Avatar"
+        "avatar": "Avatar",
+        "appLog": {
+            "loggedAt": "Data/Hora",
+            "level": "Nível",
+            "category": "Categoria",
+            "label": "Rótulo",
+            "request": "Requisição",
+            "message": "Mensagem"
+        }
     },
     "actions": {
         "view": "Ver",

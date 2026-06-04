@@ -1,39 +1,23 @@
 /**
- * Application Logs Page
+ * Application Logs Page — migrated to createEntityListPage (SPEC-184).
  *
- * Admin panel for viewing persisted application log entries (SPEC-184 T-013).
+ * The bespoke AppLogsPanel / AppLogFilters have been replaced by the shared
+ * entity-list framework. Route search params (page, pageSize, sort, filters)
+ * are managed by the generated component. The page title is rendered by the
+ * framework via the `entityKey: 'appLog'` → `admin-entities.entities.appLog.*`
+ * translations and the `SidebarPageLayout` from `createEntityListPage`.
+ *
+ * Auth guard: requireAdminApiAccess — identical to the original route.
  */
-import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
-import { AppLogsPanel } from '@/features/app-logs';
+import { AppLogsPageComponent, AppLogsRoute } from '@/features/app-logs/config/app-logs.config';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
-import { LogsIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/logs')({
+    // Mirror the validateSearch from the factory route (same pattern as
+    // accommodations/index.tsx) so page/pageSize/sort/filter URL params are
+    // normalized with their defaults before reaching the query layer.
+    validateSearch: AppLogsRoute.options.validateSearch,
     beforeLoad: ({ context }) => requireAdminApiAccess(context),
-    component: AppLogsPage
+    component: AppLogsPageComponent
 });
-
-function AppLogsPage() {
-    return (
-        <SidebarPageLayout>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                        <LogsIcon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                        <h1 className="mb-2 font-bold text-2xl">Logs de aplicación</h1>
-                        <p className="text-muted-foreground">
-                            Registro de eventos WARN y ERROR emitidos por los servicios del sistema.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Logs panel */}
-                <AppLogsPanel />
-            </div>
-        </SidebarPageLayout>
-    );
-}
