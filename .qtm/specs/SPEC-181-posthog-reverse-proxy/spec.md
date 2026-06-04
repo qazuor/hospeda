@@ -3,7 +3,7 @@ spec-id: SPEC-181
 title: PostHog Reverse Proxy — first-party analytics ingestion (web)
 type: fix
 complexity: low-medium
-status: in-progress
+status: completed
 created: 2026-06-02T00:00:00Z
 linear: BETA-77
 references:
@@ -115,6 +115,7 @@ This spec has **no user-facing UX changes**. The PostHog snippet on each page re
 from the user's perspective; only the destination URL changes.
 
 For the **operator** (person deploying):
+
 - The Worker must be deployed and the Cloudflare route configured BEFORE setting `PUBLIC_POSTHOG_HOST`
   to the proxy URL in Coolify. Reversing this order causes a broken init window.
 - The recommended deployment order is: (1) deploy Worker, (2) verify via `curl`/DevTools that
@@ -151,9 +152,11 @@ PostHog Cloud US  (us.i.posthog.com / us-assets.i.posthog.com)
 
 The PostHog snippet in `PostHogScript.astro` uses `api_host: posthogHost`. The built-in asset URL
 derivation in the stub does:
+
 ```js
 p.src = s.api_host.replace(".i.posthog.com", "-assets.i.posthog.com") + "/static/array.js"
 ```
+
 When `api_host` is `https://hospeda.com.ar/ingest`, the `.replace()` produces
 `https://hospeda.com.ar/ingest` (no match — the replacement is a no-op), and the asset URL becomes
 `https://hospeda.com.ar/ingest/static/array.js`. The Worker must handle the `/static/*` path and
@@ -165,11 +168,13 @@ guide and is accounted for in the Worker design below.
 Location: `infra/cloudflare/posthog-proxy/` (proposed — no existing `infra/` dir in the repo).
 
 Files:
+
 - `worker.js` — the proxy script (~50 lines, based on official PostHog Cloudflare Worker template)
 - `wrangler.toml` — Wrangler config (name, compatibility_date, route placeholder)
 - `README.md` — deploy instructions + the CSP coupling gotcha
 
 Worker logic (official PostHog pattern):
+
 1. Strip the `/ingest` prefix from the incoming URL.
 2. Determine the upstream host:
    - Path starts with `/static/` → `us-assets.i.posthog.com`
@@ -183,11 +188,13 @@ Worker logic (official PostHog pattern):
 ### 7. CSP Changes (`apps/web/src/lib/middleware-helpers.ts`)
 
 Current state (lines 508, 529–530):
+
 - `script-src`: includes `https://us.i.posthog.com https://us-assets.i.posthog.com`
 - `img-src`: includes `https://us.i.posthog.com`
 - `connect-src`: includes `https://us.i.posthog.com https://us-assets.i.posthog.com`
 
 After this spec:
+
 - Remove all four `us.i.posthog.com` / `us-assets.i.posthog.com` occurrences.
 - The proxy path is `hospeda.com.ar/ingest/*`, which is same-origin for the web app — `'self'`
   in `connect-src` and `img-src` already covers it. No new CSP host entry is needed for the
@@ -204,6 +211,7 @@ be updated to document the proxy approach.
 `PUBLIC_POSTHOG_HOST` is already registered in `packages/config/src/env-registry.client.ts`
 (lines 184–200). The `description`, `descriptionEs`, `defaultValue`, `exampleValue`, and
 `howToObtain`/`howToObtainEs` fields must be updated to:
+
 - State that the recommended value is `https://hospeda.com.ar/ingest` (the Worker route).
 - Mention that changing this var requires a matching CSP update in `middleware-helpers.ts`.
 - Keep `https://us.i.posthog.com` as the fallback for environments without the Worker.
