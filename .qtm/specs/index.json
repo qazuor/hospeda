@@ -638,6 +638,19 @@
                 "redeploy-free moderation word list (env var to DB)"
             ],
             "tags": ["moderation", "content", "shared-package", "backend", "admin", "phase-2"]
+        },
+        {
+            "specId": "SPEC-196",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+            "type": "refactor",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-196-shared-content-config-package",
+            "priority": "P3",
+            "created": "2026-06-05T00:00:00.000Z",
+            "archived": false,
+            "tags": ["architecture", "config-as-code", "content", "monorepo", "dx"],
+            "note": "DRAFT exploratory (owner 2026-06-05): centralize curated config-as-code (whats-new, admin tours, billing configs) into one shared package. Options analysis + migration path deliberately deferred to activation (spec.md section 5 decision workshop). No worktree until activated."
         }
     ]
 }

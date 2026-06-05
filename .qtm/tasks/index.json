@@ -177,6 +177,14 @@
             "archived": true,
             "archivedAt": "2026-06-05",
             "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
+        },
+        {
+            "specId": "SPEC-196",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-196-shared-content-config-package",
+            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
         }
     ],
     "standalone": {
