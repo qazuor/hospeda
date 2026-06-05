@@ -1075,35 +1075,35 @@
             "id": "T-030",
             "title": "Add AI entitlement + limit keys in @repo/billing",
             "description": "Per Q2, add to packages/billing/src/types/{entitlement,plan}.types.ts + config/{entitlements,limits}.config.ts (lowercase snake_case): gates ai_text_improve/ai_chat/ai_search/ai_support and limits max_ai_<feature>_per_month. Wire default per-plan values (HOST tiers, tourist free/pro/vip per §5.7 matrix). Tests: unit tests asserting keys exist and default plan→limit mapping resolves.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-031"],
             "subtasks": [
                 {
                     "title": "Add 4 gate keys + 4 limit keys (snake_case, Q2)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Default per-plan entitlement/limit values",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write entitlement-key unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "billing", "entitlement"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:05:00.000Z",
+                "completed": "2026-06-05T08:35:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 30,
+        "completed": 31,
         "blocked": 0,
         "averageComplexity": 2.5
     }
