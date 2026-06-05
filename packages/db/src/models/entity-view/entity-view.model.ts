@@ -27,8 +27,7 @@
  * @see SPEC-159 tech-analysis §4–§5
  */
 
-import type { EntityViewStats } from '@repo/schemas';
-import type { TrackableEntityType } from '@repo/schemas';
+import type { EntityViewStats, TrackableEntityType } from '@repo/schemas';
 import { lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { entityViews } from '../../schemas/entity-view/entity_view.dbschema.ts';
@@ -75,6 +74,64 @@ export interface GetStatsForEntitiesInput {
 }
 
 /**
+ * Input to retrieve the top-N most-viewed entities for a given entity type
+ * over a rolling window. (SPEC-197 §4.1 method A)
+ */
+export interface GetTopViewedEntitiesInput {
+    /** Entity type to filter by. */
+    readonly entityType: TrackableEntityType;
+    /** Rolling window in days (typically 7 or 30). */
+    readonly windowDays: number;
+    /** Maximum number of results to return (1–50 in practice). */
+    readonly limit: number;
+}
+
+/**
+ * Input to retrieve the daily view-count series grouped by entity type
+ * over a rolling window. (SPEC-197 §4.1 method B)
+ */
+export interface GetDailySeriesInput {
+    /**
+     * Rolling window in days. V1 always passes 30.
+     * The model accepts any positive integer; gap-filling is a service concern.
+     */
+    readonly windowDays: number;
+}
+
+/**
+ * Input to retrieve platform-wide view totals grouped by entity type
+ * without an IN-list filter. (SPEC-197 §4.1 method C)
+ */
+export interface GetAdminSummaryTotalsInput {
+    /** Rolling window in days (typically 7 or 30). */
+    readonly windowDays: number;
+}
+
+/**
+ * One row of the daily series result.
+ */
+export interface DailySeriesRow {
+    /** Calendar date in 'YYYY-MM-DD' format. */
+    readonly date: string;
+    /** Entity type for this row. */
+    readonly entityType: TrackableEntityType;
+    /** Deduplicated total visits for this day (30-min bucket dedup). */
+    readonly total: number;
+}
+
+/**
+ * One row of the admin summary totals result.
+ */
+export interface AdminSummaryTotalsRow {
+    /** Entity type for this row. */
+    readonly entityType: TrackableEntityType;
+    /** Distinct visitor fingerprints within the window. */
+    readonly unique: number;
+    /** Deduplicated total visits within the window. */
+    readonly total: number;
+}
+
+/**
  * Input to purge telemetry rows older than a given threshold.
  */
 export interface PurgeOlderThanInput {
@@ -85,7 +142,7 @@ export interface PurgeOlderThanInput {
     readonly days: number;
 }
 
-// ─── Raw DB row shape returned by the stats aggregation query ────────────────
+// ─── Raw DB row shapes returned by aggregation queries ───────────────────────
 
 /**
  * Raw shape of one row returned by the `getStatsForEntities` aggregation query.
@@ -97,6 +154,26 @@ export interface PurgeOlderThanInput {
  */
 interface RawStatsRow extends Record<string, unknown> {
     entityId: string;
+    unique: string | number;
+    total: string | number;
+}
+
+/**
+ * Raw shape of one row returned by the `getDailySeries` aggregation query.
+ * `date` is produced by `to_char` and is always a string. `total` may come
+ * back as a string from the pg driver.
+ */
+interface RawDailySeriesRow extends Record<string, unknown> {
+    date: string;
+    entityType: string;
+    total: string | number;
+}
+
+/**
+ * Raw shape of one row returned by the `getAdminSummaryTotals` aggregation query.
+ */
+interface RawSummaryTotalsRow extends Record<string, unknown> {
+    entityType: string;
     unique: string | number;
     total: string | number;
 }
@@ -286,6 +363,248 @@ export class EntityViewModel {
                 logError('entityViews', 'getStatsForEntities', logContext, err);
             } catch {}
             throw new DbError('entityViews', 'getStatsForEntities', logContext, err.message);
+        }
+    }
+
+    /**
+     * Returns the top-N most-viewed entities for a given entity type over a
+     * rolling window, ordered by deduplicated total visits descending.
+     *
+     * Entities with zero views in the window are NOT returned (GROUP BY omits
+     * them naturally). The caller receives at most `limit` rows.
+     *
+     * All query parameters are bound as Drizzle-parameterized values — no
+     * string interpolation of `entityType`, `windowDays`, or `limit`.
+     * `entityType` is cast to `entity_type_enum` following the precedent in
+     * `getStatsForEntities`.
+     *
+     * The alias `"total"` needs no quoting, but `"unique"` (a PG reserved word)
+     * MUST be double-quoted in the SQL text (SPEC-159 / SPEC-197 rule).
+     *
+     * @param input - entityType, windowDays, and limit.
+     * @param tx - Optional transaction client.
+     * @returns Array of `EntityViewStats` ordered by `total DESC`, length ≤ limit.
+     * @throws {DbError} If the database operation fails.
+     */
+    async getTopViewedEntities(
+        input: GetTopViewedEntitiesInput,
+        tx?: DrizzleClient
+    ): Promise<EntityViewStats[]> {
+        const { entityType, windowDays, limit } = input;
+        const db = this.getClient(tx);
+        const logContext = { entityType, windowDays, limit };
+
+        try {
+            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+            /*
+             * SELECT
+             *   entity_id                                              AS "entityId",
+             *   COUNT(DISTINCT visitor_hash)::int                      AS "unique",
+             *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
+             *                                                          AS "total"
+             * FROM entity_views
+             * WHERE entity_type = $entityType::entity_type_enum
+             *   AND viewed_at > $windowStart
+             * GROUP BY entity_id
+             * ORDER BY "total" DESC
+             * LIMIT $limit
+             */
+            const rows = await db.execute<RawStatsRow>(sql`
+                SELECT
+                    entity_id                                                    AS "entityId",
+                    COUNT(DISTINCT visitor_hash)::int                            AS "unique",
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int                                                      AS "total"
+                FROM entity_views
+                WHERE entity_type = ${entityType}::entity_type_enum
+                  AND viewed_at > ${windowStart}
+                GROUP BY entity_id
+                ORDER BY "total" DESC
+                LIMIT ${limit}
+            `);
+
+            const rawRows: RawStatsRow[] = Array.isArray(rows)
+                ? (rows as RawStatsRow[])
+                : ((rows as { rows?: RawStatsRow[] }).rows ?? []);
+
+            const stats: EntityViewStats[] = rawRows.map((row) => ({
+                entityId: row.entityId,
+                unique: Number(row.unique),
+                total: Number(row.total)
+            }));
+
+            try {
+                logQuery('entityViews', 'getTopViewedEntities', logContext, {
+                    rowCount: stats.length
+                });
+            } catch {}
+
+            return stats;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'getTopViewedEntities', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'getTopViewedEntities', logContext, err.message);
+        }
+    }
+
+    /**
+     * Returns date-bucketed view counts grouped by day and entity type over a
+     * rolling window.
+     *
+     * Only days that have at least one view are returned — gap-filling (ensuring
+     * every calendar day in the window appears, even as 0) is a **service-layer
+     * concern** (`getAdminDailySeries`). The model stays lean and returns only
+     * rows present in the table.
+     *
+     * Date strings in the result are always in `'YYYY-MM-DD'` format, produced
+     * by `to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD')`.
+     *
+     * @param input - windowDays (always 30 for V1 callers).
+     * @param tx - Optional transaction client.
+     * @returns Array of `DailySeriesRow` ordered by date ASC, entityType ASC.
+     * @throws {DbError} If the database operation fails.
+     */
+    async getDailySeries(
+        input: GetDailySeriesInput,
+        tx?: DrizzleClient
+    ): Promise<DailySeriesRow[]> {
+        const { windowDays } = input;
+        const db = this.getClient(tx);
+        const logContext = { windowDays };
+
+        try {
+            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+            /*
+             * SELECT
+             *   to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+             *   entity_type                                          AS "entityType",
+             *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
+             *                                                        AS "total"
+             * FROM entity_views
+             * WHERE viewed_at > $windowStart
+             * GROUP BY DATE_TRUNC('day', viewed_at), entity_type
+             * ORDER BY "date" ASC, entity_type ASC
+             */
+            const rows = await db.execute<RawDailySeriesRow>(sql`
+                SELECT
+                    to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+                    entity_type                                          AS "entityType",
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int                                              AS "total"
+                FROM entity_views
+                WHERE viewed_at > ${windowStart}
+                GROUP BY DATE_TRUNC('day', viewed_at), entity_type
+                ORDER BY "date" ASC, entity_type ASC
+            `);
+
+            const rawRows: RawDailySeriesRow[] = Array.isArray(rows)
+                ? (rows as RawDailySeriesRow[])
+                : ((rows as { rows?: RawDailySeriesRow[] }).rows ?? []);
+
+            const series: DailySeriesRow[] = rawRows.map((row) => ({
+                date: row.date,
+                entityType: row.entityType as TrackableEntityType,
+                total: Number(row.total)
+            }));
+
+            try {
+                logQuery('entityViews', 'getDailySeries', logContext, {
+                    rowCount: series.length
+                });
+            } catch {}
+
+            return series;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'getDailySeries', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'getDailySeries', logContext, err.message);
+        }
+    }
+
+    /**
+     * Returns platform-wide view totals grouped by entity type over a rolling
+     * window, without any `entity_id` IN-list filter.
+     *
+     * Designed for the admin summary card (`GET /admin/views/summary`). Calling
+     * `getStatsForEntities` with "all entity IDs" is not practical; this method
+     * groups by `entity_type` directly so no ID enumeration is needed
+     * (SPEC-197 §4.1 method C / §4.2 note).
+     *
+     * Entity types with zero views in the window are NOT returned — the service
+     * layer zero-fills missing entity types.
+     *
+     * @param input - windowDays (7 or 30).
+     * @param tx - Optional transaction client.
+     * @returns Array of `AdminSummaryTotalsRow`, one row per entity type present.
+     * @throws {DbError} If the database operation fails.
+     */
+    async getAdminSummaryTotals(
+        input: GetAdminSummaryTotalsInput,
+        tx?: DrizzleClient
+    ): Promise<AdminSummaryTotalsRow[]> {
+        const { windowDays } = input;
+        const db = this.getClient(tx);
+        const logContext = { windowDays };
+
+        try {
+            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+            /*
+             * SELECT
+             *   entity_type                                            AS "entityType",
+             *   COUNT(DISTINCT visitor_hash)::int                      AS "unique",
+             *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
+             *                                                          AS "total"
+             * FROM entity_views
+             * WHERE viewed_at > $windowStart
+             * GROUP BY entity_type
+             */
+            const rows = await db.execute<RawSummaryTotalsRow>(sql`
+                SELECT
+                    entity_type                                                  AS "entityType",
+                    COUNT(DISTINCT visitor_hash)::int                            AS "unique",
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int                                                      AS "total"
+                FROM entity_views
+                WHERE viewed_at > ${windowStart}
+                GROUP BY entity_type
+            `);
+
+            const rawRows: RawSummaryTotalsRow[] = Array.isArray(rows)
+                ? (rows as RawSummaryTotalsRow[])
+                : ((rows as { rows?: RawSummaryTotalsRow[] }).rows ?? []);
+
+            const totals: AdminSummaryTotalsRow[] = rawRows.map((row) => ({
+                entityType: row.entityType as TrackableEntityType,
+                unique: Number(row.unique),
+                total: Number(row.total)
+            }));
+
+            try {
+                logQuery('entityViews', 'getAdminSummaryTotals', logContext, {
+                    rowCount: totals.length
+                });
+            } catch {}
+
+            return totals;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'getAdminSummaryTotals', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'getAdminSummaryTotals', logContext, err.message);
         }
     }
 
