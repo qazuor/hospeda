@@ -1073,6 +1073,7 @@
         "zodError.result.removed.invalidType",
         "zodError.result.restoredAt.invalidType",
         "zodError.result.success.invalidType",
+        "zodError.review.moderate.decision.invalid",
         "zodError.search.caseSensitive.invalidType",
         "zodError.search.exact.invalidType",
         "zodError.search.fields.item.invalidType",
@@ -1324,7 +1325,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1323,
+    "total": 1324,
     "byNamespace": {
         "accommodation": 49,
         "accommodationAmenity": 4,
@@ -1368,6 +1369,7 @@
         "required": 1,
         "response": 1,
         "result": 6,
+        "review": 1,
         "search": 14,
         "sort": 8,
         "sponsorship": 20,

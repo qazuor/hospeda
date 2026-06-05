@@ -1,7 +1,7 @@
 ---
 specId: SPEC-166
 title: Review Moderation State
-status: in-progress
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-05-27
