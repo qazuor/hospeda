@@ -8,7 +8,140 @@
     width: 100%;
 }
 
-/* ── Detail variant — mosaic ────────────────────────────────────────────── */
+/* ── Detail variant — count-aware grid ──────────────────────────────────── */
+
+/*
+ * .grid is the count-aware container for the detail variant.
+ * The data-count attribute drives per-count grid-template rules (T-003).
+ * Per-count layout CSS (.gridCount1 … .gridCount5plus and [data-count] rules)
+ * are task T-003 — this file only declares the base container + placeholder
+ * class names so CSS Modules typing resolves correctly.
+ */
+
+.grid {
+    display: grid;
+    border-radius: var(--radius-card, 24px);
+    overflow: hidden;
+    gap: 4px;
+    max-height: 480px;
+    /* Default: single column (count=1). Per-count rules added in T-003. */
+    grid-template-columns: 1fr;
+}
+
+/* count=2: two equal half-width columns */
+.grid[data-count="2"] {
+    grid-template-columns: 1fr 1fr;
+}
+
+/* count=3,4,5+: 2fr featured + 1fr thumb column */
+.grid[data-count="3"],
+.grid[data-count="4"],
+.grid[data-count="5plus"] {
+    grid-template-columns: 2fr 1fr;
+}
+
+/* Placeholder per-count classes reserved for T-003 (named-class approach) */
+.gridCount1 {
+    /* T-003: single full-width column */
+}
+.gridCount2 {
+    /* T-003: two equal half-width columns */
+}
+.gridCount3 {
+    /* T-003: 2fr featured + 1fr column of 2 quarters */
+}
+.gridCount4 {
+    /* T-003: 2fr featured + 1fr column of 3 quarters */
+}
+.gridCount5plus {
+    /* T-003: 2fr featured + 1fr column of 3 quarters; last = overlay */
+}
+
+/* ── Cell wrappers ───────────────────────────────────────────────────────── */
+
+/** Featured / cover cell — spans the full row height in multi-thumb layouts. */
+.cellFeatured {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border: none;
+    padding: 0;
+    background: none;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    /* Span the full row height so thumbs stack beside it. */
+    grid-row: 1 / -1;
+    aspect-ratio: 16 / 10;
+}
+
+/** Half-width cell (count=2 side-by-side pair). */
+.cellHalf {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+}
+
+/** Quarter-cell thumbnail (used for counts 3, 4, 5+). */
+.cellQuarter {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+}
+
+/** Image inside any cell. */
+.cellImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+/* ── +N más overlay ──────────────────────────────────────────────────────── */
+
+/** Container for the last visible cell when count >= 5. */
+.moreOverlay {
+    position: relative;
+    overflow: hidden;
+}
+
+.moreOverlay .cellImg {
+    filter: brightness(0.45);
+}
+
+/** Keyboard-accessible button carrying the overlay text and aria-label. */
+.moreOverlayBtn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: oklch(1 0 0);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 4px oklch(0 0 0 / 0.6);
+    transition: background var(--duration-normal, 0.4s) ease;
+}
+
+.moreOverlayBtn:hover,
+.moreOverlayBtn:focus-visible {
+    background: oklch(0 0 0 / 0.15);
+}
+
+.moreOverlayBtn:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: -3px;
+}
+
+/* ── Legacy mosaic classes (kept for backward compat — superseded by .grid) */
 
 .mosaic {
     display: grid;

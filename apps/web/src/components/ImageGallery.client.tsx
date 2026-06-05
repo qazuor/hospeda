@@ -191,33 +191,68 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
 
 // ─── Detail variant ──────────────────────────────────────────────────────────
 
+/**
+ * Derives the data-count attribute value from the total image count.
+ * Maps to CSS selectors that control the grid template per §5.
+ */
+function getDetailCountKey(count: number): string {
+    if (count <= 0) return '0';
+    if (count >= 5) return '5plus';
+    return String(count);
+}
+
+/**
+ * Returns the number of thumbnail slots to render for a given image count
+ * in the detail variant, per the §5 layout matrix.
+ *
+ * | Count | Visible thumbs |
+ * |-------|---------------|
+ * | 1     | 0 (featured only, full-width) |
+ * | 2     | 1 (half-width pair) |
+ * | 3     | 2 (featured 2fr + 2 quarters) |
+ * | 4     | 3 (featured 2fr + 3 quarters) |
+ * | 5+    | 3 (featured 2fr + 3 quarters; last = overlay) |
+ */
+function getVisibleThumbCount(imageCount: number): number {
+    if (imageCount <= 1) return 0;
+    if (imageCount === 2) return 1;
+    if (imageCount === 3) return 2;
+    return 3; // 4 and 5+
+}
+
 interface DetailVariantProps {
     readonly images: ReadonlyArray<GalleryImage>;
     readonly onOpen: (index: number) => void;
-    readonly t: (key: string, fallback?: string) => string;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 }
 
 function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
-    const [featured, ...thumbs] = images;
-    const visibleThumbs = thumbs.slice(0, 3);
+    const [featured, ...rest] = images;
+    const count = images.length;
+    const visibleThumbCount = getVisibleThumbCount(count);
+    const visibleThumbs = rest.slice(0, visibleThumbCount);
+    // N in "+N más" = total images minus visible inline images (featured + visible thumbs).
+    const moreCount = count >= 5 ? count - 4 : 0;
+    const countKey = getDetailCountKey(count);
 
     if (!featured) return null;
 
     return (
         <div
-            className={`${styles.mosaic} ${visibleThumbs.length > 0 ? styles.mosaicWithThumbs : ''}`}
+            className={styles.grid}
+            data-count={countKey}
         >
-            {/* Featured image */}
+            {/* Featured image — LCP candidate, eager load, full priority */}
             <button
                 type="button"
-                className={styles.featuredBtn}
+                className={styles.cellFeatured}
                 aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
                 onClick={() => onOpen(0)}
             >
                 <img
                     src={featured.url}
                     alt={featured.alt}
-                    className={styles.featuredImg}
+                    className={styles.cellImg}
                     loading="eager"
                     // SPEC-157 REQ-3: this is the LCP candidate on the
                     // accommodation detail page. The gallery is an island, so
@@ -238,28 +273,73 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                 </span>
             </button>
 
-            {/* Thumbnails */}
+            {/* Thumbnail column — rendered only when count >= 2 */}
             {visibleThumbs.length > 0 && (
                 <div className={styles.thumbGrid}>
-                    {visibleThumbs.map((img, i) => (
-                        <button
-                            key={img.url}
-                            type="button"
-                            className={styles.thumbBtn}
-                            aria-label={t(
-                                'ui.accessibility.openFullscreen',
-                                'Ver en pantalla completa'
-                            )}
-                            onClick={() => onOpen(i + 1)}
-                        >
-                            <img
-                                src={img.url}
-                                alt={img.alt}
-                                className={styles.thumbImg}
-                                loading="lazy"
-                            />
-                        </button>
-                    ))}
+                    {visibleThumbs.map((img, i) => {
+                        // The last thumb at count >= 5 becomes the "+N más" overlay cell.
+                        const isOverlayCell = moreCount > 0 && i === visibleThumbs.length - 1;
+                        // Lightbox opens at the first hidden image (index = 1 + i + 1).
+                        // For the overlay, that is the image right after the last visible thumb
+                        // (index 4, which is images[4] — the 5th image, 0-based).
+                        const lightboxIndex = i + 1;
+
+                        const cellClass = count === 2 ? styles.cellHalf : styles.cellQuarter;
+
+                        if (isOverlayCell) {
+                            return (
+                                <div
+                                    key={img.url}
+                                    className={`${cellClass} ${styles.moreOverlay}`}
+                                >
+                                    <img
+                                        src={img.url}
+                                        alt={img.alt}
+                                        className={styles.cellImg}
+                                        loading="lazy"
+                                        aria-hidden="true"
+                                    />
+                                    {/* Keyboard-accessible overlay button — opens lightbox at the first hidden image */}
+                                    <button
+                                        type="button"
+                                        className={styles.moreOverlayBtn}
+                                        aria-label={t(
+                                            'accommodations.detail.gallery.moreOverlay',
+                                            `+${moreCount} más`,
+                                            { count: moreCount }
+                                        )}
+                                        onClick={() => onOpen(lightboxIndex + 1)}
+                                    >
+                                        {t(
+                                            'accommodations.detail.gallery.moreOverlay',
+                                            `+${moreCount} más`,
+                                            { count: moreCount }
+                                        )}
+                                    </button>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <button
+                                key={img.url}
+                                type="button"
+                                className={`${cellClass} ${styles.thumbBtn}`}
+                                aria-label={t(
+                                    'ui.accessibility.openFullscreen',
+                                    'Ver en pantalla completa'
+                                )}
+                                onClick={() => onOpen(lightboxIndex)}
+                            >
+                                <img
+                                    src={img.url}
+                                    alt={img.alt}
+                                    className={styles.cellImg}
+                                    loading="lazy"
+                                />
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
