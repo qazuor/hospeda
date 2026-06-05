@@ -312,6 +312,49 @@ describe('resolveSystemPrompt', () => {
             expect(mockGetActivePrompt).toHaveBeenCalledTimes(2);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // F4: storage throws → default returned, cache NOT poisoned (AC-12 spirit)
+    // -------------------------------------------------------------------------
+
+    describe('storage error resilience (F4 — AC-12 spirit)', () => {
+        it('should return the in-code default with source "default" when storage throws', async () => {
+            // Arrange — storage rejects (e.g. DB connection error)
+            mockGetActivePrompt.mockRejectedValue(new Error('DB connection lost'));
+
+            // Act
+            const result = await resolveSystemPrompt({ feature: 'text_improve' });
+
+            // Assert
+            expect(result.source).toBe('default');
+            expect(result.content).toBe(DEFAULT_PROMPTS.text_improve);
+            expect(result.content.length).toBeGreaterThan(0);
+        });
+
+        it('should NOT cache the failure — a subsequent successful read returns admin content', async () => {
+            // Arrange — first call: storage rejects
+            mockGetActivePrompt.mockRejectedValueOnce(new Error('DB unavailable'));
+
+            // Act — first call: error → default
+            const first = await resolveSystemPrompt({ feature: 'chat' });
+            expect(first.source).toBe('default');
+
+            // Arrange — DB recovers, admin prompt now available
+            mockGetActivePrompt.mockResolvedValueOnce({
+                content: 'Recovered admin prompt.',
+                row: { id: 'row-recovered', feature: 'chat', isActive: true }
+            });
+
+            // Act — second call: storage succeeds → admin content
+            const second = await resolveSystemPrompt({ feature: 'chat' });
+
+            // Assert — no poisoned cache; admin content served after recovery
+            expect(second.source).toBe('admin');
+            expect(second.content).toBe('Recovered admin prompt.');
+            // Storage was called twice (no caching of the error result)
+            expect(mockGetActivePrompt).toHaveBeenCalledTimes(2);
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------

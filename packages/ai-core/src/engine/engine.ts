@@ -528,7 +528,7 @@ async function routeWithFallback<T>(
                 maxAttempts: MAX_ATTEMPTS_PER_PROVIDER
             });
 
-            // Success — emit success event (only on non-primary if we fell back)
+            // Success — emit success event for every successful provider call.
             recordEvent?.({
                 type: 'success',
                 feature,

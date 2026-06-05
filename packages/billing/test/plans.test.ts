@@ -151,10 +151,10 @@ describe('Plan Configuration', () => {
         });
 
         it('tourist-vip AI limits should all be -1 (unlimited)', () => {
+            // ai_support ungranted (SPEC-200 pending) — only chat + search are unlimited
             const aiLimitKeys = [
                 LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH,
-                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+                LimitKey.MAX_AI_SEARCH_PER_MONTH
             ] as const;
             for (const key of aiLimitKeys) {
                 const found = TOURIST_VIP_PLAN.limits.find((l) => l.key === key);
@@ -171,12 +171,12 @@ describe('Plan Configuration', () => {
             expect(found?.value).toBe(100);
         });
 
-        it('complex-premium all 4 AI limits should be -1 (unlimited)', () => {
+        it('complex-premium AI limits (text/chat/search) should be -1 (unlimited)', () => {
+            // ai_support ungranted (SPEC-200 pending) — 3 keys not 4
             const aiLimitKeys = [
                 LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
                 LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH,
-                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+                LimitKey.MAX_AI_SEARCH_PER_MONTH
             ] as const;
             for (const key of aiLimitKeys) {
                 const found = COMPLEX_PREMIUM_PLAN.limits.find((l) => l.key === key);
@@ -186,12 +186,12 @@ describe('Plan Configuration', () => {
         });
 
         it('every plan with an AI gate should have the matching AI limit and vice versa', () => {
-            // Map each AI entitlement key to its corresponding limit key
+            // ai_support is ungranted on all plans (SPEC-200 pending) — only
+            // the three active keys are checked here.
             const aiGateToLimit: ReadonlyArray<readonly [EntitlementKey, LimitKey]> = [
                 [EntitlementKey.AI_TEXT_IMPROVE, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH],
                 [EntitlementKey.AI_CHAT, LimitKey.MAX_AI_CHAT_PER_MONTH],
-                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH],
-                [EntitlementKey.AI_SUPPORT, LimitKey.MAX_AI_SUPPORT_PER_MONTH]
+                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH]
             ] as const;
 
             for (const plan of ALL_PLANS) {
@@ -201,6 +201,16 @@ describe('Plan Configuration', () => {
                     // Gate and limit must be present together or absent together
                     expect(hasGate).toBe(hasLimit);
                 }
+            }
+        });
+
+        it('NO plan should have AI_SUPPORT gate or MAX_AI_SUPPORT_PER_MONTH limit (SPEC-200 pending)', () => {
+            // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
+            for (const plan of ALL_PLANS) {
+                expect(plan.entitlements).not.toContain(EntitlementKey.AI_SUPPORT);
+                expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_SUPPORT_PER_MONTH)).toBe(
+                    false
+                );
             }
         });
     });

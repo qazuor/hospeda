@@ -697,6 +697,59 @@ describe('checkCostCeiling', () => {
             });
         });
     });
+
+    // -------------------------------------------------------------------------
+    // F5: ceiling = 0 → call blocked, no NaN band / alert
+    // -------------------------------------------------------------------------
+
+    describe('when the global ceiling is 0 (F5 zero-guard)', () => {
+        it('should throw AiCeilingHitError immediately even with zero spend', async () => {
+            // Arrange — ceiling $0, any positive or zero spend triggers the hard-stop.
+            // deriveCrossedBand(0, 0) must not produce NaN; it returns null (no band).
+            const globalMonthlyMicroUsd = 0;
+            mockResolveConfig.mockResolvedValue(makeSettingsValue({}, { globalMonthlyMicroUsd }));
+            // Spent = 0 (no rows); 0 >= 0 is true → hard-stop.
+            mockAggregateByMonth.mockResolvedValue([]);
+
+            const hook = vi.fn();
+
+            // Act
+            let caughtErr: unknown;
+            try {
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+            } catch (err) {
+                caughtErr = err;
+            }
+
+            // Assert — ceiling hit, no NaN band, no spurious alert
+            expect(caughtErr).toBeInstanceOf(AiCeilingHitError);
+            const ceilErr = caughtErr as AiCeilingHitError;
+            expect(ceilErr.scope).toBe('global');
+            expect(ceilErr.ceilingMicroUsd).toBe(0);
+            // The hook must NOT have been called — ceiling=0 yields null band
+            // so no percentage alert is fired; the hard-stop is the only outcome.
+            expect(hook).not.toHaveBeenCalled();
+        });
+
+        it('should also block per-feature ceiling=0', async () => {
+            // Arrange — no global ceiling; chat feature ceiling = 0
+            const perFeatureMonthlyMicroUsd = { chat: 0 };
+            mockResolveConfig.mockResolvedValue(
+                makeSettingsValue({}, { perFeatureMonthlyMicroUsd })
+            );
+            mockAggregateByMonth.mockResolvedValue([]);
+
+            const hook = vi.fn();
+
+            // Act + Assert
+            await expect(
+                checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook })
+            ).rejects.toBeInstanceOf(AiCeilingHitError);
+
+            // No alert fired for a zero ceiling
+            expect(hook).not.toHaveBeenCalled();
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------

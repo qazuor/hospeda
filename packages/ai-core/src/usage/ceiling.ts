@@ -156,6 +156,13 @@ export interface CheckCostCeilingInput {
  * @returns The highest crossed band (50 | 80 | 100), or `null` if below 50 %.
  */
 function deriveCrossedBand(spent: number, ceiling: number): 50 | 80 | 100 | null {
+    // Zero (or negative) ceiling: a ceiling of 0 hard-stops every call via the
+    // `spent >= ceiling` check in checkCostCeiling (0 >= 0 is always true, even
+    // with zero spend).  Return null here so no spurious alert band is derived —
+    // the hard-stop is the right outcome, not a percentage alert.
+    if (ceiling <= 0) {
+        return null;
+    }
     const pct = spent / ceiling;
     if (pct >= 1.0) return 100;
     if (pct >= 0.8) return 80;

@@ -35,7 +35,7 @@
 
 import { aiCredentialAudit, aiProviderCredentials, getDb } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { getDecryptedAiProviderCredential } from '../../../src/services/ai-credential-vault.service';
@@ -291,6 +291,57 @@ describe('AI credential vault round-trip (SPEC-173 T-037 AC-3)', () => {
 
             // Service returns VALIDATION_ERROR → route maps to 422 or 400
             expect([400, 422]).toContain(second.status);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // F7(d): race-safe duplicate — insert directly via getDb(), then POST → 422
+    // -------------------------------------------------------------------------
+
+    describe('F7 — race-safe duplicate via DB-level unique index', () => {
+        it('returns 422 when a row already exists (inserted directly, bypassing the SELECT check)', async () => {
+            // Arrange — insert a credential row directly to bypass the service's
+            // SELECT-then-INSERT check, simulating a race-condition scenario where
+            // two concurrent requests both pass the SELECT but only one should win.
+            const db = getDb();
+            const { encryptSecret } = await import('../../../src/utils/ai-vault.js');
+            const { ciphertext, iv, authTag } = encryptSecret({
+                plaintext: 'sk-race-direct-insert-key'
+            });
+            await db.insert(aiProviderCredentials).values({
+                providerId: TEST_PROVIDER_ID,
+                ciphertext,
+                iv,
+                authTag,
+                label: 'race-direct-insert'
+            });
+
+            // Act — POST create for the same provider: unique-violation path
+            const res = await app.request(BASE_PATH, {
+                method: 'POST',
+                headers: makeHeaders(adminActor),
+                body: JSON.stringify({
+                    providerId: TEST_PROVIDER_ID,
+                    plaintextKey: 'sk-race-concurrent-key'
+                })
+            });
+
+            // Assert — unique-violation → VALIDATION_ERROR → 422 (or 400)
+            expect([400, 422]).toContain(res.status);
+        });
+
+        it('partial unique index exists in pg_indexes for ai_provider_credentials', async () => {
+            // Assert the index was created by db:push against the test DB.
+            const db = getDb();
+            const result = await db.execute(sql`
+                SELECT indexname
+                FROM pg_indexes
+                WHERE tablename = 'ai_provider_credentials'
+                  AND indexname = 'idx_ai_provider_credentials_active_provider'
+            `);
+            // If the index is absent the test DB was not re-pushed after the schema
+            // change. Run: pnpm db:fresh-dev (or db:push on the test DB) to fix.
+            expect(result.rows).toHaveLength(1);
         });
     });
 

@@ -322,6 +322,25 @@ export async function createAiProviderCredential(
 
         return { data: { id: createdId, providerId } };
     } catch (error) {
+        // Race-safe duplicate guard: if two concurrent requests slip past the
+        // SELECT check above simultaneously, the DB enforces uniqueness via the
+        // partial unique index on (provider_id WHERE deleted_at IS NULL).
+        // Postgres signals this as error code 23505 (unique_violation).
+        // Map it to the same VALIDATION_ERROR the SELECT check returns so the
+        // caller receives a consistent response regardless of the race outcome.
+        const pgCode =
+            error !== null &&
+            typeof error === 'object' &&
+            'code' in error &&
+            typeof (error as { code: unknown }).code === 'string'
+                ? (error as { code: string }).code
+                : undefined;
+        if (pgCode === '23505') {
+            return errorOutput<CredentialMutationResult>(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `An active credential already exists for provider '${providerId}'. Use rotate instead.`
+            );
+        }
         apiLogger.error(
             {
                 providerId,

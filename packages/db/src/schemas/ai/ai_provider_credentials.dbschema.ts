@@ -1,5 +1,14 @@
-import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import {
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -83,7 +92,22 @@ export const aiProviderCredentials = pgTable(
          */
         aiProviderCredentials_providerId_idx: index('aiProviderCredentials_providerId_idx').on(
             table.providerId
+        ),
+        /**
+         * Partial unique index: enforces ONE active credential per provider.
+         * Soft-deleted rows (deleted_at IS NOT NULL) are excluded from the
+         * constraint so multiple generations of rotated/deleted keys can coexist
+         * in the audit trail without violating uniqueness.
+         *
+         * Race-safe: concurrent inserts for the same provider and null deleted_at
+         * will see a unique-violation (Postgres error 23505) which the service
+         * maps to VALIDATION_ERROR.
+         */
+        aiProviderCredentials_active_provider_uniq: uniqueIndex(
+            'idx_ai_provider_credentials_active_provider'
         )
+            .on(table.providerId)
+            .where(sql`deleted_at IS NULL`)
     })
 );
 

@@ -168,6 +168,9 @@ export function invalidatePromptCache(feature?: AiFeature): void {
  *    never imports `@repo/db` directly — AC-4).
  * 3. **AC-12 fallback** — if `content` is `null` or blank (`trim() === ''`),
  *    falls back to `DEFAULT_PROMPTS[feature]` with `source: 'default'`.
+ * 4. **Storage error resilience (AC-12 spirit)** — if the storage read THROWS
+ *    (e.g. DB unavailable), the default is returned WITHOUT caching so a
+ *    recovered DB is picked up on the next call (no poisoned cache).
  *
  * The resolved result is written to the cache before returning, so subsequent
  * calls within the TTL window skip the storage read.
@@ -197,15 +200,27 @@ export async function resolveSystemPrompt(
     }
 
     // Cache miss — read from storage.
-    const { content: adminContent } = await getActivePrompt({ feature });
+    //
+    // AC-12 resilience (F4): if the storage layer throws (e.g. DB unavailable),
+    // fall back to the in-code default WITHOUT caching the failure result.
+    // This keeps a recovered DB usable on the next call — no poisoned cache.
+    let adminContent: string | null;
+    try {
+        const storageResult = await getActivePrompt({ feature });
+        adminContent = storageResult.content;
+    } catch {
+        // Storage error — return the in-code default without caching so
+        // a subsequent call after DB recovery will retry the storage read.
+        return { content: DEFAULT_PROMPTS[feature], source: 'default' };
+    }
 
     // AC-12: null or blank admin prompt → use in-code default.
     const isAdminPromptBlank = adminContent === null || adminContent.trim() === '';
     const resolved: ResolveSystemPromptResult = isAdminPromptBlank
-        ? { content: DEFAULT_PROMPTS[feature], source: 'default' }
-        : { content: adminContent, source: 'admin' };
+        ? { content: DEFAULT_PROMPTS[feature], source: 'default' as const }
+        : { content: adminContent as string, source: 'admin' as const };
 
-    // Populate the cache.
+    // Populate the cache only on a clean successful read.
     const entry: PromptCacheEntry = {
         content: resolved.content,
         source: resolved.source,
