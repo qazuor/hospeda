@@ -297,22 +297,22 @@
             "id": "T-014",
             "title": "End-to-end verification + full quality pass",
             "description": "Cross-cutting verification: seed entity_views fixtures across 7d/30d boundaries and assert widget-shaped responses end-to-end (capture -> read routes return consistent unique/total). Manual smoke on local dev servers (worktree ports): visit accommodation/post/event detail pages, verify rows inserted with hashed visitor (no raw IP), verify HOST/EDITOR read endpoints. Run full pnpm typecheck + lint + test, 90% coverage on new code, no .only/.skip.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-010", "T-011", "T-013"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "E2E aggregation correctness fixtures", "completed": false },
-                { "title": "Manual smoke (3 entity types, scoping)", "completed": false },
-                { "title": "Full green: typecheck + lint + test + coverage", "completed": false }
+                { "title": "E2E aggregation correctness fixtures", "completed": true },
+                { "title": "Manual smoke (3 entity types, scoping)", "completed": true },
+                { "title": "Full green: typecheck + lint + test + coverage", "completed": true }
             ],
             "tags": ["testing", "e2e", "smoke"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:50:00.000Z",
+                "completed": "2026-06-05T08:40:00.000Z"
             }
         },
         {
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.4
     }

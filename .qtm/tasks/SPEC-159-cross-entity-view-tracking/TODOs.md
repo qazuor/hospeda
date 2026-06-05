@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 13/15 tasks (87%)
+## Progress: 14/15 tasks (93%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -85,7 +85,7 @@
 
 ### Testing Phase
 
-- [ ] **T-014** (complexity: 2) - End-to-end verification + full quality pass
+- [x] **T-014** (complexity: 2) - End-to-end verification + full quality pass
   - E2E fixtures across window boundaries, manual smoke, full green + coverage
   - Blocked by: T-009, T-010, T-011, T-013
   - Blocks: T-015
