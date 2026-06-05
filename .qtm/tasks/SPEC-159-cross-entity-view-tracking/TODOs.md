@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 4/15 tasks (27%)
+## Progress: 5/15 tasks (33%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -31,7 +31,7 @@
   - Blocked by: T-002
   - Blocks: none
 
-- [ ] **T-004** (complexity: 3) - Create EntityViewModel with insert + windowed aggregation
+- [x] **T-004** (complexity: 3) - Create EntityViewModel with insert + windowed aggregation
   - insertView, getStatsForEntities (7d/30d unique+total, 30-min dedup window), purgeOlderThan
   - Blocked by: T-002
   - Blocks: T-006, T-007, T-011

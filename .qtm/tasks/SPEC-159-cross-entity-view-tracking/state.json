@@ -73,26 +73,26 @@
             "id": "T-004",
             "title": "Create EntityViewModel with insert + windowed aggregation",
             "description": "Create packages/db/src/models/analytics/entity-view.model.ts: insertView (single indexed insert, no synchronous dedup read), getStatsForEntities({ entityType, entityIds, windowDays }) returning per-entity { unique: COUNT(DISTINCT visitor_hash), total: windowed-deduped visit count } using 30-min dedup bucketing (insert-always + dedup-at-aggregation, query-time for V1), purgeOlderThan({ days }). NOTE: lean table — model may not fit BaseModel's soft-delete assumptions; follow whatever pattern fits (BaseModel subset or standalone model), document choice. Tests (write first): packages/db tests with seeded rows across 7d/30d boundaries asserting unique vs total, dedup window collapsing repeated views, purge deletes only old rows.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-006", "T-007", "T-011"],
             "subtasks": [
-                { "title": "insertView", "completed": false },
+                { "title": "insertView", "completed": true },
                 {
                     "title": "getStatsForEntities (7d/30d, unique+total, dedup window)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "purgeOlderThan", "completed": false },
-                { "title": "Unit/integration tests (test-first)", "completed": false }
+                { "title": "purgeOlderThan", "completed": true },
+                { "title": "Unit/integration tests (test-first)", "completed": true }
             ],
             "tags": ["database", "model", "aggregation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T02:05:00.000Z",
+                "completed": "2026-06-05T02:40:00.000Z"
             }
         },
         {
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.4
     }
