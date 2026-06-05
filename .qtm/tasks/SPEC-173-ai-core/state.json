@@ -1149,35 +1149,35 @@
             "id": "T-032",
             "title": "Apply sliding-window rate-limit to AI endpoints",
             "description": "Reuse createSlidingWindowPerUserRateLimit() (apps/api/src/middlewares/rate-limit.ts, Q6 — do NOT build a new counter) on AI endpoints with configurable windows, plus per-IP as defense-in-depth (§5.10.1). This is independent of the monthly quota (T-031) and USD ceiling. Tests: route unit tests asserting burst over the window is rejected and the limiter is the reused factory.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-031"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Apply reused sliding-window limiter (Q6)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Configurable window + per-IP defense",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write rate-limit unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "safety", "rate-limit"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:50:00.000Z",
+                "completed": "2026-06-05T10:20:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 32,
+        "completed": 33,
         "blocked": 0,
         "averageComplexity": 2.5
     }
