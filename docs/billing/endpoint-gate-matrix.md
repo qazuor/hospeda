@@ -57,21 +57,21 @@
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/destinations/{id}/reviews` | `destination/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
 | **USER BOOKMARKS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/user-bookmarks` | `user-bookmark/protected/create.ts` | gate+limit | `save_favorites`, `max_favorites` | wired | gateFavorites() + assertFavoritesLimitOrThrow() already applied |
-| `DELETE /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/delete.ts` | none | - | n/a | Deletion ungated per BETA-42 — users at cap must still be able to remove |
-| `GET /api/v1/protected/user-bookmarks` | `user-bookmark/protected/list.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `GET /api/v1/protected/user-bookmarks/check` | `user-bookmark/protected/check.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `POST /api/v1/protected/user-bookmarks/check-bulk` | `user-bookmark/protected/check-bulk.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `GET /api/v1/protected/user-bookmarks/count` | `user-bookmark/protected/count.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `PATCH /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/update.ts` | none | - | n/a | Metadata update (e.g. notes) on own bookmark; no entitlement needed |
+| `POST /api/v1/protected/user-bookmarks` | `user-bookmark/protected/create.ts` | gate+limit | `save_favorites`, `max_favorites` | wired | gateFavorites() + assertFavoritesLimitOrThrow() wired (toggle handler; limit checked only on toggle-ON per BETA-42) — T-145-05 audit: confirmed |
+| `DELETE /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/delete.ts` | none | - | n/a | Removal ungated per BETA-42: users at cap must still be able to free up slots — T-145-05 |
+| `GET /api/v1/protected/user-bookmarks` | `user-bookmark/protected/list.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
+| `GET /api/v1/protected/user-bookmarks/check` | `user-bookmark/protected/check.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
+| `POST /api/v1/protected/user-bookmarks/check-bulk` | `user-bookmark/protected/check-bulk.ts` | none | - | n/a | Read own data (bulk hydration); auth-only sufficient — T-145-05 |
+| `GET /api/v1/protected/user-bookmarks/count` | `user-bookmark/protected/count.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
+| `PATCH /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/update.ts` | none | - | n/a | Metadata-only update (name/notes) on own bookmark; cap-freeing op; ungated per BETA-42 — T-145-05 |
 | **BOOKMARK COLLECTIONS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/create.ts` | none | - | n/a | Collection management is ungated per ADR-026 |
-| `DELETE /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/delete.ts` | none | - | n/a | Deletion ungated |
-| `GET /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/list.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `GET /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/getById.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | none | - | n/a | Metadata update on own collection; no entitlement needed |
-| `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 |
-| `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Deletion ungated |
+| `POST /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/create.ts` | none | - | n/a | Collection management ungated per ADR-026; quota enforced inside service (QUOTA_EXCEEDED, not LimitKey) — T-145-05 |
+| `DELETE /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/delete.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
+| `GET /api/v1/protected/user-bookmark-collections` | `user-bookmark-collection/protected/list.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
+| `GET /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/getById.ts` | none | - | n/a | Read own data; auth-only sufficient — T-145-05 |
+| `PATCH /api/v1/protected/user-bookmark-collections/{id}` | `user-bookmark-collection/protected/update.ts` | none | - | n/a | Metadata update on own collection; cap-freeing op; ungated — T-145-05 |
+| `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 — T-145-05 |
+| `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) before enforcePromotionLimit() (SPEC-145 T-005) |
 | `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
