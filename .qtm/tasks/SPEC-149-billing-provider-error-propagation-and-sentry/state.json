@@ -105,31 +105,31 @@
             "id": "T-004",
             "title": "Wire mapping + Sentry into start-paid (monthly + annual)",
             "description": "Spec Parts B+C. In start-paid.ts / subscription-checkout.service.ts catches: detect provider errors via the T-002 helper → throw the mapped ServiceError + captureBillingError with operation/customer/plan/mpStatus tags. Red-first: unit tests asserting MP 429 → 503 (+Retry-After), 422→422, timeout→504, 500→502, and the Sentry call. The mapped path must preserve the existing non-provider error handling (mapServiceErrorToHttp at start-paid.ts:155-179) untouched. [T-003 note: 3 pre-existing failures reported in monthly/annual checkout e2e (entitlement catalog gap, webhook activation flakiness) claimed UNRELATED — verify before trusting; mp-error-handling 24/24 green post-flip.]",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Monthly + annual wiring",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Red-first mapping tests + Sentry assertions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["start-paid", "wiring"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T19:15:00Z",
+                "completed": "2026-06-05T20:23:00Z"
             }
         },
         {
@@ -452,9 +452,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }
