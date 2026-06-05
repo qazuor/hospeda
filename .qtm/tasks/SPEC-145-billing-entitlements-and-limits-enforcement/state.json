@@ -821,27 +821,27 @@
             "id": "T-028",
             "title": "Register deferred smoke sections + docs",
             "description": "Add SPEC-145's deferred staging-smoke sections (fresh cheap-plan user: 403 on expensive-only, 2xx on included — per spec DoD) to the SPEC-193 pending-staging-smoke.md list. Tracking commits separate from code.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
             "subtasks": [
                 {
                     "title": "Smoke list entry",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "tracking"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T09:23:18Z",
-                "completed": null
+                "completed": "2026-06-05T09:26:59Z"
             }
         },
         {
@@ -855,7 +855,7 @@
             "subtasks": [
                 {
                     "title": "PR + CI + merge",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Closeout",
@@ -879,8 +879,8 @@
     "summary": {
         "total": 29,
         "pending": 0,
-        "inProgress": 2,
-        "completed": 27,
+        "inProgress": 1,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.3
     }
