@@ -244,6 +244,7 @@
         },
         "gallery": {
             "viewAll": "Ver todas as fotos",
+            "moreOverlay": "+{{count}} mais",
             "viewFullscreen": "Ver foto {n} em tela cheia",
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"

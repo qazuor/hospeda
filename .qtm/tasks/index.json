@@ -71,13 +71,14 @@
         {
             "specId": "SPEC-186",
             "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "18/18",
             "path": "SPEC-186-web-dynamic-image-grid",
             "branch": "spec/SPEC-186-web-dynamic-image-grid",
             "linearIssues": ["BETA-53"],
-            "note": "tasks pending atomization",
-            "archived": false
+            "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
+            "archived": true,
+            "archivedAt": "2026-06-05"
         },
         {
             "specId": "SPEC-187",

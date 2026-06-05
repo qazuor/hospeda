@@ -290,6 +290,8 @@ if (userId) {
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
+// SPEC-186: pass the FULL gallery — the island owns all capping (count-aware grid
+// shows a bounded preview and a "+N más" overlay for the rest).
 const galleryImages = (() => {
     const featured = {
         url: accommodation.featuredImage || '/images/placeholder-accommodation.svg',
@@ -297,12 +299,12 @@ const galleryImages = (() => {
     };
     const extras =
         accommodation.media.galleryItems.length > 0
-            ? accommodation.media.galleryItems.slice(0, 3).map((item) => ({
+            ? accommodation.media.galleryItems.map((item) => ({
                   url: item.url,
                   alt: item.caption ?? accommodation.name,
                   caption: item.caption
               }))
-            : accommodation.media.images.slice(0, 3).map((url) => ({
+            : accommodation.media.images.map((url) => ({
                   url,
                   alt: accommodation.name
               }));
@@ -444,6 +446,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             images={galleryImages}
             variant="detail"
             locale={locale}
+            viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             client:visible
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />

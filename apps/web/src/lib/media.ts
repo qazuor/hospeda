@@ -102,8 +102,8 @@ interface MediaObject {
  * description metadata attached to it on the API side.
  *
  * Produced by {@link extractGalleryItems}. Components that render captions
- * (HeroGallery, full photo page) should consume this shape; components that
- * only need the URL list can keep using {@link extractGalleryUrls}.
+ * (e.g. the full photo page, lightbox integrations) should consume this shape;
+ * components that only need the URL list can keep using {@link extractGalleryUrls}.
  */
 export interface GalleryItem {
     readonly url: string;
@@ -272,8 +272,8 @@ export function extractGalleryUrls(
  *
  * Unlike {@link extractGalleryUrls}, this function preserves the `caption` and
  * `description` metadata attached to each gallery entry on the API side.
- * Consumers that need to surface captions (for example HeroGallery's
- * GLightbox integration) should use this helper.
+ * Consumers that need to surface captions (for example lightbox integrations
+ * on the full photo page) should use this helper.
  *
  * Non-Cloudinary URLs pass through `getMediaUrl()` unchanged.
  *

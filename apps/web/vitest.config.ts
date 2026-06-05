@@ -29,7 +29,8 @@ export default defineConfig({
             '@repo/logger': resolve(rootDir, 'packages/logger/src'),
             '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
             '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
-            '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
+            '@repo/service-core': resolve(rootDir, 'packages/service-core/src'),
+            '@repo/media': resolve(rootDir, 'packages/media/src')
         }
     },
     optimizeDeps: {
