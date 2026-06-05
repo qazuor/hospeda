@@ -36,7 +36,55 @@ export const MEDIA_PRESETS = Object.freeze({
     /** Original dimensions with automatic quality, format, and DPR. */
     full: 'q_auto,f_auto,dpr_auto',
     /** 1200x630 Open Graph image (Facebook/Twitter card standard) with automatic DPR. */
-    og: 'w_1200,h_630,c_fill,q_auto,f_auto,dpr_auto'
+    og: 'w_1200,h_630,c_fill,q_auto,f_auto,dpr_auto',
+    /**
+     * Gallery featured / cover cell — 16:10 aspect ratio at 1000px wide.
+     *
+     * Used for the primary (largest) cell in both the `detail` variant
+     * (featured image) and the `cover-plus-grid` variant (cover cell).
+     * `c_fill` + `g_auto` ensures the CDN crops to the cell's fixed ratio
+     * so no client-side crop is needed and CLS is eliminated.
+     *
+     * `srcset` width candidates: 640 / 1000 / 1400 (override via `width` option).
+     *
+     * @see SPEC-186 §7
+     */
+    galleryFeatured: 'w_1000,ar_16:10,c_fill,g_auto,q_auto,f_auto,dpr_auto',
+    /**
+     * Gallery half-width cell — 4:3 aspect ratio at 640px wide.
+     *
+     * Used for cells that span half the row in the `detail` (2-image layout)
+     * and `cover-plus-grid` (2–3 extras) variants, and for every cell in the
+     * `/fotos` all-photos sub-page.
+     * `c_fill` + `g_auto` delivers a server-side crop matching the 4:3 ratio.
+     *
+     * `srcset` width candidates: 400 / 640 / 900 (override via `width` option).
+     *
+     * @see SPEC-186 §7
+     */
+    galleryHalf: 'w_640,ar_4:3,c_fill,g_auto,q_auto,f_auto,dpr_auto',
+    /**
+     * Gallery quarter / small-thumbnail cell — 1:1 aspect ratio at 400px wide.
+     *
+     * Used for cells in the thumbnail column (3/4/5+ image `detail` variant)
+     * and the extras row (4/5+ image `cover-plus-grid` variant), including
+     * the `+N más` overlay trigger cell.
+     * Square crop via `c_fill` + `g_auto`.
+     *
+     * `srcset` width candidates: 200 / 400 / 600 (override via `width` option).
+     *
+     * @see SPEC-186 §7
+     */
+    galleryQuarter: 'w_400,ar_1:1,c_fill,g_auto,q_auto,f_auto,dpr_auto',
+    /**
+     * Gallery lightbox-strip thumbnail — 1:1 aspect ratio at 120px wide.
+     *
+     * Used for the thumbnail strip inside the lightbox dialog. Intentionally
+     * small to minimize payload for the strip row; square crop via `c_fill`.
+     *
+     * @see SPEC-186 §7
+     */
+    galleryThumb: 'w_120,ar_1:1,c_fill,g_auto,q_auto,f_auto,dpr_auto'
 } as const);
 
 /**

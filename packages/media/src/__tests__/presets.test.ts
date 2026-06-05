@@ -10,11 +10,15 @@ describe('MEDIA_PRESETS', () => {
         'gallery',
         'avatar',
         'full',
-        'og'
+        'og',
+        'galleryFeatured',
+        'galleryHalf',
+        'galleryQuarter',
+        'galleryThumb'
     ];
 
-    it('should contain all 7 expected preset keys', () => {
-        expect(Object.keys(MEDIA_PRESETS)).toHaveLength(7);
+    it('should contain all 11 expected preset keys', () => {
+        expect(Object.keys(MEDIA_PRESETS)).toHaveLength(11);
         for (const key of EXPECTED_PRESETS) {
             expect(MEDIA_PRESETS).toHaveProperty(key);
         }
@@ -88,6 +92,72 @@ describe('MEDIA_PRESETS', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-186 §7 — gallery cell presets (galleryFeatured / galleryHalf /
+    // galleryQuarter / galleryThumb).  All four must use c_fill and an ar_
+    // token so the CDN returns an already-cropped asset matching the cell's
+    // fixed aspect-ratio (zero CLS; no client-side crop needed).
+    // -----------------------------------------------------------------------
+    describe('galleryFeatured preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (16:10)', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('ar_16:10');
+        });
+
+        it('should request 1000px width', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('w_1000');
+        });
+    });
+
+    describe('galleryHalf preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (4:3)', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryHalf).toContain('ar_4:3');
+        });
+
+        it('should request 640px width', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('w_640');
+        });
+    });
+
+    describe('galleryQuarter preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (1:1)', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('ar_1:1');
+        });
+
+        it('should request 400px width', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('w_400');
+        });
+    });
+
+    describe('galleryThumb preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (1:1)', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryThumb).toContain('ar_1:1');
+        });
+
+        it('should request 120px width (lightweight strip thumbnail)', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('w_120');
+        });
+    });
+
     describe('all presets', () => {
         it('should include q_auto for automatic quality', () => {
             for (const key of EXPECTED_PRESETS) {
@@ -132,9 +202,11 @@ describe('MEDIA_PRESETS', () => {
         });
 
         it('every preset transform string should match the safe character set', () => {
-            // Allowed: a-z, 0-9, underscore, comma, slash. No spaces, no
-            // uppercase, no quotes, no semicolons, no `<` etc.
-            const SAFE_TRANSFORM = /^[a-z0-9_,/]+$/;
+            // Allowed: a-z, 0-9, underscore, comma, slash, colon. No spaces,
+            // no uppercase, no quotes, no semicolons, no `<` etc.
+            // The colon is required for aspect-ratio tokens (ar_16:10, ar_4:3,
+            // ar_1:1) introduced by the SPEC-186 gallery presets.
+            const SAFE_TRANSFORM = /^[a-z0-9_,/:]+$/;
             for (const key of EXPECTED_PRESETS) {
                 expect(MEDIA_PRESETS[key]).toMatch(SAFE_TRANSFORM);
             }
