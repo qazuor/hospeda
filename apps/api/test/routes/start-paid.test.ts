@@ -790,8 +790,27 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
     });
 
     // ── Monthly path ─────────────────────────────────────────────────────────
+    //
+    // WIRING TESTS — important context (M1 reconciliation, SPEC-149 adversarial review):
+    //
+    // qzpay-core's `subscriptions.create` re-throws RAW adapter errors, NOT wrapped
+    // in `QZPayProviderSyncError`. The monthly path therefore falls through to the
+    // generic catch block and returns HTTP 500 in production — the PROVIDER_* mapping
+    // in the catch block IS reachable but only when a synthetic wrapped error is injected
+    // by a test, NOT by the live monthly adapter path.
+    //
+    // These tests exercise the catch-block WIRING (isBillingProviderError → mapProviderError
+    // → captureBillingError → throw ServiceError) and are valuable regression guards for that
+    // code path. They are NOT representative of the live monthly checkout flow until
+    // qzpay-core wraps subscriptions.create errors in QZPayProviderSyncError.
+    //
+    // See also: test/e2e/flows/billing/monthly-checkout.test.ts:316-352 and
+    // test/e2e/flows/billing/mp-error-handling.test.ts:25-31 which pin the REAL
+    // monthly behavior (raw error → 500).
 
-    it('monthly: MP 429 → ServiceError PROVIDER_RATE_LIMITED (not a generic 500)', async () => {
+    it('monthly (WIRING): QZPayProviderSyncError 429 → ServiceError PROVIDER_RATE_LIMITED via catch block', async () => {
+        // WIRING TEST: exercises the catch block with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -807,7 +826,9 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         );
     });
 
-    it('monthly: MP 408 timeout → ServiceError PROVIDER_TIMEOUT', async () => {
+    it('monthly (WIRING): QZPayProviderSyncError 408 timeout → ServiceError PROVIDER_TIMEOUT via catch block', async () => {
+        // WIRING TEST: exercises the catch block with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -823,7 +844,9 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         );
     });
 
-    it('monthly: MP 500 → ServiceError PROVIDER_ERROR (not 500 HTTPException)', async () => {
+    it('monthly (WIRING): QZPayProviderSyncError 500 → ServiceError PROVIDER_ERROR via catch block', async () => {
+        // WIRING TEST: exercises the catch block with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(500, 'SERVER_ERROR'));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -839,7 +862,9 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         );
     });
 
-    it('monthly: MP 422 validation → ServiceError VALIDATION_ERROR', async () => {
+    it('monthly (WIRING): QZPayProviderSyncError 422 → ServiceError VALIDATION_ERROR via catch block', async () => {
+        // WIRING TEST: exercises the catch block with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(422, 'INVALID_CARD'));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -855,7 +880,9 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         );
     });
 
-    it('monthly: captureBillingError called with operation=start_paid_checkout, customerId, planId, providerStatus on 429', async () => {
+    it('monthly (WIRING): captureBillingError called with operation=start_paid_checkout, customerId, planId, providerStatus on wrapped 429', async () => {
+        // WIRING TEST: exercises captureBillingError call shape with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -878,7 +905,9 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         expect(capturedCtx).toHaveProperty('planId');
     });
 
-    it('monthly: captureBillingError called once on MP 500 with correct providerStatus', async () => {
+    it('monthly (WIRING): captureBillingError called once on wrapped MP 500 with correct providerStatus', async () => {
+        // WIRING TEST: exercises captureBillingError call shape with a synthetic wrapped error.
+        // NOT representative of live monthly path — subscriptions.create re-throws raw errors.
         const providerErr = buildProviderSyncError(buildStubCause(500));
         mockBilling(createBillingMock({ createThrows: providerErr }));
 
@@ -893,6 +922,37 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
         const [, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
         expect(capturedCtx).toMatchObject({ providerStatus: 500 });
+    });
+
+    // ── Monthly path: raw error fall-through (pins real production behavior) ──
+
+    it('monthly (REAL BEHAVIOR): raw Error from subscriptions.create falls through to HTTPException 500, captureBillingError NOT called', async () => {
+        // This test pins the ACTUAL live monthly path:
+        // qzpay-core subscriptions.create re-throws raw adapter errors, NOT wrapped
+        // in QZPayProviderSyncError. The route catch block does NOT recognize raw errors
+        // as provider errors → falls through to the generic HTTPException(500) re-throw.
+        // captureBillingError is NOT called on this path (no PROVIDER_* mapping fires).
+        //
+        // This behavior persists until qzpay-core wraps subscriptions.create errors
+        // in QZPayProviderSyncError. When that happens, this test should be updated
+        // (the raw error path will no longer reach the generic catch).
+        //
+        // Mirrors: test/e2e/flows/billing/monthly-checkout.test.ts:316-352 and
+        //          test/e2e/flows/billing/mp-error-handling.test.ts:25-31
+        const rawMpError = new Error('MP raw error: rate_limit');
+        // NOT a QZPayProviderSyncError — this is what subscriptions.create actually throws
+        mockBilling(createBillingMock({ createThrows: rawMpError }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toMatchObject({ status: 500 });
+
+        // captureBillingError is NOT called for raw non-provider errors on the monthly path
+        expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
     });
 
     // ── Annual path ──────────────────────────────────────────────────────────
