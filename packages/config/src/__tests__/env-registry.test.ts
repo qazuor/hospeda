@@ -53,8 +53,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * 203 (2026-06-04, SPEC-173 T-003): added HOSPEDA_AI_VAULT_MASTER_KEY
  * (AES-256-GCM master key for the AI credential vault, new `ai` category).
+ *
+ * 205 (2026-06-05, SPEC-173 T-035): added HOSPEDA_POSTHOG_KEY and
+ * HOSPEDA_POSTHOG_HOST for server-side AI event analytics.
  */
-const EXPECTED_VAR_COUNT = 203;
+const EXPECTED_VAR_COUNT = 205;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

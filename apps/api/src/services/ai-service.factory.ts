@@ -46,6 +46,7 @@ import type { AiProviderId } from '@repo/schemas';
 import { apiLogger } from '../utils/logger.js';
 import { createAiCostThresholdAlertHook } from './ai-cost-alert.service.js';
 import { getDecryptedAiProviderCredential } from './ai-credential-vault.service.js';
+import { createAiObservabilityRecordEvent } from './ai-observability.service.js';
 
 // ---------------------------------------------------------------------------
 // Testable seam: provider factory from a pre-built key map
@@ -160,17 +161,10 @@ export async function createConfiguredAiService(): Promise<AiService> {
     return createAiService({
         getProvider: buildGetProvider(keyMap),
 
-        recordEvent: (event) => {
-            // Structured debug log only.  Usage-metering (T-016) and Sentry
-            // integration (T-035) are wired separately and are out of scope for T-043.
-            apiLogger.debug(
-                {
-                    aiEngineEvent: event.type,
-                    feature: 'feature' in event ? event.feature : undefined
-                },
-                'ai-engine event'
-            );
-        },
+        // T-035: fan-out to structured logging, Sentry breadcrumbs/captures,
+        // and PostHog analytics events. The sink is fire-and-forget and never
+        // throws into the engine.
+        recordEvent: createAiObservabilityRecordEvent(),
 
         checkCeiling: ({ feature, now }) =>
             checkCostCeiling({ feature, now, onThresholdAlert: alertHook }),

@@ -19,6 +19,7 @@ import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { registerAppLogDbSink } from './lib/app-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
+import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { initializeMediaProvider } from './services/media';
 import {
@@ -254,6 +255,9 @@ const startServer = async (): Promise<void> => {
                         error instanceof Error ? error.message : String(error)
                     );
                 }
+
+                // Flush PostHog AI analytics events
+                await shutdownPostHog();
 
                 // Flush Sentry events
                 await closeSentry(2000);

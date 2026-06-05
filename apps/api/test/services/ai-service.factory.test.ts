@@ -130,6 +130,24 @@ vi.mock('../../src/services/ai-cost-alert.service', () => ({
     createAiCostThresholdAlertHook: mockCreateAiCostThresholdAlertHook
 }));
 
+// Mock the new observability sink so the factory test remains isolated from
+// Sentry / PostHog and the existing recordEvent assertions still pass.
+vi.mock('../../src/services/ai-observability.service', () => ({
+    createAiObservabilityRecordEvent: vi.fn(() => {
+        // Return a thin wrapper that calls apiLogger.debug exactly as the old
+        // inline lambda did — preserving the existing factory test assertions.
+        return (event: { type: string; feature?: string }) => {
+            mockApiLogger.debug(
+                {
+                    aiEngineEvent: event.type,
+                    feature: event.feature
+                },
+                'ai-engine event'
+            );
+        };
+    })
+}));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: mockApiLogger
 }));

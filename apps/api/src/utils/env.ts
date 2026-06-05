@@ -451,6 +451,11 @@ export const ApiEnvBaseSchema = z.object({
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
+    // PostHog (AI event analytics — optional, no-op when unset)
+    /** PostHog project API key for server-side AI event analytics (e.g. 'phc_xxx'). */
+    HOSPEDA_POSTHOG_KEY: z.string().optional(),
+    /** PostHog API host. Defaults to 'https://us.i.posthog.com' when unset. */
+    HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
     /**

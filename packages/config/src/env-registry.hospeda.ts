@@ -1160,6 +1160,38 @@ export const HOSPEDA_ENV_VARS = [
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
     },
     {
+        name: 'HOSPEDA_POSTHOG_KEY',
+        description: 'PostHog project API key for server-side AI event analytics',
+        descriptionEs: 'API key del proyecto PostHog para analíticas server-side de eventos de IA',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'PostHog → your project → Settings → Project API Keys → copy the project API key (starts with phc_). Leave blank to disable AI event analytics without breaking anything.',
+        howToObtainEs:
+            'PostHog → tu proyecto → Settings → Project API Keys → copiá el project API key (empieza con phc_). Dejala vacía para deshabilitar las analíticas de eventos de IA sin romper nada.'
+    },
+    {
+        name: 'HOSPEDA_POSTHOG_HOST',
+        description: 'PostHog API host (defaults to https://us.i.posthog.com)',
+        descriptionEs: 'Host de la API de PostHog (por defecto https://us.i.posthog.com)',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'Only needed when using a self-hosted PostHog instance or the EU cloud (https://eu.i.posthog.com). Leave unset to use the default US cloud endpoint.',
+        howToObtainEs:
+            'Solo necesitás configurarlo si usás una instancia self-hosted de PostHog o el cloud EU (https://eu.i.posthog.com). Si no lo configurás, se usa el endpoint por defecto del cloud US.'
+    },
+    {
         name: 'SENTRY_AUTH_TOKEN',
         description: 'Sentry auth token used at build time to upload source maps (web, admin, api)',
         descriptionEs:
