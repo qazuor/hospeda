@@ -873,7 +873,7 @@
             "id": "T-030",
             "title": "PR(s) to staging, CI green, merge",
             "description": "Orphan-commit guard before push; verify remote ref after push (rtk silent no-op gotcha). Given the spec size (~30 tasks), evaluate chained PRs (foundation+critical / high+medium / low) vs single PR with the owner BEFORE pushing. Merge only via gh pr merge --merge with CI Pass SUCCESS. After merge: index-sync closeout + engram.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-029"],
             "blocks": [],
@@ -884,32 +884,32 @@
                 },
                 {
                     "title": "Push + PR + CI + merge",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Closeout (indexes + engram)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": "2026-06-05T00:21:38Z",
-                "completed": null
+                "completed": "2026-06-05T03:00:58Z"
             }
         }
     ],
     "summary": {
         "total": 30,
         "pending": 0,
-        "inProgress": 1,
-        "completed": 29,
+        "inProgress": 0,
+        "completed": 30,
         "blocked": 0,
         "averageComplexity": 2.2
     }

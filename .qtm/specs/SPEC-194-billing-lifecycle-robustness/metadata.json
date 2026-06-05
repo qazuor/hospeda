@@ -3,10 +3,10 @@
     "title": "Billing Lifecycle Robustness & Bug Fixes",
     "type": "feature",
     "complexity": "high",
-    "status": "in-progress",
+    "status": "completed",
     "created": "2026-06-03T00:00:00Z",
     "approved": null,
-    "completed": null,
+    "completed": "2026-06-05T03:00:58Z",
     "planFileRef": null,
     "tags": [
         "billing",

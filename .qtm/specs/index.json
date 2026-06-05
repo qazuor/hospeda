@@ -610,7 +610,7 @@
             "title": "Billing Lifecycle Robustness & Bug Fixes",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-194-billing-lifecycle-robustness",
             "parent": "SPEC-193",
             "created": "2026-06-03T00:00:00Z",
@@ -618,8 +618,9 @@
             "relatesTo": ["SPEC-145", "SPEC-149", "SPEC-167", "SPEC-192"],
             "blocks": ["real-money-go-live"],
             "base": "staging",
-            "archived": false,
-            "tags": ["billing", "lifecycle", "robustness", "bugfix"]
+            "archived": true,
+            "tags": ["billing", "lifecycle", "robustness", "bugfix"],
+            "archivedAt": "2026-06-05"
         },
         {
             "specId": "SPEC-195",
