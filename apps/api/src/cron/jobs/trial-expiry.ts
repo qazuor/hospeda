@@ -60,9 +60,12 @@ export const trialExpiryJob: CronJobDefinition = {
             // Create trial service with notification sender so TRIAL_EXPIRED emails
             // fire when blockExpiredTrials cancels a subscription (INV-2).
             const trialService = new TrialService(billing, (payload) => {
-                sendNotification(payload).catch(() => {
-                    // Fire-and-forget: failures are already logged inside sendNotification
-                });
+                sendNotification(payload).catch(
+                    // Fire-and-forget: sendNotification logs all failures internally
+                    // (apiLogger.error in notification-helper.ts), so swallowing here
+                    // is intentional — no duplicate log needed (item 9c / SPEC-194 review).
+                    (/* logged inside sendNotification */) => {}
+                );
             });
 
             if (dryRun) {

@@ -125,7 +125,11 @@ function findPriceForInterval<T extends PriceShape>(
  * @returns Per-interval-unit amount (unitAmount / intervalCount)
  */
 function normalizedUnitAmount(price: PriceShape): number {
-    const count = price.intervalCount ?? 1;
+    // Guard: intervalCount <= 0 is invalid (would divide by zero or produce
+    // a negative/infinite per-unit amount). Treat as 1 to match the
+    // price-per-cycle semantics (item 9a / SPEC-194 adversarial review).
+    const rawCount = price.intervalCount ?? 1;
+    const count = rawCount > 0 ? rawCount : 1;
     return price.unitAmount / count;
 }
 

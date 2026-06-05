@@ -406,6 +406,14 @@ export class TrialService {
                 // When the tx commits the lock is released, but we already have the list.
                 // Capped at BLOCK_EXPIRED_TRIALS_BATCH_SIZE to bound lock-hold duration
                 // (T-016). Remaining subs are processed on the next cron tick.
+                //
+                // ADR-019 exception (item 9d / SPEC-194 adversarial review):
+                // Calling the external QZPay subscriptions.list() inside the lock-holding
+                // tx is intentional here. The atomic claim requires reading the candidate
+                // list under the advisory lock so a concurrent invocation that acquires
+                // the lock next sees an empty (or different) batch — preventing duplicate
+                // processing. The batch size (BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200)
+                // bounds the maximum lock-hold duration per run.
                 const result = await this.billing?.subscriptions.list({
                     filters: { status: 'trialing' },
                     limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE

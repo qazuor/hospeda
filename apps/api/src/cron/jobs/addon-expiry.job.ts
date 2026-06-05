@@ -29,6 +29,7 @@ import {
     billingNotificationLog,
     billingSubscriptions,
     eq,
+    getDb,
     isNull,
     withTransaction
 } from '@repo/db';
@@ -145,8 +146,23 @@ async function wasNotificationSent(
 const SPLIT_STATE_BATCH_SIZE = 10;
 
 /**
+ * A Phase 7 row selected inside the lock tx and processed outside (item 7 fix).
+ * Only the fields needed for the post-tx grant + flag-clear are carried over.
+ */
+interface PendingGrantRow {
+    readonly id: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+    readonly metadata: unknown;
+}
+
+/**
  * Discriminated union returned by the withTransaction callback in the cron handler.
  * Allows the outer handler to distinguish lock-skip from real execution results.
+ *
+ * `pendingPostTxGrants` carries Phase 7 rows selected inside the lock tx so
+ * the per-row grant + flag-clear can run AFTER the tx commits (item 7 fix).
+ * External QZPay grant calls must not run while the advisory lock is held.
  */
 type CronTransactionResult =
     | { readonly skipped: true }
@@ -158,6 +174,8 @@ type CronTransactionResult =
           readonly errors: number;
           readonly durationMs: number;
           readonly details: Record<string, unknown>;
+          /** Phase 7 rows to process after the tx commits (external QZPay calls). */
+          readonly pendingPostTxGrants: readonly PendingGrantRow[];
       };
 
 /**
@@ -230,7 +248,8 @@ export const addonExpiryJob: CronJobDefinition = {
                         processed: 0,
                         errors: 1,
                         durationMs: Date.now() - startedAt.getTime(),
-                        details: { error: 'billing_not_initialized' }
+                        details: { error: 'billing_not_initialized' },
+                        pendingPostTxGrants: []
                     };
                 }
 
@@ -1396,15 +1415,20 @@ export const addonExpiryJob: CronJobDefinition = {
                     });
                 }
 
-                // 7. Grant reconciliation: re-apply entitlements for active purchases
-                // where the QZPay grant failed during checkout confirmation (SPEC-194 T-012).
-                // These rows are flagged with `needsEntitlementSync = true` by
-                // `confirmAddonPurchase` when `applyAddonEntitlements` throws or returns a
-                // failure result. The purchase row is already `status='active'` and the
-                // payment is confirmed — only the QZPay entitlement grant is missing.
-                // Limited to 10 per run to stay within the 2-minute cron window.
-                let grantReconciled = 0;
-                let grantReconcileErrors = 0;
+                // 7. Grant reconciliation — CLAIM phase (item 7 / SPEC-194 adversarial review).
+                //
+                // Only the SELECT runs here, inside the lock-holding tx. The per-row
+                // grant + flag-clear (external QZPay calls + DB writes) run AFTER the tx
+                // commits so external calls never hold the advisory lock (ADR-019 §Negative).
+                // Mirrors the trial claim/process split from T-005.
+                //
+                // Idempotency: re-applying is safe because qzpay-drizzle's entitlements
+                // grant() is upsert-style — it finds the active grant for
+                // (customerId, entitlementKey) and updates/returns it instead of inserting
+                // a duplicate. Verified at qzpay packages/drizzle/src/repositories/
+                // entitlements.repository.ts:133-152 (item 6 / SPEC-194 adversarial review).
+                let claimedGrantRows: PendingGrantRow[] = [];
+                let grantDryRunCount = 0;
 
                 logger.info('Starting grant reconciliation phase for split-state purchases');
 
@@ -1433,8 +1457,9 @@ export const addonExpiryJob: CronJobDefinition = {
                         count: pendingGrantSync.length
                     });
 
-                    for (const purchase of pendingGrantSync) {
-                        if (dryRun) {
+                    if (dryRun) {
+                        // Dry-run: count only — no external calls, nothing to defer post-tx.
+                        for (const purchase of pendingGrantSync) {
                             logger.info(
                                 'Dry run mode - would re-apply entitlement grant for split-state purchase',
                                 {
@@ -1443,10 +1468,108 @@ export const addonExpiryJob: CronJobDefinition = {
                                     addonSlug: purchase.addonSlug
                                 }
                             );
-                            grantReconciled++;
-                            continue;
+                            grantDryRunCount++;
                         }
+                    } else {
+                        // Production: store rows to process after tx commits.
+                        // The advisory lock releases on commit; external calls run outside.
+                        claimedGrantRows = pendingGrantSync.map((p) => ({
+                            id: p.id,
+                            customerId: p.customerId,
+                            addonSlug: p.addonSlug,
+                            metadata: p.metadata
+                        }));
+                    }
+                } catch (grantPhaseError) {
+                    const errMsg =
+                        grantPhaseError instanceof Error
+                            ? grantPhaseError.message
+                            : String(grantPhaseError);
 
+                    errors++;
+
+                    Sentry.captureException(grantPhaseError, {
+                        tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation-claim' }
+                    });
+
+                    logger.error('Grant reconciliation claim phase failed with unexpected error', {
+                        error: errMsg
+                    });
+                }
+
+                const durationMs = Date.now() - startedAt.getTime();
+
+                logger.info('Add-on expiry job (lock phase) completed', {
+                    processed,
+                    errors,
+                    warningsSent,
+                    revocationRetried,
+                    revocationErrors,
+                    splitStateReconciled,
+                    splitStateErrors,
+                    entitlementReconciled,
+                    entitlementReconcileErrors,
+                    grantClaimedCount: claimedGrantRows.length,
+                    grantDryRunCount,
+                    durationMs
+                });
+
+                return {
+                    skipped: false,
+                    success: true,
+                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements, ${claimedGrantRows.length} grant rows claimed for post-tx processing (${errors} errors)`,
+                    processed: processed + warningsSent,
+                    errors,
+                    durationMs,
+                    details: {
+                        expiredAddons: processed,
+                        warningsSent,
+                        revocationRetried,
+                        revocationErrors,
+                        splitStateReconciled,
+                        splitStateErrors,
+                        entitlementReconciled,
+                        entitlementReconcileErrors,
+                        grantReconciled: grantDryRunCount, // dry-run only; live count set post-tx
+                        grantReconcileErrors: 0,
+                        dryRun
+                    },
+                    pendingPostTxGrants: claimedGrantRows
+                };
+                // End of withTransaction callback — advisory lock auto-releases on commit
+            });
+
+            // Handle lock-not-acquired case from inside the transaction
+            if (cronResult.skipped) {
+                apiLogger.warn(
+                    'addon-expiry cron: skipping — previous run still holds advisory lock'
+                );
+                return {
+                    success: true,
+                    message: 'Skipped: previous run still active (advisory lock not acquired)',
+                    processed: 0,
+                    errors: 0,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { skipped: true, reason: 'lock_not_acquired' }
+                };
+            }
+
+            // ── Phase 7 PROCESS phase (item 7 / SPEC-194 adversarial review) ──────────
+            // The advisory lock has been released (tx committed). Now run the external
+            // QZPay grant calls and DB flag-clears without holding the lock.
+            let grantReconciled = 0;
+            let grantReconcileErrors = 0;
+
+            if (cronResult.pendingPostTxGrants.length > 0) {
+                const postTxDb = getDb();
+                const billing = getQZPayBilling();
+
+                if (billing) {
+                    logger.info('Starting grant reconciliation post-tx processing', {
+                        count: cronResult.pendingPostTxGrants.length
+                    });
+
+                    for (const purchase of cronResult.pendingPostTxGrants) {
                         try {
                             const entitlementService = new AddonEntitlementService(billing);
 
@@ -1464,8 +1587,7 @@ export const addonExpiryJob: CronJobDefinition = {
                             const newRetryCount = retryCount + 1;
 
                             if (applyResult.success) {
-                                // Clear the sync flag and record the retry count
-                                await db
+                                await postTxDb
                                     .update(billingAddonPurchases)
                                     .set({
                                         needsEntitlementSync: false,
@@ -1477,14 +1599,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                 grantReconciled++;
                                 clearEntitlementCache(purchase.customerId);
 
-                                logger.info('Grant reconciliation succeeded', {
+                                logger.info('Grant reconciliation succeeded (post-tx)', {
                                     purchaseId: purchase.id,
                                     customerId: purchase.customerId,
                                     addonSlug: purchase.addonSlug
                                 });
                             } else {
-                                // Keep flag set; record retry count and escalate after 3 retries
-                                await db
+                                await postTxDb
                                     .update(billingAddonPurchases)
                                     .set({
                                         metadata: { ...meta, grantSyncRetries: newRetryCount },
@@ -1537,10 +1658,7 @@ export const addonExpiryJob: CronJobDefinition = {
                             grantReconcileErrors++;
 
                             Sentry.captureException(grantErr, {
-                                tags: {
-                                    cronJob: 'addon-expiry',
-                                    phase: 'grant-reconciliation'
-                                },
+                                tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation' },
                                 extra: {
                                     purchaseId: purchase.id,
                                     customerId: purchase.customerId,
@@ -1548,7 +1666,7 @@ export const addonExpiryJob: CronJobDefinition = {
                                 }
                             });
 
-                            logger.error('Unexpected error during grant reconciliation', {
+                            logger.error('Unexpected error during grant reconciliation (post-tx)', {
                                 purchaseId: purchase.id,
                                 customerId: purchase.customerId,
                                 addonSlug: purchase.addonSlug,
@@ -1558,82 +1676,24 @@ export const addonExpiryJob: CronJobDefinition = {
                         }
                     }
 
-                    logger.info('Grant reconciliation phase completed', {
+                    logger.info('Grant reconciliation post-tx processing completed', {
                         grantReconciled,
                         grantReconcileErrors
                     });
-                } catch (grantPhaseError) {
-                    const errMsg =
-                        grantPhaseError instanceof Error
-                            ? grantPhaseError.message
-                            : String(grantPhaseError);
-
-                    errors++;
-
-                    Sentry.captureException(grantPhaseError, {
-                        tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation' }
-                    });
-
-                    logger.error('Grant reconciliation phase failed with unexpected error', {
-                        error: errMsg
-                    });
+                } else {
+                    apiLogger.error(
+                        'Grant reconciliation post-tx: billing not initialized, skipping grant processing'
+                    );
+                    grantReconcileErrors += cronResult.pendingPostTxGrants.length;
                 }
-
-                const durationMs = Date.now() - startedAt.getTime();
-
-                logger.info('Add-on expiry job completed', {
-                    processed,
-                    errors,
-                    warningsSent,
-                    revocationRetried,
-                    revocationErrors,
-                    splitStateReconciled,
-                    splitStateErrors,
-                    entitlementReconciled,
-                    entitlementReconcileErrors,
-                    grantReconciled,
-                    grantReconcileErrors,
-                    durationMs
-                });
-
-                return {
-                    skipped: false,
-                    success: true,
-                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements, reconciled ${grantReconciled} grants (${errors} errors)`,
-                    processed: processed + warningsSent,
-                    errors,
-                    durationMs,
-                    details: {
-                        expiredAddons: processed,
-                        warningsSent,
-                        revocationRetried,
-                        revocationErrors,
-                        splitStateReconciled,
-                        splitStateErrors,
-                        entitlementReconciled,
-                        entitlementReconcileErrors,
-                        grantReconciled,
-                        grantReconcileErrors,
-                        dryRun
-                    }
-                };
-                // End of withTransaction callback — lock auto-releases on commit
-            });
-
-            // Handle lock-not-acquired case from inside the transaction
-            if (cronResult.skipped) {
-                apiLogger.warn(
-                    'addon-expiry cron: skipping — previous run still holds advisory lock'
-                );
-                return {
-                    success: true,
-                    message: 'Skipped: previous run still active (advisory lock not acquired)',
-                    processed: 0,
-                    errors: 0,
-                    durationMs: Date.now() - startedAt.getTime(),
-                    details: { skipped: true, reason: 'lock_not_acquired' }
-                };
             }
+
+            // Merge the live post-tx grant counts into the result details.
+            // In dry-run mode pendingPostTxGrants is always empty and grantReconciled=0;
+            // preserve the dry-run count (set inside the tx) instead of overwriting it.
+            const mergedDetails = dryRun
+                ? cronResult.details
+                : { ...cronResult.details, grantReconciled, grantReconcileErrors };
 
             return {
                 success: cronResult.success,
@@ -1641,7 +1701,7 @@ export const addonExpiryJob: CronJobDefinition = {
                 processed: cronResult.processed,
                 errors: cronResult.errors,
                 durationMs: cronResult.durationMs,
-                details: cronResult.details
+                details: mergedDetails
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

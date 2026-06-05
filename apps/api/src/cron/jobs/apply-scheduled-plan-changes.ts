@@ -231,12 +231,31 @@ async function applyOne(
 
         // Roll back the pre-stamp: flip status back to pending (or
         // failed if budget exhausted) with updated attempt metadata.
-        await markChangeRetryOrFailed(billing, subscriptionId, scheduledPlanChange, {
-            attemptCount: newAttempt,
-            lastAttemptAt: now.toISOString(),
-            lastError: message,
-            exhausted
-        });
+        // Wrap in its own try/catch (item 8 / SPEC-194 adversarial review):
+        // if markChangeRetryOrFailed itself fails, the row stays 'applied'
+        // (the pre-stamp from step 0) but the plan change was NOT applied —
+        // this is a split-state that requires operator investigation.
+        try {
+            await markChangeRetryOrFailed(billing, subscriptionId, scheduledPlanChange, {
+                attemptCount: newAttempt,
+                lastAttemptAt: now.toISOString(),
+                lastError: message,
+                exhausted
+            });
+        } catch (rollbackErr) {
+            // Row remains pre-stamped 'applied' but is NOT applied — operator must
+            // inspect and manually correct (include scheduledChangeId + subscriptionId).
+            logger.error(
+                'Scheduled plan change: rollback of pre-stamp failed — row is stuck as applied but plan NOT applied; manual intervention required',
+                {
+                    subscriptionId,
+                    scheduledChangeId: scheduledPlanChange.requestedAt, // best unique identifier in the shape
+                    rollbackError:
+                        rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr),
+                    originalError: message
+                }
+            );
+        }
 
         if (exhausted) {
             logger.error('Scheduled plan change exhausted retry budget', {
