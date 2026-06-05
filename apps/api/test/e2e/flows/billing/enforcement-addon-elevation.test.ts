@@ -22,17 +22,14 @@
  *
  * 3. ADDON EXPIRY RESTRICTION
  *    - Expire the addon via the REAL addon-expiry cron:
- *        addonExpiryJob.handler() → AddonExpirationService.processExpiredAddons →
- *              expireAddon → AddonEntitlementService.removeAddonEntitlements →
- *              billing.limits.removeBySource — does NOT call clearEntitlementCache
- *              (the cron path does not clear the in-process cache; the next
- *              billingCustomerMiddleware tick re-loads from DB).
- *    - Because the expiry path does not call clearEntitlementCache, the test DOES
- *      call clearEntitlementCache(customerId) before the post-expiry assertion.
- *      This is DOCUMENTED below — the test is asserting that the DB state after
- *      expiry is correct and that the limit gate re-enforces after a cache reset.
- *      The in-process cache-clear on expiry is a separate concern tracked by the
- *      cron authors; this file pins the DB-level + route-level lifecycle contract.
+ *        addonExpiryJob.handler() → chunked Phase 1 loop → expireAddon →
+ *              AddonEntitlementService.removeAddonEntitlements →
+ *              billing.limits.removeBySource (removes the addon-source limit row) →
+ *              clearEntitlementCache(customerId) called immediately in the cron loop
+ *              (INV-1 fix, SPEC-145 T-018).
+ *    - NO manual clearEntitlementCache call between the cron run and the assertion.
+ *      The cron itself clears the cache so the next route request sees the revoked
+ *      limit immediately.
  *
  * Real paths used (documented here as lifecycle-wiring evidence):
  *
@@ -46,11 +43,12 @@
  *
  *   ADDON EXPIRE:
  *     addonExpiryJob.handler (apps/api/src/cron/jobs/addon-expiry.job.ts)
- *     → AddonExpirationService.processExpiredAddons
- *     → expireAddon → AddonEntitlementService.removeAddonEntitlements
- *     → billing.limits.removeBySource (removes the addon-source aggregated limit)
- *     NOTE: in-process clearEntitlementCache NOT called by this cron path.
- *           Test explicitly calls it to assert the route-level state after expiry.
+ *     → chunked Phase 1 loop → expireAddon (per item) →
+ *       AddonEntitlementService.removeAddonEntitlements →
+ *       billing.limits.removeBySource (removes the addon-source aggregated limit)
+ *     → clearEntitlementCache(customerId) called in the cron's Phase 1 loop
+ *       immediately after each successful expiry (INV-1 fix, SPEC-145 T-018).
+ *       No manual cache clear is needed between the cron call and the assertion.
  *
  * Addon under test: extra-accommodations-5 (recurring, affectsLimitKey=MAX_ACCOMMODATIONS,
  *   limitIncrease=5, targetCategories=['owner'], isActive=true, priceArs=1_000_000).
@@ -544,12 +542,8 @@ describe('SPEC-145 T-017 — addon limit elevation and expiry at route level', (
         ).rows as Array<{ status: string }>;
         expect(expiredRows[0]?.status).toBe('expired');
 
-        // The addon-expiry cron does NOT call clearEntitlementCache (it removes the
-        // billing_customer_limits row but does not flush the in-process cache).
-        // We must call it manually to assert the gate state after expiry.
-        // This is DOCUMENTED: the test pins the DB-level + route-level lifecycle
-        // contract, not the in-process cache-clear behavior of the cron.
-        clearEntitlementCache(customer.customerId);
+        // The cron's Phase 1 loop calls clearEntitlementCache(customerId) after each
+        // successful expiry (INV-1 fix). No manual cache clear is needed here.
 
         // Attempt to create a 3rd accommodation (would be #3, but limit is back to 1
         // and there are already 2 rows — accommodation #1 factory-inserted and
