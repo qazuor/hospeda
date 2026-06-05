@@ -105,186 +105,186 @@
             "id": "T-004",
             "title": "Wire accommodation entitlement gates (publish + edit)",
             "description": "Spec T-145-03 (accommodation slice). Per matrix: PUBLISH_ACCOMMODATIONS on create/createDraft/host-onboarding-start (on top of existing enforceAccommodationLimit), EDIT_ACCOMMODATION_INFO on update/patch (alongside existing gateRichDescription/gateVideoEmbed). Follow the existing wired-gate pattern exactly. Unit tests per route (mocked middleware level).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Publish gates (create/draft/onboarding)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Edit gates (update/patch)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["gates", "accommodation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T05:43:49Z",
-                "completed": null
+                "completed": "2026-06-05T05:53:52Z"
             }
         },
         {
             "id": "T-005",
             "title": "Wire promotion + review entitlement gates",
             "description": "Spec T-145-03 (promotions/reviews slice). Per matrix: CREATE_PROMOTIONS on owner-promotion create/update/patch (on top of enforcePromotionLimit), WRITE_REVIEWS on accommodation + destination review create. Unit tests per route.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Promotion gates",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Review gates (accom + destination)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["gates", "promotions", "reviews"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T05:53:52Z",
+                "completed": "2026-06-05T05:59:40Z"
             }
         },
         {
             "id": "T-006",
             "title": "Wire stats + gallery gates",
             "description": "Spec T-145-03 (stats slice). Per matrix: VIEW_ADVANCED_STATS on hostFavoritesBreakdown + hostMarketComparison; VIEW_BASIC_STATS on conversations response-rate + monthly-inquiries; MAX_PHOTOS_PER_ACCOMMODATION on protected gallery media upload (mirror the admin upload inline pattern at media/admin/upload.ts:371-435). Unit tests per route. [T-001 finding: media/protected/upload.ts ALREADY has the inline MAX_PHOTOS check — verify before re-adding; T-006 scope may shrink to stats gates only.]",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
                 {
                     "title": "Advanced/basic stats gates",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Protected gallery photo limit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["gates", "stats", "media"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T05:59:40Z",
+                "completed": "2026-06-05T06:06:05Z"
             }
         },
         {
             "id": "T-007",
             "title": "Resolve MAX_PROPERTIES / MAX_STAFF_ACCOUNTS stub counters",
             "description": "Spec T-145-04. limit-enforcement.ts:619,725 hardcode currentCount=0. Per matrix decision: wire the real count if the owning service exists, else register both as 'reserved' in the matrix so the snapshot guard treats them as known (no silent never-triggering limit). Document in code comment + matrix.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Decision + wiring or reserved registration",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["limits"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:06:05Z",
+                "completed": "2026-06-05T06:17:12Z"
             }
         },
         {
             "id": "T-008",
             "title": "Favorites gate matrix decisions (list/delete/update/collections)",
             "description": "Spec T-145-05. Matrix decision per favorites-adjacent route; removal MUST stay ungated (BETA-42: users at cap can still remove). Wire whatever the matrix decides + tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Decisions + wiring + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["gates", "favorites"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:06:05Z",
+                "completed": "2026-06-05T06:17:12Z"
             }
         },
         {
             "id": "T-009",
             "title": "Document phantom gates as intentional dead code",
             "description": "Spec T-145-06 (owner decision: keep, do NOT delete, do NOT build routes). Add '// PHANTOM-GATE (SPEC-145): route not built yet, see endpoint-gate-matrix.md' to the 12 phantom gates; register each in the matrix under 'reserved — route pending'; except them in the T-022 snapshot guard.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Comments + matrix entries",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "phantom-gates"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:06:05Z",
+                "completed": "2026-06-05T06:17:12Z"
             }
         },
         {
@@ -353,7 +353,7 @@
             "id": "T-012",
             "title": "E2e block tests: 403 ENTITLEMENT_REQUIRED per wired gate",
             "description": "Spec T-145-08. One block test per wired gate (publish, edit, promotions, reviews, advanced/basic stats, photos): user whose plan lacks the entitlement → 403 with code ENTITLEMENT_REQUIRED, correct body shape (post T-002 contract), NO DB mutation. SPEC-143 patterns: billing-factories, withRollback, real production routes through full middleware stack.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004", "T-005", "T-006"],
             "blocks": [],
@@ -376,7 +376,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T06:17:12Z",
                 "completed": null
             }
         },
@@ -384,7 +384,7 @@
             "id": "T-013",
             "title": "E2e allow tests: 2xx + side effect under granting plan",
             "description": "Spec T-145-09. Same routes as T-012 under a plan that grants the entitlement → 2xx and the side effect lands in DB. Pair each with its block test (same file).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
@@ -403,7 +403,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T06:17:12Z",
                 "completed": null
             }
         },
@@ -878,9 +878,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 24,
-        "inProgress": 1,
-        "completed": 4,
+        "pending": 17,
+        "inProgress": 2,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.3
     }
