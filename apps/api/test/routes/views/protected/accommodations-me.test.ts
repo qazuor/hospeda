@@ -62,10 +62,33 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
 }));
 
-// Mock entityViewService — no real DB calls.
+// Mock plan.service so the module-level `new PlanService()` in entitlement.ts
+// does not throw when the route module is imported (the route now wires
+// requireEntitlement(VIEW_BASIC_STATS) — same pattern as response-rate.test.ts).
+vi.mock('../../../../src/services/plan.service', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        list: vi.fn(),
+        getBySlug: vi.fn()
+    }))
+}));
+
+// Mock entityViewService — no real DB calls. RoleEnum must be included so
+// entitlement.ts can build STAFF_BILLING_BYPASS_ROLES at module-load time
+// (same pattern as response-rate.test.ts, SPEC-145 T-026).
 vi.mock('@repo/service-core', () => ({
     entityViewService: {
         getStatsForHostAccommodations: mockGetStatsForHostAccommodations
+    },
+    RoleEnum: {
+        SUPER_ADMIN: 'SUPER_ADMIN',
+        ADMIN: 'ADMIN',
+        CLIENT_MANAGER: 'CLIENT_MANAGER',
+        EDITOR: 'EDITOR',
+        HOST: 'HOST',
+        SPONSOR: 'SPONSOR',
+        USER: 'USER',
+        GUEST: 'GUEST',
+        SYSTEM: 'SYSTEM'
     },
     ServiceError: class ServiceError extends Error {
         constructor(

@@ -15,6 +15,7 @@
  * @see SPEC-159 T-009
  */
 
+import { EntitlementKey } from '@repo/billing';
 import {
     EntityViewStatsListResponseSchema,
     EntityViewWindowSchema,
@@ -22,6 +23,7 @@ import {
     type ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError, entityViewService } from '@repo/service-core';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -62,6 +64,11 @@ export const hostAccommodationViewStatsRoute = createProtectedRoute({
         return { data: result.data };
     },
     options: {
+        // SPEC-145 gate matrix: accommodation view stats live in HOST Card G
+        // alongside ratings/favorites/response-rate, all gated by
+        // VIEW_BASIC_STATS — views must match or free-plan hosts would see a
+        // partially-gated card.
+        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
