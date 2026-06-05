@@ -61,7 +61,8 @@ import { adminPostSponsorRoutes } from './postSponsor';
 import {
     adminAiCredentialsRoutes,
     adminAiPromptsRoutes,
-    adminAiSettingsRoutes
+    adminAiSettingsRoutes,
+    adminAiUsageRoutes
 } from './ai/index.js';
 import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
@@ -365,10 +366,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
 
-        // AI admin (SPEC-173: credential vault, settings, prompt versions — AI_SETTINGS_MANAGE)
+        // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
         app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
+        app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
