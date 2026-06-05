@@ -1844,3 +1844,112 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
         expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// No server-side retry pinning (SPEC-149 descope pin)
+//
+// Part D of SPEC-149 (server-side retry on transient provider errors) was
+// DESCOPED during the spec realign.  Reason: the idempotency middleware does
+// not cache in-flight requests, so a naive server-side retry would hit the
+// provider a second time before the first request is known to have failed —
+// creating a double-charge risk.
+//
+// The replacement deliverable is this pinning suite: assert that on a
+// retryable provider error (429 / timeout / 5xx) the server performs EXACTLY
+// ONE provider call per request.  If anyone later adds retries, these tests
+// fail and force them to confront the idempotency problem before merging.
+// ---------------------------------------------------------------------------
+
+describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    const defaultCustomer = {
+        id: 'cust_abc',
+        email: 'owner@example.com',
+        metadata: { name: 'Test Owner' }
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+
+        // Re-set checkout create mock (happy path by default; individual tests override)
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
+        });
+
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Default addon catalog mock
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            return { success: false, error: { code: 'NOT_FOUND', message: `Not found: ${slug}` } };
+        });
+
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
+    });
+
+    it('billing.checkout.create called exactly once on MP 429 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Exactly one provider call — no retry loop.
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 503 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 408 timeout (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+});

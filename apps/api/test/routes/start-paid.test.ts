@@ -992,3 +992,104 @@ describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)
         expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// No server-side retry pinning (SPEC-149 descope pin)
+//
+// Part D of SPEC-149 (server-side retry on transient provider errors) was
+// DESCOPED during the spec realign.  Reason: the idempotency middleware does
+// not cache in-flight requests, so a naive server-side retry would hit the
+// provider a second time before the first request is known to have failed —
+// creating a double-charge risk.
+//
+// The replacement deliverable is this pinning suite: assert that on a
+// retryable provider error (429 / timeout / 5xx) the server performs EXACTLY
+// ONE provider call per request.  If anyone later adds retries, these tests
+// fail and force them to confront the idempotency problem before merging.
+// ---------------------------------------------------------------------------
+
+describe('handleStartPaidSubscription — no server-side retry (SPEC-149 descope pin)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(captureBillingError).mockReturnValue('sentinel-event-id');
+    });
+
+    it('monthly: billing.subscriptions.create called exactly once on MP 429 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        const billing = createBillingMock({ createThrows: providerErr });
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        }).catch(() => undefined);
+
+        // Exactly one provider call — no retry loop.
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('monthly: billing.subscriptions.create called exactly once on MP 503 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+        const billing = createBillingMock({ createThrows: providerErr });
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        }).catch(() => undefined);
+
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('monthly: billing.subscriptions.create called exactly once on MP 408 timeout (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        const billing = createBillingMock({ createThrows: providerErr });
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        }).catch(() => undefined);
+
+        expect(billing.subscriptions.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('annual: billing.checkout.create called exactly once on MP 429 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(
+            buildStubCause(429, 'RATE_LIMITED'),
+            'checkout_create'
+        );
+        const billing = createAnnualBillingMock();
+        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        }).catch(() => undefined);
+
+        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('annual: billing.checkout.create called exactly once on MP 503 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(
+            buildStubCause(503, 'SERVICE_UNAVAILABLE'),
+            'checkout_create'
+        );
+        const billing = createAnnualBillingMock();
+        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'annual'
+        }).catch(() => undefined);
+
+        expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+    });
+});

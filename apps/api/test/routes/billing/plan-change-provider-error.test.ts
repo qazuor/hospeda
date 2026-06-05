@@ -632,3 +632,116 @@ describe('handlePlanChange — provider error wiring (SPEC-149 T-006)', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// No server-side retry pinning (SPEC-149 descope pin)
+//
+// Part D of SPEC-149 (server-side retry on transient provider errors) was
+// DESCOPED during the spec realign.  Reason: the idempotency middleware does
+// not cache in-flight requests, so a naive server-side retry would hit the
+// provider a second time before the first request is known to have failed —
+// creating a double-charge risk.
+//
+// The replacement deliverable is this pinning suite: assert that on a
+// retryable provider error (429 / timeout / 5xx) the server performs EXACTLY
+// ONE provider call per request across all plan-change call sites.  If anyone
+// later adds retries, these tests fail and force them to confront the
+// idempotency problem before merging.
+// ---------------------------------------------------------------------------
+
+describe('handlePlanChange — no server-side retry (SPEC-149 descope pin)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(captureBillingError).mockReturnValue('sentinel-event-id');
+    });
+
+    describe('outer try/catch (billing.subscriptions.getByCustomerId)', () => {
+        it('getByCustomerId called exactly once on MP 429 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+            const billing = makeUpgradeBillingMock({ getByCustomerIdThrows: providerErr });
+            mockBillingWith(billing);
+
+            const ctx = makeUpgradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            // Exactly one provider call — no retry loop.
+            expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+        });
+
+        it('getByCustomerId called exactly once on MP 503 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+            const billing = makeUpgradeBillingMock({ getByCustomerIdThrows: providerErr });
+            mockBillingWith(billing);
+
+            const ctx = makeUpgradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+        });
+
+        it('getByCustomerId called exactly once on MP 408 timeout (no retry)', async () => {
+            const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+            const billing = makeUpgradeBillingMock({ getByCustomerIdThrows: providerErr });
+            mockBillingWith(billing);
+
+            const ctx = makeUpgradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(billing.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('upgrade branch (initiatePaidPlanUpgrade)', () => {
+        it('initiatePaidPlanUpgrade called exactly once on MP 429 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(
+                buildStubCause(429, 'RATE_LIMITED'),
+                'checkout_create'
+            );
+            mockBillingWith(makeUpgradeBillingMock());
+            vi.mocked(initiatePaidPlanUpgrade).mockRejectedValue(providerErr);
+
+            const ctx = makeUpgradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(vi.mocked(initiatePaidPlanUpgrade)).toHaveBeenCalledTimes(1);
+        });
+
+        it('initiatePaidPlanUpgrade called exactly once on MP 503 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+            mockBillingWith(makeUpgradeBillingMock());
+            vi.mocked(initiatePaidPlanUpgrade).mockRejectedValue(providerErr);
+
+            const ctx = makeUpgradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(vi.mocked(initiatePaidPlanUpgrade)).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('downgrade branch (scheduleSubscriptionDowngrade)', () => {
+        it('scheduleSubscriptionDowngrade called exactly once on MP 429 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(
+                buildStubCause(429, 'RATE_LIMITED'),
+                'subscription_update'
+            );
+            mockBillingWith(makeDowngradeBillingMock());
+            vi.mocked(scheduleSubscriptionDowngrade).mockRejectedValue(providerErr);
+
+            const ctx = makeDowngradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(vi.mocked(scheduleSubscriptionDowngrade)).toHaveBeenCalledTimes(1);
+        });
+
+        it('scheduleSubscriptionDowngrade called exactly once on MP 503 (no retry)', async () => {
+            const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+            mockBillingWith(makeDowngradeBillingMock());
+            vi.mocked(scheduleSubscriptionDowngrade).mockRejectedValue(providerErr);
+
+            const ctx = makeDowngradeContext();
+            await handlePlanChange(ctx as never).catch(() => undefined);
+
+            expect(vi.mocked(scheduleSubscriptionDowngrade)).toHaveBeenCalledTimes(1);
+        });
+    });
+});
