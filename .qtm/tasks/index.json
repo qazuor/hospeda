@@ -193,7 +193,7 @@
             "specId": "SPEC-149",
             "title": "Billing provider error propagation + Sentry context + retry policy",
             "status": "in-progress",
-            "progress": "12/15",
+            "progress": "13/15",
             "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
             "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry"
         }
