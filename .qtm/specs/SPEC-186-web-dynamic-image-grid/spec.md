@@ -3,7 +3,7 @@ specId: SPEC-186
 title: Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images
 slug: web-dynamic-image-grid
 type: feature
-status: in-progress
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-06-02
@@ -641,3 +641,4 @@ Per the project's Test-Informed Development rules (Vitest + testing-library, AAA
 | Date | Trigger | Changes | Result |
 |------|---------|---------|--------|
 | 2026-06-05 | spec-realign | D-1: Phase 1 step 1b added — remove outer gallery pre-slice in `alojamientos/[slug].astro` (island never received >4 images; 5+ overlay unreachable on accommodations). D-10: Phase 5 note — replace BOTH masonry media queries (current 1024/768px vs locked 1024/640px). Verified vs staging 2026-06-05: zero drift elsewhere; HeroGallery confirmed dead (4 JSDoc refs only); SPEC-191 `/colaborar/fotos` does not overlap. | Spec amended, status draft → in-progress |
+| 2026-06-05 | closeout | 18/18 tasks done. T-018 browser smoke PASSED (counts 1/2/3/4/5+, 4 entities, /fotos 3 breakpoints, es/en/pt, GLightbox video). 3 extra fixes shipped from smoke findings: per-count container aspect-ratio locks gallery height (12/5 · 8/3 · 16/10); "Ver todas las fotos" CTA to the previously-orphan /fotos; data-astro-reload across the /fotos boundary (ClientRouter head swap dropped the island stylesheet on back nav). Videos-in-lightbox confirmed out-of-scope (§11) — follow-up spec. | status → completed |
