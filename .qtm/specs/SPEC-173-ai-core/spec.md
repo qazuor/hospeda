@@ -230,6 +230,22 @@ Enforcement matrix:
   - **Limits** (`LimitKey`, number — "how many?"): `max_ai_text_improve_per_month`,
     `max_ai_chat_per_month`, `max_ai_search_per_month`, `max_ai_support_per_month`.
   - They reuse the existing `entitlementMiddleware()` + 5-min cache (`apps/api/src/middlewares/entitlement.ts`).
+- **Per-plan seed matrix (owner-approved 2026-06-05, T-030).** These are SEED DEFAULTS — plans are
+  runtime-editable from the admin panel (SPEC-168). `-1` = unlimited; `—` = gate absent (tourists
+  have no own content to improve, so `ai_text_improve` is owner/complex-only):
+
+  | Plan | ai_text_improve | ai_chat | ai_search | ai_support |
+  |------|----------------|---------|-----------|------------|
+  | tourist-free | — | 10 | 30 | 5 |
+  | tourist-plus | — | 50 | 150 | 20 |
+  | tourist-vip | — | -1 | -1 | -1 |
+  | owner-basico | 20 | 20 | 50 | 10 |
+  | owner-pro | 100 | 100 | 200 | 30 |
+  | owner-premium | -1 | -1 | -1 | -1 |
+  | complex-basico | 30 | 30 | 50 | 15 |
+  | complex-pro | 150 | 150 | 200 | 40 |
+  | complex-premium | -1 | -1 | -1 | -1 |
+
 - Every call is metered into `ai_usage` regardless of tier (reporting per user / feature / month).
 - Exceeding a limit returns a controlled `403` with an upgrade hint (contract aligned with the
   existing entitlement-gate convention).
