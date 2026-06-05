@@ -211,7 +211,7 @@
             "id": "T-009",
             "title": "Request Cloudinary c_fill crop per cell ratio",
             "description": "Request server-side crop matching each cell's ratio: c_fill + ar_ tokens (interim via raw override on the existing gallery preset until T-011 adds dedicated presets). ar_ is already allowlisted in @repo/media get-media-url.ts ALLOWED_RAW_TOKEN_PREFIXES (line 22). Touch ImageGallery.client.tsx and/or lib/media.ts extractGalleryItems.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-012"],
@@ -219,14 +219,14 @@
             "tags": ["web", "media", "cloudinary"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:45:00.000Z",
+                "completed": "2026-06-05T09:15:00.000Z"
             }
         },
         {
@@ -321,31 +321,31 @@
             "id": "T-014",
             "title": "Replace /fotos masonry with fixed-ratio grid",
             "description": "apps/web/src/pages/[lang]/alojamientos/[slug]/fotos.astro: replace columns:3 masonry (~line 188) with .fotosGrid/.fotosCell fixed-ratio system (all photos + videos, c_fill). Realign D-10: replace BOTH media queries — current masonry uses 1024px→2/768px→1; locked §5 breakpoints are >=1024=3 / 640-1023=2 / <640=1. The 768px query must not survive. GLightbox links (data-glightbox/data-gallery) stay as-is.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "Grid system + cells",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Both breakpoints replaced per §5",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "astro", "gallery"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:45:00.000Z",
+                "completed": "2026-06-05T09:15:00.000Z"
             }
         },
         {
@@ -439,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 8,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.2
     }

@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 10/18 tasks (56%)
+## Progress: 12/18 tasks (67%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -31,7 +31,7 @@
 - [x] **T-008** (complexity: 2) - Fixed aspect-ratio + object-fit on every gallery cell
   - True ratios on detail featured + thumbs (cover-plus-grid mostly has them)
   - Blocked by: T-003 | Blocks: T-009, T-014
-- [ ] **T-009** (complexity: 2) - Request Cloudinary c_fill crop per cell ratio
+- [x] **T-009** (complexity: 2) - Request Cloudinary c_fill crop per cell ratio
   - Interim raw c_fill,ar_ override until T-011 presets land
   - Blocked by: T-008 | Blocks: T-010, T-012
 - [x] **T-011** (complexity: 2) - Add 4 gallery* presets to @repo/media
@@ -40,7 +40,7 @@
 - [ ] **T-012** (complexity: 3) - Wire per-cell srcset/sizes in the island
   - Width-override candidates + sizes per §5 breakpoints; featured stays eager/high
   - Blocked by: T-009, T-011 | Blocks: T-013
-- [ ] **T-014** (complexity: 3) - Replace /fotos masonry with fixed-ratio grid
+- [x] **T-014** (complexity: 3) - Replace /fotos masonry with fixed-ratio grid
   - Realign D-10: replace BOTH media queries (768px must not survive)
   - Blocked by: T-008 | Blocks: T-015
 
