@@ -580,6 +580,89 @@ describe('DetailVariant — thumb click opens lightbox at correct index (index m
     });
 });
 
+// ─── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ─────────
+
+describe('DetailVariant — viewAllHref CTA link', () => {
+    /**
+     * The CTA is shown below the gallery grid when:
+     * 1. viewAllHref is provided.
+     * 2. total images > 4 (i.e. count >= 5 — images beyond the inline slots).
+     *
+     * It is absent when:
+     * - viewAllHref is omitted (regardless of count).
+     * - count < 5 (all images already visible inline).
+     *
+     * The link text is driven by the i18n key
+     * 'accommodations.detail.gallery.viewAll' (fallback "Ver todas las fotos").
+     */
+
+    it('absent when viewAllHref is not provided (count=7)', () => {
+        render(
+            <ImageGallery
+                images={IMG_7}
+                variant="detail"
+                locale="es"
+            />
+        );
+        // No anchor with the gallery viewAll i18n key text should be rendered.
+        expect(screen.queryByRole('link', { name: /todas las fotos/i })).not.toBeInTheDocument();
+    });
+
+    it('absent when viewAllHref is provided but count=4 (all images visible)', () => {
+        render(
+            <ImageGallery
+                images={IMG_4}
+                variant="detail"
+                locale="es"
+                viewAllHref="/es/alojamientos/test-slug/fotos/"
+            />
+        );
+        expect(screen.queryByRole('link', { name: /todas las fotos/i })).not.toBeInTheDocument();
+    });
+
+    it('present with viewAllHref and count=5 (first overflow case)', () => {
+        render(
+            <ImageGallery
+                images={IMG_5}
+                variant="detail"
+                locale="es"
+                viewAllHref="/es/alojamientos/test-slug/fotos/"
+            />
+        );
+        const link = screen.getByRole('link', { name: /todas las fotos/i });
+        expect(link).toBeInTheDocument();
+        expect(link).toHaveAttribute('href', '/es/alojamientos/test-slug/fotos/');
+    });
+
+    it('present with viewAllHref and count=7, href is passed through verbatim', () => {
+        render(
+            <ImageGallery
+                images={IMG_7}
+                variant="detail"
+                locale="es"
+                viewAllHref="/es/alojamientos/la-posada/fotos/"
+            />
+        );
+        const link = screen.getByRole('link', { name: /todas las fotos/i });
+        expect(link).toHaveAttribute('href', '/es/alojamientos/la-posada/fotos/');
+    });
+
+    it('link text is driven by the i18n key (fallback "Ver todas las fotos")', () => {
+        render(
+            <ImageGallery
+                images={IMG_5}
+                variant="detail"
+                locale="es"
+                viewAllHref="/es/alojamientos/test-slug/fotos/"
+            />
+        );
+        // The mock i18n returns the fallback string when the key is not specially
+        // handled — verify the link renders the expected human-readable text.
+        const link = screen.getByRole('link', { name: /todas las fotos/i });
+        expect(link.textContent?.trim()).toMatch(/Ver todas las fotos/i);
+    });
+});
+
 // ─── Featured image LCP attributes preserved ──────────────────────────────────
 
 describe('DetailVariant — featured cell LCP attributes (SPEC-157 REQ-3 regression)', () => {

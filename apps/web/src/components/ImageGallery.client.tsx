@@ -53,6 +53,18 @@ interface ImageGalleryProps {
     readonly locale: SupportedLocale;
     /** Optional CSS class override on the root element */
     readonly className?: string;
+    /**
+     * Optional href for the "Ver todas las fotos" CTA link shown below the
+     * detail-variant grid when total images exceed the visible inline count
+     * (count >= 5). Only used by the `detail` variant — accommodations pass
+     * the locale-prefixed URL to the /fotos sub-page.
+     *
+     * When omitted (or when count < 5) the CTA is not rendered.
+     *
+     * @example
+     * viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
+     */
+    readonly viewAllHref?: string;
 }
 
 // ─── Per-cell URL builder ─────────────────────────────────────────────────────
@@ -368,9 +380,14 @@ interface DetailVariantProps {
     readonly images: ReadonlyArray<GalleryImage>;
     readonly onOpen: (index: number) => void;
     readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    /**
+     * When provided AND total images exceed the visible inline count (count >= 5),
+     * a "Ver todas las fotos" link is rendered below the mosaic grid.
+     */
+    readonly viewAllHref?: string;
 }
 
-function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
+function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
     const [featured, ...rest] = images;
     const count = images.length;
     const visibleThumbCount = getVisibleThumbCount(count);
@@ -381,12 +398,18 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
 
     if (!featured) return null;
 
+    // The "Ver todas las fotos" CTA is shown only when a href is provided AND
+    // total images exceed the 4 visible inline slots (count >= 5). At count < 5
+    // all images are already visible in the grid, so the link adds no value.
+    const showViewAll = Boolean(viewAllHref) && count >= 5;
+
     return (
-        <div
-            className={styles.grid}
-            data-count={countKey}
-        >
-            {/* Featured image — LCP candidate, eager load, full priority.
+        <>
+            <div
+                className={styles.grid}
+                data-count={countKey}
+            >
+                {/* Featured image — LCP candidate, eager load, full priority.
                 Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto)
                 so the CDN crops server-side to the fixed 16:10 ratio — zero CLS,
                 no client-side crop, right-sized payload (SPEC-186 FR-3 §7).
@@ -395,62 +418,109 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                 At a typical 1280px desktop, 66vw ≈ 845px → browser selects 1000w,
                 identical to the previous single-URL w_1000 baseline. No LCP
                 regression (SPEC-186 FR-4 §8 step 10). */}
-            <button
-                type="button"
-                className={styles.cellFeatured}
-                aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
-                onClick={() => onOpen(0)}
-            >
-                <img
-                    src={buildCellUrl(featured.url, 'galleryFeatured')}
-                    srcSet={buildCellSrcset(featured.url, 'galleryFeatured')}
-                    sizes={isCloudinaryUrl(featured.url) ? CELL_SIZES.galleryFeatured : undefined}
-                    alt={featured.alt}
-                    className={styles.cellImg}
-                    loading="eager"
-                    // SPEC-157 REQ-3: this is the LCP candidate on the
-                    // accommodation detail page. The gallery is an island, so
-                    // this markup is server-rendered into the initial HTML —
-                    // fetchPriority + explicit dimensions let the browser
-                    // prioritise the fetch and reserve layout (no CLS). The
-                    // intrinsic ratio mirrors the .mosaic max-height (480px);
-                    // object-fit: cover keeps remote images undistorted.
-                    fetchPriority="high"
-                    width={800}
-                    height={480}
-                />
-                <span
-                    className={styles.expandIcon}
-                    aria-hidden="true"
+                <button
+                    type="button"
+                    className={styles.cellFeatured}
+                    aria-label={t('ui.accessibility.openFullscreen', 'Ver en pantalla completa')}
+                    onClick={() => onOpen(0)}
                 >
-                    <FullscreenIcon size={20} />
-                </span>
-            </button>
+                    <img
+                        src={buildCellUrl(featured.url, 'galleryFeatured')}
+                        srcSet={buildCellSrcset(featured.url, 'galleryFeatured')}
+                        sizes={
+                            isCloudinaryUrl(featured.url) ? CELL_SIZES.galleryFeatured : undefined
+                        }
+                        alt={featured.alt}
+                        className={styles.cellImg}
+                        loading="eager"
+                        // SPEC-157 REQ-3: this is the LCP candidate on the
+                        // accommodation detail page. The gallery is an island, so
+                        // this markup is server-rendered into the initial HTML —
+                        // fetchPriority + explicit dimensions let the browser
+                        // prioritise the fetch and reserve layout (no CLS). The
+                        // intrinsic ratio mirrors the .mosaic max-height (480px);
+                        // object-fit: cover keeps remote images undistorted.
+                        fetchPriority="high"
+                        width={800}
+                        height={480}
+                    />
+                    <span
+                        className={styles.expandIcon}
+                        aria-hidden="true"
+                    >
+                        <FullscreenIcon size={20} />
+                    </span>
+                </button>
 
-            {/* Thumbnail column — rendered only when count >= 2.
+                {/* Thumbnail column — rendered only when count >= 2.
                 count=2: half cells (4:3) via galleryHalf preset.
                 count>=3: quarter cells (1:1) via galleryQuarter preset.
                 The CDN crops server-side to the cell's fixed ratio (SPEC-186 FR-3). */}
-            {visibleThumbs.length > 0 && (
-                <div className={styles.thumbGrid}>
-                    {visibleThumbs.map((img, i) => {
-                        // The last thumb at count >= 5 becomes the "+N más" overlay cell.
-                        const isOverlayCell = moreCount > 0 && i === visibleThumbs.length - 1;
-                        // Lightbox opens at the first hidden image (index = 1 + i + 1).
-                        // For the overlay, that is the image right after the last visible thumb
-                        // (index 4, which is images[4] — the 5th image, 0-based).
-                        const lightboxIndex = i + 1;
+                {visibleThumbs.length > 0 && (
+                    <div className={styles.thumbGrid}>
+                        {visibleThumbs.map((img, i) => {
+                            // The last thumb at count >= 5 becomes the "+N más" overlay cell.
+                            const isOverlayCell = moreCount > 0 && i === visibleThumbs.length - 1;
+                            // Lightbox opens at the first hidden image (index = 1 + i + 1).
+                            // For the overlay, that is the image right after the last visible thumb
+                            // (index 4, which is images[4] — the 5th image, 0-based).
+                            const lightboxIndex = i + 1;
 
-                        const cellClass = count === 2 ? styles.cellHalf : styles.cellQuarter;
-                        // count=2 uses half cells (4:3 ratio); count>=3 uses quarter cells (1:1).
-                        const thumbPreset: 'galleryHalf' | 'galleryQuarter' =
-                            count === 2 ? 'galleryHalf' : 'galleryQuarter';
+                            const cellClass = count === 2 ? styles.cellHalf : styles.cellQuarter;
+                            // count=2 uses half cells (4:3 ratio); count>=3 uses quarter cells (1:1).
+                            const thumbPreset: 'galleryHalf' | 'galleryQuarter' =
+                                count === 2 ? 'galleryHalf' : 'galleryQuarter';
 
-                        if (isOverlayCell) {
+                            if (isOverlayCell) {
+                                return (
+                                    <div
+                                        key={img.url}
+                                        className={`${cellClass} ${styles.moreOverlay}`}
+                                    >
+                                        <img
+                                            src={buildCellUrl(img.url, thumbPreset)}
+                                            srcSet={buildCellSrcset(img.url, thumbPreset)}
+                                            sizes={
+                                                isCloudinaryUrl(img.url)
+                                                    ? CELL_SIZES[thumbPreset]
+                                                    : undefined
+                                            }
+                                            alt={img.alt}
+                                            className={styles.cellImg}
+                                            loading="lazy"
+                                            aria-hidden="true"
+                                        />
+                                        {/* Keyboard-accessible overlay button — opens lightbox at the first hidden image */}
+                                        <button
+                                            type="button"
+                                            className={styles.moreOverlayBtn}
+                                            aria-label={t(
+                                                'accommodations.detail.gallery.moreOverlay',
+                                                `+${moreCount} más`,
+                                                { count: moreCount }
+                                            )}
+                                            onClick={() => onOpen(lightboxIndex + 1)}
+                                        >
+                                            {t(
+                                                'accommodations.detail.gallery.moreOverlay',
+                                                `+${moreCount} más`,
+                                                { count: moreCount }
+                                            )}
+                                        </button>
+                                    </div>
+                                );
+                            }
+
                             return (
-                                <div
+                                <button
                                     key={img.url}
-                                    className={`${cellClass} ${styles.moreOverlay}`}
+                                    type="button"
+                                    className={`${cellClass} ${styles.thumbBtn}`}
+                                    aria-label={t(
+                                        'ui.accessibility.openFullscreen',
+                                        'Ver en pantalla completa'
+                                    )}
+                                    onClick={() => onOpen(lightboxIndex)}
                                 >
                                     <img
                                         src={buildCellUrl(img.url, thumbPreset)}
@@ -463,58 +533,22 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
-                                        aria-hidden="true"
                                     />
-                                    {/* Keyboard-accessible overlay button — opens lightbox at the first hidden image */}
-                                    <button
-                                        type="button"
-                                        className={styles.moreOverlayBtn}
-                                        aria-label={t(
-                                            'accommodations.detail.gallery.moreOverlay',
-                                            `+${moreCount} más`,
-                                            { count: moreCount }
-                                        )}
-                                        onClick={() => onOpen(lightboxIndex + 1)}
-                                    >
-                                        {t(
-                                            'accommodations.detail.gallery.moreOverlay',
-                                            `+${moreCount} más`,
-                                            { count: moreCount }
-                                        )}
-                                    </button>
-                                </div>
+                                </button>
                             );
-                        }
-
-                        return (
-                            <button
-                                key={img.url}
-                                type="button"
-                                className={`${cellClass} ${styles.thumbBtn}`}
-                                aria-label={t(
-                                    'ui.accessibility.openFullscreen',
-                                    'Ver en pantalla completa'
-                                )}
-                                onClick={() => onOpen(lightboxIndex)}
-                            >
-                                <img
-                                    src={buildCellUrl(img.url, thumbPreset)}
-                                    srcSet={buildCellSrcset(img.url, thumbPreset)}
-                                    sizes={
-                                        isCloudinaryUrl(img.url)
-                                            ? CELL_SIZES[thumbPreset]
-                                            : undefined
-                                    }
-                                    alt={img.alt}
-                                    className={styles.cellImg}
-                                    loading="lazy"
-                                />
-                            </button>
-                        );
-                    })}
-                </div>
+                        })}
+                    </div>
+                )}
+            </div>
+            {showViewAll && (
+                <a
+                    href={viewAllHref}
+                    className={styles.viewAllLink}
+                >
+                    {t('accommodations.detail.gallery.viewAll', 'Ver todas las fotos')}
+                </a>
             )}
-        </div>
+        </>
     );
 }
 
@@ -722,7 +756,13 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
  *   client:visible
  * />
  */
-export function ImageGallery({ images, variant = 'detail', locale, className }: ImageGalleryProps) {
+export function ImageGallery({
+    images,
+    variant = 'detail',
+    locale,
+    className,
+    viewAllHref
+}: ImageGalleryProps) {
     const { t } = createTranslations(locale);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -743,6 +783,7 @@ export function ImageGallery({ images, variant = 'detail', locale, className }: 
                     images={images}
                     onOpen={openLightbox}
                     t={t}
+                    viewAllHref={viewAllHref}
                 />
             ) : (
                 <CoverPlusGridVariant

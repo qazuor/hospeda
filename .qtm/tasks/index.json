@@ -84,7 +84,7 @@
             "specId": "SPEC-186",
             "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
             "status": "in-progress",
-            "progress": "17/18",
+            "progress": "18/18",
             "path": "SPEC-186-web-dynamic-image-grid",
             "branch": "spec/SPEC-186-web-dynamic-image-grid",
             "linearIssues": ["BETA-53"],

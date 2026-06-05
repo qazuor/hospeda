@@ -418,7 +418,7 @@
             "id": "T-018",
             "title": "Manual visual smoke (4 entities + /fotos, 3 breakpoints, 3 locales)",
             "description": "Spec §8 Phase 7: browser validation of the gallery at 1/2/3/4/5+ images on accommodation/event/destination (detail) + post (cover-plus-grid) + /fotos at the three breakpoints; the new strings in es/en/pt. Then flip spec + task indexes to completed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": [],
@@ -426,22 +426,22 @@
             "tags": ["smoke", "closeout"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T11:00:00.000Z",
+                "completed": "2026-06-05T12:30:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 18,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.2
     }

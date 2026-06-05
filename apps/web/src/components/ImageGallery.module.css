@@ -36,11 +36,32 @@
      */
     /* Default: single column (count=1 or unset). */
     grid-template-columns: 1fr;
+    /*
+     * FIX-1 (T-018 smoke): the single row track is minmax(0, 1fr) so cell
+     * content (natural image heights) can NEVER inflate the row. The grid
+     * height is locked by the per-count container aspect-ratio below; cells
+     * fill their tracks and object-fit: cover absorbs the crop.
+     */
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/*
+ * FIX-1: per-count CONTAINER aspect-ratio locks the total grid height
+ * deterministically (zero CLS — height is known before any image loads).
+ * Geometry derives from §5: the featured cell's ratio governs the height.
+ * count=1 → featured full-width 16/10 → container 16/10.
+ * count=2 → two 4/3 halves side by side → container 8/3.
+ * count=3/4/5+ → featured at 2/3 width with 16/10 → height = (2W/3)(10/16)
+ *   = 5W/12 → container 12/5.
+ */
+.grid[data-count="1"] {
+    aspect-ratio: 16 / 10;
 }
 
 /* count=2: two equal half-width columns */
 .grid[data-count="2"] {
     grid-template-columns: 1fr 1fr;
+    aspect-ratio: 8 / 3;
 }
 
 /* count=3,4,5+: 2fr featured + 1fr thumb column */
@@ -48,6 +69,7 @@
 .grid[data-count="4"],
 .grid[data-count="5plus"] {
     grid-template-columns: 2fr 1fr;
+    aspect-ratio: 12 / 5;
 }
 
 /* ── Cell wrappers ───────────────────────────────────────────────────────── */
@@ -62,10 +84,28 @@
     background: none;
     cursor: pointer;
     width: 100%;
+    /*
+     * FIX-1 (SPEC-186 browser smoke T-018): the grid height is locked by the
+     * per-count container aspect-ratio on .grid (see top of file), so the
+     * featured cell simply fills its track. min-height: 0 prevents the cell's
+     * content (natural image height) from inflating the minmax(0, 1fr) track.
+     * The 16/10 declaration documents the §5 role ratio (it resolves through
+     * the container ratio at counts 3/4/5+, and directly at count=1).
+     */
     height: 100%;
+    min-height: 0;
     /* Span the full row height so thumbs stack beside it. */
     grid-row: 1 / -1;
     aspect-ratio: 16 / 10;
+}
+
+/*
+ * FIX-1 count=2: spec §5 maps the featured cell to a "half" role at count=2
+ * (two equal columns, side-by-side). Override the 16/10 ratio to 4/3 so
+ * both the featured cell and the single thumb render at the same height.
+ */
+.grid[data-count="2"] .cellFeatured {
+    aspect-ratio: 4 / 3;
 }
 
 .cellFeatured:hover .cellImg,
@@ -180,22 +220,50 @@
  * count=3 → 2 thumbs → 2 rows
  * count=4 → 3 thumbs → 3 rows
  * count=5+ → 3 thumbs (last = overlay) → 3 rows
+ *
+ * FIX-1: height:100% makes the thumbGrid fill the row height determined by
+ * .cellFeatured's aspect-ratio (16/10). Without this the thumbGrid would
+ * shrink to its own intrinsic height and leave white space beside the featured
+ * image. The featured cell's aspect-ratio now governs the total row height;
+ * thumbGrid fills that height and divides it evenly among its fr rows.
  */
 .thumbGrid {
     display: grid;
     gap: 4px;
     grid-row: 1 / -1;
+    height: 100%;
+    /* FIX-1: never let thumb content inflate the container-ratio-locked row */
+    min-height: 0;
+}
+
+/*
+ * FIX-1: inside the thumbGrid, cellQuarter and cellHalf must NOT impose their
+ * own aspect-ratio — their height comes from the fr rows of the thumbGrid,
+ * which fills the featured cell's aspect-ratio-governed row. Setting
+ * aspect-ratio:auto lets each thumb track fill its allocated fr slice.
+ * The base .cellQuarter/.cellHalf classes keep their ratios for all other
+ * contexts (cover-plus-grid inlineGrid cells, CLS test assertions).
+ */
+.thumbGrid .cellQuarter,
+.thumbGrid .cellHalf {
+    aspect-ratio: auto;
+    min-height: 0;
+}
+
+/* 1 thumb (count=2): single row filling the container-ratio height */
+.grid[data-count="2"] .thumbGrid {
+    grid-template-rows: minmax(0, 1fr);
 }
 
 /* 2 thumbs (count=3): 2-row stack */
 .grid[data-count="3"] .thumbGrid {
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
 }
 
 /* 3 thumbs (count=4, count=5+): 3-row stack */
 .grid[data-count="4"] .thumbGrid,
 .grid[data-count="5plus"] .thumbGrid {
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-rows: repeat(3, minmax(0, 1fr));
 }
 
 /* Thumb button wrapper */
@@ -350,6 +418,36 @@
 .inlineGrid .cellQuarter {
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
+}
+
+/* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */
+
+/*
+ * .viewAllLink — discreet right-aligned link shown below the gallery grid
+ * when viewAllHref is provided AND total images exceed the visible inline
+ * count (count >= 5 in the detail variant). Styled to match the site's
+ * vanilla-CSS link conventions (see LocationSection.astro .location-section__link).
+ */
+.viewAllLink {
+    display: block;
+    margin-top: var(--space-2, 8px);
+    text-align: right;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary, oklch(0.55 0.17 264));
+    text-decoration: none;
+}
+
+.viewAllLink:hover,
+.viewAllLink:focus-visible {
+    text-decoration: underline;
+}
+
+.viewAllLink:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
 /* ── Lightbox ───────────────────────────────────────────────────────────── */
@@ -537,6 +635,9 @@
     /* count=2: stack vertically */
     .grid[data-count="2"] {
         grid-template-columns: 1fr;
+        /* FIX-1: release the desktop container ratio — mobile stacks rows */
+        aspect-ratio: auto;
+        grid-template-rows: auto;
     }
 
     /* count=3,4,5+: stack featured + horizontal thumb strip */
@@ -545,11 +646,16 @@
     .grid[data-count="5plus"] {
         grid-template-columns: 1fr;
         max-height: none;
+        /* FIX-1: release the desktop container ratio — mobile stacks rows */
+        aspect-ratio: auto;
+        grid-template-rows: auto;
     }
 
-    /* Featured cell: release the grid-row span so it stacks naturally */
+    /* Featured cell: release the grid-row span so it stacks naturally.
+       height:auto re-enables its own 16/10 ratio in the stacked layout. */
     .cellFeatured {
         grid-row: auto;
+        height: auto;
     }
 
     /* Thumb grid: switch to horizontal row of equal columns */
