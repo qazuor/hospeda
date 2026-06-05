@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 5/15 tasks (33%)
+## Progress: 7/15 tasks (47%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -41,7 +41,7 @@
   - Blocked by: none
   - Blocks: T-008
 
-- [ ] **T-006** (complexity: 3) - Create EntityViewService capture path
+- [x] **T-006** (complexity: 3) - Create EntityViewService capture path
   - capture() with EntityViewCaptureSchema validation, Result<T>
   - Blocked by: T-001, T-004
   - Blocks: T-008
@@ -68,7 +68,7 @@
   - Blocked by: T-007
   - Blocks: T-014
 
-- [ ] **T-011** (complexity: 2) - Create entity_views retention purge cron
+- [x] **T-011** (complexity: 2) - Create entity_views retention purge cron
   - Nightly purge >95 days, recordCronRun (mirrors search-index-refresh.job.ts)
   - Blocked by: T-004
   - Blocks: T-014

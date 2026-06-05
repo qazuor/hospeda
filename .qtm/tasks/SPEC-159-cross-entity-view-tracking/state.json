@@ -122,22 +122,22 @@
             "id": "T-006",
             "title": "Create EntityViewService capture path",
             "description": "Create packages/service-core/src/services/entityView/entity-view.service.ts (extend BaseCrudService or minimal service per what fits a lean entity — follow service-core conventions, Result<T>, runWithLoggingAndValidation): capture({ entityType, entityId, visitorHash, isAuthenticated }) validating against EntityViewCaptureSchema and inserting via EntityViewModel. Restrict entityType to ACCOMMODATION/POST/EVENT. Tests (write first): valid capture inserts; invalid entityType rejected with typed error; Result error paths.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Service skeleton per service-core conventions", "completed": false },
-                { "title": "capture() with validation", "completed": false },
-                { "title": "Unit tests (test-first)", "completed": false }
+                { "title": "Service skeleton per service-core conventions", "completed": true },
+                { "title": "capture() with validation", "completed": true },
+                { "title": "Unit tests (test-first)", "completed": true }
             ],
             "tags": ["service-core", "capture"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T03:00:00.000Z",
+                "completed": "2026-06-05T03:55:00.000Z"
             }
         },
         {
@@ -232,21 +232,21 @@
             "id": "T-011",
             "title": "Create entity_views retention purge cron",
             "description": "Create apps/api/src/cron/jobs/entity-views-purge.job.ts mirroring search-index-refresh.job.ts structure + recordCronRun: nightly DELETE of rows with viewed_at older than 95 days via EntityViewModel.purgeOlderThan. Register in the cron scheduler. Tests: purge deletes only rows older than threshold; run is recorded via cron_runs; no-op when nothing to delete.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Cron job + registration", "completed": false },
-                { "title": "Tests", "completed": false }
+                { "title": "Cron job + registration", "completed": true },
+                { "title": "Tests", "completed": true }
             ],
             "tags": ["api", "cron", "retention"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T03:00:00.000Z",
+                "completed": "2026-06-05T03:55:00.000Z"
             }
         },
         {
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.4
     }
