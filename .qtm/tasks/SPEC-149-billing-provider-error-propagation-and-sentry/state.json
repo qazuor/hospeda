@@ -283,27 +283,27 @@
             "id": "T-010",
             "title": "Update e2e error-mapping expectations (AC 8-10)",
             "description": "mp-error-handling.test.ts (all modes currently expect 500 — update to the new mapping table), monthly-checkout.test.ts:338 (429→500 becomes 429→503), annual-checkout.test.ts:306 (same). Assert Retry-After presence on 503. These are e2e (--config vitest.config.e2e.ts).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Three e2e files updated + green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T22:00:00Z",
+                "completed": "2026-06-05T22:40:00Z"
             }
         },
         {
@@ -452,9 +452,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 11,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }
