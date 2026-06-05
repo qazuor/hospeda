@@ -256,27 +256,27 @@
             "id": "T-009",
             "title": "Sentry capture on cron success:false results",
             "description": "Spec cron-alerting (narrowed): bootstrap.ts already captures thrown job exceptions (:145-164); wire an additional captureException/captureMessage when result.success === false (after recordCronRun, ~:123-131) with job_name + errors count tags (the SPEC-194 T-024 pinned contract supplies the signal). Test: job returning success:false → Sentry called; success:true → not called; thrown → existing path unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Wiring + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cron", "sentry"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T17:03:00Z",
+                "completed": "2026-06-05T17:04:30Z"
             }
         },
         {
