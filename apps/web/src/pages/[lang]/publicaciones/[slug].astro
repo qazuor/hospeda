@@ -22,6 +22,7 @@ import TagChips from '@/components/TagChips.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import CommentThread from '@/components/comments/CommentThread.astro';
 import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
@@ -311,6 +312,17 @@ const breadcrumbItems = [
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
 
 	<ReadingProgressBar client:idle />
+
+	{/* Analytics tracker (headless, SPEC-159 T-013) */}
+	{postId && (
+		<EntityViewTracker
+			client:idle
+			entityType="POST"
+			slug={slug}
+			entityId={postId}
+			locale={locale}
+		/>
+	)}
 
 	<Breadcrumbs
 		slot="breadcrumbs"

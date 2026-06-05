@@ -12,7 +12,7 @@ import { WebEvents } from '@/lib/analytics/events';
 import { describe, expect, it } from 'vitest';
 
 describe('WebEvents catalog (SPEC-140 acceptance)', () => {
-    it('should include the SPEC-140 events plus the SPEC-191 contribution events', () => {
+    it('should include the SPEC-140 events, the SPEC-191 contribution events, and the SPEC-159 entity-view events', () => {
         // Assert
         expect(WebEvents).toEqual({
             AccommodationSearched: 'accommodation_searched',
@@ -23,7 +23,9 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             ContributionBannerClicked: 'contribution_banner_clicked',
             ContributionReportSubmitted: 'contribution_report_submitted',
             ContributionPhotoSubmitted: 'contribution_photo_submitted',
-            ContributionEditorSubmitted: 'contribution_editor_submitted'
+            ContributionEditorSubmitted: 'contribution_editor_submitted',
+            PostViewed: 'post_viewed',
+            EventViewed: 'event_viewed'
         });
     });
 

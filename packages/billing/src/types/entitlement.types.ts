@@ -49,7 +49,31 @@ export enum EntitlementKey {
     CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
     CAN_VIEW_SEARCH_HISTORY = 'can_view_search_history',
-    CAN_VIEW_RECOMMENDATIONS = 'can_view_recommendations'
+    CAN_VIEW_RECOMMENDATIONS = 'can_view_recommendations',
+
+    /** AI feature entitlements (SPEC-173) */
+    /**
+     * Allows the user to use the AI-powered text improvement tool
+     * to enhance their accommodation descriptions and other content.
+     * Available on owner and complex plans only (not tourist plans,
+     * since tourists do not own content to improve).
+     */
+    AI_TEXT_IMPROVE = 'ai_text_improve',
+    /**
+     * Allows the user to interact with the AI chat assistant
+     * for travel planning, recommendations, and general queries.
+     */
+    AI_CHAT = 'ai_chat',
+    /**
+     * Allows the user to use the AI-powered search to get
+     * semantically relevant accommodation results.
+     */
+    AI_SEARCH = 'ai_search',
+    /**
+     * Allows the user to access the AI-powered support assistant
+     * for platform help and troubleshooting.
+     */
+    AI_SUPPORT = 'ai_support'
 }
 
 /**

@@ -1,7 +1,7 @@
 ---
 specId: SPEC-159
 title: Cross-Entity View Tracking
-status: draft
+status: completed
 complexity: high
 owner: qazuor
 created: 2026-05-26
@@ -21,7 +21,7 @@ tags:
 
 # SPEC-159 — Cross-Entity View Tracking
 
-> **Status**: DRAFT — extracted from the 2026-05-26 dashboard redefinition session as "heavy backend". See `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md` (Global decision — cross-entity view tracking).
+> **Status**: IN-PROGRESS — extracted from the 2026-05-26 dashboard redefinition session as "heavy backend". See `.claude/audit/admin-redesign/proposals/03c-dashboards-redefinition.md` (Global decision — cross-entity view tracking). Tech-analysis completed and §4 resolved on 2026-06-04.
 
 ## 1. Origin
 
@@ -34,22 +34,33 @@ Provide a single cross-entity mechanism to count and expose views for **accommod
 ## 3. Scope
 
 ### IN
+
 - View tracking/storage for accommodation, post, event.
 - Unique-visitor dedup (by session/user) + total counts.
 - 7d / 30d windowed aggregation.
 - Read endpoints scoped per role (HOST own, EDITOR all).
 
 ### OUT
+
 - Search-impression tracking (only detail-page views).
 - Real-time counters (batch/near-real-time is fine for V1).
 
-## 4. Key architectural decision (to resolve in tech-analysis)
+## 4. Key architectural decision — RESOLVED (2026-06-04)
 
-Two viable approaches — NOT yet decided:
-1. **Own DB table + server-side capture** — a `entity_views` table (polymorphic entityType + entityId, session/user, timestamp), populated by a server-side capture endpoint or a write from the web app; aggregations query it directly (optionally denormalize a `viewsCount`).
-2. **Query the PostHog API server-side** — keep PostHog as the source of truth and proxy/aggregate its events (depends on events carrying entity ids; adds external latency + rate-limit considerations).
+**Decision: Option 1 — own `entity_views` table + first-party server-side capture.** Approved by the user after tech-analysis (see [`tech-analysis.md`](tech-analysis.md) §7 for the full options comparison).
 
-Decision drivers: data ownership, latency, PostHog rate limits, whether unique-dedup is reliable from PostHog.
+Decisive findings:
+
+- PostHog only has `accommodation_viewed`; no `post_viewed`/`event_viewed` events exist, so Option 2 (PostHog proxy) could not serve 2 of the 3 widgets without new client events anyway.
+- PostHog is configured anonymous-hostile (`person_profiles: 'identified_only'`, memory persistence without consent, `respect_dnt`), making unique-visitor dedup from it unreliable.
+- The codebase already has every pattern Option 1 needs: polymorphic entity table (`user_bookmarks`), public rate-limited POST (`contact/submit.ts`), matview + cron (`search-index-refresh.job.ts`).
+
+Approved sub-decisions (detail in tech-analysis §4–§5):
+
+- **Lean append-only table, NOT extending `BaseModel`** (no audit/soft-delete columns); retention via TTL purge cron (~95 days). Deliberate, documented deviation.
+- Cookieless server-side `visitorHash` (salted daily hash; no raw IP stored, no consent banner needed).
+- Insert-always + dedup-at-aggregation; query-time aggregation for V1.
+- Existing PostHog client events keep firing unchanged (additive).
 
 ## 5. Enables (SPEC-155 widgets, phase 2)
 
@@ -63,4 +74,6 @@ Decision drivers: data ownership, latency, PostHog rate limits, whether unique-d
 
 ## 7. Next steps
 
-Needs tech-analysis (resolve §4) + task atomization before implementation.
+- [x] Tech-analysis (resolved §4 — Option 1 approved 2026-06-04)
+- [x] Task atomization
+- [x] Implementation

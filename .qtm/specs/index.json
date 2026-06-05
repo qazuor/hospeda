@@ -321,7 +321,7 @@
             "title": "Cross-Entity View Tracking",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-159-cross-entity-view-tracking",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. Extracted as heavy backend: three dashboard view widgets (HOST accommodation views, EDITOR post views, EDITOR event views) have no DB-backed data — PostHog tracks client-side only. Consolidated into one cross-entity tracking piece.",
@@ -426,16 +426,18 @@
             "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-173-ai-core",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-173-ai-core",
             "base": "staging",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-173-ai-core",
             "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
+            "archived": true,
             "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
-            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
+            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8.",
+            "archivedAt": "2026-06-05",
+            "completionRef": "PR #1466 merged to staging (28e726d3b), 43/43 tasks, judgment-day double-APPROVED"
         },
         {
             "specId": "SPEC-188",
@@ -655,6 +657,72 @@
             "archived": false,
             "tags": ["architecture", "config-as-code", "content", "monorepo", "dx"],
             "note": "DRAFT exploratory (owner 2026-06-05): centralize curated config-as-code (whats-new, admin tours, billing configs) into one shared package. Options analysis + migration path deliberately deferred to activation (spec.md section 5 decision workshop). No worktree until activated."
+        },
+        {
+            "specId": "SPEC-197",
+            "title": "Admin View-Stats Surfaces",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-197-admin-view-stats-surfaces",
+            "created": "2026-06-05T00:00:00.000Z",
+            "dependsOn": ["SPEC-159"],
+            "archived": false,
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["analytics", "views", "admin", "dashboards", "recharts", "phase-2"],
+            "note": "SPEC-159 phase-2 consumer, owner-approved 2026-06-05: fills the 3 SPEC-155 deferred dashboard slots + ADMIN summary card + detail chips + list columns + /analytics/views page (top-N + daily series). 4 new /admin/views/* endpoints (ANALYTICS_VIEW). Tasks pending atomization."
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-198-ai-text-improvement",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child A of SPEC-173. HOST text improvement, multi-locale, accept/reject UX over ai-core (feature text_improve, owner/complex only). DRAFT with open questions."
+        },
+        {
+            "specId": "SPEC-199",
+            "title": "AI Natural-Language Search",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-199-ai-nl-search",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child B of SPEC-173. NL search: extractIntent -> structured query, NO embeddings V1 (feature search). BLOCKING open question: anonymous UX vs login-required AI. DRAFT."
+        },
+        {
+            "specId": "SPEC-200",
+            "title": "AI Accommodation Chat (tourist)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-200-ai-accommodation-chat",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+        },
+        {
+            "specId": "SPEC-201",
+            "title": "AI Support Assistant",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-201-ai-support-assistant",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child D of SPEC-173. Support assistant over docs corpus (feature support). TOP open question: audience — ai_support ungranted from all plans pending decision. DRAFT."
         }
     ]
 }

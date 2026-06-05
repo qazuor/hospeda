@@ -54,7 +54,19 @@ export const WebEvents = {
     ContributionPhotoSubmitted: 'contribution_photo_submitted',
 
     /** Editor-application form submitted successfully (SPEC-191). Props: `locale`. */
-    ContributionEditorSubmitted: 'contribution_editor_submitted'
+    ContributionEditorSubmitted: 'contribution_editor_submitted',
+
+    /**
+     * Blog post detail page was loaded (SPEC-159 T-013).
+     * Props: `slug`, `post_id`, `locale`.
+     */
+    PostViewed: 'post_viewed',
+
+    /**
+     * Event detail page was loaded (SPEC-159 T-013).
+     * Props: `slug`, `event_id`, `locale`.
+     */
+    EventViewed: 'event_viewed'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */

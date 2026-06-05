@@ -1,0 +1,33 @@
+{
+    "specId": "SPEC-197",
+    "title": "Admin View-Stats Surfaces",
+    "type": "feature",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-06-05T00:00:00Z",
+    "approved": "2026-06-05T11:30:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "admin",
+        "analytics",
+        "views",
+        "dashboard",
+        "entity-stats",
+        "recharts",
+        "backend",
+        "entity-views",
+        "host",
+        "editor"
+    ],
+    "parent": null,
+    "dependsOn": ["SPEC-159"],
+    "relatesTo": ["SPEC-155", "SPEC-145"],
+    "blocks": [],
+    "firstAllocatedViaEngramProtocol": true,
+    "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
+    "branch": "spec/SPEC-197-admin-view-stats-surfaces",
+    "base": "staging",
+    "effortEstimateHours": "40-55",
+    "engramRefs": {}
+}

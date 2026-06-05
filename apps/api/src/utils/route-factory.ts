@@ -543,7 +543,10 @@ export {
     createAdminRoute,
     createPublicListRoute,
     createProtectedListRoute,
-    createAdminListRoute
+    createAdminListRoute,
+    // Streaming SSE factories
+    createStreamingRoute,
+    createProtectedStreamingRoute
 } from './route-factory-tiered';
 export type {
     PublicRouteOptions,
@@ -551,5 +554,11 @@ export type {
     AdminRouteOptions,
     PublicListRouteOptions,
     ProtectedListRouteOptions,
-    AdminListRouteOptions
+    AdminListRouteOptions,
+    // Streaming SSE types
+    StreamingRouteOptions,
+    ProtectedStreamingRouteOptions,
+    StreamHandlerContext,
+    StreamHandlerResult,
+    StreamTextChunk
 } from './route-factory-tiered';

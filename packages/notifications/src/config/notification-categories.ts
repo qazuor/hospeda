@@ -50,5 +50,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Welcome and campaign deliveries respect the opt-out and live in the
     // dedicated NEWSLETTER category so the preference service can route them.
     [NotificationType.NEWSLETTER_WELCOME]: NotificationCategory.NEWSLETTER,
-    [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER
+    [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER,
+
+    // AI cost threshold alert (SPEC-173 T-025) — sent to SUPER_ADMIN only
+    [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN
 };

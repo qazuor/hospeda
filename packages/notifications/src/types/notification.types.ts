@@ -28,7 +28,16 @@ export enum NotificationType {
     /** SPEC-101 — welcome email sent after the user clicks the verification link. */
     NEWSLETTER_WELCOME = 'newsletter_welcome',
     /** SPEC-101 — campaign delivery payload routed through the dispatch worker. */
-    NEWSLETTER_CAMPAIGN = 'newsletter_campaign'
+    NEWSLETTER_CAMPAIGN = 'newsletter_campaign',
+    /**
+     * SPEC-173 T-025 — alert sent to SUPER_ADMIN when AI spend crosses a cost
+     * threshold (50 / 80 / 100 %) within the current calendar month.
+     *
+     * Decision (owner-approved 2026-06-04): dedicated type instead of reusing
+     * ADMIN_SYSTEM_EVENT so the alert can be de-duplicated by type in
+     * `billing_notification_log` without colliding with other system events.
+     */
+    AI_COST_THRESHOLD_ALERT = 'ai_cost_threshold_alert'
 }
 
 /**
@@ -329,6 +338,55 @@ export interface AdminNotificationPayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for AI cost threshold alert notifications (SPEC-173 T-025).
+ *
+ * Sent to each SUPER_ADMIN email address when accumulated AI spend for the
+ * current calendar month crosses 50 %, 80 %, or 100 % of the configured
+ * cost ceiling.  De-duplication (once per threshold × period) is handled by
+ * the `apps/api` factory before this payload is constructed.
+ *
+ * @example
+ * ```ts
+ * const payload: AiCostThresholdAlertPayload = {
+ *   type: NotificationType.AI_COST_THRESHOLD_ALERT,
+ *   recipientEmail: 'admin@hospeda.com.ar',
+ *   recipientName: 'Admin',
+ *   userId: null,
+ *   scope: 'global',
+ *   thresholdPct: 80,
+ *   spentMicroUsd: 160_000_000,
+ *   ceilingMicroUsd: 200_000_000,
+ *   period: '2026-06',
+ * };
+ * ```
+ */
+export interface AiCostThresholdAlertPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.AI_COST_THRESHOLD_ALERT;
+    /** Whether the threshold was crossed for the global budget or a specific feature. */
+    readonly scope: 'global' | 'feature';
+    /**
+     * The AI feature whose spend crossed the threshold.
+     * Only present when `scope === 'feature'`.
+     */
+    readonly feature?: string;
+    /** The cost band that was crossed (50 %, 80 %, or 100 %). */
+    readonly thresholdPct: 50 | 80 | 100;
+    /** Accumulated spend for the current calendar month in micro-USD (µUSD). */
+    readonly spentMicroUsd: number;
+    /** Configured ceiling value in micro-USD (µUSD). */
+    readonly ceilingMicroUsd: number;
+    /**
+     * Calendar month in `YYYY-MM` format (UTC).
+     *
+     * Used as part of the idempotency key to ensure at-most-one alert per
+     * threshold per calendar month.
+     *
+     * @example `'2026-06'`
+     */
+    readonly period: string;
+}
+
+/**
  * Options for controlling notification send behavior.
  *
  * These flags allow callers to bypass specific side-effects of the send
@@ -370,4 +428,5 @@ export type NotificationPayload =
     | ContactSubmissionPayload
     | PlanDowngradeLimitWarningPayload
     | PaymentRetryWarningPayload
-    | AddonCancellationPayload;
+    | AddonCancellationPayload
+    | AiCostThresholdAlertPayload;

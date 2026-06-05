@@ -204,6 +204,23 @@ export const HOSPEDA_ENV_VARS = [
             'Generalo con:  openssl rand -base64 32  — NUNCA lo rotes en prod (movería todas las ubicaciones aproximadas que se muestran al público). Lo consume service-core de forma transitiva (location-obfuscation.ts, accommodation.projections.ts).'
     },
     {
+        name: 'HOSPEDA_VIEWS_HASH_SECRET',
+        description:
+            'Server-only HMAC secret used as a pepper when computing privacy-safe, day-scoped visitor deduplication hashes for cross-entity view tracking (SPEC-159). The hash is SHA-256(HMAC-SHA256(secret, date) + truncatedIp + userAgent) — the raw IP is never stored or logged. Min 32 chars enforced by Zod. Rotating this value invalidates all outstanding day-hashes (visitors will be counted as new for that day).',
+        descriptionEs:
+            'Secreto HMAC server-only que actúa como pepper al computar hashes de visita con privacidad por día para el seguimiento de vistas entre entidades (SPEC-159). El hash es SHA-256(HMAC-SHA256(secret, fecha) + ipTruncada + userAgent); la IP cruda nunca se almacena ni se loguea. Mínimo 32 caracteres validado por Zod. Rotarlo invalida todos los hashes del día actual (los visitantes se cuentan como nuevos).',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'V7k4n1Q8f2H5p9L3m6R0s4T7v1W4y8Z2a5B8c1D4e7F0=',
+        apps: ['api'],
+        category: 'auth',
+        howToObtain:
+            'Generate with:  openssl rand -base64 48  — keep stable across deploys (rotating changes the day-hash for all current visitors). Each environment (dev/staging/prod) MUST have its own distinct value. The secret is consumed exclusively by apps/api/src/utils/visitor-hash.ts.',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 48  — dejalo estable entre deploys (rotarlo cambia el hash del día para todos los visitantes activos). Cada entorno (dev/staging/prod) DEBE tener su propio valor. Lo consume exclusivamente apps/api/src/utils/visitor-hash.ts.'
+    },
+    {
         name: 'HOSPEDA_GEOCODING_USER_AGENT',
         description:
             'User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling.',
@@ -460,6 +477,27 @@ export const HOSPEDA_ENV_VARS = [
             'Free-text label, 1-11 ASCII uppercase chars (letters, digits, spaces). MP rejects anything longer or with lowercase / non-ASCII. Defaults to "HOSPEDA"; override only if MP homologation feedback requests it.',
         howToObtainEs:
             'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
+    },
+
+    // -------------------------------------------------------------------------
+    // AI / Credential Vault
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AI_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the AI credential vault (apps/api only). Encrypts/decrypts provider API keys at rest. Min 32 chars (Zod). Optional until AI features are wired everywhere.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales de IA (solo apps/api). Cifra/descifra las API keys de proveedores en reposo. Mínimo 32 caracteres (Zod). Opcional hasta que las features de IA estén cableadas en todos los entornos.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
+        apps: ['api'],
+        category: 'ai',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
 
     // -------------------------------------------------------------------------
@@ -1137,6 +1175,38 @@ export const HOSPEDA_ENV_VARS = [
             'Free-text label applied to all Sentry events. Set to `production` on the prod container and `staging` on the staging container. Takes precedence over NODE_ENV in the Sentry init — lets both deployments run with NODE_ENV=production (preserving prod-like trace/profile sampling) while remaining separable in the Sentry dashboard.',
         howToObtainEs:
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
+    },
+    {
+        name: 'HOSPEDA_POSTHOG_KEY',
+        description: 'PostHog project API key for server-side AI event analytics',
+        descriptionEs: 'API key del proyecto PostHog para analíticas server-side de eventos de IA',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'PostHog → your project → Settings → Project API Keys → copy the project API key (starts with phc_). Leave blank to disable AI event analytics without breaking anything.',
+        howToObtainEs:
+            'PostHog → tu proyecto → Settings → Project API Keys → copiá el project API key (empieza con phc_). Dejala vacía para deshabilitar las analíticas de eventos de IA sin romper nada.'
+    },
+    {
+        name: 'HOSPEDA_POSTHOG_HOST',
+        description: 'PostHog API host (defaults to https://us.i.posthog.com)',
+        descriptionEs: 'Host de la API de PostHog (por defecto https://us.i.posthog.com)',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'Only needed when using a self-hosted PostHog instance or the EU cloud (https://eu.i.posthog.com). Leave unset to use the default US cloud endpoint.',
+        howToObtainEs:
+            'Solo necesitás configurarlo si usás una instancia self-hosted de PostHog o el cloud EU (https://eu.i.posthog.com). Si no lo configurás, se usa el endpoint por defecto del cloud US.'
     },
     {
         name: 'SENTRY_AUTH_TOKEN',

@@ -34,7 +34,14 @@ const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 vi.mock('@repo/db', () => ({
     getDb: () => ({
         select: mockSelect
-    })
+    }),
+    // EntityViewService singleton (service-core barrel) dereferences these at import.
+    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    entityViewModel: {
+        insertView: vi.fn(),
+        getStatsForEntities: vi.fn(async () => []),
+        purgeOlderThan: vi.fn(async () => 0)
+    }
 }));
 
 vi.mock('@repo/db/schemas', () => ({
@@ -142,8 +149,8 @@ describe('UsageTrackingService', () => {
             expect(result.success).toBe(true);
             expect(result.data).toBeDefined();
             expect(result.data!.customerId).toBe(mockCustomerId);
-            // SPEC-145 added MAX_ACTIVE_ALERTS and MAX_COMPARE_ITEMS, so total = 8
-            expect(result.data!.limits).toHaveLength(8);
+            // One entry per LimitKey enum value (6 original + 4 AI keys added in SPEC-173 T-030).
+            expect(result.data!.limits).toHaveLength(Object.values(LimitKey).length);
 
             // Check specific limit percentages
             const accommodationsLimit = result.data!.limits.find(

@@ -86,6 +86,16 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
     /**
+     * Server-only HMAC secret (pepper) for computing privacy-safe, day-scoped
+     * visitor deduplication hashes used by cross-entity view tracking (SPEC-159).
+     * Hash form: SHA-256(HMAC-SHA256(secret, 'yyyy-mm-dd') + truncatedIp + UA).
+     * Raw IPs are never stored or logged. Min 32 chars; rotating invalidates
+     * all current-day hashes (visitors are recounted as new for that day).
+     */
+    HOSPEDA_VIEWS_HASH_SECRET: z
+        .string()
+        .min(32, 'HOSPEDA_VIEWS_HASH_SECRET must be at least 32 characters'),
+    /**
      * User-Agent header sent to Nominatim and Photon when geocoding addresses
      * for the admin location picker (SPEC-097, Phase 6). Nominatim's usage
      * policy requires an identifiable User-Agent; missing or generic values
@@ -451,6 +461,11 @@ export const ApiEnvBaseSchema = z.object({
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
+    // PostHog (AI event analytics — optional, no-op when unset)
+    /** PostHog project API key for server-side AI event analytics (e.g. 'phc_xxx'). */
+    HOSPEDA_POSTHOG_KEY: z.string().optional(),
+    /** PostHog API host. Defaults to 'https://us.i.posthog.com' when unset. */
+    HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
     /**
@@ -509,7 +524,18 @@ export const ApiEnvBaseSchema = z.object({
      * Used by `UserBookmarkCollectionService._canCreate` to enforce the limit.
      * Default: 10. Range: 1–10000.
      */
-    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10)
+    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10),
+
+    // AI / Credential Vault
+    // Decision (owner-approved 2026-06-04): optional (NOT required) so the API
+    // does not fail at boot in envs where the AI feature is not yet active.
+    // The vault crypto (T-021) will throw at runtime with a clear error when
+    // the key is accessed-but-missing. Promote to required once AI is wired
+    // everywhere and the key is set in Coolify for all environments.
+    HOSPEDA_AI_VAULT_MASTER_KEY: z
+        .string()
+        .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
+        .optional()
 });
 
 /**

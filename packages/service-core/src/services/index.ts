@@ -8,6 +8,7 @@ export * from './attraction/attraction.service';
 export * from './destination/destination.service';
 export * from './destinationReview/destinationReview.service';
 export * from './entityComment/entityComment.service';
+export * from './entityView/index.js';
 export * from './event/event.service';
 export * from './exchange-rate';
 export * from './geocoding';

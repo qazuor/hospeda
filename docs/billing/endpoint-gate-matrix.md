@@ -88,6 +88,10 @@
 | `GET /api/v1/protected/conversations/unread-count` | `conversations/protected/unread-count.ts` | none | - | n/a | Read own inbox badge; auth-only sufficient |
 | `GET /api/v1/protected/conversations/me/response-rate` | `conversations/protected/response-rate.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/conversations/me/monthly-inquiries` | `conversations/protected/monthly-inquiries.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
+| **VIEWS — PROTECTED (SPEC-159)** | | | | | |
+| `GET /api/v1/protected/views/accommodations/me` | `views/protected/accommodations-me.ts` | gate | `view_basic_stats` | wired | View stats feed HOST Card G alongside ratings/response-rate, all VIEW_BASIC_STATS-gated — views must match (SPEC-159) |
+| `GET /api/v1/protected/views/posts` | `views/protected/posts.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via POST_VIEW_ALL, editors are not billing customers |
+| `GET /api/v1/protected/views/events` | `views/protected/events.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via EVENT_VIEW_ALL, editors are not billing customers |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |

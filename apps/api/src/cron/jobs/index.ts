@@ -37,3 +37,4 @@ export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js'
 export { subscriptionPollJob } from './subscription-poll.job.js';
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
+export { entityViewsPurgeJob } from './entity-views-purge.job.js';

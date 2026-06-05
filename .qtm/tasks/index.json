@@ -196,6 +196,25 @@
             "progress": "13/15",
             "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
             "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry"
+        },
+        {
+            "specId": "SPEC-159",
+            "title": "Cross-Entity View Tracking",
+            "status": "completed",
+            "progress": "15/15",
+            "path": "SPEC-159-cross-entity-view-tracking",
+            "branch": "spec/SPEC-159-cross-entity-view-tracking"
+        },
+        {
+            "specId": "SPEC-197",
+            "title": "Admin View-Stats Surfaces",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-197-admin-view-stats-surfaces",
+            "branch": "spec/SPEC-197-admin-view-stats-surfaces",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
+            "base": "staging",
+            "note": "Spec approved by owner 2026-06-05; tasks pending atomization (run task-from-spec when work starts)."
         }
     ],
     "standalone": {

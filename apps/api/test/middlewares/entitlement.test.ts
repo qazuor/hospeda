@@ -561,11 +561,12 @@ describe('entitlementMiddleware', () => {
         it('should set tourist-free fallback entitlements (SPEC-143 T-143-58)', async () => {
             // SPEC-143 T-143-58 shipped a tourist-free fallback in
             // loadEntitlements: when getByCustomerId returns no subs, the
-            // middleware now seeds the 4 TOURIST_FREE_PLAN entitlements
-            // (SAVE_FAVORITES, WRITE_REVIEWS, READ_REVIEWS,
-            // CAN_VIEW_RECOMMENDATIONS) instead of an empty set. This pins
-            // the new contract so a future regression to "empty set" fails
-            // here loudly.
+            // middleware seeds the TOURIST_FREE_PLAN entitlements instead of
+            // an empty set. This pins the contract so a future regression to
+            // "empty set" fails here loudly.
+            // SPEC-173 T-030 added AI_CHAT + AI_SEARCH to tourist-free.
+            // AI_SUPPORT was removed (SPEC-200 pending, owner 2026-06-05),
+            // so the pinned set is now 6 keys.
             app.use((c, next) => {
                 c.set('billingEnabled', true);
                 c.set('billingCustomerId', 'test-customer-id');
@@ -586,13 +587,15 @@ describe('entitlementMiddleware', () => {
                 readonly keys: readonly string[];
             };
 
-            expect(data.entitlementsCount).toBe(4);
+            expect(data.entitlementsCount).toBe(6);
             expect(data.keys).toEqual(
                 [
                     EntitlementKey.SAVE_FAVORITES,
                     EntitlementKey.WRITE_REVIEWS,
                     EntitlementKey.READ_REVIEWS,
-                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+                    EntitlementKey.AI_CHAT,
+                    EntitlementKey.AI_SEARCH
                 ].sort()
             );
         });

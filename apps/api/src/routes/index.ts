@@ -58,6 +58,12 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
+import {
+    adminAiCredentialsRoutes,
+    adminAiPromptsRoutes,
+    adminAiSettingsRoutes,
+    adminAiUsageRoutes
+} from './ai/index.js';
 import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
@@ -98,6 +104,7 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { protectedViewsRoutes, viewsRoutes } from './views';
 import {
     brevoWebhookRoutes,
     createMercadoPagoWebhookRoutes,
@@ -218,6 +225,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
 
+        // Cross-entity view tracking capture (SPEC-159 T-008)
+        // Fire-and-forget; always 202. No auth required.
+        app.route('/api/v1/public', viewsRoutes);
+
         apiLogger.debug('✅ Public routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -261,6 +272,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // What's New (SPEC-175 — role-filtered release-notes with seen state)
         app.route('/api/v1/protected/whats-new', protectedWhatsNewRoutes);
+
+        // Cross-entity view stats (SPEC-159 T-009/T-010)
+        // Protected: host accommodation stats + editor post/event stats.
+        // Public capture (T-008) lives under /api/v1/public above.
+        app.route('/api/v1/protected/views', protectedViewsRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at
@@ -363,6 +379,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+
+        // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
+        app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
+        app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
+        app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
+        app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
