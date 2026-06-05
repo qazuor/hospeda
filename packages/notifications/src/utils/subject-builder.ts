@@ -33,7 +33,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // Newsletter (SPEC-101)
     [NotificationType.NEWSLETTER_VERIFICATION]: 'Confirmá tu suscripción al newsletter de Hospeda',
     [NotificationType.NEWSLETTER_WELCOME]: 'Bienvenido al newsletter de Hospeda',
-    [NotificationType.NEWSLETTER_CAMPAIGN]: '{subject}'
+    [NotificationType.NEWSLETTER_CAMPAIGN]: '{subject}',
+
+    // AI cost threshold alert (SPEC-173 T-025)
+    [NotificationType.AI_COST_THRESHOLD_ALERT]:
+        '[Admin] Alerta de costo IA — {thresholdPct}% del presupuesto ({scope})'
 };
 
 /**

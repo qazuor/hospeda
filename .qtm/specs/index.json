@@ -426,7 +426,7 @@
             "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-173-ai-core",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-173-ai-core",
@@ -669,6 +669,58 @@
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["analytics", "views", "admin", "dashboards", "recharts", "phase-2"],
             "note": "SPEC-159 phase-2 consumer, owner-approved 2026-06-05: fills the 3 SPEC-155 deferred dashboard slots + ADMIN summary card + detail chips + list columns + /analytics/views page (top-N + daily series). 4 new /admin/views/* endpoints (ANALYTICS_VIEW). Tasks pending atomization."
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-198-ai-text-improvement",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child A of SPEC-173. HOST text improvement, multi-locale, accept/reject UX over ai-core (feature text_improve, owner/complex only). DRAFT with open questions."
+        },
+        {
+            "specId": "SPEC-199",
+            "title": "AI Natural-Language Search",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-199-ai-nl-search",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child B of SPEC-173. NL search: extractIntent -> structured query, NO embeddings V1 (feature search). BLOCKING open question: anonymous UX vs login-required AI. DRAFT."
+        },
+        {
+            "specId": "SPEC-200",
+            "title": "AI Accommodation Chat (tourist)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-200-ai-accommodation-chat",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+        },
+        {
+            "specId": "SPEC-201",
+            "title": "AI Support Assistant",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-201-ai-support-assistant",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child D of SPEC-173. Support assistant over docs corpus (feature support). TOP open question: audience — ai_support ungranted from all plans pending decision. DRAFT."
         }
     ]
 }

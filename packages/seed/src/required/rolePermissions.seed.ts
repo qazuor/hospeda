@@ -337,7 +337,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTINGS_WRITE,
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
+        PermissionEnum.AI_SETTINGS_MANAGE
     ],
 
     [RoleEnum.ADMIN]: [

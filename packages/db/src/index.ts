@@ -7,6 +7,7 @@ export {
     desc,
     asc,
     count,
+    max,
     gt,
     gte,
     lt,

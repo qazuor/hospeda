@@ -57,7 +57,11 @@ const RESOURCE_NAMES: Record<LimitKey, string> = {
     max_properties: 'propiedades',
     max_staff_accounts: 'cuentas de personal',
     max_active_alerts: 'alertas de precio activas',
-    max_compare_items: 'elementos en el comparador'
+    max_compare_items: 'elementos en el comparador',
+    max_ai_text_improve_per_month: 'mejoras de texto con IA por mes',
+    max_ai_chat_per_month: 'conversaciones con IA por mes',
+    max_ai_search_per_month: 'búsquedas con IA por mes',
+    max_ai_support_per_month: 'consultas al soporte IA por mes'
 };
 
 /**

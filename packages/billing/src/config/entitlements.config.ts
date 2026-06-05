@@ -240,5 +240,30 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         name: 'Personalized recommendations',
         description: 'Access to personalized accommodation recommendations based on preferences'
+    },
+    // AI feature entitlements (SPEC-173)
+    {
+        key: EntitlementKey.AI_TEXT_IMPROVE,
+        name: 'AI text improvement',
+        description:
+            'Access to the AI-powered text improvement tool for enhancing accommodation descriptions and other content'
+    },
+    {
+        key: EntitlementKey.AI_CHAT,
+        name: 'AI chat assistant',
+        description:
+            'Access to the AI chat assistant for travel planning, accommodation recommendations, and general queries'
+    },
+    {
+        key: EntitlementKey.AI_SEARCH,
+        name: 'AI-powered search',
+        description:
+            'Access to AI-powered semantic search for finding the most relevant accommodations'
+    },
+    {
+        key: EntitlementKey.AI_SUPPORT,
+        name: 'AI support assistant',
+        description:
+            'Access to the AI-powered support assistant for platform help and troubleshooting'
     }
 ];

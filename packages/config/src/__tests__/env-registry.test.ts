@@ -53,8 +53,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * 203 (2026-06-05, SPEC-159 T-005): added HOSPEDA_VIEWS_HASH_SECRET (server-side
  * HMAC secret for the cookieless visitor hash used by entity view tracking).
+ *
+ * 204 (2026-06-04, SPEC-173 T-003/T-021): added HOSPEDA_AI_VAULT_MASTER_KEY
+ * (AES-256-GCM master key for the AI credential vault).
+ *
+ * 206 (2026-06-05, SPEC-173 T-035): added HOSPEDA_POSTHOG_KEY and
+ * HOSPEDA_POSTHOG_HOST for server-side AI event analytics.
  */
-const EXPECTED_VAR_COUNT = 203;
+const EXPECTED_VAR_COUNT = 206;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -79,7 +85,8 @@ const EXPECTED_CATEGORIES = [
     'client-web',
     'client-admin',
     'docker',
-    'system'
+    'system',
+    'ai'
 ] as const;
 
 describe('ENV_REGISTRY', () => {
@@ -232,7 +239,8 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
                 'HOSPEDA_EMAIL_API_KEY',
                 'HOSPEDA_SEED_SUPER_ADMIN_PASSWORD',
-                'POSTGRES_PASSWORD'
+                'POSTGRES_PASSWORD',
+                'HOSPEDA_AI_VAULT_MASTER_KEY'
             ];
 
             for (const name of expectedSecrets) {
@@ -466,6 +474,18 @@ describe('ENV_REGISTRY', () => {
 
             // Assert - snapshot of var counts per category
             expect(countByCategory).toMatchSnapshot();
+        });
+    });
+
+    describe('HOSPEDA_AI_VAULT_MASTER_KEY (SPEC-173 T-003)', () => {
+        it('should be registered, secret, optional, category ai, apps includes api', () => {
+            const entry = REGISTRY.find((e) => e.name === 'HOSPEDA_AI_VAULT_MASTER_KEY');
+
+            expect(entry, 'HOSPEDA_AI_VAULT_MASTER_KEY not found in registry').toBeDefined();
+            expect(entry?.secret, 'should be marked as secret').toBe(true);
+            expect(entry?.required, 'should be optional (not required)').toBe(false);
+            expect(entry?.category, 'should belong to the ai category').toBe('ai');
+            expect(entry?.apps, 'should list api as a consumer').toContain('api');
         });
     });
 
