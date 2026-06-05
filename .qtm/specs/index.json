@@ -68,7 +68,7 @@
         },
         {
             "specId": "SPEC-122",
-            "title": "Production-Ready Billing — Master Plan",
+            "title": "Production-Ready Billing \u2014 Master Plan",
             "type": "epic",
             "complexity": "high",
             "status": "draft",
@@ -163,7 +163,7 @@
         },
         {
             "specId": "SPEC-129",
-            "title": "Security Audit — Dependency Vulnerabilities Remediation",
+            "title": "Security Audit \u2014 Dependency Vulnerabilities Remediation",
             "type": "security",
             "complexity": "medium",
             "status": "draft",
@@ -234,7 +234,7 @@
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "parent": "SPEC-193",
             "created": "2026-05-19T00:00:00Z",
-            "discoveredDuring": "SPEC-143 T-143-27 — user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses soft-cancel branch of qzpay-core",
+            "discoveredDuring": "SPEC-143 T-143-27 \u2014 user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses soft-cancel branch of qzpay-core",
             "dependsOn": ["SPEC-143", "SPEC-109"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
@@ -255,7 +255,7 @@
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "parent": "SPEC-193",
             "created": "2026-05-20T00:00:00Z",
-            "discoveredDuring": "SPEC-143 T-143-63 reframe — original task scope conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism",
+            "discoveredDuring": "SPEC-143 T-143-63 reframe \u2014 original task scope conflated cron-lag defensive grace and plan-disable lifecycle with the shipped past_due grace mechanism",
             "dependsOn": ["SPEC-143"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
@@ -277,7 +277,7 @@
             "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
             "parent": "SPEC-193",
             "created": "2026-05-20T00:00:00Z",
-            "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer",
+            "discoveredDuring": "SPEC-143 T-143-59 reframe \u2014 qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer",
             "dependsOn": ["SPEC-143"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
@@ -299,7 +299,7 @@
             "path": "SPEC-150-billing-multi-currency-support",
             "parent": "SPEC-193",
             "created": "2026-05-20T00:00:00Z",
-            "discoveredDuring": "SPEC-143 T-143-62 reframe — multi-currency price selection is aspirational. billing_customers has no currency/locale, billing_plans has single-currency price columns, checkout never branches on customer currency, exchange_rates table exists but is decorative wrt checkout, addon currency mismatch is not validated",
+            "discoveredDuring": "SPEC-143 T-143-62 reframe \u2014 multi-currency price selection is aspirational. billing_customers has no currency/locale, billing_plans has single-currency price columns, checkout never branches on customer currency, exchange_rates table exists but is decorative wrt checkout, addon currency mismatch is not validated",
             "dependsOn": ["SPEC-143"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": [
@@ -320,7 +320,7 @@
             "status": "draft",
             "path": "SPEC-159-cross-entity-view-tracking",
             "created": "2026-05-26T00:00:00Z",
-            "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. Extracted as heavy backend: three dashboard view widgets (HOST accommodation views, EDITOR post views, EDITOR event views) have no DB-backed data — PostHog tracks client-side only. Consolidated into one cross-entity tracking piece.",
+            "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. Extracted as heavy backend: three dashboard view widgets (HOST accommodation views, EDITOR post views, EDITOR event views) have no DB-backed data \u2014 PostHog tracks client-side only. Consolidated into one cross-entity tracking piece.",
             "dependsOn": [],
             "enables": ["SPEC-155"],
             "firstAllocatedViaEngramProtocol": true,
@@ -414,23 +414,22 @@
             "dependsOn": ["SPEC-143", "SPEC-145", "SPEC-194"],
             "archived": false,
             "tags": ["billing", "downgrade", "entitlements", "limits", "backend"],
-            "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry — registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land."
+            "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry \u2014 registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land."
         },
         {
             "specId": "SPEC-173",
             "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
             "type": "feat",
             "complexity": "high",
-            "status": "completed",
+            "status": "in-progress",
             "path": "SPEC-173-ai-core",
             "created": "2026-05-29T00:00:00.000Z",
             "branch": "spec/SPEC-173-ai-core",
             "base": "staging",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-173-ai-core",
             "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
             "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
-            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
+            "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable \u2014 conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
         },
         {
             "specId": "SPEC-174",
@@ -475,7 +474,7 @@
         },
         {
             "specId": "SPEC-181",
-            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "title": "PostHog Reverse Proxy \u2014 first-party analytics ingestion (web)",
             "type": "fix",
             "complexity": "low-medium",
             "status": "in-progress",
@@ -500,11 +499,11 @@
                 "ad-blocker",
                 "env-registry"
             ],
-            "note": "Driver BETA-77. Web PostHog sends events directly to us.i.posthog.com — blocked by ad-blockers (est. 25-35% desktop loss in Argentina). Solution: Cloudflare Worker proxying /ingest/* on hospeda.com.ar to PostHog Cloud US. Web-only (admin out of scope). CRITICAL coupling: CSP in middleware-helpers.ts hardcodes the PostHog external hosts; removing them and changing PUBLIC_POSTHOG_HOST must be atomic with the Worker already live. 11 tasks across 4 phases: phase-worker (Worker + wrangler + test), phase-app (CSP + env-registry + CSP regression test), phase-docs, phase-verify (owner ops + smoke). T-010/T-011 are owner-only manual actions."
+            "note": "Driver BETA-77. Web PostHog sends events directly to us.i.posthog.com \u2014 blocked by ad-blockers (est. 25-35% desktop loss in Argentina). Solution: Cloudflare Worker proxying /ingest/* on hospeda.com.ar to PostHog Cloud US. Web-only (admin out of scope). CRITICAL coupling: CSP in middleware-helpers.ts hardcodes the PostHog external hosts; removing them and changing PUBLIC_POSTHOG_HOST must be atomic with the Worker already live. 11 tasks across 4 phases: phase-worker (Worker + wrangler + test), phase-app (CSP + env-registry + CSP regression test), phase-docs, phase-verify (owner ops + smoke). T-010/T-011 are owner-only manual actions."
         },
         {
             "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
+            "title": "Vitest Test-Suite Performance \u2014 Cut Per-File Overhead Without Saturating the Machine",
             "status": "draft",
             "complexity": "medium",
             "path": "SPEC-188-vitest-test-performance",
@@ -523,7 +522,7 @@
         },
         {
             "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
+            "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
             "type": "fix",
             "complexity": "medium-high",
             "status": "in-progress",
@@ -559,7 +558,7 @@
         },
         {
             "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
+            "title": "Admin Entity Lists v2 \u2014 filters, grid cards, host portfolio & tags migration",
             "type": "feature",
             "status": "in-progress",
             "complexity": "high",
@@ -572,7 +571,7 @@
         },
         {
             "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+            "title": "Web Dynamic Image Grid \u2014 count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
             "type": "feature",
             "status": "draft",
             "complexity": "medium",
@@ -585,7 +584,7 @@
         },
         {
             "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+            "title": "Rich Text Entity Descriptions \u2014 per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "type": "feature",
             "status": "draft",
             "complexity": "high",
@@ -598,7 +597,7 @@
         },
         {
             "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+            "title": "Optimize Seed & App Builds \u2014 run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "type": "refactor",
             "status": "draft",
             "complexity": "medium",
@@ -611,7 +610,7 @@
         },
         {
             "specId": "SPEC-190",
-            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
+            "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
             "type": "refactor",
             "status": "draft",
             "complexity": "medium-high",
@@ -624,7 +623,7 @@
         },
         {
             "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
+            "title": "Web Contribution Pages & Banners \u2014 /colaborar hub, report link & recruitment banners",
             "type": "feature",
             "status": "draft",
             "complexity": "medium",
@@ -637,7 +636,7 @@
         },
         {
             "specId": "SPEC-192",
-            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+            "title": "Billing Catalog to DB \u2014 complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "type": "refactor",
             "status": "draft",
             "complexity": "high",
@@ -651,7 +650,7 @@
         },
         {
             "specId": "SPEC-193",
-            "title": "Billing Go-Live Readiness — Master",
+            "title": "Billing Go-Live Readiness \u2014 Master",
             "type": "epic",
             "complexity": "high",
             "status": "draft",
@@ -742,7 +741,7 @@
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child D of SPEC-173. Support assistant over docs corpus (feature support). TOP open question: audience — spec says admin tech-support but billing matrix grants ai_support to ALL plans. DRAFT."
+            "note": "Child D of SPEC-173. Support assistant over docs corpus (feature support). TOP open question: audience \u2014 spec says admin tech-support but billing matrix grants ai_support to ALL plans. DRAFT."
         }
     ]
 }

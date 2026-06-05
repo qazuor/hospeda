@@ -2,7 +2,7 @@
 id: SPEC-173
 slug: ai-core
 title: AI Foundation Package (provider-agnostic @repo/ai-core)
-status: completed
+status: in-progress
 owner: qazuor
 created: 2026-05-29
 designResolvedAt: 2026-06-04
@@ -163,7 +163,7 @@ rewriting its data layer — accepted consciously to stay consistent with the ce
 pattern. **Mitigation:** ALL DB access is isolated in `src/storage/` so the coupling is contained
 to one module.
 
-Tables (all soft-delete + timestamps per project convention):
+Tables (soft-delete + timestamps per project convention, **except** `ai_usage`, `ai_request_log`, and `ai_credential_audit` which are **append-only** with no `deleted_at` / `updated_at`):
 
 | Table | Purpose |
 |-------|---------|
@@ -171,12 +171,14 @@ Tables (all soft-delete + timestamps per project convention):
 | `ai_provider_credentials` | Encrypted provider API keys (vault, §5.5) + metadata. |
 | `ai_credential_audit` | **(Q1 resolved)** Dedicated audit trail of credential mutations: actor, action (`created`/`rotated`/`deleted`), providerId, timestamp, ip. Permanent + queryable from admin (security trail over cost-bearing secrets; the repo has NO generic admin audit table — only `billing_audit_logs` from the third-party qzpay lib and a log-based `AuditEventType`, neither suitable). |
 | `ai_prompt_versions` | Versioned system prompts per feature (with `is_active` + history). |
-| `ai_usage` | Per-call metering: userId, feature, provider, model, tokensIn, tokensOut, costEstimate (centavos), latencyMs, status, timestamp. |
-| `ai_request_log` | Audit of every call (request metadata, PII-scrubbed) for debugging. |
+| `ai_usage` | Per-call metering: userId, feature, provider, model, tokensIn, tokensOut, cost_estimate_micro_usd (integer micro-USD — see ADR-030 §3), latencyMs, status, timestamp. **Append-only** (no soft-delete / updated_at). |
+| `ai_request_log` | Audit of every call (request metadata, PII-scrubbed) for debugging. **Append-only** (no soft-delete / updated_at). |
 | `ai_conversations` | Generic multi-turn conversation container (used by chat child spec). |
 | `ai_messages` | Messages within a conversation (role, content, tokens, provider). |
+| `ai_credential_audit` | Dedicated audit trail of credential mutations. **Append-only** (no soft-delete / updated_at). |
 
-> Cost is stored as **integer centavos** (project money convention).
+> Cost is stored as **integer micro-USD** (1 µUSD = 0.000001 USD). Centavos (ARS) round
+> per-call AI costs to zero, making ceilings non-functional — see ADR-030 §3.
 
 ### 5.5 Secrets vault (owner-approved: keys editable from admin)
 
@@ -236,15 +238,19 @@ Enforcement matrix:
 
   | Plan | ai_text_improve | ai_chat | ai_search | ai_support |
   |------|----------------|---------|-----------|------------|
-  | tourist-free | — | 10 | 30 | 5 |
-  | tourist-plus | — | 50 | 150 | 20 |
-  | tourist-vip | — | -1 | -1 | -1 |
-  | owner-basico | 20 | 20 | 50 | 10 |
-  | owner-pro | 100 | 100 | 200 | 30 |
-  | owner-premium | -1 | -1 | -1 | -1 |
-  | complex-basico | 30 | 30 | 50 | 15 |
-  | complex-pro | 150 | 150 | 200 | 40 |
-  | complex-premium | -1 | -1 | -1 | -1 |
+  | tourist-free | — | 10 | 30 | — |
+  | tourist-plus | — | 50 | 150 | — |
+  | tourist-vip | — | -1 | -1 | — |
+  | owner-basico | 20 | 20 | 50 | — |
+  | owner-pro | 100 | 100 | 200 | — |
+  | owner-premium | -1 | -1 | -1 | — |
+  | complex-basico | 30 | 30 | 50 | — |
+  | complex-pro | 150 | 150 | 200 | — |
+  | complex-premium | -1 | -1 | -1 | — |
+
+  > **2026-06-05 owner decision**: `ai_support` ungranted on all plans pending
+  > SPEC-200 audience resolution (internal-staff vs. end-user). Re-granting is a
+  > trivial one-line change per plan once the audience is decided.
 
 - Every call is metered into `ai_usage` regardless of tier (reporting per user / feature / month).
 - Exceeding a limit returns a controlled `403` with an upgrade hint (contract aligned with the
@@ -320,7 +326,7 @@ respond in the requested locale. Default locale `es` (Argentina market).
   versioned per-feature prompts (with code default fallback), feature flags, and per-feature/plan
   quotas — all from the admin panel, no redeploy.
 - **FR-6** All AI features require an authenticated user; anonymous calls are rejected.
-- **FR-7** Every AI call is metered into `ai_usage` (tokens, cost in centavos, feature, provider,
+- **FR-7** Every AI call is metered into `ai_usage` (tokens, cost in micro-USD, feature, provider,
   latency, status) and reportable per user / feature / month.
 - **FR-8** Per-plan quotas are enforced via the existing entitlement system; exceeding returns a
   controlled `403` with upgrade hint.
@@ -354,7 +360,7 @@ respond in the requested locale. Default locale `es` (Argentina market).
   invoke an AI feature, *then* they get a controlled `403` with an upgrade hint, *and* the attempt
   is metered.
 - **AC-7 (metering)** — *Given* a successful AI call, *then* an `ai_usage` row exists with tokens,
-  cost (centavos), feature, provider, latency, status.
+  cost (micro-USD), feature, provider, latency, status.
 - **AC-8 (cost ceiling)** — *Given* a global ceiling of `USD 200/month` and accumulated spend at
   `USD 200`, *when* a new call is attempted, *then* it is hard-stopped with a controlled error,
   *and* a 100% alert was sent via `@repo/notifications`.

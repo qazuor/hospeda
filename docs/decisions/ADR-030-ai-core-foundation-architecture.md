@@ -258,10 +258,10 @@ requirement), fail-open with telemetry is the right tradeoff.
 - `packages/db/src/schemas/ai/` — `ai_settings`, `ai_provider_credentials`,
   `ai_credential_audit`, `ai_prompt_versions`, `ai_usage`, `ai_request_log`,
   `ai_conversations`, `ai_messages`
-- `apps/api/src/utils/ai-factory.ts` — `createConfiguredAiService` (vault decrypt + AiService factory)
+- `apps/api/src/services/ai-service.factory.ts` — `createConfiguredAiService` (vault decrypt + AiService factory)
 - `packages/billing/src/types/entitlement.types.ts` — `ai_*` entitlement keys
 - `packages/billing/src/types/plan.types.ts` — `max_ai_*_per_month` limit keys
-- `apps/api/src/routes/ai/admin/` — admin AI settings routes (`AI_SETTINGS_MANAGE`)
+- `apps/api/src/routes/ai/` — admin AI settings routes (`AI_SETTINGS_MANAGE`)
 - ADR-006 — integer monetary values (centavos convention; AI uses micro-USD for precision)
 - ADR-016 — billing fail-open policy (same fail-open philosophy applied to moderation)
 - ADR-026 — collections limit strategy (per-feature limit pattern)

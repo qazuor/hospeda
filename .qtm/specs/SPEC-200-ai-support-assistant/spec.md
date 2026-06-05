@@ -60,23 +60,14 @@ changes the implementation.
 | Input/output moderation | Applied automatically inside the engine |
 | PII scrubber | Applied before Sentry/PostHog telemetry |
 
-The `ai_support` entitlement gate and `max_ai_support_per_month` limit key are
-already seeded across all plans (SPEC-173 §5.7):
+The `ai_support` entitlement gate and `max_ai_support_per_month` limit key exist
+in the enums and `ENTITLEMENT_DEFINITIONS`, but are **NOT currently seeded** in
+any plan (removed 2026-06-05 per owner decision — see §9 Q-1 note). Plans are
+runtime-editable (SPEC-168); re-granting is a one-line change per plan once the
+audience is decided.
 
-| Plan | ai_support gate | max_ai_support_per_month |
-|------|-----------------|--------------------------|
-| tourist-free | yes | 5 |
-| tourist-plus | yes | 20 |
-| tourist-vip | yes | -1 (unlimited) |
-| owner-basico | yes | 10 |
-| owner-pro | yes | 30 |
-| owner-premium | yes | -1 |
-| complex-basico | yes | 15 |
-| complex-pro | yes | 40 |
-| complex-premium | yes | -1 |
-
-The fact that tourist-free gets `ai_support` with a non-zero limit is the direct
-source of the audience ambiguity addressed in §9 Q-1.
+The audience ambiguity in §9 Q-1 remains the blocking prerequisite for any
+implementation.
 
 ### 2.2 What does NOT exist yet
 
@@ -338,10 +329,19 @@ This table does NOT exist yet; implementation depends on Q-3.
 
 ### Q-1 (BLOCKING) — Audience: internal admin, end-user, or both?
 
+> **2026-06-05 owner decision (seed grants removed as safe default):** The
+> `ai_support` entitlement and `max_ai_support_per_month` limit have been
+> **removed from all plan seed configs** in `packages/billing/src/config/plans.config.ts`
+> pending resolution of this question. The keys remain defined in the enums and
+> `ENTITLEMENT_DEFINITIONS` — re-granting is a trivial one-line change per plan
+> once the audience is decided. Plans are runtime-editable from the admin panel
+> (SPEC-168) so the grant can also be toggled without a code deploy.
+
 **This is the central design fork.** SPEC-173 §4 describes this as an
 "Admin tech-support assistant (RAG over Hospeda docs corpus)," which reads as
-internal/staff. However, SPEC-173 §5.7 grants `ai_support` to tourist-free users
-(5/month), which implies end-user scope.
+internal/staff. However, SPEC-173 §5.7 originally granted `ai_support` to
+tourist-free users (5/month), which implied end-user scope (now removed — see
+note above).
 
 The two readings are not compatible in one important dimension: **corpus source**.
 Internal staff need answers about deployment, billing configuration, and operational
