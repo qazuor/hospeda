@@ -20,6 +20,8 @@ import {
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ChevronLeftIcon, ChevronRightIcon, FullscreenIcon } from '@repo/icons';
+import { getMediaUrl, stripCloudinaryTransform } from '@repo/media';
+import type { MediaPreset } from '@repo/media';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './ImageGallery.module.css';
 
@@ -51,6 +53,49 @@ interface ImageGalleryProps {
     readonly locale: SupportedLocale;
     /** Optional CSS class override on the root element */
     readonly className?: string;
+}
+
+// ─── Per-cell URL builder ─────────────────────────────────────────────────────
+
+/**
+ * Builds a Cloudinary-optimized URL for a specific gallery cell role.
+ *
+ * For Cloudinary URLs that have already been transformed with a generic preset
+ * (e.g. `gallery`: `w_800,q_auto,f_auto,dpr_auto`) at extraction time, this
+ * function first strips the existing transform segment via
+ * `stripCloudinaryTransform` and then re-applies the correct per-cell preset
+ * via `getMediaUrl`. This ensures the CDN returns an asset that is pre-cropped
+ * to the cell's fixed aspect-ratio (SPEC-186 FR-3 / §7), eliminating
+ * client-side crop and zeroing CLS.
+ *
+ * Non-Cloudinary URLs (placeholders, external hosts) are returned unchanged —
+ * `getMediaUrl` pass-through semantics apply.
+ *
+ * @param url - Original image URL (may already carry a Cloudinary transform).
+ * @param preset - Named preset matching the cell's role and fixed aspect-ratio.
+ * @returns Optimized Cloudinary URL with `c_fill` + `ar_` matching the cell,
+ *   or the original URL if it is not a Cloudinary upload URL.
+ */
+function buildCellUrl(url: string, preset: MediaPreset): string {
+    const baseUrl = stripCloudinaryTransform(url);
+    return getMediaUrl(baseUrl, { preset });
+}
+
+/**
+ * Builds a large, non-cropped URL for the lightbox viewer.
+ *
+ * The lightbox should display the full image without a forced aspect-ratio
+ * crop so the subject is never clipped to a square or 4:3 frame. Uses the
+ * `full` preset (`q_auto,f_auto,dpr_auto`) which applies quality / format
+ * negotiation but no dimensional crop.
+ *
+ * Non-Cloudinary URLs pass through unchanged.
+ *
+ * @param url - Original image URL (may already carry a Cloudinary transform).
+ * @returns URL optimized for full-size lightbox display.
+ */
+function buildLightboxUrl(url: string): string {
+    return buildCellUrl(url, 'full');
 }
 
 // ─── Lightbox ────────────────────────────────────────────────────────────────
@@ -132,7 +177,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                 <figure className={styles.lightboxFigure}>
                     <img
                         key={current?.url}
-                        src={current?.url}
+                        src={current ? buildLightboxUrl(current.url) : undefined}
                         alt={current?.alt ?? ''}
                         className={styles.lightboxImg}
                     />
@@ -175,7 +220,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                                 onClick={() => setIndex(i)}
                             >
                                 <img
-                                    src={img.url}
+                                    src={buildCellUrl(img.url, 'galleryThumb')}
                                     alt={img.alt}
                                     className={styles.lightboxThumbImg}
                                     loading="lazy"
@@ -242,7 +287,10 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
             className={styles.grid}
             data-count={countKey}
         >
-            {/* Featured image — LCP candidate, eager load, full priority */}
+            {/* Featured image — LCP candidate, eager load, full priority.
+                Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto)
+                so the CDN crops server-side to the fixed 16:10 ratio — zero CLS,
+                no client-side crop, right-sized payload (SPEC-186 FR-3 §7). */}
             <button
                 type="button"
                 className={styles.cellFeatured}
@@ -250,7 +298,7 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                 onClick={() => onOpen(0)}
             >
                 <img
-                    src={featured.url}
+                    src={buildCellUrl(featured.url, 'galleryFeatured')}
                     alt={featured.alt}
                     className={styles.cellImg}
                     loading="eager"
@@ -273,7 +321,10 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                 </span>
             </button>
 
-            {/* Thumbnail column — rendered only when count >= 2 */}
+            {/* Thumbnail column — rendered only when count >= 2.
+                count=2: half cells (4:3) via galleryHalf preset.
+                count>=3: quarter cells (1:1) via galleryQuarter preset.
+                The CDN crops server-side to the cell's fixed ratio (SPEC-186 FR-3). */}
             {visibleThumbs.length > 0 && (
                 <div className={styles.thumbGrid}>
                     {visibleThumbs.map((img, i) => {
@@ -285,6 +336,9 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                         const lightboxIndex = i + 1;
 
                         const cellClass = count === 2 ? styles.cellHalf : styles.cellQuarter;
+                        // count=2 uses half cells (4:3 ratio); count>=3 uses quarter cells (1:1).
+                        const thumbPreset: MediaPreset =
+                            count === 2 ? 'galleryHalf' : 'galleryQuarter';
 
                         if (isOverlayCell) {
                             return (
@@ -293,7 +347,7 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                                     className={`${cellClass} ${styles.moreOverlay}`}
                                 >
                                     <img
-                                        src={img.url}
+                                        src={buildCellUrl(img.url, thumbPreset)}
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -332,7 +386,7 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                                 onClick={() => onOpen(lightboxIndex)}
                             >
                                 <img
-                                    src={img.url}
+                                    src={buildCellUrl(img.url, thumbPreset)}
                                     alt={img.alt}
                                     className={styles.cellImg}
                                     loading="lazy"
@@ -407,7 +461,11 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
 
     return (
         <div className={styles.coverPlusGrid}>
-            {/* Cover image — 16:9, eager load */}
+            {/* Cover image — 16:9, eager load.
+                Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto).
+                The spec §5 maps both the detail "featured" and cover-plus-grid "cover"
+                to the galleryFeatured preset family (closest available to 16:9 — §7
+                defines no dedicated 16:9 preset; 16:10 is the locked choice per §7). */}
             <button
                 type="button"
                 className={styles.coverBtn}
@@ -415,7 +473,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                 onClick={() => onOpen(0)}
             >
                 <img
-                    src={cover.url}
+                    src={buildCellUrl(cover.url, 'galleryFeatured')}
                     alt={cover.alt}
                     className={styles.coverImg}
                     loading="eager"
@@ -443,6 +501,9 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
 
                         // counts 2-3: half cells (4:3). counts 4-5+: quarter cells (1:1).
                         const cellClass = totalCount <= 3 ? styles.cellHalf : styles.cellQuarter;
+                        // Use the preset that matches the cell's fixed aspect-ratio (SPEC-186 FR-3 §7).
+                        const extrasPreset: MediaPreset =
+                            totalCount <= 3 ? 'galleryHalf' : 'galleryQuarter';
 
                         if (isOverlayCell) {
                             return (
@@ -451,7 +512,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                     className={`${cellClass} ${styles.moreOverlay}`}
                                 >
                                     <img
-                                        src={img.url}
+                                        src={buildCellUrl(img.url, extrasPreset)}
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -490,7 +551,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                 onClick={() => onOpen(lightboxIndex)}
                             >
                                 <img
-                                    src={img.url}
+                                    src={buildCellUrl(img.url, extrasPreset)}
                                     alt={img.alt}
                                     className={styles.cellImg}
                                     loading="lazy"
