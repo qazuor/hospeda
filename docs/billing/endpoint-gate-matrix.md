@@ -260,6 +260,7 @@
 | `DELETE /api/v1/admin/accommodations/{id}/reviews/{reviewId}` | `accommodation/reviews/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/reviews/{reviewId}/hard` | `accommodation/reviews/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/reviews/{reviewId}/restore` | `accommodation/reviews/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/reviews/{reviewId}/moderate` | `accommodation/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (SPEC-166; ACCOMMODATION_REVIEW_MODERATE) |
 | **DESTINATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/destinations` | `destination/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/destinations` | `destination/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
@@ -286,6 +287,7 @@
 | `DELETE /api/v1/admin/destinations/{id}/reviews/{reviewId}` | `destination/reviews/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/destinations/{id}/reviews/{reviewId}/hard` | `destination/reviews/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/destinations/{id}/reviews/{reviewId}/restore` | `destination/reviews/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/destinations/{id}/reviews/{reviewId}/moderate` | `destination/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (SPEC-166; DESTINATION_REVIEW_MODERATE) |
 | **EVENT — ADMIN** | | | | | |
 | `GET /api/v1/admin/events` | `event/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/events` | `event/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
@@ -513,6 +515,7 @@
 | `GET /api/v1/admin/geocoding/reverse` | `geocoding/admin/index.ts` | none | - | n/a | Admin geocoding proxy; PermissionEnum-gated |
 | **MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/moderation/pending-count` | `moderation/admin/pending-count.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `GET /api/v1/admin/moderation/reviews/pending-count` | `moderation/admin/reviews-pending-count.ts` | none | - | n/a | Admin moderation — OR-gated (ACCOMMODATION_REVIEW_MODERATE or DESTINATION_REVIEW_MODERATE; SPEC-166 §7) |
 | **SYSTEM — ADMIN** | | | | | |
 | `GET /api/v1/admin/system/health` | `system/admin/health.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **PLATFORM-SETTINGS — ADMIN** | | | | | |
