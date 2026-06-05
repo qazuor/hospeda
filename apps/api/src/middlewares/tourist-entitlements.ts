@@ -53,6 +53,12 @@ import { hasEntitlement } from './entitlement';
  * handles. No body-stream consumption, no custom HTTPException JSON
  * stringification.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, SAVE_FAVORITES)` always returns `true` for staff and
+ * `await next()` is called without a 403 being thrown.
+ *
  * @returns Middleware handler
  */
 export function gateFavorites(): AppMiddleware {
@@ -83,6 +89,12 @@ export function gateFavorites(): AppMiddleware {
  *
  * Note: This middleware expects current active alerts count to be passed
  * via context at 'currentActiveAlertsCount' key (set by route handler).
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so both the
+ * entitlement check and the limit check resolve in favour of the staff actor
+ * without throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -165,6 +177,12 @@ export function gateAlerts(): AppMiddleware {
  * Note: This middleware expects current compare items count to be passed
  * via context at 'currentCompareItemsCount' key (set by route handler).
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so both the
+ * entitlement check and the limit check resolve in favour of the staff actor
+ * without throwing a 403.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -245,6 +263,12 @@ export function gateComparator(): AppMiddleware {
  * Checks if user has the entitlement to attach photos to reviews.
  * VIP plan only feature.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_ATTACH_REVIEW_PHOTOS)` always returns `true` for
+ * staff and `await next()` is called without throwing a 403.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -291,6 +315,12 @@ export function gateReviewPhotos(): AppMiddleware {
  *
  * Checks if user has the entitlement to view their search history.
  * Plus and VIP plans only.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_VIEW_SEARCH_HISTORY)` always returns `true` for
+ * staff and `await next()` is called without throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -339,6 +369,12 @@ export function gateSearchHistory(): AppMiddleware {
  * Checks if user has the entitlement to view personalized recommendations.
  * VIP plan only feature.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_VIEW_RECOMMENDATIONS)` always returns `true` for
+ * staff and `await next()` is called without throwing a 403.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -385,6 +421,12 @@ export function gateRecommendations(): AppMiddleware {
  *
  * Checks if user has the entitlement to view exclusive deals.
  * VIP plan only feature.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, EXCLUSIVE_DEALS)` always returns `true` for staff and
+ * `await next()` is called without throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -435,6 +477,14 @@ export function gateExclusiveDeals(): AppMiddleware {
  *
  * Note: This middleware expects event start date to be passed
  * via context at 'eventStartDate' key (set by route handler).
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass the entitlement check unconditionally. {@link entitlementMiddleware}
+ * loads the unlimited entitlement set for these roles before this function
+ * runs, so `hasEntitlement(c, EARLY_ACCESS_EVENTS)` always returns `true`
+ * for staff. The timing window check (24h early-access window) still runs if
+ * an `eventStartDate` is present in context, but the entitlement 403 is never
+ * thrown for staff.
  *
  * @returns Middleware handler
  *

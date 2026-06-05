@@ -692,6 +692,14 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  * Returns 403 Forbidden if user lacks the required entitlement.
  * Use this on routes that need specific features.
  *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} — before any billing-customer or plan lookup —
+ * and populates `userEntitlements` with the full unlimited set. By the time
+ * this function executes, the key is always present in the staff set, so no
+ * 403 is thrown. The bypass is invisible here by design: staff behaviour
+ * is policy of the loader, not the checker.
+ *
  * @param key - The entitlement key to check
  * @returns Middleware handler
  *
@@ -747,6 +755,15 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
  * Returns 403 Forbidden if user has reached the limit.
  * Note: This only checks the plan limit, not the current usage.
  * Route handlers must check actual usage against the limit.
+ *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} and populates `userLimits` with the unlimited
+ * sentinel (`-1`) for every key. When this function reads `limits.get(key)`,
+ * the value is `-1` (unlimited), which is neither 0 nor missing — both `has`
+ * checks pass and `await next()` is called without a 403. The bypass is
+ * invisible here by design: staff behaviour is policy of the loader, not
+ * the checker.
  *
  * @param key - The limit key to check
  * @returns Middleware handler

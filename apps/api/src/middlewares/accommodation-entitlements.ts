@@ -74,6 +74,12 @@ function hasMarkdownSyntax(value: string): boolean {
  * gateReviewResponse) target write surfaces that do not exist today.
  * See SPEC-143 #33 and the per-gate TODOs in this file.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_USE_RICH_DESCRIPTION)` returns `true` for staff and
+ * `await next()` is called without inspecting the body or throwing a 403.
+ *
  * @returns Middleware handler
  */
 export function gateRichDescription(): AppMiddleware {
@@ -155,6 +161,12 @@ function hasVideoEmbed(value: string): boolean {
  * same ServiceError(ENTITLEMENT_REQUIRED) envelope so the frontend has
  * consistent handling across all entitlement-gated routes.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_EMBED_VIDEO)` returns `true` for staff and
+ * `await next()` is called without inspecting the body or throwing a 403.
+ *
  * @returns Middleware handler
  */
 export function gateVideoEmbed(): AppMiddleware {
@@ -204,6 +216,12 @@ export function gateVideoEmbed(): AppMiddleware {
  * TODO (SPEC-143 #33): Not wired today. No route exists at
  * `GET /accommodations/:id/calendar`. Smoke B.7 returned 404 confirming
  * the missing surface. Wire this middleware once the calendar route ships.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_USE_CALENDAR)` always returns `true` for staff and
+ * `await next()` is called without throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -255,6 +273,12 @@ export function gateCalendarAccess(): AppMiddleware {
  * TODO (SPEC-143 #33): Not wired today. No route exists at
  * `POST /accommodations/:id/calendar/sync`. Depends on the calendar feature
  * surface (same blocker as `gateCalendarAccess`). Wire once the route ships.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_SYNC_EXTERNAL_CALENDAR)` always returns `true` for
+ * staff and `await next()` is called without throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -308,6 +332,12 @@ export function gateExternalCalendarSync(): AppMiddleware {
  * feature derived from `contactInfo.mobilePhone`. Wire this middleware only
  * after the schema gains explicit WhatsApp fields (product decision needed:
  * is it a separate field or just a flag on mobilePhone?).
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_CONTACT_WHATSAPP_DISPLAY)` returns `true` for staff
+ * and `await next()` is called without inspecting the body or throwing a 403.
  *
  * @returns Middleware handler
  *
@@ -384,6 +414,12 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  * `gateWhatsAppDisplay`: the WhatsApp feature surface is UI-only. Wire only
  * after the schema gains explicit fields.
  *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, CAN_CONTACT_WHATSAPP_DIRECT)` returns `true` for staff
+ * and `await next()` is called without inspecting the body or throwing a 403.
+ *
  * @returns Middleware handler
  *
  * @example
@@ -458,6 +494,12 @@ export function gateWhatsAppDirect(): AppMiddleware {
  * exists. Smoke B.6 confirmed only `POST /reviews` (create) is implemented;
  * there is no `POST /accommodations/:id/reviews/:reviewId/response`. Wire
  * this middleware once the response endpoint ships.
+ *
+ * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
+ * pass unconditionally. {@link entitlementMiddleware} loads the unlimited
+ * entitlement set for these roles before this function runs, so
+ * `hasEntitlement(c, RESPOND_REVIEWS)` always returns `true` for staff and
+ * `await next()` is called without throwing a 403.
  *
  * @returns Middleware handler
  *
