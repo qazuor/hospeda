@@ -2,7 +2,7 @@
 specId: SPEC-149
 title: Billing provider error propagation + Sentry context + retry policy
 type: refactor
-status: in-progress
+status: completed
 complexity: high
 created: 2026-05-20T00:00:00Z
 discoveredDuring: SPEC-143 T-143-59 reframe
