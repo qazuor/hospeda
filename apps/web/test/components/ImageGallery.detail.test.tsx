@@ -632,6 +632,9 @@ describe('DetailVariant — viewAllHref CTA link', () => {
         const link = screen.getByRole('link', { name: /todas las fotos/i });
         expect(link).toBeInTheDocument();
         expect(link).toHaveAttribute('href', '/es/alojamientos/test-slug/fotos/');
+        // Regression (T-018): the CTA must hard-navigate across the /fotos boundary
+        // — the ClientRouter head swap drops the island's injected stylesheet.
+        expect(link).toHaveAttribute('data-astro-reload');
     });
 
     it('present with viewAllHref and count=7, href is passed through verbatim', () => {

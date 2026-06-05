@@ -541,9 +541,15 @@ function DetailVariant({ images, onOpen, t, viewAllHref }: DetailVariantProps) {
                 )}
             </div>
             {showViewAll && (
+                /* data-astro-reload forces a full page load across the /fotos
+                boundary. The ClientRouter head swap drops the island's injected
+                stylesheet and the module-cached island JS never re-injects it on
+                back navigation, leaving the gallery unstyled (T-018 smoke bug).
+                A hard navigation also guarantees GLightbox initialisation. */
                 <a
                     href={viewAllHref}
                     className={styles.viewAllLink}
+                    data-astro-reload
                 >
                     {t('accommodations.detail.gallery.viewAll', 'Ver todas las fotos')}
                 </a>

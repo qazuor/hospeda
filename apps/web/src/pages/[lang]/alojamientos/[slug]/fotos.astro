@@ -152,7 +152,10 @@ const jsonLd = {
 
     <div class="fotos">
         <div class="fotos__back-row">
-            <a href={backUrl} class="fotos__back">
+            {/* data-astro-reload: full page load back to the detail page so the
+            gallery island re-imports and re-injects its CSS-module stylesheet
+            (the ClientRouter head swap drops it — T-018 smoke bug). */}
+            <a href={backUrl} class="fotos__back" data-astro-reload>
                 {t('accommodations.detail.gallery.backToAccommodation')}
             </a>
         </div>
@@ -186,7 +189,7 @@ const jsonLd = {
         </div>
 
         <div class="fotos__footer">
-            <a href={backUrl} class="fotos__back fotos__back--footer">
+            <a href={backUrl} class="fotos__back fotos__back--footer" data-astro-reload>
                 {t('accommodations.detail.gallery.backToAccommodation')}
             </a>
         </div>
