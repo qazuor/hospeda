@@ -227,8 +227,9 @@ export interface GetStatsForEditorEntitiesInput {
 export class EntityViewService extends BaseService {
     static readonly ENTITY_NAME = 'entity_views';
     protected readonly entityName = EntityViewService.ENTITY_NAME;
-    protected readonly model: EntityViewModel;
-    private readonly accommodationModel: AccommodationModel;
+    private readonly modelOverride: EntityViewModel | undefined;
+    private readonly accommodationModelOverride: AccommodationModel | undefined;
+    private accommodationModelLazy: AccommodationModel | undefined;
 
     constructor(
         ctx: ServiceConfig,
@@ -236,8 +237,34 @@ export class EntityViewService extends BaseService {
         accommodationModel?: AccommodationModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
-        this.model = model ?? entityViewModel;
-        this.accommodationModel = accommodationModel ?? new AccommodationModelClass();
+        // IMPORTANT: do NOT dereference @repo/db exports here. The singleton
+        // below is constructed at barrel import time; touching `entityViewModel`
+        // or `AccommodationModelClass` in the constructor breaks every test
+        // that partially mocks '@repo/db' (vitest mock proxies throw on access
+        // to undefined exports). Resolution is deferred to the lazy getters.
+        this.modelOverride = model;
+        this.accommodationModelOverride = accommodationModel;
+    }
+
+    /**
+     * Lazily resolves the entity-view model: injected override or the shared
+     * singleton. First dereference of `entityViewModel` happens on first
+     * method call, never at import/construction time.
+     */
+    protected get model(): EntityViewModel {
+        return this.modelOverride ?? entityViewModel;
+    }
+
+    /**
+     * Lazily resolves the accommodation model used for host ownership lookups.
+     * Instantiated once on first use (or the injected override).
+     */
+    private get accommodationModel(): AccommodationModel {
+        if (!this.accommodationModelLazy) {
+            this.accommodationModelLazy =
+                this.accommodationModelOverride ?? new AccommodationModelClass();
+        }
+        return this.accommodationModelLazy;
     }
 
     /**
