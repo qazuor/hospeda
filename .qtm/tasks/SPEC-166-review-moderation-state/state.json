@@ -13,12 +13,22 @@
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "package.json + tsconfig + vitest config", "completed": false },
-                { "title": "src/index.ts barrel + workspace registration", "completed": false }
+                {
+                    "title": "package.json + tsconfig + vitest config",
+                    "completed": false
+                },
+                {
+                    "title": "src/index.ts barrel + workspace registration",
+                    "completed": false
+                }
             ],
             "tags": ["package", "scaffold", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -38,11 +48,18 @@
                     "title": "Types: ModerationCategory, ModerationResult, ModerateTextInput",
                     "completed": false
                 },
-                { "title": "moderateTextInputSchema Zod + JSDoc", "completed": false }
+                {
+                    "title": "moderateTextInputSchema Zod + JSDoc",
+                    "completed": false
+                }
             ],
             "tags": ["package", "contract", "zod", "types"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -58,7 +75,10 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-010", "T-011"],
             "subtasks": [
-                { "title": "parseBlocklist + module-load env parse", "completed": false },
+                {
+                    "title": "parseBlocklist + module-load env parse",
+                    "completed": false
+                },
                 {
                     "title": "substring + domain scan -> ModerationResult mapping",
                     "completed": false
@@ -66,7 +86,11 @@
             ],
             "tags": ["package", "moderation", "stub", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -82,12 +106,22 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "match/clean/domain/case cases", "completed": false },
-                { "title": "edge cases: empty, multiple terms", "completed": false }
+                {
+                    "title": "match/clean/domain/case cases",
+                    "completed": false
+                },
+                {
+                    "title": "edge cases: empty, multiple terms",
+                    "completed": false
+                }
             ],
             "tags": ["package", "tests"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -103,12 +137,22 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Add to ApiEnvBaseSchema", "completed": false },
-                { "title": "Add to apps/api/.env.example", "completed": false }
+                {
+                    "title": "Add to ApiEnvBaseSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Add to apps/api/.env.example",
+                    "completed": false
+                }
             ],
             "tags": ["env", "config", "api"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -124,12 +168,22 @@
             "blockedBy": [],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
-                { "title": "PG enum in packages/db", "completed": false },
-                { "title": "Zod/TS enum in @repo/schemas", "completed": false }
+                {
+                    "title": "PG enum in packages/db",
+                    "completed": false
+                },
+                {
+                    "title": "Zod/TS enum in @repo/schemas",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema", "enum"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -145,12 +199,22 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "dbschema columns", "completed": false },
-                { "title": "@repo/schemas mirror", "completed": false }
+                {
+                    "title": "dbschema columns",
+                    "completed": false
+                },
+                {
+                    "title": "@repo/schemas mirror",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema", "reviews"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -166,12 +230,22 @@
             "blockedBy": ["T-006"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "dbschema columns", "completed": false },
-                { "title": "@repo/schemas mirror", "completed": false }
+                {
+                    "title": "dbschema columns",
+                    "completed": false
+                },
+                {
+                    "title": "@repo/schemas mirror",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema", "reviews"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -187,13 +261,26 @@
             "blockedBy": ["T-007", "T-008"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
-                { "title": "db:generate migration file", "completed": false },
-                { "title": "Add APPROVED backfill UPDATE", "completed": false },
-                { "title": "Round-trip migrate test", "completed": false }
+                {
+                    "title": "db:generate migration file",
+                    "completed": false
+                },
+                {
+                    "title": "Add APPROVED backfill UPDATE",
+                    "completed": false
+                },
+                {
+                    "title": "Round-trip migrate test",
+                    "completed": false
+                }
             ],
             "tags": ["database", "migration"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -204,17 +291,27 @@
             "id": "T-010",
             "title": "Implement resolveInitialModerationState helper",
             "description": "Add resolveInitialModerationState({entityType, verificationLevel, moderationScore}) in service-core (shared by both review services). Rules: score>=PENDING_THRESHOLD -> PENDING; else entity default (destination none-verified -> PENDING, accommodation semi-verified -> APPROVED). Forward-looking verificationLevel='verified' -> APPROVED. RORO + JSDoc. Tests: each branch + threshold boundary.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
-                { "title": "Resolver logic", "completed": false },
-                { "title": "Unit tests for all branches", "completed": false }
+                {
+                    "title": "Resolver logic",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for all branches",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "moderation", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -230,13 +327,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Swap to moderateText", "completed": false },
-                { "title": "Delete dead word-list code", "completed": false },
-                { "title": "Regression tests preserve behavior", "completed": false }
+                {
+                    "title": "Swap to moderateText",
+                    "completed": false
+                },
+                {
+                    "title": "Delete dead word-list code",
+                    "completed": false
+                },
+                {
+                    "title": "Regression tests preserve behavior",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "messaging", "refactor"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -247,18 +357,31 @@
             "id": "T-012",
             "title": "Wire moderation into accommodation review creation",
             "description": "In accommodationReview.service create flow: call moderateText on the review text, feed score into resolveInitialModerationState({entityType:'accommodation', verificationLevel:'semi', moderationScore}), persist moderationState. Tests: clean -> APPROVED, blocked word -> PENDING.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-014", "T-016", "T-022"],
             "subtasks": [
-                { "title": "Call moderateText + resolver on create", "completed": false },
-                { "title": "Persist moderationState", "completed": false },
-                { "title": "Tests: default + blocked-word path", "completed": false }
+                {
+                    "title": "Call moderateText + resolver on create",
+                    "completed": false
+                },
+                {
+                    "title": "Persist moderationState",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: default + blocked-word path",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -269,18 +392,31 @@
             "id": "T-013",
             "title": "Wire moderation into destination review creation",
             "description": "In destinationReview.service create flow: call moderateText, feed score into resolveInitialModerationState({entityType:'destination', verificationLevel:'none', moderationScore}), persist moderationState (default PENDING). Tests: clean -> PENDING, blocked word -> PENDING.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": ["T-015", "T-017", "T-023"],
             "subtasks": [
-                { "title": "Call moderateText + resolver on create", "completed": false },
-                { "title": "Persist moderationState", "completed": false },
-                { "title": "Tests: default PENDING + blocked-word path", "completed": false }
+                {
+                    "title": "Call moderateText + resolver on create",
+                    "completed": false
+                },
+                {
+                    "title": "Persist moderationState",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: default PENDING + blocked-word path",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -291,18 +427,31 @@
             "id": "T-014",
             "title": "Add moderateReview (approve/reject) to accommodation service",
             "description": "Add moderateReview({id, decision, reason, actor}) to accommodationReview.service: permission-check ACCOMMODATION_REVIEW_MODERATE, set moderationState + moderatedById/At/Reason, do NOT touch lifecycleState. Tests: approve, reject, permission denial (403), not-found.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "moderateReview method + audit fields", "completed": false },
-                { "title": "Permission check", "completed": false },
-                { "title": "Tests: approve/reject/403/404", "completed": false }
+                {
+                    "title": "moderateReview method + audit fields",
+                    "completed": false
+                },
+                {
+                    "title": "Permission check",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: approve/reject/403/404",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -313,18 +462,31 @@
             "id": "T-015",
             "title": "Add moderateReview (approve/reject) to destination service",
             "description": "Add moderateReview({id, decision, reason, actor}) to destinationReview.service: permission-check DESTINATION_REVIEW_MODERATE, set moderationState + audit fields, lifecycleState untouched. Tests: approve, reject, 403, 404.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "moderateReview method + audit fields", "completed": false },
-                { "title": "Permission check", "completed": false },
-                { "title": "Tests: approve/reject/403/404", "completed": false }
+                {
+                    "title": "moderateReview method + audit fields",
+                    "completed": false
+                },
+                {
+                    "title": "Permission check",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: approve/reject/403/404",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -335,17 +497,27 @@
             "id": "T-016",
             "title": "Add getPendingCount to accommodation review service",
             "description": "Add getPendingCount({actor}) to accommodationReview.service counting moderationState='PENDING' (permission-gated by ACCOMMODATION_REVIEW_MODERATE). Tests: count correctness, permission denial.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "getPendingCount method", "completed": false },
-                { "title": "Tests: count + permission", "completed": false }
+                {
+                    "title": "getPendingCount method",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: count + permission",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -356,17 +528,27 @@
             "id": "T-017",
             "title": "Add getPendingCount to destination review service",
             "description": "Add getPendingCount({actor}) to destinationReview.service counting moderationState='PENDING' (permission-gated by DESTINATION_REVIEW_MODERATE). Tests: count correctness, permission denial.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "getPendingCount method", "completed": false },
-                { "title": "Tests: count + permission", "completed": false }
+                {
+                    "title": "getPendingCount method",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: count + permission",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -377,17 +559,27 @@
             "id": "T-018",
             "title": "Grant review-moderate permissions to ADMIN/SUPER_ADMIN in seed",
             "description": "Verify ACCOMMODATION_REVIEW_MODERATE and DESTINATION_REVIEW_MODERATE are granted to ADMIN and SUPER_ADMIN roles in the role-permission seed; add the grants if missing. Tests: seed assertion / role-permission test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-019", "T-020", "T-021"],
             "subtasks": [
-                { "title": "Verify/add seed grants", "completed": false },
-                { "title": "Seed test", "completed": false }
+                {
+                    "title": "Verify/add seed grants",
+                    "completed": false
+                },
+                {
+                    "title": "Seed test",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -403,13 +595,26 @@
             "blockedBy": ["T-016", "T-017", "T-018"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Route + ResponseFactory shape", "completed": false },
-                { "title": "Permission gating per type", "completed": false },
-                { "title": "Integration tests", "completed": false }
+                {
+                    "title": "Route + ResponseFactory shape",
+                    "completed": false
+                },
+                {
+                    "title": "Permission gating per type",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -425,13 +630,26 @@
             "blockedBy": ["T-014", "T-015", "T-018"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Both moderate routes + Zod body", "completed": false },
-                { "title": "Permission gating", "completed": false },
-                { "title": "Integration tests happy + 403", "completed": false }
+                {
+                    "title": "Both moderate routes + Zod body",
+                    "completed": false
+                },
+                {
+                    "title": "Permission gating",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests happy + 403",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin", "reviews", "moderation"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -447,12 +665,22 @@
             "blockedBy": ["T-018"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Add moderationState filter + field", "completed": false },
-                { "title": "Tests", "completed": false }
+                {
+                    "title": "Add moderationState filter + field",
+                    "completed": false
+                },
+                {
+                    "title": "Tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -468,12 +696,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-024", "T-025"],
             "subtasks": [
-                { "title": "Add APPROVED filter to public reads", "completed": false },
-                { "title": "Tests: non-APPROVED hidden", "completed": false }
+                {
+                    "title": "Add APPROVED filter to public reads",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: non-APPROVED hidden",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "visibility"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -489,12 +727,22 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Add APPROVED filter to public reads", "completed": false },
-                { "title": "Tests: non-APPROVED hidden", "completed": false }
+                {
+                    "title": "Add APPROVED filter to public reads",
+                    "completed": false
+                },
+                {
+                    "title": "Tests: non-APPROVED hidden",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "visibility"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -510,12 +758,22 @@
             "blockedBy": ["T-022"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Apply APPROVED filter to host listing", "completed": false },
-                { "title": "Tests", "completed": false }
+                {
+                    "title": "Apply APPROVED filter to host listing",
+                    "completed": false
+                },
+                {
+                    "title": "Tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "host", "visibility"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -531,13 +789,26 @@
             "blockedBy": ["T-019", "T-020", "T-021", "T-022", "T-023", "T-024"],
             "blocks": ["T-026", "T-027"],
             "subtasks": [
-                { "title": "Create + default-by-entity assertions", "completed": false },
-                { "title": "Approve/reject visibility assertions", "completed": false },
-                { "title": "lifecycleState independence assertion", "completed": false }
+                {
+                    "title": "Create + default-by-entity assertions",
+                    "completed": false
+                },
+                {
+                    "title": "Approve/reject visibility assertions",
+                    "completed": false
+                },
+                {
+                    "title": "lifecycleState independence assertion",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "integration", "e2e"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -553,12 +824,22 @@
             "blockedBy": ["T-025"],
             "blocks": [],
             "subtasks": [
-                { "title": "Run coverage + identify gaps", "completed": false },
-                { "title": "Add targeted tests", "completed": false }
+                {
+                    "title": "Run coverage + identify gaps",
+                    "completed": false
+                },
+                {
+                    "title": "Add targeted tests",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "coverage"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,
@@ -574,12 +855,22 @@
             "blockedBy": ["T-025"],
             "blocks": [],
             "subtasks": [
-                { "title": "Package README + moderation model doc", "completed": false },
-                { "title": "Pointer to SPEC-195 for internals", "completed": false }
+                {
+                    "title": "Package README + moderation model doc",
+                    "completed": false
+                },
+                {
+                    "title": "Pointer to SPEC-195 for internals",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-04T00:00:00.000Z",
                 "started": null,

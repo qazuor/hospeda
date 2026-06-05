@@ -13,6 +13,7 @@ import crypto from 'node:crypto';
 export type IdTypes =
     | 'user'
     | 'accommodation'
+    | 'accommodationReview'
     | 'amenity'
     | 'attraction'
     | 'destination'
