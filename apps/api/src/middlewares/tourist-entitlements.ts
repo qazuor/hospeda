@@ -100,6 +100,9 @@ export function gateFavorites(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /alerts once that route ships.
+// Do NOT delete and do NOT build the route without a spec.
 export function gateAlerts(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED
@@ -178,6 +181,9 @@ export function gateAlerts(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /compare once that route ships.
+// Do NOT delete and do NOT build the route without a spec.
 export function gateComparator(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED
@@ -255,6 +261,9 @@ export function gateComparator(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /reviews/:id/photos once
+// that route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateReviewPhotos(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS)) {
@@ -299,6 +308,9 @@ export function gateReviewPhotos(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for GET /search-history once that
+// route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateSearchHistory(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
@@ -343,6 +355,9 @@ export function gateSearchHistory(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for GET /recommendations once that
+// route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateRecommendations(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_VIEW_RECOMMENDATIONS)) {
@@ -387,6 +402,9 @@ export function gateRecommendations(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for GET /deals/exclusive once that
+// route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateExclusiveDeals(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.EXCLUSIVE_DEALS)) {
@@ -434,6 +452,9 @@ export function gateExclusiveDeals(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /events/:id/tickets (early
+// window) once that route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateEarlyEventAccess(): AppMiddleware {
     return async (c, next) => {
         // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED.

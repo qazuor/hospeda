@@ -221,6 +221,9 @@ export function gateVideoEmbed(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for GET /accommodations/:id/calendar
+// once that route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateCalendarAccess(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_USE_CALENDAR)) {
@@ -269,6 +272,9 @@ export function gateCalendarAccess(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /accommodations/:id/calendar/sync
+// once that route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateExternalCalendarSync(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)) {
@@ -319,6 +325,10 @@ export function gateExternalCalendarSync(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). The accommodation schema has no dedicated
+// whatsappNumber field; this gate targets a future PATCH surface. Do NOT delete and
+// do NOT build the route without a spec.
 export function gateWhatsAppDisplay(): AppMiddleware {
     return async (c, next) => {
         const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
@@ -390,6 +400,10 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). The accommodation schema has no dedicated
+// whatsappDirectLink field; this gate targets a future PATCH surface. Do NOT delete
+// and do NOT build the route without a spec.
 export function gateWhatsAppDirect(): AppMiddleware {
     return async (c, next) => {
         const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
@@ -461,6 +475,9 @@ export function gateWhatsAppDirect(): AppMiddleware {
  * );
  * ```
  */
+// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
+// (Reserved — Phantom Gates section). Intended for POST /accommodations/:id/reviews/:reviewId/response
+// once that route ships. Do NOT delete and do NOT build the route without a spec.
 export function gateReviewResponse(): AppMiddleware {
     return async (c, next) => {
         if (hasEntitlement(c, EntitlementKey.RESPOND_REVIEWS)) {
