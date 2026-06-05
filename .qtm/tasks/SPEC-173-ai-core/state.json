@@ -861,35 +861,35 @@
             "id": "T-024",
             "title": "Implement streamText capability in @repo/ai-core",
             "description": "Add streamText(...) to AiService returning an async iterable of tokens over the routing engine (§5.9/FR-10). Consumed later by SSE route. Locale-aware. RO-RO, JSDoc, named export. Tests: unit tests via StubProvider asserting tokens are yielded incrementally and fallback applies to the stream path too.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-029", "T-036"],
             "subtasks": [
                 {
                     "title": "streamText async-iterable over engine",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fallback applies to stream path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export + write incremental-stream unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "streaming", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:00:00.000Z",
+                "completed": "2026-06-05T06:50:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 28,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.5
     }
