@@ -422,7 +422,7 @@
             "id": "T-015",
             "title": "PR to staging, CI green, merge, closeout",
             "description": "Orphan guard; resync staging if behind; push with remote-ref verification (rtk silent no-op — VERIFY EVERY PUSH). PR notes: behavior changes (error statuses change from 500 to 422/502/503/504 on provider failures — API consumers note; dev/sandbox now throws like prod), webhook failed-marking semantics, dead-letter coverage. Merge only on CI Pass SUCCESS. Closeout: index-sync + engram + worktree cleanup ask.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
@@ -457,5 +457,6 @@
         "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
-    }
+    },
+    "status": "completed"
 }
