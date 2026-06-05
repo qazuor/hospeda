@@ -682,35 +682,35 @@
             "id": "T-019",
             "title": "Implement prompt-injection guard + PII scrubber",
             "description": "Create src/safety/ — injection-guard (input sanitization + basic override-attempt detection, §5.10.2) and pii-scrubber (redact emails/phones/cards before any Sentry/PostHog emit; DB keeps verbatim, §5.10.4/AC-11). RO-RO, JSDoc. Moderation hook reuses AiProvider.moderate (T-013). Tests: unit tests asserting injection patterns flagged and PII redacted in telemetry payload while raw text preserved (AC-11).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": ["T-020", "T-035"],
             "subtasks": [
                 {
                     "title": "Prompt-injection guard (sanitize + detect)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "PII scrubber for external telemetry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write injection + PII unit tests (AC-11)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "safety", "security", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T03:00:00.000Z",
+                "completed": "2026-06-05T04:55:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 26,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.5
     }
