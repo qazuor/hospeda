@@ -337,6 +337,43 @@ describe('mapProviderErrorToServiceError — malformed / no-cause', () => {
 
         expect(result.code).toBe(ServiceErrorCode.PROVIDER_TIMEOUT); // 408 wins
     });
+
+    it('reads status from originalError when top-level status is absent (real QZPayMercadoPagoError shape)', () => {
+        // Real adapter shape: QZPayMercadoPagoError has no top-level `status`
+        // but carries the HTTP status inside `originalError.status`.
+        const cause = new Error('adapter error') as Error & {
+            name: string;
+            code: string;
+            originalError: { status: number };
+        };
+        cause.name = 'QZPayMercadoPagoError';
+        cause.code = 'provider_error'; // would map to 500 via string table
+        cause.originalError = { status: 429 }; // real status wins over string code
+        const err = buildProviderSyncError(cause);
+        const result = mapProviderErrorToServiceError({
+            error: err,
+            operation: 'subscription_create'
+        });
+
+        // originalError.status=429 → PROVIDER_RATE_LIMITED (not PROVIDER_ERROR from code string)
+        expect(result.code).toBe(ServiceErrorCode.PROVIDER_RATE_LIMITED);
+    });
+
+    it('falls back to code string mapping when originalError.status is non-numeric', () => {
+        // originalError exists but status is a string — should not be used; fall back to code map
+        const cause = new Error('adapter error') as Error & {
+            name: string;
+            code: string;
+            originalError: { status: string };
+        };
+        cause.name = 'QZPayMercadoPagoError';
+        cause.code = 'rate_limit_error'; // maps to 429
+        cause.originalError = { status: 'not-a-number' };
+        const err = buildProviderSyncError(cause);
+        const result = mapProviderErrorToServiceError({ error: err, operation: 'checkout_create' });
+
+        expect(result.code).toBe(ServiceErrorCode.PROVIDER_RATE_LIMITED); // code string wins
+    });
 });
 
 // ---------------------------------------------------------------------------

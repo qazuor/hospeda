@@ -134,7 +134,10 @@ const MP_ERROR_CODE_TO_STATUS: Readonly<Record<string, number>> = {
  * Priority:
  * 1. `cause.status` — numeric (stub shape + some MP SDK paths).
  * 2. `cause.statusCode` — numeric (alternative SDK field name).
- * 3. `cause.code` — maps `QZPayMercadoPagoError` string codes to synthetic
+ * 3. `cause.originalError?.status` — numeric (real `QZPayMercadoPagoError` shape:
+ *    the adapter wraps the raw MP SDK response in `originalError`, which carries
+ *    the HTTP status from the axios/fetch response layer).
+ * 4. `cause.code` — maps `QZPayMercadoPagoError` string codes to synthetic
  *    numeric statuses via {@link MP_ERROR_CODE_TO_STATUS}.
  *
  * @param err - A detected `QZPayProviderSyncError`.
@@ -160,7 +163,20 @@ function extractProviderStatus(err: QZPayProviderSyncError): number | undefined 
             return (cause as Record<string, unknown>).statusCode as number;
         }
 
-        // Shape 3: QZPayMercadoPagoError.code string → synthetic status
+        // Shape 3: real QZPayMercadoPagoError shape — status nested inside originalError
+        // (the raw MP SDK axios/fetch response object carries the HTTP status there)
+        const originalError = (cause as Record<string, unknown>).originalError;
+        if (
+            originalError !== undefined &&
+            originalError !== null &&
+            typeof originalError === 'object' &&
+            'status' in originalError &&
+            typeof (originalError as Record<string, unknown>).status === 'number'
+        ) {
+            return (originalError as Record<string, unknown>).status as number;
+        }
+
+        // Shape 4: QZPayMercadoPagoError.code string → synthetic status
         if ('code' in cause && typeof (cause as Record<string, unknown>).code === 'string') {
             const codeStr = (cause as Record<string, unknown>).code as string;
             const mapped = MP_ERROR_CODE_TO_STATUS[codeStr];
