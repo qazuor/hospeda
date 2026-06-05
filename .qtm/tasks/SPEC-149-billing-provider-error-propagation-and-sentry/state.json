@@ -194,31 +194,31 @@
             "id": "T-007",
             "title": "Webhook handlers mark failed on transient errors (absorbed fix)",
             "description": "Spec webhook ownership (a) — orphaned between 194/149, now owned here. payment-handler.ts (catch :145-155, markEventProcessedByProviderId :157 outside the catch) and subscription-payment-handler.ts (catch :314, safeMarkProcessed :326): on TRANSIENT errors (DB timeout, lock failure — define the transient classification, reuse/extend any existing one) re-throw or explicitly mark the event failed so it joins the dead-letter queue (READ how handleWebhookError marks failures — reuse that path). TERMINAL errors (malformed payload) may still mark processed with an error log (document per branch). Red-first: failing tests proving transient errors currently land processed; then green. Sentry capture on the failed-marking per spec.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008"],
             "subtasks": [
                 {
                     "title": "Red tests (transient → processed today)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mark-failed wiring both handlers + Sentry",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["webhooks", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T18:30:00Z",
+                "completed": "2026-06-05T16:51:00Z"
             }
         },
         {
