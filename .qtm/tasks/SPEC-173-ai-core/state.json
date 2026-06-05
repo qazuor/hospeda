@@ -1394,31 +1394,31 @@
             "id": "T-039",
             "title": "Write @repo/ai-core README + usage guide",
             "description": "Author packages/ai-core/README.md and a usage guide (public API surface, capabilities, provider config, locale param, how apps/api passes credentials by param) per FR-14. JSDoc on exports is done in code tasks; this is the package-level prose. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "README with public API surface",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Usage guide (config, locale, credential-by-param)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "ai-core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T17:20:00.000Z",
+                "completed": "2026-06-05T17:45:00.000Z"
             }
         },
         {
@@ -1456,27 +1456,27 @@
             "id": "T-041",
             "title": "Write packages/ai-core/CLAUDE.md",
             "description": "Author packages/ai-core/CLAUDE.md (conventions: package never reads env/secrets, storage/ is the only db-coupled module, RO-RO, named exports, StubProvider for tests, add-a-provider recipe). Mirror the per-package CLAUDE.md style used across the monorepo. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Package CLAUDE.md with conventions + add-provider recipe",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "ai-core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T17:20:00.000Z",
+                "completed": "2026-06-05T17:45:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 3,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 40,
+        "completed": 42,
         "blocked": 0,
         "averageComplexity": 2.5
     }
