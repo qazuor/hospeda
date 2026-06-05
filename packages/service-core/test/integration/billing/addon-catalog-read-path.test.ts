@@ -163,7 +163,10 @@ const VISIBILITY_BOOST = buildAddonRow({
     description: 'Boosts your listing visibility for 7 days.',
     unitAmount: 500000,
     billingInterval: 'one_time',
-    entitlements: ['FEATURED_LISTING'],
+    // The DB stores EntitlementKey enum VALUES (lowercase), not key names.
+    // EntitlementKey.FEATURED_LISTING = 'featured_listing' — this is what the
+    // seeder writes and what isEntitlementKey() validates against.
+    entitlements: ['featured_listing'],
     limits: {},
     metadata: {
         slug: 'visibility-boost-7d',
@@ -235,7 +238,8 @@ describe('addon catalog read path — listAvailableAddons (T-032)', () => {
             expect(visDef?.billingType).toBe('one_time'); // billingInterval 'one_time' → 'one_time'
             expect(visDef?.priceArs).toBe(500000);
             expect(visDef?.durationDays).toBe(7);
-            expect(visDef?.grantsEntitlement).toBe('FEATURED_LISTING');
+            // EntitlementKey.FEATURED_LISTING = 'featured_listing' (lowercase enum value)
+            expect(visDef?.grantsEntitlement).toBe('featured_listing');
             expect(visDef?.affectsLimitKey).toBeNull();
             expect(visDef?.limitIncrease).toBeNull();
             expect(visDef?.targetCategories).toEqual(['owner', 'complex']);
@@ -314,6 +318,63 @@ describe('addon catalog read path — listAvailableAddons (T-032)', () => {
             expect(result.error.code).toBe('INTERNAL_ERROR');
         });
     });
+
+    // Regression: guard must reject enum KEY NAMES and only accept enum VALUES.
+    // Prior to SPEC-145 T-003 the mapper used `as EntitlementKey` which silently
+    // passed any string; the guard change exposed this latent bug.
+    // Canonical format: lowercase enum values ('featured_listing'), NOT uppercase
+    // key names ('FEATURED_LISTING'). The DB seeder always writes the VALUE.
+    describe('entitlement key format — regression (SPEC-145 T-003)', () => {
+        it('should return null grantsEntitlement when DB row carries uppercase key name instead of value', async () => {
+            // Arrange — row with the wrong format (enum KEY name, not VALUE)
+            const rowWithWrongFormat = buildAddonRow({
+                id: 'addon-wrong-format',
+                name: 'Wrong Format Addon',
+                entitlements: ['FEATURED_LISTING'], // wrong: key name not value
+                limits: {},
+                metadata: {
+                    slug: 'wrong-format-addon',
+                    durationDays: null,
+                    targetCategories: ['owner'],
+                    sortOrder: 99
+                }
+            });
+            mockGetDb.mockReturnValue(buildListDb([rowWithWrongFormat]));
+
+            // Act
+            const result = await listAvailableAddons();
+
+            // Assert — guard correctly filters out the non-canonical uppercase string
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data[0]?.grantsEntitlement).toBeNull();
+        });
+
+        it('should return correct grantsEntitlement when DB row carries lowercase enum value', async () => {
+            // Arrange — row with the correct format (enum VALUE, not KEY name)
+            const rowWithCorrectFormat = buildAddonRow({
+                id: 'addon-correct-format',
+                name: 'Correct Format Addon',
+                entitlements: ['featured_listing'], // correct: lowercase enum VALUE
+                limits: {},
+                metadata: {
+                    slug: 'correct-format-addon',
+                    durationDays: null,
+                    targetCategories: ['owner'],
+                    sortOrder: 99
+                }
+            });
+            mockGetDb.mockReturnValue(buildListDb([rowWithCorrectFormat]));
+
+            // Act
+            const result = await listAvailableAddons();
+
+            // Assert — guard accepts the canonical lowercase value
+            expect(result.success).toBe(true);
+            if (!result.success) return;
+            expect(result.data[0]?.grantsEntitlement).toBe('featured_listing');
+        });
+    });
 });
 
 // ─── Tests: getBySlug() / getAddonCatalogEntry() ──────────────────────────
@@ -338,7 +399,8 @@ describe('addon catalog read path — getAddonCatalogEntry (T-032)', () => {
             expect(result.data.billingType).toBe('one_time');
             expect(result.data.priceArs).toBe(500000);
             expect(result.data.durationDays).toBe(7);
-            expect(result.data.grantsEntitlement).toBe('FEATURED_LISTING');
+            // EntitlementKey.FEATURED_LISTING = 'featured_listing' (lowercase enum value)
+            expect(result.data.grantsEntitlement).toBe('featured_listing');
         });
 
         it('should return the correct AddonDefinition for extra-photos-20', async () => {
