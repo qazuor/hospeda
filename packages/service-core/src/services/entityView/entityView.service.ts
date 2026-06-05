@@ -318,9 +318,18 @@ export class EntityViewService extends BaseService {
                 isAuthenticated: validated.isAuthenticated
             });
 
-            // The model returns SelectEntityView. Map to EntityView (same shape;
-            // the schema validates coerced dates so we cast via unknown).
-            const entityView = inserted as unknown as EntityView;
+            // The model returns SelectEntityView, whose entityType is the FULL
+            // EntityTypeEnum union; EntityView narrows it to the trackable
+            // subset. Build the result explicitly from the inserted row plus the
+            // already-validated entityType — no cast needed.
+            const entityView: EntityView = {
+                id: inserted.id,
+                entityType: validated.entityType,
+                entityId: inserted.entityId,
+                visitorHash: inserted.visitorHash,
+                isAuthenticated: inserted.isAuthenticated,
+                viewedAt: inserted.viewedAt
+            };
 
             this.logger.info(
                 {
