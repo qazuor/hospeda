@@ -181,6 +181,7 @@
         "banReason": "Ban Reason",
         "banExpires": "Ban Expires",
         "avatar": "Avatar",
+        "views30d": "Views (30d)",
         "appLog": {
             "loggedAt": "Date/Time",
             "level": "Level",

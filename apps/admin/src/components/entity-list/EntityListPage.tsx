@@ -7,9 +7,11 @@ import { TableSearchInput } from '@/components/table/TableSearchInput';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
+import { useHasPermission } from '@/hooks/use-user-permissions';
 import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
 import { AddIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -320,9 +322,14 @@ export const createEntityListPage = <TData extends { id: string }>(
         const viewRef = useRef(search.view);
         viewRef.current = search.view;
 
+        // Resolve ANALYTICS_VIEW permission once for the whole list page.
+        // Passed to createColumns so permission-gated columns (e.g. "Vistas (30d)")
+        // can be conditionally included without the column factory needing its own hook.
+        const hasAnalyticsView = useHasPermission(PermissionEnum.ANALYTICS_VIEW);
+
         // Generate columns
         const columns = useMemo<readonly DataTableColumn<Row>[]>(() => {
-            const columnsConfig = config.createColumns(t);
+            const columnsConfig = config.createColumns(t, { hasAnalyticsView });
             return columnsConfig.map((columnConfig) => ({
                 ...columnConfig,
                 accessorKey: columnConfig.accessorKey as keyof Row & string,
@@ -351,13 +358,13 @@ export const createEntityListPage = <TData extends { id: string }>(
                       }
                     : undefined
             }));
-        }, [navigate, config.createColumns, config.basePath, t]);
+        }, [navigate, config.createColumns, config.basePath, t, hasAnalyticsView]);
 
         // Column visibility logic
         const getInitialColumnVisibility = useCallback(
             (viewType: 'table' | 'grid') => {
                 const visibility: Record<string, boolean> = {};
-                for (const columnConfig of config.createColumns(t)) {
+                for (const columnConfig of config.createColumns(t, { hasAnalyticsView })) {
                     if (viewType === 'table') {
                         visibility[columnConfig.id] = columnConfig.startVisibleOnTable !== false;
                     } else {
@@ -366,7 +373,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 }
                 return visibility;
             },
-            [config.createColumns, t]
+            [config.createColumns, t, hasAnalyticsView]
         );
 
         const initialColumnVisibility = useMemo(() => {
