@@ -109,6 +109,20 @@ const ADMIN_ACTOR: Actor = {
     ]
 };
 
+/** Actor that holds ONLY the destination-review moderate permission (OR gate scenario). */
+const DESTINATION_ONLY_MODERATOR: Actor = {
+    id: 'dest-only-moderator-id',
+    role: RoleEnum.ADMIN,
+    permissions: [PermissionEnum.DESTINATION_REVIEW_MODERATE]
+};
+
+/** Actor that holds NEITHER moderate permission — both services should deny. */
+const NO_MODERATE_ACTOR: Actor = {
+    id: 'no-moderate-actor-id',
+    role: RoleEnum.ADMIN,
+    permissions: []
+};
+
 function buildMockContext(): Record<string, unknown> {
     return { get: vi.fn(), set: vi.fn(), json: vi.fn() };
 }
@@ -265,6 +279,32 @@ describe('adminReviewsPendingCountRoute handler — SPEC-166 T-019', () => {
             expect(result.byType.destinationReviews).toBe(0);
             expect(result.count).toBe(3);
         });
+
+        // OR gate: a destination-only moderator's accommodation service call returns
+        // FORBIDDEN (service self-gates), so accommodation contributes 0.
+        // The destination count is still returned — the actor is NOT blocked at the
+        // route level (spec §7 OR semantics). This test documents that removing
+        // requiredPermissions from the factory config is the correct fix.
+        it('destination-only moderator gets partial response: accommodation=0, destination count present', async () => {
+            mockGetActorFromContext.mockReturnValue(DESTINATION_ONLY_MODERATOR);
+            // The accommodation service denies — actor lacks ACCOMMODATION_REVIEW_MODERATE.
+            mockAccGetPendingCount.mockResolvedValue({
+                error: { code: ServiceErrorCode.FORBIDDEN, message: 'Insufficient permissions' }
+            });
+            // The destination service succeeds — actor has DESTINATION_REVIEW_MODERATE.
+            mockDestGetPendingCount.mockResolvedValue({ data: { count: 5 } });
+
+            const handler = getHandler();
+            const ctx = buildMockContext() as unknown as Context;
+            const result = (await handler(ctx, {}, {})) as {
+                count: number;
+                byType: { accommodationReviews: number; destinationReviews: number };
+            };
+
+            expect(result.byType.accommodationReviews).toBe(0);
+            expect(result.byType.destinationReviews).toBe(5);
+            expect(result.count).toBe(5);
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -284,6 +324,24 @@ describe('adminReviewsPendingCountRoute handler — SPEC-166 T-019', () => {
             const ctx = buildMockContext() as unknown as Context;
 
             await expect(handler(ctx, {}, {})).rejects.toThrow(/Permission denied/);
+        });
+
+        // Actor holds NEITHER moderate permission — both services deny at the
+        // service level. The handler must re-throw so the route factory can
+        // produce a 403 response (both-denied → effective OR gate failure).
+        it('actor with neither moderate permission causes both services to deny, handler throws', async () => {
+            mockGetActorFromContext.mockReturnValue(NO_MODERATE_ACTOR);
+            mockAccGetPendingCount.mockResolvedValue({
+                error: { code: ServiceErrorCode.FORBIDDEN, message: 'Insufficient permissions' }
+            });
+            mockDestGetPendingCount.mockResolvedValue({
+                error: { code: ServiceErrorCode.FORBIDDEN, message: 'Insufficient permissions' }
+            });
+
+            const handler = getHandler();
+            const ctx = buildMockContext() as unknown as Context;
+
+            await expect(handler(ctx, {}, {})).rejects.toThrow(/Insufficient permissions/);
         });
 
         it('propagates unexpected thrown errors from the accommodation service', async () => {

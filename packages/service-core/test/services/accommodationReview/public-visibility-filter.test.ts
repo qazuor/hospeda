@@ -285,4 +285,36 @@ describe('AccommodationReviewService.listWithUser — public-visibility filter (
         const whereArg = mockModel.findAllWithUser.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(whereArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
     });
+
+    // FIX 2 regression: caller-supplied filter overrides must NOT win over
+    // the post-spread force-assignments. Previously `{ ...filterParams }` came
+    // AFTER the forced values, so a caller passing lifecycleState='ARCHIVED'
+    // or moderationState='PENDING' would silently override the public gate.
+    it('ignores caller-supplied lifecycleState=ARCHIVED and still passes ACTIVE to the model', async () => {
+        const actor = makeActor();
+
+        await service.listWithUser(actor, {
+            page: 1,
+            pageSize: 10,
+            lifecycleState: LifecycleStatusEnum.ARCHIVED
+        } as Parameters<typeof service.listWithUser>[1]);
+
+        const whereArg = mockModel.findAllWithUser.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(whereArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        expect(whereArg.moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+
+    it('ignores caller-supplied moderationState=PENDING and still passes APPROVED to the model', async () => {
+        const actor = makeActor();
+
+        await service.listWithUser(actor, {
+            page: 1,
+            pageSize: 10,
+            moderationState: ModerationStatusEnum.PENDING
+        } as Parameters<typeof service.listWithUser>[1]);
+
+        const whereArg = mockModel.findAllWithUser.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(whereArg.moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(whereArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+    });
 });

@@ -661,14 +661,18 @@ export class DestinationReviewService extends BaseCrudService<
                 const { page, pageSize, ...filterParams } = validData;
 
                 // SPEC-166 T-023: public visibility = ACTIVE + APPROVED only.
-                // Force-override both filters so PENDING/REJECTED reviews cannot
-                // surface via the testimonials path (public tier).
+                // Caller params are spread first, then forced values are assigned
+                // AFTER the spread so no caller-supplied lifecycleState or
+                // moderationState can override them (post-spread assignment pattern
+                // matching _executeSearch / _executeCount in this file).
                 const defaultFilters = {
                     deletedAt: null,
-                    lifecycleState: LifecycleStatusEnum.ACTIVE,
-                    moderationState: ModerationStatusEnum.APPROVED,
                     ...filterParams
                 };
+                (defaultFilters as Record<string, unknown>).lifecycleState =
+                    LifecycleStatusEnum.ACTIVE;
+                (defaultFilters as Record<string, unknown>).moderationState =
+                    ModerationStatusEnum.APPROVED;
 
                 const result = await this.model.findAllWithUser(
                     defaultFilters,
