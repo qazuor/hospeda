@@ -3,7 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { RoleEnum } from '@repo/service-core';
+import { PlanService, RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,6 +19,7 @@ import {
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import {
     clearEntitlementCache,
+    clearHostDraftDefaultsCache,
     entitlementMiddleware,
     getAllEntitlements,
     getAllLimits,
@@ -40,6 +41,7 @@ import {
     gateSearchHistory
 } from '../../src/middlewares/tourist-entitlements';
 import type { AppBindings } from '../../src/types';
+import { checkLimit } from '../../src/utils/limit-check';
 
 // Mock the billing module
 vi.mock('../../src/middlewares/billing', () => ({
@@ -55,6 +57,19 @@ vi.mock('../../src/utils/logger', () => ({
         error: vi.fn()
     }
 }));
+
+// Wrap checkLimit in a spy so individual tests can inject synthetic return values
+// (e.g., allowed=false with upgradeMessage=undefined to cover ?? fallback branches).
+// By default the spy delegates to the real implementation so all existing tests pass.
+vi.mock('../../src/utils/limit-check', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/utils/limit-check')>();
+    return {
+        ...actual,
+        checkLimit: vi.fn(actual.checkLimit),
+        calculateThreshold: vi.fn(actual.calculateThreshold),
+        calculateUsagePercent: vi.fn(actual.calculateUsagePercent)
+    };
+});
 
 describe('entitlementMiddleware', () => {
     let app: Hono<AppBindings>;
@@ -648,6 +663,68 @@ describe('entitlementMiddleware', () => {
             // Assert — owner-basico limits are set
             expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
             expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
+        });
+
+        it('should degrade to tourist-free defaults when planService.getBySlug rejects (lines 272-279)', async () => {
+            // Coverage target: the .catch() guard in buildHostDraftDefaultsResult
+            // (entitlement.ts lines 271-279). When planService.getBySlug REJECTS
+            // (DB threw as opposed to returning a resolved failure Result), the
+            // promise rejection must be caught, the cache reset, and the request
+            // degraded to tourist-free defaults (not a hard 500).
+            const hostActor = {
+                id: 'host-db-throw',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host-db-throw@example.com'
+            };
+            const hostCustomerId = 'host-customer-db-throw';
+
+            // Reset host draft cache so the next request triggers a fresh DB lookup.
+            clearHostDraftDefaultsCache();
+            clearEntitlementCache(hostCustomerId);
+
+            // Spy on the mock PlanService prototype so that getBySlug rejects.
+            // PlanService here is the global mock from test/setup.ts; using prototype
+            // spy so the already-constructed singleton in entitlement.ts is affected.
+            const spy = vi
+                .spyOn(PlanService.prototype, 'getBySlug')
+                .mockRejectedValueOnce(
+                    new Error('DB connection reset — simulated transient error')
+                );
+
+            type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set('actor', hostActor as unknown as InjectedActor);
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act — HOST request; planService.getBySlug throws so .catch fires.
+            const res = await app.request('/test');
+            expect(res.status).toBe(200);
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Degraded to tourist-free defaults, NOT owner-basico.
+            // tourist-free defaults contain SAVE_FAVORITES (no PUBLISH_ACCOMMODATIONS).
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+
+            spy.mockRestore();
+            // Reset cache again so the rejected-promise stub does not persist.
+            clearHostDraftDefaultsCache();
         });
     });
 
@@ -1538,7 +1615,7 @@ describe('requireEntitlement middleware', () => {
         expect(res.status).toBe(200);
     });
 
-    it('should return 403 when user lacks entitlement', async () => {
+    it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
         app.use((c, next) => {
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('billingLoadFailed', false);
@@ -1546,9 +1623,12 @@ describe('requireEntitlement middleware', () => {
         });
         app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
     });
 
     // =========================================================================
@@ -1623,9 +1703,12 @@ describe('requireLimit middleware', () => {
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('LIMIT_REACHED');
     });
 
     it('should return 403 when limit is 0', async () => {
@@ -1638,9 +1721,12 @@ describe('requireLimit middleware', () => {
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('LIMIT_REACHED');
     });
 
     // =========================================================================
@@ -1965,22 +2051,21 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateCalendarAccess());
             app.get('/calendar', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/calendar');
             expect(res.status).toBe(403);
 
             const data = await res.json();
-            expect(data.success).toBe(false);
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('Calendar access requires');
-            expect(data.error.details.requiredEntitlement).toBe(EntitlementKey.CAN_USE_CALENDAR);
         });
     });
 
@@ -1997,18 +2082,20 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateExternalCalendarSync());
             app.post('/sync', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/sync', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('Premium plan');
         });
     });
@@ -2034,13 +2121,14 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user tries to add WhatsApp without entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user tries to add WhatsApp without entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateWhatsAppDisplay());
             app.post('/test', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -2051,9 +2139,27 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(403);
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.requiredEntitlement).toBe(
-                EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
-            );
+        });
+
+        it('should pass through when user lacks entitlement but body does NOT contain whatsapp fields (line 385)', async () => {
+            // Coverage target: accommodation-entitlements.ts line 385.
+            // The guard only blocks when the body EXERCISES the gated capability.
+            // A body without whatsappNumber / contactWhatsApp must pass through
+            // even when the user has no entitlement.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateWhatsAppDisplay());
+            app.post('/test', (c) => c.json({ ok: true }));
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Casa del Sol', description: 'Hermosa cabaña' })
+            });
+
+            expect(res.status).toBe(200);
         });
     });
 
@@ -2075,7 +2181,32 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user tries to enable direct link without entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user tries to enable direct link without entitlement', async () => {
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateWhatsAppDirect());
+            app.post('/test', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ whatsappDirectLink: true })
+            });
+
+            expect(res.status).toBe(403);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.message).toContain('Premium plan');
+        });
+
+        it('should pass through when user lacks entitlement but body does NOT enable direct link (line 466)', async () => {
+            // Coverage target: accommodation-entitlements.ts line 466.
+            // The guard only blocks when whatsappDirectLink === true OR
+            // enableWhatsAppDirect === true. A body that sets neither must pass
+            // through even without the entitlement (non-gated field update).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
@@ -2086,12 +2217,10 @@ describe('Accommodation Entitlement Gates', () => {
             const res = await app.request('/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ whatsappDirectLink: true })
+                body: JSON.stringify({ name: 'Casa del Sol', whatsappDirectLink: false })
             });
 
-            expect(res.status).toBe(403);
-            const data = await res.json();
-            expect(data.error.message).toContain('Premium plan');
+            expect(res.status).toBe(200);
         });
     });
 
@@ -2108,18 +2237,19 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateReviewResponse());
             app.post('/respond', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/respond', { method: 'POST' });
             expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.error.details.requiredEntitlement).toBe(EntitlementKey.RESPOND_REVIEWS);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 });
@@ -2227,20 +2357,20 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateExclusiveDeals());
             app.get('/deals/exclusive', (c) => c.json({ deals: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/deals/exclusive');
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.EXCLUSIVE_DEALS);
             expect(data.error.message).toContain('VIP');
         });
     });
@@ -2261,23 +2391,27 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateEarlyEventAccess());
             app.post('/events/123/tickets', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/events/123/tickets', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.EARLY_ACCESS_EVENTS);
         });
 
-        it('should return 403 when early access has not started yet', async () => {
+        it('should return 403 FORBIDDEN when early access window has not started yet', async () => {
+            // Users WITH the entitlement but before the 24h window get FORBIDDEN + timing details,
+            // not ENTITLEMENT_REQUIRED. EARLY_ACCESS_NOT_STARTED is not a ServiceErrorCode;
+            // the ServiceError contract maps this to FORBIDDEN with earlyAccessStart/publicSaleStart
+            // in details (exercised by the staging smoke, not this bare-Hono harness).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
                 // Event starts in 36 hours (before 24h early access window)
@@ -2287,12 +2421,13 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateEarlyEventAccess());
             app.post('/events/123/tickets', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/events/123/tickets', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
-            expect(data.error.code).toBe('EARLY_ACCESS_NOT_STARTED');
+            expect(data.error.code).toBe('FORBIDDEN');
         });
 
         it('should allow access when event is in public sale period', async () => {
@@ -2329,7 +2464,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -2337,6 +2472,7 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateAlerts());
             app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/alerts', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -2346,7 +2482,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(data.error.message).toContain('Plus y VIP');
         });
 
-        it('should return 403 when limit is reached', async () => {
+        it('should return 403 LIMIT_REACHED when limit is reached', async () => {
             app.use((c, next) => {
                 const entitlements = new Set([EntitlementKey.PRICE_ALERTS]);
                 const limits = new Map<LimitKey, number>();
@@ -2358,12 +2494,51 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateAlerts());
             app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/alerts', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('LIMIT_REACHED');
+        });
+
+        it('should use ?? fallback message when checkLimit returns !allowed with no upgradeMessage (line 155)', async () => {
+            // Coverage target: tourist-entitlements.ts line 155.
+            // `limitCheck.upgradeMessage ?? 'Has alcanzado el límite...'` — the right-hand
+            // fallback fires when checkLimit returns allowed=false with upgradeMessage=undefined.
+            // checkLimit normally always provides upgradeMessage when !allowed, but the ?? guard
+            // is there for defensive correctness.
+            app.use((c, next) => {
+                const entitlements = new Set([EntitlementKey.PRICE_ALERTS]);
+                const limits = new Map<LimitKey, number>();
+                limits.set('max_active_alerts' as LimitKey, 5);
+                c.set('userEntitlements', entitlements);
+                c.set('userLimits', limits);
+                c.set('currentActiveAlertsCount' as any, 5);
+                return next();
+            });
+            app.use(gateAlerts());
+            app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
+
+            // Inject synthetic checkLimit result with no upgradeMessage
+            vi.mocked(checkLimit).mockReturnValueOnce({
+                allowed: false,
+                currentCount: 5,
+                maxAllowed: 5,
+                remaining: 0,
+                upgradeMessage: undefined
+            });
+
+            const res = await app.request('/alerts', { method: 'POST' });
+            expect(res.status).toBe(403);
+            const responseData = await res.json();
+            expect(responseData.error.code).toBe('LIMIT_REACHED');
+            // The ?? fallback string must appear in the error message
+            expect(responseData.error.message).toContain(
+                'Has alcanzado el límite de alertas activas'
+            );
         });
     });
 
@@ -2386,7 +2561,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -2394,6 +2569,7 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateComparator());
             app.post('/compare', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/compare', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -2418,13 +2594,14 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateReviewPhotos());
             app.post('/reviews/123/photos', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/reviews/123/photos', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -2449,18 +2626,20 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateSearchHistory());
             app.get('/search-history', (c) => c.json({ history: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/search-history');
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('historial de búsqueda');
         });
     });
@@ -2479,18 +2658,20 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRecommendations());
             app.get('/recommendations', (c) => c.json({ recommendations: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/recommendations');
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('recomendaciones personalizadas');
             expect(data.error.message).toContain('todos los planes');
         });

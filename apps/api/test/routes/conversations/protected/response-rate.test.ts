@@ -56,10 +56,23 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 // Mock ConversationService so no real DB calls happen.
+// RoleEnum must be included so entitlement.ts can build STAFF_BILLING_BYPASS_ROLES
+// at module-load time (SPEC-145 T-026).
 vi.mock('@repo/service-core', () => ({
     ConversationService: vi.fn(() => ({
         getHostResponseRate: mockGetHostResponseRate
     })),
+    RoleEnum: {
+        SUPER_ADMIN: 'SUPER_ADMIN',
+        ADMIN: 'ADMIN',
+        CLIENT_MANAGER: 'CLIENT_MANAGER',
+        EDITOR: 'EDITOR',
+        HOST: 'HOST',
+        SPONSOR: 'SPONSOR',
+        USER: 'USER',
+        GUEST: 'GUEST',
+        SYSTEM: 'SYSTEM'
+    },
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
@@ -87,6 +100,15 @@ vi.mock('../../../../src/utils/env', () => ({
         HOSPEDA_BETTER_AUTH_SECRET: 'test-secret',
         HOSPEDA_SITE_URL: 'http://localhost:4321'
     }
+}));
+
+// Mock plan.service so the module-level `new PlanService()` in entitlement.ts
+// does not throw when the route module is imported (SPEC-145 T-026).
+vi.mock('../../../../src/services/plan.service', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        list: vi.fn(),
+        getBySlug: vi.fn()
+    }))
 }));
 
 // ---------------------------------------------------------------------------

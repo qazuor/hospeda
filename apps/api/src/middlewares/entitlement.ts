@@ -19,12 +19,14 @@ import {
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
-    getUnlimitedEntitlements
+    getUnlimitedEntitlements,
+    isEntitlementKey,
+    isLimitKey
 } from '@repo/billing';
-import { RoleEnum } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceError } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
@@ -239,13 +241,23 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
             return buildDefaultEntitlementsResult();
         }
 
-        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>
+        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>.
+        // Filter to known LimitKey values — unknown keys from a mis-configured DB
+        // plan are silently dropped rather than trusted blindly.
         const limits = new Map<LimitKey, number>(
-            Object.entries(result.data.limits) as [LimitKey, number][]
+            Object.entries(result.data.limits).filter((entry): entry is [LimitKey, number] =>
+                isLimitKey(entry[0])
+            )
         );
 
         return {
-            entitlements: new Set<EntitlementKey>(result.data.entitlements as EntitlementKey[]),
+            // BillingPlanResponse.entitlements is string[] (Zod z.array(z.string())).
+            // Filter to known EntitlementKey values — unknown strings from a
+            // mis-configured DB plan are silently dropped (same as a cast would do
+            // for valid values, but without silently trusting garbage).
+            entitlements: new Set<EntitlementKey>(
+                result.data.entitlements.filter(isEntitlementKey)
+            ),
             limits,
             shouldCache: true
         };
@@ -319,9 +331,8 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
     const unlimited = getUnlimitedEntitlements();
     return {
         entitlements: new Set<EntitlementKey>(unlimited.entitlements),
-        limits: new Map<LimitKey, number>(
-            unlimited.limits.map((l) => [l.key as LimitKey, l.value])
-        ),
+        // LimitDefinition.key is already LimitKey — no cast needed.
+        limits: new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value])),
         shouldCache: true
     };
 }
@@ -405,14 +416,22 @@ async function loadEntitlements(
             };
         }
 
-        // Extract entitlements from plan (entitlements is string[])
-        const entitlements = new Set<EntitlementKey>((plan.entitlements || []) as EntitlementKey[]);
+        // Extract entitlements from plan. QZPay returns string[]; filter to known
+        // EntitlementKey values — unexpected strings from a mis-configured plan are
+        // silently dropped (filter-out strategy, matching prior cast behaviour for
+        // valid values without blindly trusting garbage).
+        const entitlements = new Set<EntitlementKey>(
+            (plan.entitlements ?? []).filter(isEntitlementKey)
+        );
 
-        // Extract limits from plan (limits is Record<string, number>)
+        // Extract limits from plan. QZPay returns Record<string, number>; filter to
+        // known LimitKey values — unknown keys are silently dropped.
         const limits = new Map<LimitKey, number>();
         if (plan.limits) {
             for (const [key, value] of Object.entries(plan.limits)) {
-                limits.set(key as LimitKey, value);
+                if (isLimitKey(key)) {
+                    limits.set(key, value);
+                }
             }
         }
 
@@ -423,16 +442,23 @@ async function loadEntitlements(
         let shouldCache = true;
 
         try {
-            // Fetch customer-level entitlements and merge with plan entitlements (union)
+            // Fetch customer-level entitlements and merge with plan entitlements (union).
+            // QZPay returns QZPayCustomerEntitlement where entitlementKey is string —
+            // filter to known keys; unknown keys are silently dropped.
             const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
             for (const ce of customerEntitlements) {
-                entitlements.add(ce.entitlementKey as EntitlementKey);
+                if (isEntitlementKey(ce.entitlementKey)) {
+                    entitlements.add(ce.entitlementKey);
+                }
             }
 
-            // Fetch customer-level limits and override plan-level values (customer takes precedence)
+            // Fetch customer-level limits and override plan-level values (customer takes precedence).
+            // QZPay returns QZPayCustomerLimit where limitKey is string — filter to known keys.
             const customerLimits = await billing.limits.getByCustomerId(customerId);
             for (const cl of customerLimits) {
-                limits.set(cl.limitKey as LimitKey, cl.maxValue);
+                if (isLimitKey(cl.limitKey)) {
+                    limits.set(cl.limitKey, cl.maxValue);
+                }
             }
         } catch (customerError) {
             const errorMessage =
@@ -666,6 +692,14 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  * Returns 403 Forbidden if user lacks the required entitlement.
  * Use this on routes that need specific features.
  *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} — before any billing-customer or plan lookup —
+ * and populates `userEntitlements` with the full unlimited set. By the time
+ * this function executes, the key is always present in the staff set, so no
+ * 403 is thrown. The bypass is invisible here by design: staff behaviour
+ * is policy of the loader, not the checker.
+ *
  * @param key - The entitlement key to check
  * @returns Middleware handler
  *
@@ -685,7 +719,8 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  */
 export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
-        // If billing failed to load, return 503 instead of silently granting access
+        // If billing failed to load, return 503 instead of silently granting access.
+        // This guard prevents privilege escalation during billing outages.
         if (c.get('billingLoadFailed')) {
             return c.json(
                 {
@@ -701,9 +736,13 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
         const entitlements = c.get('userEntitlements');
 
         if (!entitlements || !entitlements.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' entitlement.`
-            });
+            // Throws ServiceError(ENTITLEMENT_REQUIRED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`.
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                `Access denied. This feature requires the '${key}' entitlement.`,
+                { requiredEntitlement: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();
@@ -716,6 +755,15 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
  * Returns 403 Forbidden if user has reached the limit.
  * Note: This only checks the plan limit, not the current usage.
  * Route handlers must check actual usage against the limit.
+ *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} and populates `userLimits` with the unlimited
+ * sentinel (`-1`) for every key. When this function reads `limits.get(key)`,
+ * the value is `-1` (unlimited), which is neither 0 nor missing — both `has`
+ * checks pass and `await next()` is called without a 403. The bypass is
+ * invisible here by design: staff behaviour is policy of the loader, not
+ * the checker.
  *
  * @param key - The limit key to check
  * @returns Middleware handler
@@ -756,18 +804,26 @@ export function requireLimit(key: LimitKey): MiddlewareHandler<AppBindings> {
         const limits = c.get('userLimits');
 
         if (!limits || !limits.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' limit to be defined.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'LIMIT_REACHED', ... } }`.
+            // "Not defined" means the plan grants no access for this limit key.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. This feature requires the '${key}' limit to be defined.`,
+                { limitKey: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         const limitValue = limits.get(key);
 
-        // Check if limit is 0 (effectively disabled)
+        // Limit of 0 means feature is explicitly disabled in this plan.
         if (limitValue === 0) {
-            throw new HTTPException(403, {
-                message: `Access denied. The '${key}' limit is set to 0 in your plan.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — same contract as the "not defined" case.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. The '${key}' limit is set to 0 in your plan.`,
+                { limitKey: key, maxAllowed: 0, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();

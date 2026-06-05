@@ -35,16 +35,89 @@ vi.mock('../../src/services/plan.service', () => ({
 // ─── Mock @repo/billing ───────────────────────────────────────────────────────
 // getDefaultEntitlements is needed for the tourist-free fallback path.
 // getPlanBySlug is intentionally absent — any residual call would surface a TypeError.
+//
+// isEntitlementKey / isLimitKey MUST be included and functional: entitlement.ts
+// calls them inside buildHostDraftDefaultsResult() to filter DB plan data. An
+// absent (undefined) guard causes .filter(undefined) to throw, which resets the
+// memo cache and makes every HOST request re-query PlanService — breaking both
+// the entitlement-set tests (empty result) and the memoization test (2 calls).
+// We provide the real runtime sets derived from the canonical enum values so the
+// guards accept the fixture strings used in STUB_OWNER_BASICO.
+
+const _ENTITLEMENT_VALUES = new Set([
+    'publish_accommodations',
+    'edit_accommodation_info',
+    'view_basic_stats',
+    'view_advanced_stats',
+    'respond_reviews',
+    'priority_support',
+    'featured_listing',
+    'custom_branding',
+    'api_access',
+    'dedicated_manager',
+    'create_promotions',
+    'social_media_integration',
+    'can_use_rich_description',
+    'can_embed_video',
+    'can_use_calendar',
+    'can_sync_external_calendar',
+    'can_contact_whatsapp_display',
+    'can_contact_whatsapp_direct',
+    'has_verification_badge',
+    'multi_property_management',
+    'consolidated_analytics',
+    'centralized_booking',
+    'staff_management',
+    'white_label',
+    'multi_channel_integration',
+    'save_favorites',
+    'write_reviews',
+    'read_reviews',
+    'ad_free',
+    'price_alerts',
+    'early_access_events',
+    'exclusive_deals',
+    'vip_support',
+    'concierge_service',
+    'airport_transfers',
+    'vip_promotions_access',
+    'can_compare_accommodations',
+    'can_attach_review_photos',
+    'can_view_search_history',
+    'can_view_recommendations'
+]);
+
+const _LIMIT_VALUES = new Set([
+    'max_accommodations',
+    'max_photos_per_accommodation',
+    'max_active_promotions',
+    'max_favorites',
+    'max_properties',
+    'max_staff_accounts',
+    'max_active_alerts',
+    'max_compare_items'
+]);
 
 vi.mock('@repo/billing', () => ({
-    EntitlementKey: {},
-    LimitKey: {},
+    EntitlementKey: {
+        PUBLISH_ACCOMMODATIONS: 'publish_accommodations',
+        EDIT_ACCOMMODATION_INFO: 'edit_accommodation_info',
+        SAVE_FAVORITES: 'save_favorites',
+        WRITE_REVIEWS: 'write_reviews'
+    },
+    LimitKey: {
+        MAX_ACCOMMODATIONS: 'max_accommodations',
+        MAX_FAVORITES: 'max_favorites'
+    },
+    isEntitlementKey: (value: unknown): boolean =>
+        typeof value === 'string' && _ENTITLEMENT_VALUES.has(value),
+    isLimitKey: (value: unknown): boolean => typeof value === 'string' && _LIMIT_VALUES.has(value),
     getDefaultEntitlements: vi.fn(() => ({
-        entitlements: ['SAVE_FAVORITES'],
+        entitlements: ['save_favorites'],
         limits: [{ key: 'max_favorites', value: 5 }]
     })),
     getUnlimitedEntitlements: vi.fn(() => ({
-        entitlements: ['SAVE_FAVORITES', 'WRITE_REVIEWS'],
+        entitlements: ['save_favorites', 'write_reviews'],
         limits: [{ key: 'max_favorites', value: -1 }]
     }))
 }));
@@ -109,7 +182,7 @@ const STUB_OWNER_BASICO = {
     trialDays: 14,
     isDefault: true,
     sortOrder: 1,
-    entitlements: ['CAN_LIST_ACCOMMODATION', 'CAN_EDIT_ACCOMMODATION'],
+    entitlements: ['publish_accommodations', 'edit_accommodation_info'],
     limits: { max_accommodations: 1 },
     isActive: true,
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -183,10 +256,10 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
             // Act
             await middleware(ctx as never, next);
 
-            // Assert — entitlements from DB plan
+            // Assert — entitlements from DB plan (canonical lowercase enum values)
             const entitlements = ctx.get('userEntitlements') as Set<string>;
-            expect(entitlements.has('CAN_LIST_ACCOMMODATION')).toBe(true);
-            expect(entitlements.has('CAN_EDIT_ACCOMMODATION')).toBe(true);
+            expect(entitlements.has('publish_accommodations')).toBe(true);
+            expect(entitlements.has('edit_accommodation_info')).toBe(true);
         });
 
         it('should set limits from the DB plan (Record<string,number> converted to Map)', async () => {
@@ -286,9 +359,9 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
 
             // Assert — tourist-free fallback entitlements applied (from mocked getDefaultEntitlements)
             const entitlements = ctx.get('userEntitlements') as Set<string>;
-            expect(entitlements.has('SAVE_FAVORITES')).toBe(true);
+            expect(entitlements.has('save_favorites')).toBe(true);
             // owner-basico entitlement should NOT be present
-            expect(entitlements.has('CAN_LIST_ACCOMMODATION')).toBe(false);
+            expect(entitlements.has('publish_accommodations')).toBe(false);
         });
 
         it('should NOT memoize the NOT_FOUND result — next request retries PlanService', async () => {
@@ -337,7 +410,7 @@ describe('entitlement middleware — host-draft plan cutover (SPEC-192 T-024)', 
 
             // Assert — degraded to tourist-free defaults, request continued
             const entitlements = ctx.get('userEntitlements') as Set<string>;
-            expect(entitlements.has('SAVE_FAVORITES')).toBe(true);
+            expect(entitlements.has('save_favorites')).toBe(true);
             expect(next).toHaveBeenCalled();
         });
 

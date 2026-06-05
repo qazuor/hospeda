@@ -23,18 +23,6 @@
             "path": "SPEC-133-evaluate-astro-env"
         },
         {
-            "specId": "SPEC-145",
-            "title": "Billing Entitlements and Limits Enforcement",
-            "status": "reserved",
-            "progress": "0/0",
-            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
-            "worktree": null,
-            "branch": null,
-            "dependsOn": ["SPEC-143"],
-            "reservedAt": "2026-05-18T22:00:00Z",
-            "note": "Tasks not yet atomized — atomization happens at activation per spec.md § 'Activation criteria'"
-        },
-        {
             "specId": "SPEC-188",
             "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "completed",
@@ -188,6 +176,14 @@
             "progress": "0/0",
             "path": "SPEC-196-shared-content-config-package",
             "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
+        },
+        {
+            "specId": "SPEC-145",
+            "title": "Billing Entitlements & Limits Enforcement",
+            "status": "in-progress",
+            "progress": "28/29",
+            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+            "branch": "spec/SPEC-145-billing-entitlements-and-limits-enforcement"
         }
     ],
     "standalone": {

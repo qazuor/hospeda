@@ -97,16 +97,27 @@ export class E2EApiClient {
     }
 
     /**
-     * Make authenticated DELETE request
+     * Make authenticated DELETE request.
+     *
      * @param path - API path
+     * @param body - Optional JSON body. Note: the route-factory skips JSON body
+     *   parsing for DELETE methods (`shouldParseBody = false`), so routes that
+     *   use `createAdminRoute`/`createOpenApiRoute` will NOT receive this body
+     *   via the factory's `body` argument — they receive `{}` instead. The body
+     *   IS sent in the raw request and can be read via `c.req.json()` inside the
+     *   handler if the handler reads it directly (bypassing the factory arg).
+     *   Routes that call `RevokeEntitlementBodySchema.parse(body)` on the factory
+     *   arg will fail validation regardless of what body is sent here.
+     *   Included here for completeness and to document the known factory limitation.
      * @returns Response object
      */
-    async delete(path: string) {
+    async delete(path: string, body?: unknown) {
         const headers = createAuthenticatedRequest(this.actor);
 
         return await this.app.request(path, {
             method: 'DELETE',
-            headers: headers.headers
+            headers: headers.headers,
+            body: body !== undefined ? JSON.stringify(body) : undefined
         });
     }
 

@@ -15,7 +15,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { LIMIT_METADATA, LimitKey } from '@repo/billing';
+import { LIMIT_METADATA, LimitKey, isLimitKey } from '@repo/billing';
 import { getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
@@ -316,8 +316,9 @@ export class UsageTrackingService {
             // Calculate usage percentage
             const usagePercentage = maxAllowed > 0 ? (currentUsage / maxAllowed) * 100 : 0;
 
-            // Get display name
-            const displayName = LIMIT_METADATA[limitKey as LimitKey]?.name || limitKey;
+            // Get display name. limitKey is typed as string (public API accepts any key);
+            // guard before indexing LIMIT_METADATA so unknown keys fall back to the raw string.
+            const displayName = isLimitKey(limitKey) ? LIMIT_METADATA[limitKey].name : limitKey;
 
             // Calculate threshold
             const threshold = calculateThreshold({ current: currentUsage, max: maxAllowed });

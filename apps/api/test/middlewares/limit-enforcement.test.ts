@@ -20,7 +20,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     enforceAccommodationLimit,
     enforcePhotoLimit,
-    enforcePromotionLimit
+    enforcePromotionLimit,
+    enforcePropertiesLimit,
+    enforceStaffAccountsLimit
 } from '../../src/middlewares/limit-enforcement';
 import type { AppBindings } from '../../src/types';
 
@@ -28,6 +30,19 @@ import type { AppBindings } from '../../src/types';
 vi.mock('../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
 }));
+
+// Wrap checkLimit in a spy so individual tests can inject synthetic return values
+// (e.g., allowed=false with upgradeMessage=undefined to cover the ?? fallback branches).
+// By default the spy delegates to the real implementation so all existing tests pass.
+vi.mock('../../src/utils/limit-check', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/utils/limit-check')>();
+    return {
+        ...actual,
+        checkLimit: vi.fn(actual.checkLimit),
+        calculateThreshold: vi.fn(actual.calculateThreshold),
+        calculateUsagePercent: vi.fn(actual.calculateUsagePercent)
+    };
+});
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
@@ -93,6 +108,7 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { getActorFromContext } from '../../src/utils/actor';
+import { checkLimit } from '../../src/utils/limit-check';
 
 describe('Limit Enforcement Middleware', () => {
     let mockContext: Context<AppBindings>;
@@ -232,6 +248,68 @@ describe('Limit Enforcement Middleware', () => {
 
             expect(mockNext).toHaveBeenCalled();
         });
+
+        it('should use ?? fallback message when upgradeMessage is undefined (line 165)', async () => {
+            // Coverage target: limit-enforcement.ts line 165.
+            // `limitCheck.upgradeMessage ?? 'Accommodation limit reached'` — defensive fallback
+            // when checkLimit returns allowed=false without upgradeMessage.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+
+            const mockCount = vi.fn().mockResolvedValue({
+                success: true,
+                data: { count: 5 }
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as AccommodationService
+            );
+
+            vi.mocked(checkLimit).mockReturnValueOnce({
+                allowed: false,
+                currentCount: 5,
+                maxAllowed: 5,
+                remaining: 0,
+                upgradeMessage: undefined
+            });
+
+            const middleware = enforceAccommodationLimit();
+            let thrown: unknown;
+            try {
+                await middleware(mockContext, mockNext);
+            } catch (err) {
+                thrown = err;
+            }
+            expect(thrown).toBeInstanceOf(ServiceError);
+            expect((thrown as ServiceError).message).toBe('Accommodation limit reached');
+        });
+
+        it('should call next() and log with String() when a non-Error is thrown in the catch block (line 185)', async () => {
+            // Coverage target: limit-enforcement.ts line 185.
+            // `error instanceof Error ? error.message : String(error)` — the String(error)
+            // branch fires when someone throws a non-Error value (e.g. a plain string).
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+
+            // Make count throw a plain string (NOT an Error instance)
+            const mockCount = vi.fn().mockImplementation(() => {
+                // eslint-disable-next-line @typescript-eslint/no-throw-literal
+                throw 'plain-string-error-for-coverage';
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as AccommodationService
+            );
+
+            const middleware = enforceAccommodationLimit();
+            await middleware(mockContext, mockNext);
+
+            // Plain-string throw must NOT block the request
+            expect(mockNext).toHaveBeenCalled();
+        });
     });
 
     describe('enforcePhotoLimit', () => {
@@ -334,6 +412,166 @@ describe('Limit Enforcement Middleware', () => {
 
             const mockGetById = vi.fn().mockResolvedValue({
                 data: { id: 'accommodation-id-123' }
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        getById: mockGetById
+                    }) as unknown as AccommodationService
+            );
+
+            const middleware = enforcePhotoLimit();
+            await middleware(mockContext, mockNext);
+
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should count 0 when media.gallery is not an array (line 260 false branch)', async () => {
+            // Coverage target: limit-enforcement.ts line 260.
+            // `Array.isArray(media.gallery) ? media.gallery.length : 0` — the `: 0` branch
+            // fires when gallery is absent/not-array (e.g. null, string, plain object).
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
+            const mockGetById = vi.fn().mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'accommodation-id-123',
+                    media: {
+                        // gallery is a plain object, not an array — triggers the ternary false branch
+                        gallery: { 0: { url: 'https://example.com/0.jpg' } },
+                        featuredImage: { url: 'https://example.com/featured.jpg' }
+                    }
+                }
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        getById: mockGetById
+                    }) as unknown as AccommodationService
+            );
+
+            const middleware = enforcePhotoLimit();
+            await middleware(mockContext, mockNext);
+
+            // gallery counted as 0 (not array) + 1 featuredImage = 1 total — under limit 10
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should count 0 for featuredImage when absent (line 261 false branch)', async () => {
+            // Coverage target: limit-enforcement.ts line 261.
+            // `media.featuredImage ? 1 : 0` — the `: 0` branch fires when featuredImage is falsy.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
+            const mockGetById = vi.fn().mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'accommodation-id-123',
+                    media: {
+                        // no featuredImage key — falsy → 0 count
+                        gallery: Array.from({ length: 3 }, (_v, i) => ({
+                            url: `https://example.com/${i}.jpg`
+                        }))
+                    }
+                }
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        getById: mockGetById
+                    }) as unknown as AccommodationService
+            );
+
+            const middleware = enforcePhotoLimit();
+            await middleware(mockContext, mockNext);
+
+            // 3 gallery + 0 featured = 3 total — under limit 10
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should use ?? fallback message when upgradeMessage is undefined (line 291)', async () => {
+            // Coverage target: limit-enforcement.ts line 291.
+            // `limitCheck.upgradeMessage ?? 'Photo limit reached'` — the right-hand fallback
+            // fires when checkLimit returns allowed=false with upgradeMessage=undefined.
+            // This is a defensive branch; checkLimit normally always provides upgradeMessage
+            // when !allowed, but the ?? guard is there for edge cases.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 1);
+
+            // 1 featuredImage + 0 gallery = 1 → at limit
+            const mockGetById = vi.fn().mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'accommodation-id-123',
+                    media: {
+                        featuredImage: { url: 'https://example.com/featured.jpg' },
+                        gallery: []
+                    }
+                }
+            });
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        getById: mockGetById
+                    }) as unknown as AccommodationService
+            );
+
+            // Inject a synthetic checkLimit result that omits upgradeMessage so the
+            // ?? right-hand fallback string 'Photo limit reached' is used.
+            vi.mocked(checkLimit).mockReturnValueOnce({
+                allowed: false,
+                currentCount: 1,
+                maxAllowed: 1,
+                remaining: 0,
+                upgradeMessage: undefined
+            });
+
+            const middleware = enforcePhotoLimit();
+            let thrown: unknown;
+            try {
+                await middleware(mockContext, mockNext);
+            } catch (err) {
+                thrown = err;
+            }
+            expect(thrown).toBeInstanceOf(ServiceError);
+            expect((thrown as ServiceError).message).toBe('Photo limit reached');
+        });
+
+        it('should call next() when an unexpected non-ServiceError is thrown inside the try block (photo limit catch)', async () => {
+            // Coverage target: limit-enforcement.ts lines 303-314 (enforcePhotoLimit catch block).
+            // The catch re-throws ServiceError/HTTPException; for any other error it logs
+            // and calls next() to avoid blocking the user on monitoring failures.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
+            // Make getById throw a raw Error (not ServiceError, not HTTPException)
+            const mockGetById = vi.fn().mockRejectedValue(new RangeError('Unexpected proxy error'));
+            vi.mocked(AccommodationService).mockImplementation(
+                () =>
+                    ({
+                        getById: mockGetById
+                    }) as unknown as AccommodationService
+            );
+
+            const middleware = enforcePhotoLimit();
+            await middleware(mockContext, mockNext);
+
+            // Unexpected errors must NOT block the request — next() is called.
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should call next() and log with String() when a non-Error is thrown in photo catch (line 311)', async () => {
+            // Coverage target: limit-enforcement.ts line 311.
+            // `error instanceof Error ? error.message : String(error)` — the String(error)
+            // branch fires when a non-Error value is thrown.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
+
+            // Make getById throw a plain object (NOT an Error instance)
+            const mockGetById = vi.fn().mockImplementation(() => {
+                // eslint-disable-next-line @typescript-eslint/no-throw-literal
+                throw { code: 'PROXY_ERROR', detail: 'non-error-throw' };
             });
             vi.mocked(AccommodationService).mockImplementation(
                 () =>
@@ -457,6 +695,112 @@ describe('Limit Enforcement Middleware', () => {
                     ownerId: 'user-123'
                 });
             }
+        });
+
+        it('should treat undefined data.count as 0 and allow when under limit (line 371 ?. branch)', async () => {
+            // Coverage target: limit-enforcement.ts line 371.
+            // `countResult.data?.count || 0` — the `?.` optional chain evaluates to
+            // undefined when data is undefined (success=true but no data payload).
+            // The `|| 0` then coerces undefined to 0, and the limit check uses 0.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+
+            // Service returns success but data is undefined (edge case)
+            const mockCount = vi.fn().mockResolvedValue({
+                success: true,
+                data: undefined
+            });
+            vi.mocked(OwnerPromotionService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as OwnerPromotionService
+            );
+
+            const middleware = enforcePromotionLimit();
+            await middleware(mockContext, mockNext);
+
+            // currentCount falls back to 0, which is under limit 3 → next() called
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should use ?? fallback message when upgradeMessage is undefined (line 399)', async () => {
+            // Coverage target: limit-enforcement.ts line 399.
+            // `limitCheck.upgradeMessage ?? 'Promotion limit reached'` — defensive fallback
+            // when checkLimit returns allowed=false without upgradeMessage.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+            mockLimitsMap.set(LimitKey.MAX_ACTIVE_PROMOTIONS, 3);
+
+            const mockCount = vi.fn().mockResolvedValue({
+                success: true,
+                data: { count: 3 }
+            });
+            vi.mocked(OwnerPromotionService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as OwnerPromotionService
+            );
+
+            // Inject a synthetic checkLimit result without upgradeMessage
+            vi.mocked(checkLimit).mockReturnValueOnce({
+                allowed: false,
+                currentCount: 3,
+                maxAllowed: 3,
+                remaining: 0,
+                upgradeMessage: undefined
+            });
+
+            const middleware = enforcePromotionLimit();
+            await expect(middleware(mockContext, mockNext)).rejects.toThrow(ServiceError);
+        });
+
+        it('should call next() when an unexpected non-ServiceError is thrown inside the try block (lines 411-422)', async () => {
+            // Coverage target: limit-enforcement.ts lines 411-422.
+            // The catch block re-throws ServiceError/HTTPException and logs+continues
+            // for any other unexpected error. This covers the else branch where the
+            // error is neither a ServiceError nor an HTTPException.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+
+            // Make OwnerPromotionService.count throw a raw Error (not ServiceError)
+            const mockCount = vi.fn().mockRejectedValue(new TypeError('Unexpected proxy error'));
+            vi.mocked(OwnerPromotionService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as OwnerPromotionService
+            );
+
+            const middleware = enforcePromotionLimit();
+            await middleware(mockContext, mockNext);
+
+            // Unexpected errors must NOT block the request — next() must be called.
+            expect(mockNext).toHaveBeenCalled();
+        });
+
+        it('should call next() and log with String() when a non-Error is thrown in promotion catch (line 419)', async () => {
+            // Coverage target: limit-enforcement.ts line 419.
+            // `error instanceof Error ? error.message : String(error)` — the String(error)
+            // branch fires when a non-Error value is thrown inside the try block.
+            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
+
+            // Throw a plain number (NOT an Error instance)
+            const mockCount = vi.fn().mockImplementation(() => {
+                // eslint-disable-next-line @typescript-eslint/no-throw-literal
+                throw 42;
+            });
+            vi.mocked(OwnerPromotionService).mockImplementation(
+                () =>
+                    ({
+                        count: mockCount
+                    }) as unknown as OwnerPromotionService
+            );
+
+            const middleware = enforcePromotionLimit();
+            await middleware(mockContext, mockNext);
+
+            // Non-Error throw must NOT block the request
+            expect(mockNext).toHaveBeenCalled();
         });
     });
 
@@ -933,6 +1277,140 @@ describe('Limit Enforcement Middleware', () => {
                     upgradeAudience: 'host'
                 });
             }
+        });
+    });
+});
+
+/**
+ * RESERVED-LIMIT pinning tests (SPEC-145 T-007)
+ *
+ * These tests assert the stub-always-passes behaviour for MAX_PROPERTIES and
+ * MAX_STAFF_ACCOUNTS. Both limits have a hardcoded currentCount=0 because the
+ * counting service has not been built yet (see docs/billing/endpoint-gate-matrix.md
+ * "Reserved — Limit Stubs"). The tests intentionally verify that:
+ *   1. The middleware calls next() (never blocks) for an authenticated actor.
+ *   2. No LIMIT_REACHED error is thrown even when the plan ceiling is very low.
+ *
+ * If either test starts failing, it means someone wired a real count source
+ * without updating this file — that is a deliberate break that forces a review.
+ */
+describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
+    let mockContext: Context<AppBindings>;
+    let mockNext: ReturnType<typeof vi.fn>;
+    let mockLimitsMap: Map<LimitKey, number>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        mockLimitsMap = new Map<LimitKey, number>();
+
+        mockContext = {
+            req: {
+                param: vi.fn().mockReturnValue('complex-id-123')
+            },
+            get: vi.fn((key: string) => {
+                if (key === 'userLimits') {
+                    return mockLimitsMap;
+                }
+                return undefined;
+            }),
+            header: vi.fn()
+        } as unknown as Context<AppBindings>;
+
+        mockNext = vi.fn();
+    });
+
+    describe('enforcePropertiesLimit — stub always passes', () => {
+        it('always calls next() because counting service is not built', async () => {
+            // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
+            const actor: Actor = {
+                id: 'host-stub-123',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            // Set the plan limit extremely low — the stub count is 0, so it still passes
+            mockLimitsMap.set(LimitKey.MAX_PROPERTIES, 1);
+
+            const middleware = enforcePropertiesLimit();
+
+            // Act
+            await middleware(mockContext, mockNext);
+
+            // Assert — never blocked; next() must be called
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+
+        it('does not throw ServiceError when plan ceiling is 0 (stub count is 0)', async () => {
+            // Arrange — a plan with ceiling 0 would normally block immediately, but
+            // checkLimit treats 0 as "not configured" / unlimited so the stub still passes
+            const actor: Actor = {
+                id: 'host-stub-456',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            // No limit key in context — checkLimit falls back to unlimited (0 = no limit set)
+            const middleware = enforcePropertiesLimit();
+
+            // Act & Assert
+            await expect(middleware(mockContext, mockNext)).resolves.toBeUndefined();
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('enforceStaffAccountsLimit — stub always passes', () => {
+        it('always calls next() because staff service is not built', async () => {
+            // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
+            const actor: Actor = {
+                id: 'host-staff-stub-123',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            mockContext = {
+                ...mockContext,
+                req: {
+                    param: vi.fn()
+                }
+            } as unknown as Context<AppBindings>;
+
+            mockLimitsMap.set(LimitKey.MAX_STAFF_ACCOUNTS, 1);
+
+            const middleware = enforceStaffAccountsLimit();
+
+            // Act
+            await middleware(mockContext, mockNext);
+
+            // Assert — never blocked; next() must be called
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+
+        it('does not throw ServiceError even with low ceiling (stub count is 0)', async () => {
+            // Arrange
+            const actor: Actor = {
+                id: 'host-staff-stub-456',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            mockContext = {
+                ...mockContext,
+                req: {
+                    param: vi.fn()
+                }
+            } as unknown as Context<AppBindings>;
+
+            // No limit key set — checkLimit returns unlimited
+            const middleware = enforceStaffAccountsLimit();
+
+            // Act & Assert
+            await expect(middleware(mockContext, mockNext)).resolves.toBeUndefined();
+            expect(mockNext).toHaveBeenCalledOnce();
         });
     });
 });
