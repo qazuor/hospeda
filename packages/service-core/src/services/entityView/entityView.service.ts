@@ -299,8 +299,10 @@ export class EntityViewService extends BaseService {
                     details: {
                         fieldErrors,
                         formErrors,
-                        issues: parseResult.error.issues,
-                        input
+                        issues: parseResult.error.issues
+                        // input intentionally omitted — it contains visitorHash,
+                        // which must never appear in logs or forwarded error details
+                        // (privacy contract, see docs/guides/view-tracking-privacy.md)
                     }
                 }
             };
@@ -336,7 +338,16 @@ export class EntityViewService extends BaseService {
                     ? `Failed to record view: ${error.message}`
                     : 'Failed to record view: unknown error';
 
-            this.logger.error({ error, input: validated }, 'entity_views capture failed');
+            this.logger.error(
+                {
+                    error,
+                    entityType: validated.entityType,
+                    entityId: validated.entityId,
+                    isAuthenticated: validated.isAuthenticated
+                    // visitorHash intentionally omitted — privacy contract
+                },
+                'entity_views capture failed'
+            );
 
             return {
                 error: {

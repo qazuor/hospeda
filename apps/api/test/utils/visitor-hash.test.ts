@@ -296,4 +296,63 @@ describe('computeVisitorHash', () => {
             expect(hashA).not.toBe(hashB);
         });
     });
+
+    describe('getClientIp trust-chain prefixes (regression — review finding)', () => {
+        it('strips the proxy: prefix so the embedded IPv4 is still /24-truncated', () => {
+            // Without prefix stripping, 'proxy:192.168.1.5' contains a colon and
+            // would be misparsed as IPv6, skipping truncation entirely.
+            const hashPrefixedA = computeVisitorHash({
+                ip: 'proxy:192.168.1.5',
+                userAgent: UA,
+                date: DATE,
+                secret: SECRET
+            });
+            const hashPrefixedB = computeVisitorHash({
+                ip: 'proxy:192.168.1.200',
+                userAgent: UA,
+                date: DATE,
+                secret: SECRET
+            });
+            const hashClean = computeVisitorHash({
+                ip: '192.168.1.99',
+                userAgent: UA,
+                date: DATE,
+                secret: SECRET
+            });
+
+            // Same /24 → same hash, prefix or not.
+            expect(hashPrefixedA).toBe(hashPrefixedB);
+            expect(hashPrefixedA).toBe(hashClean);
+        });
+
+        it('strips internal: and untrusted: prefixes equivalently', () => {
+            const base = computeVisitorHash({
+                ip: '10.0.0.1',
+                userAgent: UA,
+                date: DATE,
+                secret: SECRET
+            });
+
+            for (const prefixed of ['internal:10.0.0.1', 'untrusted:10.0.0.1']) {
+                const hash = computeVisitorHash({
+                    ip: prefixed,
+                    userAgent: UA,
+                    date: DATE,
+                    secret: SECRET
+                });
+                expect(hash).toBe(base);
+            }
+        });
+
+        it("hashes the literal 'unknown' sentinel without throwing", () => {
+            const hash = computeVisitorHash({
+                ip: 'unknown',
+                userAgent: UA,
+                date: DATE,
+                secret: SECRET
+            });
+
+            expect(hash).toMatch(/^[0-9a-f]{64}$/);
+        });
+    });
 });

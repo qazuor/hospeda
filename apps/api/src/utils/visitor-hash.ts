@@ -85,27 +85,46 @@ function toUtcDateString(date: Date): string {
 }
 
 /**
+ * Trust-chain prefixes that `getClientIp` (rate-limit middleware) may prepend
+ * to its return value. They MUST be stripped before truncation, otherwise the
+ * embedded IP would be misparsed (e.g. `proxy:192.168.1.5` contains a colon
+ * and would be treated as IPv6, skipping the /24 truncation entirely).
+ *
+ * @internal
+ */
+const CLIENT_IP_PREFIXES = ['internal:', 'proxy:', 'untrusted:'] as const;
+
+/**
  * Truncate an IP address for privacy before hashing.
  *
+ * Strips any `getClientIp` trust-chain prefix first, then:
  * IPv4: drops the last octet (`a.b.c.d` → `a.b.c`).
  * IPv6: keeps the first 4 groups (`a:b:c:d:e:f:g:h` → `a:b:c:d`).
- * Unknown format (no dots or colons): returned as-is, nothing is logged.
+ * Unknown format (no dots or colons, e.g. `unknown`): returned as-is,
+ * nothing is logged.
  *
  * @internal
  */
 function truncateIp(ip: string): string {
-    if (ip.includes(':')) {
+    let raw = ip;
+    for (const prefix of CLIENT_IP_PREFIXES) {
+        if (raw.startsWith(prefix)) {
+            raw = raw.slice(prefix.length);
+            break;
+        }
+    }
+    if (raw.includes(':')) {
         // IPv6 — keep first 4 colon-delimited groups
-        const groups = ip.split(':');
+        const groups = raw.split(':');
         return groups.slice(0, 4).join(':');
     }
-    if (ip.includes('.')) {
+    if (raw.includes('.')) {
         // IPv4 — drop the last octet (/24 window)
-        const octets = ip.split('.');
+        const octets = raw.split('.');
         return octets.slice(0, 3).join('.');
     }
     // Unknown format — return as-is (will still be hashed, never logged raw)
-    return ip;
+    return raw;
 }
 
 // ---------------------------------------------------------------------------
