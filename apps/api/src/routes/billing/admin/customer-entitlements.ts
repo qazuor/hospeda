@@ -7,6 +7,7 @@
  * Routes:
  * - POST /api/v1/admin/billing/customer-entitlements/grant
  *     - Body: { customerId, entitlementKey, expiresAt? }
+ *     - Validates customer exists via billing.customers.get() → 404 if not found
  *     - Calls billing.entitlements.grant() with source='manual'
  *     - Clears the entitlement cache for the customer
  * - POST /api/v1/admin/billing/customer-entitlements/revoke
@@ -23,10 +24,15 @@
  * Permissions: PermissionEnum.BILLING_MANAGE (matches sibling billing admin
  * mutation routes — addons.ts, plans.ts).
  *
+ * Note on 201-on-revoke: the createAdminRoute factory (via createCRUDRoute)
+ * returns 201 for all POST routes by default. The revoke route logically maps
+ * to 204 (no-content mutation), but the factory does not support POST→204.
+ * API consumers must treat 201 from POST /revoke as "success, no body".
+ *
  * @module routes/billing/admin/customer-entitlements
  */
 
-import { type EntitlementKey, isEntitlementKey } from '@repo/billing';
+import { isEntitlementKey } from '@repo/billing';
 import { PermissionEnum } from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -57,8 +63,14 @@ const GrantEntitlementBodySchema = z.object({
         .string()
         .min(1, 'entitlementKey is required')
         .refine(isEntitlementKey, { message: 'Unknown entitlementKey value' }),
-    /** Optional expiry — grant expires at this date if provided */
-    expiresAt: z.coerce.date().optional()
+    /**
+     * Optional expiry — grant expires at this date if provided.
+     * Must be a future date; past dates are rejected with 400.
+     */
+    expiresAt: z.coerce
+        .date()
+        .refine((d) => d > new Date(), { message: 'expiresAt must be in the future' })
+        .optional()
 });
 
 /**
@@ -122,11 +134,26 @@ export const adminGrantCustomerEntitlementRoute = createAdminRoute({
     },
     handler: async (c: Context, _params: unknown, body: unknown) => {
         const actor = getActorFromContext(c);
+        // The route-factory pre-validates body via ctx.req.valid('json') with
+        // GrantEntitlementBodySchema (including coercion for expiresAt). We
+        // re-parse here only to carry the narrowed TypeScript type into this
+        // handler scope — the factory does not expose a typed getter in the
+        // generic handler signature.
         const input = GrantEntitlementBodySchema.parse(body);
 
         const billing = getQZPayBilling();
         if (!billing) {
             throw new HTTPException(503, { message: 'Billing service is not available' });
+        }
+
+        // Validate that the billing customer exists before attempting to grant.
+        // A missing customer means the caller passed the wrong ID; return 404
+        // rather than letting the billing adapter create a phantom record.
+        const customer = await billing.customers.get(input.customerId);
+        if (!customer) {
+            throw new HTTPException(404, {
+                message: `Billing customer not found: ${input.customerId}`
+            });
         }
 
         apiLogger.info(
@@ -138,10 +165,19 @@ export const adminGrantCustomerEntitlementRoute = createAdminRoute({
             'Admin granting customer entitlement'
         );
 
+        // Narrow entitlementKey from string to EntitlementKey using the type
+        // guard (same guard used by the Zod .refine above — no redundant cast).
+        if (!isEntitlementKey(input.entitlementKey)) {
+            // This branch is unreachable in practice: the Zod schema's .refine
+            // already rejected any unknown key before the handler was invoked.
+            // The guard is retained for TypeScript narrowing only.
+            throw new HTTPException(400, { message: 'Unknown entitlementKey value' });
+        }
+
         // QZPayGrantEntitlementInput: { customerId, entitlementKey, expiresAt?, source?, sourceId? }
         const granted = await billing.entitlements.grant({
             customerId: input.customerId,
-            entitlementKey: input.entitlementKey as EntitlementKey,
+            entitlementKey: input.entitlementKey,
             expiresAt: input.expiresAt,
             source: 'manual',
             sourceId: actor.id
@@ -194,6 +230,8 @@ export const adminRevokeCustomerEntitlementRoute = createAdminRoute({
     },
     handler: async (c: Context, _params: unknown, body: unknown) => {
         const actor = getActorFromContext(c);
+        // Re-parse to carry typed fields into this scope (same reasoning as
+        // the grant handler — factory pre-validates but handler receives unknown).
         const input = RevokeEntitlementBodySchema.parse(body);
 
         const billing = getQZPayBilling();

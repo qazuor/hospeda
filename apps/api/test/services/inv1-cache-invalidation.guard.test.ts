@@ -229,9 +229,22 @@ describe('INV-1 transversal guard: every lifecycle handler calls clearEntitlemen
      * appears in it. A missing call (e.g. after a refactor) fails this specific
      * test case, making the gap immediately visible.
      *
-     * NOTE: this checks the file contains the string, not that the call is on the
-     * correct path. Per-handler unit tests already guard the runtime behavior.
-     * This guard catches "someone deleted the line entirely" regressions.
+     * ## Limitation: string-contains, not runtime-path verification
+     *
+     * This guard asserts the STRING "clearEntitlementCache" is present in the
+     * source file. It passes as long as the string appears anywhere — including
+     * inside a comment or in an unreachable branch. It does NOT verify that the
+     * call executes on the correct code path (e.g. inside an if-branch that is
+     * always skipped). This is a known and accepted trade-off:
+     *
+     *   - Per-handler unit/integration tests already assert the runtime behavior
+     *     (cache is cleared on the happy path). Those tests are the complementary
+     *     guard for path-correctness.
+     *   - This guard's only job is to catch "someone deleted the line entirely"
+     *     regressions — which it does reliably and with zero runtime deps.
+     *
+     * If a file is refactored and the call moves to a helper/delegate, update
+     * the LIFECYCLE_SITES entry to point at the file where the call now lives.
      */
     it.each(LIFECYCLE_SITES.map((s) => [s.description, s.file] as const))(
         'clearEntitlementCache present in handler: %s',

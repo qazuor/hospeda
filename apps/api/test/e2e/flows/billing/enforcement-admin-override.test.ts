@@ -397,4 +397,30 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
         const body = (await res.json()) as { success: boolean };
         expect(body.success).toBe(false);
     });
+
+    // =========================================================================
+    // Sad path: unknown customerId → 404
+    // =========================================================================
+
+    it('grant with a non-existent customerId → 404', async () => {
+        mpStub.config.reset();
+
+        // Minimal setup: admin actor only — no billing customer created.
+        const adminUser = await createTestUser({
+            email: `override-admin-nocust-${randomUUID().slice(0, 8)}@example.com`
+        });
+        const adminClient = new E2EApiClient(app, makeAdminActor(adminUser.id));
+
+        // A random UUID that was never registered as a billing customer.
+        // The grant route validates existence via billing.customers.get() and
+        // must return 404 rather than propagating to the billing adapter.
+        const res = await adminClient.post('/api/v1/admin/billing/customer-entitlements/grant', {
+            customerId: randomUUID(),
+            entitlementKey: E.VIEW_ADVANCED_STATS
+        });
+
+        expect(res.status, `expected 404 but got ${res.status}`).toBe(404);
+        const body = (await res.json()) as { success: boolean };
+        expect(body.success).toBe(false);
+    });
 });

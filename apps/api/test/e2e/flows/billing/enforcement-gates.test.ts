@@ -727,6 +727,12 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
 
     // =========================================================================
     // Gate 4: WRITE_REVIEWS
+    //
+    // Owner decision (2026-06-05): hosts (owner/complex plans) intentionally
+    // cannot write reviews — blocking all host tiers from WRITE_REVIEWS is a
+    // conflict-of-interest policy (hosts must not review competitors). Hosts
+    // keep RESPOND_REVIEWS instead. This is NOT a bug; it is a product decision
+    // recorded in spec.md Revision History and docs/billing/endpoint-gate-matrix.md.
     // =========================================================================
 
     describe('Gate 4: WRITE_REVIEWS', () => {

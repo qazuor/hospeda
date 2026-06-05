@@ -26,6 +26,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
     mockGrant,
     mockRevoke,
+    mockCustomersGet,
     mockClearEntitlementCache,
     mockGetQZPayBilling,
     mockCreateAdminRoute,
@@ -33,6 +34,7 @@ const {
 } = vi.hoisted(() => ({
     mockGrant: vi.fn(),
     mockRevoke: vi.fn(),
+    mockCustomersGet: vi.fn(),
     mockClearEntitlementCache: vi.fn(),
     mockGetQZPayBilling: vi.fn(),
     mockCreateAdminRoute: vi.fn(),
@@ -43,6 +45,12 @@ const {
 vi.mock('../../../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
 }));
+
+// Mock @repo/billing — preserve isEntitlementKey + EntitlementKey but stub createMercadoPagoAdapter
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return { ...actual }; // full pass-through; no runtime adapter needed for unit tests
+});
 
 // Mock clearEntitlementCache from entitlement middleware
 vi.mock('../../../../src/middlewares/entitlement', () => ({
@@ -162,17 +170,33 @@ describe('route registration — permissions', () => {
 // Grant handler tests
 // ---------------------------------------------------------------------------
 
+/** Minimal stub for a billing customer returned by billing.customers.get() */
+const SAMPLE_BILLING_CUSTOMER = {
+    customerId: SAMPLE_CUSTOMER_ID,
+    externalId: 'user-00000000-0000-0000-0000-000000000010',
+    email: 'customer@example.com'
+};
+
 describe('adminGrantCustomerEntitlementRoute handler', () => {
-    let mockBilling: { entitlements: { grant: typeof mockGrant; revoke: typeof mockRevoke } };
+    let mockBilling: {
+        entitlements: { grant: typeof mockGrant; revoke: typeof mockRevoke };
+        customers: { get: typeof mockCustomersGet };
+    };
 
     beforeEach(() => {
         mockGrant.mockReset();
         mockRevoke.mockReset();
+        mockCustomersGet.mockReset();
         mockClearEntitlementCache.mockReset();
         mockGetQZPayBilling.mockReset();
         mockAuditLog.mockReset();
-        mockBilling = { entitlements: { grant: mockGrant, revoke: mockRevoke } };
+        mockBilling = {
+            entitlements: { grant: mockGrant, revoke: mockRevoke },
+            customers: { get: mockCustomersGet }
+        };
         mockGetQZPayBilling.mockReturnValue(mockBilling);
+        // Default: customer exists
+        mockCustomersGet.mockResolvedValue(SAMPLE_BILLING_CUSTOMER);
     });
 
     it('grant happy path — calls billing.entitlements.grant and clears cache', async () => {
@@ -275,6 +299,54 @@ describe('adminGrantCustomerEntitlementRoute handler', () => {
 
         expect(mockGrant).not.toHaveBeenCalled();
     });
+
+    it('unknown customerId (customers.get returns null) → throws HTTPException 404', async () => {
+        // Arrange — customer does not exist in billing
+        mockCustomersGet.mockResolvedValue(null);
+        const config = findRouteCall('post', '/grant');
+        const handler = config?.handler as (c: unknown, p: unknown, b: unknown) => Promise<unknown>;
+        const c = createMockContext();
+
+        // Act & Assert
+        await expect(
+            handler(
+                c,
+                {},
+                {
+                    customerId: '00000000-0000-0000-0000-000000000099',
+                    entitlementKey: EntitlementKey.FEATURED_LISTING
+                }
+            )
+        ).rejects.toMatchObject({ status: 404 });
+
+        // billing.entitlements.grant must NOT have been called
+        expect(mockGrant).not.toHaveBeenCalled();
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+    });
+
+    it('past expiresAt → Zod refine rejects with 400 before any billing call', async () => {
+        // Arrange — expiresAt in the past
+        const pastDate = new Date(Date.now() - 60_000); // 1 minute ago
+        const config = findRouteCall('post', '/grant');
+        const handler = config?.handler as (c: unknown, p: unknown, b: unknown) => Promise<unknown>;
+        const c = createMockContext();
+
+        // Act & Assert — Zod .refine on expiresAt rejects past dates
+        await expect(
+            handler(
+                c,
+                {},
+                {
+                    customerId: SAMPLE_CUSTOMER_ID,
+                    entitlementKey: EntitlementKey.FEATURED_LISTING,
+                    expiresAt: pastDate.toISOString()
+                }
+            )
+        ).rejects.toThrow();
+
+        expect(mockGrant).not.toHaveBeenCalled();
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -282,15 +354,22 @@ describe('adminGrantCustomerEntitlementRoute handler', () => {
 // ---------------------------------------------------------------------------
 
 describe('adminRevokeCustomerEntitlementRoute handler', () => {
-    let mockBilling: { entitlements: { grant: typeof mockGrant; revoke: typeof mockRevoke } };
+    let mockBilling: {
+        entitlements: { grant: typeof mockGrant; revoke: typeof mockRevoke };
+        customers: { get: typeof mockCustomersGet };
+    };
 
     beforeEach(() => {
         mockGrant.mockReset();
         mockRevoke.mockReset();
+        mockCustomersGet.mockReset();
         mockClearEntitlementCache.mockReset();
         mockGetQZPayBilling.mockReset();
         mockAuditLog.mockReset();
-        mockBilling = { entitlements: { grant: mockGrant, revoke: mockRevoke } };
+        mockBilling = {
+            entitlements: { grant: mockGrant, revoke: mockRevoke },
+            customers: { get: mockCustomersGet }
+        };
         mockGetQZPayBilling.mockReturnValue(mockBilling);
     });
 
