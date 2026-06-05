@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 8/18 tasks (44%)
+## Progress: 10/18 tasks (56%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -28,7 +28,7 @@
 - [x] **T-006** (complexity: 3) - Count-aware CoverPlusGridVariant
   - Replace slice(0,6) + fixed 3-col track, reuse T-003 cell classes
   - Blocked by: T-003 | Blocks: T-007
-- [ ] **T-008** (complexity: 2) - Fixed aspect-ratio + object-fit on every gallery cell
+- [x] **T-008** (complexity: 2) - Fixed aspect-ratio + object-fit on every gallery cell
   - True ratios on detail featured + thumbs (cover-plus-grid mostly has them)
   - Blocked by: T-003 | Blocks: T-009, T-014
 - [ ] **T-009** (complexity: 2) - Request Cloudinary c_fill crop per cell ratio
@@ -48,7 +48,7 @@
 
 - [x] **T-005** (complexity: 3) - Vitest coverage for detail variant count logic + overlay
   - Blocked by: T-003 | Blocks: T-017
-- [ ] **T-007** (complexity: 2) - Vitest coverage for cover-plus-grid variant
+- [x] **T-007** (complexity: 2) - Vitest coverage for cover-plus-grid variant
   - Blocked by: T-006 | Blocks: T-017
 - [ ] **T-010** (complexity: 2) - CLS test + object-position sanity
   - Blocked by: T-009 | Blocks: T-017
