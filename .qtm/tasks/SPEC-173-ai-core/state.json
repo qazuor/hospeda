@@ -1483,35 +1483,35 @@
             "id": "T-042",
             "title": "Final coverage + lint/typecheck verification pass",
             "description": "Run full pnpm typecheck + lint + test across @repo/ai-core, @repo/schemas, @repo/billing, @repo/db, apps/api touched surfaces; confirm ≥90% coverage on the package (AC-13), no .only/.skip, no raw ilike, no any. Remove any temporary workarounds. Tests: this task verifies the full suite is green; no new product code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-038"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Run typecheck + lint + test across touched packages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm ≥90% coverage + no forbidden patterns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove temporary workarounds",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cleanup", "quality", "ai-core"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T17:50:00.000Z",
+                "completed": "2026-06-05T18:40:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 42,
+        "completed": 43,
         "blocked": 0,
         "averageComplexity": 2.5
     }

@@ -2,7 +2,7 @@
 id: SPEC-173
 slug: ai-core
 title: AI Foundation Package (provider-agnostic @repo/ai-core)
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-05-29
 designResolvedAt: 2026-06-04
