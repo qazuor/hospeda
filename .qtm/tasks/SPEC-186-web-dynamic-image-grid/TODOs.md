@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 4/18 tasks (22%)
+## Progress: 6/18 tasks (33%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -19,10 +19,10 @@
 - [x] **T-002** (complexity: 3) - Count-aware composition in DetailVariant + '+N más' overlay
   - Replace slice(0,3) + binary mosaicWithThumbs with 1/2/3/4/5+ composition
   - Blocked by: T-001 | Blocks: T-003, T-004
-- [ ] **T-003** (complexity: 3) - Per-count CSS rules in ImageGallery.module.css (detail)
+- [x] **T-003** (complexity: 3) - Per-count CSS rules in ImageGallery.module.css (detail)
   - Cell classes per §6, drop fixed repeat(3,1fr), tablet breakpoint FR-7
   - Blocked by: T-002 | Blocks: T-005, T-006, T-008
-- [ ] **T-004** (complexity: 1) - Remove outer gallery pre-slice in alojamientos/[slug].astro
+- [x] **T-004** (complexity: 1) - Remove outer gallery pre-slice in alojamientos/[slug].astro
   - Realign D-1: pass FULL gallery to the island (was capped at featured+3)
   - Blocked by: T-002 | Blocks: T-017
 - [ ] **T-006** (complexity: 3) - Count-aware CoverPlusGridVariant
