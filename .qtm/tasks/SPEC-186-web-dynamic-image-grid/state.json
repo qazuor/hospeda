@@ -299,7 +299,7 @@
             "id": "T-013",
             "title": "Tests for presets + srcset wiring + LCP guard",
             "description": "Spec §8 step 10: preset transforms contain c_fill+ar_; every cell's srcset has >=2 candidates; featured image keeps loading=eager + fetchPriority=high and does not pick a heavier LCP candidate than today (w_800 baseline).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-017"],
@@ -307,14 +307,14 @@
             "tags": ["web", "testing", "media"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T10:10:00.000Z",
+                "completed": "2026-06-05T10:40:00.000Z"
             }
         },
         {
@@ -396,7 +396,7 @@
             "id": "T-017",
             "title": "Full quality gate: web + media + i18n green",
             "description": "Run typecheck + lint + tests for apps/web, packages/media, packages/i18n. Everything green before the manual smoke. No .only/.skip committed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-004", "T-005", "T-007", "T-010", "T-013", "T-015", "T-016"],
             "blocks": ["T-018"],
@@ -404,14 +404,14 @@
             "tags": ["testing", "quality-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T10:30:00.000Z",
+                "completed": "2026-06-05T10:40:00.000Z"
             }
         },
         {
@@ -439,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 3,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.2
     }

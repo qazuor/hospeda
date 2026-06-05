@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 15/18 tasks (83%)
+## Progress: 17/18 tasks (94%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -52,11 +52,11 @@
   - Blocked by: T-006 | Blocks: T-017
 - [x] **T-010** (complexity: 2) - CLS test + object-position sanity
   - Blocked by: T-009 | Blocks: T-017
-- [ ] **T-013** (complexity: 2) - Tests for presets + srcset wiring + LCP guard
+- [x] **T-013** (complexity: 2) - Tests for presets + srcset wiring + LCP guard
   - Blocked by: T-012 | Blocks: T-017
 - [x] **T-015** (complexity: 2) - Verify /fotos videos + GLightbox + reflow at 3 breakpoints
   - Blocked by: T-014 | Blocks: T-017
-- [ ] **T-017** (complexity: 1) - Full quality gate: web + media + i18n green
+- [x] **T-017** (complexity: 1) - Full quality gate: web + media + i18n green
   - Blocked by: T-004, T-005, T-007, T-010, T-013, T-015, T-016 | Blocks: T-018
 - [ ] **T-018** (complexity: 2) - Manual visual smoke (4 entities + /fotos, 3 breakpoints, 3 locales)
   - Blocked by: T-017 | Blocks: none
