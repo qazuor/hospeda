@@ -39,37 +39,37 @@
             "id": "T-002",
             "title": "Count-aware composition in DetailVariant + '+N más' overlay",
             "description": "In apps/web/src/components/ImageGallery.client.tsx DetailVariant (~line 200): replace thumbs.slice(0,3) + binary mosaicWithThumbs with count-aware composition for 1/2/3/4/5+ images per spec §5 layout matrix. At 5+, render the '+N más' overlay as a keyboard-accessible button on the last visible cell that opens the lightbox at that index. Use the T-001 i18n keys. Tests are written in T-005 (same PR).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
                 {
                     "title": "Per-count cell composition (1/2/3/4/5+)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "+N overlay button (aria-label, opens lightbox)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "gallery"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:55:00.000Z",
+                "completed": "2026-06-05T07:10:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Per-count CSS rules in ImageGallery.module.css (detail variant)",
-            "description": "Add .grid/.cellFeatured/.cellHalf/.cellQuarter/.moreOverlay classes (spec §6) and per-count layout rules to apps/web/src/components/ImageGallery.module.css; remove the unconditional grid-template-rows: repeat(3,1fr) on .thumbGrid (~line 84). Add the tablet breakpoint rules per spec FR-7 (641-1023px) alongside the existing 640px query. Visual result: no empty reserved rows at any count.",
+            "description": "Add .grid/.cellFeatured/.cellHalf/.cellQuarter/.moreOverlay classes (spec §6) and per-count layout rules to apps/web/src/components/ImageGallery.module.css; remove the unconditional grid-template-rows: repeat(3,1fr) on .thumbGrid (~line 84). Add the tablet breakpoint rules per spec FR-7 (641-1023px) alongside the existing 640px query. Visual result: no empty reserved rows at any count. NOTE from T-002: base [data-count] grid-template rules + cell classes with aspect-ratios were already added; T-003 completes per-count refinement, tablet breakpoint, thumbGrid row rules, and MUST delete the now-dead legacy classes (.mosaic, .mosaicWithThumbs, .featuredBtn, .featuredImg, .thumbImg and related hover rules).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-002"],
@@ -439,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.2
     }

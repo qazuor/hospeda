@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 3/18 tasks (17%)
+## Progress: 4/18 tasks (22%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -16,7 +16,7 @@
 
 ### Core Phase
 
-- [ ] **T-002** (complexity: 3) - Count-aware composition in DetailVariant + '+N más' overlay
+- [x] **T-002** (complexity: 3) - Count-aware composition in DetailVariant + '+N más' overlay
   - Replace slice(0,3) + binary mosaicWithThumbs with 1/2/3/4/5+ composition
   - Blocked by: T-001 | Blocks: T-003, T-004
 - [ ] **T-003** (complexity: 3) - Per-count CSS rules in ImageGallery.module.css (detail)
