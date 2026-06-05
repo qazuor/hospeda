@@ -7,39 +7,25 @@
  * themselves (not the test harness) are responsible for cache invalidation.
  *
  * Routes under test:
- *   POST   /api/v1/admin/billing/customer-entitlements/grant
- *   DELETE /api/v1/admin/billing/customer-entitlements/revoke
+ *   POST /api/v1/admin/billing/customer-entitlements/grant
+ *   POST /api/v1/admin/billing/customer-entitlements/revoke
  *
- * Flow (happy-path test):
+ * Flow (happy-path tests):
  *   1. Customer on owner-basico plan (lacks VIEW_ADVANCED_STATS) hits the
  *      gated route → 403 ENTITLEMENT_REQUIRED.
- *   2. Admin grants view_advanced_stats via the REAL grant route → 201.
+ *   2. Admin grants view_advanced_stats via the REAL POST /grant route → 201.
  *      Customer hits the gated route immediately → NOT 403 ENTITLEMENT_REQUIRED.
  *      (No manual clearEntitlementCache() call between grant and assert —
  *       that is exactly what the test proves: the grant route cleared the cache.)
- *   3. Admin revokes via the REAL revoke route → 200 (null body, 204 response).
+ *   3. Admin revokes via the REAL POST /revoke route → 201.
  *      Customer hits the gated route immediately → 403 ENTITLEMENT_REQUIRED.
  *      (Same: no manual cache clear in test code — the revoke route cleared it.)
  *
- * Route-factory + DELETE body limitation (documented):
- *   The route-factory (`apps/api/src/utils/route-factory.ts:390`) skips JSON
- *   body parsing for DELETE methods: `shouldParseBody = !(method === 'delete')`.
- *   The factory passes `body = {}` to the handler for DELETE, regardless of the
- *   raw request body. `RevokeEntitlementBodySchema.parse({})` therefore throws a
- *   ZodError and returns 400. This is a known factory limitation.
- *
- *   The revoke route IS unit-tested in `test/routes/billing/admin/customer-entitlements.test.ts`
- *   where the handler is called directly with the body arg bypassing the factory.
- *
- *   For this e2e test we work around the factory limitation by calling the
- *   QZPay billing adapter's `revoke()` directly (the same call the handler makes)
- *   and then explicitly calling `clearEntitlementCache(customerId)` (the same call
- *   the handler makes after revoking). This is functionally equivalent to calling
- *   the route and tests the cache-immediacy contract for the revoke path.
- *
- *   See `test/routes/billing/admin/customer-entitlements.test.ts:284-370` for the
- *   unit-level coverage of the revoke handler including the billing call shape and
- *   cache-clear assertion.
+ * Note on method choice for revoke:
+ *   Revoke uses POST (not DELETE) because the route-factory skips JSON body
+ *   parsing for DELETE methods (`shouldParseBody = !(method === 'delete')`),
+ *   which would cause Zod to always receive {} and return 400. POST body-carrying
+ *   mutations are unambiguous and match the pattern used by customer-addons.ts.
  *
  * Sad path test:
  *   4. Grant with an unknown entitlementKey → 400.
@@ -59,7 +45,7 @@
  *   - clearEntitlementCache(customerId) is called ONCE in beforeEach setup
  *     (after subscription creation) to start each test with a cold cache.
  *     After that, NO further cache-clear calls occur in the test body for the
- *     grant-path assertion (steps 1-2).
+ *     grant-path or revoke-path assertions.
  *
  * @module test/e2e/flows/billing/enforcement-admin-override
  */
@@ -96,7 +82,6 @@ import type { Actor } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resetBillingInstance } from '../../../../src/middlewares/billing.js';
-import { getQZPayBilling } from '../../../../src/middlewares/billing.js';
 import { clearEntitlementCache } from '../../../../src/middlewares/entitlement.js';
 import { createMockActor, createMockAdminActor } from '../../../helpers/auth.js';
 import { E2EApiClient } from '../../helpers/api-client.js';
@@ -228,24 +213,12 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
     });
 
     // =========================================================================
-    // Happy path: grant → 2xx → cache cleared → gated route passes immediately;
-    //             revoke → cache cleared → gated route blocks again.
+    // Happy path: grant → 201 → cache cleared → gated route passes immediately;
+    //             revoke → 201 → cache cleared → gated route blocks again.
     //
-    // Grant path: tested via the REAL HTTP POST route. No manual cache clear.
-    //
-    // Revoke path: the factory skips JSON body parsing for DELETE
-    // (shouldParseBody = false), passing `body = {}` to the handler. The
-    // handler calls `RevokeEntitlementBodySchema.parse({})` which throws a Zod
-    // error and returns 400. This is a known factory limitation documented in
-    // the module comment above. The revoke behavior (billing.entitlements.revoke
-    // + clearEntitlementCache) is covered at the unit level in
-    // `test/routes/billing/admin/customer-entitlements.test.ts:284-370`.
-    //
-    // To verify cache-immediacy for revoke in this e2e suite without the factory
-    // limitation blocking us, we: (a) call the DELETE route and observe it
-    // processes (even if 400 for body), then (b) revoke via billing adapter
-    // directly + explicit clearEntitlementCache — which is the EXACT same
-    // operation the handler does when working correctly.
+    // Both paths are tested via the REAL HTTP POST routes. No manual cache
+    // clears occur after setup — the routes themselves handle cache invalidation.
+    // This is the contract being tested.
     // =========================================================================
 
     it('grant lifts gate immediately (no manual cache clear between grant and assert)', async () => {
@@ -324,21 +297,10 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
         expect(Array.isArray(afterGrantBody.data)).toBe(true);
     });
 
-    it('revoke restores block immediately (factory limitation workaround: billing adapter + explicit cache clear — equivalent to what the route does)', async () => {
+    it('revoke restores block immediately (real POST /revoke route — no manual cache clear after revoke)', async () => {
         mpStub.config.reset();
 
-        // NOTE ON TEST STRATEGY:
-        // The DELETE /revoke route cannot be exercised via HTTP body in e2e because
-        // the route-factory skips body parsing for DELETE (shouldParseBody = false),
-        // passing `body = {}` to the handler, causing `RevokeEntitlementBodySchema.parse({})`
-        // to throw and return 400. This is a known factory limitation. Unit coverage
-        // for the revoke handler is in test/routes/billing/admin/customer-entitlements.test.ts.
-        //
-        // This test verifies the revoke→cache-clear contract by calling the same
-        // two operations the handler executes: billing.entitlements.revoke() +
-        // clearEntitlementCache(). The result on the customer's next request is
-        // the same as if the HTTP DELETE route had worked end-to-end.
-
+        // ── Arrange: owner-basico plan (lacks VIEW_ADVANCED_STATS) ─────────────
         const ownerBasico = await createTestPlan({
             name: `Override-Revoke-${randomUUID().slice(0, 8)}`,
             entitlements: [E.PUBLISH_ACCOMMODATIONS, E.EDIT_ACCOMMODATION_INFO, E.VIEW_BASIC_STATS]
@@ -356,6 +318,8 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
             planId: ownerBasico.planId,
             status: 'active'
         });
+        // Cold cache after setup — only manual cache clear in this test.
+        clearEntitlementCache(customer.customerId);
 
         const adminUser = await createTestUser({
             email: `override-revoke-admin-${randomUUID().slice(0, 8)}@example.com`
@@ -366,9 +330,13 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
 
         const gatedRoute = '/api/v1/protected/accommodations/my/favorites-breakdown';
 
-        // ── Grant via the REAL route (same as the grant test) ─────────────────
-        clearEntitlementCache(customer.customerId);
+        // ── Step 1: confirm gate is BLOCKING before grant ──────────────────────
+        const before = await customerClient.get(gatedRoute);
+        await expectEntitlementBlock(before);
 
+        // ── Step 2: admin grants VIEW_ADVANCED_STATS via the REAL POST route ───
+        // The grant route calls clearEntitlementCache(customerId) internally.
+        // NO manual cache clear after this point.
         const grantRes = await adminClient.post(
             '/api/v1/admin/billing/customer-entitlements/grant',
             {
@@ -376,28 +344,30 @@ describe('SPEC-145 T-012 (e2e) — admin entitlement override with immediate cac
                 entitlementKey: E.VIEW_ADVANCED_STATS
             }
         );
-        expect(grantRes.status).toBe(201);
+        expect(grantRes.status, `Grant route returned ${grantRes.status} — expected 201`).toBe(201);
 
         // Gate passes after grant (no manual cache clear — grant route cleared it).
         const afterGrant = await customerClient.get(gatedRoute);
         await expectGatePassed(afterGrant);
         expect(afterGrant.status).toBe(200);
 
-        // ── Revoke: billing adapter + explicit cache clear ─────────────────────
-        // Same two operations that the DELETE handler executes:
-        //   1. billing.entitlements.revoke(customerId, entitlementKey)
-        //   2. clearEntitlementCache(customerId)
-        const billing = getQZPayBilling();
-        expect(billing, 'Billing service must be available in test env').not.toBeNull();
-        // biome-ignore lint/style/noNonNullAssertion: asserted above
-        await billing!.entitlements.revoke(customer.customerId, E.VIEW_ADVANCED_STATS);
-        // This IS the single manual clearEntitlementCache in this test — it
-        // explicitly mirrors what the DELETE handler does internally.
-        clearEntitlementCache(customer.customerId);
+        // ── Step 3: admin revokes VIEW_ADVANCED_STATS via the REAL POST route ──
+        // The revoke route calls clearEntitlementCache(customerId) internally.
+        // NO manual cache clear after this — that is exactly what the test proves.
+        const revokeRes = await adminClient.post(
+            '/api/v1/admin/billing/customer-entitlements/revoke',
+            {
+                customerId: customer.customerId,
+                entitlementKey: E.VIEW_ADVANCED_STATS
+            }
+        );
+        expect(revokeRes.status, `Revoke route returned ${revokeRes.status} — expected 201`).toBe(
+            201
+        );
 
-        // ── Gate blocks again immediately after revoke ─────────────────────────
-        // No additional cache manipulation. The cache was invalidated by
-        // clearEntitlementCache above (same as the route would do).
+        // ── Step 4: gate blocks again immediately after revoke ─────────────────
+        // No clearEntitlementCache() call between revoke and this request.
+        // The revoke route cleared the cache; this is the key assertion.
         const afterRevoke = await customerClient.get(gatedRoute);
         await expectEntitlementBlock(afterRevoke);
     });

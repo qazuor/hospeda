@@ -5,14 +5,20 @@
  * for a billing customer, bypassing subscription-based entitlement resolution.
  *
  * Routes:
- * - POST   /api/v1/admin/billing/customer-entitlements/grant
+ * - POST /api/v1/admin/billing/customer-entitlements/grant
  *     - Body: { customerId, entitlementKey, expiresAt? }
  *     - Calls billing.entitlements.grant() with source='manual'
  *     - Clears the entitlement cache for the customer
- * - DELETE /api/v1/admin/billing/customer-entitlements/revoke
+ * - POST /api/v1/admin/billing/customer-entitlements/revoke
  *     - Body: { customerId, entitlementKey }
  *     - Calls billing.entitlements.revoke()
  *     - Clears the entitlement cache for the customer
+ *
+ * Both routes use POST because the route-factory skips JSON body parsing for
+ * DELETE requests (shouldParseBody = false), which would cause the Zod schema
+ * to always receive {} and return 400. POST body-carrying mutations are
+ * unambiguous and match the action-verb POST pattern used by customer-addons.ts
+ * (POST /expire, POST /activate).
  *
  * Permissions: PermissionEnum.BILLING_MANAGE (matches sibling billing admin
  * mutation routes — addons.ts, plans.ts).
@@ -158,17 +164,21 @@ export const adminGrantCustomerEntitlementRoute = createAdminRoute({
 });
 
 /**
- * DELETE /api/v1/admin/billing/customer-entitlements/revoke
+ * POST /api/v1/admin/billing/customer-entitlements/revoke
  *
  * Revokes a one-off customer entitlement. The underlying QZPay revoke call
  * is a hard-delete of the customer_entitlements row. Clears the entitlement
  * cache so the next request no longer sees the revoked entitlement.
  *
+ * Uses POST (not DELETE) because the route-factory skips JSON body parsing
+ * for DELETE methods, which would cause Zod validation to always fail with
+ * 400. Matches the action-verb POST pattern used by customer-addons.ts.
+ *
  * Body: { customerId, entitlementKey }
  * Permission: BILLING_MANAGE
  */
 export const adminRevokeCustomerEntitlementRoute = createAdminRoute({
-    method: 'delete',
+    method: 'post',
     path: '/revoke',
     summary: 'Revoke a customer entitlement (admin)',
     description:

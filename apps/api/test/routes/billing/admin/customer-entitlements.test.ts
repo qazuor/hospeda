@@ -151,8 +151,8 @@ describe('route registration — permissions', () => {
         expect(config?.requiredPermissions).toContain('billing:manage');
     });
 
-    it('DELETE /revoke should require BILLING_MANAGE', () => {
-        const config = findRouteCall('delete', '/revoke');
+    it('POST /revoke should require BILLING_MANAGE', () => {
+        const config = findRouteCall('post', '/revoke');
         expect(config).toBeDefined();
         expect(config?.requiredPermissions).toContain('billing:manage');
     });
@@ -297,7 +297,7 @@ describe('adminRevokeCustomerEntitlementRoute handler', () => {
     it('revoke happy path — calls billing.entitlements.revoke and clears cache', async () => {
         // Arrange
         mockRevoke.mockResolvedValue(undefined);
-        const config = findRouteCall('delete', '/revoke');
+        const config = findRouteCall('post', '/revoke');
         const handler = config?.handler as (c: unknown, p: unknown, b: unknown) => Promise<unknown>;
         const c = createMockContext();
 
@@ -326,7 +326,7 @@ describe('adminRevokeCustomerEntitlementRoute handler', () => {
 
     it('invalid entitlementKey → Zod throws before billing is called', async () => {
         // Arrange
-        const config = findRouteCall('delete', '/revoke');
+        const config = findRouteCall('post', '/revoke');
         const handler = config?.handler as (c: unknown, p: unknown, b: unknown) => Promise<unknown>;
         const c = createMockContext();
 
@@ -349,7 +349,7 @@ describe('adminRevokeCustomerEntitlementRoute handler', () => {
     it('billing service unavailable → throws HTTPException 503', async () => {
         // Arrange
         mockGetQZPayBilling.mockReturnValue(null);
-        const config = findRouteCall('delete', '/revoke');
+        const config = findRouteCall('post', '/revoke');
         const handler = config?.handler as (c: unknown, p: unknown, b: unknown) => Promise<unknown>;
         const c = createMockContext();
 
