@@ -32,11 +32,11 @@
             "branch": null,
             "dependsOn": ["SPEC-143"],
             "reservedAt": "2026-05-18T22:00:00Z",
-            "note": "Tasks not yet atomized \u2014 atomization happens at activation per spec.md \u00a7 'Activation criteria'"
+            "note": "Tasks not yet atomized — atomization happens at activation per spec.md \u00a7 'Activation criteria'"
         },
         {
             "specId": "SPEC-181",
-            "title": "PostHog Reverse Proxy \u2014 first-party analytics ingestion (web)",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
             "status": "in-progress",
             "progress": "9/11",
             "path": "SPEC-181-posthog-reverse-proxy",
@@ -52,7 +52,7 @@
         },
         {
             "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance \u2014 Cut Per-File Overhead Without Saturating the Machine",
+            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "pending",
             "progress": "0/15",
             "path": "SPEC-188-vitest-test-performance"
@@ -77,7 +77,7 @@
         },
         {
             "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
+            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "status": "in-progress",
             "progress": "0/14",
             "path": "SPEC-180-sentry-observability"
@@ -101,7 +101,7 @@
         },
         {
             "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 \u2014 filters, grid cards, host portfolio & tags migration",
+            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "status": "in-progress",
             "progress": "0/17",
             "path": "SPEC-185-admin-entity-lists-v2",
@@ -111,7 +111,7 @@
         },
         {
             "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid \u2014 count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-186-web-dynamic-image-grid",
@@ -122,7 +122,7 @@
         },
         {
             "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions \u2014 per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-187-rich-text-entity-descriptions",
@@ -133,7 +133,7 @@
         },
         {
             "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds \u2014 run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-189-optimize-seed-and-app-builds",
@@ -144,7 +144,7 @@
         },
         {
             "specId": "SPEC-190",
-            "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
@@ -155,7 +155,7 @@
         },
         {
             "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners \u2014 /colaborar hub, report link & recruitment banners",
+            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-191-web-contribution-pages-and-banners",
@@ -166,7 +166,7 @@
         },
         {
             "specId": "SPEC-192",
-            "title": "Billing Catalog to DB \u2014 complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-192-billing-catalog-to-db",
