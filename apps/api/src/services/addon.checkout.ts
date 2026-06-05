@@ -19,6 +19,11 @@ import type {
     ServiceResult
 } from '@repo/service-core';
 import { AddonCatalogService, PlanService } from '@repo/service-core';
+import {
+    isBillingProviderError,
+    mapProviderErrorToServiceError
+} from '../lib/billing-provider-error';
+import { captureBillingError } from '../lib/sentry';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -477,6 +482,33 @@ export async function createAddonCheckout(
             }
         };
     } catch (error) {
+        // SPEC-149 T-005: QZPayProviderSyncError (thrown when providerSyncErrorStrategy
+        // is 'throw', which T-003 made the default) → map to typed ServiceError so the
+        // global error handler returns 502/503/504/400 instead of generic 500, and
+        // capture to Sentry with billing operation tags (no PII).
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'checkout_create'
+            });
+
+            // Extract providerStatus from the mapped ServiceError details for Sentry tags.
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+
+            captureBillingError(serviceError, {
+                operation: 'addon_checkout',
+                addonIds: [input.addonSlug],
+                providerStatus: details?.providerStatus
+            });
+
+            // Re-throw so the global error handler maps the ServiceError to the
+            // correct HTTP status (502/503/504/400 via ERROR_CODE_TO_HTTP).
+            // Polling is never reached — it only runs after a successful checkout.create.
+            throw serviceError;
+        }
+
         const errorMessage = error instanceof Error ? error.message : String(error);
 
         apiLogger.error(
