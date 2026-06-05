@@ -185,6 +185,14 @@ async function resolvePlanByIdOrSlug(planId: string): Promise<BillingPlanRespons
  * @param input - Purchase request details
  * @returns Checkout URL, order ID, amount, and expiration
  *
+ * @throws {ServiceError} With `ServiceErrorCode.PROVIDER_ERROR` (→ HTTP 502),
+ *   `ServiceErrorCode.PROVIDER_RATE_LIMITED` (→ HTTP 503), or
+ *   `ServiceErrorCode.PROVIDER_TIMEOUT` (→ HTTP 504) when MercadoPago returns
+ *   a provider-level error that was wrapped by qzpay-core as
+ *   `QZPayProviderSyncError`. These are mapped by `handleRouteError` via the
+ *   `isBillingProviderError` / `mapProviderErrorToServiceError` helpers.
+ *   All other failures return `ServiceResult` with `success: false` and never throw.
+ *
  * @example
  * ```ts
  * const result = await createAddonCheckout(billing, {

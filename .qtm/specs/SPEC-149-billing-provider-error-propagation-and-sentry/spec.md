@@ -141,6 +141,20 @@ Replacement scope:
 9. `monthly-checkout.test.ts:326-351` 429 → 500 expectation is updated to 429 → 503.
 10. `annual-checkout.test.ts:285-318` 429 → 500 expectation is updated to 429 → 503.
 
+### Scope limitation — monthly preapproval path (added M1 reconciliation, 2026-06-05)
+
+The PROVIDER_* error mapping (criteria 1–7 above) currently applies to:
+
+- **Annual checkout** (`billing.checkout.create`) — qzpay-core wraps errors in `QZPayProviderSyncError` ✓
+- **Addon checkout** (`billing.checkout.create`) — same wrap path ✓
+- **Plan-change** (`billing.checkout.create`) — same wrap path ✓
+
+The **monthly preapproval path** (`billing.subscriptions.create`) is a **known exception**: qzpay-core's `subscriptions.create` re-throws the raw adapter error WITHOUT wrapping it in `QZPayProviderSyncError`. As a result, monthly provider errors fall through to the generic HTTP 500 catch block and do NOT trigger PROVIDER_* mapping or `captureBillingError`.
+
+This is pinned at unit level by `test/routes/start-paid.test.ts` ("REAL BEHAVIOR" test) and at e2e level by `test/e2e/flows/billing/monthly-checkout.test.ts:316-352` and `mp-error-handling.test.ts:25-31`. The unit tests that exercise the catch-block wiring with a synthetic wrapped error are explicitly labelled "(WIRING)" to make this distinction clear.
+
+**Resolution pending**: once qzpay-core wraps `subscriptions.create` errors in `QZPayProviderSyncError`, the monthly path will automatically benefit from the same PROVIDER_* mapping. At that point, remove the "(REAL BEHAVIOR)" pin test and update the "(WIRING)" tests to reflect the new canonical behavior.
+
 ## Implementation strategy (draft)
 
 Defer to design phase. High-level sequencing:
