@@ -136,31 +136,31 @@
             "id": "T-005",
             "title": "Wire mapping + Sentry into addon purchase path",
             "description": "Spec Part C realign note (c): createAddonCheckout (apps/api/src/services/addon.checkout.ts) has NO try/catch around billing.checkout.create — provider errors escape raw to global 500. Add the catch: provider error → mapped ServiceError (the route layer must let it propagate — check how the addon route consumes ServiceResult vs thrown errors and keep the contract coherent) + captureBillingError. Mind the SPEC-127 polling schedule (scheduleAddonCheckoutPolling runs only on success — verify ordering unaffected). Tests in addon.checkout.test.ts (39 tests green baseline).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Catch + map + capture in addon checkout",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route contract coherence + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["addons", "wiring"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:30:00Z",
+                "completed": "2026-06-05T21:10:00Z"
             }
         },
         {
