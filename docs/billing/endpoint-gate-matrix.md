@@ -296,6 +296,7 @@
 | `DELETE /api/v1/admin/events/{id}/hard` | `event/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/events/{id}/restore` | `event/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/events/batch` | `event/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| `GET /api/v1/admin/events/options` | `event/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **EVENT COMMENTS — ADMIN** | | | | | |
 | `GET /api/v1/admin/events/{eventId}/comments` | `event/comments/public/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **AMENITY — ADMIN** | | | | | |
@@ -347,6 +348,7 @@
 | `DELETE /api/v1/admin/event-organizers/{id}` | `event-organizer/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/event-organizers/{id}/hard` | `event-organizer/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/event-organizers/{id}/restore` | `event-organizer/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `GET /api/v1/admin/event-organizers/options` | `event-organizer/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **POST (BLOG) — ADMIN** | | | | | |
 | `GET /api/v1/admin/posts` | `post/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/posts` | `post/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
