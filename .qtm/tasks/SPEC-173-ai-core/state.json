@@ -1184,42 +1184,42 @@
             "id": "T-033",
             "title": "Create admin AI usage reporting routes",
             "description": "Create apps/api admin routes /api/v1/admin/ai/usage* exposing per user/feature/month aggregates (T-018) via createAdminRoute guarded by AI_SETTINGS_MANAGE (FR-7). page+pageSize pagination. Tests: route unit tests asserting aggregates returned and non-super → 403.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-026", "T-027", "T-018"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "usage-report admin routes (aggregates)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AI_SETTINGS_MANAGE guard + pagination",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write usage-route unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "admin", "reporting"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T11:00:00.000Z",
+                "completed": "2026-06-05T11:45:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Wire prompt resolution with in-code default fallback",
             "description": "In the engine, resolve the active prompt per feature from ai_prompt_versions; on empty/invalid/missing admin prompt, fall back to a mandatory in-code default so a feature never bricks (§5.6.3/AC-12). RO-RO, JSDoc. Tests: unit tests asserting active prompt used when valid and in-code default used when admin prompt empty/invalid (AC-12).",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-028", "T-011"],
             "blocks": [],
@@ -1246,7 +1246,7 @@
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
+                "started": "2026-06-05T11:00:00.000Z",
                 "completed": null
             }
         },
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 10,
-        "inProgress": 0,
-        "completed": 33,
+        "pending": 8,
+        "inProgress": 1,
+        "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.5
     }
