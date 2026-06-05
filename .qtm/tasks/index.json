@@ -162,10 +162,13 @@
         {
             "specId": "SPEC-166",
             "title": "Review Moderation State",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "27/27",
             "path": "SPEC-166-review-moderation-state",
-            "branch": "spec/SPEC-166-review-moderation-state"
+            "branch": "spec/SPEC-166-review-moderation-state",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
         },
         {
             "specId": "SPEC-194",
