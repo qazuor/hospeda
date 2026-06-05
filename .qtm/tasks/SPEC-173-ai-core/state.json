@@ -1425,31 +1425,31 @@
             "id": "T-040",
             "title": "Write ADR for AI foundation architecture",
             "description": "Add an ADR under docs/decisions/ capturing the architecture and resolved decisions: provider-agnostic wrap of Vercel AI SDK, tables in @repo/db (non-portable tradeoff), Q1 dedicated audit table, Q2 per-feature snake_case keys in @repo/billing, Q3 schemas in @repo/schemas, Q4 provider-agnostic moderation, Q6 reused rate-limit, Q7 JSONB settings. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "ADR: architecture + Q1-Q7 resolved decisions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Link from docs/decisions index",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "adr"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T12:00:00.000Z",
+                "completed": "2026-06-05T13:05:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 35,
+        "completed": 36,
         "blocked": 0,
         "averageComplexity": 2.5
     }
