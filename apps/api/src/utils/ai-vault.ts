@@ -77,7 +77,9 @@ export function encryptSecret(input: { readonly plaintext: string }): EncryptedS
     const key = deriveKey();
     const iv = randomBytes(IV_BYTES);
 
-    const cipher = createCipheriv(ALGORITHM, key, iv);
+    // authTagLength is explicit so a future algorithm/default change can never
+    // silently weaken the tag (semgrep gcm-no-tag-length).
+    const cipher = createCipheriv(ALGORITHM, key, iv, { authTagLength: 16 });
     const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
     const authTag = cipher.getAuthTag();
 
@@ -108,7 +110,11 @@ export function decryptSecret(input: EncryptedSecret): { readonly plaintext: str
     const { ciphertext, iv, authTag } = input;
     const key = deriveKey();
 
-    const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'base64'));
+    // Explicit authTagLength rejects truncated auth tags outright instead of
+    // accepting any tag length the attacker supplies (semgrep gcm-no-tag-length).
+    const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'base64'), {
+        authTagLength: 16
+    });
     decipher.setAuthTag(Buffer.from(authTag, 'base64'));
 
     const plaintext = Buffer.concat([
