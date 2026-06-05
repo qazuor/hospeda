@@ -139,7 +139,8 @@ describe('UsageTrackingService', () => {
             expect(result.success).toBe(true);
             expect(result.data).toBeDefined();
             expect(result.data!.customerId).toBe(mockCustomerId);
-            expect(result.data!.limits).toHaveLength(6);
+            // One entry per LimitKey enum value (6 original + 4 AI keys added in SPEC-173 T-030).
+            expect(result.data!.limits).toHaveLength(Object.values(LimitKey).length);
 
             // Check specific limit percentages
             const accommodationsLimit = result.data!.limits.find(
