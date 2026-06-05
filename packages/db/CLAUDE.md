@@ -656,6 +656,24 @@ buildOrderByClause(sortBy: string, table: unknown, sortOrder: 'asc' | 'desc' = '
 
 The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `useDefaultParameterLast` rule enforces this ordering. If you swap them, the pre-commit hook will fail.
 
+## Lean append-only tables (approved deviation from BaseModel)
+
+Most tables extend `BaseModel` and carry full audit columns (`createdById`,
+`updatedById`, `deletedAt`, `adminInfo`) plus soft-delete. A small set of
+**append-only telemetry tables** deliberately omit these columns:
+
+| Table | Precedent spec | Reason |
+|---|---|---|
+| `app_log_entries` | SPEC-??? | Structured log sink; never edited, never user-owned |
+| `entity_views` | SPEC-159 | High-write view capture; audit/FK overhead would bloat the hottest-write table |
+
+These tables use **TTL purge crons** (nightly `DELETE WHERE <time_col> < now() - interval
+'N days'`) instead of soft-delete, and they do NOT extend `BaseModel`. This is an approved,
+documented convention deviation — do not "fix" them by adding BaseModel columns.
+
+Apply this pattern only for tables that are: (a) append-only, (b) never user-owned or
+role-scoped for CRUD, and (c) high-write enough that audit column overhead is measurable.
+
 ## Notes
 
 - Models are stateless - create new instances as needed

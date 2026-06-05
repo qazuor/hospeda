@@ -75,5 +75,5 @@ Approved sub-decisions (detail in tech-analysis §4–§5):
 ## 7. Next steps
 
 - [x] Tech-analysis (resolved §4 — Option 1 approved 2026-06-04)
-- [ ] Task atomization
-- [ ] Implementation
+- [x] Task atomization
+- [x] Implementation
