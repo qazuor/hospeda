@@ -661,7 +661,7 @@
             "title": "Admin View-Stats Surfaces",
             "type": "feature",
             "complexity": "high",
-            "status": "approved",
+            "status": "in-progress",
             "path": "SPEC-197-admin-view-stats-surfaces",
             "created": "2026-06-05T00:00:00.000Z",
             "dependsOn": ["SPEC-159"],

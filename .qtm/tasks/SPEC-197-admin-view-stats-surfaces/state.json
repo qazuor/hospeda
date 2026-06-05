@@ -8,72 +8,105 @@
             "id": "T-001",
             "title": "Verify ANALYTICS_VIEW seed assignment and VIEW_BASIC_STATS entitlement key",
             "description": "Verify ANALYTICS_VIEW permission is assigned to ADMIN and SUPER_ADMIN roles in rolePermissions.seed.ts. Verify VIEW_BASIC_STATS is in EntitlementKey (packages/billing/src/types/entitlement.types.ts). Document findings in progress notes. No code changes expected; if the seed assignment is missing, STOP and report before continuing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-004", "T-007", "T-008", "T-013"],
             "subtasks": [
                 {
                     "title": "Check rolePermissions.seed.ts for ANALYTICS_VIEW on ADMIN + SUPER_ADMIN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Check EntitlementKey.VIEW_BASIC_STATS in entitlement.types.ts",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Document findings", "completed": false }
+                {
+                    "title": "Document findings",
+                    "completed": true
+                }
             ],
             "tags": ["verification", "permissions", "billing"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Verify entityView schema exports from @repo/schemas",
             "description": "Verify TrackableEntityTypeSchema and EntityViewStatsSchema are exported and accessible from @repo/schemas entityView barrel. Confirm EntityViewWindowSchema accepts '7d' and '30d'. Document findings. No code changes expected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
-                { "title": "Check entityView barrel exports", "completed": false },
-                { "title": "Confirm EntityViewWindowSchema values", "completed": false }
+                {
+                    "title": "Check entityView barrel exports",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm EntityViewWindowSchema values",
+                    "completed": true
+                }
             ],
             "tags": ["verification", "schemas"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Add zodError translation keys for new admin view schemas",
             "description": "Add zodError.adminView.batch.entityIds.empty, zodError.adminView.batch.entityIds.tooMany, zodError.adminView.dailySeries.date.invalid to packages/i18n/src/locales/{es,en,pt}/validation.json (GAP-010 guard compliance). Run pnpm --filter @repo/i18n check-locales to verify. Tests: locale check passes for all three locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Add 3 keys to es/validation.json", "completed": false },
-                { "title": "Add 3 keys to en/validation.json", "completed": false },
-                { "title": "Add 3 keys to pt/validation.json", "completed": false },
-                { "title": "Run check-locales", "completed": false }
+                {
+                    "title": "Add 3 keys to es/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 keys to en/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 keys to pt/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Run check-locales",
+                    "completed": true
+                }
             ],
             "tags": ["i18n", "validation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
             }
         },
         {
@@ -89,11 +122,18 @@
                     "title": "Implement getTopViewedEntities with parameterized SQL",
                     "completed": false
                 },
-                { "title": "Unit tests: ordering, limit, empty fixture", "completed": false }
+                {
+                    "title": "Unit tests: ordering, limit, empty fixture",
+                    "completed": false
+                }
             ],
             "tags": ["database", "model", "sql"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -109,12 +149,22 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Implement getDailySeries SQL", "completed": false },
-                { "title": "Unit tests: date format, no gap-fill", "completed": false }
+                {
+                    "title": "Implement getDailySeries SQL",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: date format, no gap-fill",
+                    "completed": false
+                }
             ],
             "tags": ["database", "model", "sql"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -130,14 +180,30 @@
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Implement getAdminSummaryTotals", "completed": false },
-                { "title": "Add 6 Zod schemas + barrel exports", "completed": false },
-                { "title": "Unit tests for model + schemas", "completed": false },
-                { "title": "Run extract-zod-keys --verify", "completed": false }
+                {
+                    "title": "Implement getAdminSummaryTotals",
+                    "completed": false
+                },
+                {
+                    "title": "Add 6 Zod schemas + barrel exports",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for model + schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Run extract-zod-keys --verify",
+                    "completed": false
+                }
             ],
             "tags": ["database", "model", "schemas", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -161,13 +227,26 @@
                     "title": "Implement getAdminBatch (≤100 validation, zero-fill)",
                     "completed": false
                 },
-                { "title": "Implement getAdminTopEntities (limit ≤50)", "completed": false },
-                { "title": "Implement getAdminDailySeries (gap-fill 90 rows)", "completed": false },
-                { "title": "Permission + validation + gap-fill tests", "completed": false }
+                {
+                    "title": "Implement getAdminTopEntities (limit ≤50)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement getAdminDailySeries (gap-fill 90 rows)",
+                    "completed": false
+                },
+                {
+                    "title": "Permission + validation + gap-fill tests",
+                    "completed": false
+                }
             ],
             "tags": ["service", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -183,14 +262,30 @@
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-015", "T-019"],
             "subtasks": [
-                { "title": "Create admin/index.ts router + mount", "completed": false },
-                { "title": "Implement summary.ts", "completed": false },
-                { "title": "Integration tests (403/200/shape)", "completed": false },
-                { "title": "Gate-matrix row", "completed": false }
+                {
+                    "title": "Create admin/index.ts router + mount",
+                    "completed": false
+                },
+                {
+                    "title": "Implement summary.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (403/200/shape)",
+                    "completed": false
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -206,16 +301,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-016", "T-017"],
             "subtasks": [
-                { "title": "Implement batch.ts", "completed": false },
+                {
+                    "title": "Implement batch.ts",
+                    "completed": false
+                },
                 {
                     "title": "Integration tests incl. 101-item and invalid-UUID",
                     "completed": false
                 },
-                { "title": "Gate-matrix row", "completed": false }
+                {
+                    "title": "Gate-matrix row",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -231,13 +336,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "Implement top.ts", "completed": false },
-                { "title": "Integration tests incl. limit bounds", "completed": false },
-                { "title": "Gate-matrix row", "completed": false }
+                {
+                    "title": "Implement top.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests incl. limit bounds",
+                    "completed": false
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -253,13 +371,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "Implement daily-series.ts", "completed": false },
-                { "title": "Integration tests incl. 90-row invariant", "completed": false },
-                { "title": "Gate-matrix row", "completed": false }
+                {
+                    "title": "Implement daily-series.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests incl. 90-row invariant",
+                    "completed": false
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -270,22 +401,35 @@
             "id": "T-012",
             "title": "Implement shared WindowToggle component",
             "description": "Create apps/admin/src/components/views/WindowToggle.tsx per spec §5.1: props {value: '7d'|'30d', onChange, disabled?}. Shadcn ToggleGroup/ToggleGroupItem, i18n keys common.window.7d / common.window.30d, role=group + aria-label, active data-state=on visual. SINGLE implementation — all six surfaces import this one. Tests in apps/admin/src/components/views/__tests__/WindowToggle.test.tsx: active state per value, onChange('7d') on click, disabled blocks onChange. Add i18n keys (es/en/pt).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-013", "T-014", "T-015", "T-019"],
             "subtasks": [
-                { "title": "Implement WindowToggle.tsx", "completed": false },
-                { "title": "Add common.window.* i18n keys", "completed": false },
-                { "title": "Component tests", "completed": false }
+                {
+                    "title": "Implement WindowToggle.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add common.window.* i18n keys",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests",
+                    "completed": true
+                }
             ],
             "tags": ["admin", "component", "shared"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
             }
         },
         {
@@ -305,12 +449,22 @@
                     "title": "Swap deferredSlot → source in dashboards.ts (same commit)",
                     "completed": false
                 },
-                { "title": "Locked-state UI + i18n keys (es/en/pt)", "completed": false },
-                { "title": "Resolver tests (locked / entitled paths)", "completed": false }
+                {
+                    "title": "Locked-state UI + i18n keys (es/en/pt)",
+                    "completed": false
+                },
+                {
+                    "title": "Resolver tests (locked / entitled paths)",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard", "billing", "entitlements"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -326,16 +480,26 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Register both editor sources", "completed": false },
+                {
+                    "title": "Register both editor sources",
+                    "completed": false
+                },
                 {
                     "title": "Swap deferredSlots → sources in dashboards.ts (same commit)",
                     "completed": false
                 },
-                { "title": "i18n keys + component tests", "completed": false }
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -351,17 +515,30 @@
             "blockedBy": ["T-008", "T-012"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Register admin.views.summary source", "completed": false },
-                { "title": "Add admin-card-views to adminBaseDashboard", "completed": false },
+                {
+                    "title": "Register admin.views.summary source",
+                    "completed": false
+                },
+                {
+                    "title": "Add admin-card-views to adminBaseDashboard",
+                    "completed": false
+                },
                 {
                     "title": "Update dashboards.config.test.ts card count (same commit)",
                     "completed": false
                 },
-                { "title": "i18n keys + component tests", "completed": false }
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -377,14 +554,30 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Implement EntityViewStatChips component", "completed": false },
-                { "title": "Add 'stats-chips' section type + renderer case", "completed": false },
-                { "title": "Wire into 3 entity configs (viewOnly)", "completed": false },
-                { "title": "i18n keys + component tests", "completed": false }
+                {
+                    "title": "Implement EntityViewStatChips component",
+                    "completed": false
+                },
+                {
+                    "title": "Add 'stats-chips' section type + renderer case",
+                    "completed": false
+                },
+                {
+                    "title": "Wire into 3 entity configs (viewOnly)",
+                    "completed": false
+                },
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "component", "detail-pages"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -404,12 +597,22 @@
                     "title": "Derived column + batch useQuery for accommodations",
                     "completed": false
                 },
-                { "title": "Permission guard + loading/error states", "completed": false },
-                { "title": "i18n key + column tests", "completed": false }
+                {
+                    "title": "Permission guard + loading/error states",
+                    "completed": false
+                },
+                {
+                    "title": "i18n key + column tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "lists", "derived-column"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -425,13 +628,26 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Posts column", "completed": false },
-                { "title": "Events column", "completed": false },
-                { "title": "Tests for both", "completed": false }
+                {
+                    "title": "Posts column",
+                    "completed": false
+                },
+                {
+                    "title": "Events column",
+                    "completed": false
+                },
+                {
+                    "title": "Tests for both",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "lists", "derived-column"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -447,15 +663,34 @@
             "blockedBy": ["T-008", "T-010", "T-011", "T-012"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Route + guard + SidebarPageLayout skeleton", "completed": false },
-                { "title": "Summary tiles + WindowToggle", "completed": false },
-                { "title": "Top-10 lists with name resolution", "completed": false },
-                { "title": "Recharts 3-line daily series chart", "completed": false },
-                { "title": "i18n keys + page title", "completed": false }
+                {
+                    "title": "Route + guard + SidebarPageLayout skeleton",
+                    "completed": false
+                },
+                {
+                    "title": "Summary tiles + WindowToggle",
+                    "completed": false
+                },
+                {
+                    "title": "Top-10 lists with name resolution",
+                    "completed": false
+                },
+                {
+                    "title": "Recharts 3-line daily series chart",
+                    "completed": false
+                },
+                {
+                    "title": "i18n keys + page title",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "analytics", "recharts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -471,13 +706,26 @@
             "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-018", "T-019"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "views.test.tsx page tests", "completed": false },
-                { "title": "pnpm typecheck + test + build green", "completed": false },
-                { "title": "Local CI guards green", "completed": false }
+                {
+                    "title": "views.test.tsx page tests",
+                    "completed": false
+                },
+                {
+                    "title": "pnpm typecheck + test + build green",
+                    "completed": false
+                },
+                {
+                    "title": "Local CI guards green",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "build-gate"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -493,16 +741,26 @@
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Seed DB + fire beacons", "completed": false },
+                {
+                    "title": "Seed DB + fire beacons",
+                    "completed": false
+                },
                 {
                     "title": "Verify summary/daily-series/top against expectations",
                     "completed": false
                 },
-                { "title": "Sign-off in PR description", "completed": false }
+                {
+                    "title": "Sign-off in PR description",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "smoke", "real-db"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": null,
@@ -512,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 21,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.2
     }
