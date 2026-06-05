@@ -189,43 +189,43 @@
             "id": "T-009",
             "title": "Create GET /protected/views/accommodations/me route",
             "description": "Create apps/api/src/routes/views/protected/accommodations-me.ts: GET /api/v1/protected/views/accommodations/me?window=7d|30d, auth user session, permission ACCOMMODATION_VIEW_OWN, cacheTTL: 60 + customRateLimit (precedent response-rate.ts). Calls service.getStatsForHostAccommodations. Response: [{ entityId, unique, total }]. Integration tests: host sees only own accommodations; window validation (reject 90d); unauthenticated 401.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Protected route + caching", "completed": false },
-                { "title": "Integration tests", "completed": false }
+                { "title": "Protected route + caching", "completed": true },
+                { "title": "Integration tests", "completed": true }
             ],
             "tags": ["api", "protected", "host"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T05:25:00.000Z",
+                "completed": "2026-06-05T06:10:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Create GET /protected/views/posts and /protected/views/events routes",
             "description": "Create apps/api/src/routes/views/protected/{posts,events}.ts: GET /api/v1/protected/views/posts?window=&entityIds= (permission POST_VIEW_ALL) and same for events (EVENT_VIEW_ALL), cacheTTL: 60 + customRateLimit. Calls service.getStatsForEditorEntities. Integration tests: editor with permission gets stats for requested ids; user without permission 403; entityIds validation (uuid array, bounded size); window validation.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Posts route", "completed": false },
-                { "title": "Events route", "completed": false },
-                { "title": "Integration tests", "completed": false }
+                { "title": "Posts route", "completed": true },
+                { "title": "Events route", "completed": true },
+                { "title": "Integration tests", "completed": true }
             ],
             "tags": ["api", "protected", "editor"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T05:25:00.000Z",
+                "completed": "2026-06-05T06:10:00.000Z"
             }
         },
         {
@@ -341,8 +341,8 @@
     "summary": {
         "total": 15,
         "pending": 4,
-        "inProgress": 2,
-        "completed": 9,
+        "inProgress": 0,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.4
     }

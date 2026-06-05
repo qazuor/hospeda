@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 9/15 tasks (60%)
+## Progress: 11/15 tasks (73%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -58,12 +58,12 @@
   - Blocked by: T-001, T-005, T-006
   - Blocks: T-012
 
-- [ ] **T-009** (complexity: 2) - Create GET /protected/views/accommodations/me route
+- [x] **T-009** (complexity: 2) - Create GET /protected/views/accommodations/me route
   - ACCOMMODATION_VIEW_OWN, cacheTTL 60, per-accommodation breakdown
   - Blocked by: T-007
   - Blocks: T-014
 
-- [ ] **T-010** (complexity: 3) - Create GET /protected/views/posts and /protected/views/events routes
+- [x] **T-010** (complexity: 3) - Create GET /protected/views/posts and /protected/views/events routes
   - POST_VIEW_ALL / EVENT_VIEW_ALL, entityIds + window validation
   - Blocked by: T-007
   - Blocks: T-014
