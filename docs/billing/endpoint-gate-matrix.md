@@ -37,18 +37,18 @@
 | Route (METHOD path) | Handler file | Decision | Key(s) | Status | Reason |
 |---|---|---|---|---|---|
 | **ACCOMMODATION — PROTECTED** | | | | | |
-| `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | limit | `max_accommodations` | wired | enforceAccommodationLimit() middleware already applied |
-| `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | limit | `max_accommodations` | wired | enforceAccommodationLimit() middleware already applied |
-| `POST /api/v1/protected/accommodations/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | enforceAccommodationLimit() middleware already applied on onboarding start |
+| `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
+| `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
+| `POST /api/v1/protected/accommodations/start` | `host-onboarding/protected/start.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}` | `accommodation/protected/getById.ts` | none | - | n/a | Read own data only; auth + ownership check in handler |
-| `PUT /api/v1/protected/accommodations/{id}` | `accommodation/protected/update.ts` | gate | `edit_accommodation_info` | to-wire | Full replace of accommodation; owner-approved gate (T-145-01 candidate list) |
-| `PATCH /api/v1/protected/accommodations/{id}` | `accommodation/protected/patch.ts` | gate+limit | `edit_accommodation_info`, `can_use_rich_description`, `can_embed_video` | wired | gateRichDescription + gateVideoEmbed already wired; EDIT_ACCOMMODATION_INFO gate to-wire (T-145-03) |
+| `PUT /api/v1/protected/accommodations/{id}` | `accommodation/protected/update.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
+| `PATCH /api/v1/protected/accommodations/{id}` | `accommodation/protected/patch.ts` | gate+limit | `edit_accommodation_info`, `can_use_rich_description`, `can_embed_video` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + gateRichDescription + gateVideoEmbed (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}` | `accommodation/protected/softDelete.ts` | none | - | n/a | Deletion is ungated; soft-delete own resource |
 | `GET /api/v1/protected/accommodations/{id}/contact` | `accommodation/protected/contact.ts` | none | - | n/a | Read-only resolved contact info; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/getFaqs.ts` | none | - | n/a | Read own data; auth-only sufficient |
-| `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | to-wire | Mutation on accommodation content; same gate as update/patch (T-145-03) |
-| `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | to-wire | Mutation on accommodation content; same gate as update/patch (T-145-03) |
+| `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
+| `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | to-wire | Per-accommodation bookmark analytics; owner-approved gate (T-145-01 candidate list) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | to-wire | Market comparison analytics; owner-approved gate (T-145-01 candidate list) |

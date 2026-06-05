@@ -17,6 +17,7 @@
  * The HOST role is NOT assigned here. Promotion happens later, atomically,
  * when the draft transitions to ACTIVE through the publish flow.
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationCreateDraftHttpSchema,
     AccommodationIdSchema,
@@ -26,6 +27,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { getActorFromContext } from '../../../utils/actor';
@@ -150,6 +152,14 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         // should go to the admin panel; the 403 conveys the same "you cannot create
         // more accommodations from this entry point" semantic with the right HTTP
         // code for limit-reached.
-        middlewares: [enforceAccommodationLimit()]
+        // SPEC-145 T-004: entitlement gate BEFORE limit check — caller must have
+        // PUBLISH_ACCOMMODATIONS (granted on all owner/complex plans) before we
+        // consult the accommodation-count limit. This mirrors the create/createDraft
+        // routes.  Already-host and resumed paths short-circuit at the service layer,
+        // but 403 ENTITLEMENT_REQUIRED is the correct early-exit for non-entitled callers.
+        middlewares: [
+            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
+            enforceAccommodationLimit()
+        ]
     }
 });

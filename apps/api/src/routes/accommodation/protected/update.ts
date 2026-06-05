@@ -2,6 +2,7 @@
  * Protected update accommodation endpoint
  * Requires authentication and ownership
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
@@ -11,6 +12,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -58,5 +60,10 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // SPEC-145 T-004: full-replace mutation requires EDIT_ACCOMMODATION_INFO
+        // (granted on all owner/complex plans). Runs before the handler.
+        middlewares: [requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO)]
     }
 });
