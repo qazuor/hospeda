@@ -206,7 +206,7 @@
             "title": "Billing Entitlements & Limits Enforcement",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "parent": "SPEC-193",
             "created": "2026-05-18T22:00:00Z",
@@ -225,7 +225,9 @@
                 "e2e",
                 "feature-gates",
                 "go-live-gate"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-05"
         },
         {
             "specId": "SPEC-147",

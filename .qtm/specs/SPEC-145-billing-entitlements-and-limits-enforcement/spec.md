@@ -3,7 +3,7 @@ spec-id: SPEC-145
 title: Billing Entitlements & Limits Enforcement
 type: feature
 complexity: high
-status: in-progress
+status: completed
 created: 2026-05-18T22:00:00Z
 rewritten: 2026-06-03T00:00:00Z
 scoped_under: SPEC-193
