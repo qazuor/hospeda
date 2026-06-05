@@ -33,7 +33,8 @@
         "settingsCritical": "Settings - Portal (Critical)",
         "analyticsUsage": "Analytics - Usage",
         "analyticsDebug": "Analytics - Debug",
-        "analyticsBusiness": "Analytics - Business"
+        "analyticsBusiness": "Analytics - Business",
+        "analyticsViews": "Analytics - Views"
     },
     "auth": {
         "signin": {
@@ -374,6 +375,27 @@
             "colP99": "P99 (ms)",
             "rawData": "Raw Metrics Data",
             "loading": "Loading..."
+        },
+        "views": {
+            "title": "Entity Views",
+            "subtitle": "View statistics by accommodation, post, and event",
+            "summaryTitle": "Views Summary",
+            "top10Title": "Top 10 by Type",
+            "labelAccommodation": "Accommodations",
+            "labelPost": "Posts",
+            "labelEvent": "Events",
+            "labelUnique": "Unique",
+            "labelTotal": "Total",
+            "colRank": "#",
+            "colUnique": "Unique",
+            "colTotal": "Total",
+            "empty": "No views in this period",
+            "chart": {
+                "title": "Daily series (last 30 days)",
+                "accommodation": "Accommodations",
+                "post": "Posts",
+                "event": "Events"
+            }
         }
     },
     "access": {

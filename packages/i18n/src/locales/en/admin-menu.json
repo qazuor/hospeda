@@ -80,6 +80,7 @@
         "title": "Analytics",
         "usage": "Usage",
         "debug": "Debug",
-        "business": "Business"
+        "business": "Business",
+        "views": "Views"
     }
 }
