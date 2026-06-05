@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 12/18 tasks (67%)
+## Progress: 15/18 tasks (83%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -37,7 +37,7 @@
 - [x] **T-011** (complexity: 2) - Add 4 gallery* presets to @repo/media
   - galleryFeatured/Half/Quarter/Thumb; preset-count test 7 → 11
   - Blocked by: none | Blocks: T-012
-- [ ] **T-012** (complexity: 3) - Wire per-cell srcset/sizes in the island
+- [x] **T-012** (complexity: 3) - Wire per-cell srcset/sizes in the island
   - Width-override candidates + sizes per §5 breakpoints; featured stays eager/high
   - Blocked by: T-009, T-011 | Blocks: T-013
 - [x] **T-014** (complexity: 3) - Replace /fotos masonry with fixed-ratio grid
@@ -50,11 +50,11 @@
   - Blocked by: T-003 | Blocks: T-017
 - [x] **T-007** (complexity: 2) - Vitest coverage for cover-plus-grid variant
   - Blocked by: T-006 | Blocks: T-017
-- [ ] **T-010** (complexity: 2) - CLS test + object-position sanity
+- [x] **T-010** (complexity: 2) - CLS test + object-position sanity
   - Blocked by: T-009 | Blocks: T-017
 - [ ] **T-013** (complexity: 2) - Tests for presets + srcset wiring + LCP guard
   - Blocked by: T-012 | Blocks: T-017
-- [ ] **T-015** (complexity: 2) - Verify /fotos videos + GLightbox + reflow at 3 breakpoints
+- [x] **T-015** (complexity: 2) - Verify /fotos videos + GLightbox + reflow at 3 breakpoints
   - Blocked by: T-014 | Blocks: T-017
 - [ ] **T-017** (complexity: 1) - Full quality gate: web + media + i18n green
   - Blocked by: T-004, T-005, T-007, T-010, T-013, T-015, T-016 | Blocks: T-018

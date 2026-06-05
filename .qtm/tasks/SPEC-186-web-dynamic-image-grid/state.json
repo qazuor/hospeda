@@ -233,7 +233,7 @@
             "id": "T-010",
             "title": "CLS test + object-position sanity",
             "description": "Spec §8 step 7: assert the gallery contributes zero layout shift (fixed-ratio cells render with reserved space before image load); object-position default center sanity check.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-017"],
@@ -241,14 +241,14 @@
             "tags": ["web", "testing", "performance"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:25:00.000Z",
+                "completed": "2026-06-05T10:00:00.000Z"
             }
         },
         {
@@ -277,7 +277,7 @@
             "id": "T-012",
             "title": "Wire per-cell srcset/sizes in the island",
             "description": "Spec FR-4: per cell role, build srcset candidates via @repo/media width override (get-media-url.ts:248-257 regex-replaces w_ in preset — verified working) + sizes attr matching §5 breakpoints. Update extractGalleryItems/lib/media.ts only if cells need the base public-id to build candidates. Featured keeps eager/high-priority loading.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-011"],
             "blocks": ["T-013"],
@@ -285,14 +285,14 @@
             "tags": ["web", "media", "performance"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:25:00.000Z",
+                "completed": "2026-06-05T10:00:00.000Z"
             }
         },
         {
@@ -352,7 +352,7 @@
             "id": "T-015",
             "title": "Verify /fotos videos + GLightbox + reflow at 3 breakpoints",
             "description": "Spec §8 step 12: video thumbnail + play overlay + GLightbox still work on /fotos after T-014; reflow test at the three §5 breakpoints (>=1024, 640-1023, <640).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-017"],
@@ -360,14 +360,14 @@
             "tags": ["web", "testing", "gallery"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:25:00.000Z",
+                "completed": "2026-06-05T10:00:00.000Z"
             }
         },
         {
@@ -439,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 6,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.2
     }
