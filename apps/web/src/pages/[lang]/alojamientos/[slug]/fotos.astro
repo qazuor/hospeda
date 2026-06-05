@@ -1,8 +1,10 @@
 ---
 /**
  * @file alojamientos/[slug]/fotos.astro
- * @description Full photo gallery sub-page with CSS columns masonry layout.
- * All media items open via GLightbox.
+ * @description Full photo gallery sub-page with fixed-ratio CSS grid layout.
+ * All media items open via GLightbox. Replaces the former columns masonry.
+ * Breakpoints: >=1024px → 3 cols, 640-1023px → 2 cols, <640px → 1 col.
+ * Cell ratio: 4/3 (galleryHalf preset, c_fill crop).
  * @route /{lang}/alojamientos/{slug}/fotos/
  * @rendering SSR (on-demand)
  */
@@ -14,6 +16,7 @@ import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { getMediaUrl } from '@repo/media';
 
 export const prerender = false;
 
@@ -38,8 +41,19 @@ function extractYoutubeId(url: string): string | null {
 
 interface GalleryItem {
     type: 'image' | 'video';
+    /** Full-size URL used as the GLightbox href (large/uncropped). */
     src: string;
+    /**
+     * Original thumb URL (YouTube poster or raw image URL).
+     * Kept for video fallback chaining.
+     */
     thumb: string;
+    /**
+     * Grid cell thumbnail URL — applies galleryHalf preset (c_fill, 4:3, 640px)
+     * for Cloudinary images. Non-Cloudinary URLs (YouTube posters) pass through
+     * unchanged (getMediaUrl returns them as-is).
+     */
+    thumbGrid: string;
     thumbFallback?: string;
     alt: string;
     caption?: string;
@@ -50,7 +64,16 @@ const galleryItems: GalleryItem[] = [];
 
 // Featured image first
 if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')) {
-    galleryItems.push({ type: 'image', src: accommodation.featuredImage, thumb: accommodation.featuredImage, alt: accommodation.name });
+    const featuredSrc = accommodation.featuredImage;
+    galleryItems.push({
+        type: 'image',
+        src: featuredSrc,
+        thumb: featuredSrc,
+        // Apply galleryHalf preset for the grid cell thumbnail (4:3, c_fill, 640px).
+        // Non-Cloudinary URLs pass through unchanged.
+        thumbGrid: getMediaUrl(featuredSrc, { preset: 'galleryHalf' }),
+        alt: accommodation.name
+    });
 }
 
 // Gallery images (skip duplicate of featured). Prefer galleryItems so captions
@@ -64,6 +87,8 @@ for (const entry of galleryEntries) {
             type: 'image',
             src: entry.url,
             thumb: entry.url,
+            // Grid thumbnail: c_fill 4:3 crop via galleryHalf preset.
+            thumbGrid: getMediaUrl(entry.url, { preset: 'galleryHalf' }),
             alt: entry.caption ?? accommodation.name,
             caption: entry.caption,
             description: entry.description
@@ -71,13 +96,18 @@ for (const entry of galleryEntries) {
     }
 }
 
-// Videos
+// Videos — YouTube poster URLs are not Cloudinary; getMediaUrl passes them through.
 for (const entry of accommodation.media.videos) {
     const ytId = extractYoutubeId(entry.url);
+    const posterUrl = ytId
+        ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`
+        : accommodation.featuredImage;
     galleryItems.push({
         type: 'video',
         src: entry.url,
-        thumb: ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : accommodation.featuredImage,
+        thumb: posterUrl,
+        // YouTube poster: non-Cloudinary → passes through unchanged (no c_fill crop).
+        thumbGrid: getMediaUrl(posterUrl, { preset: 'galleryHalf' }),
         thumbFallback: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined,
         alt: entry.caption ?? `${accommodation.name} - video`,
         caption: entry.caption,
@@ -127,9 +157,9 @@ const jsonLd = {
             </a>
         </div>
 
-        <div class="fotos__masonry">
+        <div class="fotosGrid">
             {galleryItems.map((item, i) => (
-                <div class="fotos__item">
+                <div class="fotosCell">
                     <a
                         href={item.src}
                         data-glightbox
@@ -140,11 +170,11 @@ const jsonLd = {
                         class="fotos__link"
                     >
                         <img
-                            src={item.thumb}
+                            src={item.thumbGrid}
                             alt={item.alt}
                             loading="lazy"
                             decoding="async"
-                            class="fotos__img"
+                            class="fotos__cellImg"
                             data-fallback={item.thumbFallback ?? undefined}
                         />
                         {item.type === 'video' && (
@@ -184,35 +214,56 @@ const jsonLd = {
     .fotos__back:hover {
         text-decoration: underline;
     }
-    .fotos__masonry {
-        columns: 3;
-        column-gap: var(--space-card-gap, 30px);
+    /*
+     * Fixed-ratio grid — replaces the former columns masonry.
+     * Spec §5: >=1024px = 3 cols, 640-1023px = 2 cols, <640px = 1 col.
+     * Cell ratio: 4/3 (galleryHalf preset, c_fill crop).
+     * SPEC-186 §6 class names: .fotosGrid / .fotosCell.
+     */
+    .fotosGrid {
+        display: grid;
+        /* Desktop (>=1024px): 3 equal columns. */
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-card-gap, 16px);
     }
-    @media (max-width: 1024px) {
-        .fotos__masonry { columns: 2; }
+    /* Tablet: 640px–1023px → 2 columns. */
+    @media (max-width: 1023px) {
+        .fotosGrid {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
-    @media (max-width: 768px) {
-        .fotos__masonry { columns: 1; }
+    /* Mobile: <640px → 1 column. */
+    @media (max-width: 639px) {
+        .fotosGrid {
+            grid-template-columns: 1fr;
+        }
     }
-    .fotos__item {
-        display: inline-block;
-        width: 100%;
-        break-inside: avoid;
-        margin-bottom: var(--space-card-gap, 30px);
+
+    .fotosCell {
+        /* Fixed 4:3 ratio reserves space before image loads → zero CLS. */
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border-radius: var(--radius-card, 24px);
+        position: relative;
     }
+
     .fotos__link {
         display: block;
-        position: relative;
-        border-radius: var(--radius-card, 24px);
-        overflow: hidden;
-    }
-    .fotos__img {
         width: 100%;
-        height: auto;
+        height: 100%;
+        position: relative;
+    }
+
+    /* Cell image fills the fixed-ratio container via object-fit: cover. */
+    .fotos__cellImg {
+        width: 100%;
+        height: 100%;
         display: block;
+        object-fit: cover;
+        object-position: center;
         transition: transform var(--duration-normal, 0.4s) ease;
     }
-    .fotos__link:hover .fotos__img {
+    .fotos__link:hover .fotos__cellImg {
         transform: scale(1.04);
     }
     .fotos__play {
