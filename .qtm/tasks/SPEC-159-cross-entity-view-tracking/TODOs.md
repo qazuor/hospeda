@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 11/15 tasks (73%)
+## Progress: 12/15 tasks (80%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -73,7 +73,7 @@
   - Blocked by: T-004
   - Blocks: T-014
 
-- [ ] **T-012** (complexity: 3) - Add web view-capture beacon + extend accommodation tracker
+- [x] **T-012** (complexity: 3) - Add web view-capture beacon + extend accommodation tracker
   - sendBeacon util + AccommodationViewTracker, astro:page-load VT rebind (SPEC-191 gotcha)
   - Blocked by: T-008
   - Blocks: T-013

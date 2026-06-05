@@ -253,29 +253,29 @@
             "id": "T-012",
             "title": "Add web view-capture beacon + extend accommodation tracker",
             "description": "Create apps/web/src/lib/analytics/view-capture.ts: sendViewBeacon({ entityType, entityId }) using navigator.sendBeacon to POST /api/v1/public/views (fallback fetch keepalive). Extend apps/web/src/components/analytics/AccommodationViewTracker.client.tsx to ALSO call sendViewBeacon (existing PostHog accommodation_viewed event keeps firing unchanged — additive). MUST handle the astro:page-load rebinding gotcha from SPEC-191 (View Transitions lose listeners; fire once per page view, no double-fire). Tests: beacon called once per page load with correct payload; rebinds after VT navigation; PostHog event unaffected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "sendViewBeacon util", "completed": false },
-                { "title": "Extend AccommodationViewTracker", "completed": false },
-                { "title": "VT rebind handling + tests", "completed": false }
+                { "title": "sendViewBeacon util", "completed": true },
+                { "title": "Extend AccommodationViewTracker", "completed": true },
+                { "title": "VT rebind handling + tests", "completed": true }
             ],
             "tags": ["web", "analytics", "beacon"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:30:00.000Z",
+                "completed": "2026-06-05T07:05:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Add post and event view trackers on detail pages",
             "description": "Create PostViewTracker.client.tsx + EventViewTracker.client.tsx (or one generic EntityViewTracker with props) mounted client:idle on post and event detail pages, calling sendViewBeacon({ entityType: POST|EVENT, entityId }). Optionally also fire new PostHog post_viewed/event_viewed events for product-analytics parity (additive, follow events.ts catalog conventions). Tests: tracker fires once per detail page view with correct entity id; VT rebind works on both page types.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-014"],
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 4,
-        "inProgress": 0,
-        "completed": 11,
+        "pending": 2,
+        "inProgress": 1,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.4
     }
