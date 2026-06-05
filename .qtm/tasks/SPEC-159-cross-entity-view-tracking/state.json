@@ -166,30 +166,30 @@
             "id": "T-008",
             "title": "Create POST /api/v1/public/views capture route",
             "description": "Create apps/api/src/routes/views/public/capture.ts following contact/submit.ts: createSimpleRoute + skipAuth + customRateLimit({ requests: 30, windowMs: 60000 }). Flow: bot UA denylist regex (bot|crawl|spider|preview|curl|wget...) -> fake 202 accept (indistinguishable drop, like contact honeypot); compute visitorHash server-side from headers (T-005); resolve userId opportunistically from session if present; service.capture; return 202 { accepted: true } immediately (fire-and-forget). Register route. Integration tests: 202 on valid; 400 invalid entityType/uuid; 429 rate-limited; bot UA gets 202 but inserts nothing; response never blocks on aggregation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-005", "T-006"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "Route with skipAuth + rate limit", "completed": false },
-                { "title": "Bot denylist with fake-accept", "completed": false },
-                { "title": "Server-side hash + opportunistic auth", "completed": false },
-                { "title": "Integration tests", "completed": false }
+                { "title": "Route with skipAuth + rate limit", "completed": true },
+                { "title": "Bot denylist with fake-accept", "completed": true },
+                { "title": "Server-side hash + opportunistic auth", "completed": true },
+                { "title": "Integration tests", "completed": true }
             ],
             "tags": ["api", "public", "capture"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T04:45:00.000Z",
+                "completed": "2026-06-05T05:15:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Create GET /protected/views/accommodations/me route",
             "description": "Create apps/api/src/routes/views/protected/accommodations-me.ts: GET /api/v1/protected/views/accommodations/me?window=7d|30d, auth user session, permission ACCOMMODATION_VIEW_OWN, cacheTTL: 60 + customRateLimit (precedent response-rate.ts). Calls service.getStatsForHostAccommodations. Response: [{ entityId, unique, total }]. Integration tests: host sees only own accommodations; window validation (reject 90d); unauthenticated 401.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-014"],
@@ -210,7 +210,7 @@
             "id": "T-010",
             "title": "Create GET /protected/views/posts and /protected/views/events routes",
             "description": "Create apps/api/src/routes/views/protected/{posts,events}.ts: GET /api/v1/protected/views/posts?window=&entityIds= (permission POST_VIEW_ALL) and same for events (EVENT_VIEW_ALL), cacheTTL: 60 + customRateLimit. Calls service.getStatsForEditorEntities. Integration tests: editor with permission gets stats for requested ids; user without permission 403; entityIds validation (uuid array, bounded size); window validation.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-014"],
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 7,
-        "inProgress": 0,
-        "completed": 8,
+        "pending": 4,
+        "inProgress": 2,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.4
     }

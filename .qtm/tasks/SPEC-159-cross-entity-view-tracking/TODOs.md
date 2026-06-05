@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 8/15 tasks (53%)
+## Progress: 9/15 tasks (60%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -53,7 +53,7 @@
 
 ### Integration Phase
 
-- [ ] **T-008** (complexity: 3) - Create POST /api/v1/public/views capture route
+- [x] **T-008** (complexity: 3) - Create POST /api/v1/public/views capture route
   - skipAuth + rate limit + bot denylist fake-202 + server-side hash, fire-and-forget 202
   - Blocked by: T-001, T-005, T-006
   - Blocks: T-012
