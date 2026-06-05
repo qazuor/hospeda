@@ -253,6 +253,110 @@ export const ResponseFactory = {
     },
 
     /**
+     * Creates OpenAPI response descriptions for SSE streaming endpoints.
+     *
+     * The 200 entry uses `text/event-stream` with a string schema that
+     * describes the named-event protocol (token / done / error frames).
+     * The remaining entries reuse the standard JSON error shape so OpenAPI
+     * tooling can render them consistently alongside all other routes.
+     *
+     * **SSE frame protocol (owner-approved 2026-06-05)**:
+     * ```
+     * event: token
+     * data: {"delta":"…"}
+     *
+     * event: done
+     * data: {"usage":{…},"provider":"…","model":"…","finishReason":"…"}
+     *
+     * event: error
+     * data: {"code":"…","message":"…"}
+     * ```
+     */
+    createStreamingResponses() {
+        return {
+            200: {
+                content: {
+                    'text/event-stream': {
+                        schema: z
+                            .string()
+                            .describe(
+                                'Server-sent event stream. Named events: ' +
+                                    '"token" ({delta:string}), ' +
+                                    '"done" ({usage,provider,model,finishReason}), ' +
+                                    '"error" ({code:string,message:string})'
+                            )
+                    }
+                },
+                description: 'SSE stream of token deltas, followed by a done or error frame'
+            },
+            400: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Bad Request — invalid request body'
+            },
+            401: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Unauthorized'
+            },
+            403: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Forbidden'
+            },
+            422: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Unprocessable Entity — content moderation blocked'
+            },
+            429: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Too Many Requests — rate limit or quota exceeded'
+            },
+            500: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Internal Server Error'
+            },
+            502: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Bad Gateway — all AI providers exhausted'
+            },
+            503: {
+                content: {
+                    'application/json': {
+                        schema: errorResponseSchema
+                    }
+                },
+                description: 'Service Unavailable — feature disabled or no enabled provider'
+            }
+        };
+    },
+
+    /**
      * Creates file upload responses
      * Responses for file upload operations
      */
