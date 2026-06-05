@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 0/15 tasks (0%)
+## Progress: 1/15 tasks (7%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -21,7 +21,7 @@
 
 ### Core Phase
 
-- [ ] **T-002** (complexity: 2) - Create entity_views lean dbschema + migration
+- [x] **T-002** (complexity: 2) - Create entity_views lean dbschema + migration
   - LEAN append-only table (approved deviation, no BaseModel columns) + db:generate migration
   - Blocked by: none
   - Blocks: T-003, T-004, T-011

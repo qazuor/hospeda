@@ -30,22 +30,22 @@
             "id": "T-002",
             "title": "Create entity_views lean dbschema + migration",
             "description": "Create packages/db/src/schemas/analytics/entity_view.dbschema.ts: LEAN append-only table (APPROVED deviation — NO BaseModel audit/soft-delete columns): id uuid PK defaultRandom, entityType EntityTypePgEnum NOT NULL, entityId uuid NOT NULL (polymorphic, no DB FK — same as user_bookmarks), visitorHash text NOT NULL, isAuthenticated boolean NOT NULL default false, viewedAt timestamptz NOT NULL defaultNow. Declare indexes on the Drizzle model: (entity_type, entity_id, viewed_at) and (viewed_at). Register in schema barrel. Run pnpm db:generate and commit the migration (drift guard blocks CI otherwise). Tests: schema shape test consistent with how other dbschemas are tested.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003", "T-004", "T-011"],
             "subtasks": [
-                { "title": "Drizzle table definition (lean)", "completed": false },
-                { "title": "Indexes on model", "completed": false },
-                { "title": "db:generate migration committed", "completed": false }
+                { "title": "Drizzle table definition (lean)", "completed": true },
+                { "title": "Indexes on model", "completed": true },
+                { "title": "db:generate migration committed", "completed": true }
             ],
             "tags": ["database", "drizzle", "migration"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-04T23:20:00.000Z",
+                "completed": "2026-06-05T01:10:00.000Z"
             }
         },
         {
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.4
     }
