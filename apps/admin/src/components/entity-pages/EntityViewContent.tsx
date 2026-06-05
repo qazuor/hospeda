@@ -85,9 +85,17 @@ export const EntityViewContent = ({
 
     /**
      * Shared per-section body builder — same logic for accordion and flat modes.
+     *
+     * Sections with `customRender` bypass the standard field-grid renderer
+     * entirely — the function is called directly (SPEC-197 T-016).
      */
     const buildSectionBody = (section: SectionConfig, index: number): ReactNode => {
         if (renderSection) return renderSection(section, index);
+
+        // Custom-render sections (e.g. stats-chips) bypass the field renderer.
+        if (typeof section.customRender === 'function') {
+            return section.customRender();
+        }
 
         const viewSection = (
             <EntityViewSection

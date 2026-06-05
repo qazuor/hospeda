@@ -324,6 +324,15 @@
             "relations": "Relações",
             "metadata": "Metadados",
             "audit": "Auditoria"
+        },
+        "viewStats": {
+            "sectionTitle": "Estatísticas de visualizações",
+            "chips": {
+                "unique": "Únicos",
+                "total": "Totais",
+                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal": "{{window}}: {{count}} visualizações totais"
+            }
         }
     },
     "form": {
