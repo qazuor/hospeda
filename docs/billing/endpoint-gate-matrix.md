@@ -53,9 +53,9 @@
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | to-wire | Per-accommodation bookmark analytics; owner-approved gate (T-145-01 candidate list) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | to-wire | Market comparison analytics; owner-approved gate (T-145-01 candidate list) |
 | **ACCOMMODATION REVIEWS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | to-wire | Review creation; owner-approved gate (T-145-01 candidate list) |
+| `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/destinations/{id}/reviews` | `destination/reviews/protected/create.ts` | gate | `write_reviews` | to-wire | Review creation; owner-approved gate (T-145-01 candidate list) |
+| `POST /api/v1/protected/destinations/{id}/reviews` | `destination/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
 | **USER BOOKMARKS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/user-bookmarks` | `user-bookmark/protected/create.ts` | gate+limit | `save_favorites`, `max_favorites` | wired | gateFavorites() + assertFavoritesLimitOrThrow() already applied |
 | `DELETE /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/delete.ts` | none | - | n/a | Deletion ungated per BETA-42 — users at cap must still be able to remove |
@@ -73,9 +73,9 @@
 | `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 |
 | `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Deletion ungated |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | enforcePromotionLimit() already wired; CREATE_PROMOTIONS entitlement gate to-wire (T-145-03) |
-| `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | to-wire | Mutation on owned promotion; same plan requirement as create (T-145-03) |
-| `PUT /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/update.ts` | gate | `create_promotions` | to-wire | Full replace of owned promotion; same plan requirement as create (T-145-03) |
+| `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) before enforcePromotionLimit() (SPEC-145 T-005) |
+| `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
+| `PUT /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/update.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
 | `DELETE /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/softDelete.ts` | none | - | n/a | Deletion ungated; removing own promotion always allowed |
 | **MEDIA — PROTECTED** | | | | | |
 | `POST /api/v1/protected/media/upload` | `media/protected/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check already in handler (SPEC-143 Finding #15) |

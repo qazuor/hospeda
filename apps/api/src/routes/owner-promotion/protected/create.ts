@@ -2,6 +2,7 @@
  * Protected create owner promotion endpoint
  * Requires authentication
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     OwnerPromotionCreateInputSchema,
     OwnerPromotionProtectedSchema,
@@ -9,6 +10,7 @@ import {
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { enforcePromotionLimit } from '../../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -44,6 +46,9 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        middlewares: [enforcePromotionLimit()]
+        // SPEC-145 T-005: entitlement gate BEFORE limit check — actor must have the
+        // CREATE_PROMOTIONS entitlement (granted on owner-pro, owner-premium,
+        // complex-pro, complex-premium) before we consult the promotion-count limit.
+        middlewares: [requireEntitlement(EntitlementKey.CREATE_PROMOTIONS), enforcePromotionLimit()]
     }
 });
