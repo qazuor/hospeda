@@ -1,7 +1,7 @@
 ---
 specId: SPEC-159
 title: Cross-Entity View Tracking
-status: in-progress
+status: completed
 complexity: high
 owner: qazuor
 created: 2026-05-26

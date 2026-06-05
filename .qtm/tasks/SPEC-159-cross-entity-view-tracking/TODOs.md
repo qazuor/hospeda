@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 14/15 tasks (93%)
+## Progress: 15/15 tasks (100%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -92,7 +92,7 @@
 
 ### Docs Phase
 
-- [ ] **T-015** (complexity: 1) - Document view tracking + close out spec
+- [x] **T-015** (complexity: 1) - Document view tracking + close out spec
   - route-architecture.md, privacy note, deviation note, spec close-out
   - Blocked by: T-014
   - Blocks: none

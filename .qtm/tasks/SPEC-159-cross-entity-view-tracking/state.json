@@ -319,30 +319,30 @@
             "id": "T-015",
             "title": "Document view tracking + close out spec",
             "description": "Docs: update apps/api/docs/route-architecture.md with the new public/protected views routes; add a short privacy note (unique visitors are APPROXIMATE, cookieless daily-salted hash, no raw IP, 95-day retention) in the relevant docs/ guide; document the lean-table convention deviation where dbschema conventions are described. Update spec.md next-steps checklist, flip task tracking, prepare PR description referencing the approved decisions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
-                { "title": "route-architecture.md", "completed": false },
-                { "title": "Privacy + deviation notes", "completed": false },
-                { "title": "Spec close-out", "completed": false }
+                { "title": "route-architecture.md", "completed": true },
+                { "title": "Privacy + deviation notes", "completed": true },
+                { "title": "Spec close-out", "completed": true }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:05:00.000Z",
+                "completed": "2026-06-05T09:25:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.4
     }
