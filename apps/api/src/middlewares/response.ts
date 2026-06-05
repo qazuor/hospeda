@@ -33,7 +33,10 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
     [ServiceErrorCode.QUOTA_EXCEEDED]: 429,
     [ServiceErrorCode.LIMIT_REACHED]: 403,
-    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403
+    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403,
+    [ServiceErrorCode.PROVIDER_ERROR]: 502,
+    [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
+    [ServiceErrorCode.PROVIDER_TIMEOUT]: 504
 };
 
 /**
