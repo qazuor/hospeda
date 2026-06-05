@@ -206,7 +206,7 @@
             "title": "Billing Entitlements & Limits Enforcement",
             "type": "feature",
             "complexity": "high",
-            "status": "reserved",
+            "status": "in-progress",
             "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
             "parent": "SPEC-193",
             "created": "2026-05-18T22:00:00Z",
