@@ -1359,35 +1359,35 @@
             "id": "T-038",
             "title": "Write streaming + provider-swap E2E tests",
             "description": "E2E tests: (1) streaming endpoint returns text/event-stream with incremental tokens (AC-10); (2) admin changes chat primary openai→anthropic → next call uses new provider with no redeploy (AC-1); (3) fallback on simulated 5xx records ai_usage event (AC-2). StubProvider only, no real APIs, assert ≥90% coverage on the package (AC-13). Files under apps/api/test/ai/. Tests: this task IS the E2E suite + coverage gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-029", "T-027", "T-037"],
             "blocks": ["T-042"],
             "subtasks": [
                 {
                     "title": "SSE streaming E2E (AC-10)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Provider-swap-no-redeploy E2E (AC-1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fallback-event E2E (AC-2) + coverage assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "api", "streaming"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T16:40:00.000Z",
+                "completed": "2026-06-05T17:10:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "blocked": 0,
         "averageComplexity": 2.5
     }
