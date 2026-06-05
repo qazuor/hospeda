@@ -388,10 +388,16 @@ function makeMpSubscription(
  * given rows when the chain terminates (simulates `.select().from().where().limit()`).
  *
  * The mock also provides a `transaction(cb)` method that executes the callback
- * with a `tx` object containing its own `update` and `insert` chains, mirroring
- * how the implementation calls `db.transaction(async (tx) => { ... })`.
+ * with a `tx` object containing its own `update`, `insert`, and `select` chains,
+ * mirroring how the implementation calls `db.transaction(async (tx) => { ... })`.
+ *
+ * The `tx.select` chain supports `.from().where().for('update')` for the
+ * authoritative TOCTOU guard added in item 5. By default, `tx.select` returns
+ * a fresh-status row derived from `selectRows[0]` so the guard sees the same
+ * status that the outer SELECT returned (no concurrent write scenario). Pass
+ * `txFreshRows` to override the tx-internal SELECT result for stale-read tests.
  */
-function makeDbMock(selectRows: unknown[], insertShouldFail = false) {
+function makeDbMock(selectRows: unknown[], insertShouldFail = false, txFreshRows?: unknown[]) {
     const txInsertValuesChain = {
         values: vi.fn().mockResolvedValue(undefined)
     };
@@ -404,10 +410,25 @@ function makeDbMock(selectRows: unknown[], insertShouldFail = false) {
         where: vi.fn().mockResolvedValue(undefined)
     };
 
+    // tx.select: supports .from().where().for('update') for the TOCTOU guard.
+    // By default returns the same status row as the outer SELECT so existing
+    // tests stay green. Override with txFreshRows to simulate a stale-read.
+    const freshRows = txFreshRows ?? selectRows;
+    const txSelectForChain = {
+        for: vi.fn().mockResolvedValue(freshRows)
+    };
+    const txSelectWhereChain = {
+        where: vi.fn().mockReturnValue(txSelectForChain)
+    };
+    const txSelectFromChain = {
+        from: vi.fn().mockReturnValue(txSelectWhereChain)
+    };
+
     /** Transaction object passed to the callback of db.transaction() */
     const tx = {
         insert: vi.fn().mockReturnValue(txInsertValuesChain),
-        update: vi.fn().mockReturnValue(txUpdateSetChain)
+        update: vi.fn().mockReturnValue(txUpdateSetChain),
+        select: vi.fn().mockReturnValue(txSelectFromChain)
     };
 
     const selectChain = {
@@ -1386,9 +1407,16 @@ describe('processSubscriptionUpdated', () => {
                 set: vi.fn().mockReturnThis(),
                 where: vi.fn().mockResolvedValue(undefined)
             };
+            // tx.select supports .from().where().for('update') for the TOCTOU guard.
+            // For this test (ACTIVE → PAST_DUE), the fresh status matches the outer
+            // SELECT so the guard short-circuits and the update proceeds normally.
+            const txSelectForChain = { for: vi.fn().mockResolvedValue([localSub]) };
+            const txSelectWhereChain = { where: vi.fn().mockReturnValue(txSelectForChain) };
+            const txSelectFromChain = { from: vi.fn().mockReturnValue(txSelectWhereChain) };
             const tx = {
                 insert: vi.fn().mockReturnValue(txInsertValuesChain),
-                update: vi.fn().mockReturnValue(txUpdateSetChain)
+                update: vi.fn().mockReturnValue(txUpdateSetChain),
+                select: vi.fn().mockReturnValue(txSelectFromChain)
             };
 
             // Top-level db.update chain — needs .returning() for the paymentFailureCount increment
@@ -1624,6 +1652,75 @@ describe('processSubscriptionUpdated', () => {
             expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
             expect(dbMock.transaction).toHaveBeenCalled();
             expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+
+        // TC-SPEC-194-T002-D: Stale-read TOCTOU — concurrent write changes status between
+        // the outer SELECT and the tx-internal SELECT FOR UPDATE (item 5 fix).
+        it('should skip write and return statusChanged:false when tx-internal fresh status already matches target', async () => {
+            // Arrange: outer SELECT sees active → MP says cancelled → pre-tx guard passes.
+            // But tx-internal SELECT FOR UPDATE returns 'cancelled' (a concurrent replica
+            // already applied the transition) — the authoritative guard must skip the write.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.ACTIVE });
+            // txFreshRows: tx-internal SELECT FOR UPDATE returns 'cancelled' (already updated by peer)
+            const txFreshRows = [{ status: SubscriptionStatusEnum.CANCELLED }];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t002-d'
+            });
+
+            // Assert: tx internal short-circuit fires → no DB write, no notifications
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(false);
+            // The transaction was opened (we got inside it before the guard) but no update was called
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).not.toHaveBeenCalled();
+            expect(dbMock.tx.insert).not.toHaveBeenCalled();
+        });
+
+        // TC-SPEC-194-T002-E: Stale-read TOCTOU — tx-internal fresh status invalidates transition.
+        // Concurrent write changed status to a terminal state (expired) that breaks the
+        // transition guard: expired→active is NOT a valid transition per the state machine.
+        it('should skip write and return statusChanged:false when tx-internal guard rejects fresh status', async () => {
+            // Arrange: outer SELECT sees 'paused', MP says 'active' (reactivation).
+            // Between outer SELECT and tx-internal SELECT FOR UPDATE, status changed to 'expired'
+            // (terminal, no outgoing transitions) — expired→active is rejected by the guard.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('active'));
+
+            const localSub = makeLocalSubscription({ status: SubscriptionStatusEnum.PAUSED });
+            // tx-internal FOR UPDATE returns 'expired' (terminal — no outgoing transitions)
+            const txFreshRows = [{ status: SubscriptionStatusEnum.EXPIRED }];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t002-e'
+            });
+
+            // Assert: tx guard fires on fresh 'expired' status → no DB write committed
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(false);
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).not.toHaveBeenCalled();
         });
     });
 });

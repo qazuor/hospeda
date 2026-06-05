@@ -818,6 +818,58 @@ describe('TrialService', () => {
                 .calls[0]?.[0] as Record<string, unknown> | undefined;
             expect(typeof listArg?.limit).toBe('number');
         });
+
+        // Item 4 regression (SPEC-194 adversarial review):
+        // A subscription in the claimed batch may already be in a terminal state
+        // (cancelled/expired/abandoned) between the claim commit and process phase.
+        // The pre-cancel status guard must skip such subscriptions without calling
+        // billing.subscriptions.cancel(), and the blockedCount should NOT include them.
+        it('item-4: skips cancel for claimed subscription already in a terminal status', async () => {
+            // Arrange: one subscription in terminal 'cancelled' state, one in 'trialing'
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            const cancelledSub = {
+                id: 'sub-already-cancelled',
+                customerId: 'customer-terminal',
+                status: 'cancelled', // terminal — should be skipped
+                trialEnd: expiredEnd.toISOString(),
+                metadata: {}
+            };
+            const trialingSub = {
+                id: 'sub-trialing-valid',
+                customerId: 'customer-valid',
+                status: 'trialing', // valid — should be processed
+                trialEnd: expiredEnd.toISOString(),
+                metadata: {}
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: [cancelledSub, trialingSub]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'customer-valid',
+                email: 'valid@example.com',
+                metadata: { name: 'Valid User', userId: 'u-valid' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert: only the trialing sub is blocked; cancel NOT called for the terminal one.
+            expect(result).toBe(1);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(1);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-trialing-valid');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalledWith(
+                'sub-already-cancelled'
+            );
+        });
     });
 
     describe('reactivateFromTrial', () => {

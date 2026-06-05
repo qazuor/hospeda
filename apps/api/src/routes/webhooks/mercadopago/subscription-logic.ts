@@ -464,9 +464,71 @@ export async function processSubscriptionUpdated({
         updateData.cancelAtPeriodEnd = false;
     }
 
+    // Track whether the transaction observed a status change so callers can decide
+    // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
+    let txStatusChanged = true;
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
+
+        // ── Authoritative TOCTOU guard (item 5 / SPEC-194 adversarial review) ──
+        // The initial SELECT at Step 5 ran OUTSIDE this transaction. Between that
+        // read and now another webhook replica may have written a new status. Re-read
+        // the row with SELECT … FOR UPDATE to serialize concurrent writes, then
+        // re-evaluate the same-status short-circuit and the transition guard on the
+        // FRESH status. The earlier guard (Step 6b above) is a cheap fast path only.
+        const [freshRow] = await tx
+            .select({ status: billingSubscriptions.status })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscription.id))
+            .for('update');
+
+        const freshStatus = freshRow?.status;
+
+        if (!freshStatus) {
+            // Row disappeared between Step 5 and here — nothing to update.
+            apiLogger.warn(
+                { subscriptionId: localSubscription.id, source },
+                'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        if (freshStatus === mappedStatus) {
+            // Another replica already applied this transition — idempotent skip.
+            apiLogger.debug(
+                { subscriptionId: localSubscription.id, freshStatus, mappedStatus, source },
+                'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        const txTransitionGuard = checkSubscriptionStatusTransition({
+            from: freshStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+            to: mappedStatus,
+            subscriptionId: localSubscription.id
+        });
+        if (!txTransitionGuard.valid) {
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    freshStatus,
+                    from: freshStatus,
+                    to: mappedStatus,
+                    previousStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source,
+                    reason: txTransitionGuard.reason
+                },
+                'Subscription webhook tx: invalid transition on fresh status — committing nothing'
+            );
+            txStatusChanged = false;
+            return;
+        }
 
         await tx
             .update(billingSubscriptions)
@@ -512,6 +574,12 @@ export async function processSubscriptionUpdated({
             // Do NOT throw - audit failure is non-blocking; status update must still commit
         }
     });
+
+    // If the tx-internal guard determined no write happened (stale-read scenario),
+    // skip all post-commit side effects and return statusChanged:false.
+    if (!txStatusChanged) {
+        return { success: true, statusChanged: false };
+    }
 
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);

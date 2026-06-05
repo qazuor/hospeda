@@ -30,6 +30,7 @@ import {
     type TrialEndingSubscription,
     type TrialStatus,
     calculateTrialDaysRemaining,
+    checkSubscriptionStatusTransition,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -483,6 +484,29 @@ export class TrialService {
                         apiLogger.debug(
                             { subscriptionId: subscription.id },
                             'blockExpiredTrials: TRIAL_BLOCKED event already exists, skipping (idempotent)'
+                        );
+                        continue;
+                    }
+
+                    // ── Pre-cancel status guard (item 4 / SPEC-194 adversarial review) ──
+                    // The claimed subscription object may be stale (fetched inside the
+                    // claim tx that has since committed). Re-validate the status transition
+                    // before calling the external QZPay cancel API to avoid erroring on
+                    // subscriptions that were already cancelled/expired/abandoned between
+                    // the claim and the process phases.
+                    const transitionGuard = checkSubscriptionStatusTransition({
+                        from: subscription.status as `${SubscriptionStatusEnum}`,
+                        to: SubscriptionStatusEnum.CANCELLED,
+                        subscriptionId: subscription.id
+                    });
+                    if (!transitionGuard.valid) {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                currentStatus: subscription.status,
+                                reason: transitionGuard.reason
+                            },
+                            'blockExpiredTrials: claimed subscription is in a terminal state — skipping cancel call'
                         );
                         continue;
                     }
