@@ -300,6 +300,19 @@
             }
         }
     },
+    "adminView": {
+        "batch": {
+            "entityIds": {
+                "empty": "La lista de IDs de entidades no puede estar vacía",
+                "tooMany": "No se pueden solicitar más de 100 IDs de entidades a la vez"
+            }
+        },
+        "dailySeries": {
+            "date": {
+                "invalid": "La fecha debe tener el formato YYYY-MM-DD"
+            }
+        }
+    },
     "amenity": {
         "bulkOperation": {
             "force": {
