@@ -21,7 +21,7 @@
  * - Usage metering (T-016)
  * - Safety / guardrail hooks (T-018)
  * - SSE streaming wiring (T-024 — `streamText` is explicitly excluded from V1)
- * - DB or vault access — that wiring lives in `apps/api` (T-019)
+ * - DB or vault access — that wiring lives in `apps/api` (T-043)
  *
  * ## Relationship to AiEngine
  *
@@ -90,7 +90,7 @@ export interface CreateAiServiceInput {
      * given `AiProviderId`.
      *
      * Forwarded directly to `createAiEngine`. The factory is called at
-     * request routing time; `apps/api` (T-019) constructs concrete adapters
+     * request routing time; `apps/api` (T-043) constructs concrete adapters
      * with decrypted API keys from the vault and passes them here. The service
      * itself never imports `@repo/db`, never reads env vars, and never touches
      * API keys.
@@ -135,7 +135,7 @@ export interface CreateAiServiceInput {
     readonly moderationProviderId?: AiProviderId;
 
     /**
-     * Optional cost-ceiling check hook, wired by `apps/api` (T-043 / T-019).
+     * Optional cost-ceiling check hook, wired by `apps/api` (T-043).
      *
      * Forwarded directly to `createAiEngine`. When provided, the engine awaits
      * this hook BEFORE invoking any provider on each capability call. If the hook
@@ -154,7 +154,7 @@ export interface CreateAiServiceInput {
     readonly checkCeiling?: CreateAiEngineInput['checkCeiling'];
 
     /**
-     * Optional clock factory, wired by `apps/api` (T-043 / T-019).
+     * Optional clock factory, wired by `apps/api` (T-043).
      *
      * Forwarded directly to `createAiEngine`. Paired with `checkCeiling` — the
      * engine calls `getNow()` once per capability call to supply the current
@@ -190,7 +190,7 @@ export interface AiService {
     /**
      * The underlying engine instance.
      *
-     * Exposed for T-019 (wiring) and T-024 (SSE streaming) which need to call
+     * Exposed for T-043 (wiring) and T-024 (SSE streaming) which need to call
      * `engine.streamText` directly at the route layer. External callers should
      * prefer the named capability methods above this.
      */
@@ -282,7 +282,7 @@ export interface AiService {
  *
  * @example
  * ```ts
- * // In apps/api (T-019):
+ * // In apps/api (T-043):
  * const service = createAiService({
  *   getProvider: (id) => {
  *     const key = vault.getDecryptedKey(id);
@@ -327,7 +327,7 @@ export function createAiService(input: CreateAiServiceInput): AiService {
     });
 
     return {
-        // Expose the underlying engine for T-019/T-024 direct access.
+        // Expose the underlying engine for T-043/T-024 direct access.
         engine,
 
         // -----------------------------------------------------------------------

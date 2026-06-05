@@ -20,8 +20,8 @@
  * // injected factory `getProvider: (id: AiProviderId) => AiProvider`.
  * // Rationale: the engine MUST NOT construct adapters with API keys itself —
  * // key decryption from the vault (`ai_provider_credentials`) is done in
- * // `apps/api` (T-019) at request time. The factory pattern keeps the engine
- * // credential-free and testable. T-019 will wire the real adapters at the
+ * // `apps/api` (T-043) at request time. The factory pattern keeps the engine
+ * // credential-free and testable. T-043 will wire the real adapters at the
  * // Hono app-startup layer.
  *
  * ## Event recording (§12 flag)
@@ -31,7 +31,7 @@
  * // `ai_usage`, Sentry, or any log sink directly — that wiring lives in
  * // T-016 (usage recording), T-018 (Sentry), and T-035 (billing metering).
  * // The sink receives typed `AiEngineEvent` objects; the injected callback in
- * // T-019 will fan them out.
+ * // T-043 will fan them out.
  *
  * ## V2 routing seam
  *
@@ -237,14 +237,14 @@ export interface CreateAiEngineInput {
      * given `AiProviderId`.
      *
      * **Credential injection**: the factory is called at request routing time.
-     * The caller (T-019, `apps/api`) constructs concrete adapters with decrypted
+     * The caller (T-043, `apps/api`) constructs concrete adapters with decrypted
      * API keys from the vault and hands them to the engine via this factory.
      * The engine itself never imports `@repo/db`, never reads env vars, and never
      * touches API keys directly.
      *
      * * **Decision (owner-approved 2026-06-04):** The factory-per-request pattern
      * is used (vs. a pre-built `Map<AiProviderId, AiProvider>`). The factory is
-     * simpler to test and allows T-019 to decrypt keys on demand; a pre-built map
+     * simpler to test and allows T-043 to decrypt keys on demand; a pre-built map
      * would require eager decryption of all provider credentials.
      *
      * @param providerId - Which provider to return.
@@ -308,7 +308,7 @@ export interface CreateAiEngineInput {
      *
      * **`now` threading**: the engine pairs this hook with `getNow`. When both
      * are provided the engine calls `await checkCeiling({ feature, now: getNow() })`
-     * before routing each call.  `apps/api` (T-019) supplies both fields from
+     * before routing each call.  `apps/api` (T-043) supplies both fields from
      * the request context.  When either is absent the ceiling check is skipped
      * for that call.
      *
@@ -331,7 +331,7 @@ export interface CreateAiEngineInput {
      * also set. This keeps `now` out of the schema request types and avoids
      * making `checkCeiling` responsible for capturing the clock itself.
      *
-     * `apps/api` (T-019) wires this as `() => new Date()` (or a request-scoped
+     * `apps/api` (T-043) wires this as `() => new Date()` (or a request-scoped
      * timestamp) when it injects `checkCeiling`.  Tests that do not test ceiling
      * behaviour omit both fields and are unaffected.
      *
@@ -593,7 +593,7 @@ async function routeWithFallback<T>(
  *
  * @example
  * ```ts
- * // T-019 wiring (apps/api):
+ * // T-043 wiring (apps/api):
  * const engine = createAiEngine({
  *   getProvider: (id) => {
  *     const key = vault.getDecryptedKey(id);
@@ -649,7 +649,7 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
 
             // Ceiling hook: awaited so a breach hard-stops the call (T-017, AC-8).
             // Only invoked when both checkCeiling and getNow are provided.
-            // apps/api (T-019) supplies both; tests that omit them bypass the check.
+            // apps/api (T-043) supplies both; tests that omit them bypass the check.
             if (checkCeiling !== undefined && getNow !== undefined) {
                 await checkCeiling({ feature: req.feature, now: getNow() });
             }
