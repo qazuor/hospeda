@@ -94,6 +94,16 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic', () => ({
     processSubscriptionUpdated: vi.fn()
 }));
 
+vi.mock('../../src/utils/mp-authorized-payment', () => ({
+    fetchAuthorizedPaymentDetails: vi.fn()
+}));
+
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token'
+    }
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
@@ -114,6 +124,7 @@ import {
     extractPaymentInfo
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { AddonService } from '../../src/services/addon.service';
+import { fetchAuthorizedPaymentDetails } from '../../src/utils/mp-authorized-payment';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -488,7 +499,169 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Test 6: Unknown MercadoPago event type — resolves with a warning
+    // Test 5c: subscription_preapproval.created — must delegate to processSubscriptionUpdated
+    // (RED: currently falls to default and resolves permanently without retry)
+    // -------------------------------------------------------------------------
+    it('should run processSubscriptionUpdated for subscription_preapproval.created events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_preapproval.created',
+            providerEventId: 'mp-sub-created-1',
+            payload: {
+                data: { id: 'preapproval-created-123' },
+                date_created: '2024-03-01T00:00:00Z'
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        const billing = makeBillingMock({ id: 'cust-created-1' });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const mockAdapter = { subscriptions: { retrieve: vi.fn() } };
+        vi.mocked(createMercadoPagoAdapter).mockReturnValue(
+            mockAdapter as unknown as ReturnType<typeof createMercadoPagoAdapter>
+        );
+
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: true,
+            statusChanged: true,
+            newStatus: 'active'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — subscription created event triggers the real handler, not the silent default
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        expect(processSubscriptionUpdated).toHaveBeenCalledWith(
+            expect.objectContaining({
+                providerEventId: 'mp-sub-created-1',
+                source: 'dead-letter-retry'
+            })
+        );
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5d: subscription_authorized_payment.created — must run the retry handler
+    // (RED: currently falls to default and resolves permanently without retry —
+    // fetchAuthorizedPaymentDetails is never called in the default branch)
+    // -------------------------------------------------------------------------
+    it('should call fetchAuthorizedPaymentDetails for subscription_authorized_payment.created events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-1',
+            payload: {
+                data: { id: 'authorized-payment-123' }
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            makeBillingMock({ id: 'cust-1' }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        // Return a not-found result so the retry ends with no DB record written
+        // (simulates the common case where the authorized payment can't be fetched yet)
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'not-found',
+            authorizedPaymentId: 'authorized-payment-123'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — fetchAuthorizedPaymentDetails must be called (proves the new switch case ran)
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledOnce();
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledWith(
+            expect.objectContaining({ authorizedPaymentId: 'authorized-payment-123' })
+        );
+        expect(result.success).toBe(true);
+        // processSubscriptionUpdated is NOT called for authorized_payment events
+        expect(processSubscriptionUpdated).not.toHaveBeenCalled();
+        // extractPaymentInfo (payment.updated path) is also not called
+        expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5e: subscription_authorized_payment.updated — same retry handler
+    // -------------------------------------------------------------------------
+    it('should call fetchAuthorizedPaymentDetails for subscription_authorized_payment.updated events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.updated',
+            providerEventId: 'mp-auth-pay-upd-1',
+            payload: {
+                data: { id: 'authorized-payment-456' }
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            makeBillingMock({ id: 'cust-2' }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'not-found',
+            authorizedPaymentId: 'authorized-payment-456'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — authorized_payment.updated takes the same retry path as .created
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledOnce();
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledWith(
+            expect.objectContaining({ authorizedPaymentId: 'authorized-payment-456' })
+        );
+        expect(result.success).toBe(true);
+        expect(processSubscriptionUpdated).not.toHaveBeenCalled();
+        expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5f: subscription_authorized_payment — billing not configured → resolves (no-op)
+    // -------------------------------------------------------------------------
+    it('should resolve subscription_authorized_payment event when billing is not configured', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-no-billing',
+            payload: { data: { id: 'authorized-payment-789' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(null);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — billing not configured: no retry possible, resolve gracefully
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 6: Unknown MercadoPago event type — resolves with a warning (NOT silently eaten)
+    // Decision (realign 2026-06-05): resolve-with-loud-log to avoid dead-letter queue rot.
+    // A genuinely-unknown type that enters the queue would loop forever without ever
+    // succeeding; resolving it with an explicit loud log is the correct trade-off.
     // -------------------------------------------------------------------------
     it('should resolve unknown MercadoPago event types without failing', async () => {
         // Arrange
