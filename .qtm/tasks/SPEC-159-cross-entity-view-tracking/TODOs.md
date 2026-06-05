@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 7/15 tasks (47%)
+## Progress: 8/15 tasks (53%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -46,7 +46,7 @@
   - Blocked by: T-001, T-004
   - Blocks: T-008
 
-- [ ] **T-007** (complexity: 3) - Add EntityViewService scoped aggregation methods
+- [x] **T-007** (complexity: 3) - Add EntityViewService scoped aggregation methods
   - HOST own-scoped (anti-peeking) + EDITOR permission-gated (POST_VIEW_ALL / EVENT_VIEW_ALL)
   - Blocked by: T-001, T-004
   - Blocks: T-009, T-010

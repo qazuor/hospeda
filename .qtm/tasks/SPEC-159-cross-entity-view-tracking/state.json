@@ -144,22 +144,22 @@
             "id": "T-007",
             "title": "Add EntityViewService scoped aggregation methods",
             "description": "Extend EntityViewService: getStatsForHostAccommodations({ actor, window }) — resolves the actor's OWN accommodation ids internally (anti-peeking: never accept ownerId param; precedent conversations/protected/response-rate.ts), permission ACCOMMODATION_VIEW_OWN; getStatsForEditorEntities({ actor, entityType, entityIds, window }) — permission POST_VIEW_ALL / EVENT_VIEW_ALL per entityType. Both return EntityViewStatsSchema arrays via EntityViewModel.getStatsForEntities. PermissionEnum only (never roles). Tests (write first): host A cannot see host B's stats; editor without permission rejected; window mapping 7d/30d correct.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
-                { "title": "getStatsForHostAccommodations (own-scoped)", "completed": false },
-                { "title": "getStatsForEditorEntities (permission-gated)", "completed": false },
-                { "title": "Unit tests (test-first)", "completed": false }
+                { "title": "getStatsForHostAccommodations (own-scoped)", "completed": true },
+                { "title": "getStatsForEditorEntities (permission-gated)", "completed": true },
+                { "title": "Unit tests (test-first)", "completed": true }
             ],
             "tags": ["service-core", "aggregation", "permissions"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T04:10:00.000Z",
+                "completed": "2026-06-05T04:30:00.000Z"
             }
         },
         {
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.4
     }
