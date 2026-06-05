@@ -225,31 +225,31 @@
             "id": "T-008",
             "title": "Dead-letter retry covers the two missing event types",
             "description": "Spec webhook ownership (b). webhook-retry.job.ts switch (:208-247): add subscription_preapproval.created and subscription_authorized_payment.* with real retry handling (route to the same handlers the live webhook uses — find them). The default case currently returns true → marks RESOLVED permanently (worse than skip): decide + document the unknown-type behavior (explicit log + resolve vs leave pending; prefer resolve-with-loud-log to avoid queue rot, but justify). Red-first: failing test proving the two types currently get resolved without retry.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Red tests for the two types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Switch cases + default decision",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["webhooks", "dead-letter"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T17:00:00Z",
+                "completed": "2026-06-05T17:10:00Z"
             }
         },
         {
