@@ -540,6 +540,103 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
 
+## Entitlement & Limit Enforcement (SPEC-145)
+
+### Middleware chain order
+
+Every protected route runs middleware in this order:
+
+```
+auth → actor → billing → billingCustomer → trial → [options.middlewares]
+```
+
+`options.middlewares` is where entitlement and limit gates live. Gate the
+route there — never inside the handler body.
+
+### Ordering invariants
+
+- `trialMiddleware` fires **before** `requireEntitlement`. An expired-trial
+  user gets HTTP 402 before the 403 entitlement gate (T-019 learning).
+- Entitlement gate always precedes limit check. Gate the feature first so
+  the usage counter is never queried for users who lack the feature.
+
+### Unified ServiceError contract
+
+Gates MUST throw `ServiceError`, never `HTTPException(403)` directly:
+
+- Missing entitlement: `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED)` →
+  HTTP 403 `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`
+- Limit reached: `ServiceError(ServiceErrorCode.LIMIT_REACHED)` →
+  HTTP 403 `{ error: { code: 'LIMIT_REACHED', ... } }`
+
+The global `createErrorHandler()` performs the mapping. Direct
+`HTTPException(403)` bypasses that mapping and breaks API consumers.
+
+### Staff bypass (INV-6)
+
+`SUPER_ADMIN`, `ADMIN`, `EDITOR`, and `CLIENT_MANAGER` bypass entitlement
+checks. `entitlementMiddleware` grants them the full unlimited set (all
+`EntitlementKey` values, all `LimitKey` values at `-1`) before
+`options.middlewares` runs. By the time `requireEntitlement` executes, the
+key is already in their set — no 403 is ever thrown. The bypass is policy
+of the loader, not the checker.
+
+### `clearEntitlementCache` invariant (INV-1)
+
+Every money-mutating lifecycle event (subscription activated / upgraded /
+downgraded / cancelled / paused / resumed; addon purchased / expired) MUST
+call `clearEntitlementCache(customerId)`. Failure to do so leaves stale
+plan entitlements in the 5-minute in-memory FIFO cache, causing the user
+to see the old plan's gates until TTL expires.
+
+The transversal guard test (`apps/api/test/services/inv1-cache-invalidation.guard.test.ts`,
+SPEC-145 T-021) statically scans ~24 handler files and fails CI if any one
+drops the call.
+
+### Phantom gates / reserved limit stubs
+
+`// PHANTOM-GATE (SPEC-145)`: a gate function exists in
+`middlewares/tourist-entitlements.ts` or `middlewares/accommodation-entitlements.ts`
+but the route it protects has not been built yet. Do not delete these;
+do not build the route without a spec. The snapshot guard excepts them.
+
+`// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
+`currentCount` implementation is a hardcoded `0` stub (the counter service
+does not exist yet). See the "Reserved — Limit Stubs" section in
+`docs/billing/endpoint-gate-matrix.md`.
+
+### Gate matrix + snapshot guard
+
+`docs/billing/endpoint-gate-matrix.md` is the single source of truth for
+gate decisions on every protected and admin route. The snapshot guard
+(`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`, T-145-22)
+parses the table on every CI run:
+
+- A new handler file without a matrix row → CI fails.
+- A matrix row pointing at a deleted file → CI fails.
+
+When adding a new protected/admin route:
+
+1. Add a matrix row with the correct Decision and Status.
+2. If Decision = `none`, write a clear Reason.
+3. If gating an existing previously-ungated route, document the behavior
+   change in `docs/billing/spec-145-behavior-changes.md`.
+
+See `docs/billing/adding-an-entitlement.md` for the full end-to-end workflow.
+
+### DELETE-body factory gotcha
+
+Hono's DELETE handlers do **not** receive a request body. Route factories
+that need to pass resource identifiers on a deletion-like action (e.g.,
+cancel a subscription addon) must use an action-POST pattern:
+
+```
+POST /api/v1/protected/billing/addons/{id}/cancel
+```
+
+Never `DELETE` with a body expecting it to be parsed — the body is silently
+discarded.
+
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
