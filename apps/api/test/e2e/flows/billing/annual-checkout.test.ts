@@ -282,15 +282,16 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         expect(subs[0]?.status).toBe('pending_provider');
     });
 
-    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
-        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
-        // (the qzpay default). When the adapter throws, qzpay logs a warning
-        // and returns the un-enriched local session (no providerInitPoint).
-        // The hospeda handler then surfaces MISSING_INIT_POINT as 500.
+    it('returns 503 (PROVIDER_RATE_LIMITED) when the adapter throws a 429 (provider sync failure, throw strategy)', async () => {
+        // qzpay-core is constructed with `providerSyncErrorStrategy: 'throw'`
+        // (SPEC-149 T-002). When checkout.create throws, qzpay-core wraps the
+        // error in QZPayProviderSyncError and re-throws. The hospeda handler
+        // detects it via isBillingProviderError(), maps MP 429 →
+        // PROVIDER_RATE_LIMITED → HTTP 503 with a Retry-After header.
         //
-        // This validates the qzpay log-strategy branch end-to-end, distinct
-        // from the previous test which exercised the success-with-missing-url
-        // path. Both reach the same 500 but via different qzpay internals.
+        // This validates the throw-strategy branch end-to-end for the annual
+        // flow, distinct from the previous test which exercises the
+        // success-with-missing-url path.
         mpStub.config.setError(
             'checkout.create',
             429,
@@ -303,7 +304,20 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             billingInterval: 'annual'
         });
 
-        expect(response.status).toBe(500);
+        // Post-SPEC-149: MP 429 → QZPayProviderSyncError → PROVIDER_RATE_LIMITED → 503.
+        expect(response.status).toBe(503);
+
+        const body = (await response.json()) as {
+            readonly success: boolean;
+            readonly error: { readonly code: string };
+        };
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('PROVIDER_RATE_LIMITED');
+
+        // Retry-After header must be present for rate-limited responses.
+        const retryAfter = response.headers.get('Retry-After');
+        expect(retryAfter).not.toBeNull();
+        expect(Number(retryAfter)).toBeGreaterThan(0);
 
         // Adapter was called and threw — outcome recorded as 'error'.
         const calls = mpStub.config.getCalls('checkout.create');
