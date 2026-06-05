@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 12/15 tasks (80%)
+## Progress: 13/15 tasks (87%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -78,7 +78,7 @@
   - Blocked by: T-008
   - Blocks: T-013
 
-- [ ] **T-013** (complexity: 3) - Add post and event view trackers on detail pages
+- [x] **T-013** (complexity: 3) - Add post and event view trackers on detail pages
   - POST/EVENT trackers client:idle on detail pages
   - Blocked by: T-012
   - Blocks: T-014
