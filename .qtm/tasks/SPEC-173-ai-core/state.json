@@ -1219,35 +1219,35 @@
             "id": "T-034",
             "title": "Wire prompt resolution with in-code default fallback",
             "description": "In the engine, resolve the active prompt per feature from ai_prompt_versions; on empty/invalid/missing admin prompt, fall back to a mandatory in-code default so a feature never bricks (§5.6.3/AC-12). RO-RO, JSDoc. Tests: unit tests asserting active prompt used when valid and in-code default used when admin prompt empty/invalid (AC-12).",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Resolve active prompt per feature",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mandatory in-code default fallback",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write prompt-fallback unit tests (AC-12)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "service", "config", "ai-core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
                 "started": "2026-06-05T11:00:00.000Z",
-                "completed": null
+                "completed": "2026-06-05T12:50:00.000Z"
             }
         },
         {
@@ -1553,8 +1553,8 @@
     "summary": {
         "total": 43,
         "pending": 8,
-        "inProgress": 1,
-        "completed": 34,
+        "inProgress": 0,
+        "completed": 35,
         "blocked": 0,
         "averageComplexity": 2.5
     }
