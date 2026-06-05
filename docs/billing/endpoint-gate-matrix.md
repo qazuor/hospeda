@@ -53,9 +53,9 @@
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | **ACCOMMODATION REVIEWS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
+| `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005). **Owner decision 2026-06-05:** ALL host-tier plans (owner-basico, owner-pro, owner-complex) intentionally lack WRITE_REVIEWS — hosts must not review competitors (conflict-of-interest policy). Hosts keep RESPOND_REVIEWS only. |
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
-| `POST /api/v1/protected/destinations/{id}/reviews` | `destination/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
+| `POST /api/v1/protected/destinations/{id}/reviews` | `destination/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005). **Owner decision 2026-06-05:** ALL host-tier plans intentionally lack WRITE_REVIEWS (same conflict-of-interest policy as accommodation reviews). |
 | **USER BOOKMARKS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/user-bookmarks` | `user-bookmark/protected/create.ts` | gate+limit | `save_favorites`, `max_favorites` | wired | gateFavorites() + assertFavoritesLimitOrThrow() wired (toggle handler; limit checked only on toggle-ON per BETA-42) — T-145-05 audit: confirmed |
 | `DELETE /api/v1/protected/user-bookmarks/{id}` | `user-bookmark/protected/delete.ts` | none | - | n/a | Removal ungated per BETA-42: users at cap must still be able to free up slots — T-145-05 |
