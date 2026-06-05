@@ -109,6 +109,31 @@ function findPriceForInterval<T extends PriceShape>(
 }
 
 /**
+ * Normalize a price's unit amount to a per-interval-unit rate.
+ *
+ * Multi-month prices store the total amount for the whole billing period
+ * (e.g. a quarterly plan stores 3 months' worth). To compare two prices
+ * across different interval counts the amount must be divided by
+ * `intervalCount` first — otherwise a "6-month at $600" plan looks more
+ * expensive than a "1-month at $120" plan even though the per-month rate
+ * ($100 vs $120) makes it a genuine downgrade.
+ *
+ * Mirrors the normalization in `apps/api/src/routes/billing/plan-change.ts`
+ * (lines 270-274).
+ *
+ * @param price - Price shape with `unitAmount` and optional `intervalCount`
+ * @returns Per-interval-unit amount (unitAmount / intervalCount)
+ */
+function normalizedUnitAmount(price: PriceShape): number {
+    // Guard: intervalCount <= 0 is invalid (would divide by zero or produce
+    // a negative/infinite per-unit amount). Treat as 1 to match the
+    // price-per-cycle semantics (item 9a / SPEC-194 adversarial review).
+    const rawCount = price.intervalCount ?? 1;
+    const count = rawCount > 0 ? rawCount : 1;
+    return price.unitAmount / count;
+}
+
+/**
  * Schedule a plan downgrade to apply at the end of the current
  * billing period.
  *
@@ -213,10 +238,19 @@ export async function scheduleSubscriptionDowngrade(
     // caller short-circuits or the prices changed mid-flight, surface
     // the mismatch instead of silently scheduling a "downgrade" that
     // would charge MORE per cycle.
-    if (targetPrice.unitAmount >= currentPrice.unitAmount) {
+    //
+    // Normalize by intervalCount (T-017) so multi-month prices are
+    // comparable on a per-interval-unit basis — mirrors the same
+    // normalization in the plan-change route handler. Without this,
+    // an annual→monthly same-tier cycle change (total annual > total
+    // monthly) would be rejected as NOT_A_DOWNGRADE even though the
+    // normalized monthly rate is lower.
+    const normalizedCurrentAmount = normalizedUnitAmount(currentPrice);
+    const normalizedTargetAmount = normalizedUnitAmount(targetPrice);
+    if (normalizedTargetAmount >= normalizedCurrentAmount) {
         throw new SubscriptionDowngradeError(
             'NOT_A_DOWNGRADE',
-            `Target price (${targetPrice.unitAmount}) is not lower than current (${currentPrice.unitAmount}) — downgrade scheduling requires a strictly cheaper plan`
+            `Target price (${normalizedTargetAmount}/interval) is not lower than current (${normalizedCurrentAmount}/interval) — downgrade scheduling requires a strictly cheaper plan`
         );
     }
 
@@ -288,5 +322,6 @@ export async function clearPendingScheduledPlanChange(
  * mock.
  */
 export const _internals = {
-    findPriceForInterval
+    findPriceForInterval,
+    normalizedUnitAmount
 };

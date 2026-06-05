@@ -1,5 +1,5 @@
 -- =============================================================================
--- 010-entity-views.indexes.sql
+-- 011-entity-views.indexes.sql
 -- Mirrors the indexes declared on the entityViews Drizzle model
 -- (packages/db/src/schemas/entity-view/entity_view.dbschema.ts, SPEC-159).
 --

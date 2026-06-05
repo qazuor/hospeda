@@ -68,19 +68,12 @@ export class AddonEntitlementService {
      *    DB `limits` field is `Record<string,number>`, so the key lookup is a plain
      *    property access. Computes `newMaxValue = basePlanLimit + totalIncrement`, then
      *    calls `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
-     * 5. Writes add-on adjustment to subscription metadata (backward compat, deprecated)
-     * 6. Clears the entitlement cache
+     * 5. Clears the entitlement cache
      *
      * Note: The billing_addon_purchases INSERT is owned by the checkout flow (caller).
-     *
-     * **KNOWN LIMITATION — metadata race condition**: Step 5 performs a read-modify-write on
-     * `subscription.metadata.addonAdjustments` without any distributed lock. Concurrent addon
-     * purchases for the same customer can cause one write to silently overwrite the other,
-     * resulting in a lost entry in the JSON array. This is a known, accepted limitation because
-     * this metadata path is **deprecated** — the authoritative record of active add-ons is stored
-     * in the `billing_addon_purchases` table (one row per purchase, no race). The metadata is
-     * retained only for backward compatibility with legacy readers. No fix is required unless
-     * the metadata path is reinstated as a primary source of truth.
+     * The authoritative record of active add-ons is `billing_addon_purchases` (one row per
+     * purchase). Writing to `subscription.metadata.addonAdjustments` was removed in
+     * SPEC-194 T-021 — legacy rows may still carry that field; readers fall back to it.
      *
      * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
@@ -280,23 +273,6 @@ export class AddonEntitlementService {
                 }
             }
 
-            // Track the adjustment in subscription metadata (backward compatibility, deprecated)
-            const adjustments = this.getAddonAdjustments(activeSubscription);
-            adjustments.push({
-                addonSlug: input.addonSlug,
-                entitlement: addon.grantsEntitlement || undefined,
-                limitKey: addon.affectsLimitKey || undefined,
-                limitIncrease: addon.limitIncrease || undefined,
-                appliedAt: now.toISOString()
-            });
-
-            await this.billing.subscriptions.update(activeSubscription.id, {
-                metadata: {
-                    ...activeSubscription.metadata,
-                    addonAdjustments: JSON.stringify(adjustments)
-                }
-            });
-
             // Clear entitlement cache to force refresh
             clearEntitlementCache(input.customerId);
 
@@ -342,8 +318,7 @@ export class AddonEntitlementService {
      * 1. Finds the add-on definition
      * 2. Gets the customer's active subscription
      * 3. Revokes QZPay entitlement or limit for the add-on (with source-based fallback for backward compat)
-     * 4. Removes the add-on adjustment from subscription metadata (deprecated, kept for backward compat)
-     * 5. Clears the entitlement cache
+     * 4. Clears the entitlement cache
      *
      * For entitlement add-ons: tries `revokeBySource('addon', purchaseId)` first, falls back to
      * `revoke(customerId, entitlementKey)` for pre-migration data without a sourceId.
@@ -354,12 +329,8 @@ export class AddonEntitlementService {
      * add-on cancellation resilient to billing service transient failures.
      *
      * Note: The billing_addon_purchases status update is owned by the caller.
-     *
-     * **KNOWN LIMITATION — metadata race condition**: The metadata cleanup step performs a
-     * read-modify-write on `subscription.metadata.addonAdjustments` without any distributed lock.
-     * Concurrent cancellations for the same customer can cause one write to overwrite the other.
-     * This is accepted because this metadata path is **deprecated** — see `applyAddonEntitlements`
-     * for the full explanation.
+     * Writing to `subscription.metadata.addonAdjustments` was removed in SPEC-194 T-021 —
+     * legacy rows may still carry that field; readers fall back to it.
      *
      * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
@@ -501,18 +472,6 @@ export class AddonEntitlementService {
                     );
                 }
             }
-
-            // Remove the adjustment from subscription metadata (backward compatibility, deprecated)
-            const adjustments = this.getAddonAdjustments(activeSubscription).filter(
-                (adj) => adj.addonSlug !== input.addonSlug
-            );
-
-            await this.billing.subscriptions.update(activeSubscription.id, {
-                metadata: {
-                    ...activeSubscription.metadata,
-                    addonAdjustments: JSON.stringify(adjustments)
-                }
-            });
 
             // Clear entitlement cache to force refresh
             clearEntitlementCache(input.customerId);

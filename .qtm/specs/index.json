@@ -394,11 +394,12 @@
             "title": "Review Moderation State",
             "type": "feat",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-166-review-moderation-state",
             "created": "2026-05-27T00:00:00.000Z",
             "extractedFrom": "SPEC-155",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-05",
             "extractionReason": "Phase-1 scout 2026-05-27: accommodation_reviews and destination_reviews have lifecycleState (ACTIVE/ARCHIVED) only, not moderationState. No review moderation flow exists. ADMIN dashboard card F reviews-pending sub-slot renders a deferred placeholder until this spec ships.",
             "enables": ["SPEC-155 ADMIN card F reviews-pending sub-slot"],
             "tags": ["reviews", "moderation", "admin", "backend", "phase-2"]
@@ -433,21 +434,6 @@
             "archived": false,
             "tags": ["ai", "foundation", "package", "provider-agnostic", "infrastructure"],
             "note": "FOUNDATION spec for adding AI to Hospeda. Only the infra: @repo/ai-core package (provider-agnostic, Vercel AI SDK wrapped), admin-managed config (new PermissionEnum.AI_SETTINGS_MANAGE, SUPER_ADMIN), encrypted secrets vault (keys editable from admin, decrypted in apps/api, passed to package by param), usage metering + per-plan entitlement enforcement (login required for ALL AI, no anonymous), cost ceiling + kill-switch + threshold alerts via @repo/notifications, SSE streaming primitive, safety layer (rate-limit + injection guard + moderation + PII scrub for external telemetry), tables in @repo/db (NOT portable — conscious tradeoff, DB access isolated in storage/). Multi-provider = fallback + per-feature routing (V1); advanced routing + vector DB/embeddings + async jobs = V2. 4 V1 features (text improvement, NL search, accommodation chat, admin tech-support) are CHILD specs, out of scope here. Allocated SPEC-173 = max(git=172, engram-stale=144)+1. SS12 mandatory decision protocol: consult owner on ANY ambiguity. Tasks not yet atomized; 7 blocking open questions in spec.md SS8."
-        },
-        {
-            "specId": "SPEC-174",
-            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
-            "type": "feat",
-            "complexity": "high",
-            "status": "draft",
-            "path": "SPEC-174-admin-welcome-tour",
-            "created": "2026-05-29T00:00:00.000Z",
-            "branch": "spec/SPEC-174-admin-welcome-tour",
-            "base": "staging",
-            "firstAllocatedViaEngramProtocol": true,
-            "archived": false,
-            "tags": ["admin", "onboarding", "ux", "config-driven", "i18n", "frontend", "api"],
-            "note": "Role-based guided welcome tour for apps/admin (HOST/EDITOR/ADMIN/SUPER_ADMIN). Hybrid UX: Radix Dialog welcome modal + optional driver.js spotlight (dep-policy exception, lazy-loaded). Contextual & separate tours (NO cross-route nav): welcome per role + mini-tours per key section, auto on first visit. Config-driven sibling of SPEC-154 IA config (tour.schema.ts + tours.ts, Zod boot-validated, inline I18nLabel es/en/pt). Catalog v1 = 4 welcome + 15 contextual = 19 tours. SCOPE FINDING: persistence cannot use admin /users PATCH (MANAGE_USERS unassigned to any role; HOST/EDITOR lack USER_READ_ALL per SPEC-169) -> dedicated protected endpoint PATCH /api/v1/protected/users/me/tour-progress with server-side merge into UserSettings.onboarding.adminTours (tourId->seenVersion map). Versioning: auto-offer iff config.version>seen; manual replay ignores version. Touches apps/admin + apps/api + @repo/schemas + @repo/service-core. NOT atomized, implementation NOT started (owner: spec-only for now). Open Qs Q1-Q5 in spec.md sec.15."
         },
         {
             "specId": "SPEC-188",
@@ -625,7 +611,7 @@
             "title": "Billing Lifecycle Robustness & Bug Fixes",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-194-billing-lifecycle-robustness",
             "parent": "SPEC-193",
             "created": "2026-06-03T00:00:00Z",
@@ -633,8 +619,9 @@
             "relatesTo": ["SPEC-145", "SPEC-149", "SPEC-167", "SPEC-192"],
             "blocks": ["real-money-go-live"],
             "base": "staging",
-            "archived": false,
-            "tags": ["billing", "lifecycle", "robustness", "bugfix"]
+            "archived": true,
+            "tags": ["billing", "lifecycle", "robustness", "bugfix"],
+            "archivedAt": "2026-06-05"
         },
         {
             "specId": "SPEC-195",
@@ -652,6 +639,19 @@
                 "redeploy-free moderation word list (env var to DB)"
             ],
             "tags": ["moderation", "content", "shared-package", "backend", "admin", "phase-2"]
+        },
+        {
+            "specId": "SPEC-196",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+            "type": "refactor",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-196-shared-content-config-package",
+            "priority": "P3",
+            "created": "2026-06-05T00:00:00.000Z",
+            "archived": false,
+            "tags": ["architecture", "config-as-code", "content", "monorepo", "dx"],
+            "note": "DRAFT exploratory (owner 2026-06-05): centralize curated config-as-code (whats-new, admin tours, billing configs) into one shared package. Options analysis + migration path deliberately deferred to activation (spec.md section 5 decision workshop). No worktree until activated."
         }
     ]
 }

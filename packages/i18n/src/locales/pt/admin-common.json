@@ -290,5 +290,14 @@
             "view": "Ver",
             "cancel": "Cancelar"
         }
+    },
+    "tour": {
+        "skip": "Pular",
+        "showMe": "Me mostre",
+        "next": "Próximo",
+        "prev": "Anterior",
+        "done": "Concluído",
+        "replay": "Ver guia",
+        "replayPage": "Ver guia desta página"
     }
 }

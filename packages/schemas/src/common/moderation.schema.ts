@@ -3,6 +3,50 @@ import { ModerationStatusEnum } from '../enums/index.js';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
 
 /**
+ * Input schema for review moderation actions (approve / reject).
+ *
+ * Used by:
+ * - `POST /api/v1/admin/accommodation-reviews/:id/moderate`
+ * - `POST /api/v1/admin/destination-reviews/:id/moderate`
+ *
+ * `decision` must be `APPROVED` or `REJECTED` (`PENDING` is the initial state
+ * set by the service and cannot be chosen as a moderation outcome).
+ * `reason` is optional but expected for `REJECTED` decisions by convention.
+ */
+export const ReviewModerateInputSchema = z.object({
+    /** Moderation decision: APPROVED or REJECTED. */
+    decision: z.enum(
+        [ModerationStatusEnum.APPROVED, ModerationStatusEnum.REJECTED] as [
+            ModerationStatusEnum.APPROVED,
+            ModerationStatusEnum.REJECTED
+        ],
+        { error: () => ({ message: 'zodError.review.moderate.decision.invalid' }) }
+    ),
+    /** Free-text reason for the decision (required for REJECTED by convention). */
+    reason: z.string().max(1000).optional()
+});
+
+export type ReviewModerateInput = z.infer<typeof ReviewModerateInputSchema>;
+
+/**
+ * Response schema for review moderation endpoints.
+ *
+ * Returns a structured pending count broken down by review type:
+ * - `accommodationReviews`: count from accommodation_reviews table
+ * - `destinationReviews`: count from destination_reviews table
+ *
+ * Used by `GET /api/v1/admin/reviews/pending-count`.
+ */
+export const ReviewPendingCountSchema = z.object({
+    count: z.number().int().min(0),
+    byType: z.object({
+        accommodationReviews: z.number().int().min(0),
+        destinationReviews: z.number().int().min(0)
+    })
+});
+export type ReviewPendingCount = z.infer<typeof ReviewPendingCountSchema>;
+
+/**
  * Base moderation fields
  */
 export const BaseModerationFields = {

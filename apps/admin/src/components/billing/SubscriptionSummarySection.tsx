@@ -24,7 +24,8 @@ const KNOWN_STATUS_KEYS: ReadonlyArray<string> = [
     'past_due',
     'canceled',
     'incomplete',
-    'incomplete_expired'
+    'incomplete_expired',
+    'abandoned'
 ];
 
 function statusTranslationKey(status: string | undefined): TranslationKey {
@@ -49,6 +50,7 @@ function statusBadgeVariant(status: string | undefined): 'default' | 'destructiv
         case 'canceled':
         case 'cancelled':
         case 'incomplete_expired':
+        case 'abandoned':
             return 'destructive';
         default:
             return 'outline';

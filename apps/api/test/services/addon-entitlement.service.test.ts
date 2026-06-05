@@ -496,7 +496,7 @@ describe('AddonEntitlementService', () => {
             expect(mockBilling.limits.set).toHaveBeenCalledTimes(1);
         });
 
-        it('should write add-on adjustment to subscription metadata and clear cache', async () => {
+        it('should NOT write addonAdjustments to subscription metadata (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -517,27 +517,15 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // Verify subscription metadata was updated with adjustment tracking
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            expect(updateCall).toBeDefined();
-            expect(updateCall![0]).toBe('sub_123');
-
-            const metadata = updateCall![1].metadata;
-            expect(metadata).toBeDefined();
-
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0]).toMatchObject({
-                addonSlug: 'extra-photos-20',
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                limitIncrease: 20
-            });
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            // The service must NOT call subscriptions.update at all during apply.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Verify cache was cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should write entitlement add-on to subscription metadata', async () => {
+        it('should NOT write addonAdjustments for entitlement add-on (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -558,15 +546,8 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0]).toMatchObject({
-                addonSlug: 'visibility-boost-7d',
-                entitlement: EntitlementKey.FEATURED_LISTING
-            });
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
         it('should NOT call billing.plans.get or billing.plans.update (no global plan mutation)', async () => {
@@ -814,7 +795,7 @@ describe('AddonEntitlementService', () => {
             });
         });
 
-        it('should append to existing adjustments without overwriting', async () => {
+        it('should NOT append to metadata even when existing addonAdjustments are present (deprecated write removed)', async () => {
             const existingAdjustments = [
                 {
                     addonSlug: 'extra-accommodations-5',
@@ -838,19 +819,16 @@ describe('AddonEntitlementService', () => {
             ]);
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
-            await service.applyAddonEntitlements({
+            const result = await service.applyAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-photos-20',
                 purchaseId: 'purchase_new'
             });
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
+            expect(result.success).toBe(true);
 
-            expect(adjustments).toHaveLength(2);
-            expect(adjustments[0].addonSlug).toBe('extra-accommodations-5');
-            expect(adjustments[1].addonSlug).toBe('extra-photos-20');
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
     });
 
@@ -1068,7 +1046,7 @@ describe('AddonEntitlementService', () => {
             );
         });
 
-        it('should continue with metadata cleanup even if revokeBySource throws (resilience)', async () => {
+        it('should succeed and clear cache even if revokeBySource throws (resilience)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1101,14 +1079,14 @@ describe('AddonEntitlementService', () => {
             // Should still succeed despite QZPay error (resilient)
             expect(result.success).toBe(true);
 
-            // Metadata should still be cleaned up
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Cache should still be cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should continue with metadata cleanup even if removeBySource throws (resilience)', async () => {
+        it('should succeed even if removeBySource throws (resilience, no metadata write)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1142,11 +1120,11 @@ describe('AddonEntitlementService', () => {
             // Should still succeed despite QZPay error (resilient)
             expect(result.success).toBe(true);
 
-            // Metadata should still be cleaned up
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
-        it('should remove adjustment from subscription metadata and clear cache', async () => {
+        it('should NOT write addonAdjustments on removal and should clear cache (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1177,20 +1155,14 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // Verify subscription metadata was cleared
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            expect(updateCall).toBeDefined();
-            expect(updateCall![0]).toBe('sub_123');
-
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-            expect(adjustments).toHaveLength(0);
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Verify cache was cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should only remove the targeted add-on from metadata, leaving others intact', async () => {
+        it('should NOT write addonAdjustments on removal even with multiple existing entries (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1219,18 +1191,17 @@ describe('AddonEntitlementService', () => {
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
             vi.mocked(mockBilling.limits.removeBySource).mockResolvedValue(1);
 
-            await service.removeAddonEntitlements({
+            const result = await service.removeAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-photos-20',
                 purchaseId: 'purchase_abc'
             });
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
+            expect(result.success).toBe(true);
 
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0].addonSlug).toBe('extra-accommodations-5');
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            // Legacy metadata is left as-is; readers fall back to it for old rows.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
         it('should NOT call billing.plans.get or billing.plans.update (no global plan mutation)', async () => {
@@ -1296,11 +1267,11 @@ describe('AddonEntitlementService', () => {
             });
 
             // Assert — inner catch captures the cascading error, operation is resilient.
-            // Metadata cleanup and cache clear still run despite billing failures.
+            // Cache clear still runs despite billing failures.
             expect(result.success).toBe(true);
 
-            // Metadata cleanup still ran despite cascading billing failure
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Cache was still cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith(
@@ -1308,7 +1279,9 @@ describe('AddonEntitlementService', () => {
             );
         });
 
-        it('should return INTERNAL_ERROR when subscriptions.update throws (outer catch)', async () => {
+        it('should return success even when subscriptions.update would throw (no metadata write, outer catch not triggered)', async () => {
+            // SPEC-194 T-021: addonAdjustments write was removed, so subscriptions.update is
+            // never called during removeAddonEntitlements. This test pins that contract.
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1329,8 +1302,9 @@ describe('AddonEntitlementService', () => {
                 purchaseId: 'purchase_abc'
             });
 
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('INTERNAL_ERROR');
+            // subscriptions.update is never called, so the mock rejection never fires.
+            expect(result.success).toBe(true);
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
     });
 

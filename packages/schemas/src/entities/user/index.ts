@@ -31,3 +31,6 @@ export * from './user.access.schema.js';
 
 // Profile completion flow schemas (SPEC-113)
 export * from './user.profile-completion.schema.js';
+
+// Tour progress body schema (SPEC-174)
+export * from './user.tour-progress.schema.js';

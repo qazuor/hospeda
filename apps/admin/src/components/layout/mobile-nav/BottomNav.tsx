@@ -223,6 +223,7 @@ export function BottomNav() {
         <nav
             className="fixed right-0 bottom-0 left-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:hidden"
             aria-label="Mobile navigation"
+            data-tour="bottom-nav"
         >
             <div className="relative flex items-stretch">
                 {/* FAB spacer — leaves a gap in the center when FAB is present */}

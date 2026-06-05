@@ -6,6 +6,7 @@ import {
 } from '../../../src/entities/destinationReview/destinationReview.access.schema';
 import { DestinationReviewSchema } from '../../../src/entities/destinationReview/destinationReview.schema';
 import { LifecycleStatusEnum } from '../../../src/enums/lifecycle-state.enum';
+import { ModerationStatusEnum } from '../../../src/enums/moderation-status.enum';
 
 describe('DestinationReview Schemas', () => {
     const validReviewData = {
@@ -37,6 +38,7 @@ describe('DestinationReview Schemas', () => {
         },
         averageRating: 4.0,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
+        moderationState: ModerationStatusEnum.APPROVED,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: '123e4567-e89b-12d3-a456-426614174003',

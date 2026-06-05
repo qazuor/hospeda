@@ -162,10 +162,32 @@
         {
             "specId": "SPEC-166",
             "title": "Review Moderation State",
-            "status": "in-progress",
-            "progress": "6/27",
+            "status": "completed",
+            "progress": "27/27",
             "path": "SPEC-166-review-moderation-state",
-            "branch": "spec/SPEC-166-review-moderation-state"
+            "branch": "spec/SPEC-166-review-moderation-state",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
+        },
+        {
+            "specId": "SPEC-194",
+            "title": "Billing Lifecycle Robustness & Bug Fixes",
+            "status": "completed",
+            "progress": "30/30",
+            "path": "SPEC-194-billing-lifecycle-robustness",
+            "branch": "spec/SPEC-194-billing-lifecycle-robustness",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
+        },
+        {
+            "specId": "SPEC-196",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-196-shared-content-config-package",
+            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
         },
         {
             "specId": "SPEC-159",

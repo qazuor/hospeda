@@ -1,5 +1,5 @@
 {
-    "id": "fbb52059-8130-4850-a8bc-e9e9caeaa7c7",
+    "id": "9443b3da-c3a1-4beb-aefc-ace74c34f2df",
     "prevId": "30db7767-2c18-471c-a156-69394e28cbdb",
     "version": "7",
     "dialect": "postgresql",
@@ -934,6 +934,32 @@
                     "type": "uuid",
                     "primaryKey": false,
                     "notNull": false
+                },
+                "moderation_state": {
+                    "name": "moderation_state",
+                    "type": "moderation_status_enum",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'APPROVED'"
+                },
+                "moderated_by_id": {
+                    "name": "moderated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "moderated_at": {
+                    "name": "moderated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "moderation_reason": {
+                    "name": "moderation_reason",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
                 }
             },
             "indexes": {
@@ -1023,6 +1049,21 @@
                     "concurrently": false,
                     "method": "btree",
                     "with": {}
+                },
+                "accommodation_reviews_moderationState_idx": {
+                    "name": "accommodation_reviews_moderationState_idx",
+                    "columns": [
+                        {
+                            "expression": "moderation_state",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
                 }
             },
             "foreignKeys": {
@@ -1067,6 +1108,15 @@
                     "tableFrom": "accommodation_reviews",
                     "tableTo": "users",
                     "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "accommodation_reviews_moderated_by_id_users_id_fk": {
+                    "name": "accommodation_reviews_moderated_by_id_users_id_fk",
+                    "tableFrom": "accommodation_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["moderated_by_id"],
                     "columnsTo": ["id"],
                     "onDelete": "set null",
                     "onUpdate": "no action"
@@ -4600,6 +4650,32 @@
                     "type": "uuid",
                     "primaryKey": false,
                     "notNull": false
+                },
+                "moderation_state": {
+                    "name": "moderation_state",
+                    "type": "moderation_status_enum",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'PENDING'"
+                },
+                "moderated_by_id": {
+                    "name": "moderated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "moderated_at": {
+                    "name": "moderated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "moderation_reason": {
+                    "name": "moderation_reason",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
                 }
             },
             "indexes": {
@@ -4668,6 +4744,21 @@
                     "concurrently": false,
                     "method": "btree",
                     "with": {}
+                },
+                "destination_reviews_moderationState_idx": {
+                    "name": "destination_reviews_moderationState_idx",
+                    "columns": [
+                        {
+                            "expression": "moderation_state",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
                 }
             },
             "foreignKeys": {
@@ -4712,6 +4803,15 @@
                     "tableFrom": "destination_reviews",
                     "tableTo": "users",
                     "columnsFrom": ["deleted_by_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                },
+                "destination_reviews_moderated_by_id_users_id_fk": {
+                    "name": "destination_reviews_moderated_by_id_users_id_fk",
+                    "tableFrom": "destination_reviews",
+                    "tableTo": "users",
+                    "columnsFrom": ["moderated_by_id"],
                     "columnsTo": ["id"],
                     "onDelete": "set null",
                     "onUpdate": "no action"
@@ -4959,102 +5059,6 @@
                     "onUpdate": "no action"
                 }
             },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.entity_views": {
-            "name": "entity_views",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "entity_type": {
-                    "name": "entity_type",
-                    "type": "entity_type_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "entity_id": {
-                    "name": "entity_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "visitor_hash": {
-                    "name": "visitor_hash",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "is_authenticated": {
-                    "name": "is_authenticated",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": false
-                },
-                "viewed_at": {
-                    "name": "viewed_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                }
-            },
-            "indexes": {
-                "idx_entity_views_entity_time": {
-                    "name": "idx_entity_views_entity_time",
-                    "columns": [
-                        {
-                            "expression": "entity_type",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "entity_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "viewed_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "idx_entity_views_time": {
-                    "name": "idx_entity_views_time",
-                    "columns": [
-                        {
-                            "expression": "viewed_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "policies": {},

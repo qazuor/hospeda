@@ -120,7 +120,10 @@ function makeValidConfig(): ConfigInput {
                 enabled: false,
                 label: { es: 'Sponsor', en: 'Sponsor', pt: 'Patrocinador' }
             }
-        }
+        },
+        // SPEC-174 T-006: tours field is now required in AdminIAConfigSchema.
+        // An empty record is valid — no tours = no cross-check violations.
+        tours: {}
     };
 }
 

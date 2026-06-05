@@ -60,6 +60,11 @@ function resolveBillingContext(c: Parameters<SimpleRouteInterface['handler']>[0]
 /**
  * Handler for the self-serve pause. Pauses the caller's active (or trialing)
  * subscription and applies the full service suspension.
+ *
+ * Annual one-time subscriptions do not have a MercadoPago preapproval to pause,
+ * so attempting to pause them would silently do nothing on the billing side while
+ * leaving the user in a misleading state. We reject with a clear error instead
+ * (SPEC-194 T-023).
  */
 export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['handler']>[0]) => {
     const { billing, billingCustomerId } = resolveBillingContext(c);
@@ -71,6 +76,16 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
     );
     if (!target) {
         throw new HTTPException(404, { message: 'No active subscription to pause' });
+    }
+
+    // Annual one-time subscriptions are backed by a single MP payment, not a
+    // recurring preapproval. There is nothing to pause on the billing side, and
+    // calling billing.subscriptions.pause() on them would silently fail or lie
+    // about the pause state. Reject early with a clear, actionable error.
+    if (target.metadata?.billingInterval === 'annual') {
+        throw new HTTPException(400, {
+            message: 'PAUSE_NOT_SUPPORTED_FOR_ANNUAL: Annual subscriptions cannot be paused'
+        });
     }
 
     // 1. Billing dimension: qzpay pauses the MP preapproval and flips the local

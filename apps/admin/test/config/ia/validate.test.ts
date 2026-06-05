@@ -41,7 +41,7 @@ describe('validatedConfig integration proof (T-019)', () => {
         expect(config).not.toBeNull();
     });
 
-    it('should expose validatedConfig as an object with the 6 top-level keys', async () => {
+    it('should expose validatedConfig as an object with the 7 top-level keys (including tours — SPEC-174 T-007)', async () => {
         const { validatedConfig } = await import('@/config/ia/validate');
         expect(validatedConfig).toHaveProperty('sections');
         expect(validatedConfig).toHaveProperty('sidebars');
@@ -49,6 +49,7 @@ describe('validatedConfig integration proof (T-019)', () => {
         expect(validatedConfig).toHaveProperty('tabs');
         expect(validatedConfig).toHaveProperty('createActions');
         expect(validatedConfig).toHaveProperty('roles');
+        expect(validatedConfig).toHaveProperty('tours');
     });
 });
 
@@ -75,7 +76,8 @@ describe('validate.ts error formatting', () => {
             },
             tabs: {},
             createActions: {},
-            roles: {}
+            roles: {},
+            tours: {} // SPEC-174 T-006: tours field now required
         };
 
         const result = AdminIAConfigSchema.safeParse(badConfig);
@@ -122,7 +124,8 @@ describe('validate.ts error formatting', () => {
             },
             tabs: {},
             createActions: {},
-            roles: {}
+            roles: {},
+            tours: {} // SPEC-174 T-006: tours field now required
         };
 
         const result = AdminIAConfigSchema.safeParse(badConfig);

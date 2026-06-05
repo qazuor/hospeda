@@ -167,6 +167,7 @@ export function QuickCreate() {
             <DropdownMenuTrigger
                 className="inline-flex h-9 items-center gap-0.5 rounded-md px-2 hover:bg-white/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Quick create"
+                data-tour="quick-create"
             >
                 <span
                     className="font-medium text-lg text-primary leading-none"

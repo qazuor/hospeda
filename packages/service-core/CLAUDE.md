@@ -1039,11 +1039,56 @@ See `packages/service-core/src/base/base.crud.read.ts` for the reference impleme
 - Services are the single source of truth for business logic
 - All database access goes through services, not directly to models
 
+## Review Moderation (SPEC-166)
+
+Review moderation adds a `moderationState` (`PENDING | APPROVED | REJECTED`) to
+`accommodation_reviews` and `destination_reviews`, independent from `lifecycleState`.
+
+### Key exports from `services/moderation/`
+
+```ts
+import {
+  resolveInitialModerationState,
+  MODERATION_PENDING_THRESHOLD,
+  ModerationAggregationService,
+} from '@repo/service-core';
+```
+
+| Export | Purpose |
+|--------|---------|
+| `resolveInitialModerationState(input)` | Computes initial `moderationState` from entity type, verification level, and content-mod score. |
+| `MODERATION_PENDING_THRESHOLD` | `0.5` — score at or above this forces `PENDING`. |
+| `ModerationAggregationService` | Cross-entity pending-count aggregation (accommodations, destinations, posts, events). |
+
+### Review service methods added in SPEC-166
+
+Both `AccommodationReviewService` and `DestinationReviewService` expose:
+
+| Method | Permission gate | Description |
+|--------|----------------|-------------|
+| `moderateReview({ id, decision, reason, actor })` | `ACCOMMODATION_REVIEW_MODERATE` / `DESTINATION_REVIEW_MODERATE` | Sets `moderationState` to `APPROVED` or `REJECTED`. Does NOT touch `lifecycleState`. |
+| `getPendingCount({ actor })` | Same as above | Count of PENDING reviews (non-deleted only). |
+
+### Public-visibility filter
+
+All public read paths (`_executeSearch`, `_executeCount`, `listByAccommodation`,
+`listWithUser`) force-override both filters:
+
+```
+lifecycleState = 'ACTIVE'  AND  moderationState = 'APPROVED'
+```
+
+This is applied AFTER the caller's filters so no HTTP query param can override it.
+Admin list paths do NOT apply this override — admins need to query all states.
+
+Full reference: [docs/guides/review-moderation.md](../../docs/guides/review-moderation.md)
+
 ## Related Documentation
 
 - [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md) — the end-to-end pattern, including the service layer
 - [Error Handling Guide](../../docs/guides/error-handling.md)
 - [Architecture Patterns](../../docs/architecture/patterns.md)
+- [Review Moderation Guide](../../docs/guides/review-moderation.md)
 
 <claude-mem-context>
 # Recent Activity

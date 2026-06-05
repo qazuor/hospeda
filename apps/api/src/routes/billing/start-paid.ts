@@ -42,17 +42,43 @@ import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 /**
- * Default locale prefix for the user-facing return URLs.
+ * Supported locale values for the user-facing return URLs.
  *
- * The MP preapproval / preference flow does not propagate the caller's
- * accepted-languages, so the API has to pick a locale at preapproval-create
- * time. Hospeda's primary market is Argentina, and the locale fallback in
- * the web middleware is `es`, so hardcoding here matches the user-facing
- * behaviour for the overwhelming majority of users. When per-user locale
- * propagation lands (tracked separately), thread the user's preferred
- * locale through `start-paid` and replace this constant with that value.
+ * Must stay in sync with `apps/web/src/lib/i18n.ts` SUPPORTED_LOCALES.
+ * The checkout pages (`[lang]/suscriptores/checkout/{success,failure,pending}`)
+ * exist for all three locales via Astro's `[lang]` routing.
  */
-const RETURN_URL_LOCALE = 'es';
+const SUPPORTED_RETURN_URL_LOCALES = ['es', 'en', 'pt'] as const;
+type ReturnUrlLocale = (typeof SUPPORTED_RETURN_URL_LOCALES)[number];
+
+/** Fallback locale when the user has no preference or the preference is unknown. */
+const DEFAULT_RETURN_URL_LOCALE: ReturnUrlLocale = 'es';
+
+/**
+ * Resolves the locale to embed in MP return URLs from the authenticated user's
+ * web language preference (`user.settings.languageWeb`).
+ *
+ * Falls back to `'es'` when:
+ * - There is no authenticated user on the context.
+ * - The user has no `settings.languageWeb` value.
+ * - The stored value is not one of the three supported locales.
+ *
+ * @param c - Hono context carrying the Better Auth session user.
+ * @returns A supported locale string for use in URL path prefixes.
+ */
+function resolveReturnUrlLocale(c: Context): ReturnUrlLocale {
+    const user = c.get('user') as { settings?: Record<string, unknown> } | null | undefined;
+    const rawLocale = user?.settings?.languageWeb;
+
+    if (
+        typeof rawLocale === 'string' &&
+        (SUPPORTED_RETURN_URL_LOCALES as readonly string[]).includes(rawLocale)
+    ) {
+        return rawLocale as ReturnUrlLocale;
+    }
+
+    return DEFAULT_RETURN_URL_LOCALE;
+}
 
 /**
  * MercadoPago `back_url` for the preapproval (monthly subscriptions).
@@ -69,9 +95,11 @@ const RETURN_URL_LOCALE = 'es';
  * History: until 2026-05-21 this returned
  * `${HOSPEDA_SITE_URL}/billing/return`, which Astro's middleware rewrote
  * to `/es/return/` (404). Surfaced during staging smoke as Finding #8.
+ *
+ * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
  */
-function buildPaymentMethodReturnUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/success/`;
+function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
 }
 
 /**
@@ -97,17 +125,19 @@ function buildNotificationUrl(): string {
  * Pointing the URLs there directly avoids the locale-middleware rewrite
  * that bit the monthly flow (Finding #8).
  *
+ * @param locale - User's preferred return-URL locale.
+ *
  * The front-end receives `localSubscriptionId` in the response body and
  * persists it in sessionStorage BEFORE redirecting to MP, so the URLs do
  * not need to carry the id. MP appends `?status=approved` /
  * `?payment_id=...` / `?preference_id=...` on its own at redirect time.
  */
-function buildAnnualSuccessUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/success/`;
+function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
 }
 
-function buildAnnualCancelUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/failure/`;
+function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
 }
 
 // NOTE: a `pending` outcome URL would point at
@@ -193,6 +223,8 @@ export const handleStartPaidSubscription = async (
         });
     }
 
+    const locale = resolveReturnUrlLocale(c);
+
     try {
         const result =
             body.billingInterval === 'annual'
@@ -201,8 +233,8 @@ export const handleStartPaidSubscription = async (
                       planSlug: body.planSlug,
                       billing,
                       urls: {
-                          successUrl: buildAnnualSuccessUrl(),
-                          cancelUrl: buildAnnualCancelUrl(),
+                          successUrl: buildAnnualSuccessUrl(locale),
+                          cancelUrl: buildAnnualCancelUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
                       statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
@@ -212,7 +244,7 @@ export const handleStartPaidSubscription = async (
                       planSlug: body.planSlug,
                       billing,
                       urls: {
-                          paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                          paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
                       promoCode: body.promoCode
@@ -309,3 +341,13 @@ startPaidRouter.use('/start-paid', idempotencyKeyMiddleware({ operation: 'hosped
 startPaidRouter.route('/', startPaidSubscriptionRoute);
 
 export { startPaidRouter };
+
+/**
+ * Exported helpers for unit testing locale resolution without spinning up
+ * the full handler.
+ */
+export const _internals = {
+    resolveReturnUrlLocale,
+    SUPPORTED_RETURN_URL_LOCALES,
+    DEFAULT_RETURN_URL_LOCALE
+};

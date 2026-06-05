@@ -25,6 +25,7 @@ import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
 import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -310,6 +311,11 @@ export const dunningJob: CronJobDefinition = {
                                         'Failed to send dunning cancellation notification (non-blocking)'
                                     );
                                 }
+
+                                // INV-1: invalidate entitlement cache so the cancelled
+                                // customer stops seeing paid-plan entitlements immediately,
+                                // rather than waiting for the 5-minute TTL to expire.
+                                clearEntitlementCache(event.customerId);
                                 break;
                             case 'subscription.retry_failed':
                                 apiLogger.warn(logData, 'Dunning: payment retry failed');

@@ -20,6 +20,7 @@ import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
     SubscriptionCheckoutError,
     initiatePaidPlanUpgrade
@@ -445,6 +446,16 @@ export const changePlanRoute = createSimpleRoute({
  * Plan change routes router
  */
 const planChangeRouter = createRouter();
+
+// Enforce X-Idempotency-Key on the mutating POST /change-plan endpoint
+// (SPEC-143 T-143-60 / SPEC-194 T-018). Mount BEFORE the route handler so
+// the middleware short-circuits missing-key requests with a 400 before the
+// handler touches QZPay or MP. Mirrors the wiring in start-paid.ts and
+// addons.ts.
+planChangeRouter.use(
+    '/change-plan',
+    idempotencyKeyMiddleware({ operation: 'hospeda.change_plan' })
+);
 
 planChangeRouter.route('/', changePlanRoute);
 

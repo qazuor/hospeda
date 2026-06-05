@@ -2644,6 +2644,13 @@
             "invalidType": "[PT] El resultado exitoso debe ser un booleano"
         }
     },
+    "review": {
+        "moderate": {
+            "decision": {
+                "invalid": "A decisão deve ser APPROVED ou REJECTED"
+            }
+        }
+    },
     "search": {
         "caseSensitive": {
             "invalidType": "[PT] El case sensitive tiene un tipo de dato inválido"

@@ -18,8 +18,9 @@ import { DestinationReviewSchema } from './destinationReview.schema.js';
 // ============================================================================
 
 /**
- * Schema for creating a new destination review
- * Omits auto-generated fields like id and audit fields
+ * Schema for creating a new destination review.
+ * Omits auto-generated fields, audit fields, and moderation fields
+ * (the service sets moderationState to PENDING; it is not user-settable via HTTP).
  */
 export const DestinationReviewCreateInputSchema = DestinationReviewSchema.omit({
     id: true,
@@ -29,7 +30,11 @@ export const DestinationReviewCreateInputSchema = DestinationReviewSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    averageRating: true // Computed/denormalized field, not user-settable
+    averageRating: true, // Computed/denormalized field, not user-settable
+    moderationState: true,
+    moderatedById: true,
+    moderatedAt: true,
+    moderationReason: true
 }).strict();
 
 /**
@@ -43,8 +48,10 @@ export const DestinationReviewCreateOutputSchema = DestinationReviewSchema;
 // ============================================================================
 
 /**
- * Schema for updating a destination review (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial except required ones
+ * Schema for updating a destination review (PUT - complete replacement).
+ * Omits auto-generated fields, moderation fields, and makes all fields partial
+ * except required ones. Moderation fields are managed through the dedicated
+ * moderation endpoint, not through standard CRUD operations.
  */
 export const DestinationReviewUpdateInputSchema = DestinationReviewSchema.omit({
     id: true,
@@ -56,7 +63,11 @@ export const DestinationReviewUpdateInputSchema = DestinationReviewSchema.omit({
     deletedById: true,
     userId: true, // Cannot change the user who wrote the review
     destinationId: true, // Cannot change the destination being reviewed
-    averageRating: true // Computed/denormalized field, not user-settable
+    averageRating: true, // Computed/denormalized field, not user-settable
+    moderationState: true,
+    moderatedById: true,
+    moderatedAt: true,
+    moderationReason: true
 })
     .partial()
     .strict();
