@@ -2,6 +2,20 @@ import { type SQL, gte, lt, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { appLogEntries } from '../../schemas/app-log/app_log_entry.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { safeIlike } from '../../utils/drizzle-helpers.ts';
+
+/**
+ * Validated sort input for app log list queries.
+ * Field is constrained to the whitelisted sortable columns; direction is asc | desc.
+ * This type is intentionally inline (not imported from @repo/schemas) so the db
+ * package stays independent of the schemas package at the type level.
+ */
+export interface AppLogEntrySortInput {
+    /** Whitelisted sortable field — only loggedAt and level are accepted */
+    field: 'loggedAt' | 'level';
+    /** Sort direction */
+    direction: 'asc' | 'desc';
+}
 
 /** Row type inferred from the app_log_entries table */
 type AppLogEntry = typeof appLogEntries.$inferSelect;
@@ -55,12 +69,19 @@ export class AppLogEntryModel extends BaseModelImpl<AppLogEntry> {
     }
 
     /**
-     * Lists log entries matching the given filters, paginated and sorted by
-     * `loggedAt` desc. Equality filters (level/category) and the `loggedAt`
-     * date range are applied at the DB layer; pagination + total count come
-     * from the base `findAll`.
+     * Lists log entries matching the given filters, paginated and sorted.
      *
-     * @param filter - Optional equality filters, date range, and pagination.
+     * Equality filters (level/category/requestId/userId/method) and the `loggedAt`
+     * date range are applied at the DB layer. `path` is a case-insensitive
+     * substring match via {@link safeIlike} (auto-escapes LIKE wildcards, per
+     * the project-wide injection guard). Pagination + total count come from
+     * the base `findAll`.
+     *
+     * The sort field is whitelisted to `loggedAt` and `level` only — the caller
+     * MUST validate the field name before passing it here. The default sort is
+     * `loggedAt desc` when no sort input is provided.
+     *
+     * @param filter - Optional filters (equality, date range, path substring), pagination, and sort.
      * @param tx - Optional transaction client.
      * @returns The matching page of entries and the total count.
      */
@@ -70,26 +91,46 @@ export class AppLogEntryModel extends BaseModelImpl<AppLogEntry> {
             category?: string;
             fromDate?: Date;
             toDate?: Date;
+            /** Exact match on request correlation ID */
+            requestId?: string;
+            /** Exact match on authenticated user UUID */
+            userId?: string;
+            /** Exact match on HTTP method (e.g. 'GET', 'POST') */
+            method?: string;
+            /** Case-insensitive substring match on request path */
+            path?: string;
             page?: number;
             pageSize?: number;
+            /**
+             * Validated sort input. Field must be a whitelisted column name.
+             * When absent the default is loggedAt desc.
+             */
+            sort?: AppLogEntrySortInput;
         } = {},
         tx?: DrizzleClient
     ): Promise<{ items: AppLogEntry[]; total: number }> {
         const where: Record<string, unknown> = {};
         if (filter.level) where.level = filter.level;
         if (filter.category) where.category = filter.category;
+        if (filter.requestId) where.requestId = filter.requestId;
+        if (filter.userId) where.userId = filter.userId;
+        if (filter.method) where.method = filter.method;
 
         const conditions: SQL[] = [];
         if (filter.fromDate) conditions.push(gte(appLogEntries.loggedAt, filter.fromDate));
         if (filter.toDate) conditions.push(lte(appLogEntries.loggedAt, filter.toDate));
+        if (filter.path) conditions.push(safeIlike(appLogEntries.path, filter.path));
+
+        const sortBy = filter.sort?.field ?? 'loggedAt';
+        const sortOrder = filter.sort?.direction ?? 'desc';
 
         return this.findAll(
             where,
             {
                 page: filter.page,
                 pageSize: filter.pageSize,
-                sortBy: 'loggedAt',
-                sortOrder: 'desc'
+                sortBy,
+                sortOrder
             },
             conditions.length > 0 ? conditions : undefined,
             tx

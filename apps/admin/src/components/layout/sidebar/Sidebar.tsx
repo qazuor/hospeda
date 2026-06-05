@@ -95,6 +95,7 @@ function SidebarInner({
                     'h-[calc(100vh-3.5rem)]',
                     className
                 )}
+                data-tour="sidebar"
             >
                 {/* Mobile header with close button */}
                 <div className="flex h-12 items-center justify-between border-b px-4 md:hidden">

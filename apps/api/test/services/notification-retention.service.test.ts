@@ -31,6 +31,13 @@ const { _mockDb, mockGetDb } = vi.hoisted(() => {
 // Mock @repo/db
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
+    // EntityViewService singleton (service-core barrel) dereferences these at import.
+    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    entityViewModel: {
+        insertView: vi.fn(),
+        getStatsForEntities: vi.fn(async () => []),
+        purgeOlderThan: vi.fn(async () => 0)
+    },
     // SPEC-064: withTransaction is used by service-core services for atomic operations
     withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback(mockGetDb())

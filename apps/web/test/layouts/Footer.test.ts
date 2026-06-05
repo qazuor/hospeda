@@ -47,6 +47,11 @@ describe('Footer.astro', () => {
             expect(src).toContain('companyLinks');
         });
 
+        it('links to the contribution hub in the Hospeda column (SPEC-191)', () => {
+            expect(src).toContain('path: "/colaborar/"');
+            expect(src).toContain('footer.collaborate');
+        });
+
         it('renders exactly 3 nav column <details> elements', () => {
             const matches = src.match(/<details class="footer__nav-col"/g);
             expect(matches).not.toBeNull();

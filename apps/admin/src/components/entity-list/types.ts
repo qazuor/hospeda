@@ -29,9 +29,32 @@ export type SearchConfig = {
 };
 
 /**
- * Configuration for view settings (table/grid)
+ * Props passed to a per-entity custom grid card renderer.
+ *
+ * A config can supply `gridConfig.renderCard` to replace the polished generic
+ * `GridCard` for its entity. The custom renderer receives the row data and the
+ * three standard action callbacks so it has full parity with the generic card.
+ *
+ * @typeParam TData - The entity row type.
  */
-export type ViewConfig = {
+export interface GridCardRenderProps<TData> {
+    /** The entity row being rendered. */
+    readonly row: TData;
+    /** Open the peek drawer for this row. */
+    readonly onPeek: (row: TData) => void;
+    /** Navigate to the edit page for this row. */
+    readonly onEdit: (row: TData) => void;
+    /** Trigger the delete action for this row. */
+    readonly onDelete: (row: TData) => void;
+}
+
+/**
+ * Configuration for view settings (table/grid).
+ *
+ * @typeParam TData - The entity row type. Defaults to `unknown` so that all
+ * existing usages of `ViewConfig` without a type parameter remain compatible.
+ */
+export type ViewConfig<TData = unknown> = {
     readonly defaultView: 'table' | 'grid';
     readonly allowViewToggle: boolean;
     readonly gridConfig?: {
@@ -41,6 +64,19 @@ export type ViewConfig = {
             readonly tablet: number;
             readonly desktop: number;
         };
+        /**
+         * Per-entity custom card renderer (opt-in, backward-compatible).
+         *
+         * When present, the grid renderer calls this function instead of the
+         * polished generic `GridCard` for every row. The function receives
+         * `GridCardRenderProps<TData>` which exposes the row data plus the
+         * three standard action callbacks (peek / edit / delete), ensuring full
+         * parity with the generic card.
+         *
+         * When absent (the default), the generic `GridCard` is used — all
+         * existing configs that do not set this field are unaffected.
+         */
+        readonly renderCard?: (props: GridCardRenderProps<TData>) => ReactNode;
     };
 };
 
@@ -259,7 +295,7 @@ export type EntityConfig<TData = unknown> = {
 
     // Configuration
     readonly searchConfig?: SearchConfig;
-    readonly viewConfig?: ViewConfig;
+    readonly viewConfig?: ViewConfig<TData>;
     readonly paginationConfig?: PaginationConfig;
     readonly layoutConfig: LayoutConfig;
     /**

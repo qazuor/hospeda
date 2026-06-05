@@ -1302,3 +1302,11 @@ registerDataSource('host.suggestions.list', (ctx) => ({
 // Card G — views ('host.stats.views'): PHASE 2. Cross-entity view tracking
 //   not yet built (PostHog fires client-side; nothing persisted in our DB).
 //   DeferredWidget handles this slot; T-029 sets onMissing: 'hide'.
+
+// ============================================================================
+// NOTE — WHATS NEW RECENT (SPEC-175 T-016)
+// ============================================================================
+// `whats-new.recent` is registered in `./whats-new.ts` (imported via index.ts).
+// It is shared across all four roles — registering it here would cause a
+// duplicate-registration error since all source files are imported at the same
+// module load time. See apps/admin/src/lib/dashboard-sources/index.ts.

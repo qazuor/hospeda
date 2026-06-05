@@ -86,6 +86,16 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
     /**
+     * Server-only HMAC secret (pepper) for computing privacy-safe, day-scoped
+     * visitor deduplication hashes used by cross-entity view tracking (SPEC-159).
+     * Hash form: SHA-256(HMAC-SHA256(secret, 'yyyy-mm-dd') + truncatedIp + UA).
+     * Raw IPs are never stored or logged. Min 32 chars; rotating invalidates
+     * all current-day hashes (visitors are recounted as new for that day).
+     */
+    HOSPEDA_VIEWS_HASH_SECRET: z
+        .string()
+        .min(32, 'HOSPEDA_VIEWS_HASH_SECRET must be at least 32 characters'),
+    /**
      * User-Agent header sent to Nominatim and Photon when geocoding addresses
      * for the admin location picker (SPEC-097, Phase 6). Nominatim's usage
      * policy requires an identifiable User-Agent; missing or generic values
@@ -482,6 +492,20 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
     /** Lockout window in milliseconds (default: 900000 = 15 min) */
     HOSPEDA_AUTH_LOCKOUT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
+
+    // Content moderation blocklists (SPEC-166)
+    /**
+     * Comma-separated list of word substrings to block in user-generated text
+     * (messages, reviews, posts). Case-insensitive substring match.
+     * Parsed at startup by @repo/content-moderation. Example: "badword,spam,forbidden"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_WORDS: z.string().optional(),
+    /**
+     * Comma-separated list of domain names to block when they appear in URLs
+     * inside user-generated text. Matches exact hostname and sub-domain suffixes.
+     * Parsed at startup by @repo/content-moderation. Example: "spam.com,evil.org"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_DOMAINS: z.string().optional(),
 
     // Infrastructure
     HOSPEDA_REDIS_URL: z.string().optional(),

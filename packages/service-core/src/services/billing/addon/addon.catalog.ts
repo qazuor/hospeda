@@ -2,19 +2,32 @@
  * Add-on Catalog Module
  *
  * Handles listing and retrieval of available add-on definitions.
- * Filters by billing type, target category, and active status.
+ * Delegates to {@link AddonCatalogService} which reads from the `billing_addons`
+ * DB table (SPEC-192 T-004).
+ *
+ * Public API is unchanged from the static-config era — all downstream consumers
+ * continue to call `listAvailableAddons()` and `getAddonCatalogEntry()` with the
+ * same signatures and receive the same `ServiceResult<AddonDefinition>` shapes.
  *
  * @module services/addon.catalog
  */
 
-import { ALL_ADDONS, type AddonDefinition, getAddonBySlug } from '@repo/billing';
+import type { AddonDefinition } from '@repo/billing';
+import { AddonCatalogService } from './addon-catalog.service.js';
 import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
+
+// ---------------------------------------------------------------------------
+// Module-level singleton — avoids re-constructing on every call while keeping
+// the module stateless (no shared DB connection beyond what getDb() manages).
+// ---------------------------------------------------------------------------
+const catalogService = new AddonCatalogService();
 
 /**
  * List available add-ons.
  *
- * Filters the static add-on catalog by billing type, target category, and
- * active status. Results are sorted by sortOrder ascending.
+ * Delegates to {@link AddonCatalogService#list}. Reads from the `billing_addons`
+ * DB table filtered by billing type, target category, and active status. Results
+ * are sorted by `sortOrder` ascending.
  *
  * @param input - Filter options
  * @returns Filtered and sorted list of add-on definitions
@@ -30,73 +43,26 @@ import type { ListAvailableAddonsInput, ServiceResult } from './addon.types.js';
 export async function listAvailableAddons(
     input: ListAvailableAddonsInput = {}
 ): Promise<ServiceResult<AddonDefinition[]>> {
-    try {
-        let addons = [...ALL_ADDONS];
-
-        if (input.billingType) {
-            addons = addons.filter((addon) => addon.billingType === input.billingType);
-        }
-
-        if (input.targetCategory) {
-            const targetCategory = input.targetCategory;
-            addons = addons.filter((addon) => addon.targetCategories.includes(targetCategory));
-        }
-
-        if (input.active !== undefined) {
-            addons = addons.filter((addon) => addon.isActive === input.active);
-        }
-
-        addons.sort((a, b) => a.sortOrder - b.sortOrder);
-
-        return { success: true, data: addons };
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        return {
-            success: false,
-            error: {
-                code: 'INTERNAL_ERROR',
-                message: `Failed to list available add-ons: ${errorMessage}`
-            }
-        };
-    }
+    return catalogService.list(input);
 }
 
 /**
  * Get a single add-on by its slug.
  *
- * Looks up the static catalog by slug. Returns NOT_FOUND if the slug does not
- * match any registered add-on definition.
+ * Delegates to {@link AddonCatalogService#getBySlug}. Returns NOT_FOUND if
+ * the slug does not match any row in `billing_addons`.
  *
  * @param slug - The add-on slug identifier
  * @returns The matching add-on definition or a NOT_FOUND error
  *
  * @example
  * ```ts
- * const result = await getAddonCatalogEntry('extra-photos');
+ * const result = await getAddonCatalogEntry('extra-photos-20');
  * if (result.success) {
  *   console.log(result.data.name);
  * }
  * ```
  */
 export async function getAddonCatalogEntry(slug: string): Promise<ServiceResult<AddonDefinition>> {
-    try {
-        const addon = getAddonBySlug(slug);
-
-        if (!addon) {
-            return {
-                success: false,
-                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
-            };
-        }
-
-        return { success: true, data: addon };
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-
-        return {
-            success: false,
-            error: { code: 'INTERNAL_ERROR', message: `Failed to get add-on: ${errorMessage}` }
-        };
-    }
+    return catalogService.getBySlug(slug);
 }

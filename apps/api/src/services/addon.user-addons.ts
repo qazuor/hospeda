@@ -8,10 +8,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
 import { type DrizzleClient, billingSubscriptions, getDb, withTransaction } from '@repo/db';
 import { billingAddonPurchases, billingSubscriptionEvents } from '@repo/db/schemas';
 import { NotificationType } from '@repo/notifications';
+import { AddonCatalogService } from '@repo/service-core';
 import {
     BILLING_EVENT_TYPES,
     cancelAddonPurchaseRecord,
@@ -34,6 +34,10 @@ import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.s
 
 // Re-export types from service-core for backward compatibility
 export type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
 
 /**
  * Get a user's active add-ons.
@@ -143,7 +147,9 @@ export async function cancelUserAddon(
         }
 
         const addonSlug = purchase.addonSlug;
-        const addonDef = getAddonBySlug(addonSlug);
+        // Resolve addon definition from the DB-backed catalog service (SPEC-192 T-011 cutover).
+        const addonCatalogResult = await catalogService.getBySlug(addonSlug);
+        const addonDef = addonCatalogResult.success ? addonCatalogResult.data : null;
 
         // SPEC-064 OP-5: recalculateAddonLimitsForCustomer makes external QZPay HTTP calls
         // (billing.subscriptions.getByCustomerId, billing.limits.set/removeBySource).

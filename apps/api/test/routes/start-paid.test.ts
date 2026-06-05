@@ -81,7 +81,7 @@ vi.mock('@repo/db', () => {
 // ---------------------------------------------------------------------------
 
 import { getQZPayBilling } from '../../src/middlewares/billing';
-import { handleStartPaidSubscription } from '../../src/routes/billing/start-paid';
+import { _internals, handleStartPaidSubscription } from '../../src/routes/billing/start-paid';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -96,14 +96,17 @@ const ANNUAL_PRICE_ID = 'price_annual_1';
 interface ContextOptions {
     billingEnabled?: boolean;
     billingCustomerId?: string | null;
+    /** Optional user with settings for locale resolution (T-025). */
+    user?: { settings?: Record<string, unknown> } | null;
 }
 
 function createMockContext(opts: ContextOptions = {}) {
-    const { billingEnabled = true, billingCustomerId = OWNER_CUSTOMER_ID } = opts;
+    const { billingEnabled = true, billingCustomerId = OWNER_CUSTOMER_ID, user = null } = opts;
 
     const store = new Map<string, unknown>([
         ['billingEnabled', billingEnabled],
-        ['billingCustomerId', billingCustomerId]
+        ['billingCustomerId', billingCustomerId],
+        ['user', user]
     ]);
 
     return {
@@ -642,5 +645,79 @@ describe('handleStartPaidSubscription (annual)', () => {
         // billing.checkout was called (success) — annual ignores promoCode
         // entirely (Decision 4 of SPEC-122: discount-type promos out of MVP).
         expect(billing.checkout.create).toHaveBeenCalledTimes(1);
+    });
+});
+
+// ─── Locale resolution tests (SPEC-194 T-025) ──────────────────────────────────
+
+describe('resolveReturnUrlLocale (_internals)', () => {
+    it('returns "es" when user is null (no session)', () => {
+        const ctx = createMockContext({ user: null });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('returns "es" when user has no settings', () => {
+        const ctx = createMockContext({ user: {} });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('returns "es" when user.settings.languageWeb is absent', () => {
+        const ctx = createMockContext({ user: { settings: { themeWeb: 'dark' } } });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('returns "en" when user.settings.languageWeb is "en"', () => {
+        const ctx = createMockContext({ user: { settings: { languageWeb: 'en' } } });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('en');
+    });
+
+    it('returns "pt" when user.settings.languageWeb is "pt"', () => {
+        const ctx = createMockContext({ user: { settings: { languageWeb: 'pt' } } });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('pt');
+    });
+
+    it('returns "es" when user.settings.languageWeb is an unsupported value', () => {
+        const ctx = createMockContext({ user: { settings: { languageWeb: 'fr' } } });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('SUPPORTED_RETURN_URL_LOCALES contains es, en, pt', () => {
+        expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('es');
+        expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('en');
+        expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('pt');
+    });
+});
+
+describe('handleStartPaidSubscription — locale threading (SPEC-194 T-025)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('monthly: uses user locale in paymentMethodReturnUrl', async () => {
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext({ user: { settings: { languageWeb: 'en' } } });
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        const callArg = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(callArg.paymentMethodReturnUrl).toContain('/en/suscriptores/checkout/success/');
+    });
+
+    it('monthly: falls back to "es" when no user on context', async () => {
+        const billing = createBillingMock();
+        mockBilling(billing);
+
+        const ctx = createMockContext({ user: null });
+        await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        });
+
+        const callArg = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(callArg.paymentMethodReturnUrl).toContain('/es/suscriptores/checkout/success/');
     });
 });

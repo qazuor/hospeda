@@ -19,13 +19,15 @@ import {
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
-    getPlanBySlug,
-    getUnlimitedEntitlements
+    getUnlimitedEntitlements,
+    isEntitlementKey,
+    isLimitKey
 } from '@repo/billing';
-import { RoleEnum } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceError } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
+import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
@@ -126,6 +128,33 @@ const entitlementCache = new EntitlementCache({
 });
 
 /**
+ * Module-level PlanService singleton used for the host-draft default plan lookup.
+ *
+ * Shared across all requests to avoid recreating the service on every call.
+ * Safe: PlanService has no mutable state.
+ */
+const planService = new PlanService();
+
+/**
+ * Memoized promise carrying the resolved owner-basico defaults.
+ *
+ * Populated on first call to {@link buildHostDraftDefaultsResult} and
+ * invalidated after {@link HOST_DRAFT_CACHE_TTL_MS} (5 minutes — matching
+ * the entitlement cache TTL philosophy). A single promise is shared across
+ * all concurrent requests on the HOST fallback path, so the DB is only
+ * queried once per TTL window even under burst load (SPEC-192 T-024).
+ *
+ * Set to `null` on module initialisation and after TTL expiry.
+ */
+let hostDraftDefaultsCache: Promise<LoadEntitlementsResult> | null = null;
+
+/** Timestamp of the last successful hostDraftDefaultsCache population */
+let hostDraftDefaultsCachedAt = 0;
+
+/** TTL for the owner-basico defaults memo — matches the entitlement cache TTL */
+const HOST_DRAFT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/**
  * Result of loading entitlements for a billing customer.
  */
 interface LoadEntitlementsResult {
@@ -171,32 +200,90 @@ function buildDefaultEntitlementsResult(): LoadEntitlementsResult {
  * publish, we fall back to the `owner-basico` plan entitlements/limits instead
  * of the tourist-free defaults used for regular users.
  *
- * This result is `shouldCache: true` because it derives exclusively from
- * static in-memory plan config, same as {@link buildDefaultEntitlementsResult}.
+ * **Performance (SPEC-192 T-024):** this function is called on every protected
+ * request for HOST actors without an active subscription — a hot path. The
+ * previous implementation was an in-memory map lookup (O(n) on ALL_PLANS); the
+ * new implementation queries the `billing_plans` DB table. To preserve the
+ * near-zero latency of the hot path, the resolved result is memoized with a
+ * module-level promise and a 5-minute TTL matching the entitlement cache
+ * philosophy (see {@link HOST_DRAFT_CACHE_TTL_MS}). The promise is shared, so
+ * concurrent requests on first load coalesce into a single DB query.
  *
- * If `owner-basico` is somehow absent from the plan registry (mis-configuration,
- * should never happen in production), this function falls back to
- * {@link buildDefaultEntitlementsResult} instead of crashing the request.
+ * If `owner-basico` is NOT_FOUND (mis-configuration or plan not yet seeded),
+ * this function falls back to {@link buildDefaultEntitlementsResult} and does
+ * NOT memoize the miss — the next request will retry so the plan is picked up
+ * after seeding without requiring a restart.
  *
- * @returns A LoadEntitlementsResult populated from the `owner-basico` plan.
+ * @returns A LoadEntitlementsResult populated from the `owner-basico` DB plan.
  */
-function buildHostDraftDefaultsResult(): LoadEntitlementsResult {
-    const plan = getPlanBySlug('owner-basico');
+async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
+    const now = Date.now();
 
-    if (!plan) {
-        // Defensive: plan registry mis-configuration. Log and fall back to
-        // tourist-free rather than crashing.
-        apiLogger.warn(
-            'owner-basico plan not found in registry — falling back to tourist-free defaults for HOST actor'
-        );
-        return buildDefaultEntitlementsResult();
+    // Return the memoized promise if still within TTL
+    if (
+        hostDraftDefaultsCache !== null &&
+        now - hostDraftDefaultsCachedAt < HOST_DRAFT_CACHE_TTL_MS
+    ) {
+        return hostDraftDefaultsCache;
     }
 
-    return {
-        entitlements: new Set<EntitlementKey>(plan.entitlements as EntitlementKey[]),
-        limits: new Map<LimitKey, number>(plan.limits.map((l) => [l.key as LimitKey, l.value])),
-        shouldCache: true
-    };
+    // Build a new promise and memoize it immediately so concurrent callers
+    // share the same inflight query (promise deduplication).
+    const fetchPromise = planService.getBySlug('owner-basico').then((result) => {
+        if (!result.success) {
+            // NOT_FOUND or INTERNAL_ERROR — do NOT memoize; next request retries.
+            hostDraftDefaultsCache = null;
+            hostDraftDefaultsCachedAt = 0;
+            apiLogger.warn(
+                { errorCode: result.error.code },
+                'owner-basico plan not found in DB — falling back to tourist-free defaults for HOST actor'
+            );
+            return buildDefaultEntitlementsResult();
+        }
+
+        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>.
+        // Filter to known LimitKey values — unknown keys from a mis-configured DB
+        // plan are silently dropped rather than trusted blindly.
+        const limits = new Map<LimitKey, number>(
+            Object.entries(result.data.limits).filter((entry): entry is [LimitKey, number] =>
+                isLimitKey(entry[0])
+            )
+        );
+
+        return {
+            // BillingPlanResponse.entitlements is string[] (Zod z.array(z.string())).
+            // Filter to known EntitlementKey values — unknown strings from a
+            // mis-configured DB plan are silently dropped (same as a cast would do
+            // for valid values, but without silently trusting garbage).
+            entitlements: new Set<EntitlementKey>(
+                result.data.entitlements.filter(isEntitlementKey)
+            ),
+            limits,
+            shouldCache: true
+        };
+    });
+
+    // Guard against promise REJECTION (DB threw, as opposed to a resolved
+    // failure Result): without this, the rejected promise stays memoized for
+    // the full TTL and every HOST request fails for up to 5 minutes after a
+    // single transient DB error. Reset the cache so the next request retries,
+    // and degrade to tourist-free defaults for this request.
+    const guardedPromise = fetchPromise.catch((err: unknown) => {
+        hostDraftDefaultsCache = null;
+        hostDraftDefaultsCachedAt = 0;
+        apiLogger.warn(
+            { error: err instanceof Error ? err.message : String(err) },
+            'owner-basico plan lookup threw — cache reset, falling back to tourist-free defaults for HOST actor'
+        );
+        return buildDefaultEntitlementsResult();
+    });
+
+    // Memoize the guarded promise; set the timestamp now so concurrent
+    // callers use it.
+    hostDraftDefaultsCache = guardedPromise;
+    hostDraftDefaultsCachedAt = now;
+
+    return guardedPromise;
 }
 
 /**
@@ -244,9 +331,8 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
     const unlimited = getUnlimitedEntitlements();
     return {
         entitlements: new Set<EntitlementKey>(unlimited.entitlements),
-        limits: new Map<LimitKey, number>(
-            unlimited.limits.map((l) => [l.key as LimitKey, l.value])
-        ),
+        // LimitDefinition.key is already LimitKey — no cast needed.
+        limits: new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value])),
         shouldCache: true
     };
 }
@@ -296,7 +382,7 @@ async function loadEntitlements(
             // draft phase (SPEC-143 Block 1). All other roles receive tourist-free
             // defaults (SPEC-143 T-143-58).
             if (actorRole === RoleEnum.HOST) {
-                return buildHostDraftDefaultsResult();
+                return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
         }
@@ -311,7 +397,7 @@ async function loadEntitlements(
             // role-appropriate defaults. Same rationale as the no-subscriptions
             // branch above (SPEC-143 Block 1 / T-143-58).
             if (actorRole === RoleEnum.HOST) {
-                return buildHostDraftDefaultsResult();
+                return await buildHostDraftDefaultsResult();
             }
             return buildDefaultEntitlementsResult();
         }
@@ -330,14 +416,22 @@ async function loadEntitlements(
             };
         }
 
-        // Extract entitlements from plan (entitlements is string[])
-        const entitlements = new Set<EntitlementKey>((plan.entitlements || []) as EntitlementKey[]);
+        // Extract entitlements from plan. QZPay returns string[]; filter to known
+        // EntitlementKey values — unexpected strings from a mis-configured plan are
+        // silently dropped (filter-out strategy, matching prior cast behaviour for
+        // valid values without blindly trusting garbage).
+        const entitlements = new Set<EntitlementKey>(
+            (plan.entitlements ?? []).filter(isEntitlementKey)
+        );
 
-        // Extract limits from plan (limits is Record<string, number>)
+        // Extract limits from plan. QZPay returns Record<string, number>; filter to
+        // known LimitKey values — unknown keys are silently dropped.
         const limits = new Map<LimitKey, number>();
         if (plan.limits) {
             for (const [key, value] of Object.entries(plan.limits)) {
-                limits.set(key as LimitKey, value);
+                if (isLimitKey(key)) {
+                    limits.set(key, value);
+                }
             }
         }
 
@@ -348,16 +442,23 @@ async function loadEntitlements(
         let shouldCache = true;
 
         try {
-            // Fetch customer-level entitlements and merge with plan entitlements (union)
+            // Fetch customer-level entitlements and merge with plan entitlements (union).
+            // QZPay returns QZPayCustomerEntitlement where entitlementKey is string —
+            // filter to known keys; unknown keys are silently dropped.
             const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
             for (const ce of customerEntitlements) {
-                entitlements.add(ce.entitlementKey as EntitlementKey);
+                if (isEntitlementKey(ce.entitlementKey)) {
+                    entitlements.add(ce.entitlementKey);
+                }
             }
 
-            // Fetch customer-level limits and override plan-level values (customer takes precedence)
+            // Fetch customer-level limits and override plan-level values (customer takes precedence).
+            // QZPay returns QZPayCustomerLimit where limitKey is string — filter to known keys.
             const customerLimits = await billing.limits.getByCustomerId(customerId);
             for (const cl of customerLimits) {
-                limits.set(cl.limitKey as LimitKey, cl.maxValue);
+                if (isLimitKey(cl.limitKey)) {
+                    limits.set(cl.limitKey, cl.maxValue);
+                }
             }
         } catch (customerError) {
             const errorMessage =
@@ -466,7 +567,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
 
             const fallback =
                 (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? buildHostDraftDefaultsResult()
+                    ? await buildHostDraftDefaultsResult()
                     : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
@@ -500,7 +601,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
 
             const fallback =
                 (actor.role as RoleEnum | undefined) === RoleEnum.HOST
-                    ? buildHostDraftDefaultsResult()
+                    ? await buildHostDraftDefaultsResult()
                     : buildDefaultEntitlementsResult();
             c.set('userEntitlements', fallback.entitlements);
             c.set('userLimits', fallback.limits);
@@ -591,6 +692,14 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  * Returns 403 Forbidden if user lacks the required entitlement.
  * Use this on routes that need specific features.
  *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} — before any billing-customer or plan lookup —
+ * and populates `userEntitlements` with the full unlimited set. By the time
+ * this function executes, the key is always present in the staff set, so no
+ * 403 is thrown. The bypass is invisible here by design: staff behaviour
+ * is policy of the loader, not the checker.
+ *
  * @param key - The entitlement key to check
  * @returns Middleware handler
  *
@@ -610,7 +719,8 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  */
 export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
-        // If billing failed to load, return 503 instead of silently granting access
+        // If billing failed to load, return 503 instead of silently granting access.
+        // This guard prevents privilege escalation during billing outages.
         if (c.get('billingLoadFailed')) {
             return c.json(
                 {
@@ -626,9 +736,13 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
         const entitlements = c.get('userEntitlements');
 
         if (!entitlements || !entitlements.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' entitlement.`
-            });
+            // Throws ServiceError(ENTITLEMENT_REQUIRED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`.
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                `Access denied. This feature requires the '${key}' entitlement.`,
+                { requiredEntitlement: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();
@@ -641,6 +755,15 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
  * Returns 403 Forbidden if user has reached the limit.
  * Note: This only checks the plan limit, not the current usage.
  * Route handlers must check actual usage against the limit.
+ *
+ * **Staff bypass (INV-6):** platform staff roles (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) pass unconditionally. The bypass runs inside
+ * {@link entitlementMiddleware} and populates `userLimits` with the unlimited
+ * sentinel (`-1`) for every key. When this function reads `limits.get(key)`,
+ * the value is `-1` (unlimited), which is neither 0 nor missing — both `has`
+ * checks pass and `await next()` is called without a 403. The bypass is
+ * invisible here by design: staff behaviour is policy of the loader, not
+ * the checker.
  *
  * @param key - The limit key to check
  * @returns Middleware handler
@@ -681,18 +804,26 @@ export function requireLimit(key: LimitKey): MiddlewareHandler<AppBindings> {
         const limits = c.get('userLimits');
 
         if (!limits || !limits.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' limit to be defined.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'LIMIT_REACHED', ... } }`.
+            // "Not defined" means the plan grants no access for this limit key.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. This feature requires the '${key}' limit to be defined.`,
+                { limitKey: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         const limitValue = limits.get(key);
 
-        // Check if limit is 0 (effectively disabled)
+        // Limit of 0 means feature is explicitly disabled in this plan.
         if (limitValue === 0) {
-            throw new HTTPException(403, {
-                message: `Access denied. The '${key}' limit is set to 0 in your plan.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — same contract as the "not defined" case.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. The '${key}' limit is set to 0 in your plan.`,
+                { limitKey: key, maxAllowed: 0, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();
@@ -849,6 +980,19 @@ export function getAllLimits(c: Context<AppBindings>): Map<LimitKey, number> {
 export function clearEntitlementCache(customerId: string): void {
     apiLogger.debug({ customerId }, 'Entitlement cache cleared');
     entitlementCache.invalidate(customerId);
+}
+
+/**
+ * Invalidates the module-level memo for the `owner-basico` host-draft defaults
+ * (SPEC-192 T-024).
+ *
+ * Forces the next call to {@link buildHostDraftDefaultsResult} to re-query the
+ * DB. Useful in test harnesses and after plan updates that should be reflected
+ * immediately without waiting for the TTL to expire.
+ */
+export function clearHostDraftDefaultsCache(): void {
+    hostDraftDefaultsCache = null;
+    hostDraftDefaultsCachedAt = 0;
 }
 
 /**

@@ -32,6 +32,7 @@ import type { AdminIAConfigSchema } from './schema';
 import { sections } from './sections';
 import { sidebars } from './sidebars';
 import { tabs } from './tabs';
+import { tours } from './tours';
 
 /**
  * The 6 roles configured for the admin panel, keyed by RoleEnum value string.
@@ -76,5 +77,6 @@ export const rawConfig: z.input<typeof AdminIAConfigSchema> = {
     dashboards,
     tabs,
     createActions,
-    roles
+    roles,
+    tours
 };

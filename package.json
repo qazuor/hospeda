@@ -147,13 +147,14 @@
             "@opentelemetry/api": "1.9.1",
             "@remix-run/node": ">=2.17.2",
             "@remix-run/router": ">=1.23.2",
-            "@remix-run/server-runtime": ">=2.17.3",
+            "@remix-run/server-runtime": ">=2.17.5",
             "esbuild": ">=0.25.0",
             "@tanstack/form-core": "0.42.1",
             "csstype": "3.1.3",
             "@types/react": "19.1.10",
             "@types/react-dom": "19.1.7",
-            "@vitejs/plugin-react": "^4.7.0"
+            "@vitejs/plugin-react": "^4.7.0",
+            "turbo-stream": ">=3.0.0"
         },
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"

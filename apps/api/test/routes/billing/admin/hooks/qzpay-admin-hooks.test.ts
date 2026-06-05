@@ -60,18 +60,43 @@ vi.mock('@repo/db', () => ({
     }
 }));
 
-vi.mock('@repo/schemas', () => ({
-    SubscriptionStatusEnum: {
-        CANCELLED: 'cancelled',
-        ACTIVE: 'active'
-    }
-}));
+// importOriginal spread preserves all enum/type exports that are transitively
+// needed by @repo/service-core (e.g. PermissionEnum used in permission.ts).
+vi.mock('@repo/schemas', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/schemas')>();
+    return {
+        ...actual,
+        SubscriptionStatusEnum: {
+            CANCELLED: 'cancelled',
+            ACTIVE: 'active'
+        }
+    };
+});
 
-vi.mock('@repo/service-core', () => ({
-    BILLING_EVENT_TYPES: {
-        ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
-    }
-}));
+// After SPEC-192 T-017 cutover, qzpay-admin-hooks.ts imports AddonCatalogService.
+// PlanService is also needed for the transitive addon-plan-change.service import.
+// SPEC-194 T-006/T-007: importOriginal spread preserves pure functions like
+// checkSubscriptionStatusTransition while still overriding class-based exports.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: vi.fn().mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'addon not found' }
+            }),
+            list: vi.fn()
+        })),
+        PlanService: vi.fn().mockImplementation(() => ({
+            getById: vi.fn(),
+            getBySlug: vi.fn()
+        })),
+        BILLING_EVENT_TYPES: {
+            ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
+        }
+    };
+});
 
 vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn().mockReturnValue({
@@ -107,6 +132,12 @@ vi.mock('../../../../../src/services/addon-lifecycle.service', () => ({
     revokeAddonForSubscriptionCancellation: vi.fn()
 }));
 
+// SPEC-194 T-006/T-007: refund lifecycle service — mocked so hook tests can
+// verify delegation. The service itself is unit-tested in refund-lifecycle.service.test.ts.
+vi.mock('../../../../../src/services/refund-lifecycle.service', () => ({
+    applyRefundLifecycle: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('../../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -121,6 +152,7 @@ import { getQZPayBilling } from '../../../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../../../src/middlewares/entitlement';
 import { adminBillingHooks } from '../../../../../src/routes/billing/admin/qzpay-admin-hooks';
 import { revokeAddonForSubscriptionCancellation } from '../../../../../src/services/addon-lifecycle.service';
+import { applyRefundLifecycle } from '../../../../../src/services/refund-lifecycle.service';
 
 // ---------------------------------------------------------------------------
 // Test fixtures + helpers
@@ -203,6 +235,30 @@ function buildDbMock(
             updateWhere
         }
     };
+}
+
+/**
+ * Build a minimal QZPayPayment fixture as expected by `onAfterPaymentRefund`.
+ * `subscriptionId` defaults to SUBSCRIPTION_ID so refund lifecycle applies.
+ * Set `subscriptionId: null` to simulate a payment not linked to a subscription.
+ */
+function buildPayment(
+    overrides: Partial<{
+        id: string;
+        customerId: string;
+        amount: number;
+        status: string;
+        subscriptionId: string | null;
+    }> = {}
+) {
+    return {
+        id: PAYMENT_ID,
+        customerId: CUSTOMER_ID,
+        amount: 1000,
+        status: 'refunded',
+        subscriptionId: SUBSCRIPTION_ID,
+        ...overrides
+    } as Parameters<NonNullable<typeof adminBillingHooks.onAfterPaymentRefund>>[0]['payment'];
 }
 
 /**
@@ -607,12 +663,9 @@ describe('adminBillingHooks.onAfterPaymentRefund', () => {
     });
 
     it('adds a Sentry breadcrumb in the billing.admin category', async () => {
-        const payment = {
-            id: PAYMENT_ID,
-            customerId: CUSTOMER_ID,
-            amount: 1000,
-            status: 'refunded'
-        } as Parameters<NonNullable<typeof adminBillingHooks.onAfterPaymentRefund>>[0]['payment'];
+        // Partial refund (amount: 500 < payment.amount: 1000) — breadcrumb fires
+        // regardless of full/partial path.
+        const payment = buildPayment({ subscriptionId: null }); // null → no lifecycle work
 
         await adminBillingHooks.onAfterPaymentRefund!({
             payment,
@@ -636,24 +689,86 @@ describe('adminBillingHooks.onAfterPaymentRefund', () => {
         });
     });
 
-    it('does NOT touch the database (payments have no Hospeda-side audit table)', async () => {
-        const { db, spies } = buildDbMock();
-        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
-        const payment = { id: PAYMENT_ID, customerId: CUSTOMER_ID } as Parameters<
-            NonNullable<typeof adminBillingHooks.onAfterPaymentRefund>
-        >[0]['payment'];
+    // SPEC-194 T-006 (RED): full refund delegates to applyRefundLifecycle with
+    // isFullRefund=true and the correct payment + actor context.
+    it('delegates to applyRefundLifecycle with isFullRefund=true on a full refund', async () => {
+        const payment = buildPayment({ amount: 1000 });
 
         await adminBillingHooks.onAfterPaymentRefund!({
             payment,
+            // amount equal to payment.amount → full refund
             amount: 1000,
-            reason: 'Test',
+            reason: 'Chargeback',
             ctx: buildContext()
         });
 
-        // getDb may not even be called — but if it is, we never touch insert/update/select.
-        expect(spies.insert).not.toHaveBeenCalled();
-        expect(spies.update).not.toHaveBeenCalled();
-        expect(spies.select).not.toHaveBeenCalled();
+        expect(applyRefundLifecycle).toHaveBeenCalledTimes(1);
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payment,
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            })
+        );
+    });
+
+    // SPEC-194 T-006 (RED): full refund when amount is undefined (hook received
+    // no explicit amount) — treated as full refund.
+    it('delegates to applyRefundLifecycle with isFullRefund=true when refund amount is undefined', async () => {
+        const payment = buildPayment({ amount: 2000 });
+
+        await adminBillingHooks.onAfterPaymentRefund!({
+            payment,
+            amount: undefined,
+            reason: 'Admin bulk refund',
+            ctx: buildContext()
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledTimes(1);
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payment,
+                refundAmount: undefined,
+                adminUserId: ADMIN_USER_ID
+            })
+        );
+    });
+
+    // SPEC-194 T-006 (RED): partial refund delegates to applyRefundLifecycle with
+    // partial amount; lifecycle service handles the audit-only path.
+    it('delegates to applyRefundLifecycle with partial refundAmount on a partial refund', async () => {
+        const payment = buildPayment({ amount: 1000 });
+
+        await adminBillingHooks.onAfterPaymentRefund!({
+            payment,
+            amount: 400, // < 1000 → partial
+            reason: 'Partial service issue',
+            ctx: buildContext()
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledTimes(1);
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                payment,
+                refundAmount: 400
+            })
+        );
+    });
+
+    // SPEC-194 T-006 (RED): hook should NOT crash if applyRefundLifecycle throws
+    // (qzpay-hono wraps after-hooks in try/catch — but we guard defensively).
+    it('does not propagate errors from applyRefundLifecycle (fail-safe hook)', async () => {
+        vi.mocked(applyRefundLifecycle).mockRejectedValueOnce(new Error('DB unavailable'));
+        const payment = buildPayment();
+
+        await expect(
+            adminBillingHooks.onAfterPaymentRefund!({
+                payment,
+                amount: 1000,
+                reason: 'Test',
+                ctx: buildContext()
+            })
+        ).resolves.toBeUndefined();
     });
 });
 

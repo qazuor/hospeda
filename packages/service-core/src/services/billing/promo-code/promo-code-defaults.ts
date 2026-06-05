@@ -8,15 +8,34 @@
  * The defaults are created during API startup and are idempotent -
  * they will only create codes that don't already exist.
  *
+ * ---
+ * SCOPE: seed / startup path only (SPEC-192 T-029)
+ *
+ * `DEFAULT_PROMO_CODES` (private) and `getDefaultPromoCodeConfigs` are
+ * intentionally restricted to:
+ *   - API startup: `ensureDefaultPromoCodes()` (called once at boot)
+ *   - Dev tooling and tests: `getDefaultPromoCodeConfigs()` (read-only)
+ *
+ * They MUST NOT be used for request-time catalog reads. Any runtime promo
+ * code lookup MUST go through `PromoCodeService.getByCode()` or the
+ * equivalent CRUD function so the DB (not this in-process config) is the
+ * source of truth. See `@repo/billing` `DEFAULT_PROMO_CODES` for the
+ * richer `PromoCodeDefinition` format used by the seeder.
+ *
+ * Moving this const to `packages/seed` was evaluated and rejected: seed
+ * imports from service-core; inverting that dependency would create a cycle.
+ * The JSDoc banner above is the designated guard.
+ * ---
+ *
  * @module services/billing/promo-code/promo-code-defaults
  */
 
 import { type CreatePromoCodeInput, PromoCodeService } from './promo-code.service.js';
 
 /**
- * Default promo codes configuration
+ * Default promo codes configuration in `CreatePromoCodeInput` shape.
  *
- * These codes are created automatically on API startup if they don't exist.
+ * @internal Startup / seed-path use only — see module JSDoc banner above.
  */
 const DEFAULT_PROMO_CODES: CreatePromoCodeInput[] = [
     {
@@ -76,11 +95,12 @@ export async function ensureDefaultPromoCodes(): Promise<void> {
 }
 
 /**
- * Get the list of default promo code configurations
+ * Get the list of default promo code configurations.
  *
- * Useful for testing and documentation purposes.
+ * Intended for testing and documentation purposes only.
+ * Runtime catalog reads MUST use `PromoCodeService.getByCode()` instead.
  *
- * @returns Array of default promo code configurations
+ * @returns Read-only array of default promo code configurations
  */
 export function getDefaultPromoCodeConfigs(): readonly CreatePromoCodeInput[] {
     return DEFAULT_PROMO_CODES;

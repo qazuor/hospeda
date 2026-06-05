@@ -130,6 +130,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Retry past-due billing payments and notify customers.'
     },
     {
+        name: 'entity-views-purge',
+        displayName: 'Purga de vistas de entidades',
+        category: 'system',
+        schedule: '30 3 * * *',
+        description:
+            'Hard-delete entity_views telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011).'
+    },
+    {
         name: 'exchange-rate-fetch',
         displayName: 'Tipos de cambio',
         category: 'billing',

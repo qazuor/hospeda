@@ -16,6 +16,18 @@ export const eventOrganizersConfig: EntityConfig<EventOrganizer> = {
     // API
     apiEndpoint: '/api/v1/admin/event-organizers',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/events/organizers',
     detailPath: '/events/organizers/[id]',

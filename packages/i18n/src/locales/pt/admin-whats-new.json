@@ -1,0 +1,23 @@
+{
+    "badge": {
+        "label": "{{count}} novidade(s) não lida(s)",
+        "labelNone": "Sem novidades"
+    },
+    "modal": {
+        "title": "Novidades",
+        "close": "Entendi"
+    },
+    "panel": {
+        "title": "Últimas novidades",
+        "markAllRead": "Marcar tudo como lido",
+        "empty": "Não há novidades disponíveis.",
+        "seeEntry": "Ver"
+    },
+    "card": {
+        "seeAll": "Ver todas"
+    },
+    "status": {
+        "new": "Novo",
+        "seen": "Visto"
+    }
+}

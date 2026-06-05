@@ -31,6 +31,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import ArticleCard from '@/components/shared/cards/ArticleCard.astro';
 import ArticleCardSkeleton from '@/components/shared/cards/ArticleCardSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
@@ -386,6 +387,20 @@ const postCategoryChips = [
             ))}
         </div>
     )}
+
+    <!-- Editor-recruitment banner (SPEC-191 FR-8): after the grid, before
+         pagination. page/[page].astro is a rewrite — single mount covers all pages. -->
+    <ContributionBanner
+        title={t('contributions.banner.editors.title', '¿Te gusta escribir?')}
+        description={t(
+            'contributions.banner.editors.description',
+            'Buscamos editores voluntarios para el blog y la agenda de eventos.'
+        )}
+        ctaLabel={t('contributions.banner.editors.cta', 'Sumate como editor')}
+        ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+        source="blog_listing"
+        variant="editors"
+    />
 
     {totalPages > 1 && (
         <Pagination

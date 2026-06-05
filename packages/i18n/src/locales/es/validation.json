@@ -2644,6 +2644,13 @@
             "invalidType": "El resultado exitoso debe ser un booleano"
         }
     },
+    "review": {
+        "moderate": {
+            "decision": {
+                "invalid": "La decisión debe ser APPROVED o REJECTED"
+            }
+        }
+    },
     "search": {
         "caseSensitive": {
             "invalidType": "El case sensitive tiene un tipo de dato inválido"
@@ -3357,6 +3364,44 @@
         },
         "postId": {
             "invalidUuid": "El ID del post debe ser un UUID válido"
+        }
+    },
+    "entityView": {
+        "entityId": {
+            "invalidUuid": "El ID de la entidad debe ser un UUID válido",
+            "required": "El ID de la entidad es obligatorio"
+        },
+        "entityType": {
+            "invalid": "El tipo de entidad no es válido para el registro de vistas"
+        },
+        "id": {
+            "invalidUuid": "El ID debe ser un UUID válido",
+            "required": "El ID es obligatorio"
+        },
+        "isAuthenticated": {
+            "required": "El estado de autenticación es obligatorio"
+        },
+        "stats": {
+            "total": {
+                "integer": "El total de visitas debe ser un número entero",
+                "nonnegative": "El total de visitas no puede ser negativo",
+                "required": "El total de visitas es obligatorio"
+            },
+            "unique": {
+                "integer": "El conteo de visitantes únicos debe ser un número entero",
+                "nonnegative": "El conteo de visitantes únicos no puede ser negativo",
+                "required": "El conteo de visitantes únicos es obligatorio"
+            }
+        },
+        "viewedAt": {
+            "required": "La fecha de la vista es obligatoria"
+        },
+        "visitorHash": {
+            "empty": "El identificador de visitante no puede estar vacío",
+            "required": "El identificador de visitante es obligatorio"
+        },
+        "window": {
+            "invalid": "La ventana de tiempo debe ser 7d o 30d"
         }
     }
 }

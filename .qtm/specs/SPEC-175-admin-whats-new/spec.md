@@ -2,7 +2,7 @@
 id: SPEC-175
 slug: admin-whats-new
 title: Admin What's New / Release Notes Dialog
-status: draft
+status: completed
 owner: qazuor
 created: 2026-05-29
 relatedSpecs:
@@ -71,6 +71,7 @@ decision: deploy cadence and content cadence are independent.
 ### 2.3 Why persistence goes through the protected tier (SPEC-169 constraint)
 
 The naive path — `PATCH /api/v1/admin/users/{id}` — does not work:
+
 - The admin PATCH requires `MANAGE_USERS`, assigned to no role in
   `packages/seed/src/required/rolePermissions.seed.ts` (not even SUPER_ADMIN).
 - The admin GET requires `USER_READ_ALL`, which HOST and EDITOR do not hold (SPEC-169
@@ -83,6 +84,7 @@ ownership is implicit (`me` = actor). This is the same constraint that drives SP
 ### 2.4 Relationship to SPEC-174
 
 SPEC-174 (admin-welcome-tour) and SPEC-175 share:
+
 - The same `UserSettings.onboarding` JSONB namespace (additive, no migration).
 - The same protected dedicated-PATCH-with-server-side-merge pattern.
 - The same "no `.default({})`" caution on the JSONB column.
@@ -139,6 +141,7 @@ are distinct (`onboarding.adminTours` vs `onboarding.whatsNew`) and do not inter
 | D14 | UI chrome strings in new namespace `admin-whats-new.json` (es/en/pt); entry content travels in the data file. | Separation between app strings and curator-authored content. |
 | D15 | Markdown body rendered sanitized using TipTap's existing read-only path (`@tiptap/react` + `tiptap-markdown` already installed). | No new dependency; XSS-safe; consistent with admin rich text. See §12 TBD-1. |
 | D16 | Analytics via existing `trackEvent` in `apps/admin/src/lib/analytics/posthog-client.ts`. | No new infra. |
+| D17 | **Welcome-tour priority (cross-spec, owner-locked 2026-06-03)**: the What's New auto-modal must NOT fire for a user whose SPEC-174 welcome tour is still pending (unseen). A brand-new user starts from zero — nothing is "news" to them. `baselineAt` already covers entries published before first login; this rule covers the residual window. Suppression only affects the auto-modal; badge, panel, and card render normally. Implemented as coordination in the auto-trigger when SPEC-174 lands (whichever ships second wires it). | Avoids stacking two auto-opening modals on a new user's first dashboard load. |
 
 ## 5. Scope
 
@@ -176,6 +179,7 @@ onboarding: z.object({
 ```
 
 Rules (identical to SPEC-174's guidance):
+
 - Do **NOT** add `.default({})` on `onboarding` or any sub-object. Adding a default causes Zod
   to rewrite the stored JSONB on every parse, silently zeroing unseen state for users whose
   stored column lacks the key. A missing `onboarding` key must parse cleanly (treated as "no
@@ -286,6 +290,7 @@ export type WhatsNewSeenBody = z.infer<typeof WhatsNewSeenBodySchema>;
 **Factory**: `createProtectedRoute` (no `requiredPermissions` — any authenticated session).
 
 **Server logic**:
+
 1. Read actor from context.
 2. Read actor's settings via `UserService.getById(actor, actor.id)` (or a lean settings-only
    read — confirm cheapest path with `UserService`).
@@ -329,6 +334,7 @@ user routes: `patch.ts`, `getById.ts`, `newsletter.ts`, etc.)
 **Body**: `WhatsNewSeenBodySchema` (`{ ids: string[] }`).
 
 **Server logic (server-side merge)**:
+
 1. Read actor's current `settings` (full object).
 2. Read current `seenIds` from `settings.onboarding?.whatsNew?.seenIds ?? []`.
 3. Merge: `newSeenIds = Array.from(new Set([...currentSeenIds, ...body.ids]))`.
@@ -381,6 +387,7 @@ interface UseWhatsNewReturn {
 ```
 
 Implementation:
+
 - **TanStack Query** `useQuery` with key `['whats-new', userId]` hitting `GET .../whats-new`.
 - `useMutation` hitting `PATCH .../users/me/whats-new-seen` with optimistic update on
   `unseenCount` and `items[*].seen`, then `queryClient.invalidateQueries(['whats-new', userId])`.
@@ -397,6 +404,7 @@ open the modal **once** (use a `useRef` latch to prevent double-fire under React
 mode).
 
 **Component**:
+
 - **Shadcn Dialog** (`components/ui/dialog.tsx`) — full-screen on mobile, constrained width
   (max `sm:max-w-lg`) on desktop.
 - Content: list of highlight entries (title + body rendered as markdown via TipTap read-only,
@@ -426,6 +434,7 @@ link in the right-side action row.
 ```
 
 **New component**: `apps/admin/src/components/whats-new/WhatsNewBadge.tsx` (NEW)
+
 - Calls `useWhatsNew()` to get `unseenCount`.
 - Renders a button with a `GiftIcon` or `SparkleIcon` from `@repo/icons` (confirm icon
   name against `@repo/icons` exports at implementation — see §14 Q2).
@@ -456,6 +465,7 @@ The dashboard card is a **`list` type widget** registered in the config-driven I
 system (SPEC-154/SPEC-155). This is NOT an ad-hoc card component.
 
 **Source registration** (`apps/admin/src/lib/dashboard-sources/`):
+
 - Add a new source `whats-new.recent` (or per-role if needed) to each of the four source
   files: `host.ts`, `editor.ts`, `admin.ts`, `super.ts`.
 - The source's `queryFn` calls `GET /api/v1/protected/whats-new` (via `fetchApi`), maps
@@ -578,6 +588,7 @@ directive before the entry goes live.
 implementing team must flag when the first image-bearing entry is authored.
 
 Relevant file(s) to update (confirm at implementation time):
+
 - The admin CSP configuration — check `apps/api/src/middlewares/security.ts` or the
   Coolify/reverse-proxy CSP header config.
 
@@ -795,6 +806,7 @@ Then `adminTours` is preserved intact in the resulting stored JSONB.
 Use `pnpm db:fresh-dev` + role/plan test users (`<slug>@local.test` / `Password123!`).
 
 Checklist:
+
 1. HOST first login → badge shows count if highlight entries exist → modal auto-opens → close → badge decrements.
 2. ADMIN login → ADMIN-targeted entry visible; HOST-only entries absent.
 3. Panel: all entries listed; "Marcar todo como leído" → badge = 0.
@@ -852,6 +864,7 @@ Checklist:
 - **T-018** Admin component integration tests with Testing Library + MSW mocks.
 
 **Task dependencies**:
+
 - T-003 depends on T-002.
 - T-005, T-006 depend on T-001, T-002, T-003, T-004.
 - T-007, T-008 depend on T-001 (schema types needed for TypeScript).

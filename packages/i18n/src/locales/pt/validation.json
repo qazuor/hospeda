@@ -2644,6 +2644,13 @@
             "invalidType": "[PT] El resultado exitoso debe ser un booleano"
         }
     },
+    "review": {
+        "moderate": {
+            "decision": {
+                "invalid": "A decisão deve ser APPROVED ou REJECTED"
+            }
+        }
+    },
     "search": {
         "caseSensitive": {
             "invalidType": "[PT] El case sensitive tiene un tipo de dato inválido"
@@ -3357,6 +3364,44 @@
         },
         "postId": {
             "invalidUuid": "O ID do post deve ser um UUID válido"
+        }
+    },
+    "entityView": {
+        "entityId": {
+            "invalidUuid": "O ID da entidade deve ser um UUID válido",
+            "required": "O ID da entidade é obrigatório"
+        },
+        "entityType": {
+            "invalid": "O tipo de entidade não é válido para o registro de visualizações"
+        },
+        "id": {
+            "invalidUuid": "O ID deve ser um UUID válido",
+            "required": "O ID é obrigatório"
+        },
+        "isAuthenticated": {
+            "required": "O estado de autenticação é obrigatório"
+        },
+        "stats": {
+            "total": {
+                "integer": "O total de visitas deve ser um número inteiro",
+                "nonnegative": "O total de visitas não pode ser negativo",
+                "required": "O total de visitas é obrigatório"
+            },
+            "unique": {
+                "integer": "A contagem de visitantes únicos deve ser um número inteiro",
+                "nonnegative": "A contagem de visitantes únicos não pode ser negativa",
+                "required": "A contagem de visitantes únicos é obrigatória"
+            }
+        },
+        "viewedAt": {
+            "required": "A data da visualização é obrigatória"
+        },
+        "visitorHash": {
+            "empty": "O identificador do visitante não pode estar vazio",
+            "required": "O identificador do visitante é obrigatório"
+        },
+        "window": {
+            "invalid": "A janela de tempo deve ser 7d ou 30d"
         }
     }
 }

@@ -85,6 +85,11 @@
             "singular": "Avaliação",
             "plural": "Avaliações",
             "description": "Gerencie avaliações e classificações"
+        },
+        "appLog": {
+            "singular": "Registro",
+            "plural": "Registros de aplicação",
+            "description": "Eventos WARN e ERROR emitidos pelos serviços do sistema"
         }
     },
     "columns": {
@@ -175,7 +180,16 @@
         "banned": "Banido",
         "banReason": "Motivo do Banimento",
         "banExpires": "Banimento Expira",
-        "avatar": "Avatar"
+        "avatar": "Avatar",
+        "appLog": {
+            "loggedAt": "Data/Hora",
+            "level": "Nível",
+            "category": "Categoria",
+            "label": "Rótulo",
+            "request": "Requisição",
+            "userId": "Usuário",
+            "message": "Mensagem"
+        }
     },
     "actions": {
         "view": "Ver",
@@ -286,6 +300,15 @@
             "showing": "Exibindo {start} a {end} de {total}",
             "page": "Página {page} de {totalPages}",
             "rowsPerPage": "Linhas por página"
+        }
+    },
+    "grid": {
+        "statistics": "Estatísticas",
+        "moreFields": "campos adicionais",
+        "actions": {
+            "peek": "Ver",
+            "edit": "Editar",
+            "delete": "Excluir"
         }
     },
     "detail": {
@@ -657,7 +680,9 @@
         "premiumCta": "Atualizar plano",
         "goToSection": "Ir para a seção",
         "signals": {
-            "featuredImage": { "label": "Imagem principal carregada" },
+            "featuredImage": {
+                "label": "Imagem principal carregada"
+            },
             "galleryPhotos": {
                 "label": "Pelo menos {target} fotos na galeria",
                 "hint": "{current} de {target} carregadas"
@@ -670,28 +695,56 @@
                 "label": "Descrição detalhada",
                 "hint": "{current} de {target} caracteres"
             },
-            "summary": { "label": "Resumo curto" },
-            "locationPin": { "label": "Localização marcada no mapa" },
-            "contact": { "label": "Pelo menos um canal de contato" },
+            "summary": {
+                "label": "Resumo curto"
+            },
+            "locationPin": {
+                "label": "Localização marcada no mapa"
+            },
+            "contact": {
+                "label": "Pelo menos um canal de contato"
+            },
             "services": {
                 "label": "Serviços preenchidos",
                 "hint": "{current} de {target} marcados"
             },
-            "price": { "label": "Preço definido" },
-            "videoGallery": { "label": "Galeria com vídeos" },
-            "virtualTour": { "label": "Tour virtual 360°" },
-            "dates": { "label": "Datas do evento" },
-            "organizer": { "label": "Organizador atribuído" },
-            "category": { "label": "Categoria selecionada" },
-            "location": { "label": "Local do evento" },
+            "price": {
+                "label": "Preço definido"
+            },
+            "videoGallery": {
+                "label": "Galeria com vídeos"
+            },
+            "virtualTour": {
+                "label": "Tour virtual 360°"
+            },
+            "dates": {
+                "label": "Datas do evento"
+            },
+            "organizer": {
+                "label": "Organizador atribuído"
+            },
+            "category": {
+                "label": "Categoria selecionada"
+            },
+            "location": {
+                "label": "Local do evento"
+            },
             "content": {
                 "label": "Corpo do artigo",
                 "hint": "{current} de {target} caracteres"
             },
-            "readingTime": { "label": "Tempo de leitura definido" },
-            "author": { "label": "Autor atribuído" },
-            "relatedEntity": { "label": "Vinculado a outra entidade" },
-            "publishedAt": { "label": "Data de publicação" }
+            "readingTime": {
+                "label": "Tempo de leitura definido"
+            },
+            "author": {
+                "label": "Autor atribuído"
+            },
+            "relatedEntity": {
+                "label": "Vinculado a outra entidade"
+            },
+            "publishedAt": {
+                "label": "Data de publicação"
+            }
         }
     }
 }

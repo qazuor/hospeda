@@ -850,3 +850,9 @@ registerDataSource('editor.comments.recent', (ctx) => ({
 // Card C — open rate: 🔴 PHASE 2 (no email-open tracking). Deferred.
 // Card E — views per post: 🔴 PHASE 2 (cross-entity view tracking).
 // Card F — views per event: 🔴 PHASE 2 (cross-entity view tracking).
+
+// ============================================================================
+// NOTE — WHATS NEW RECENT (SPEC-175 T-016)
+// ============================================================================
+// `whats-new.recent` is registered in `./whats-new.ts` (imported via index.ts).
+// Shared across all four roles — see apps/admin/src/lib/dashboard-sources/index.ts.

@@ -13,7 +13,6 @@
  * - SYSTEM messages: no notifications, no counters, no sender-side timestamps
  * - State machine: CLOSED → PENDING_OWNER reopen, BLOCKED rejection
  * - Metrics: first_*_message_at only set on first message
- * - Env-var parsing: absent, empty, single, multiple, trailing comma, mixed case
  * - getMessages: cursor pagination, nextCursor presence/absence
  */
 
@@ -28,6 +27,14 @@ vi.mock('../../../src/utils/transaction.js', () => ({
     )
 }));
 
+// Mock @repo/content-moderation so MessageService tests are isolated from
+// the real engine's env-var parsing.  Each content-moderation test group
+// configures the mock return value to simulate blocked / clean results.
+vi.mock('@repo/content-moderation', () => ({
+    moderateText: vi.fn()
+}));
+
+import * as contentModeration from '@repo/content-moderation';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { SelectConversation, SelectMessage } from '@repo/db';
 import {
@@ -47,6 +54,34 @@ import {
     expectValidationError
 } from '../../helpers/assertions.js';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory.js';
+
+/** Clean (no blocked terms) ModerationResult for use as default mock return value. */
+const CLEAN_MODERATION_RESULT: contentModeration.ModerationResult = {
+    score: 0,
+    categories: Object.freeze({
+        spam: 0,
+        sexual: 0,
+        violence: 0,
+        hate: 0,
+        harassment: 0,
+        other: 0
+    }),
+    matchedTerms: Object.freeze([])
+};
+
+/** Blocked ModerationResult for simulating a word/domain hit. */
+const BLOCKED_MODERATION_RESULT: contentModeration.ModerationResult = {
+    score: 1.0,
+    categories: Object.freeze({
+        spam: 0,
+        sexual: 0,
+        violence: 0,
+        hate: 0,
+        harassment: 0,
+        other: 1.0
+    }),
+    matchedTerms: Object.freeze(['badword'])
+};
 
 /** Cast helper for Vitest mock access */
 const asMock = <T>(fn: T) => fn as unknown as Mock;
@@ -189,6 +224,9 @@ describe('MessageService', () => {
             notificationScheduleMock
         );
 
+        // Default: content moderation returns clean result (no blocked terms)
+        asMock(contentModeration.moderateText).mockResolvedValue(CLEAN_MODERATION_RESULT);
+
         // Default: notification schedule calls succeed
         asMock(notificationScheduleMock.upsertForMessage).mockResolvedValue({ data: {} });
         asMock(notificationScheduleMock.cancelForRecipient).mockResolvedValue({
@@ -198,7 +236,6 @@ describe('MessageService', () => {
 
     afterEach(() => {
         vi.clearAllMocks();
-        vi.unstubAllEnvs();
     });
 
     // -----------------------------------------------------------------------
@@ -519,105 +556,113 @@ describe('MessageService', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Content moderation — blocked word
+    // Content moderation — blocked word (REGRESSION — T-011)
     // -----------------------------------------------------------------------
 
-    describe('createMessage — blocked word', () => {
-        it('should reject body containing a blocked word (case-insensitive substring match)', async () => {
-            vi.stubEnv('HOSPEDA_MESSAGING_BLOCKED_WORDS', 'badword');
+    describe('createMessage — blocked word (via @repo/content-moderation)', () => {
+        it('should reject body with a blocked word — error code VALIDATION_ERROR + reason MESSAGE_CONTENT_BLOCKED', async () => {
+            // Arrange — simulate moderateText reporting a blocked word hit
+            asMock(contentModeration.moderateText).mockResolvedValue(BLOCKED_MODERATION_RESULT);
 
-            // Re-create service after env var is set (module-level parse happens at import, but
-            // the service calls _validateMessageContent which reads the top-level frozen const).
-            // Since BLOCKED_WORDS is module-level, we need to test via a service that reflects
-            // the stub. We test by calling the method directly through integration with env reset.
-
-            // NOTE: BLOCKED_WORDS is a top-level const parsed at module load time, so env stubs
-            // after import won't affect it within the same test process. Instead we test the
-            // parsing logic directly below and test the blocked-word path via module re-import
-            // or by testing with a known blocklist scenario.
-            // For the mocked environment tests, we verify the parseBlocklist utility behavior.
-
-            // The primary integration test: with env ALREADY set, verify the parsing outcome.
-            // Since the module is loaded once, we test parseBlocklist separately (see env tests).
-            // Here we test that a real blocked-word hit returns MESSAGE_CONTENT_BLOCKED.
             const conversation = makeConversation();
             asMock(conversationModelMock.findById).mockResolvedValue(conversation);
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
 
-            // Access private method via cast to test it directly
-            const svcWithBlocklist = service as unknown as {
-                _validateMessageContent: (body: string) => void;
-                [key: string]: any;
-            };
-            // Manually test _validateMessageContent with a known forbidden pattern:
-            // inject by overwriting the private method with one that simulates a blocked word
-            const originalValidate = svcWithBlocklist._validateMessageContent.bind(service);
-            // Verify no error for a clean body
-            expect(() => originalValidate('Hello there, this is a clean message')).not.toThrow();
+            // Act
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'This contains badword here'
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect((result.error as unknown as { reason?: string })?.reason).toBe(
+                'MESSAGE_CONTENT_BLOCKED'
+            );
+            expect(asMock(messageModelMock.create)).not.toHaveBeenCalled();
         });
 
-        it('should not block when HOSPEDA_MESSAGING_BLOCKED_WORDS is empty string', async () => {
-            vi.stubEnv('HOSPEDA_MESSAGING_BLOCKED_WORDS', '');
-            // Empty blocklist — any message passes
+        it('should pass a body with no blocked words (clean result)', async () => {
+            // Arrange — default mock returns CLEAN_MODERATION_RESULT (set in beforeEach)
             const conversation = makeConversation();
             asMock(conversationModelMock.findById).mockResolvedValue(conversation);
             asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
             asMock(messageModelMock.create).mockResolvedValue(makeMessage());
             asMock(conversationModelMock.update).mockResolvedValue(conversation);
 
+            // Act
             const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'Hello, is this place available in July?'
+            });
+
+            // Assert
+            expectSuccess(result);
+        });
+
+        it('should pass context "message" to moderateText', async () => {
+            // Arrange
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(messageModelMock.create).mockResolvedValue(makeMessage());
+            asMock(conversationModelMock.update).mockResolvedValue(conversation);
+
+            // Act
+            await service.createMessage(ACTOR, {
                 conversationId: CONVERSATION_ID,
                 senderType: MessageSenderTypeEnum.GUEST,
                 body: 'Hello!'
             });
 
-            expectSuccess(result);
+            // Assert — moderateText called with context: 'message'
+            const moderateCall = asMock(contentModeration.moderateText).mock.calls[0] as [
+                { text: string; context?: string }
+            ];
+            expect(moderateCall[0].context).toBe('message');
         });
     });
 
     // -----------------------------------------------------------------------
-    // Content moderation — blocked domain
+    // Content moderation — blocked domain (REGRESSION — T-011)
     // -----------------------------------------------------------------------
 
-    describe('createMessage — blocked domain', () => {
-        it('parseBlocklist handles trailing comma', () => {
-            // Import parseBlocklist indirectly by testing the module-level behavior
-            // This test documents the expected parsing result
-            const raw = 'spam.com,evil.org,';
-            const parsed = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(parsed).toEqual(['spam.com', 'evil.org']);
-        });
+    describe('createMessage — blocked domain (via @repo/content-moderation)', () => {
+        it('should reject body with a blocked domain URL — error code VALIDATION_ERROR + reason MESSAGE_CONTENT_BLOCKED', async () => {
+            // Arrange — simulate moderateText reporting a blocked domain hit
+            const domainBlockedResult: contentModeration.ModerationResult = {
+                score: 1.0,
+                categories: Object.freeze({
+                    spam: 0,
+                    sexual: 0,
+                    violence: 0,
+                    hate: 0,
+                    harassment: 0,
+                    other: 1.0
+                }),
+                matchedTerms: Object.freeze(['spam.com'])
+            };
+            asMock(contentModeration.moderateText).mockResolvedValue(domainBlockedResult);
 
-        it('parseBlocklist handles single entry', () => {
-            const raw = 'spam.com';
-            const parsed = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(parsed).toEqual(['spam.com']);
-        });
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
 
-        it('parseBlocklist handles mixed case and spaces', () => {
-            const raw = '  Spam.COM , Evil.ORG  ';
-            const parsed = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(parsed).toEqual(['spam.com', 'evil.org']);
-        });
+            // Act
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'Visit https://spam.com for deals'
+            });
 
-        it('parseBlocklist returns empty array for undefined', () => {
-            const parsed = undefined as unknown as string | undefined;
-            const result = parsed
-                ? parsed
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter((s) => s.length > 0)
-                : [];
-            expect(result).toEqual([]);
+            // Assert
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect((result.error as unknown as { reason?: string })?.reason).toBe(
+                'MESSAGE_CONTENT_BLOCKED'
+            );
+            expect(asMock(messageModelMock.create)).not.toHaveBeenCalled();
         });
     });
 
@@ -883,59 +928,6 @@ describe('MessageService', () => {
             });
 
             expectForbiddenError(result);
-        });
-    });
-
-    // -----------------------------------------------------------------------
-    // Env-var parsing: parseBlocklist logic
-    // -----------------------------------------------------------------------
-
-    describe('parseBlocklist (env-var parsing)', () => {
-        it('handles multiple words with trailing comma', () => {
-            const raw = 'spam,evil,bad,';
-            const result = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(result).toEqual(['spam', 'evil', 'bad']);
-        });
-
-        it('handles mixed case', () => {
-            const raw = 'SPAM,Evil,BAD';
-            const result = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(result).toEqual(['spam', 'evil', 'bad']);
-        });
-
-        it('handles absent value (undefined)', () => {
-            const raw = undefined as string | undefined;
-            const result: string[] = raw
-                ? raw
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter((s) => s.length > 0)
-                : [];
-            expect(result).toEqual([]);
-        });
-
-        it('handles empty string', () => {
-            const raw = '';
-            const result = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(result).toEqual([]);
-        });
-
-        it('handles single word no trailing comma', () => {
-            const raw = 'badword';
-            const result = raw
-                .split(',')
-                .map((s) => s.trim().toLowerCase())
-                .filter((s) => s.length > 0);
-            expect(result).toEqual(['badword']);
         });
     });
 });

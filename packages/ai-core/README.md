@@ -8,7 +8,7 @@ specific LLM vendor.
 Only `apps/api` consumes this package. Never import it directly in `apps/web` or
 `apps/admin`.
 
-See [ADR-030](../../docs/decisions/ADR-030-ai-core-foundation-architecture.md) for
+See [ADR-031](../../docs/decisions/ADR-031-ai-core-foundation-architecture.md) for
 the authoritative design record.
 
 ---

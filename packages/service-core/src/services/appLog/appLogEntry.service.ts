@@ -4,6 +4,7 @@ import {
     type AppLogEntry,
     type AppLogEntryFilter,
     AppLogEntryFilterSchema,
+    AppLogEntrySortInputSchema,
     type CreateAppLogEntry,
     CreateAppLogEntrySchema
 } from '@repo/schemas';
@@ -17,8 +18,11 @@ const DEFAULT_RETENTION_DAYS = 30;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-/** Input schema for listEntries (filter is validated; actor is handled by the wrapper). */
-const ListEntriesInputSchema = z.object({ filter: AppLogEntryFilterSchema });
+/** Input schema for listEntries (filter + optional sort; actor is handled by the wrapper). */
+const ListEntriesInputSchema = z.object({
+    filter: AppLogEntryFilterSchema,
+    sort: AppLogEntrySortInputSchema.optional()
+});
 
 /**
  * Service for persisted application log entries (SPEC-184 / BETA-82).
@@ -75,7 +79,12 @@ export class AppLogEntryService extends BaseService {
             label: data.label ?? null,
             message,
             data: dataField ?? null,
-            loggedAt: data.loggedAt
+            loggedAt: data.loggedAt,
+            // Request-context fields — present when the sink ran inside an ALS scope.
+            requestId: data.requestId ?? null,
+            userId: data.userId ?? null,
+            method: data.method ?? null,
+            path: data.path ?? null
             // biome-ignore lint/suspicious/noExplicitAny: db Partial<row> vs schema type bridge
         } as any);
 
@@ -86,26 +95,35 @@ export class AppLogEntryService extends BaseService {
     }
 
     /**
-     * Lists app log entries with filters + pagination (admin-tier).
+     * Lists app log entries with filters, pagination, and optional sort (admin-tier).
+     *
+     * The `sort` input must already be validated by the caller (e.g. parsed from
+     * the `field:direction` query param in the route). It is propagated as-is to
+     * the model so the DB layer never receives arbitrary field names.
      *
      * @param input.actor - Actor performing the action (needs SYSTEM_MAINTENANCE_MODE).
      * @param input.filter - Optional filters + pagination.
+     * @param input.sort - Optional validated sort (field whitelisted to loggedAt | level).
      * @returns The matching page of entries and total count.
      */
     public async listEntries(input: {
         actor: Actor;
         filter?: Partial<AppLogEntryFilter>;
+        sort?: { field: 'loggedAt' | 'level'; direction: 'asc' | 'desc' };
         ctx?: ServiceContext;
     }): Promise<ServiceOutput<{ items: AppLogEntry[]; total: number }>> {
-        const { actor, filter, ctx } = input;
+        const { actor, filter, sort, ctx } = input;
         return this.runWithLoggingAndValidation({
             methodName: 'listEntries',
-            input: { actor, filter: AppLogEntryFilterSchema.parse(filter ?? {}) },
+            input: { actor, filter: AppLogEntryFilterSchema.parse(filter ?? {}), sort },
             schema: ListEntriesInputSchema,
             ctx,
             execute: async (validated) => {
                 checkCanViewAppLogs(actor);
-                const result = await this.model.listEntries(validated.filter);
+                const result = await this.model.listEntries({
+                    ...validated.filter,
+                    sort: validated.sort
+                });
                 // TYPE-WORKAROUND: same DB-model vs @repo/schemas nominal mismatch as recordEntry.
                 return result as unknown as { items: AppLogEntry[]; total: number };
             }

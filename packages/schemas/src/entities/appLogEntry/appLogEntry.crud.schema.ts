@@ -12,6 +12,9 @@ export const APP_LOG_MESSAGE_MAX_LENGTH = 2000;
  * so they are omitted here. `message` is truncated to
  * {@link APP_LOG_MESSAGE_MAX_LENGTH} chars by the service (overflow moved to
  * `data.messageFull`).
+ *
+ * Request-context fields (`requestId`, `userId`, `method`, `path`) are optional:
+ * entries emitted outside a request scope (startup, cron) should simply omit them.
  */
 export const CreateAppLogEntrySchema = z.object({
     /** Log level (only WARN | ERROR are persisted) */
@@ -25,7 +28,27 @@ export const CreateAppLogEntrySchema = z.object({
     /** Redacted structured payload (already sanitized by the logger) */
     data: z.record(z.string(), z.unknown()).optional(),
     /** When the log entry was emitted */
-    loggedAt: z.coerce.date()
+    loggedAt: z.coerce.date(),
+    /**
+     * Correlation ID from AsyncLocalStorage request context.
+     * Omit for non-request-scoped entries.
+     */
+    requestId: z.string().max(64).optional(),
+    /**
+     * Authenticated user ID at the time of the log entry.
+     * Omit for unauthenticated requests or non-request-scoped entries.
+     */
+    userId: z.string().uuid().optional(),
+    /**
+     * HTTP method of the in-flight request (e.g. 'GET', 'POST').
+     * Omit for non-request-scoped entries.
+     */
+    method: z.string().max(10).optional(),
+    /**
+     * Request path (e.g. '/api/v1/public/accommodations').
+     * Omit for non-request-scoped entries.
+     */
+    path: z.string().optional()
 });
 
 /** Input type for recording an app log entry */

@@ -128,6 +128,13 @@ vi.mock('@/integrations/clerk/header-user', () => ({
     HeaderUser: () => <div data-testid="auth-header">AuthHeader</div>
 }));
 
+// ── WhatsNewBadge mock ────────────────────────────────────────────────────────
+// WhatsNewBadge calls useWhatsNew → TanStack useQuery, which requires a
+// QueryClientProvider. Isolate with a stub matching the existing pattern (SPEC-175).
+vi.mock('@/components/whats-new/WhatsNewBadge', () => ({
+    WhatsNewBadge: () => <button data-testid="whats-new-badge">WhatsNew</button>
+}));
+
 // Import after mocks
 import { Header } from '@/components/layout/header/Header';
 

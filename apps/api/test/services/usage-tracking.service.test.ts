@@ -34,7 +34,14 @@ const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 vi.mock('@repo/db', () => ({
     getDb: () => ({
         select: mockSelect
-    })
+    }),
+    // EntityViewService singleton (service-core barrel) dereferences these at import.
+    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    entityViewModel: {
+        insertView: vi.fn(),
+        getStatsForEntities: vi.fn(async () => []),
+        purgeOlderThan: vi.fn(async () => 0)
+    }
 }));
 
 vi.mock('@repo/db/schemas', () => ({
@@ -85,7 +92,10 @@ describe('UsageTrackingService', () => {
             [LimitKey.MAX_ACTIVE_PROMOTIONS]: 2,
             [LimitKey.MAX_FAVORITES]: 20,
             [LimitKey.MAX_PROPERTIES]: 0, // Unlimited
-            [LimitKey.MAX_STAFF_ACCOUNTS]: 0 // Unlimited
+            [LimitKey.MAX_STAFF_ACCOUNTS]: 0, // Unlimited
+            // SPEC-145: two new tourist-facing limits added to LimitKey
+            [LimitKey.MAX_ACTIVE_ALERTS]: 0,
+            [LimitKey.MAX_COMPARE_ITEMS]: 0
         }
     };
 

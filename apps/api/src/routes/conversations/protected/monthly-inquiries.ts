@@ -12,9 +12,11 @@
  * @see SPEC-155 HOST card I
  */
 
+import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -73,6 +75,10 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
         return { months: result.data ?? [] };
     },
     options: {
+        // SPEC-145 T-006: VIEW_BASIC_STATS gate — monthly-inquiries trend KPI is
+        // a basic stats feature granted on owner-basico (and above) and
+        // complex-basico (and above). Tourists never see this route.
+        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

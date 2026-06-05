@@ -318,7 +318,9 @@
             "status": "Estado",
             "actions": "Acciones",
             "perMonth": "/mes",
-            "daysUnit": "días"
+            "daysUnit": "días",
+            "slug": "Slug",
+            "deleted": "Eliminado"
         },
         "billingTypeLabels": {
             "oneTime": "Único",
@@ -418,7 +420,13 @@
             "expiresAtLabel": "Fecha de expiración:",
             "paymentIdLabel": "ID de Pago:",
             "recordIdLabel": "ID del registro:"
-        }
+        },
+        "actionRestore": "Restaurar add-on",
+        "actionHardDelete": "Eliminar permanentemente",
+        "confirmSoftDeleteDesc": "El add-on dejará de estar disponible para nuevas compras. Vas a eliminar:",
+        "confirmHardDeleteDesc": "Esta acción no se puede deshacer y será bloqueada si el add-on tiene compras o suscripciones asociadas. Vas a eliminar permanentemente:",
+        "statusInactive": "Inactivo",
+        "statusDeleted": "Eliminado"
     },
     "settings": {
         "title": "Configuración de Facturación",

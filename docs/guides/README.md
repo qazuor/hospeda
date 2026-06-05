@@ -16,6 +16,7 @@
 | [Self-Hosted Runner](self-hosted-runner.md) | Register and operate the PR CI runner on the owner's laptop (SPEC-179) |
 | [Log Management](log-management.md) | API log output (pretty/NDJSON), Coolify stdout retention, WARN/ERROR DB sink + admin viewer, purge policy (SPEC-184) |
 | [Markdown Formatting](markdown-formatting.md) | Documentation formatting standards |
+| [Review Moderation](review-moderation.md) | Review moderation model (PENDING/APPROVED/REJECTED), hybrid default policy, content-moderation gate, admin API surface (SPEC-166) |
 
 ## Policy Documents
 

@@ -235,6 +235,7 @@ function DashboardGrid({ dashboard, userRole }: DashboardGridProps) {
         <div
             className="space-y-6"
             data-testid="dashboard-renderer"
+            data-tour="dashboard-region"
         >
             {/* Widget grid — each widget fires its useQuery independently */}
             <div className="grid auto-rows-[minmax(220px,auto)] grid-cols-1 gap-4 md:grid-cols-2 lg:grid-flow-dense lg:grid-cols-6">

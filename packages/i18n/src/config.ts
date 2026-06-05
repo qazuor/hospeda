@@ -66,7 +66,11 @@ export const namespaces = [
     // Tag system namespaces (admin panel only, per SPEC-086 D-024)
     'tags',
     // Map components (SPEC-097)
-    'maps'
+    'maps',
+    // What's New / Release Notes (admin panel only, SPEC-175)
+    'admin-whats-new',
+    // Contribution hub /colaborar (web only, SPEC-191)
+    'contributions'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -126,6 +130,7 @@ import adminNewsletterEs from './locales/es/admin-newsletter.json';
 import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
+import adminWhatsNewEs from './locales/es/admin-whats-new.json';
 import apiEs from './locales/es/api.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
@@ -134,6 +139,7 @@ import blogEs from './locales/es/blog.json';
 import commentsEs from './locales/es/comments.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
+import contributionsEs from './locales/es/contributions.json';
 import conversationsEs from './locales/es/conversations.json';
 import cookieConsentEs from './locales/es/cookieConsent.json';
 import destinationEs from './locales/es/destination.json';
@@ -175,6 +181,7 @@ import adminNewsletterEn from './locales/en/admin-newsletter.json';
 import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
+import adminWhatsNewEn from './locales/en/admin-whats-new.json';
 import apiEn from './locales/en/api.json';
 import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
@@ -183,6 +190,7 @@ import blogEn from './locales/en/blog.json';
 import commentsEn from './locales/en/comments.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
+import contributionsEn from './locales/en/contributions.json';
 import conversationsEn from './locales/en/conversations.json';
 import cookieConsentEn from './locales/en/cookieConsent.json';
 import destinationEn from './locales/en/destination.json';
@@ -224,6 +232,7 @@ import adminNewsletterPt from './locales/pt/admin-newsletter.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
+import adminWhatsNewPt from './locales/pt/admin-whats-new.json';
 import apiPt from './locales/pt/api.json';
 import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
@@ -232,6 +241,7 @@ import blogPt from './locales/pt/blog.json';
 import commentsPt from './locales/pt/comments.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
+import contributionsPt from './locales/pt/contributions.json';
 import conversationsPt from './locales/pt/conversations.json';
 import cookieConsentPt from './locales/pt/cookieConsent.json';
 import destinationPt from './locales/pt/destination.json';
@@ -274,6 +284,7 @@ const rawTranslations = {
         comments: commentsEs,
         common: commonEs,
         contact: contactEs,
+        contributions: contributionsEs,
         destinations: destinationEs,
         error: errorEs,
         events: eventEs,
@@ -309,7 +320,8 @@ const rawTranslations = {
         validation: validationEs,
         revalidation: revalidationEs,
         tags: tagsEs,
-        maps: mapsEs
+        maps: mapsEs,
+        'admin-whats-new': adminWhatsNewEs
     },
     en: {
         about: aboutEn,
@@ -323,6 +335,7 @@ const rawTranslations = {
         comments: commentsEn,
         common: commonEn,
         contact: contactEn,
+        contributions: contributionsEn,
         destinations: destinationEn,
         error: errorEn,
         events: eventEn,
@@ -358,7 +371,8 @@ const rawTranslations = {
         validation: validationEn,
         revalidation: revalidationEn,
         tags: tagsEn,
-        maps: mapsEn
+        maps: mapsEn,
+        'admin-whats-new': adminWhatsNewEn
     },
     pt: {
         about: aboutPt,
@@ -372,6 +386,7 @@ const rawTranslations = {
         comments: commentsPt,
         common: commonPt,
         contact: contactPt,
+        contributions: contributionsPt,
         destinations: destinationPt,
         error: errorPt,
         events: eventPt,
@@ -407,7 +422,8 @@ const rawTranslations = {
         validation: validationPt,
         revalidation: revalidationPt,
         tags: tagsPt,
-        maps: mapsPt
+        maps: mapsPt,
+        'admin-whats-new': adminWhatsNewPt
     }
 };
 

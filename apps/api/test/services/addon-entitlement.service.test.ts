@@ -4,14 +4,116 @@
  * Covers:
  * - T-010a: applyAddonEntitlements() with QZPay grant/set APIs
  * - T-010b: removeAddonEntitlements() with revokeBySource/removeBySource + fallbacks
+ *
+ * Updated for SPEC-192 T-012/T-025 cutover: addon reads now go through
+ * AddonCatalogService (DB-backed) and plan reads through PlanService (DB-backed).
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import type { PlanDefinition } from '@repo/billing';
-import * as billingModule from '@repo/billing';
 import { getDb } from '@repo/db';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ─── Hoisted mocks ─────────────────────────────────────────────────────────────
+
+const { mockCatalogGetBySlug, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(() => ({
+    mockCatalogGetBySlug: vi.fn(),
+    mockPlanGetById: vi.fn(),
+    mockPlanGetBySlug: vi.fn()
+}));
+
+// ─── Service-core mock (DB-backed catalog + plan services, SPEC-192 T-012/T-025) ──
+
+vi.mock('@repo/service-core', () => ({
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        getBySlug: mockCatalogGetBySlug,
+        list: vi.fn()
+    })),
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: mockPlanGetById,
+        getBySlug: mockPlanGetBySlug
+    }))
+}));
+
+// ─── Addon stubs matching the shapes the service expects from AddonCatalogService ──
+
+const ADDON_STUBS: Record<string, unknown> = {
+    'visibility-boost-7d': {
+        slug: 'visibility-boost-7d',
+        billingType: 'one_time',
+        priceArs: 500000,
+        annualPriceArs: null,
+        durationDays: 7,
+        affectsLimitKey: null,
+        limitIncrease: null,
+        grantsEntitlement: EntitlementKey.FEATURED_LISTING,
+        targetCategories: ['owner', 'complex'],
+        isActive: true,
+        sortOrder: 1
+    },
+    'visibility-boost-30d': {
+        slug: 'visibility-boost-30d',
+        billingType: 'one_time',
+        priceArs: 1500000,
+        annualPriceArs: null,
+        durationDays: 30,
+        affectsLimitKey: null,
+        limitIncrease: null,
+        grantsEntitlement: EntitlementKey.FEATURED_LISTING,
+        targetCategories: ['owner', 'complex'],
+        isActive: true,
+        sortOrder: 2
+    },
+    'extra-photos-20': {
+        slug: 'extra-photos-20',
+        billingType: 'recurring',
+        priceArs: 500000,
+        annualPriceArs: null,
+        durationDays: null,
+        affectsLimitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
+        limitIncrease: 20,
+        grantsEntitlement: null,
+        targetCategories: ['owner', 'complex'],
+        isActive: true,
+        sortOrder: 3
+    },
+    'extra-accommodations-5': {
+        slug: 'extra-accommodations-5',
+        billingType: 'recurring',
+        priceArs: 1000000,
+        annualPriceArs: null,
+        durationDays: null,
+        affectsLimitKey: LimitKey.MAX_ACCOMMODATIONS,
+        limitIncrease: 5,
+        grantsEntitlement: null,
+        targetCategories: ['owner'],
+        isActive: true,
+        sortOrder: 4
+    }
+};
+
+// ─── Plan stubs matching the shapes from PlanService (limits as Record<string,number>) ──
+
+const PLAN_STUBS: Record<string, unknown> = {
+    'owner-basico': {
+        id: 'plan-uuid-owner-basico',
+        slug: 'owner-basico',
+        name: 'Owner Básico',
+        limits: {
+            [LimitKey.MAX_ACCOMMODATIONS]: 1,
+            [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 5
+        }
+    },
+    'owner-pro': {
+        id: 'plan-uuid-owner-pro',
+        slug: 'owner-pro',
+        name: 'Owner Pro',
+        limits: {
+            [LimitKey.MAX_ACCOMMODATIONS]: 3,
+            [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 15
+        }
+    }
+};
+
 import * as entitlementMiddleware from '../../src/middlewares/entitlement';
 import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { createMockBilling, createMockSubscriptionWithHelpers } from '../helpers/mock-factories';
@@ -66,6 +168,32 @@ describe('AddonEntitlementService', () => {
     beforeEach(() => {
         mockBilling = createMockBilling();
         service = new AddonEntitlementService(mockBilling);
+
+        // Default: catalog returns the stub for known slugs, NOT_FOUND for unknown
+        mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            const stub = ADDON_STUBS[slug];
+            if (stub) return { success: true, data: stub };
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `addon '${slug}' not found` }
+            };
+        });
+
+        // Default: plan getById returns NOT_FOUND (forces getBySlug fallback)
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found by id' }
+        });
+
+        // Default: plan getBySlug returns stub for known slugs
+        mockPlanGetBySlug.mockImplementation(async (slug: string) => {
+            const stub = PLAN_STUBS[slug];
+            if (stub) return { success: true, data: stub };
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `plan '${slug}' not found` }
+            };
+        });
     });
 
     afterEach(() => {
@@ -307,71 +435,42 @@ describe('AddonEntitlementService', () => {
         });
 
         it('should skip limits.set() when base plan limit is -1 (unlimited)', async () => {
-            // No real canonical plan has -1 for a limit key targeted by an existing addon.
-            // We inject a synthetic plan with MAX_PHOTOS_PER_ACCOMMODATION = -1 so the service
-            // reads -1 from ALL_PLANS and skips the limits.set() call entirely.
-            const originalAllPlans = billingModule.ALL_PLANS;
-            const planWithUnlimitedPhotos: PlanDefinition = {
-                slug: 'owner-unlimited-test',
-                name: 'Test Unlimited Plan',
-                description: 'Synthetic plan for -1 skip test',
-                category: 'owner',
-                monthlyPriceArs: 0,
-                annualPriceArs: null,
-                monthlyPriceUsdRef: 0,
-                hasTrial: false,
-                trialDays: 0,
-                isDefault: false,
-                sortOrder: 99,
-                entitlements: [],
-                limits: [
-                    {
-                        key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        value: -1,
-                        name: 'Photos per accommodation',
-                        description: 'Unlimited photos'
+            // After SPEC-192 T-025 cutover, plan limits come from PlanService (DB-backed).
+            // Override the plan mock to return -1 for MAX_PHOTOS_PER_ACCOMMODATION.
+            mockPlanGetBySlug.mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'plan-uuid-unlimited-test',
+                    slug: 'owner-unlimited-test',
+                    name: 'Test Unlimited Plan',
+                    limits: {
+                        [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: -1
                     }
-                ],
-                isActive: true
-            };
-
-            Object.defineProperty(billingModule, 'ALL_PLANS', {
-                value: [...originalAllPlans, planWithUnlimitedPhotos],
-                configurable: true,
-                writable: true
+                }
             });
 
-            try {
-                const mockSubscription = createMockSubscriptionWithHelpers({
-                    id: 'sub_123',
-                    status: 'active',
-                    planId: 'owner-unlimited-test',
-                    metadata: {}
-                });
+            const mockSubscription = createMockSubscriptionWithHelpers({
+                id: 'sub_123',
+                status: 'active',
+                planId: 'owner-unlimited-test',
+                metadata: {}
+            });
 
-                vi.mocked(mockBilling.subscriptions.getByCustomerId).mockResolvedValue([
-                    mockSubscription
-                ]);
-                vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
+            vi.mocked(mockBilling.subscriptions.getByCustomerId).mockResolvedValue([
+                mockSubscription
+            ]);
+            vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
-                const result = await service.applyAddonEntitlements({
-                    customerId: 'cust_123',
-                    addonSlug: 'extra-photos-20',
-                    purchaseId: 'purchase_x'
-                });
+            const result = await service.applyAddonEntitlements({
+                customerId: 'cust_123',
+                addonSlug: 'extra-photos-20',
+                purchaseId: 'purchase_x'
+            });
 
-                expect(result.success).toBe(true);
+            expect(result.success).toBe(true);
 
-                // Base plan limit is -1 (unlimited) -> service must NOT call limits.set()
-                expect(mockBilling.limits.set).not.toHaveBeenCalled();
-            } finally {
-                // Restore original ALL_PLANS regardless of test outcome
-                Object.defineProperty(billingModule, 'ALL_PLANS', {
-                    value: originalAllPlans,
-                    configurable: true,
-                    writable: true
-                });
-            }
+            // Base plan limit is -1 (unlimited) -> service must NOT call limits.set()
+            expect(mockBilling.limits.set).not.toHaveBeenCalled();
         });
 
         it('should work with trialing subscription status', async () => {
@@ -397,7 +496,7 @@ describe('AddonEntitlementService', () => {
             expect(mockBilling.limits.set).toHaveBeenCalledTimes(1);
         });
 
-        it('should write add-on adjustment to subscription metadata and clear cache', async () => {
+        it('should NOT write addonAdjustments to subscription metadata (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -418,27 +517,15 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // Verify subscription metadata was updated with adjustment tracking
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            expect(updateCall).toBeDefined();
-            expect(updateCall![0]).toBe('sub_123');
-
-            const metadata = updateCall![1].metadata;
-            expect(metadata).toBeDefined();
-
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0]).toMatchObject({
-                addonSlug: 'extra-photos-20',
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                limitIncrease: 20
-            });
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            // The service must NOT call subscriptions.update at all during apply.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Verify cache was cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should write entitlement add-on to subscription metadata', async () => {
+        it('should NOT write addonAdjustments for entitlement add-on (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -459,15 +546,8 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0]).toMatchObject({
-                addonSlug: 'visibility-boost-7d',
-                entitlement: EntitlementKey.FEATURED_LISTING
-            });
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
         it('should NOT call billing.plans.get or billing.plans.update (no global plan mutation)', async () => {
@@ -542,11 +622,9 @@ describe('AddonEntitlementService', () => {
         });
 
         it('should call billing.entitlements.grant() without expiresAt for permanent entitlement addon (durationDays: null)', async () => {
-            // Arrange — spy on getAddonBySlug to return a permanent entitlement addon
+            // Arrange — after SPEC-192 T-012 cutover, override catalog mock to return a permanent entitlement addon
             const permanentAddon = {
                 slug: 'permanent-entitlement-addon',
-                name: 'Permanent Entitlement Addon',
-                description: 'Grants a permanent entitlement with no expiry.',
                 billingType: 'recurring' as const,
                 priceArs: 100000,
                 annualPriceArs: null,
@@ -559,9 +637,7 @@ describe('AddonEntitlementService', () => {
                 sortOrder: 99
             };
 
-            const getAddonBySlugSpy = vi
-                .spyOn(billingModule, 'getAddonBySlug')
-                .mockReturnValueOnce(permanentAddon);
+            mockCatalogGetBySlug.mockResolvedValueOnce({ success: true, data: permanentAddon });
 
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_perm',
@@ -597,8 +673,6 @@ describe('AddonEntitlementService', () => {
 
             // limits.set must NOT be called
             expect(mockBilling.limits.set).not.toHaveBeenCalled();
-
-            getAddonBySlugSpy.mockRestore();
         });
 
         it('should NOT clear entitlement cache when billing.entitlements.grant throws', async () => {
@@ -721,7 +795,7 @@ describe('AddonEntitlementService', () => {
             });
         });
 
-        it('should append to existing adjustments without overwriting', async () => {
+        it('should NOT append to metadata even when existing addonAdjustments are present (deprecated write removed)', async () => {
             const existingAdjustments = [
                 {
                     addonSlug: 'extra-accommodations-5',
@@ -745,19 +819,16 @@ describe('AddonEntitlementService', () => {
             ]);
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
 
-            await service.applyAddonEntitlements({
+            const result = await service.applyAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-photos-20',
                 purchaseId: 'purchase_new'
             });
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
+            expect(result.success).toBe(true);
 
-            expect(adjustments).toHaveLength(2);
-            expect(adjustments[0].addonSlug).toBe('extra-accommodations-5');
-            expect(adjustments[1].addonSlug).toBe('extra-photos-20');
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
     });
 
@@ -975,7 +1046,7 @@ describe('AddonEntitlementService', () => {
             );
         });
 
-        it('should continue with metadata cleanup even if revokeBySource throws (resilience)', async () => {
+        it('should succeed and clear cache even if revokeBySource throws (resilience)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1008,14 +1079,14 @@ describe('AddonEntitlementService', () => {
             // Should still succeed despite QZPay error (resilient)
             expect(result.success).toBe(true);
 
-            // Metadata should still be cleaned up
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Cache should still be cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should continue with metadata cleanup even if removeBySource throws (resilience)', async () => {
+        it('should succeed even if removeBySource throws (resilience, no metadata write)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1049,11 +1120,11 @@ describe('AddonEntitlementService', () => {
             // Should still succeed despite QZPay error (resilient)
             expect(result.success).toBe(true);
 
-            // Metadata should still be cleaned up
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
-        it('should remove adjustment from subscription metadata and clear cache', async () => {
+        it('should NOT write addonAdjustments on removal and should clear cache (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1084,20 +1155,14 @@ describe('AddonEntitlementService', () => {
 
             expect(result.success).toBe(true);
 
-            // Verify subscription metadata was cleared
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            expect(updateCall).toBeDefined();
-            expect(updateCall![0]).toBe('sub_123');
-
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
-            expect(adjustments).toHaveLength(0);
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Verify cache was cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
         });
 
-        it('should only remove the targeted add-on from metadata, leaving others intact', async () => {
+        it('should NOT write addonAdjustments on removal even with multiple existing entries (deprecated write removed)', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1126,18 +1191,17 @@ describe('AddonEntitlementService', () => {
             vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
             vi.mocked(mockBilling.limits.removeBySource).mockResolvedValue(1);
 
-            await service.removeAddonEntitlements({
+            const result = await service.removeAddonEntitlements({
                 customerId: 'cust_123',
                 addonSlug: 'extra-photos-20',
                 purchaseId: 'purchase_abc'
             });
 
-            const updateCall = vi.mocked(mockBilling.subscriptions.update).mock.calls[0];
-            const metadata = updateCall![1].metadata;
-            const adjustments = JSON.parse(metadata!.addonAdjustments as string);
+            expect(result.success).toBe(true);
 
-            expect(adjustments).toHaveLength(1);
-            expect(adjustments[0].addonSlug).toBe('extra-accommodations-5');
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            // Legacy metadata is left as-is; readers fall back to it for old rows.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
 
         it('should NOT call billing.plans.get or billing.plans.update (no global plan mutation)', async () => {
@@ -1203,11 +1267,11 @@ describe('AddonEntitlementService', () => {
             });
 
             // Assert — inner catch captures the cascading error, operation is resilient.
-            // Metadata cleanup and cache clear still run despite billing failures.
+            // Cache clear still runs despite billing failures.
             expect(result.success).toBe(true);
 
-            // Metadata cleanup still ran despite cascading billing failure
-            expect(mockBilling.subscriptions.update).toHaveBeenCalled();
+            // SPEC-194 T-021: addonAdjustments metadata write was removed.
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
 
             // Cache was still cleared
             expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith(
@@ -1215,7 +1279,9 @@ describe('AddonEntitlementService', () => {
             );
         });
 
-        it('should return INTERNAL_ERROR when subscriptions.update throws (outer catch)', async () => {
+        it('should return success even when subscriptions.update would throw (no metadata write, outer catch not triggered)', async () => {
+            // SPEC-194 T-021: addonAdjustments write was removed, so subscriptions.update is
+            // never called during removeAddonEntitlements. This test pins that contract.
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',
                 status: 'active',
@@ -1236,8 +1302,9 @@ describe('AddonEntitlementService', () => {
                 purchaseId: 'purchase_abc'
             });
 
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('INTERNAL_ERROR');
+            // subscriptions.update is never called, so the mock rejection never fires.
+            expect(result.success).toBe(true);
+            expect(mockBilling.subscriptions.update).not.toHaveBeenCalled();
         });
     });
 

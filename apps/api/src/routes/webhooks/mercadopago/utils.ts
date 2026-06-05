@@ -370,17 +370,29 @@ export function extractPlanChangeUpgradeMetadata(
 }
 
 /**
- * Check if external_reference follows add-on pattern (addon_SLUG_TIMESTAMP).
+ * Check if external_reference follows the legacy add-on pattern (addon_SLUG_TIMESTAMP).
+ *
+ * SPEC-127 semantics note: as of the qzpay checkout migration, NEW addon payments
+ * no longer use this pattern for their MP `external_reference`. The qzpay checkout
+ * session UUID is now used as `external_reference` (set internally by qzpay-core).
+ * The orderId (which previously was the external_reference) now travels in checkout
+ * metadata as `order_id`.
+ *
+ * This function is intentionally kept as a **legacy-only** matcher so that in-flight
+ * checkouts created before the migration still trigger the diagnostic warning in the
+ * no-metadata fallback branch. Do NOT extend the regex to match qzpay session UUIDs
+ * here — see the no-metadata branch in `processPaymentUpdated` for the qzpay-era
+ * second-chance diagnostic.
  *
  * @param externalReference - External reference string
- * @returns Add-on slug if pattern matches, null otherwise
+ * @returns Add-on slug if the legacy pattern matches, null otherwise
  */
 export function extractAddonFromReference(externalReference: unknown): string | null {
     if (typeof externalReference !== 'string') {
         return null;
     }
 
-    // Pattern: addon_SLUG_TIMESTAMP
+    // Legacy pattern: addon_SLUG_TIMESTAMP (pre-qzpay migration, SPEC-127)
     const match = externalReference.match(/^addon_([a-z0-9-]+)_\d+$/);
 
     if (match?.[1]) {

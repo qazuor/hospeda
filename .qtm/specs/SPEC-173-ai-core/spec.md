@@ -13,10 +13,10 @@ relatedSpecs:
   - SPEC-154  # admin config-driven IA — admin AI-settings page slots into this
   - SPEC-164  # admin billing super-only — AI_SETTINGS_MANAGE follows the same super-only pattern
 childSpecs:
-  - SPEC-197  # AI Feature — HOST text improvement (draft)
-  - SPEC-198  # AI Feature — Natural-language search (draft)
-  - SPEC-199  # AI Feature — Accommodation chat, tourist (draft)
-  - SPEC-200  # AI Feature — Support assistant (draft; audience open question)
+  - SPEC-198  # AI Feature — HOST text improvement (draft)
+  - SPEC-199  # AI Feature — Natural-language search (draft)
+  - SPEC-200  # AI Feature — Accommodation chat, tourist (draft)
+  - SPEC-201  # AI Feature — Support assistant (draft; audience open question)
 tags:
   - ai
   - foundation
@@ -171,14 +171,14 @@ Tables (soft-delete + timestamps per project convention, **except** `ai_usage`, 
 | `ai_provider_credentials` | Encrypted provider API keys (vault, §5.5) + metadata. |
 | `ai_credential_audit` | **(Q1 resolved)** Dedicated audit trail of credential mutations: actor, action (`created`/`rotated`/`deleted`), providerId, timestamp, ip. Permanent + queryable from admin (security trail over cost-bearing secrets; the repo has NO generic admin audit table — only `billing_audit_logs` from the third-party qzpay lib and a log-based `AuditEventType`, neither suitable). |
 | `ai_prompt_versions` | Versioned system prompts per feature (with `is_active` + history). |
-| `ai_usage` | Per-call metering: userId, feature, provider, model, tokensIn, tokensOut, cost_estimate_micro_usd (integer micro-USD — see ADR-030 §3), latencyMs, status, timestamp. **Append-only** (no soft-delete / updated_at). |
+| `ai_usage` | Per-call metering: userId, feature, provider, model, tokensIn, tokensOut, cost_estimate_micro_usd (integer micro-USD — see ADR-031 §3), latencyMs, status, timestamp. **Append-only** (no soft-delete / updated_at). |
 | `ai_request_log` | Audit of every call (request metadata, PII-scrubbed) for debugging. **Append-only** (no soft-delete / updated_at). |
 | `ai_conversations` | Generic multi-turn conversation container (used by chat child spec). |
 | `ai_messages` | Messages within a conversation (role, content, tokens, provider). |
 | `ai_credential_audit` | Dedicated audit trail of credential mutations. **Append-only** (no soft-delete / updated_at). |
 
 > Cost is stored as **integer micro-USD** (1 µUSD = 0.000001 USD). Centavos (ARS) round
-> per-call AI costs to zero, making ceilings non-functional — see ADR-030 §3.
+> per-call AI costs to zero, making ceilings non-functional — see ADR-031 §3.
 
 ### 5.5 Secrets vault (owner-approved: keys editable from admin)
 
@@ -249,7 +249,7 @@ Enforcement matrix:
   | complex-premium | -1 | -1 | -1 | — |
 
   > **2026-06-05 owner decision**: `ai_support` ungranted on all plans pending
-  > SPEC-200 audience resolution (internal-staff vs. end-user). Re-granting is a
+  > SPEC-201 audience resolution (internal-staff vs. end-user). Re-granting is a
   > trivial one-line change per plan once the audience is decided.
 
 - Every call is metered into `ai_usage` regardless of tier (reporting per user / feature / month).

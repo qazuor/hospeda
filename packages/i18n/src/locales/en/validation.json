@@ -2644,6 +2644,13 @@
             "invalidType": "[EN] El resultado exitoso debe ser un booleano"
         }
     },
+    "review": {
+        "moderate": {
+            "decision": {
+                "invalid": "Decision must be APPROVED or REJECTED"
+            }
+        }
+    },
     "search": {
         "caseSensitive": {
             "invalidType": "[EN] El case sensitive tiene un tipo de dato inválido"
@@ -3357,6 +3364,44 @@
         },
         "postId": {
             "invalidUuid": "Post ID must be a valid UUID"
+        }
+    },
+    "entityView": {
+        "entityId": {
+            "invalidUuid": "Entity ID must be a valid UUID",
+            "required": "Entity ID is required"
+        },
+        "entityType": {
+            "invalid": "Entity type is not valid for view tracking"
+        },
+        "id": {
+            "invalidUuid": "ID must be a valid UUID",
+            "required": "ID is required"
+        },
+        "isAuthenticated": {
+            "required": "Authentication state is required"
+        },
+        "stats": {
+            "total": {
+                "integer": "Total visits must be an integer",
+                "nonnegative": "Total visits cannot be negative",
+                "required": "Total visits is required"
+            },
+            "unique": {
+                "integer": "Unique visitor count must be an integer",
+                "nonnegative": "Unique visitor count cannot be negative",
+                "required": "Unique visitor count is required"
+            }
+        },
+        "viewedAt": {
+            "required": "View timestamp is required"
+        },
+        "visitorHash": {
+            "empty": "Visitor identifier cannot be empty",
+            "required": "Visitor identifier is required"
+        },
+        "window": {
+            "invalid": "Time window must be 7d or 30d"
         }
     }
 }

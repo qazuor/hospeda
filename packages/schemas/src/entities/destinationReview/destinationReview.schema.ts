@@ -8,6 +8,7 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ModerationStatusEnumSchema } from '../../enums/index.js';
 import { DestinationRatingSchema } from '../destination/subtypes/destination.rating.schema.js';
 
 /**
@@ -119,7 +120,27 @@ export const DestinationReviewSchema = z.object({
      * Whether the destination owner has responded to this review.
      * Computed or stored flag used to filter reviews with owner engagement.
      */
-    hasOwnerResponse: z.boolean().default(false)
+    hasOwnerResponse: z.boolean().default(false),
+
+    /**
+     * Moderation state (PENDING / APPROVED / REJECTED). Defaults to PENDING for
+     * destination reviews — they must be approved before public visibility (spec §3.1).
+     * Set exclusively by the service/admin — not accepted from the HTTP request body.
+     */
+    moderationState: ModerationStatusEnumSchema,
+    /**
+     * UUID of the user who last performed a moderation action. Nullable until
+     * a moderator acts on the review.
+     */
+    moderatedById: UserIdSchema.nullish(),
+    /**
+     * Timestamp of the last moderation action. Nullable until first action.
+     */
+    moderatedAt: z.coerce.date().nullish(),
+    /**
+     * Free-text reason provided by the moderator. Nullable.
+     */
+    moderationReason: z.string().nullish()
 });
 
 /**

@@ -61,6 +61,8 @@ vi.mock('../../../../src/utils/actor', () => ({
 }));
 
 // Mock AccommodationService and UserBookmarkService — no DB calls.
+// RoleEnum must be included so entitlement.ts can build STAFF_BILLING_BYPASS_ROLES
+// at module-load time (SPEC-145 T-026).
 vi.mock('@repo/service-core', () => ({
     AccommodationService: vi.fn(() => ({
         list: mockListAccommodations
@@ -68,6 +70,17 @@ vi.mock('@repo/service-core', () => ({
     UserBookmarkService: vi.fn(() => ({
         countBookmarksForEntity: mockCountBookmarksForEntity
     })),
+    RoleEnum: {
+        SUPER_ADMIN: 'SUPER_ADMIN',
+        ADMIN: 'ADMIN',
+        CLIENT_MANAGER: 'CLIENT_MANAGER',
+        EDITOR: 'EDITOR',
+        HOST: 'HOST',
+        SPONSOR: 'SPONSOR',
+        USER: 'USER',
+        GUEST: 'GUEST',
+        SYSTEM: 'SYSTEM'
+    },
     ServiceError: class ServiceError extends Error {
         constructor(
             public readonly code: string,
@@ -87,6 +100,15 @@ vi.mock('../../../../src/utils/logger', () => ({
         warn: vi.fn(),
         log: vi.fn()
     }
+}));
+
+// Mock plan.service so the module-level `new PlanService()` in entitlement.ts
+// does not throw when the route module is imported (SPEC-145 T-026).
+vi.mock('../../../../src/services/plan.service', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        list: vi.fn(),
+        getBySlug: vi.fn()
+    }))
 }));
 
 // ---------------------------------------------------------------------------

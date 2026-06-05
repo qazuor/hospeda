@@ -1,2 +1,0 @@
-ALTER TYPE "public"."permission_enum" ADD VALUE 'ai.settings.manage';--> statement-breakpoint
-CREATE UNIQUE INDEX "idx_ai_provider_credentials_active_provider" ON "ai_provider_credentials" USING btree ("provider_id") WHERE deleted_at IS NULL;

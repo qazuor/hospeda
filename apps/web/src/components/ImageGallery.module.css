@@ -8,23 +8,74 @@
     width: 100%;
 }
 
-/* ── Detail variant — mosaic ────────────────────────────────────────────── */
+/* ── Detail variant — count-aware grid ──────────────────────────────────── */
 
-.mosaic {
+/*
+ * .grid is the count-aware container for the detail variant.
+ * The data-count attribute drives per-count grid-template rules per §5.
+ *
+ * count=1  → single full-width column (featured fills the row)
+ * count=2  → two equal columns (featured half + second half)
+ * count=3  → 2fr featured + 1fr column of 2 quarter thumbs
+ * count=4  → 2fr featured + 1fr column of 3 quarter thumbs
+ * count=5+ → same as 4, last quarter cell carries the +N overlay
+ */
+
+.grid {
     display: grid;
-    grid-template-columns: 1fr;
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
     gap: 4px;
-    max-height: 480px;
+    /*
+     * max-height is intentionally absent here. Fixed aspect-ratio on each cell
+     * (§5: .cellFeatured = 16/10, .cellHalf = 4/3, .cellQuarter = 1/1) drives
+     * the grid height. A container max-height combined with height:100% on the
+     * featured cell overrides aspect-ratio (CSS: both width+height non-auto →
+     * ratio ignored), producing distorted cells and defeating FR-3 / §5 CLS
+     * guarantee. Height is fully determined by the locked ratios.
+     */
+    /* Default: single column (count=1 or unset). */
+    grid-template-columns: 1fr;
+    /*
+     * FIX-1 (T-018 smoke): the single row track is minmax(0, 1fr) so cell
+     * content (natural image heights) can NEVER inflate the row. The grid
+     * height is locked by the per-count container aspect-ratio below; cells
+     * fill their tracks and object-fit: cover absorbs the crop.
+     */
+    grid-template-rows: minmax(0, 1fr);
 }
 
-.mosaicWithThumbs {
+/*
+ * FIX-1: per-count CONTAINER aspect-ratio locks the total grid height
+ * deterministically (zero CLS — height is known before any image loads).
+ * Geometry derives from §5: the featured cell's ratio governs the height.
+ * count=1 → featured full-width 16/10 → container 16/10.
+ * count=2 → two 4/3 halves side by side → container 8/3.
+ * count=3/4/5+ → featured at 2/3 width with 16/10 → height = (2W/3)(10/16)
+ *   = 5W/12 → container 12/5.
+ */
+.grid[data-count="1"] {
+    aspect-ratio: 16 / 10;
+}
+
+/* count=2: two equal half-width columns */
+.grid[data-count="2"] {
+    grid-template-columns: 1fr 1fr;
+    aspect-ratio: 8 / 3;
+}
+
+/* count=3,4,5+: 2fr featured + 1fr thumb column */
+.grid[data-count="3"],
+.grid[data-count="4"],
+.grid[data-count="5plus"] {
     grid-template-columns: 2fr 1fr;
+    aspect-ratio: 12 / 5;
 }
 
-/* Featured image button */
-.featuredBtn {
+/* ── Cell wrappers ───────────────────────────────────────────────────────── */
+
+/** Featured / cover cell — spans the full row height in multi-thumb layouts. */
+.cellFeatured {
     position: relative;
     display: block;
     overflow: hidden;
@@ -32,30 +83,109 @@
     padding: 0;
     background: none;
     cursor: pointer;
+    width: 100%;
+    /*
+     * FIX-1 (SPEC-186 browser smoke T-018): the grid height is locked by the
+     * per-count container aspect-ratio on .grid (see top of file), so the
+     * featured cell simply fills its track. min-height: 0 prevents the cell's
+     * content (natural image height) from inflating the minmax(0, 1fr) track.
+     * The 16/10 declaration documents the §5 role ratio (it resolves through
+     * the container ratio at counts 3/4/5+, and directly at count=1).
+     */
+    height: 100%;
+    min-height: 0;
+    /* Span the full row height so thumbs stack beside it. */
     grid-row: 1 / -1;
-    width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 10;
 }
 
-.featuredImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
+/*
+ * FIX-1 count=2: spec §5 maps the featured cell to a "half" role at count=2
+ * (two equal columns, side-by-side). Override the 16/10 ratio to 4/3 so
+ * both the featured cell and the single thumb render at the same height.
+ */
+.grid[data-count="2"] .cellFeatured {
+    aspect-ratio: 4 / 3;
 }
 
-.featuredBtn:hover .featuredImg,
-.featuredBtn:focus-visible .featuredImg {
+.cellFeatured:hover .cellImg,
+.cellFeatured:focus-visible .cellImg {
     transform: scale(1.04);
 }
 
-.featuredBtn:focus-visible {
+.cellFeatured:focus-visible {
     outline: 3px solid var(--primary, oklch(0.55 0.17 264));
     outline-offset: -3px;
 }
 
-/* Expand icon overlay */
+/** Half-width cell (count=2 side-by-side pair). */
+.cellHalf {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+}
+
+/** Quarter-cell thumbnail (used for counts 3, 4, 5+). */
+.cellQuarter {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+}
+
+/** Image inside any cell. */
+.cellImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+/* ── +N más overlay ──────────────────────────────────────────────────────── */
+
+/** Wrapper on the last visible cell when count >= 5 (stacked with cellQuarter). */
+.moreOverlay {
+    position: relative;
+    overflow: hidden;
+}
+
+/** Dim the background image to make the count label legible. */
+.moreOverlay .cellImg {
+    filter: brightness(0.45);
+}
+
+/** Keyboard-accessible button carrying the overlay text and aria-label. */
+.moreOverlayBtn {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: oklch(1 0 0);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 4px oklch(0 0 0 / 0.6);
+    transition: background var(--duration-normal, 0.4s) ease;
+}
+
+.moreOverlayBtn:hover,
+.moreOverlayBtn:focus-visible {
+    background: oklch(0 0 0 / 0.15);
+}
+
+.moreOverlayBtn:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: -3px;
+}
+
+/* Expand icon overlay (shown on hover/focus of featured or cover cell) */
 .expandIcon {
     position: absolute;
     bottom: var(--space-3, 12px);
@@ -73,21 +203,70 @@
     pointer-events: none;
 }
 
-.featuredBtn:hover .expandIcon,
-.featuredBtn:focus-visible .expandIcon,
+.cellFeatured:hover .expandIcon,
+.cellFeatured:focus-visible .expandIcon,
 .coverBtn:hover .expandIcon,
 .coverBtn:focus-visible .expandIcon {
     opacity: 1;
 }
 
-/* Thumbnail grid (3 stacked) */
+/* ── Thumbnail column (detail variant) ──────────────────────────────────── */
+
+/*
+ * .thumbGrid is the right-hand column that stacks quarter thumbnails.
+ * grid-template-rows is NOT fixed — count-scoped rules below set it so that
+ * only the actual thumb count is reserved (no empty rows).
+ *
+ * count=3 → 2 thumbs → 2 rows
+ * count=4 → 3 thumbs → 3 rows
+ * count=5+ → 3 thumbs (last = overlay) → 3 rows
+ *
+ * FIX-1: height:100% makes the thumbGrid fill the row height determined by
+ * .cellFeatured's aspect-ratio (16/10). Without this the thumbGrid would
+ * shrink to its own intrinsic height and leave white space beside the featured
+ * image. The featured cell's aspect-ratio now governs the total row height;
+ * thumbGrid fills that height and divides it evenly among its fr rows.
+ */
 .thumbGrid {
     display: grid;
-    grid-template-rows: repeat(3, 1fr);
     gap: 4px;
     grid-row: 1 / -1;
+    height: 100%;
+    /* FIX-1: never let thumb content inflate the container-ratio-locked row */
+    min-height: 0;
 }
 
+/*
+ * FIX-1: inside the thumbGrid, cellQuarter and cellHalf must NOT impose their
+ * own aspect-ratio — their height comes from the fr rows of the thumbGrid,
+ * which fills the featured cell's aspect-ratio-governed row. Setting
+ * aspect-ratio:auto lets each thumb track fill its allocated fr slice.
+ * The base .cellQuarter/.cellHalf classes keep their ratios for all other
+ * contexts (cover-plus-grid inlineGrid cells, CLS test assertions).
+ */
+.thumbGrid .cellQuarter,
+.thumbGrid .cellHalf {
+    aspect-ratio: auto;
+    min-height: 0;
+}
+
+/* 1 thumb (count=2): single row filling the container-ratio height */
+.grid[data-count="2"] .thumbGrid {
+    grid-template-rows: minmax(0, 1fr);
+}
+
+/* 2 thumbs (count=3): 2-row stack */
+.grid[data-count="3"] .thumbGrid {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+
+/* 3 thumbs (count=4, count=5+): 3-row stack */
+.grid[data-count="4"] .thumbGrid,
+.grid[data-count="5plus"] .thumbGrid {
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+}
+
+/* Thumb button wrapper */
 .thumbBtn {
     display: block;
     position: relative;
@@ -100,16 +279,8 @@
     height: 100%;
 }
 
-.thumbImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
-}
-
-.thumbBtn:hover .thumbImg,
-.thumbBtn:focus-visible .thumbImg {
+.thumbBtn:hover .cellImg,
+.thumbBtn:focus-visible .cellImg {
     transform: scale(1.06);
 }
 
@@ -119,6 +290,17 @@
 }
 
 /* ── Cover-plus-grid variant ────────────────────────────────────────────── */
+
+/*
+ * .coverPlusGrid stacks the cover (16:9) above the count-aware extras grid.
+ * The extras grid (.inlineGrid) uses data-extras-count to pick the right
+ * column template per the §5 matrix:
+ *
+ *   data-extras-count="1"    → 1 col  (1 half  cell,  4:3)
+ *   data-extras-count="2"    → 2 cols (2 half  cells, 4:3)
+ *   data-extras-count="3"    → 3 cols (3 quarter cells, 1:1)
+ *   data-extras-count="3plus"→ 3 cols (3 quarter cells; last = overlay)
+ */
 
 .coverPlusGrid {
     display: flex;
@@ -158,39 +340,114 @@
     outline-offset: 2px;
 }
 
+/*
+ * .inlineGrid — count-aware extras grid.
+ * Default (no data-extras-count or "0"): not rendered (JS handles this).
+ * Column template is driven by data-extras-count attribute selectors.
+ */
 .inlineGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-2, 8px);
+    /* Fallback: 3 columns (matches the most common 5+ case). */
+    grid-template-columns: repeat(3, 1fr);
 }
 
+/* 1 extra (count=2): single full-width half cell */
+.inlineGrid[data-extras-count="1"] {
+    grid-template-columns: 1fr;
+}
+
+/* 2 extras (count=3): two equal half cells */
+.inlineGrid[data-extras-count="2"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 3 extras (count=4): three equal quarter cells */
+.inlineGrid[data-extras-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 3 extras with overlay (count=5+): three equal quarter cells, last = overlay */
+.inlineGrid[data-extras-count="3plus"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/*
+ * .inlineGridBtn — button wrapper for non-overlay extras cells.
+ * Aspect-ratio is set per cell role via .cellHalf / .cellQuarter (shared classes).
+ * The radius comes from the shared card token.
+ */
 .inlineGridBtn {
     display: block;
+    position: relative;
     overflow: hidden;
     border: none;
     padding: 0;
     background: none;
     cursor: pointer;
-    aspect-ratio: 4 / 3;
+    width: 100%;
+    height: 100%;
     border-radius: var(--radius-card, 24px);
 }
 
-.inlineGridImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
-}
-
-.inlineGridBtn:hover .inlineGridImg,
-.inlineGridBtn:focus-visible .inlineGridImg {
+.inlineGridBtn:hover .cellImg,
+.inlineGridBtn:focus-visible .cellImg {
     transform: scale(1.06);
 }
 
 .inlineGridBtn:focus-visible {
     outline: 3px solid var(--primary, oklch(0.55 0.17 264));
     outline-offset: -3px;
+}
+
+/*
+ * Overlay cell border-radius — the shared .moreOverlay does not set radius
+ * because the detail variant uses it inside .thumbGrid (which has no radius).
+ * In the inline extras grid the overlay cell should match the card radius.
+ */
+.inlineGrid .moreOverlay {
+    border-radius: var(--radius-card, 24px);
+}
+
+/*
+ * .cellHalf and .cellQuarter inside the inline grid need border-radius too
+ * (the shared cell classes don't set it — they rely on the container's overflow).
+ * Since .inlineGrid has no overflow:hidden, apply it per-cell.
+ */
+.inlineGrid .cellHalf,
+.inlineGrid .cellQuarter {
+    border-radius: var(--radius-card, 24px);
+    overflow: hidden;
+}
+
+/* ── "Ver todas las fotos" CTA (FIX-2, SPEC-186 browser smoke T-018) ───── */
+
+/*
+ * .viewAllLink — discreet right-aligned link shown below the gallery grid
+ * when viewAllHref is provided AND total images exceed the visible inline
+ * count (count >= 5 in the detail variant). Styled to match the site's
+ * vanilla-CSS link conventions (see LocationSection.astro .location-section__link).
+ */
+.viewAllLink {
+    display: block;
+    margin-top: var(--space-2, 8px);
+    text-align: right;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary, oklch(0.55 0.17 264));
+    text-decoration: none;
+}
+
+.viewAllLink:hover,
+.viewAllLink:focus-visible {
+    text-decoration: underline;
+}
+
+.viewAllLink:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
 /* ── Lightbox ───────────────────────────────────────────────────────────── */
@@ -345,26 +602,89 @@
     object-fit: cover;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────── */
+/* ── Responsive — tablet (641px–1023px) ─────────────────────────────────── */
+
+@media (min-width: 641px) and (max-width: 1023px) {
+    /*
+     * Tablet layout per FR-7 / §5:
+     * count=1  → single column, unchanged.
+     * count=2  → keep two-column side-by-side (readable at tablet widths).
+     * count=3  → keep 2fr+1fr; collapse to 1 col only at mobile.
+     * count=4  → keep 2fr+1fr; thumb column narrows but still legible.
+     * count=5+ → same as 4 (overlay stays on last quarter thumb).
+     * No max-height override — same reasoning as desktop: cell aspect-ratios
+     * (§5) drive height. Adding max-height here would re-introduce the same
+     * ratio-vs-height conflict removed from the base .grid rule.
+     */
+
+    /* Relax the moreOverlayBtn font size so it fits narrower cells */
+    .moreOverlayBtn {
+        font-size: 1.1rem;
+    }
+}
+
+/* ── Responsive — mobile (≤640px) ───────────────────────────────────────── */
 
 @media (max-width: 640px) {
-    .mosaicWithThumbs {
+    /*
+     * All multi-column detail grids collapse to a single column at mobile:
+     * featured cell first (grid-row auto), then thumbGrid below as a
+     * horizontal 2-up strip with a fixed height so the strip stays compact.
+     */
+
+    /* count=2: stack vertically */
+    .grid[data-count="2"] {
+        grid-template-columns: 1fr;
+        /* FIX-1: release the desktop container ratio — mobile stacks rows */
+        aspect-ratio: auto;
+        grid-template-rows: auto;
+    }
+
+    /* count=3,4,5+: stack featured + horizontal thumb strip */
+    .grid[data-count="3"],
+    .grid[data-count="4"],
+    .grid[data-count="5plus"] {
         grid-template-columns: 1fr;
         max-height: none;
+        /* FIX-1: release the desktop container ratio — mobile stacks rows */
+        aspect-ratio: auto;
+        grid-template-rows: auto;
     }
 
-    .featuredBtn {
+    /* Featured cell: release the grid-row span so it stacks naturally.
+       height:auto re-enables its own 16/10 ratio in the stacked layout. */
+    .cellFeatured {
         grid-row: auto;
+        height: auto;
     }
 
+    /* Thumb grid: switch to horizontal row of equal columns */
     .thumbGrid {
         grid-row: auto;
-        grid-template-rows: unset;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: unset !important;
         height: 100px;
     }
 
-    .inlineGrid {
+    /* count=3 → 2 thumbs side by side */
+    .grid[data-count="3"] .thumbGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* count=4, count=5+ → 3 thumbs side by side */
+    .grid[data-count="4"] .thumbGrid,
+    .grid[data-count="5plus"] .thumbGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /*
+     * cover-plus-grid mobile — extras collapse to fewer columns per §5 / FR-7:
+     * 1 extra  → stays 1 column (already single-column).
+     * 2 extras → stays 2 columns (fits mobile width).
+     * 3 extras (count=4 or 5+) → drop to 2 columns so cells aren't too narrow.
+     * The fallback (repeat(3,1fr)) is overridden only for the 3-extras cases.
+     */
+    .inlineGrid[data-extras-count="3"],
+    .inlineGrid[data-extras-count="3plus"] {
         grid-template-columns: repeat(2, 1fr);
     }
 

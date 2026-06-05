@@ -17,6 +17,7 @@ import {
     conversationTokenReminderJob,
     cronRunPurgeJob,
     dunningJob,
+    entityViewsPurgeJob,
     exchangeRateFetchJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
@@ -58,7 +59,8 @@ export const cronJobs: CronJobDefinition[] = [
     applyScheduledPlanChangesJob,
     subscriptionPollJob,
     cronRunPurgeJob,
-    appLogPurgeJob
+    appLogPurgeJob,
+    entityViewsPurgeJob
 ];
 
 /**

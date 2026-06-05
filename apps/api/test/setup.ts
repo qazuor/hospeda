@@ -39,6 +39,8 @@ process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
 process.env.HOSPEDA_ADMIN_URL = 'http://localhost:3000';
 // Location obfuscation salt (required, >= 32 chars)
 process.env.HOSPEDA_LOCATION_SALT = 'test-location-salt-fixed-for-deterministic-tests-32+chars';
+// View-tracking visitor hash secret (required, >= 32 chars, SPEC-159)
+process.env.HOSPEDA_VIEWS_HASH_SECRET = 'test-views-hash-secret-fixed-for-deterministic-tests-32ch';
 // Disable rate limiting in tests by default.
 // IMPORTANT: z.coerce.boolean() uses Boolean() constructor, so any non-empty
 // string (including 'false') coerces to TRUE. Use empty string '' to get false.
@@ -358,7 +360,74 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         NotificationService,
         PromotionService,
         DiscountCodeService,
-        DiscountCodeUsageService
+        DiscountCodeUsageService,
+        // SPEC-192 T-024: PlanService.getBySlug is used by entitlement middleware
+        // (buildHostDraftDefaultsResult) for the host-draft fallback path. The global
+        // mock returns the owner-basico plan data so existing entitlement tests that
+        // assert on HOST actor entitlements continue to pass without a real DB.
+        PlanService: class MockPlanService {
+            async getBySlug(slug: string) {
+                if (slug === 'owner-basico') {
+                    return {
+                        success: true as const,
+                        data: {
+                            id: 'mock-owner-basico-id',
+                            slug: 'owner-basico',
+                            name: 'Básico',
+                            description: 'Plan básico para anfitriones',
+                            category: 'owner' as const,
+                            monthlyPriceArs: 500_000,
+                            annualPriceArs: null,
+                            monthlyPriceUsdRef: 5,
+                            hasTrial: true,
+                            trialDays: 14,
+                            isDefault: true,
+                            sortOrder: 1,
+                            // Entitlements mirror the real owner-basico static config so
+                            // existing entitlement tests (e.g. PUBLISH_ACCOMMODATIONS
+                            // assertion at line 209 of entitlement.test.ts) continue to pass.
+                            // Values match packages/billing/src/config/plans.config.ts OWNER_BASICO_PLAN.
+                            entitlements: [
+                                'publish_accommodations',
+                                'edit_accommodation_info',
+                                'view_basic_stats',
+                                'respond_reviews',
+                                'can_use_calendar',
+                                'can_contact_whatsapp_display'
+                            ],
+                            // Limits mirror the real owner-basico static config
+                            limits: {
+                                max_accommodations: 1,
+                                max_photos_per_accommodation: 5,
+                                max_active_promotions: 0
+                            },
+                            isActive: true,
+                            createdAt: '2026-01-01T00:00:00.000Z',
+                            updatedAt: '2026-01-01T00:00:00.000Z'
+                        }
+                    };
+                }
+                return {
+                    success: false as const,
+                    error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
+                };
+            }
+            async list() {
+                return {
+                    success: true as const,
+                    data: {
+                        items: [],
+                        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 }
+                    }
+                };
+            }
+            async getById() {
+                return {
+                    success: false as const,
+                    error: { code: 'NOT_FOUND', message: 'Plan not found' }
+                };
+            }
+        }
     };
 });
 

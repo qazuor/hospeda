@@ -715,6 +715,47 @@
             "archived": true,
             "archivedAt": "2026-06-03T21:57:52.000Z",
             "archiveNote": "All 16 tasks done; PR #1412 merged to staging 2026-06-03. Follow-up (ALS request-context enrichment: request_id/user_id/method/path columns + filters) tracked separately as new branch post-merge. Operator pending: provision app-log-purge cron in external scheduler."
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "status": "completed",
+            "progress": "11/11",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "archived": true,
+            "archivedAt": "2026-06-03T22:35:55.000Z",
+            "archiveNote": "Code merged in PR #1385 (2026-06-02). Owner ops T-010 (CF Worker deploy + route) and T-011 (PUBLIC_POSTHOG_HOST in Coolify + redeploy + smoke) executed 2026-06-03. 11/11."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-175-admin-whats-new",
+            "archived": true,
+            "archivedAt": "2026-06-04T08:56:41.000Z",
+            "archiveNote": "All 20 tasks done; PR #1437 merged to staging 2026-06-04. Open: TBD-2 (CDN image origin) gated by allowlist test; D17 tour suppression seam wired when SPEC-174 ships. Catalog ships empty."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "status": "completed",
+            "progress": "22/22",
+            "path": "SPEC-182-unified-auth-host-access",
+            "archived": true,
+            "completedAt": "2026-06-03",
+            "archivedAt": "2026-06-04T17:30:00.000Z",
+            "archiveNote": "Closeout: 22/22 tasks done; merged to staging. Was left in active index with archived=false; moved to archive 2026-06-04 for consistency with the index.archive.json pattern."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "archived": true,
+            "archivedAt": "2026-06-04T23:03:21.000Z",
+            "archiveNote": "All 18 tasks done; PR #1451 merged to staging 2026-06-04 after full browser smoke (welcome+contextual+replay+D12/D13 live). Owner-noted minor details deferred as follow-ups. Open: prod-promote consideration — tours auto-fire for ALL existing users on first post-deploy login (no baseline)."
         }
     ]
 }

@@ -26,7 +26,12 @@ import { createMockBilling } from '../helpers/mock-factories';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockWithServiceTransaction } = vi.hoisted(() => {
+const {
+    mockWithServiceTransaction,
+    mockAddonCatalogGetBySlug,
+    mockPlanServiceGetById,
+    mockPlanServiceGetBySlug
+} = vi.hoisted(() => {
     const mockWithServiceTransaction = vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
         return cb({
             tx: {
@@ -48,7 +53,26 @@ const { mockWithServiceTransaction } = vi.hoisted(() => {
             hookState: {}
         });
     });
-    return { mockWithServiceTransaction };
+
+    const mockAddonCatalogGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+    });
+    const mockPlanServiceGetById = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+    const mockPlanServiceGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+
+    return {
+        mockWithServiceTransaction,
+        mockAddonCatalogGetBySlug,
+        mockPlanServiceGetById,
+        mockPlanServiceGetBySlug
+    };
 });
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -58,7 +82,15 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
-            mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>))
+            mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>)),
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug,
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        })),
+        PlanService: vi.fn().mockImplementation(() => ({
+            getById: mockPlanServiceGetById,
+            getBySlug: mockPlanServiceGetBySlug
+        }))
     };
 });
 
@@ -139,32 +171,45 @@ const OLD_PLAN_SLUG = 'owner-pro';
 const NEW_PLAN_SLUG = 'owner-basico';
 const LIMIT_KEY = 'max_active_accommodations';
 
+// DB shape: limits is Record<string, number> (SPEC-192 T-026 cutover).
 const mockOldPlan = {
+    id: 'plan-uuid-owner-pro',
     slug: OLD_PLAN_SLUG,
     name: 'Owner Pro',
     description: '',
+    category: 'owner' as const,
     monthlyPriceArs: 5000,
     annualPriceArs: null,
-    targetCategories: ['owner'],
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
     isActive: true,
     sortOrder: 2,
-    features: [],
-    limits: [{ key: LIMIT_KEY, value: 10 }],
-    entitlements: []
+    limits: { [LIMIT_KEY]: 10 } as Record<string, number>,
+    entitlements: [] as string[],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
 };
 
 const mockNewPlan = {
+    id: 'plan-uuid-owner-basico',
     slug: NEW_PLAN_SLUG,
     name: 'Owner Basico',
     description: '',
+    category: 'owner' as const,
     monthlyPriceArs: 2000,
     annualPriceArs: null,
-    targetCategories: ['owner'],
+    monthlyPriceUsdRef: 2,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: true,
     isActive: true,
     sortOrder: 1,
-    features: [],
-    limits: [{ key: LIMIT_KEY, value: 3 }],
-    entitlements: []
+    limits: { [LIMIT_KEY]: 3 } as Record<string, number>,
+    entitlements: [] as string[],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
 };
 
 const mockAddonDef = {
@@ -273,15 +318,30 @@ describe('DEDUP_WINDOW_MS behavioral constant (SPEC-064)', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
 
-        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
-        (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
-            if (slug === OLD_PLAN_SLUG) return mockOldPlan;
-            if (slug === NEW_PLAN_SLUG) return mockNewPlan;
-            return null;
+        // DB-backed plan service (SPEC-192 T-026 cutover).
+        mockPlanServiceGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Plan not found' }
         });
-        (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
-            if (slug === 'extra-accommodations-5') return mockAddonDef;
-            return null;
+        mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
+            if (slug === OLD_PLAN_SLUG)
+                return Promise.resolve({ success: true, data: mockOldPlan });
+            if (slug === NEW_PLAN_SLUG)
+                return Promise.resolve({ success: true, data: mockNewPlan });
+            return Promise.resolve({
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
+            });
+        });
+
+        // DB-backed addon catalog (SPEC-192 T-013 cutover).
+        mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+            if (slug === 'extra-accommodations-5')
+                return Promise.resolve({ success: true, data: mockAddonDef });
+            return Promise.resolve({
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+            });
         });
 
         billing = createMockBilling();

@@ -1,7 +1,7 @@
 # CLAUDE.md - AI Core Package
 
 > **Main docs**: [README.md](./README.md)
-> **Design record**: [ADR-030](../../docs/decisions/ADR-030-ai-core-foundation-architecture.md)
+> **Design record**: [ADR-031](../../docs/decisions/ADR-031-ai-core-foundation-architecture.md)
 > **Project guidelines**: [root CLAUDE.md](../../CLAUDE.md)
 
 Provider-agnostic AI infrastructure package consumed exclusively by `apps/api`.
@@ -125,7 +125,7 @@ sub-modules is tracked as follow-up work.
 
 ## Related documentation
 
-- [ADR-030 — AI Foundation Architecture](../../docs/decisions/ADR-030-ai-core-foundation-architecture.md)
+- [ADR-031 — AI Foundation Architecture](../../docs/decisions/ADR-031-ai-core-foundation-architecture.md)
 - [SPEC-173](../../.qtm/specs/SPEC-173-ai-core/spec.md)
 - [ADR-006 — Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
 - [ADR-016 — Billing fail-open policy](../../docs/decisions/ADR-016-billing-fail-open.md)

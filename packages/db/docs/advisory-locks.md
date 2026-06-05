@@ -6,6 +6,14 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 
 | Lock ID | Owner File | Purpose | Type | Spec |
 |---------|-----------|---------|------|------|
+| 1001 | `apps/api/src/cron/jobs/webhook-retry.job.ts` | Prevent overlapping webhook retry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-009 |
+| 1002 | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-034 |
+| 1003 | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-021 |
+| 1004 | `apps/api/src/services/trial.service.ts` | Prevent overlapping `blockExpiredTrials` batch runs | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
+| 1005 | `apps/api/src/cron/jobs/trial-pre-end-notif.job.ts` | Prevent overlapping trial pre-end notification cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
+| 1006 | `apps/api/src/cron/jobs/abandoned-pending-subs.job.ts` | Prevent overlapping abandoned pending subscriptions cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-143 |
+| 1007 | `apps/api/src/cron/jobs/subscription-poll.job.ts` | Prevent overlapping subscription poll cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-143 |
+| 1008 | `apps/api/src/cron/jobs/exchange-rate-fetch.job.ts` | Prevent overlapping exchange rate fetch cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-194 |
 | 43001 | `apps/api/src/cron/jobs/addon-expiry.job.ts` | Prevent overlapping addon expiry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-064 |
 | hash-derived | `apps/api/src/services/addon-plan-change.service.ts` | Per-customer addon recalculation serialization | `pg_advisory_xact_lock` (blocking) | SPEC-064 |
 | 43010 | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` | Prevent overlapping promotion archive cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-063 |

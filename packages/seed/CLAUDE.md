@@ -497,6 +497,7 @@ If `moderationState` is missing from a fixture, `withModerationDefault('APPROVED
 - The `users` step seeds [`admin-user.json`](src/data/user/required/admin-user.json) and `super-admin-user.json`, both with the well-known `admin@hospeda.com` email. Loading these on prod creates predictable admin credentials and must always be excluded.
 - Always back up production data before running any seed command, even the curated production-safe one.
 - Use `--reset` carefully — it drops all data. Never combine with a production database URL.
+- `entity_views` is intentionally not seeded. It is an append-only telemetry table populated at runtime; seeding view counts would produce misleading dashboard KPIs.
 - Seed data uses realistic values for better testing.
 - Example data is deterministic when using the same Faker seed.
 

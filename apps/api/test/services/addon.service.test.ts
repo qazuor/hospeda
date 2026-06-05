@@ -20,13 +20,130 @@ import { AddonService } from '../../src/services/addon.service';
 // Hoisted mock functions for service-core query functions (addon-user-addons).
 // After migration, queryUserAddons/queryAddonActive live in service-core and
 // import @repo/db directly. Mocking the resolved path intercepts the actual call.
-const { mockQueryUserAddons, mockQueryAddonActive, mockCancelAddonPurchaseRecord } = vi.hoisted(
-    () => ({
+const {
+    mockQueryUserAddons,
+    mockQueryAddonActive,
+    mockCancelAddonPurchaseRecord,
+    MOCK_ADDONS,
+    mockCatalogList,
+    mockCatalogGetBySlug
+} = vi.hoisted(() => {
+    const LimitKeyEnum = {
+        MAX_ACCOMMODATIONS: 'max_accommodations',
+        MAX_PHOTOS_PER_ACCOMMODATION: 'max_photos_per_accommodation',
+        MAX_ACTIVE_PROMOTIONS: 'max_active_promotions',
+        MAX_FAVORITES: 'max_favorites',
+        MAX_PROPERTIES: 'max_properties',
+        MAX_STAFF_ACCOUNTS: 'max_staff_accounts'
+    } as const;
+
+    const MOCK_ADDONS = [
+        {
+            slug: 'boost-7',
+            name: 'Boost 7 días',
+            description: 'Boost visibility for 7 days',
+            billingType: 'one_time' as const,
+            priceArs: 5000,
+            annualPriceArs: null,
+            durationDays: 7,
+            isActive: true,
+            targetCategories: ['owner', 'complex'] as const,
+            sortOrder: 1,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'extra-photos',
+            name: 'Pack fotos extra',
+            description: 'Extra photos pack',
+            billingType: 'recurring' as const,
+            priceArs: 5000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: true,
+            targetCategories: ['owner'] as const,
+            sortOrder: 2,
+            affectsLimitKey: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
+            limitIncrease: 20,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'inactive-addon',
+            name: 'Inactive',
+            description: 'Inactive addon',
+            billingType: 'one_time' as const,
+            priceArs: 1000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: false,
+            targetCategories: ['owner'] as const,
+            sortOrder: 99,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        },
+        {
+            slug: 'complex-only',
+            name: 'Complex Only Addon',
+            description: 'Only for complexes',
+            billingType: 'one_time' as const,
+            priceArs: 10000,
+            annualPriceArs: null,
+            durationDays: null,
+            isActive: true,
+            targetCategories: ['complex'] as const,
+            sortOrder: 3,
+            affectsLimitKey: null,
+            limitIncrease: null,
+            grantsEntitlement: null
+        }
+    ];
+
+    // Catalog service mocks — filter MOCK_ADDONS like the real service would.
+    const mockCatalogList = vi.fn().mockImplementation(
+        async (
+            input: {
+                billingType?: string;
+                targetCategory?: string;
+                active?: boolean;
+            } = {}
+        ) => {
+            let filtered = [...MOCK_ADDONS];
+            if (input.billingType !== undefined) {
+                filtered = filtered.filter((a) => a.billingType === input.billingType);
+            }
+            if (input.targetCategory !== undefined) {
+                filtered = filtered.filter((a) =>
+                    (a.targetCategories as readonly string[]).includes(input.targetCategory!)
+                );
+            }
+            if (input.active !== undefined) {
+                filtered = filtered.filter((a) => a.isActive === input.active);
+            }
+            filtered.sort((a, b) => a.sortOrder - b.sortOrder);
+            return { success: true, data: filtered };
+        }
+    );
+
+    const mockCatalogGetBySlug = vi.fn().mockImplementation(async (slug: string) => {
+        const addon = MOCK_ADDONS.find((a) => a.slug === slug);
+        if (addon) return { success: true, data: addon };
+        return {
+            success: false,
+            error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+        };
+    });
+
+    return {
         mockQueryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
         mockQueryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
-        mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1)
-    })
-);
+        mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
+        MOCK_ADDONS,
+        mockCatalogList,
+        mockCatalogGetBySlug
+    };
+});
 
 vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user-addons', () => ({
     queryUserAddons: mockQueryUserAddons,
@@ -36,6 +153,30 @@ vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user
     RevokeAllAddonsResult: {},
     RevokeAllAddonsInput: {}
 }));
+
+// Override global setup.ts mock for @repo/service-core to add:
+// - AddonCatalogService (SPEC-192 T-011): used by addon.user-addons.ts for addon resolution
+// - listAvailableAddons (SPEC-192 T-004): used by addon.service.ts listAvailable()
+// - getAddonCatalogEntry (SPEC-192 T-004): used by addon.service.ts getById()
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        // DB-backed catalog functions used by addon.service.ts (SPEC-192 T-004 cutover)
+        listAvailableAddons: mockCatalogList,
+        getAddonCatalogEntry: mockCatalogGetBySlug,
+        // DB-backed catalog service used by addon.user-addons.ts (SPEC-192 T-011 cutover)
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockCatalogGetBySlug,
+            list: mockCatalogList
+        })),
+        // cancelAddonPurchaseRecord from the path-specific mock takes precedence for the
+        // actual runtime path, but keeping it here ensures correct typing for consumers.
+        cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord,
+        queryUserAddons: mockQueryUserAddons,
+        queryAddonActive: mockQueryAddonActive
+    };
+});
 
 // Use vi.hoisted to define mock database utilities available before vi.mock runs
 // Only destructure the top-level values we need to pass to vi.mock
@@ -159,7 +300,9 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchases
 }));
 
-// Mock @repo/billing - Define mock data inline in factory to avoid hoisting issues
+// Mock @repo/billing — uses MOCK_ADDONS from hoisted block for consistency with
+// the DB-backed catalog mock. The getAddonBySlug function is kept for backward
+// compatibility with any remaining consumers (e.g. addon.checkout.ts).
 vi.mock('@repo/billing', () => {
     const LimitKeyEnum = {
         MAX_ACCOMMODATIONS: 'max_accommodations',
@@ -170,100 +313,43 @@ vi.mock('@repo/billing', () => {
         MAX_STAFF_ACCOUNTS: 'max_staff_accounts'
     } as const;
 
-    const mockAddons = [
-        {
-            slug: 'boost-7',
-            name: 'Boost 7 días',
-            description: 'Boost visibility for 7 days',
-            billingType: 'one_time' as const,
-            priceArs: 5000,
-            durationDays: 7,
-            isActive: true,
-            targetCategories: ['owner', 'complex'] as const,
-            sortOrder: 1,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'extra-photos',
-            name: 'Pack fotos extra',
-            description: 'Extra photos pack',
-            billingType: 'recurring' as const,
-            priceArs: 5000,
-            durationDays: null,
-            isActive: true,
-            targetCategories: ['owner'] as const,
-            sortOrder: 2,
-            affectsLimitKey: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
-            limitIncrease: 20,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'inactive-addon',
-            name: 'Inactive',
-            description: 'Inactive addon',
-            billingType: 'one_time' as const,
-            priceArs: 1000,
-            durationDays: null,
-            isActive: false,
-            targetCategories: ['owner'] as const,
-            sortOrder: 99,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        },
-        {
-            slug: 'complex-only',
-            name: 'Complex Only Addon',
-            description: 'Only for complexes',
-            billingType: 'one_time' as const,
-            priceArs: 10000,
-            durationDays: null,
-            isActive: true,
-            targetCategories: ['complex'] as const,
-            sortOrder: 3,
-            affectsLimitKey: null,
-            limitIncrease: null,
-            grantsEntitlement: null
-        }
-    ];
-
     return {
-        ALL_ADDONS: mockAddons,
+        ALL_ADDONS: MOCK_ADDONS,
         // ALL_PLANS is imported at the top level of addon.checkout.ts (via confirmAddonPurchase).
         // An empty array is sufficient: the code uses optional chaining when accessing plan
         // limits (canonicalPlan?.limits.find(...)), so an unknown planId is non-fatal.
         ALL_PLANS: [],
         LimitKey: LimitKeyEnum,
         getAddonBySlug: vi.fn((slug: string) => {
-            return mockAddons.find((a) => a.slug === slug) || null;
+            return MOCK_ADDONS.find((a) => a.slug === slug) || null;
         })
     };
 });
 
-// Use vi.hoisted to ensure mock functions are defined before vi.mock runs (hoisting)
-const { mockPreferenceCreate, mockApplyAddonEntitlements, mockRemoveAddonEntitlements, mockEnv } =
-    vi.hoisted(() => ({
-        mockPreferenceCreate: vi.fn(),
-        mockApplyAddonEntitlements: vi.fn(),
-        mockRemoveAddonEntitlements: vi.fn(),
-        mockEnv: {
-            NODE_ENV: 'test',
-            HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token',
-            HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
-            HOSPEDA_SITE_URL: 'http://localhost:4321',
-            HOSPEDA_API_URL: 'http://localhost:3001'
-        } as Record<string, string>
-    }));
-
-// Mock mercadopago
-vi.mock('mercadopago', () => ({
-    MercadoPagoConfig: vi.fn(),
-    Preference: vi.fn().mockImplementation(() => ({
-        create: mockPreferenceCreate
-    }))
+// Use vi.hoisted to ensure mock functions are defined before vi.mock runs (hoisting).
+// mockBillingCheckoutCreate replaces the old mockPreferenceCreate: after the SPEC-127
+// cutover addon.checkout.ts calls billing.checkout.create() via QZPay, not the
+// raw mercadopago SDK.
+const {
+    mockBillingCheckoutCreate,
+    mockApplyAddonEntitlements,
+    mockRemoveAddonEntitlements,
+    mockEnv
+} = vi.hoisted(() => ({
+    mockBillingCheckoutCreate: vi.fn(),
+    mockApplyAddonEntitlements: vi.fn(),
+    mockRemoveAddonEntitlements: vi.fn(),
+    mockEnv: {
+        NODE_ENV: 'test',
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
+        HOSPEDA_SITE_URL: 'http://localhost:4321',
+        HOSPEDA_API_URL: 'http://localhost:3001'
+    } as Record<string, string>
 }));
+
+// mercadopago package was removed from apps/api in SPEC-127.
+// The vi.mock('mercadopago', ...) block that previously stubbed Preference.create
+// is intentionally absent — addon.checkout.ts now delegates to billing.checkout.create().
 
 // Mock addon-entitlement service
 vi.mock('../../src/services/addon-entitlement.service', () => ({
@@ -314,7 +400,13 @@ describe('AddonService', () => {
         // Clear all mocks
         vi.clearAllMocks();
 
-        // Create mock billing object
+        // Create mock billing object.
+        // checkout.create and getStorage are needed by createAddonCheckout (SPEC-127):
+        // the new path calls billing.checkout.create() instead of the raw MP SDK, and
+        // scheduleAddonCheckoutPolling calls billing.getStorage().subscriptionPollingJobs.
+        // HOSPEDA_BILLING_POLLING_ENABLED is unset (falsy) so polling code is skipped,
+        // making getStorage irrelevant for most tests — but the object still needs the
+        // method to avoid "not a function" errors if the guard is ever removed.
         mockBilling = {
             customers: {
                 get: vi.fn(),
@@ -325,19 +417,35 @@ describe('AddonService', () => {
             },
             plans: {
                 get: vi.fn()
-            }
+            },
+            checkout: {
+                create: mockBillingCheckoutCreate
+            },
+            getStorage: vi.fn().mockReturnValue({
+                subscriptionPollingJobs: null
+            })
         } as unknown as QZPayBilling;
 
         // Create service instances
         service = new AddonService(mockBilling);
         serviceWithoutBilling = new AddonService(null);
 
-        // Reset default environment values on the hoisted mockEnv object
+        // Reset default environment values on the hoisted mockEnv object.
+        // HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN is no longer checked by createAddonCheckout
+        // after the SPEC-127 cutover (billing adapter owns MP credentials).
         mockEnv.NODE_ENV = 'test';
-        mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
         mockEnv.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR = 'HOSPEDA';
         mockEnv.HOSPEDA_SITE_URL = 'http://localhost:4321';
         mockEnv.HOSPEDA_API_URL = 'http://localhost:3001';
+        // HOSPEDA_BILLING_POLLING_ENABLED is intentionally absent (falsy) so
+        // scheduleAddonCheckoutPolling short-circuits and getStorage is not called.
+
+        // Re-wire checkout mock after clearAllMocks resets the spy.
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'chk_mock_001',
+            providerInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/mock',
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+        });
 
         // Restore mockDbTransaction implementation after clearAllMocks wipes it.
         // cancelUserAddon now uses db.transaction() for limit-type addon cancellations,
@@ -619,9 +727,10 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('active subscription');
         });
 
-        it('should return error when MERCADO_PAGO_ACCESS_TOKEN not set', async () => {
-            // Arrange - set env var to empty string (falsy) to trigger check
-            mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = '';
+        it('should return error when HOSPEDA_SITE_URL not set', async () => {
+            // Arrange — after SPEC-127, createAddonCheckout checks HOSPEDA_SITE_URL
+            // (not HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN which is now owned by qzpay).
+            mockEnv.HOSPEDA_SITE_URL = '';
             (mockBilling.customers.get as Mock).mockResolvedValue({
                 id: 'cust_123',
                 email: 'user@test.com',
@@ -640,13 +749,18 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not configured');
         });
 
-        it('should create MercadoPago preference and return checkout URL', async () => {
-            // Arrange
-            const mockPreference = {
-                id: 'pref_123',
-                init_point: 'https://mercadopago.com/checkout/pref_123',
-                sandbox_init_point: 'https://sandbox.mercadopago.com/checkout/pref_123'
-            };
+        it('should create QZPay checkout session and return checkout URL', async () => {
+            // Arrange — SPEC-127 cutover: billing.checkout.create() replaced the raw
+            // MP SDK call. The mock returns a QZPayCheckoutWithHelpers-shaped object
+            // where providerInitPoint is the MP init_point (set by the qzpay adapter
+            // from ProviderCheckoutResponse.url). The service picks providerInitPoint
+            // first, then falls back to providerSandboxInitPoint.
+            const expectedCheckoutUrl = 'https://www.mercadopago.com.ar/checkout/pref_qzpay_123';
+            mockBillingCheckoutCreate.mockResolvedValueOnce({
+                id: 'chk_qzpay_123',
+                providerInitPoint: expectedCheckoutUrl,
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
 
             (mockBilling.customers.get as Mock).mockResolvedValue({
                 id: 'cust_123',
@@ -656,7 +770,6 @@ describe('AddonService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
-            mockPreferenceCreate.mockResolvedValue(mockPreference);
 
             // Act
             const result = await service.purchase(validPurchaseInput);
@@ -664,55 +777,43 @@ describe('AddonService', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(result.data).toBeDefined();
-            expect(result.data?.checkoutUrl).toBe(mockPreference.sandbox_init_point);
+            expect(result.data?.checkoutUrl).toBe(expectedCheckoutUrl);
             expect(result.data?.addonId).toBe('boost-7');
             expect(result.data?.amount).toBe(5000);
             expect(result.data?.currency).toBe('ARS');
             expect(result.data?.orderId).toContain('addon_boost-7_');
             expect(result.data?.expiresAt).toBeDefined();
 
-            // Verify MercadoPago preference creation
-            // Phase 5 wrapped the SDK in createMercadoPagoPreference which passes
-            // { accessToken, preferenceData } to the wrapper, and the wrapper calls
-            // Preference.create(preferenceData). The wrapper then merges
-            // `requestOptions` into the call, so the actual arg shape is
-            // `{ body, requestOptions }` — use `objectContaining` to allow the
-            // extra `requestOptions` key. Items use objectContaining too
-            // because addon.checkout.ts annotates each item with
-            // `category_id: 'services'` (MP fraud-engine hint, not asserted
-            // here — separately covered by the SDK-shape contract).
-            expect(mockPreferenceCreate).toHaveBeenCalledWith(
+            // Verify billing.checkout.create() was called with the expected shape.
+            // The new path passes the addon data as lineItems and the metadata with
+            // both camelCase and snake_case keys (backward compat for webhook handlers).
+            expect(mockBillingCheckoutCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    body: expect.objectContaining({
-                        items: [
-                            expect.objectContaining({
-                                id: 'boost-7',
-                                title: 'Boost 7 días',
-                                description: 'Boost visibility for 7 days',
-                                quantity: 1,
-                                // Phase 5: price is now converted from centavos to ARS (5000 / 100 = 50)
-                                unit_price: 50,
-                                currency_id: 'ARS'
-                            })
-                        ],
-                        metadata: expect.objectContaining({
-                            addon_slug: 'boost-7',
-                            addonSlug: 'boost-7',
-                            customer_id: 'cust_123',
-                            customerId: 'cust_123',
-                            user_id: 'user_123',
-                            userId: 'user_123',
-                            type: 'addon_purchase',
-                            promo_code: null,
-                            promo_code_id: null,
-                            discount_amount: 0,
-                            original_price: 5000
-                        }),
-                        external_reference: expect.stringContaining('addon_boost-7_'),
-                        auto_return: 'approved',
-                        notification_url: 'http://localhost:3001/api/v1/webhooks/mercadopago',
-                        statement_descriptor: 'HOSPEDA',
-                        expires: true
+                    mode: 'payment',
+                    lineItems: [
+                        expect.objectContaining({
+                            unitAmount: 5000,
+                            currency: 'ARS',
+                            quantity: 1,
+                            title: 'Boost 7 días',
+                            categoryId: 'services'
+                        })
+                    ],
+                    customerId: 'cust_123',
+                    customerEmail: 'user@test.com',
+                    notificationUrl: expect.stringContaining('mercadopago'),
+                    metadata: expect.objectContaining({
+                        addon_slug: 'boost-7',
+                        addonSlug: 'boost-7',
+                        customer_id: 'cust_123',
+                        customerId: 'cust_123',
+                        user_id: 'user_123',
+                        userId: 'user_123',
+                        type: 'addon_purchase',
+                        promo_code: null,
+                        promo_code_id: null,
+                        discount_amount: 0,
+                        original_price: 5000
                     })
                 })
             );
@@ -728,10 +829,7 @@ describe('AddonService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'trialing' }
             ]);
-            mockPreferenceCreate.mockResolvedValue({
-                id: 'pref_123',
-                init_point: 'https://mercadopago.com/checkout/pref_123'
-            });
+            // billing.checkout.create returns a valid session (default mock from beforeEach)
 
             // Act
             const result = await service.purchase(validPurchaseInput);
@@ -740,8 +838,16 @@ describe('AddonService', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should return error when preference has no checkout URL', async () => {
-            // Arrange
+        it('should return error when checkout has no URL', async () => {
+            // Arrange — billing.checkout.create returns a session with no
+            // providerInitPoint and no providerSandboxInitPoint. createAddonCheckout
+            // then returns CHECKOUT_ERROR "Failed to get checkout URL from payment provider".
+            mockBillingCheckoutCreate.mockResolvedValueOnce({
+                id: 'chk_no_url',
+                providerInitPoint: undefined,
+                providerSandboxInitPoint: undefined,
+                expiresAt: new Date(Date.now() + 30 * 60 * 1000)
+            });
             (mockBilling.customers.get as Mock).mockResolvedValue({
                 id: 'cust_123',
                 email: 'user@test.com',
@@ -750,11 +856,6 @@ describe('AddonService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
-            mockPreferenceCreate.mockResolvedValue({
-                id: 'pref_123',
-                init_point: null,
-                sandbox_init_point: null
-            });
 
             // Act
             const result = await service.purchase(validPurchaseInput);
@@ -765,8 +866,10 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('checkout URL');
         });
 
-        it('should handle MercadoPago errors gracefully', async () => {
-            // Arrange
+        it('should handle billing checkout errors gracefully', async () => {
+            // Arrange — billing.checkout.create throws; createAddonCheckout catches it
+            // and returns CHECKOUT_ERROR "Failed to create checkout session for add-on purchase".
+            mockBillingCheckoutCreate.mockRejectedValueOnce(new Error('QZPay adapter error'));
             (mockBilling.customers.get as Mock).mockResolvedValue({
                 id: 'cust_123',
                 email: 'user@test.com',
@@ -775,7 +878,6 @@ describe('AddonService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
             ]);
-            mockPreferenceCreate.mockRejectedValue(new Error('MercadoPago API error'));
 
             // Act
             const result = await service.purchase(validPurchaseInput);

@@ -96,6 +96,7 @@ function MainMenuItem({ section, isActive }: MainMenuItemProps) {
             )}
             aria-current={isActive ? 'page' : undefined}
             data-section-id={section.id}
+            data-tour={`main-menu-section-${section.id}`}
         >
             {IconComponent && (
                 <span className="flex-shrink-0">
@@ -157,6 +158,7 @@ export function MainMenu() {
         <nav
             className="hidden items-center gap-1 md:flex"
             aria-label="Main navigation"
+            data-tour="main-menu"
         >
             {visibleSections.map((section) => (
                 <MainMenuItem

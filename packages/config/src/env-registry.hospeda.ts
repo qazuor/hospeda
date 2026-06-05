@@ -204,6 +204,23 @@ export const HOSPEDA_ENV_VARS = [
             'Generalo con:  openssl rand -base64 32  — NUNCA lo rotes en prod (movería todas las ubicaciones aproximadas que se muestran al público). Lo consume service-core de forma transitiva (location-obfuscation.ts, accommodation.projections.ts).'
     },
     {
+        name: 'HOSPEDA_VIEWS_HASH_SECRET',
+        description:
+            'Server-only HMAC secret used as a pepper when computing privacy-safe, day-scoped visitor deduplication hashes for cross-entity view tracking (SPEC-159). The hash is SHA-256(HMAC-SHA256(secret, date) + truncatedIp + userAgent) — the raw IP is never stored or logged. Min 32 chars enforced by Zod. Rotating this value invalidates all outstanding day-hashes (visitors will be counted as new for that day).',
+        descriptionEs:
+            'Secreto HMAC server-only que actúa como pepper al computar hashes de visita con privacidad por día para el seguimiento de vistas entre entidades (SPEC-159). El hash es SHA-256(HMAC-SHA256(secret, fecha) + ipTruncada + userAgent); la IP cruda nunca se almacena ni se loguea. Mínimo 32 caracteres validado por Zod. Rotarlo invalida todos los hashes del día actual (los visitantes se cuentan como nuevos).',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'V7k4n1Q8f2H5p9L3m6R0s4T7v1W4y8Z2a5B8c1D4e7F0=',
+        apps: ['api'],
+        category: 'auth',
+        howToObtain:
+            'Generate with:  openssl rand -base64 48  — keep stable across deploys (rotating changes the day-hash for all current visitors). Each environment (dev/staging/prod) MUST have its own distinct value. The secret is consumed exclusively by apps/api/src/utils/visitor-hash.ts.',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 48  — dejalo estable entre deploys (rotarlo cambia el hash del día para todos los visitantes activos). Cada entorno (dev/staging/prod) DEBE tener su propio valor. Lo consume exclusivamente apps/api/src/utils/visitor-hash.ts.'
+    },
+    {
         name: 'HOSPEDA_GEOCODING_USER_AGENT',
         description:
             'User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling.',

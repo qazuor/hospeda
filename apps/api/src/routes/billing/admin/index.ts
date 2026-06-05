@@ -39,6 +39,7 @@ import {
     expireCustomerAddonRoute,
     listCustomerAddonsRoute
 } from './customer-addons';
+import { adminCustomerEntitlementsRouter } from './customer-entitlements';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
 import { adminPlansRouter } from './plans';
@@ -144,6 +145,10 @@ app.route('/subscriptions', subscriptionEventsRoute);
 
 // GET /addons, /addons/:slug - Hospeda add-on catalog (admin only)
 app.route('/addons', adminAddonsRouter);
+
+// POST /customer-entitlements/grant - Grant one-off entitlement to a customer
+// DELETE /customer-entitlements/revoke - Revoke a customer entitlement
+app.route('/customer-entitlements', adminCustomerEntitlementsRouter);
 
 // GET /plans, /plans/:id - Hospeda plan view (admin only)
 app.route('/plans', adminPlansRouter);

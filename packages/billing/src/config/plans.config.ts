@@ -347,6 +347,8 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
     ],
     limits: [
         limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
+        limit(LimitKey.MAX_COMPARE_ITEMS, 4),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 50),
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 150)
     ]
@@ -389,6 +391,8 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     ],
     limits: [
         limit(LimitKey.MAX_FAVORITES, -1), // unlimited
+        limit(LimitKey.MAX_ACTIVE_ALERTS, -1), // unlimited
+        limit(LimitKey.MAX_COMPARE_ITEMS, -1), // unlimited
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
         limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
     ]

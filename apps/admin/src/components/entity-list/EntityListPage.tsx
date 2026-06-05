@@ -1,4 +1,4 @@
-import { GridCard } from '@/components/grid';
+import { GridCard, GridEmptyState } from '@/components/grid';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
@@ -134,7 +134,12 @@ export const createEntityListPage = <TData extends { id: string }>(
         const pageSize = paginationConfig.allowedPageSizes.includes(Number(search.pageSize))
             ? Number(search.pageSize)
             : paginationConfig.defaultPageSize;
-        const view = search.view === 'grid' ? 'grid' : 'table';
+        // Use URL value when explicitly set; otherwise fall back to the config's defaultView
+        // so that grid-only configs (allowViewToggle:false, defaultView:'grid') start in grid.
+        const view =
+            search.view === 'grid' || search.view === 'table'
+                ? search.view
+                : viewConfig.defaultView;
         const q = typeof search.q === 'string' ? search.q : '';
         const sort = typeof search.sort === 'string' ? search.sort : undefined;
         const cols = typeof search.cols === 'string' ? search.cols : undefined;
@@ -550,7 +555,8 @@ export const createEntityListPage = <TData extends { id: string }>(
                     <div className="space-y-3 rounded-md border bg-card p-4">
                         <DataTableToolbar
                             view={search.view}
-                            onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
+                            onViewChange={handleViewChange}
+                            showViewToggle={viewConfig.allowViewToggle}
                             columnVisibility={currentViewVisibility}
                             onColumnVisibilityChange={handleColsChange}
                             availableColumns={availableColumns}
@@ -603,27 +609,50 @@ export const createEntityListPage = <TData extends { id: string }>(
                             })}`}
                         >
                             {isLoading ? (
-                                <div className="text-muted-foreground text-sm">
+                                <div className="col-span-full text-muted-foreground text-sm">
                                     {t('ui.loading.text')}
                                 </div>
                             ) : rows.length === 0 ? (
-                                <div className="text-muted-foreground text-sm">
-                                    {filterState.hasActiveFilters
-                                        ? t(
-                                              'admin-entities.list.noResultsFiltered' as TranslationKey
-                                          )
-                                        : t('admin-entities.list.noResults' as TranslationKey)}
-                                </div>
+                                <GridEmptyState hasActiveFilters={filterState.hasActiveFilters} />
                             ) : (
-                                rows.map((r) => (
-                                    <GridCard<Row>
-                                        key={r.id}
-                                        item={r}
-                                        columns={columns}
-                                        visibleColumns={getGridVisibleColumns()}
-                                        maxFields={viewConfig.gridConfig?.maxFields || 10}
-                                    />
-                                ))
+                                rows.map((r) => {
+                                    // Access renderCard from the original config (not the
+                                    // DEFAULT_VIEW_CONFIG merge) to preserve its optional type.
+                                    // TData is propagated through ViewConfig<TData> so no casts
+                                    // are needed here — row is already typed as TData.
+                                    const renderCard = config.viewConfig?.gridConfig?.renderCard;
+                                    if (renderCard) {
+                                        return renderCard({
+                                            row: r,
+                                            onPeek: (row) => setPeekRow(row as Row),
+                                            onEdit: (row) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: (row as Row).id }
+                                                } as DynamicNavigateOptions),
+                                            onDelete: (_row) => {
+                                                // Delete is handled externally; no-op here unless
+                                                // a future spec wires a delete handler into the config.
+                                            }
+                                        });
+                                    }
+                                    return (
+                                        <GridCard<Row>
+                                            key={r.id}
+                                            item={r}
+                                            columns={columns}
+                                            visibleColumns={getGridVisibleColumns()}
+                                            maxFields={viewConfig.gridConfig?.maxFields || 10}
+                                            onPeek={(row) => setPeekRow(row)}
+                                            onEdit={(row) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: row.id }
+                                                } as DynamicNavigateOptions)
+                                            }
+                                        />
+                                    );
+                                })
                             )}
                         </div>
                     )}

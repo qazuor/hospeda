@@ -14,6 +14,7 @@ import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { setRequestContextActor } from '../lib/request-context';
 import { createGuestActor } from '../utils/actor';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -214,6 +215,14 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
         // Inject actor into context
         c.set('actor', actor);
+
+        // Enrich the AsyncLocalStorage request context with the resolved actor
+        // so logs emitted by packages that don't have access to Hono's Context
+        // can still be attributed to the actor. Guest actors have no meaningful
+        // identity, so we only set when a real user id is present.
+        if (actor.id && actor.role && actor.role !== 'GUEST') {
+            setRequestContextActor({ userId: actor.id, role: actor.role });
+        }
 
         await next();
     };

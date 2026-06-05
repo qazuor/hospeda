@@ -10,13 +10,24 @@
  */
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
-import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
+import {
+    and,
+    billingAddonPurchases,
+    billingPayments,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNull,
+    sql
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { AddonCatalogService } from '@repo/service-core';
+import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
+import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
@@ -29,6 +40,11 @@ import {
     extractPaymentInfo,
     extractPlanChangeUpgradeMetadata
 } from './utils';
+
+// ─── Catalog service (DB-backed addon reads — SPEC-192 T-016) ─────────────────
+// Replaces static `getAddonBySlug` from `@repo/billing` for the addon
+// purchase notification path. Instantiated once at module level.
+const catalogService = new AddonCatalogService();
 
 /** Input for processing a payment.updated event */
 interface ProcessPaymentUpdatedInput {
@@ -48,6 +64,13 @@ interface ProcessPaymentUpdatedResult {
     readonly annualSubscriptionConfirmed?: boolean;
     /** True when this event committed a plan-change upgrade (SPEC-141 D7). */
     readonly planUpgradeConfirmed?: boolean;
+    /**
+     * True when the addon purchase already existed (ADDON_ALREADY_ACTIVE).
+     * The purchase is present in the DB so this is a semantic success — the
+     * polling job must treat this as terminal 'succeeded' instead of
+     * error-backoff spinning (SPEC-194 T-013).
+     */
+    readonly addonAlreadyActive?: boolean;
 }
 
 /**
@@ -168,6 +191,35 @@ export async function confirmAnnualSubscription(input: {
             { annualSubscriptionId, providerPaymentId, source },
             'Annual subscription confirmation: payment already recorded — skipping record'
         );
+    }
+
+    // Guard: verify pending_provider → active is a permitted transition before
+    // writing. Skip is safe here: the subscription already exists in the DB in
+    // a non-pending_provider state, which means a concurrent process already
+    // activated (or cancelled) it; either way, re-writing active would be
+    // incorrect. The `sub.status !== PENDING_PROVIDER` early-exit above
+    // (lines 121-132) already handles the expected idempotency case (active →
+    // skip); this guard catches any *other* unexpected status that slipped
+    // through (e.g. a race that wrote cancelled between our SELECT and here).
+    const transitionCheck = checkSubscriptionStatusTransition({
+        from: sub.status as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+        to: SubscriptionStatusEnum.ACTIVE,
+        subscriptionId: sub.id
+    });
+    if (!transitionCheck.valid) {
+        apiLogger.error(
+            {
+                annualSubscriptionId,
+                providerPaymentId,
+                source,
+                from: sub.status,
+                to: SubscriptionStatusEnum.ACTIVE,
+                subscriptionId: sub.id,
+                reason: transitionCheck.reason
+            },
+            'Annual subscription confirmation: invalid status transition — skipping status write'
+        );
+        return { confirmed: false };
     }
 
     // Flip the local subscription status from pending_provider to active.
@@ -452,6 +504,168 @@ async function confirmPlanUpgrade(input: {
     return { confirmed: true };
 }
 
+// ─── Webhook refund lifecycle helpers (SPEC-194 T-008) ───────────────────────
+
+/**
+ * Resolved local payment record fields needed by {@link applyRefundLifecycle}.
+ */
+interface LocalPaymentRecord {
+    readonly id: string;
+    readonly customerId: string;
+    readonly subscriptionId: string | null;
+    readonly amount: number;
+}
+
+/**
+ * Apply the refund lifecycle policy for a webhook-sourced MP payment refund.
+ *
+ * Flow:
+ *  1. Resolve the local `billing_payments` row via a JSONB lookup on
+ *     `providerPaymentIds->>'mercadopago'`. A single `getDb()` scope is used
+ *     for both this select and the optional addon-purchase check so tests can
+ *     drive each select's result via the standard per-`getDb()` counter.
+ *     If no row found → log warn + skip (refund for unknown/unrecorded payment).
+ *  2. If `payment.subscriptionId` is null AND the addon-purchase check finds a
+ *     matching `billing_addon_purchases.paymentId` → log structured warn + skip.
+ *     (Addon refund revocation is deferred to TODO(SPEC-194 T-012).)
+ *     If no addon purchase found → fall through to `applyRefundLifecycle` (its
+ *     own no-subscription guard will log and return gracefully).
+ *  3. Call `applyRefundLifecycle`. When `data.transaction_amount_refunded` is
+ *     present and numeric in the MP payload, it is converted from major units
+ *     (ARS pesos, the unit MP uses) to centavos (integer, the unit Hospeda DB
+ *     uses) via `Math.round(majorAmount * 100)` and passed as `refundAmount`.
+ *     If absent, `refundAmount` is `undefined` → treated as full refund.
+ *
+ *     Unit conversion chain (SPEC-194 T-019):
+ *       MP payload: `transaction_amount_refunded` in major units (e.g. 150.00 ARS)
+ *       → `Math.round(150.00 * 100)` = 15000 centavos
+ *       → passed as `refundAmount: 15000`
+ *       → `billing_payments.refunded_amount` written as 15000 (centavos)
+ *
+ * The entire function is fail-safe: step failures are caught and logged so a
+ * transient DB error does not propagate as a webhook 500 — MP would then retry
+ * the event indefinitely.
+ *
+ * @param mpPaymentId  - The MP payment ID extracted from `data.id`.
+ * @param data         - The full webhook payload (to read transaction_amount_refunded).
+ * @param source       - Caller label for log messages (webhook | polling).
+ */
+async function applyWebhookRefundLifecycle({
+    mpPaymentId,
+    data,
+    source
+}: {
+    readonly mpPaymentId: string;
+    readonly data: Record<string, unknown>;
+    readonly source: string;
+}): Promise<void> {
+    const db = getDb();
+
+    // Step 1: resolve the local payment record (select index 0 in this db scope).
+    let payment: LocalPaymentRecord | null;
+    try {
+        const rows = await db
+            .select({
+                id: billingPayments.id,
+                customerId: billingPayments.customerId,
+                subscriptionId: billingPayments.subscriptionId,
+                amount: billingPayments.amount
+            })
+            .from(billingPayments)
+            .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${mpPaymentId}`)
+            .limit(1);
+        payment = rows[0] ?? null;
+    } catch (err) {
+        apiLogger.error(
+            { mpPaymentId, source, err },
+            'Webhook refund lifecycle: DB error resolving local payment — lifecycle skipped'
+        );
+        return;
+    }
+
+    if (!payment) {
+        apiLogger.warn(
+            { mpPaymentId, source },
+            'Webhook refund lifecycle: local payment not found for MP payment id — lifecycle skipped'
+        );
+        return;
+    }
+
+    // Step 2: guard against cancelling a subscription because an addon payment
+    // was refunded (select index 1 in this db scope, only when subscriptionId
+    // is null).
+    if (payment.subscriptionId === null) {
+        let addonRefund = false;
+        try {
+            const addonRows = await db
+                .select({ id: billingAddonPurchases.id })
+                .from(billingAddonPurchases)
+                .where(eq(billingAddonPurchases.paymentId, mpPaymentId))
+                .limit(1);
+            addonRefund = addonRows.length > 0;
+        } catch (err) {
+            apiLogger.error(
+                { mpPaymentId, source, paymentId: payment.id, err },
+                'Webhook refund lifecycle: DB error checking addon purchase — treating as non-addon, continuing'
+            );
+        }
+
+        if (addonRefund) {
+            // TODO(SPEC-194 T-012/T-019): implement addon revocation on refund.
+            apiLogger.warn(
+                { mpPaymentId, source, paymentId: payment.id, customerId: payment.customerId },
+                'Webhook refund lifecycle: addon payment refunded — subscription cancellation skipped (T-019 follow-up)'
+            );
+            return;
+        }
+    }
+
+    // Step 3: apply the refund lifecycle (subscription cancellation, cache clear).
+    //
+    // Parse transaction_amount_refunded from the MP payload (SPEC-194 T-019).
+    // MP sends this field in major units (ARS pesos). Convert to centavos so
+    // the service can compare with payment.amount (also centavos).
+    // If absent or non-numeric → undefined → applyRefundLifecycle treats as full refund.
+    const mpRefundedAmountMajor =
+        typeof data.transaction_amount_refunded === 'number'
+            ? data.transaction_amount_refunded
+            : null;
+    const refundAmountCentavos =
+        mpRefundedAmountMajor !== null ? Math.round(mpRefundedAmountMajor * 100) : undefined;
+
+    try {
+        await applyRefundLifecycle({
+            payment: {
+                id: payment.id,
+                customerId: payment.customerId,
+                subscriptionId: payment.subscriptionId,
+                amount: payment.amount,
+                // Fields required by QZPayPayment but not needed by applyRefundLifecycle's
+                // logic — set to safe defaults so the type is satisfied without a DB join.
+                invoiceId: null,
+                currency: 'ARS',
+                status: 'refunded',
+                paymentMethodId: null,
+                providerPaymentIds: { mercadopago: mpPaymentId },
+                failureCode: null,
+                failureMessage: null,
+                metadata: {},
+                livemode: true,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            },
+            refundAmount: refundAmountCentavos,
+            adminUserId: 'webhook',
+            source: 'webhook'
+        });
+    } catch (err) {
+        apiLogger.error(
+            { mpPaymentId, source, paymentId: payment.id, customerId: payment.customerId, err },
+            'Webhook refund lifecycle: applyRefundLifecycle threw unexpectedly — lifecycle effects may be incomplete'
+        );
+    }
+}
+
 /**
  * Process a payment.updated event's business logic.
  *
@@ -505,6 +719,27 @@ export async function processPaymentUpdated({
                 failureReason,
                 billing
             );
+        }
+    }
+
+    // SPEC-194 T-008: webhook refund lifecycle.
+    //
+    // When MP reports a refunded payment, apply the Hospeda-side subscription
+    // cancellation policy. This block fires after the failure notification so
+    // the customer is always notified regardless of lifecycle outcome.
+    //
+    // Guard: only fires for `refunded` status (not `rejected` / `cancelled`).
+    // Control then falls through to the annual/plan-upgrade/addon dispatch —
+    // refunded events are mutually exclusive with those activation paths in
+    // practice, but `applyWebhookRefundLifecycle` is self-contained and safe
+    // to run even if other metadata is present (the activation guards below
+    // short-circuit on non-approved statuses anyway).
+    if (paymentInfo?.status === 'refunded') {
+        const mpPaymentId =
+            typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
+
+        if (mpPaymentId) {
+            await applyWebhookRefundLifecycle({ mpPaymentId, data, source });
         }
     }
 
@@ -590,12 +825,13 @@ export async function processPaymentUpdated({
     const addonInfo = extractAddonMetadata(data.metadata);
 
     if (!addonInfo) {
-        const addonSlug = extractAddonFromReference(data.external_reference);
+        // ── Legacy warn: pre-qzpay-migration payments carry addon_SLUG_TIMESTAMP ──
+        const legacyAddonSlug = extractAddonFromReference(data.external_reference);
 
-        if (addonSlug) {
+        if (legacyAddonSlug) {
             apiLogger.warn(
                 {
-                    addonSlug,
+                    addonSlug: legacyAddonSlug,
                     externalReference: data.external_reference,
                     hasMetadata: !!data.metadata,
                     metadataKeys: data.metadata ? Object.keys(data.metadata as object) : [],
@@ -605,6 +841,30 @@ export async function processPaymentUpdated({
                 },
                 'Found add-on slug in external_reference but missing customerId - addon purchase may not be confirmed properly'
             );
+        } else {
+            // ── qzpay-era second-chance diagnostic ────────────────────────────────
+            // After SPEC-127 migration, new addon MP payments have a bare qzpay
+            // session UUID as external_reference (set by qzpay-core internally).
+            // If metadata is absent or malformed this payment cannot be correlated
+            // to an addon — emit a diagnostic so operators can match the qzpay
+            // checkout session via externalReference.
+            const extRef = data.external_reference;
+            const isBareuuid =
+                typeof extRef === 'string' &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(extRef);
+
+            if (isBareuuid) {
+                apiLogger.warn(
+                    {
+                        externalReference: extRef,
+                        paymentId: data.id,
+                        paymentStatus: data.status,
+                        metadataKeys: data.metadata ? Object.keys(data.metadata as object) : [],
+                        source
+                    },
+                    'Payment has bare UUID external_reference (qzpay session id) but no addon metadata - possible qzpay-era addon payment missing metadata; correlate via qzpay checkout session'
+                );
+            }
         }
 
         return { success: true, addonConfirmed: false };
@@ -663,6 +923,23 @@ export async function processPaymentUpdated({
     });
 
     if (!result.success) {
+        // SPEC-194 T-013: ADDON_ALREADY_ACTIVE is a semantic success — the purchase
+        // already exists in the DB. Signal this explicitly so the polling job can
+        // mark the job terminal instead of error-backoff spinning. The async
+        // grant-reconciliation cron (Phase 7) handles any missing entitlement grants.
+        const errorCode =
+            result.error !== null && typeof result.error === 'object' && 'code' in result.error
+                ? (result.error as { code: string }).code
+                : null;
+
+        if (errorCode === 'ADDON_ALREADY_ACTIVE') {
+            apiLogger.info(
+                { addonSlug, customerId: addonCustomerId, source },
+                'Add-on purchase already active — idempotent success (SPEC-194 T-013)'
+            );
+            return { success: true, addonConfirmed: false, addonAlreadyActive: true };
+        }
+
         apiLogger.error(
             { addonSlug, customerId: addonCustomerId, error: result.error, source },
             'Failed to confirm add-on purchase'
@@ -678,7 +955,10 @@ export async function processPaymentUpdated({
     // Send addon purchase notification
     try {
         const customer = await billing.customers.get(addonCustomerId);
-        const addon = getAddonBySlug(addonSlug);
+        // SPEC-192 T-016: resolve addon definition from DB-backed catalog.
+        // Identical fallback: if NOT_FOUND, `addon` is undefined → notification not sent.
+        const addonCatalogResult = await catalogService.getBySlug(addonSlug);
+        const addon = addonCatalogResult.success ? addonCatalogResult.data : undefined;
 
         if (customer && addon) {
             const customerName =

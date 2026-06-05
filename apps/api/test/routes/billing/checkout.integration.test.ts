@@ -147,9 +147,17 @@ vi.mock('../../../src/middlewares/billing-customer', () => ({
     }
 }));
 
-// Pass-through middlewares that are not under test
+// Pass-through middlewares that are not under test.
+// requireEntitlement and requireLimit added here (SPEC-145 T-026) — they
+// are now used in routes that are transitively imported by this test.
 vi.mock('../../../src/middlewares/entitlement', () => ({
     entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
+    },
+    requireEntitlement: () => async (_c: unknown, next: () => Promise<void>) => {
+        await next();
+    },
+    requireLimit: () => async (_c: unknown, next: () => Promise<void>) => {
         await next();
     }
 }));

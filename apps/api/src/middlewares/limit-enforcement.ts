@@ -604,10 +604,11 @@ export function enforcePropertiesLimit(): AppMiddleware {
                 return;
             }
 
-            // FUTURE FEATURE: Complex accommodations (hotels/hostels) with room/unit management.
-            // This limit enforces the maximum number of rooms/units within a single complex
-            // accommodation. The accommodation type (simple vs complex) is defined on the
-            // accommodation entity, and complex types will have a related rooms/units table.
+            // RESERVED-LIMIT (SPEC-145): counting service not built; see docs/billing/endpoint-gate-matrix.md
+            // (Reserved — Limit Stubs section). The multi-property management service
+            // (AccommodationRoomService) does not exist yet. Complex accommodations (hotels/
+            // hostels with multiple rooms/units) are a future feature. Until that service is
+            // built and this stub is wired, the count is always 0 and the limit never fires.
             //
             // When the complex accommodation feature is implemented, replace with:
             //   const roomService = new AccommodationRoomService({ logger: apiLogger });
@@ -708,20 +709,20 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                 return;
             }
 
-            // FUTURE FEATURE: Staff account management.
-            // In v1, each accommodation is managed by a single user (the owner).
-            // Staff accounts will be implemented in a future version to allow owners
-            // to invite team members (receptionists, managers) with granular permissions.
+            // RESERVED-LIMIT (SPEC-145): counting service not built; see docs/billing/endpoint-gate-matrix.md
+            // (Reserved — Limit Stubs section). The staff accounts management service
+            // (StaffService) does not exist yet. In v1, each accommodation is managed by a
+            // single owner. Staff accounts (invite team members with granular permissions) are
+            // a future feature. Until that service is built and this stub is wired, the count
+            // is always 0 and the limit never fires.
             //
-            // Implementation plan:
+            // Implementation plan when ready:
             //   1. Create staff_invitations table (owner_user_id, email, role, status, etc.)
             //   2. Create StaffService with invite/accept/revoke flows
             //   3. Replace this stub with:
             //      const staffService = new StaffService({ logger: apiLogger });
             //      const countResult = await staffService.countAcceptedByOwner(actor, { ownerId: actor.id });
             //      const currentCount = countResult.data?.count || 0;
-            //
-            // Until then, the limit is never reached (count is always 0).
             const currentCount = 0;
 
             // Check limit

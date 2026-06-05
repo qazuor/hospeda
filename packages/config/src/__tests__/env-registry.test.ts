@@ -51,13 +51,16 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * branch's SPEC-182 (+2, 201) were added independently off the same 199 base;
  * the merged registry holds both sets.
  *
- * 203 (2026-06-04, SPEC-173 T-003): added HOSPEDA_AI_VAULT_MASTER_KEY
- * (AES-256-GCM master key for the AI credential vault, new `ai` category).
+ * 203 (2026-06-05, SPEC-159 T-005): added HOSPEDA_VIEWS_HASH_SECRET (server-side
+ * HMAC secret for the cookieless visitor hash used by entity view tracking).
  *
- * 205 (2026-06-05, SPEC-173 T-035): added HOSPEDA_POSTHOG_KEY and
+ * 204 (2026-06-04, SPEC-173 T-003/T-021): added HOSPEDA_AI_VAULT_MASTER_KEY
+ * (AES-256-GCM master key for the AI credential vault).
+ *
+ * 206 (2026-06-05, SPEC-173 T-035): added HOSPEDA_POSTHOG_KEY and
  * HOSPEDA_POSTHOG_HOST for server-side AI event analytics.
  */
-const EXPECTED_VAR_COUNT = 205;
+const EXPECTED_VAR_COUNT = 206;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

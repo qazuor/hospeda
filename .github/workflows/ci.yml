@@ -1,17 +1,15 @@
 name: CI
 
-# Dynamic runs-on strategy (SPEC-179):
-#   - pull_request events from the same repo (non-draft) → self-hosted runner
-#     on the owner's laptop (labels: self-hosted, linux, x64, leo-laptop).
-#     These events consume ZERO GitHub-hosted minutes (private-repo quota saving).
-#   - push to refs/heads/staging → self-hosted (same laptop). Staging CI now
-#     depends on the laptop being online; jobs queue if it is offline.
-#   - push to refs/heads/main → ubuntu-latest (GitHub-hosted). Main is the
-#     trusted, always-available baseline and must never depend on the laptop.
-#   - workflow_call, fork PRs, and draft PRs → ubuntu-latest (GitHub-hosted).
-# Tradeoff: staging CI is free but availability-dependent; main CI is paid but
-# always reachable. This is intentional — main is the release gate.
-# See docs/guides/self-hosted-runner.md for setup and operational details.
+# Runner strategy: every job runs on GitHub-hosted ubuntu-latest.
+#
+# The repo is public, so GitHub-hosted Actions minutes are free AND unlimited,
+# and jobs run on ~20 parallel hosted runners. The previous SPEC-179 dynamic
+# strategy routed PR/staging CI to a single self-hosted runner (leo-laptop) to
+# save private-repo minutes, but that serialized all jobs onto one machine and
+# created long queues under load. Going public makes the self-hosted routing
+# both unnecessary (hosted is free) and harmful (it was the bottleneck), so it
+# was reverted here. The semgrep-CLI migration and turbo remote cache are kept
+# (they help on hosted too). The self-hosted runner can now be decommissioned.
 
 on:
   push:
@@ -85,13 +83,7 @@ jobs:
   # ------------------------------------------------------------------
   lint:
     name: Lint
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -109,42 +101,25 @@ jobs:
   # ------------------------------------------------------------------
   security:
     name: Security
-    # Uses the same dynamic runs-on as every other job: PRs (same-repo,
-    # non-draft) run on self-hosted leo-laptop; everything else falls back
-    # to ubuntu-latest.
-    #
-    # Previously this job was pinned to ubuntu-latest because it used
-    # `semgrep/semgrep-action@v1`, a Docker container action that runs as
-    # root and leaves `.git/objects` + `.git/HEAD` root-owned, corrupting
-    # subsequent `actions/checkout` calls on the shared leo-laptop workspace.
-    # That action was also archived in 2024-04.
-    #
-    # Replaced with the semgrep CLI installed via pip (no Docker, no root).
-    # Rule packs are identical: p/typescript, p/nodejs, p/owasp-top-ten,
-    # p/secrets. `--error` makes semgrep exit non-zero on any finding,
-    # preserving the same CI-gate behaviour as the old action.
-    # setup-python + pip install semgrep adds ~30-60s; acceptable.
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
-    timeout-minutes: 10
+    # Uses the semgrep CLI (via uv) instead of the archived
+    # `semgrep/semgrep-action@v1` Docker action. Rule packs are identical:
+    # p/typescript, p/nodejs, p/owasp-top-ten, p/secrets. `--error` makes
+    # semgrep exit non-zero on any finding, preserving the old action's gate.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
       - name: Install uv (provides Python + semgrep CLI)
-        # actions/setup-python is NOT used: it has no prebuilt Python for the
-        # self-hosted runner's OS (Ubuntu 25.04 → "version 3.12 not found"),
-        # and that machine's system Python is 3.14, which semgrep does not yet
-        # support. uv fetches a pinned, semgrep-compatible Python (3.12) on ANY
-        # runner without relying on the GitHub tool-cache, so it works on both
-        # the self-hosted leo-laptop and ubuntu-latest.
-        uses: astral-sh/setup-uv@v8.2.0
+        # uv fetches a pinned, semgrep-compatible Python (3.12) without relying
+        # on the GitHub tool-cache (which actions/setup-python lacks for some
+        # OSes). The official installer is used directly: astral-sh/setup-uv@v8
+        # was observed hanging ~9min in CI and tripping the job timeout.
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Semgrep SAST scan
         # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
         # isolated Python 3.12 env. Same rule packs + --error gate as the old
@@ -165,13 +140,7 @@ jobs:
   # ------------------------------------------------------------------
   guards:
     name: Guards
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -230,13 +199,7 @@ jobs:
   # ------------------------------------------------------------------
   build:
     name: Build
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -264,13 +227,7 @@ jobs:
   # ------------------------------------------------------------------
   typecheck:
     name: Typecheck
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: build
     steps:
@@ -293,13 +250,7 @@ jobs:
   # ------------------------------------------------------------------
   test-unit:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
     # instead of rebuilding. Originally calibrated at 13-15 min/shard (PR
     # #1060), capped at 20. The suite has since grown substantially
@@ -313,6 +264,12 @@ jobs:
     # suites) rather than just raising the cap again.
     timeout-minutes: 30
     needs: build
+    # Raise fork count on CI: each shard runs in an isolated VM so the
+    # machine-safety ceiling that applies locally (maxForks=3) does not
+    # constrain here. VITEST_MAX_FORKS=4 gives a small throughput boost.
+    # See docs/guides/test-performance.md for the full rationale.
+    env:
+      VITEST_MAX_FORKS: 4
     strategy:
       fail-fast: false
       matrix:
@@ -387,13 +344,7 @@ jobs:
   # ------------------------------------------------------------------
   test-integration:
     name: Integration Tests
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: build
 
@@ -432,13 +383,7 @@ jobs:
   # ------------------------------------------------------------------
   coverage-check:
     name: Coverage Threshold
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: test-unit
     # Coverage artifacts only exist on main pushes (see test-unit job).
@@ -559,13 +504,7 @@ jobs:
   # ------------------------------------------------------------------
   ci-pass:
     name: CI Pass
-    runs-on: >-
-      ${{ ((github.event_name == 'pull_request'
-            && github.event.pull_request.draft == false
-            && github.event.pull_request.head.repo.full_name == github.repository)
-           || (github.event_name == 'push' && github.ref == 'refs/heads/staging'))
-          && fromJSON('["self-hosted","linux","x64","leo-laptop"]')
-          || 'ubuntu-latest' }}
+    runs-on: ubuntu-latest
     if: always()
     needs:
       - lint
