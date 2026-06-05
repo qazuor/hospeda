@@ -3,6 +3,7 @@
  * Requires authentication
  */
 import type { z } from '@hono/zod-openapi';
+import { EntitlementKey } from '@repo/billing';
 import {
     DestinationIdSchema,
     DestinationReviewCreateInputSchema,
@@ -11,6 +12,7 @@ import {
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { requireEntitlement } from '../../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
@@ -43,5 +45,10 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         const result = await service.create(actor, payload);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
+    },
+    options: {
+        // SPEC-145 T-005: WRITE_REVIEWS gate — granted on all tourist plans
+        // (tourist-free, tourist-plus, tourist-vip). Same gate as accommodation reviews.
+        middlewares: [requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
     }
 });

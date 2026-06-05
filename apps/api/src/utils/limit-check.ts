@@ -55,7 +55,9 @@ const RESOURCE_NAMES: Record<LimitKey, string> = {
     max_active_promotions: 'promociones activas',
     max_favorites: 'favoritos',
     max_properties: 'propiedades',
-    max_staff_accounts: 'cuentas de personal'
+    max_staff_accounts: 'cuentas de personal',
+    max_active_alerts: 'alertas de precio activas',
+    max_compare_items: 'elementos en el comparador'
 };
 
 /**

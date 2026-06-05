@@ -92,7 +92,10 @@ describe('UsageTrackingService', () => {
             [LimitKey.MAX_ACTIVE_PROMOTIONS]: 2,
             [LimitKey.MAX_FAVORITES]: 20,
             [LimitKey.MAX_PROPERTIES]: 0, // Unlimited
-            [LimitKey.MAX_STAFF_ACCOUNTS]: 0 // Unlimited
+            [LimitKey.MAX_STAFF_ACCOUNTS]: 0, // Unlimited
+            // SPEC-145: two new tourist-facing limits added to LimitKey
+            [LimitKey.MAX_ACTIVE_ALERTS]: 0,
+            [LimitKey.MAX_COMPARE_ITEMS]: 0
         }
     };
 
@@ -146,7 +149,8 @@ describe('UsageTrackingService', () => {
             expect(result.success).toBe(true);
             expect(result.data).toBeDefined();
             expect(result.data!.customerId).toBe(mockCustomerId);
-            expect(result.data!.limits).toHaveLength(6);
+            // SPEC-145 added MAX_ACTIVE_ALERTS and MAX_COMPARE_ITEMS, so total = 8
+            expect(result.data!.limits).toHaveLength(8);
 
             // Check specific limit percentages
             const accommodationsLimit = result.data!.limits.find(

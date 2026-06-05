@@ -293,7 +293,11 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
     ],
-    limits: [limit(LimitKey.MAX_FAVORITES, 20)]
+    limits: [
+        limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
+        limit(LimitKey.MAX_COMPARE_ITEMS, 4)
+    ]
 };
 
 export const TOURIST_VIP_PLAN: PlanDefinition = {
@@ -329,7 +333,9 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, -1) // unlimited
+        limit(LimitKey.MAX_FAVORITES, -1), // unlimited
+        limit(LimitKey.MAX_ACTIVE_ALERTS, -1), // unlimited
+        limit(LimitKey.MAX_COMPARE_ITEMS, -1) // unlimited
     ]
 };
 

@@ -2577,4 +2577,157 @@ describe('Add-on Expiry Cron Job', () => {
             expect(expireAddonMock).toHaveBeenCalledTimes(10);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // INV-1: Phase 1 expiry path must call clearEntitlementCache
+    //
+    // Before this fix the cron's Phase 1 loop called expireAddon() but never
+    // clearEntitlementCache — the DB limit row was removed but the in-process
+    // cache stayed warm until TTL, causing stale-serve for subsequent requests.
+    //
+    // The fix adds clearEntitlementCache(customerId) after each successful
+    // expireAddon() result in the chunked loop.
+    // -------------------------------------------------------------------------
+
+    describe('INV-1: Phase 1 expiry path clears entitlement cache on success', () => {
+        it('calls clearEntitlementCache for each successfully expired addon (regression)', async () => {
+            // Arrange — 3 addons for 2 distinct customers; all expiry succeeds.
+            // RED: this test FAILS before the fix because Phase 1 does not call
+            //      clearEntitlementCache after expireAddon().
+            const ctx = createMockContext();
+            const addons = [
+                {
+                    id: 'inv1-purchase-1',
+                    customerId: 'inv1-cust-a',
+                    addonSlug: 'extra-listings',
+                    expiresAt: new Date('2024-06-15T00:00:00Z'),
+                    subscriptionId: null,
+                    purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                },
+                {
+                    id: 'inv1-purchase-2',
+                    customerId: 'inv1-cust-a', // same customer, different addon
+                    addonSlug: 'featured',
+                    expiresAt: new Date('2024-06-15T00:00:00Z'),
+                    subscriptionId: null,
+                    purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                },
+                {
+                    id: 'inv1-purchase-3',
+                    customerId: 'inv1-cust-b',
+                    addonSlug: 'extra-listings',
+                    expiresAt: new Date('2024-06-15T00:00:00Z'),
+                    subscriptionId: null,
+                    purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                }
+            ];
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: addons }),
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — job succeeded
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(3);
+
+            // clearEntitlementCache must be called once per successfully expired addon.
+            // Before the fix: 0 calls from Phase 1 → test fails here.
+            // After the fix: 3 calls (one per addon) from Phase 1.
+            const cacheCallArgs = vi
+                .mocked(clearEntitlementCache)
+                .mock.calls.map((call) => call[0]);
+
+            // All 3 customerIds must appear in the calls (inv1-cust-a appears twice,
+            // once for each of their two expired addons).
+            expect(cacheCallArgs).toContain('inv1-cust-a');
+            expect(cacheCallArgs).toContain('inv1-cust-b');
+
+            // Exactly 3 cache-clear calls from Phase 1 (one per successful expiry).
+            // Phases 4/6/7 contribute 0 extra calls here (no orphans/pending-removal/sync).
+            expect(
+                cacheCallArgs.filter((id) => id === 'inv1-cust-a' || id === 'inv1-cust-b').length
+            ).toBe(3);
+        });
+
+        it('does NOT call clearEntitlementCache for failed expiry items', async () => {
+            // Arrange — 2 addons: first fails, second succeeds.
+            const ctx = createMockContext();
+            const addons = [
+                {
+                    id: 'inv1-fail-1',
+                    customerId: 'inv1-fail-cust',
+                    addonSlug: 'extra-listings',
+                    expiresAt: new Date('2024-06-15T00:00:00Z'),
+                    subscriptionId: null,
+                    purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                },
+                {
+                    id: 'inv1-ok-1',
+                    customerId: 'inv1-ok-cust',
+                    addonSlug: 'featured',
+                    expiresAt: new Date('2024-06-15T00:00:00Z'),
+                    subscriptionId: null,
+                    purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                }
+            ];
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: addons }),
+                expireAddon: vi
+                    .fn()
+                    .mockResolvedValueOnce({
+                        success: false,
+                        error: { code: 'DB_ERROR', message: 'failed' }
+                    })
+                    .mockResolvedValueOnce({
+                        success: true,
+                        data: {
+                            purchaseId: 'inv1-ok-1',
+                            customerId: 'inv1-ok-cust',
+                            addonSlug: 'featured',
+                            expiredAt: new Date()
+                        }
+                    }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            await addonExpiryJob.handler(ctx);
+
+            // Assert — only the successful addon's customer gets a cache clear from Phase 1.
+            const cacheCallArgs = vi
+                .mocked(clearEntitlementCache)
+                .mock.calls.map((call) => call[0]);
+
+            expect(cacheCallArgs).not.toContain('inv1-fail-cust'); // failed → no cache clear
+            expect(cacheCallArgs).toContain('inv1-ok-cust'); // succeeded → cache cleared
+        });
+    });
 });

@@ -342,6 +342,10 @@ export const addonExpiryJob: CronJobDefinition = {
                                     });
                                 } else if (settledResult.value.success) {
                                     processed++;
+                                    // INV-1: clear the in-process cache immediately so the
+                                    // next request for this customer sees the revoked limits
+                                    // rather than the pre-expiry stale value (SPEC-145 T-018).
+                                    clearEntitlementCache(addon.customerId);
                                 } else {
                                     failed++;
                                     errors++;

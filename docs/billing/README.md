@@ -11,6 +11,13 @@
 | [Prod Smoke + Rollback](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) | Post-deploy production smoke and rollback procedures for billing-CORE changes |
 | [MP Test Cards Reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) | MercadoPago sandbox card numbers and outcome codes |
 
+## Contributor Guides
+
+| Document | Description |
+|----------|-------------|
+| [Adding an Entitlement](adding-an-entitlement.md) | End-to-end steps for adding a new entitlement key: enum → plan config → DB sync → route gate → tests → matrix row |
+| [Endpoint Gate Matrix](endpoint-gate-matrix.md) | Single source of truth for billing-gate decisions on every protected/admin route; parsed by CI snapshot guard |
+
 ## Decision Records
 
 | Document | Description |

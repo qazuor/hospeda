@@ -1,8 +1,9 @@
 /**
- * PUT /api/v1/public/accommodations/:id/faqs/:faqId
+ * PUT /api/v1/protected/accommodations/:id/faqs/:faqId
  * Update an existing FAQ for an accommodation
  */
 
+import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationFaqIdSchema,
     AccommodationFaqSingleOutputSchema,
@@ -13,6 +14,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -54,6 +56,11 @@ export const updateFaqRoute = createCRUDRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
+        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
+        middlewares: [requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO)]
     }
 });
 

@@ -32,8 +32,7 @@
  */
 
 import type { AddonDefinition } from '@repo/billing';
-import type { EntitlementKey } from '@repo/billing';
-import type { LimitKey } from '@repo/billing';
+import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
 import type { QZPayBillingAddon } from '@repo/db';
 
 // ---------------------------------------------------------------------------
@@ -70,7 +69,9 @@ function resolveGrantsEntitlement(entitlements: unknown): EntitlementKey | null 
         return null;
     }
     const first = entitlements[0];
-    return typeof first === 'string' ? (first as EntitlementKey) : null;
+    // DB text array — guard to known EntitlementKey; unknown strings return null
+    // (filter-out strategy matching prior cast behaviour for valid values).
+    return isEntitlementKey(first) ? first : null;
 }
 
 /**
@@ -95,8 +96,10 @@ function resolveLimitFields(limits: unknown): {
     const [key, value] = entries[0] as [string, unknown];
     const increase = typeof value === 'number' ? value : null;
 
+    // DB JSONB key is string — guard to known LimitKey; unknown keys become null
+    // (filter-out strategy matching prior cast behaviour for valid values).
     return {
-        affectsLimitKey: (key as LimitKey) ?? null,
+        affectsLimitKey: isLimitKey(key) ? key : null,
         limitIncrease: increase
     };
 }

@@ -3,7 +3,7 @@ spec-id: SPEC-145
 title: Billing Entitlements & Limits Enforcement
 type: feature
 complexity: high
-status: reserved
+status: in-progress
 created: 2026-05-18T22:00:00Z
 rewritten: 2026-06-03T00:00:00Z
 scoped_under: SPEC-193
@@ -15,8 +15,8 @@ relates_to: [SPEC-149, SPEC-167, SPEC-194]
 blocks: [real-money-go-live]
 first_allocated_via_engram_protocol: true
 priority: high
-worktree: null
-branch: null
+worktree: /home/qazuor/projects/WEBS/hospeda-spec-145-billing-entitlements-and-limits-enforcement
+branch: spec/SPEC-145-billing-entitlements-and-limits-enforcement
 base: staging
 ---
 
@@ -44,11 +44,14 @@ Without this spec, a customer can pay for the cheap plan and use expensive-only 
 
 | Capability | Where | Source |
 |---|---|---|
-| `entitlementMiddleware` loads entitlements/limits into context, mounted globally | `entitlement.ts`, `create-app.ts:184` | SPEC-143 |
-| Staff bypass (`SUPER_ADMIN/ADMIN/EDITOR/CLIENT_MANAGER` → unlimited), short-circuits before billing/cache | `entitlement.ts:215,433` | SPEC-171 |
+| `entitlementMiddleware` loads entitlements/limits into context, mounted globally | `entitlement.ts`, `create-app.ts:189` | SPEC-143 |
+| Staff bypass (`SUPER_ADMIN/ADMIN/EDITOR/CLIENT_MANAGER` → unlimited), short-circuits before billing/cache | `entitlement.ts:290-303` (roles + helper), `:509` (short-circuit) | SPEC-171 |
 | Billing-off / no-customer fallback by role (HOST→owner-basico, others→tourist-free, guest→empty) | `buildHostDraftDefaultsResult`, `buildDefaultEntitlementsResult` | BETA-42 |
-| `requireEntitlement`/`hasEntitlement`/`clearEntitlementCache`/`getRemainingLimit` | `entitlement.ts:611,728,849,768` | SPEC-143 |
-| `EntitlementKey` (40) + `LimitKey` (6) enums | `packages/billing/src/types/*` | — |
+| `requireEntitlement`/`hasEntitlement`/`getRemainingLimit`/`clearEntitlementCache` | `entitlement.ts:686,803,843,924` | SPEC-143 |
+| `EntitlementKey` (**48** — grew from 40 since first write) + `LimitKey` (6) enums | `packages/billing/src/types/*` | — |
+| Refund/dunning revoke + cache-clear behavior (the lifecycle side 145 asserts at route level) | `refund-lifecycle.service.ts` (state-machine + 4 cache-clear sites), `dunning.job.ts:318` | SPEC-194 |
+| Pattern A error contract on the 3 LIVE gates (`gateRichDescription`/`gateVideoEmbed`/`gateFavorites` already throw `ServiceError(ENTITLEMENT_REQUIRED)`) | `accommodation-entitlements.ts:111,188`, `tourist-entitlements.ts:68` | post-rewrite drift (verified 2026-06-05) |
+| 13 role×plan dev test users seeded (`<slug>@local.test`) — the full matrix Workstream E needs | `packages/seed/src/test-users/testUsers.seed.ts:86-162` | SPEC-143 block 1 |
 | Wired gates today: `gateRichDescription`/`gateVideoEmbed` (accom PATCH), `gateFavorites` + `assertFavoritesLimitOrThrow` (bookmark create), `enforceAccommodationLimit` (create/draft/onboarding), `enforcePromotionLimit` (promo create), inline photo limit (admin media upload) | various routes | SPEC-143 |
 
 ## 3. Cross-spec dependencies & boundaries
@@ -75,13 +78,15 @@ Without this spec, a customer can pay for the cheap plan and use expensive-only 
   - host favorites-breakdown / market-comparison → `VIEW_ADVANCED_STATS`.
   - conversations response-rate / monthly-inquiries → `VIEW_BASIC_STATS`.
   - protected gallery media upload → `MAX_PHOTOS_PER_ACCOMMODATION`.
-- **T-145-02** Unify the error contract. Refactor the **Pattern B** gates (`gateAlerts`, `gateComparator`,
-  `gateReviewPhotos`, `gateSearchHistory`, `gateRecommendations`, `gateExclusiveDeals`, `gateEarlyEventAccess`,
+- **T-145-02** Unify the error contract. Realign 2026-06-05: the 3 LIVE gates are ALREADY Pattern A;
+  remaining Pattern B surface = the 12 phantom gates (`gateAlerts`, `gateComparator`, `gateReviewPhotos`,
+  `gateSearchHistory`, `gateRecommendations`, `gateExclusiveDeals`, `gateEarlyEventAccess`,
   `gateCalendarAccess`, `gateExternalCalendarSync`, `gateWhatsAppDisplay`, `gateWhatsAppDirect`,
-  `gateReviewResponse`, and `requireEntitlement`/`requireLimit`) from `HTTPException(403, JSON.stringify(...))`
-  — which the global `onError` maps to `FORBIDDEN` with a stringified body — to
-  `ServiceError(ENTITLEMENT_REQUIRED | LIMIT_REACHED, ...)` so `code`/`message`/`details` are correct
-  (matching Pattern A). Fixes INV-2.
+  `gateReviewResponse` — `tourist-entitlements.ts:109-534`, `accommodation-entitlements.ts:238-368+`) plus
+  `requireEntitlement` (`entitlement.ts:704`) and `requireLimit` (`entitlement.ts:759,768`). Refactor those
+  from `HTTPException(403, JSON.stringify(...))` — which the global `onError` (`response.ts:286-310`) maps
+  to `FORBIDDEN` with a stringified body — to `ServiceError(ENTITLEMENT_REQUIRED | LIMIT_REACHED, ...)`
+  so `code`/`message`/`details` are correct (matching Pattern A). Fixes INV-2.
 - **T-145-03** Wire the entitlement gates from the matrix: publish, edit, create-promotions, write-reviews,
   advanced/basic stats. Each gets a block + allow e2e test (Workstream E).
 - **T-145-04** Plumb missing limit counters: `MAX_PROPERTIES` / `MAX_STAFF_ACCOUNTS` are hardcoded
@@ -111,7 +116,11 @@ Following SPEC-143 patterns (mp-stub, billing-factories, withRollback/clean, pro
 - **T-145-11** Elevation/restriction across plan changes: post-upgrade previously-blocked route → 2xx
   immediately (no TTL wait); post-downgrade (scheduled + cron apply, per 167 policy) premium route → 403.
 - **T-145-12** Customer-level override: admin grants a one-off entitlement → 2xx; admin revokes → 403
-  immediately (confirm the admin grant/revoke route invalidates cache; coordinate with 194 if it's a gap).
+  immediately. Realign 2026-06-05: the admin grant/revoke route DOES NOT EXIST (no
+  `billing/admin/customer-entitlements` route; verified) — this task EXPANDS to build the minimal admin
+  route pair (grant/revoke one-off customer entitlement via `billing.entitlements`, PermissionEnum-gated,
+  calling `clearEntitlementCache`) following the established `createAdminRoute` + qzpay-admin patterns,
+  then the e2e asserts grant→2xx / revoke→403 immediately.
 - **T-145-13** Addon limit elevation: cheap plan `MAX_ACCOMMODATIONS=1` + extra-accommodations-5 → allows up
   to 6; after addon-expiry cron → back to 1.
 - **T-145-14** Cancellation/refund revocation at route level (refund behavior owned by 194; 145 asserts the
@@ -139,7 +148,13 @@ Following SPEC-143 patterns (mp-stub, billing-factories, withRollback/clean, pro
   invariant, and the phantom/reserved-key concept.
 - **T-145-22** Coverage: 100% functional + line on `entitlement.ts`, `tourist-entitlements.ts`,
   `accommodation-entitlements.ts`, `limit-enforcement.ts` (chunked coverage per SPEC-143; full `--coverage`
-  OOMs, engram #636).
+  OOMs, engram #636). Realign note: tourist-/accommodation-entitlements have NO standalone test files —
+  they're covered inside `entitlement.test.ts` (2498 lines); chunked runs target the source files, not
+  test-file granularity.
+- **T-145-23 (realign 2026-06-05, absorbed from SPEC-192 §3 residue)** Remove the remaining
+  `as EntitlementKey`/`as LimitKey` casts in `entitlement.ts` (lines ~323, 409, 415, 429, 435 — 6+ sites;
+  ~11 across apps/api/src). SPEC-192 closed without completing the cast removal this spec's §3 assumed.
+  Replace with proper narrowing/validation per ADR-021 (type-cast policy). Small, typed, no behavior change.
 
 ## 5. Definition of done
 
@@ -161,3 +176,11 @@ Following SPEC-143 patterns (mp-stub, billing-factories, withRollback/clean, pro
 - Code: `apps/api/src/middlewares/{entitlement,tourist-entitlements,accommodation-entitlements,limit-enforcement}.ts`;
   `routes/**/protected/**`; `packages/billing/src/types/*`.
 - Tests: `apps/api/test/e2e/flows/billing/**`, `apps/api/test/middlewares/{entitlement,limit-enforcement,limit-enforcement-photo}.test.ts`.
+- E2e toolkit (verified available): `test/e2e/helpers/` — billing-factories (createTestBillingCustomer/Subscription/Addon/SubscriptionAddon/PromoCode), mp-stub, billing-fixtures, api-client, signature-helpers; `withRollback` via TestDatabaseManager; 13 seeded role×plan dev users.
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-05 | spec-realign (post SPEC-192/127/194 merges) | §2 line numbers refreshed (create-app:189, bypass 290-303/509, helpers 686/803/843/924); EntitlementKey 40→48; §2 gained 3 rows (194 refund/dunning behavior, 3 live gates already Pattern A, 13 dev users seeded); T-145-02 narrowed (live gates done; scope = 12 phantom gates + requireEntitlement/requireLimit); T-145-12 expanded (admin grant/revoke route does not exist — build minimal route pair + e2e); T-145-22 noted no standalone test files for tourist-/accommodation-entitlements; NEW T-145-23 absorbs the as-EntitlementKey/LimitKey cast removal SPEC-192 left incomplete; e2e toolkit inventory appended | 23 tasks; status reserved→ready to atomize |
+| 2026-06-05 | owner decision | **WRITE_REVIEWS host lockout is intentional.** Hosts on owner/complex plans cannot write reviews (conflict-of-interest: hosts must not review competitors). Hosts keep RESPOND_REVIEWS. This policy is reflected in enforcement-gates.test.ts Gate 4 BLOCK tests (owner-basico is the BLOCK plan) and endpoint-gate-matrix.md review-create rows. | Decision recorded; no task change. |
