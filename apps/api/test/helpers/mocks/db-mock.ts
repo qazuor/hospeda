@@ -604,6 +604,16 @@ export function createDbMock() {
         RevalidationLogModel: GenericMockModel,
         SponsorshipLevelModel: GenericMockModel,
         SponsorshipModel: GenericMockModel,
-        SponsorshipPackageModel: GenericMockModel
+        SponsorshipPackageModel: GenericMockModel,
+
+        // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
+        // instantiate at module scope when the service-core barrel is loaded by any job
+        // that imports @repo/service-core. The instance is returned directly (not a class)
+        // because entityViewModel is a singleton, not a constructor.
+        entityViewModel: {
+            insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
+            getStatsForEntities: vi.fn().mockResolvedValue([]),
+            purgeOlderThan: vi.fn().mockResolvedValue(0)
+        }
     };
 }
