@@ -1110,39 +1110,39 @@
             "id": "T-031",
             "title": "Wire AI quota enforcement into apps/api",
             "description": "Apply login-required + per-feature entitlement/limit enforcement on AI endpoints reusing entitlementMiddleware() + 5-min cache (apps/api/src/middlewares/entitlement.ts, Q2/§5.7). Unauthenticated → 401 (AC-5); over-limit → controlled 403 with upgrade hint (AC-6); meter the attempt regardless. Tests: route integration tests asserting 401 anon, 403 at limit with meter row (AC-5/AC-6).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-030", "T-016", "T-029"],
             "blocks": ["T-032", "T-037"],
             "subtasks": [
                 {
                     "title": "Login-required guard on AI endpoints (AC-5)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Per-feature entitlement/limit gate → 403 + hint (AC-6)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Meter even on rejection",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write enforcement integration tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "entitlement", "auth"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:50:00.000Z",
+                "completed": "2026-06-05T09:40:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.5
     }
