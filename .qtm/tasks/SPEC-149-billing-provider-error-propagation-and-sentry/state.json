@@ -337,27 +337,27 @@
             "id": "T-012",
             "title": "Mock sweep + per-package typechecks",
             "description": "Mandatory sweep. Touched surfaces: @repo/schemas (NEW ServiceErrorCode members — exhaustive Records + enumerated factories!), billing middleware config, sentry.ts BillingContext, start-paid/subscription-checkout/addon.checkout, payment-handler/subscription-payment-handler/webhook-retry.job, bootstrap.ts. SPEC-145 LESSON: re-run files previously marked 'already green' whenever a shared package's export surface changed — do NOT trust exclusion lists for @repo/schemas consumers. Sequential targeted runs; typecheck apps/api + packages/schemas.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-009", "T-010", "T-011"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Sweep + fixes + re-runs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T18:01:00Z",
+                "completed": "2026-06-05T18:10:00Z"
             }
         },
         {
