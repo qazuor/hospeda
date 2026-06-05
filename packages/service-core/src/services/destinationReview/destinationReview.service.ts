@@ -217,11 +217,13 @@ export class DestinationReviewService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<DestinationReview>> {
         const { page, pageSize, sortBy: _sortBy, sortOrder: _sortOrder, ...filters } = params;
-        // Force-override lifecycleState=ACTIVE: defense-in-depth for public paths
-        // (GAP-003 / SPEC-063-gaps T-004). Mirrors SponsorshipService pattern.
-        // sortBy/sortOrder are stripped to prevent WHERE-clause leak (regression
-        // covered by test/services/where-leak.regression.test.ts).
+        // Force-override lifecycleState=ACTIVE and moderationState=APPROVED:
+        // defense-in-depth for public paths (GAP-003 / SPEC-063-gaps T-004,
+        // SPEC-166 T-023). PENDING/REJECTED reviews must never surface on public
+        // reads. sortBy/sortOrder are stripped to prevent WHERE-clause leak
+        // (regression covered by test/services/where-leak.regression.test.ts).
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
         return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
     }
 
@@ -237,9 +239,11 @@ export class DestinationReviewService extends BaseCrudService<
             sortOrder: _sortOrder,
             ...filters
         } = params;
-        // Mirror _executeSearch force-override so pagination `total` stays consistent
-        // with the filtered items on public endpoints. sortBy/sortOrder also stripped.
+        // Mirror _executeSearch force-overrides so pagination `total` stays
+        // consistent with the filtered items on public endpoints (SPEC-166 T-023).
+        // sortBy/sortOrder also stripped to prevent WHERE-clause leak.
         (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
         const count = await this.model.count({ ...filters, deletedAt: null });
         return { count };
     }
@@ -603,7 +607,10 @@ export class DestinationReviewService extends BaseCrudService<
                     deletedAt: null
                 };
                 if (!opts?.includeAllStates) {
+                    // SPEC-166 T-023: public visibility = ACTIVE + APPROVED only.
+                    // PENDING / REJECTED reviews must not surface to public readers.
                     filters.lifecycleState = LifecycleStatusEnum.ACTIVE;
+                    filters.moderationState = ModerationStatusEnum.APPROVED;
                 }
                 const result = await this.model.findAll(
                     filters,
@@ -653,11 +660,19 @@ export class DestinationReviewService extends BaseCrudService<
                 await this._canList(validatedActor);
                 const { page, pageSize, ...filterParams } = validData;
 
-                // Default filters for public access
+                // SPEC-166 T-023: public visibility = ACTIVE + APPROVED only.
+                // Caller params are spread first, then forced values are assigned
+                // AFTER the spread so no caller-supplied lifecycleState or
+                // moderationState can override them (post-spread assignment pattern
+                // matching _executeSearch / _executeCount in this file).
                 const defaultFilters = {
                     deletedAt: null,
                     ...filterParams
                 };
+                (defaultFilters as Record<string, unknown>).lifecycleState =
+                    LifecycleStatusEnum.ACTIVE;
+                (defaultFilters as Record<string, unknown>).moderationState =
+                    ModerationStatusEnum.APPROVED;
 
                 const result = await this.model.findAllWithUser(
                     defaultFilters,
