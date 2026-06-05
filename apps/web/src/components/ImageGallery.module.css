@@ -12,10 +12,13 @@
 
 /*
  * .grid is the count-aware container for the detail variant.
- * The data-count attribute drives per-count grid-template rules (T-003).
- * Per-count layout CSS (.gridCount1 … .gridCount5plus and [data-count] rules)
- * are task T-003 — this file only declares the base container + placeholder
- * class names so CSS Modules typing resolves correctly.
+ * The data-count attribute drives per-count grid-template rules per §5.
+ *
+ * count=1  → single full-width column (featured fills the row)
+ * count=2  → two equal columns (featured half + second half)
+ * count=3  → 2fr featured + 1fr column of 2 quarter thumbs
+ * count=4  → 2fr featured + 1fr column of 3 quarter thumbs
+ * count=5+ → same as 4, last quarter cell carries the +N overlay
  */
 
 .grid {
@@ -24,7 +27,7 @@
     overflow: hidden;
     gap: 4px;
     max-height: 480px;
-    /* Default: single column (count=1). Per-count rules added in T-003. */
+    /* Default: single column (count=1 or unset). */
     grid-template-columns: 1fr;
 }
 
@@ -38,23 +41,6 @@
 .grid[data-count="4"],
 .grid[data-count="5plus"] {
     grid-template-columns: 2fr 1fr;
-}
-
-/* Placeholder per-count classes reserved for T-003 (named-class approach) */
-.gridCount1 {
-    /* T-003: single full-width column */
-}
-.gridCount2 {
-    /* T-003: two equal half-width columns */
-}
-.gridCount3 {
-    /* T-003: 2fr featured + 1fr column of 2 quarters */
-}
-.gridCount4 {
-    /* T-003: 2fr featured + 1fr column of 3 quarters */
-}
-.gridCount5plus {
-    /* T-003: 2fr featured + 1fr column of 3 quarters; last = overlay */
 }
 
 /* ── Cell wrappers ───────────────────────────────────────────────────────── */
@@ -73,6 +59,16 @@
     /* Span the full row height so thumbs stack beside it. */
     grid-row: 1 / -1;
     aspect-ratio: 16 / 10;
+}
+
+.cellFeatured:hover .cellImg,
+.cellFeatured:focus-visible .cellImg {
+    transform: scale(1.04);
+}
+
+.cellFeatured:focus-visible {
+    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
+    outline-offset: -3px;
 }
 
 /** Half-width cell (count=2 side-by-side pair). */
@@ -101,12 +97,13 @@
 
 /* ── +N más overlay ──────────────────────────────────────────────────────── */
 
-/** Container for the last visible cell when count >= 5. */
+/** Wrapper on the last visible cell when count >= 5 (stacked with cellQuarter). */
 .moreOverlay {
     position: relative;
     overflow: hidden;
 }
 
+/** Dim the background image to make the count label legible. */
 .moreOverlay .cellImg {
     filter: brightness(0.45);
 }
@@ -141,54 +138,7 @@
     outline-offset: -3px;
 }
 
-/* ── Legacy mosaic classes (kept for backward compat — superseded by .grid) */
-
-.mosaic {
-    display: grid;
-    grid-template-columns: 1fr;
-    border-radius: var(--radius-card, 24px);
-    overflow: hidden;
-    gap: 4px;
-    max-height: 480px;
-}
-
-.mosaicWithThumbs {
-    grid-template-columns: 2fr 1fr;
-}
-
-/* Featured image button */
-.featuredBtn {
-    position: relative;
-    display: block;
-    overflow: hidden;
-    border: none;
-    padding: 0;
-    background: none;
-    cursor: pointer;
-    grid-row: 1 / -1;
-    width: 100%;
-    height: 100%;
-}
-
-.featuredImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
-}
-
-.featuredBtn:hover .featuredImg,
-.featuredBtn:focus-visible .featuredImg {
-    transform: scale(1.04);
-}
-
-.featuredBtn:focus-visible {
-    outline: 3px solid var(--primary, oklch(0.55 0.17 264));
-    outline-offset: -3px;
-}
-
-/* Expand icon overlay */
+/* Expand icon overlay (shown on hover/focus of featured or cover cell) */
 .expandIcon {
     position: absolute;
     bottom: var(--space-3, 12px);
@@ -206,21 +156,42 @@
     pointer-events: none;
 }
 
-.featuredBtn:hover .expandIcon,
-.featuredBtn:focus-visible .expandIcon,
+.cellFeatured:hover .expandIcon,
+.cellFeatured:focus-visible .expandIcon,
 .coverBtn:hover .expandIcon,
 .coverBtn:focus-visible .expandIcon {
     opacity: 1;
 }
 
-/* Thumbnail grid (3 stacked) */
+/* ── Thumbnail column (detail variant) ──────────────────────────────────── */
+
+/*
+ * .thumbGrid is the right-hand column that stacks quarter thumbnails.
+ * grid-template-rows is NOT fixed — count-scoped rules below set it so that
+ * only the actual thumb count is reserved (no empty rows).
+ *
+ * count=3 → 2 thumbs → 2 rows
+ * count=4 → 3 thumbs → 3 rows
+ * count=5+ → 3 thumbs (last = overlay) → 3 rows
+ */
 .thumbGrid {
     display: grid;
-    grid-template-rows: repeat(3, 1fr);
     gap: 4px;
     grid-row: 1 / -1;
 }
 
+/* 2 thumbs (count=3): 2-row stack */
+.grid[data-count="3"] .thumbGrid {
+    grid-template-rows: repeat(2, 1fr);
+}
+
+/* 3 thumbs (count=4, count=5+): 3-row stack */
+.grid[data-count="4"] .thumbGrid,
+.grid[data-count="5plus"] .thumbGrid {
+    grid-template-rows: repeat(3, 1fr);
+}
+
+/* Thumb button wrapper */
 .thumbBtn {
     display: block;
     position: relative;
@@ -233,16 +204,8 @@
     height: 100%;
 }
 
-.thumbImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
-}
-
-.thumbBtn:hover .thumbImg,
-.thumbBtn:focus-visible .thumbImg {
+.thumbBtn:hover .cellImg,
+.thumbBtn:focus-visible .cellImg {
     transform: scale(1.06);
 }
 
@@ -478,25 +441,74 @@
     object-fit: cover;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────── */
+/* ── Responsive — tablet (641px–1023px) ─────────────────────────────────── */
+
+@media (min-width: 641px) and (max-width: 1023px) {
+    /*
+     * Tablet layout per FR-7 / §5:
+     * count=1  → single column, unchanged.
+     * count=2  → keep two-column side-by-side (readable at tablet widths).
+     * count=3  → keep 2fr+1fr; collapse to 1 col only at mobile.
+     * count=4  → keep 2fr+1fr; thumb column narrows but still legible.
+     * count=5+ → same as 4 (overlay stays on last quarter thumb).
+     * max-height is relaxed slightly so cells don't get too short.
+     */
+    .grid {
+        max-height: 400px;
+    }
+
+    /* Relax the moreOverlayBtn font size so it fits narrower cells */
+    .moreOverlayBtn {
+        font-size: 1.1rem;
+    }
+}
+
+/* ── Responsive — mobile (≤640px) ───────────────────────────────────────── */
 
 @media (max-width: 640px) {
-    .mosaicWithThumbs {
+    /*
+     * All multi-column detail grids collapse to a single column at mobile:
+     * featured cell first (grid-row auto), then thumbGrid below as a
+     * horizontal 2-up strip with a fixed height so the strip stays compact.
+     */
+
+    /* count=2: stack vertically */
+    .grid[data-count="2"] {
+        grid-template-columns: 1fr;
+    }
+
+    /* count=3,4,5+: stack featured + horizontal thumb strip */
+    .grid[data-count="3"],
+    .grid[data-count="4"],
+    .grid[data-count="5plus"] {
         grid-template-columns: 1fr;
         max-height: none;
     }
 
-    .featuredBtn {
+    /* Featured cell: release the grid-row span so it stacks naturally */
+    .cellFeatured {
         grid-row: auto;
     }
 
+    /* Thumb grid: switch to horizontal row of equal columns */
     .thumbGrid {
         grid-row: auto;
-        grid-template-rows: unset;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: unset !important;
         height: 100px;
     }
 
+    /* count=3 → 2 thumbs side by side */
+    .grid[data-count="3"] .thumbGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* count=4, count=5+ → 3 thumbs side by side */
+    .grid[data-count="4"] .thumbGrid,
+    .grid[data-count="5plus"] .thumbGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    /* cover-plus-grid: extras drop to 2-column row */
     .inlineGrid {
         grid-template-columns: repeat(2, 1fr);
     }
