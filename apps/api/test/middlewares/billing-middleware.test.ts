@@ -384,4 +384,40 @@ describe('billingMiddleware', () => {
             expect.stringContaining('Missing environment variables')
         );
     });
+
+    it('should pass providerSyncErrorStrategy: throw to createQZPayBilling (SPEC-149)', async () => {
+        // Ensure the billing instance is initialized with explicit throw strategy so that
+        // QZPayProviderSyncError surfaces to the Hono error handler on every environment.
+        vi.doMock('../../src/utils/env', () => ({
+            env: {
+                NODE_ENV: 'test',
+                HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test',
+                HOSPEDA_DATABASE_URL: 'postgresql://test:test@localhost/test',
+                HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+            },
+            validateApiEnv: vi.fn()
+        }));
+
+        const mockDb = {};
+        const mockStorage = {};
+        const mockAdapter = {};
+        const mockBilling = {};
+
+        mockGetDb.mockReturnValue(mockDb);
+        mockCreateBillingAdapter.mockReturnValue(mockStorage);
+        mockCreateMercadoPagoAdapter.mockReturnValue(mockAdapter);
+        mockCreateQZPayBilling.mockReturnValue(mockBilling);
+
+        const { billingMiddleware } = await import('../../src/middlewares/billing');
+        const ctx = createMockContext();
+        const next = vi.fn();
+
+        await billingMiddleware(ctx as never, next);
+
+        expect(mockCreateQZPayBilling).toHaveBeenCalledWith(
+            expect.objectContaining({
+                providerSyncErrorStrategy: 'throw'
+            })
+        );
+    });
 });

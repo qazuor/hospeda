@@ -231,6 +231,67 @@ describe('Sentry Configuration', () => {
                 SentryModule.captureBillingError(error, context);
             }).not.toThrow();
         });
+
+        it('should forward provider error fields as tags and context when present (SPEC-149)', () => {
+            mockIsEnabled.mockReturnValue(true);
+            mockCaptureException.mockReturnValue('event-id-provider');
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
+            SentryModule.initializeSentry();
+
+            const error = new Error('Provider rate limited');
+            const context = {
+                subscriptionId: 'sub_456',
+                planId: 'plan_pro',
+                operation: 'checkout_create',
+                providerStatus: 429,
+                providerCode: 'rate_limit_error'
+            };
+
+            SentryModule.captureBillingError(error, context);
+
+            expect(mockCaptureException).toHaveBeenCalledWith(
+                error,
+                expect.objectContaining({
+                    tags: expect.objectContaining({
+                        billing_operation: 'checkout_create',
+                        provider_status: '429',
+                        provider_code: 'rate_limit_error'
+                    }),
+                    contexts: expect.objectContaining({
+                        billing: expect.objectContaining({
+                            providerOperation: 'checkout_create',
+                            providerStatus: 429,
+                            providerCode: 'rate_limit_error'
+                        })
+                    })
+                })
+            );
+        });
+
+        it('should NOT include provider tags when provider fields are absent (SPEC-149)', () => {
+            mockIsEnabled.mockReturnValue(true);
+            mockCaptureException.mockReturnValue('event-id-no-provider');
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
+            SentryModule.initializeSentry();
+
+            const error = new Error('Subscription creation failed');
+            const context = {
+                subscriptionId: 'sub_789',
+                planId: 'plan_basic'
+                // no operation / providerStatus / providerCode
+            };
+
+            SentryModule.captureBillingError(error, context);
+
+            const callArg = mockCaptureException.mock.calls.at(-1)?.[1] as Record<string, unknown>;
+            const tags = callArg?.tags as Record<string, unknown> | undefined;
+
+            expect(tags).not.toHaveProperty('billing_operation');
+            expect(tags).not.toHaveProperty('provider_status');
+            expect(tags).not.toHaveProperty('provider_code');
+        });
     });
 
     describe('capturePaymentFailure', () => {
