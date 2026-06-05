@@ -51,6 +51,20 @@ export function checkCanViewDestinationReview(_actor: Actor): void {
 }
 
 /**
+ * Throws if the actor cannot moderate (approve / reject) a destination review.
+ * Requires {@link PermissionEnum.DESTINATION_REVIEW_MODERATE}.
+ */
+export function checkCanModerateDestinationReview(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.DESTINATION_REVIEW_MODERATE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: DESTINATION_REVIEW_MODERATE required'
+        );
+    }
+}
+
+/**
  * Checks if an actor has permission to admin-list this entity type.
  * @throws {ServiceError} If the permission check fails.
  */
