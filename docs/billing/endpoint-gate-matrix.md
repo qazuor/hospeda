@@ -493,6 +493,8 @@
 | `GET /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `PUT /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
 | `DELETE /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
+| `POST /api/v1/admin/billing/customer-entitlements/grant` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements |
+| `DELETE /api/v1/admin/billing/customer-entitlements/revoke` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements |
 | `* /api/v1/admin/billing/* (qzpay-admin)` | `billing/admin/index.ts (qzpay)` | none | - | n/a | QZPay admin tier: subscriptions/payments/invoices/entitlements/limits; PermissionEnum.BILLING_READ_ALL + BILLING_MANAGE gated via adminBillingAuthMiddleware |
 | **NEWSLETTER — ADMIN** | | | | | |
 | `GET /api/v1/admin/newsletter` | `newsletter/admin/subscribers.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
