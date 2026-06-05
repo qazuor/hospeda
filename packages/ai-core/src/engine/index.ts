@@ -55,6 +55,19 @@ export {
 export type { WithRetryInput } from './retry.js';
 
 // ---------------------------------------------------------------------------
+// Default prompts (T-034)
+// ---------------------------------------------------------------------------
+
+export { DEFAULT_PROMPTS } from './default-prompts.js';
+
+// ---------------------------------------------------------------------------
+// Prompt injection helper (T-034)
+// ---------------------------------------------------------------------------
+
+export { injectSystemPrompt } from './prompt-injection.js';
+export type { InjectSystemPromptInput } from './prompt-injection.js';
+
+// ---------------------------------------------------------------------------
 // AiService (T-015) — public facade
 // ---------------------------------------------------------------------------
 

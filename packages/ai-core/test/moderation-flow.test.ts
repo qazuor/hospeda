@@ -36,6 +36,14 @@ import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
 // ---------------------------------------------------------------------------
+// Mock: prompt storage — no DB required (T-034)
+// ---------------------------------------------------------------------------
+
+vi.mock('../src/storage/prompt.storage.js', () => ({
+    getActivePrompt: vi.fn().mockResolvedValue({ content: null, row: null })
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: config resolver — no DB required
 // ---------------------------------------------------------------------------
 

@@ -37,3 +37,14 @@ export {
     type ResolveFeatureConfigInput,
     type SaveConfigInput
 } from './resolver.js';
+
+// ---------------------------------------------------------------------------
+// System-prompt resolver (T-034)
+// ---------------------------------------------------------------------------
+
+export {
+    invalidatePromptCache,
+    resolveSystemPrompt,
+    type ResolveSystemPromptInput,
+    type ResolveSystemPromptResult
+} from './prompt-resolver.js';

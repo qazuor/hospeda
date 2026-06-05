@@ -40,6 +40,20 @@ import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
 // ---------------------------------------------------------------------------
+// Mock: prompt-resolver — no DB required (T-034)
+//
+// engine.ts calls resolveSystemPrompt on every capability call.  Mock the
+// entire resolver so tests in this file are unaffected by the injection.
+// ---------------------------------------------------------------------------
+
+vi.mock('../src/config/prompt-resolver.js', () => ({
+    resolveSystemPrompt: vi.fn(() =>
+        Promise.resolve({ content: 'default system prompt', source: 'default' })
+    ),
+    invalidatePromptCache: vi.fn()
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: config resolver
 // ---------------------------------------------------------------------------
 
@@ -60,6 +74,23 @@ const mockResolveConfig = configResolver.resolveConfig as ReturnType<typeof vi.f
 const mockResolveFeatureConfig = configResolver.resolveFeatureConfig as ReturnType<typeof vi.fn>;
 const mockIsFeatureKillSwitched = configResolver.isFeatureKillSwitched as ReturnType<typeof vi.fn>;
 const mockGetProviderOrder = configResolver.getProviderOrder as ReturnType<typeof vi.fn>;
+
+// ---------------------------------------------------------------------------
+// Mock: prompt-resolver — no DB required (T-034)
+//
+// engine.ts calls resolveSystemPrompt from config/prompt-resolver.ts which
+// in turn reads from storage. Mock the entire resolver so engine tests in
+// this file are unaffected by the new system-prompt injection.
+// ---------------------------------------------------------------------------
+
+vi.mock('../src/config/prompt-resolver.js', () => {
+    return {
+        resolveSystemPrompt: vi.fn(() =>
+            Promise.resolve({ content: 'default system prompt', source: 'default' })
+        ),
+        invalidatePromptCache: vi.fn()
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Mock: storage (aggregateAiUsageByMonth + resolveConfig dependency for ceiling.ts)

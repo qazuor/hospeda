@@ -39,6 +39,18 @@ import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
 // ---------------------------------------------------------------------------
+// Mock the prompt storage — no DB required (T-034)
+//
+// engine.ts now calls resolveSystemPrompt which reads getActivePrompt from the
+// storage layer.  Return null (no active prompt) so the engine falls back to
+// the in-code default and existing test expectations are unaffected.
+// ---------------------------------------------------------------------------
+
+vi.mock('../src/storage/prompt.storage.js', () => ({
+    getActivePrompt: vi.fn().mockResolvedValue({ content: null, row: null })
+}));
+
+// ---------------------------------------------------------------------------
 // Mock the config resolver — no DB required
 // ---------------------------------------------------------------------------
 

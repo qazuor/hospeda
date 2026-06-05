@@ -42,6 +42,18 @@ import type { AiProvider, StreamTextResult } from '../src/providers/ai-provider.
 import { StubProvider } from '../src/providers/index.js';
 
 // ---------------------------------------------------------------------------
+// Mock: prompt storage — no DB required (T-034)
+//
+// engine.ts now resolves a system prompt on every capability call via
+// getActivePrompt.  Return null so the engine falls back to the in-code default;
+// existing stream-text-flow test expectations are unaffected.
+// ---------------------------------------------------------------------------
+
+vi.mock('../src/storage/prompt.storage.js', () => ({
+    getActivePrompt: vi.fn().mockResolvedValue({ content: null, row: null })
+}));
+
+// ---------------------------------------------------------------------------
 // Mock: config resolver — no DB required
 // ---------------------------------------------------------------------------
 

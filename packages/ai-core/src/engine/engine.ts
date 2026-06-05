@@ -69,6 +69,7 @@ import type {
 } from '@repo/schemas';
 import type { AiFeatureConfig } from '@repo/schemas';
 import type { ZodType } from 'zod';
+import { resolveSystemPrompt } from '../config/prompt-resolver.js';
 import {
     getProviderOrder,
     isFeatureKillSwitched,
@@ -87,6 +88,7 @@ import {
     runModerationPass,
     wrapStreamWithOutputModeration
 } from './moderation-pass.js';
+import { injectSystemPrompt } from './prompt-injection.js';
 import { MAX_ATTEMPTS_PER_PROVIDER, isRetryableError, withRetry } from './retry.js';
 
 // ---------------------------------------------------------------------------
@@ -669,12 +671,21 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent
             });
 
+            // System-prompt injection (T-034, AC-12): resolve the active system
+            // prompt and inject it into the request using the caller-wins policy.
+            // If the caller already supplied a system message, the request is
+            // passed through unchanged. Otherwise the resolved prompt is prepended.
+            const { content: systemContent } = await resolveSystemPrompt({
+                feature: req.feature
+            });
+            const injectedReq = injectSystemPrompt({ req, systemContent });
+
             const providersConfig = await getProvidersConfig();
 
             const response = await routeWithFallback(
                 req.feature,
                 featureConfig,
-                (provider) => provider.generateText(req),
+                (provider) => provider.generateText(injectedReq as GenerateTextRequest),
                 getProvider,
                 selectProviderOrder,
                 recordEvent,
@@ -723,12 +734,22 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent
             });
 
+            // System-prompt injection (T-034, AC-12): same caller-wins policy as
+            // generateText — resolve and inject the system prompt before routing.
+            const { content: streamSystemContent } = await resolveSystemPrompt({
+                feature: req.feature
+            });
+            const injectedStreamReq = injectSystemPrompt({
+                req,
+                systemContent: streamSystemContent
+            });
+
             const providersConfig = await getProvidersConfig();
 
             const result = await routeWithFallback(
                 req.feature,
                 featureConfig,
-                (provider) => provider.streamText(req),
+                (provider) => provider.streamText(injectedStreamReq as StreamTextRequest),
                 getProvider,
                 selectProviderOrder,
                 recordEvent,
@@ -779,12 +800,26 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent
             });
 
+            // System-prompt injection (T-034, AC-12): GenerateObjectRequest has only
+            // a `prompt` field — no `messages`. The provider adapter always reads
+            // `input.prompt`, so injection is done by prepending the resolved system
+            // content to the prompt string.  Caller-wins: if the caller already
+            // embedded a system instruction in their prompt, this prepend is still
+            // safe because the model treats the system block as higher-priority context.
+            const { content: objectSystemContent } = await resolveSystemPrompt({
+                feature: req.feature
+            });
+            const injectedObjectReq: GenerateObjectRequest = {
+                ...req,
+                prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
+            };
+
             const providersConfig = await getProvidersConfig();
 
             const response = await routeWithFallback(
                 req.feature,
                 featureConfig,
-                (provider) => provider.generateObject(req, outputSchema),
+                (provider) => provider.generateObject(injectedObjectReq, outputSchema),
                 getProvider,
                 selectProviderOrder,
                 recordEvent,
