@@ -27,6 +27,17 @@ export type { StatusWidgetProps } from './StatusWidget';
 export { CommentsFeedCard } from './CommentsFeedCard';
 export type { CommentsFeedCardProps } from './CommentsFeedCard';
 
+export { ViewsWidget } from './ViewsWidget';
+export type {
+    ViewsWidgetProps,
+    ViewsWidgetConfig,
+    ViewsEntityRow,
+    HostViewsData,
+    EditorViewsData,
+    AdminViewKpi,
+    AdminViewsData
+} from './ViewsWidget';
+
 export {
     WidgetCard,
     WidgetSkeletonBody,

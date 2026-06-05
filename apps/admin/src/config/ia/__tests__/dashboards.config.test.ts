@@ -87,6 +87,16 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     'admin.system.health',
     'admin.moderation.pending',
 
+    // SPEC-197 T-013: HOST views widget (host.ts)
+    'host.stats.views',
+
+    // SPEC-197 T-014: EDITOR views widgets (editor.ts)
+    'editor.posts.views',
+    'editor.events.views',
+
+    // SPEC-197 T-015: ADMIN views summary card (admin.ts)
+    'admin.views.summary',
+
     // T-021 SUPER (super.ts)
     'super.billing.stats',
 
@@ -169,24 +179,24 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
 
     describe('Card counts', () => {
         // SPEC-175 T-017: +1 'whats-new' widget on all four role dashboards.
-        it('hostDashboard has exactly 11 widgets (10 original + 1 whats-new)', () => {
-            expect(dashboards.hostDashboard.widgets).toHaveLength(11);
+        it('hostDashboard has exactly 12 widgets (10 original + 1 whats-new + 1 host-card-g-views)', () => {
+            expect(dashboards.hostDashboard.widgets).toHaveLength(12);
         });
 
-        it('editorDashboard has exactly 12 widgets (11 original + 1 whats-new)', () => {
-            expect(dashboards.editorDashboard.widgets).toHaveLength(12);
+        it('editorDashboard has exactly 14 widgets (11 original + 1 whats-new + 2 views widgets)', () => {
+            expect(dashboards.editorDashboard.widgets).toHaveLength(14);
         });
 
-        it('adminBaseDashboard has exactly 8 widgets (7 original + 1 whats-new)', () => {
-            expect(dashboards.adminBaseDashboard.widgets).toHaveLength(8);
+        it('adminBaseDashboard has exactly 9 widgets (7 original + 1 admin-card-views + 1 whats-new)', () => {
+            expect(dashboards.adminBaseDashboard.widgets).toHaveLength(9);
         });
 
         it('superAdminOnlySection has exactly 2 widgets', () => {
             expect(superAdminOnlySection.widgets).toHaveLength(2);
         });
 
-        it('superAdminDashboard has exactly 10 widgets (7 base + 2 super-only + 1 whats-new)', () => {
-            expect(dashboards.superAdminDashboard.widgets).toHaveLength(10);
+        it('superAdminDashboard has exactly 11 widgets (8 base + 2 super-only + 1 whats-new)', () => {
+            expect(dashboards.superAdminDashboard.widgets).toHaveLength(11);
         });
     });
 
@@ -261,25 +271,25 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             }
         });
 
-        it('superAdminDashboard widgets A–G come from adminBaseDashboard (excluding whats-new)', () => {
+        it('superAdminDashboard widgets A–G + views-card come from adminBaseDashboard (excluding whats-new)', () => {
             // adminBaseDashboard now includes the whats-new widget at the end.
-            // Slice to 7 to get the original base widgets (A–G).
-            const baseIds = dashboards.adminBaseDashboard.widgets.slice(0, 7).map((w) => w.id);
-            const superIds = dashboards.superAdminDashboard.widgets.slice(0, 7).map((w) => w.id);
+            // Slice to 8 to get the original base widgets (A–G + admin-card-views) before whats-new.
+            const baseIds = dashboards.adminBaseDashboard.widgets.slice(0, 8).map((w) => w.id);
+            const superIds = dashboards.superAdminDashboard.widgets.slice(0, 8).map((w) => w.id);
             expect(superIds).toEqual(baseIds);
         });
 
         it('superAdminDashboard widgets H–I come from superAdminOnlySection (ids match)', () => {
             const sectionIds = superAdminOnlySection.widgets.map((w) => w.id);
-            // superAdminDashboard = adminBaseDashboard (A–G + whats-new) ++ superAdminOnlySection,
+            // superAdminDashboard = adminBaseDashboard (A–G + views-card + whats-new) ++ superAdminOnlySection,
             // so the super-only section occupies the LAST two positions (t039 spread invariant).
             const superIds = dashboards.superAdminDashboard.widgets.slice(-2).map((w) => w.id);
             expect(superIds).toEqual(sectionIds);
         });
 
-        it('superAdminDashboard includes whats-new right after the A–G base (position 7)', () => {
-            // Concatenation invariant: [A–G, whats-new] ++ [H, I].
-            const widget = dashboards.superAdminDashboard.widgets.at(7);
+        it('superAdminDashboard includes whats-new right after the A–G + views-card base (position 8)', () => {
+            // Concatenation invariant: [A–G, admin-card-views, whats-new] ++ [H, I].
+            const widget = dashboards.superAdminDashboard.widgets.at(8);
             expect(widget?.id).toBe('whats-new');
         });
     });

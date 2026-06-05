@@ -1297,11 +1297,88 @@ registerDataSource('host.suggestions.list', (ctx) => ({
 }));
 
 // ============================================================================
-// NOTE — deferred phase-2 slots
+// CARD G — Estadísticas (views slot): per-accommodation unique + total views
 // ============================================================================
-// Card G — views ('host.stats.views'): PHASE 2. Cross-entity view tracking
-//   not yet built (PostHog fires client-side; nothing persisted in our DB).
-//   DeferredWidget handles this slot; T-029 sets onMissing: 'hide'.
+
+/** Shape of GET /api/v1/protected/views/accommodations/me response. */
+interface AccommodationViewStatsApiResponse {
+    readonly success: boolean;
+    readonly data?: ReadonlyArray<{
+        readonly entityId: string;
+        readonly unique: number;
+        readonly total: number;
+    }>;
+}
+
+/**
+ * HOST card G — views slot: unique + total view counts per accommodation.
+ *
+ * ## Locked-state detection (proactive, AC-5 / §5.2)
+ *
+ * Fetches the entitlements endpoint (same call as `host.billing.plan`) to check
+ * for the `view_basic_stats` entitlement BEFORE calling the views endpoint.
+ * TanStack Query automatically deduplicates the entitlements fetch when both
+ * resolvers run concurrently (same query key shared by the billing.plan cache).
+ *
+ * Logic:
+ *  - Entitlements call fails (503) → optimistic: attempt views fetch anyway;
+ *    a 403 from the views endpoint is the defensive fallback (AC-6).
+ *  - `view_basic_stats` absent → `{ locked: true }` (no views fetch made, AC-3/AC-5).
+ *  - `view_basic_stats` present → fetch and return per-accommodation stats.
+ *  - Views endpoint returns 403 despite entitlement check → `{ locked: true }` (AC-6).
+ *
+ * Source ID: `'host.stats.views'`
+ * Scope: `'own'`
+ * Endpoint: GET /api/v1/protected/views/accommodations/me?window=7d|30d
+ *
+ * @see SPEC-197 T-013, §5.2
+ */
+registerDataSource('host.stats.views', (ctx) => ({
+    queryKey: buildDashboardQueryKey('host.stats.views', ctx),
+    queryFn: async () => {
+        // Proactive entitlement check — same endpoint that host.billing.plan fetches.
+        // If 503 (billing service unavailable), we optimistically try the views fetch
+        // and let the 403 defensive path handle the locked state if needed.
+        let hasViewBasicStats = true;
+        try {
+            const entResult = await fetchApi<EntitlementsApiResponse>({
+                path: '/api/v1/protected/users/me/entitlements'
+            });
+            const entitlements = entResult.data.data?.entitlements ?? [];
+            hasViewBasicStats = entitlements.includes('view_basic_stats');
+        } catch (err) {
+            // 503 (billing unavailable) or network failure: optimistic pass-through.
+            // Any other status is unexpected; let it fall through to the views fetch.
+            if (!(err instanceof ApiError && err.status === 503)) {
+                // Unknown error: return loading state to avoid false locked-UI.
+                return { locked: false, loading: true } as const;
+            }
+        }
+
+        if (!hasViewBasicStats) {
+            // AC-3/AC-5: locked state — do NOT call the views endpoint.
+            return { locked: true } as const;
+        }
+
+        // Entitlement confirmed — fetch per-accommodation view stats.
+        // Default window is 30d; the widget controls window via its own state,
+        // but the source resolver always fetches 30d as the starting point.
+        try {
+            const result = await fetchApi<AccommodationViewStatsApiResponse>({
+                path: '/api/v1/protected/views/accommodations/me?window=30d'
+            });
+            const items = result.data.data ?? [];
+            return { locked: false, items } as const;
+        } catch (err) {
+            // AC-6: 403 from the views endpoint despite entitlement check → locked.
+            if (err instanceof ApiError && err.status === 403) {
+                return { locked: true } as const;
+            }
+            throw err;
+        }
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
 
 // ============================================================================
 // NOTE — WHATS NEW RECENT (SPEC-175 T-016)

@@ -46,6 +46,12 @@ vi.mock('@/components/dashboards/widgets', () => ({
     ),
     DeferredWidget: ({ title }: { title: string; phaseSpec: string }) => (
         <div data-testid="deferred-widget">{title}</div>
+    ),
+    CommentsFeedCard: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`feed-widget-${widget.id}`}>{widget.label.es}</div>
+    ),
+    ViewsWidget: ({ widget }: { widget: { id: string; label: { es: string } } }) => (
+        <div data-testid={`views-widget-${widget.id}`}>{widget.label.es}</div>
     )
 }));
 
