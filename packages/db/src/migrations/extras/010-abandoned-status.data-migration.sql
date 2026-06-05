@@ -20,6 +20,8 @@
 -- =============================================================================
 
 DO $$
+DECLARE
+  migrated_rows integer;
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.tables
@@ -35,7 +37,8 @@ BEGIN
          updated_at = NOW()
   WHERE  status = 'incomplete_expired';
 
+  GET DIAGNOSTICS migrated_rows = ROW_COUNT;
   RAISE NOTICE '010-abandoned-status: migrated % row(s) from incomplete_expired to abandoned.',
-               ROW_COUNT();
+               migrated_rows;
 END;
 $$;
