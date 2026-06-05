@@ -56,3 +56,9 @@ export {
     type AiUsageByUserAggRow,
     type AiUsageByFeatureAggRow
 } from './usage.queries.js';
+
+// Monthly call-count query for quota enforcement (SPEC-173 T-031)
+export {
+    countAiUsageForUserFeatureMonth,
+    type CountAiUsageForUserFeatureMonthInput
+} from './usage.queries.js';

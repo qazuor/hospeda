@@ -22,3 +22,9 @@ export {
     type GetUtcMonthRangeInput,
     type UtcMonthRange
 } from './month-range.js';
+
+// Monthly call-count helper for quota enforcement (SPEC-173 T-031)
+export {
+    getMonthlyCallCount,
+    type GetMonthlyCallCountInput
+} from './monthly-call-count.js';

@@ -322,6 +322,111 @@ export async function aggregateAiUsageByFeature(
 }
 
 // ---------------------------------------------------------------------------
+// countAiUsageForUserFeatureMonth
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link countAiUsageForUserFeatureMonth}.
+ */
+export interface CountAiUsageForUserFeatureMonthInput {
+    /** UUID of the authenticated user. */
+    readonly userId: string;
+    /** AI feature to count (e.g. `'text_improve'`, `'chat'`). */
+    readonly feature: string;
+    /**
+     * Inclusive start of the calendar-month window (UTC).
+     * Typically sourced from {@link getUtcMonthRange}.
+     */
+    readonly monthStart: Date;
+    /**
+     * Exclusive end of the calendar-month window (UTC).
+     * Typically sourced from {@link getUtcMonthRange}.
+     */
+    readonly monthEnd: Date;
+    /**
+     * Which `status` values to include in the count.
+     * The quota enforcement helper passes `['success', 'fallback']` — only
+     * calls that **delivered value** count against quota. Provider errors
+     * (`'error'`), rejected attempts (`'quota_exceeded'`, `'ceiling_hit'`,
+     * `'kill_switch'`) are excluded so they do NOT consume quota.
+     *
+     * Must be a non-empty array; an empty array will return 0 via the WHERE
+     * clause but is a caller bug — document it for later detection.
+     */
+    readonly statuses: readonly string[];
+    /** Optional Drizzle transaction client (falls back to `getDb()`). */
+    readonly tx?: DrizzleClient;
+}
+
+/**
+ * Counts `ai_usage` rows for a specific user, feature, and calendar-month
+ * window, filtered to the supplied `statuses`.
+ *
+ * This is the lean call-count query used by the monthly quota enforcement
+ * layer (SPEC-173 T-031).  It counts rows matching:
+ *   `user_id = userId AND feature = feature AND created_at IN [monthStart, monthEnd)`
+ *   AND `status IN statuses`.
+ *
+ * **Decision (owner-approved T-031)**: only calls that delivered value count
+ * against quota.  The caller MUST pass `statuses: ['success', 'fallback']` for
+ * quota checks.  Provider errors (`'error'`) and rejected attempts
+ * (`'quota_exceeded'`, `'ceiling_hit'`, `'kill_switch'`) are excluded so they
+ * do NOT consume quota.
+ *
+ * AC-4: this function lives in `storage/` — the ONLY sub-module allowed to
+ * import `@repo/db` directly.
+ *
+ * @param input - {@link CountAiUsageForUserFeatureMonthInput}
+ * @returns The number of matching rows (0 when there are none).
+ *
+ * @example
+ * ```ts
+ * const n = await countAiUsageForUserFeatureMonth({
+ *   userId: 'abc-123',
+ *   feature: 'text_improve',
+ *   monthStart: new Date('2026-06-01T00:00:00Z'),
+ *   monthEnd:   new Date('2026-07-01T00:00:00Z'),
+ *   statuses: ['success', 'fallback'],
+ * });
+ * // n === 7
+ * ```
+ */
+export async function countAiUsageForUserFeatureMonth(
+    input: CountAiUsageForUserFeatureMonthInput
+): Promise<number> {
+    const { userId, feature, monthStart, monthEnd, statuses, tx } = input;
+    const db = tx ?? getDb();
+
+    // Build base conditions using the shared helper.
+    const baseConditions = buildConditions({ since: monthStart, until: monthEnd, userId, feature });
+
+    // Build the status IN (...) condition via sql template because `inArray`
+    // is not re-exported by `@repo/db` and `drizzle-orm` is not a direct
+    // dependency of this package. Using a positional parameter list avoids
+    // SQL injection — Drizzle's `sql` template binds each value safely.
+    //
+    // When statuses is empty the placeholder list is empty, which is invalid SQL.
+    // We guard with an early-return of 0 to make the edge-case explicit.
+    if (statuses.length === 0) {
+        return 0;
+    }
+
+    // Build `status IN ($1, $2, ...)` using Drizzle sql template.
+    // Each element is interpolated as a bound parameter by Drizzle.
+    const placeholders = statuses.map((s) => sql`${s}`);
+    const statusCondition = sql`${aiUsage.status} IN (${sql.join(placeholders, sql`, `)})`;
+
+    const allConditions = [...baseConditions, statusCondition];
+
+    const [row] = await db
+        .select({ total: count(aiUsage.id) })
+        .from(aiUsage)
+        .where(and(...(allConditions as Parameters<typeof and>)));
+
+    return Number(row?.total ?? 0);
+}
+
+// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 

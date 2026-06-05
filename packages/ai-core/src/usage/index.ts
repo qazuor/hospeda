@@ -35,6 +35,12 @@ export {
     type UtcMonthRange
 } from './reporting/index.js';
 
+// Monthly call-count helper for quota enforcement (SPEC-173 T-031)
+export {
+    getMonthlyCallCount,
+    type GetMonthlyCallCountInput
+} from './reporting/index.js';
+
 // Cost-ceiling check (SPEC-173 T-017)
 export {
     checkCostCeiling,
