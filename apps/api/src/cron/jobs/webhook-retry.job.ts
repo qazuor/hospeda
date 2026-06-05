@@ -30,11 +30,16 @@ import {
     withTransaction
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
+import {
+    findLocalSubscriptionByPreapprovalId,
+    paymentAlreadyRecorded
+} from '../../routes/webhooks/mercadopago/subscription-payment-handler.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
@@ -237,12 +242,38 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         return true;
     }
 
+    // Resolve the local subscription from MP's preapproval ID — mirrors the live handler.
+    // If we cannot resolve the subscription we cannot record the payment against a customer;
+    // treat this as a permanent skip (same as the live handler's no-local-subscription path).
+    const sub = details.preapprovalId
+        ? await findLocalSubscriptionByPreapprovalId(details.preapprovalId)
+        : null;
+
+    if (!sub) {
+        apiLogger.warn(
+            { authorizedPaymentId, preapprovalId: details.preapprovalId ?? null },
+            'Subscription authorized payment dead-letter retry: no local subscription found for preapproval ID — resolving permanently'
+        );
+        return true;
+    }
+
+    // Idempotency: do not record a duplicate if the payment was already captured
+    // by a previous cron run or by the live webhook handler.
+    if (await paymentAlreadyRecorded(details.paymentId)) {
+        apiLogger.info(
+            { authorizedPaymentId, mpPaymentId: details.paymentId, localSubscriptionId: sub.id },
+            'Subscription authorized payment already recorded — idempotent skip during dead-letter retry'
+        );
+        return true;
+    }
+
     try {
-        // Record the payment via the billing facade using the same pattern as
-        // the live handler (subscription-payment-handler.ts)
+        // Record the payment via the billing facade, mirroring the live handler exactly:
+        // real customerId and subscriptionId from the resolved local subscription row.
         await billing.payments.record({
             id: crypto.randomUUID(),
-            customerId: '',
+            customerId: sub.customerId,
+            subscriptionId: sub.id,
             amount: Math.round(details.transactionAmount * 100),
             currency: (details.currencyId as 'ARS') || 'ARS',
             status: 'succeeded',
@@ -255,7 +286,12 @@ async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boo
         });
 
         apiLogger.info(
-            { authorizedPaymentId, mpPaymentId: details.paymentId },
+            {
+                authorizedPaymentId,
+                mpPaymentId: details.paymentId,
+                localSubscriptionId: sub.id,
+                customerId: sub.customerId
+            },
             'Subscription authorized payment recorded during dead-letter retry'
         );
 
@@ -386,6 +422,22 @@ async function retryWebhookEvent(event: {
                 apiLogger.warn(
                     { eventId: event.id, type: event.type, provider: event.provider },
                     'DEAD-LETTER: unrecognized MercadoPago event type — resolving to prevent queue rot. Add a case here when the live webhook router gains this type.'
+                );
+                // Emit to Sentry so an unknown event type is visible in the alert
+                // pipeline and not just stdout. Level=warning because the queue is
+                // auto-resolved (no data loss), but the gap in handler coverage must
+                // be noticed by an engineer. Pattern mirrors bootstrap.ts Sentry usage.
+                Sentry.captureMessage(
+                    `DEAD-LETTER: unrecognized webhook event type '${event.type}' permanently resolved`,
+                    {
+                        level: 'warning',
+                        tags: {
+                            module: 'cron',
+                            job_name: 'webhook-retry',
+                            event_type: event.type,
+                            provider: event.provider
+                        }
+                    }
                 );
                 return true;
             }

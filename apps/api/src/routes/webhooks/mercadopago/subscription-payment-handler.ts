@@ -359,3 +359,29 @@ export const _internals = {
     paymentAlreadyRecorded,
     safeMarkProcessed
 };
+
+// ---------------------------------------------------------------------------
+// Shared helpers — exported for reuse by the dead-letter retry cron job.
+// Naming convention: production-safe exports use a `sharedForRetry` namespace
+// to distinguish them from the test-only `_internals` object.
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolve a local `billing_subscriptions` row from a MercadoPago preapproval
+ * ID. Shared between the live webhook handler and the dead-letter retry job
+ * so both use the same lookup logic.
+ *
+ * @param preapprovalId - The MercadoPago preapproval (subscription) ID.
+ * @returns The local subscription's `id` and `customerId`, or `null` if not found.
+ */
+export { findLocalSubscriptionByPreapprovalId };
+
+/**
+ * Check whether a `billing_payments` row already exists for a given
+ * MercadoPago payment ID. Used by both the live handler and the dead-letter
+ * retry cron to prevent duplicate records.
+ *
+ * @param providerPaymentId - The MercadoPago payment ID to check.
+ * @returns `true` if a record already exists.
+ */
+export { paymentAlreadyRecorded };
