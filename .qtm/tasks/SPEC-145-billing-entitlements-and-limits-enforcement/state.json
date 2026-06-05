@@ -635,119 +635,119 @@
             "id": "T-022",
             "title": "Route snapshot guard test (CI gate)",
             "description": "Spec T-145-19. Walk every registered route; any routes/**/protected/** or gated admin/** route must appear in endpoint-gate-matrix.md (gate or justified 'no gate needed'); phantom/reserved excepted explicitly. Fails CI when a new protected route lands without a matrix entry. Parse the matrix table (machine-checkable format from T-001).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004", "T-005", "T-006", "T-008", "T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Route walker + matrix parser",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Exception handling + CI verification",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "snapshot-guard"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T07:59:37Z",
-                "completed": null
+                "completed": "2026-06-05T08:35:45Z"
             }
         },
         {
             "id": "T-023",
             "title": "Contributor doc: adding-an-entitlement.md",
             "description": "Spec T-145-20. docs/billing/adding-an-entitlement.md: enum (192 catalog) → seed/plan config → gate the route → block+allow e2e → matrix entry. Concise, linked from billing docs index.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-022"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Doc",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:16:45Z",
+                "completed": "2026-06-05T09:23:18Z"
             }
         },
         {
             "id": "T-024",
             "title": "Update CLAUDE.md files with the enforcement model",
             "description": "Spec T-145-21. apps/api/CLAUDE.md + packages/billing/CLAUDE.md: middleware chain order, unified error contract, admin/staff bypass, clearEntitlementCache invariant, phantom/reserved-key concept. Separate commit (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-022"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Both CLAUDE.md updates",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T09:16:45Z",
+                "completed": "2026-06-05T09:23:18Z"
             }
         },
         {
             "id": "T-025",
             "title": "Chunked coverage: 100% functional on the 4 enforcement files",
             "description": "Spec T-145-22. entitlement.ts, tourist-entitlements.ts, accommodation-entitlements.ts, limit-enforcement.ts — chunked coverage per SPEC-143 (full --coverage OOMs, engram #636). Note: tourist/accommodation have no standalone test files (covered in entitlement.test.ts). Fill gaps found.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Chunked runs + gap fills",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["coverage"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T07:59:37Z",
-                "completed": null
+                "completed": "2026-06-05T08:35:45Z"
             }
         },
         {
             "id": "T-026",
             "title": "Post-change mock sweep + per-package typechecks",
             "description": "Mandatory sweep (SPEC-192/127/194 precedent): grep ALL test files mocking touched modules (entitlement, tourist-entitlements, accommodation-entitlements, limit-enforcement, the gated route modules, the new admin customer-entitlements route). Fix stale enumerated vi.mock factories. Targeted sequential runs only. Typecheck apps/api + packages touched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-003",
@@ -770,58 +770,58 @@
             "subtasks": [
                 {
                     "title": "Sweep + fixes + targeted re-runs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:35:45Z",
+                "completed": "2026-06-05T08:54:55Z"
             }
         },
         {
             "id": "T-027",
             "title": "Quality gate + adversarial fresh-context review",
             "description": "Per-package typecheck, lint, targeted suites sequential (owner constraints). Adversarial review of the full diff (enforcement = security-adjacent: hunt for gates that fail open, bypass paths, ServiceError leaking internals, e2e asserting mocks instead of behavior). Fix round on confirmed findings. [E2E findings for review: (1) test DB in worktree lacked SPEC-166 moderation_state columns — check test-DB provisioning; (2) PATCH /accommodations/:id with unknown UUID returns 500 not 404 — possible pre-existing bug, flag in PR.]",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-026"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Gates green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Adversarial review + fixes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T08:54:55Z",
+                "completed": "2026-06-05T09:16:45Z"
             }
         },
         {
             "id": "T-028",
             "title": "Register deferred smoke sections + docs",
             "description": "Add SPEC-145's deferred staging-smoke sections (fresh cheap-plan user: 403 on expensive-only, 2xx on included — per spec DoD) to the SPEC-193 pending-staging-smoke.md list. Tracking commits separate from code.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 1,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
@@ -840,7 +840,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T09:23:18Z",
                 "completed": null
             }
         },
@@ -848,7 +848,7 @@
             "id": "T-029",
             "title": "PR to staging, CI green, merge, closeout",
             "description": "Orphan-commit guard; push with remote-ref verification (rtk silent no-op gotcha); resync staging early if behind. PR notes: new gates list (behavior change: previously-open routes now 403 for under-plan users — flag for review), error-contract unification, new admin route, snapshot guard. Merge only on CI Pass SUCCESS. Closeout: index-sync + engram.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": [],
@@ -871,16 +871,16 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T09:23:18Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 29,
-        "pending": 6,
+        "pending": 0,
         "inProgress": 2,
-        "completed": 21,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.3
     }
