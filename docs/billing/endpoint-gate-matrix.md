@@ -50,8 +50,8 @@
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
-| `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | to-wire | Per-accommodation bookmark analytics; owner-approved gate (T-145-01 candidate list) |
-| `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | to-wire | Market comparison analytics; owner-approved gate (T-145-01 candidate list) |
+| `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
+| `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | **ACCOMMODATION REVIEWS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005) |
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
@@ -86,8 +86,8 @@
 | `POST /api/v1/protected/conversations/{id}/messages` | `conversations/protected/reply.ts` | none | - | n/a | Core messaging; no plan restriction on replying |
 | `PATCH /api/v1/protected/conversations/{id}/archive` | `conversations/protected/archive.ts` | none | - | n/a | Archive toggle on own conversation; no plan restriction |
 | `GET /api/v1/protected/conversations/unread-count` | `conversations/protected/unread-count.ts` | none | - | n/a | Read own inbox badge; auth-only sufficient |
-| `GET /api/v1/protected/conversations/me/response-rate` | `conversations/protected/response-rate.ts` | gate | `view_basic_stats` | to-wire | Response-rate KPI; owner-approved gate (T-145-01 candidate list) |
-| `GET /api/v1/protected/conversations/me/monthly-inquiries` | `conversations/protected/monthly-inquiries.ts` | gate | `view_basic_stats` | to-wire | Monthly-inquiries KPI; owner-approved gate (T-145-01 candidate list) |
+| `GET /api/v1/protected/conversations/me/response-rate` | `conversations/protected/response-rate.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
+| `GET /api/v1/protected/conversations/me/monthly-inquiries` | `conversations/protected/monthly-inquiries.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
