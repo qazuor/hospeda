@@ -1324,35 +1324,35 @@
             "id": "T-037",
             "title": "Write vault round-trip + enforcement integration tests",
             "description": "Integration tests against apps/api: (1) admin saves an OpenAI key → DB stores ciphertext, apps/api decrypts + uses it, audit row written (AC-3); (2) anon → 401, tourist-free at limit → 403 + meter (AC-5/AC-6); (3) ceiling breach hard-stop + 100% alert (AC-8). Use StubProvider + throwaway vault key, never real APIs (AC-13). Files under apps/api/test/ai/. Tests: this task IS the integration suite.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-031", "T-026", "T-025"],
             "blocks": ["T-038"],
             "subtasks": [
                 {
                     "title": "Vault round-trip + audit integration test (AC-3)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enforcement (401/403/meter) integration test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ceiling hard-stop + alert integration test (AC-8)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "integration", "api", "security"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T15:10:00.000Z",
+                "completed": "2026-06-05T16:30:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 38,
+        "completed": 39,
         "blocked": 0,
         "averageComplexity": 2.5
     }
