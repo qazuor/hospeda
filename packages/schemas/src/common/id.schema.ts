@@ -61,6 +61,9 @@ export type DestinationReviewIdType = z.infer<typeof DestinationReviewIdSchema>;
 export const EntityCommentIdSchema = BaseIdSchema;
 export type EntityCommentIdType = z.infer<typeof EntityCommentIdSchema>;
 
+export const EntityViewIdSchema = BaseIdSchema;
+export type EntityViewIdType = z.infer<typeof EntityViewIdSchema>;
+
 export const EventIdSchema = BaseIdSchema;
 export type EventIdType = z.infer<typeof EventIdSchema>;
 

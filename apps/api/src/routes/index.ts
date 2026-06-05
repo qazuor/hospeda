@@ -98,6 +98,7 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { protectedViewsRoutes, viewsRoutes } from './views';
 import {
     brevoWebhookRoutes,
     createMercadoPagoWebhookRoutes,
@@ -218,6 +219,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
 
+        // Cross-entity view tracking capture (SPEC-159 T-008)
+        // Fire-and-forget; always 202. No auth required.
+        app.route('/api/v1/public', viewsRoutes);
+
         apiLogger.debug('✅ Public routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
@@ -261,6 +266,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // What's New (SPEC-175 — role-filtered release-notes with seen state)
         app.route('/api/v1/protected/whats-new', protectedWhatsNewRoutes);
+
+        // Cross-entity view stats (SPEC-159 T-009/T-010)
+        // Protected: host accommodation stats + editor post/event stats.
+        // Public capture (T-008) lives under /api/v1/public above.
+        app.route('/api/v1/protected/views', protectedViewsRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at

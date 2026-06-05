@@ -29,6 +29,13 @@
             "when": 1780610219748,
             "tag": "0003_chemical_sharon_carter",
             "breakpoints": true
+        },
+        {
+            "idx": 4,
+            "version": "7",
+            "when": 1780648998378,
+            "tag": "0004_smart_talon",
+            "breakpoints": true
         }
     ]
 }

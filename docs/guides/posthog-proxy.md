@@ -93,3 +93,4 @@ Reversing steps 1 and 3 causes a broken init window with lost events.
 - CSP source: `apps/web/src/lib/middleware-helpers.ts` (`buildCspHeader`)
 - Env registry: `packages/config/src/env-registry.client.ts` (`PUBLIC_POSTHOG_HOST`)
 - Predecessor: SPEC-140 (initial PostHog integration — web snippet + consent)
+- First-party view counting (SPEC-159): [`view-tracking-privacy.md`](./view-tracking-privacy.md) — server-side cookieless unique-visitor tracking that complements PostHog events with durable per-entity counts

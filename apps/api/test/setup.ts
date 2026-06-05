@@ -39,6 +39,8 @@ process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
 process.env.HOSPEDA_ADMIN_URL = 'http://localhost:3000';
 // Location obfuscation salt (required, >= 32 chars)
 process.env.HOSPEDA_LOCATION_SALT = 'test-location-salt-fixed-for-deterministic-tests-32+chars';
+// View-tracking visitor hash secret (required, >= 32 chars, SPEC-159)
+process.env.HOSPEDA_VIEWS_HASH_SECRET = 'test-views-hash-secret-fixed-for-deterministic-tests-32ch';
 // Disable rate limiting in tests by default.
 // IMPORTANT: z.coerce.boolean() uses Boolean() constructor, so any non-empty
 // string (including 'false') coerces to TRUE. Use empty string '' to get false.

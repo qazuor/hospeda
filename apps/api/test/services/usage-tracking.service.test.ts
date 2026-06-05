@@ -34,7 +34,14 @@ const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 vi.mock('@repo/db', () => ({
     getDb: () => ({
         select: mockSelect
-    })
+    }),
+    // EntityViewService singleton (service-core barrel) dereferences these at import.
+    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    entityViewModel: {
+        insertView: vi.fn(),
+        getStatsForEntities: vi.fn(async () => []),
+        purgeOlderThan: vi.fn(async () => 0)
+    }
 }));
 
 vi.mock('@repo/db/schemas', () => ({

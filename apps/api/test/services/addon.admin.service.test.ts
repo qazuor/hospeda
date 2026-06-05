@@ -17,6 +17,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
     withTransaction: vi.fn(),
+    // EntityViewService singleton (service-core barrel) dereferences these at import.
+    AccommodationModel: vi.fn(() => ({ findIdsByOwnerId: vi.fn(async () => []) })),
+    entityViewModel: {
+        insertView: vi.fn(),
+        getStatsForEntities: vi.fn(async () => []),
+        purgeOlderThan: vi.fn(async () => 0)
+    },
     // Table schema stubs — used directly by addon.admin.ts via @repo/db imports
     billingAddonPurchases: {
         id: 'id',

@@ -188,6 +188,14 @@
             "archived": true,
             "archivedAt": "2026-06-05",
             "note": "PR #1462 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; behavior changes: docs/billing/spec-145-behavior-changes.md"
+        },
+        {
+            "specId": "SPEC-159",
+            "title": "Cross-Entity View Tracking",
+            "status": "completed",
+            "progress": "15/15",
+            "path": "SPEC-159-cross-entity-view-tracking",
+            "branch": "spec/SPEC-159-cross-entity-view-tracking"
         }
     ],
     "standalone": {

@@ -86,6 +86,16 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
     /**
+     * Server-only HMAC secret (pepper) for computing privacy-safe, day-scoped
+     * visitor deduplication hashes used by cross-entity view tracking (SPEC-159).
+     * Hash form: SHA-256(HMAC-SHA256(secret, 'yyyy-mm-dd') + truncatedIp + UA).
+     * Raw IPs are never stored or logged. Min 32 chars; rotating invalidates
+     * all current-day hashes (visitors are recounted as new for that day).
+     */
+    HOSPEDA_VIEWS_HASH_SECRET: z
+        .string()
+        .min(32, 'HOSPEDA_VIEWS_HASH_SECRET must be at least 32 characters'),
+    /**
      * User-Agent header sent to Nominatim and Photon when geocoding addresses
      * for the admin location picker (SPEC-097, Phase 6). Nominatim's usage
      * policy requires an identifiable User-Agent; missing or generic values

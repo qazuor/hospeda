@@ -5,6 +5,7 @@ export * from './billing/index.ts';
 export * from './cron/index.ts';
 export * from './destination/index.ts';
 export * from './entity-comment/index.ts';
+export * from './entity-view/index.ts';
 export * from './event/index.ts';
 export * from './exchange-rate/index.ts';
 export * from './owner-promotion/index.ts';
