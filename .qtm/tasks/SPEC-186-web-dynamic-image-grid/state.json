@@ -8,21 +8,31 @@
             "id": "T-001",
             "title": "Add i18n keys for gallery overlay strings (es/en/pt)",
             "description": "Add the new user-facing strings to @repo/i18n: '+N más' overlay label (with count interpolation) and 'ver todas las fotos' CTA, in es/en/pt locale files under the existing gallery namespace (alongside viewAll/viewFullscreen/photosSubpage). Regenerate i18n types. Tests: locale-completeness check passes for the 3 locales; key lookup returns interpolated count.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "Add keys to es/en/pt locale JSON", "completed": false },
-                { "title": "Regenerate types.ts and verify typecheck", "completed": false }
+                {
+                    "title": "Add keys to es/en/pt locale JSON",
+                    "completed": true
+                },
+                {
+                    "title": "Regenerate types.ts and verify typecheck",
+                    "completed": true
+                }
             ],
             "tags": ["i18n", "web"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:30:00.000Z",
+                "completed": "2026-06-05T06:45:00.000Z"
             }
         },
         {
@@ -34,12 +44,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004"],
             "subtasks": [
-                { "title": "Per-count cell composition (1/2/3/4/5+)", "completed": false },
-                { "title": "+N overlay button (aria-label, opens lightbox)", "completed": false }
+                {
+                    "title": "Per-count cell composition (1/2/3/4/5+)",
+                    "completed": false
+                },
+                {
+                    "title": "+N overlay button (aria-label, opens lightbox)",
+                    "completed": false
+                }
             ],
             "tags": ["web", "react", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -55,12 +75,22 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-005", "T-006", "T-008"],
             "subtasks": [
-                { "title": "Cell classes + per-count rules", "completed": false },
-                { "title": "Tablet breakpoint (641-1023px)", "completed": false }
+                {
+                    "title": "Cell classes + per-count rules",
+                    "completed": false
+                },
+                {
+                    "title": "Tablet breakpoint (641-1023px)",
+                    "completed": false
+                }
             ],
             "tags": ["web", "css", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -78,7 +108,11 @@
             "subtasks": [],
             "tags": ["web", "astro", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -96,7 +130,11 @@
             "subtasks": [],
             "tags": ["web", "testing", "gallery"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -114,7 +152,11 @@
             "subtasks": [],
             "tags": ["web", "react", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -132,7 +174,11 @@
             "subtasks": [],
             "tags": ["web", "testing", "gallery"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -150,7 +196,11 @@
             "subtasks": [],
             "tags": ["web", "css", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -168,7 +218,11 @@
             "subtasks": [],
             "tags": ["web", "media", "cloudinary"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -186,7 +240,11 @@
             "subtasks": [],
             "tags": ["web", "testing", "performance"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -197,18 +255,22 @@
             "id": "T-011",
             "title": "Add 4 gallery* presets to @repo/media",
             "description": "Add galleryFeatured/galleryHalf/galleryQuarter/galleryThumb presets to packages/media/src/presets.ts per spec §7 (c_fill + ar_ + width + q_auto,f_auto,dpr_auto). Update preset-count test 7 → 11 and the explicit key list (packages/media/src/__tests__/presets.test.ts:16), plus the safe-token test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012"],
             "subtasks": [],
             "tags": ["media", "cloudinary"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:30:00.000Z",
+                "completed": "2026-06-05T06:45:00.000Z"
             }
         },
         {
@@ -222,7 +284,11 @@
             "subtasks": [],
             "tags": ["web", "media", "performance"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -240,7 +306,11 @@
             "subtasks": [],
             "tags": ["web", "testing", "media"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -256,12 +326,22 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Grid system + cells", "completed": false },
-                { "title": "Both breakpoints replaced per §5", "completed": false }
+                {
+                    "title": "Grid system + cells",
+                    "completed": false
+                },
+                {
+                    "title": "Both breakpoints replaced per §5",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "gallery"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -279,7 +359,11 @@
             "subtasks": [],
             "tags": ["web", "testing", "gallery"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -290,18 +374,22 @@
             "id": "T-016",
             "title": "Delete dead HeroGallery.astro + JSDoc cleanup",
             "description": "Delete apps/web/src/components/accommodation/HeroGallery.astro (verified dead: zero runtime imports, 4 JSDoc refs only). Remove dangling references: lib/media.ts:105 and :275, lib/api/transforms.ts:636, data/types.ts:576. Grep proves zero HeroGallery references remain; build + typecheck green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-017"],
             "subtasks": [],
             "tags": ["web", "cleanup"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:30:00.000Z",
+                "completed": "2026-06-05T06:45:00.000Z"
             }
         },
         {
@@ -315,7 +403,11 @@
             "subtasks": [],
             "tags": ["testing", "quality-gate"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -333,7 +425,11 @@
             "subtasks": [],
             "tags": ["smoke", "closeout"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
                 "started": null,
@@ -343,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 18,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.2
     }

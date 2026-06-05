@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 0/18 tasks (0%)
+## Progress: 3/18 tasks (17%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -10,7 +10,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) - Add i18n keys for gallery overlay strings (es/en/pt)
+- [x] **T-001** (complexity: 2) - Add i18n keys for gallery overlay strings (es/en/pt)
   - '+N más' + 'ver todas las fotos' in the gallery namespace, types regen
   - Blocked by: none | Blocks: T-002
 
@@ -34,7 +34,7 @@
 - [ ] **T-009** (complexity: 2) - Request Cloudinary c_fill crop per cell ratio
   - Interim raw c_fill,ar_ override until T-011 presets land
   - Blocked by: T-008 | Blocks: T-010, T-012
-- [ ] **T-011** (complexity: 2) - Add 4 gallery* presets to @repo/media
+- [x] **T-011** (complexity: 2) - Add 4 gallery* presets to @repo/media
   - galleryFeatured/Half/Quarter/Thumb; preset-count test 7 → 11
   - Blocked by: none | Blocks: T-012
 - [ ] **T-012** (complexity: 3) - Wire per-cell srcset/sizes in the island
@@ -63,7 +63,7 @@
 
 ### Cleanup Phase
 
-- [ ] **T-016** (complexity: 1) - Delete dead HeroGallery.astro + JSDoc cleanup
+- [x] **T-016** (complexity: 1) - Delete dead HeroGallery.astro + JSDoc cleanup
   - Verified dead (zero runtime imports); 4 JSDoc refs to remove
   - Blocked by: none | Blocks: T-017
 
