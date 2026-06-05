@@ -529,6 +529,108 @@ describe('StubProvider', () => {
 });
 
 // ---------------------------------------------------------------------------
+// StubProvider.buildEcho — empty messages array (covers ?. ?? '' branch)
+// ---------------------------------------------------------------------------
+
+describe('StubProvider — buildEcho with messages where last element has no content', () => {
+    it('should fall back to empty string when the last message has undefined content', async () => {
+        // Arrange — messages array has one entry whose content is undefined.
+        // This exercises the `messages[messages.length - 1]?.content ?? ''`
+        // branch where the nullish-coalesce returns ''.
+        const provider = new StubProvider();
+
+        // Act — cast to bypass TypeScript to inject undefined content at runtime
+        const result = await provider.generateText({
+            feature: 'chat',
+            locale: 'es',
+            messages: [{ role: 'user', content: undefined as unknown as string }]
+        });
+
+        // Assert — echo is '[stub:chat] ' with empty payload (content coalesced to '')
+        expect(result.text).toBe('[stub:chat] ');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// adapter-mappers: mapSdkUsage with undefined inputTokens / outputTokens
+// (covers ?? 0 branches in adapter-mappers.ts lines 43-44)
+// ---------------------------------------------------------------------------
+
+import type { LanguageModelUsage } from 'ai';
+import { mapSdkUsage } from '../src/providers/adapter-mappers.js';
+
+describe('mapSdkUsage', () => {
+    describe('when inputTokens and outputTokens are defined', () => {
+        it('should map them directly', () => {
+            // Arrange
+            const sdkUsage: LanguageModelUsage = { inputTokens: 50, outputTokens: 100 };
+
+            // Act
+            const result = mapSdkUsage(sdkUsage);
+
+            // Assert
+            expect(result.promptTokens).toBe(50);
+            expect(result.completionTokens).toBe(100);
+            expect(result.totalTokens).toBe(150);
+        });
+    });
+
+    describe('when inputTokens is undefined', () => {
+        it('should normalise to 0 (covers ?? 0 branch)', () => {
+            // Arrange — inputTokens undefined, outputTokens defined
+            const sdkUsage = {
+                inputTokens: undefined,
+                outputTokens: 80
+            } as unknown as LanguageModelUsage;
+
+            // Act
+            const result = mapSdkUsage(sdkUsage);
+
+            // Assert
+            expect(result.promptTokens).toBe(0);
+            expect(result.completionTokens).toBe(80);
+            expect(result.totalTokens).toBe(80);
+        });
+    });
+
+    describe('when outputTokens is undefined', () => {
+        it('should normalise to 0 (covers ?? 0 branch)', () => {
+            // Arrange — outputTokens undefined, inputTokens defined
+            const sdkUsage = {
+                inputTokens: 30,
+                outputTokens: undefined
+            } as unknown as LanguageModelUsage;
+
+            // Act
+            const result = mapSdkUsage(sdkUsage);
+
+            // Assert
+            expect(result.promptTokens).toBe(30);
+            expect(result.completionTokens).toBe(0);
+            expect(result.totalTokens).toBe(30);
+        });
+    });
+
+    describe('when both tokens are undefined', () => {
+        it('should return all zeros', () => {
+            // Arrange
+            const sdkUsage = {
+                inputTokens: undefined,
+                outputTokens: undefined
+            } as unknown as LanguageModelUsage;
+
+            // Act
+            const result = mapSdkUsage(sdkUsage);
+
+            // Assert
+            expect(result.promptTokens).toBe(0);
+            expect(result.completionTokens).toBe(0);
+            expect(result.totalTokens).toBe(0);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // NotImplementedError
 // ---------------------------------------------------------------------------
 

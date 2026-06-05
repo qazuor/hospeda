@@ -282,6 +282,33 @@ describe('createPromptVersion', () => {
             ).rejects.toThrow('createPromptVersion');
         });
     });
+
+    describe('when maxResult returns an empty array (no rows at all)', () => {
+        it('should treat maxVersion as 0 and insert version 1', async () => {
+            // Arrange — selectMaxFn returns [] (no rows), exercising the
+            // `maxResult[0]?.maxVersion ?? 0` branch where `maxResult[0]` is
+            // undefined (the ?. yields undefined, ?? gives 0).
+            const selectMaxFn = buildSelectNoOrderChain([]); // empty — no max row
+            const updateFn = buildUpdateVoidChain();
+            const insertFn = buildInsertChain([{ ...PROMPT_ROW_V1, version: 1 }]);
+
+            const fakeTx = { select: selectMaxFn, update: updateFn, insert: insertFn };
+            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
+                cb(fakeTx)
+            );
+
+            // Act
+            const row = await createPromptVersion({
+                feature: 'text_improve',
+                content: 'first ever prompt',
+                isActive: false,
+                actorId: ACTOR_ID
+            });
+
+            // Assert — version should be 1 (0 + 1 from the fallback)
+            expect(row.version).toBe(1);
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -343,6 +370,42 @@ describe('activatePromptVersion', () => {
             const row = await activatePromptVersion({ id: 'nonexistent-uuid' });
 
             // Assert
+            expect(row).toBeNull();
+        });
+
+        it('should return null when the activate update returns no rows', async () => {
+            // Arrange — target row exists, but the final activate UPDATE.returning()
+            // returns an empty array.  This covers the `row ?? null` branch in
+            // activatePromptVersion (prompt.storage.ts line ~263).
+            const selectFn = buildSelectNoOrderChain([
+                { id: PROMPT_ROW_V1.id, feature: PROMPT_ROW_V1.feature }
+            ]);
+            let updateCallCount = 0;
+            const updateFn = vi.fn(() => {
+                updateCallCount++;
+                if (updateCallCount === 1) {
+                    // First update: deactivate all rows (no returning)
+                    const setFn = vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue(undefined)
+                    });
+                    return { set: setFn };
+                }
+                // Second update: activate target — returning() returns EMPTY array
+                const returningFn = vi.fn().mockResolvedValue([]); // empty → row = undefined
+                const whereFn = vi.fn().mockReturnValue({ returning: returningFn });
+                const setFn = vi.fn().mockReturnValue({ where: whereFn });
+                return { set: setFn };
+            });
+
+            const fakeTx = { select: selectFn, update: updateFn };
+            mockWithTransaction.mockImplementation((cb: (tx: unknown) => Promise<unknown>) =>
+                cb(fakeTx)
+            );
+
+            // Act
+            const row = await activatePromptVersion({ id: PROMPT_ROW_V1.id });
+
+            // Assert — undefined from returning() is coerced to null
             expect(row).toBeNull();
         });
     });

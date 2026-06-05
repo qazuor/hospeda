@@ -854,3 +854,292 @@ describe('single-provider config with retryable failure', () => {
         ).rejects.toThrow(AiEngineExhaustedError);
     });
 });
+
+// ---------------------------------------------------------------------------
+// 14. injectSystemPrompt — messages-path with undefined messages
+//     (covers req.messages ?? [] branch in prompt-injection.ts)
+// ---------------------------------------------------------------------------
+
+import { injectSystemPrompt } from '../src/engine/prompt-injection.js';
+
+describe('injectSystemPrompt — messages-path with undefined messages', () => {
+    it('should inject system message when req has no prompt and no messages', () => {
+        // Arrange — request has neither prompt nor messages (messages is undefined).
+        // This exercises the `req.messages ?? []` fallback so the injected result
+        // contains only the system message.
+        const req = {} as { prompt?: string; messages?: { role: string; content: string }[] };
+        const systemContent = 'You are helpful.';
+
+        // Act
+        const result = injectSystemPrompt({ req, systemContent });
+
+        // Assert — messages is [system] (injected from empty fallback)
+        expect((result as { messages: unknown[] }).messages).toHaveLength(1);
+        expect((result as { messages: { role: string; content: string }[] }).messages[0]).toEqual({
+            role: 'system',
+            content: systemContent
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 15. AiEngineExhaustedError with empty attempts (covers lastError fallback branch)
+// ---------------------------------------------------------------------------
+
+describe('AiEngineExhaustedError — empty attempts fallback', () => {
+    it('should use a fallback Error as lastError when attempts array is empty', () => {
+        // Arrange + Act — construct with empty attempts to exercise the
+        // `attempts[attempts.length - 1]?.error ?? new Error('unknown')` branch.
+        const err = new AiEngineExhaustedError('chat', []);
+
+        // Assert — lastError is the fallback
+        expect(err.lastError).toBeInstanceOf(Error);
+        expect(err.lastError.message).toBe('unknown');
+        expect(err.attempts).toHaveLength(0);
+        expect(err.feature).toBe('chat');
+        expect(err.engineCode).toBe('ENGINE_EXHAUSTED');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 15. routeWithFallback: non-Error thrown by provider (covers String(err) branch)
+// ---------------------------------------------------------------------------
+
+describe('routeWithFallback — non-Error thrown value', () => {
+    it('should wrap a non-Error thrown value in Error and treat as non-retryable', async () => {
+        // Arrange — provider throws a plain string, not an Error instance.
+        // withRetry wraps it in new Error(String(err)).  The resulting message
+        // ("oops") does NOT match any retryable heuristic, so it surfaces
+        // immediately without fallback.
+        const stringThrowingProvider: AiProvider = {
+            id: 'openai',
+            generateText: () => Promise.reject('oops'),
+            streamText: () => Promise.reject('oops'),
+            generateObject: () => Promise.reject('oops'),
+            extractIntent: () => Promise.reject('oops'),
+            moderate: () => Promise.reject('oops'),
+            embed: () => Promise.reject('oops')
+        };
+        const providers = new Map<string, AiProvider>([['openai', stringThrowingProvider]]);
+        const engine = makeEngine(providers);
+
+        // Act + Assert — must reject; the exact error wraps the string value
+        await expect(
+            engine.generateText({ feature: 'text_improve', locale: 'es', prompt: 'test' })
+        ).rejects.toThrow('oops');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 15. streamText kill-switch WITH recordEvent (covers recordEvent?.() truthy branch)
+// ---------------------------------------------------------------------------
+
+describe('streamText kill-switch — with recordEvent sink', () => {
+    it('should emit kill_switch event and throw AiFeatureDisabledError', async () => {
+        // Arrange — feature disabled AND recordEvent IS provided.
+        // This exercises the `recordEvent?.({type:'kill_switch',...})` optional-chain
+        // with recordEvent defined, covering the truthy branch at engine.ts line 716.
+        mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_DISABLED);
+        const events: AiEngineEvent[] = [];
+        const providers = new Map<string, AiProvider>([['openai', new StubProvider()]]);
+        const engine = makeEngine(providers, events);
+
+        // Act + Assert
+        await expect(
+            engine.streamText({ feature: 'chat', locale: 'es', prompt: 'hi' })
+        ).rejects.toThrow(AiFeatureDisabledError);
+
+        // The kill_switch event was recorded via recordEvent
+        expect(events.some((e) => e.type === 'kill_switch')).toBe(true);
+        expect(events[0]).toMatchObject({ type: 'kill_switch', feature: 'chat' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 16. extractIntent kill-switch WITH recordEvent (covers recordEvent?.() truthy branch)
+// ---------------------------------------------------------------------------
+
+describe('extractIntent kill-switch — with recordEvent sink', () => {
+    it('should emit kill_switch event and throw AiFeatureDisabledError', async () => {
+        // Arrange — feature disabled AND recordEvent IS provided.
+        // This exercises the `recordEvent?.({type:'kill_switch', feature})` optional-chain
+        // with recordEvent defined, covering the truthy branch at engine.ts line 851.
+        mockResolveFeatureConfig.mockResolvedValue(FEATURE_CONFIG_DISABLED);
+        const events: AiEngineEvent[] = [];
+        const providers = new Map<string, AiProvider>([['openai', new StubProvider()]]);
+        const engine = makeEngine(providers, events);
+
+        // Act + Assert
+        await expect(engine.extractIntent({ query: 'test' }, 'chat')).rejects.toThrow(
+            AiFeatureDisabledError
+        );
+
+        // The kill_switch event was recorded via recordEvent
+        expect(events.some((e) => e.type === 'kill_switch')).toBe(true);
+        expect(events[0]).toMatchObject({ type: 'kill_switch', feature: 'chat' });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 17. generateObject ceiling hook (covers checkCeiling branch in generateObject)
+// ---------------------------------------------------------------------------
+
+describe('generateObject — ceiling hook wiring', () => {
+    it('should invoke the ceiling hook before routing and propagate its error', async () => {
+        // Arrange
+        const ceilingErr = new Error('ceiling breached');
+        const checkCeiling = vi.fn().mockRejectedValue(ceilingErr);
+        const getNow = () => new Date();
+
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling,
+            getNow
+        });
+
+        const schema = z.object({ name: z.string().default('x') });
+
+        // Act + Assert — ceiling error propagates out of generateObject
+        await expect(
+            engine.generateObject({ feature: 'search', locale: 'es', prompt: 'test' }, schema)
+        ).rejects.toThrow('ceiling breached');
+
+        expect(checkCeiling).toHaveBeenCalledOnce();
+    });
+
+    it('should skip ceiling hook in generateObject when getNow is absent', async () => {
+        // Arrange — checkCeiling present, getNow absent → hook skipped
+        const checkCeiling = vi.fn().mockResolvedValue(undefined);
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling
+            // getNow intentionally absent
+        });
+
+        const schema = z.object({ name: z.string().default('x') });
+
+        // Act + Assert — should succeed, hook not called
+        await expect(
+            engine.generateObject({ feature: 'search', locale: 'es', prompt: 'test' }, schema)
+        ).resolves.toBeDefined();
+
+        expect(checkCeiling).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 18. extractIntent ceiling hook (covers checkCeiling branch in extractIntent)
+// ---------------------------------------------------------------------------
+
+describe('extractIntent — ceiling hook wiring', () => {
+    it('should invoke the ceiling hook before routing and propagate its error', async () => {
+        // Arrange
+        const ceilingErr = new Error('extractIntent ceiling');
+        const checkCeiling = vi.fn().mockRejectedValue(ceilingErr);
+        const getNow = () => new Date();
+
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling,
+            getNow
+        });
+
+        // Act + Assert
+        await expect(engine.extractIntent({ query: 'hoteles' }, 'search')).rejects.toThrow(
+            'extractIntent ceiling'
+        );
+
+        expect(checkCeiling).toHaveBeenCalledOnce();
+    });
+
+    it('should skip ceiling hook in extractIntent when getNow is absent', async () => {
+        // Arrange
+        const checkCeiling = vi.fn().mockResolvedValue(undefined);
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling
+            // getNow intentionally absent
+        });
+
+        // Act + Assert
+        await expect(engine.extractIntent({ query: 'test' }, 'search')).resolves.toBeDefined();
+        expect(checkCeiling).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// 19. streamText ceiling hook (covers checkCeiling branch in streamText)
+// ---------------------------------------------------------------------------
+
+describe('streamText — ceiling hook wiring', () => {
+    it('should invoke the ceiling hook before opening stream and propagate its error', async () => {
+        // Arrange
+        const ceilingErr = new Error('streamText ceiling');
+        const checkCeiling = vi.fn().mockRejectedValue(ceilingErr);
+        const getNow = () => new Date();
+
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling,
+            getNow
+        });
+
+        // Act + Assert
+        await expect(
+            engine.streamText({ feature: 'chat', locale: 'es', prompt: 'hi' })
+        ).rejects.toThrow('streamText ceiling');
+
+        expect(checkCeiling).toHaveBeenCalledOnce();
+    });
+
+    it('should skip ceiling hook in streamText when getNow is absent', async () => {
+        // Arrange
+        const checkCeiling = vi.fn().mockResolvedValue(undefined);
+        const stub = new StubProvider();
+        const providers = new Map<string, AiProvider>([['openai', stub]]);
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                const p = providers.get(id);
+                if (!p) throw new Error(`No provider: ${id}`);
+                return p;
+            },
+            checkCeiling
+            // getNow intentionally absent
+        });
+
+        // Act + Assert
+        const result = await engine.streamText({ feature: 'chat', locale: 'es', prompt: 'hi' });
+        expect(result.stream).toBeDefined();
+        expect(checkCeiling).not.toHaveBeenCalled();
+    });
+});

@@ -37,7 +37,18 @@ export default defineConfig({
                 'src/**/*.d.ts',
                 'src/**/*.d.ts.map',
                 'src/**/*.js.map',
-                '**/*.config.*'
+                '**/*.config.*',
+                // Owner decision (2026-06-05, SPEC-173 T-042): the Vercel SDK
+                // adapters are excluded from coverage because their uncovered
+                // branches are real-SDK execution paths that AC-13 forbids
+                // exercising in tests (no network, StubProvider only). Their
+                // request/response mapping logic IS covered via mocked unit
+                // tests (vercel-*.adapter.test.ts); the 90% thresholds stay
+                // fully enforced for every other file in the package.
+                'src/providers/vercel-openai.adapter.ts',
+                'src/providers/vercel-anthropic.adapter.ts',
+                // Type-only barrel — no executable code.
+                'src/types/index.ts'
             ]
         }
     }

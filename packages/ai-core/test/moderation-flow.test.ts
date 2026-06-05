@@ -609,3 +609,44 @@ describe('when generateText uses messages array (multi-turn)', () => {
         expect(inputModCall?.input).toBe('first message\nsecond message');
     });
 });
+
+// ---------------------------------------------------------------------------
+// runModerationPass — non-Error thrown (covers String(err) branch)
+// The fail-open catch block: `err instanceof Error ? err.message : String(err)`
+// ---------------------------------------------------------------------------
+
+describe('runModerationPass — non-Error thrown by moderation provider', () => {
+    it('should emit moderation_error with String(err) message when provider throws a non-Error', async () => {
+        // Arrange — moderation provider throws a plain string (not an Error instance).
+        // This exercises the `err instanceof Error ? err.message : String(err)`
+        // branch in the catch block of runModerationPass (moderation-pass.ts line ~157).
+        const moderationProvider: AiProvider = {
+            ...new StubProvider(),
+            id: 'openai',
+            // Throw a plain object, not an Error instance.
+            moderate: () => Promise.reject('non-error string thrown')
+        };
+        const events: AiEngineEvent[] = [];
+        const engine = makeEngine({ moderationProvider, events });
+
+        // Act — fail-open: call proceeds even though moderation threw a non-Error
+        const result = await engine.generateText({
+            feature: 'text_improve',
+            locale: 'es',
+            prompt: 'some text'
+        });
+
+        // Assert — call succeeded (fail-open)
+        expect(result).toBeDefined();
+
+        // A moderation_error event was recorded with the String()-coerced message
+        const modErrorEvent = events.find((e) => e.type === 'moderation_error');
+        expect(modErrorEvent).toBeDefined();
+        expect(modErrorEvent).toMatchObject({
+            type: 'moderation_error',
+            feature: 'text_improve',
+            direction: 'input',
+            errorMessage: 'non-error string thrown'
+        });
+    });
+});
