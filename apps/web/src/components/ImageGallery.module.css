@@ -26,7 +26,14 @@
     border-radius: var(--radius-card, 24px);
     overflow: hidden;
     gap: 4px;
-    max-height: 480px;
+    /*
+     * max-height is intentionally absent here. Fixed aspect-ratio on each cell
+     * (§5: .cellFeatured = 16/10, .cellHalf = 4/3, .cellQuarter = 1/1) drives
+     * the grid height. A container max-height combined with height:100% on the
+     * featured cell overrides aspect-ratio (CSS: both width+height non-auto →
+     * ratio ignored), producing distorted cells and defeating FR-3 / §5 CLS
+     * guarantee. Height is fully determined by the locked ratios.
+     */
     /* Default: single column (count=1 or unset). */
     grid-template-columns: 1fr;
 }
@@ -507,11 +514,10 @@
      * count=3  → keep 2fr+1fr; collapse to 1 col only at mobile.
      * count=4  → keep 2fr+1fr; thumb column narrows but still legible.
      * count=5+ → same as 4 (overlay stays on last quarter thumb).
-     * max-height is relaxed slightly so cells don't get too short.
+     * No max-height override — same reasoning as desktop: cell aspect-ratios
+     * (§5) drive height. Adding max-height here would re-introduce the same
+     * ratio-vs-height conflict removed from the base .grid rule.
      */
-    .grid {
-        max-height: 400px;
-    }
 
     /* Relax the moreOverlayBtn font size so it fits narrower cells */
     .moreOverlayBtn {
