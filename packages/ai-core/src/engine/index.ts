@@ -68,5 +68,6 @@ export type {
     ExtractIntentCapabilityInput,
     GenerateObjectCapabilityInput,
     GenerateTextCapabilityInput,
-    ModerateCapabilityInput
+    ModerateCapabilityInput,
+    StreamTextCapabilityInput
 } from './ai-service.js';

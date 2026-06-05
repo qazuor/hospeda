@@ -20,7 +20,6 @@
  *
  * - Usage metering (T-016)
  * - Safety / guardrail hooks (T-018)
- * - SSE streaming wiring (T-024 — `streamText` is explicitly excluded from V1)
  * - DB or vault access — that wiring lives in `apps/api` (T-043)
  *
  * ## Relationship to AiEngine
@@ -37,13 +36,12 @@
  *
  * ## §12 Design flag
  *
- * **streamText**: `AiService` does NOT expose `streamText` in V1. The SSE HTTP
- * wiring (T-024) needs the raw `StreamTextResult` (`{ stream, meta }`) which is
- * an internal type not suitable for the generic service surface. T-024 will wire
- * `engine.streamText` directly at the Hono route layer. This keeps the service
- * surface clean and avoids leaking the streaming plumbing into the facade.
- * If needed in V2, `streamText` can be added here with a
- * `(request: StreamTextCapabilityInput) => Promise<StreamTextResult>` signature.
+ * **streamText (owner decision 2026-06-05)**: `AiService` now exposes `streamText`
+ * as a first-class method. The earlier note stating it was excluded from V1 is
+ * superseded by this decision. T-029 (SSE route) consumes `service.streamText`
+ * rather than calling `service.engine.streamText` directly. The facade applies
+ * locale defaulting identically to `generateText`. Input and output moderation are
+ * wired inside `engine.streamText` (same policy as T-020 for buffered calls).
  *
  * **embed (V2 stub)**: `AiService.embed` is exposed so callers already have a
  * stable import path. V1 providers throw `NotImplementedError`. The vector-search
@@ -74,6 +72,9 @@ import { executeGenerateText } from '../capabilities/generate-text.capability.js
 import type { GenerateTextCapabilityInput } from '../capabilities/generate-text.capability.js';
 import { executeModerate } from '../capabilities/moderate.capability.js';
 import type { ModerateCapabilityInput } from '../capabilities/moderate.capability.js';
+import { executeStreamText } from '../capabilities/stream-text.capability.js';
+import type { StreamTextCapabilityInput } from '../capabilities/stream-text.capability.js';
+import type { StreamTextResult } from '../providers/ai-provider.interface.js';
 import { createAiEngine } from './engine.js';
 import type { AiEngine, AiEngineEvent, CreateAiEngineInput } from './engine.js';
 
@@ -210,6 +211,33 @@ export interface AiService {
     generateText(request: GenerateTextCapabilityInput): Promise<GenerateTextResponse>;
 
     /**
+     * Generates text as a stream of incremental delta chunks (T-024).
+     *
+     * Returns a `StreamTextResult` containing:
+     * - `stream`: an `AsyncIterable<StreamTextChunk>` of delta tokens. Input is
+     *   moderated before the stream opens; output is moderated at drain. If the
+     *   output is flagged, the async generator throws `AiModerationBlockedError`
+     *   after the last token. The SSE consumer (T-029) must catch this and emit
+     *   an error event so the client can discard the shown content.
+     * - `meta`: a `Promise<StreamTextFinalMeta>` that resolves after the stream
+     *   is fully consumed. Callers MUST drain `stream` before `meta` resolves.
+     *
+     * `locale` defaults to `defaultLocale` (default `'es'`) when omitted.
+     *
+     * Owner decision (2026-06-05): `streamText` is now exposed on `AiService`.
+     * T-029 consumes `service.streamText`, not `service.engine.streamText`.
+     *
+     * @param request - Stream-text request; `locale` is optional.
+     * @returns A `StreamTextResult` with `{ stream, meta }`.
+     * @throws {AiFeatureDisabledError} If the feature kill-switch is active.
+     * @throws {AiFeatureNotConfiguredError} If the feature has no config entry.
+     * @throws {AiEngineExhaustedError} If all providers fail.
+     * @throws {AiModerationBlockedError} If the input is flagged before the stream
+     *   opens, or thrown from within `stream` if the output is flagged after drain.
+     */
+    streamText(request: StreamTextCapabilityInput): Promise<StreamTextResult>;
+
+    /**
      * Generates a structured object conforming to a caller-supplied Zod schema.
      *
      * `locale` defaults to `defaultLocale` (default `'es'`) when omitted.
@@ -339,6 +367,14 @@ export function createAiService(input: CreateAiServiceInput): AiService {
         },
 
         // -----------------------------------------------------------------------
+        // streamText (T-024)
+        // -----------------------------------------------------------------------
+
+        streamText(request: StreamTextCapabilityInput): Promise<StreamTextResult> {
+            return executeStreamText({ request, defaultLocale, engine });
+        },
+
+        // -----------------------------------------------------------------------
         // generateObject
         // -----------------------------------------------------------------------
 
@@ -391,7 +427,8 @@ export type {
     ExtractIntentCapabilityInput,
     GenerateObjectCapabilityInput,
     GenerateTextCapabilityInput,
-    ModerateCapabilityInput
+    ModerateCapabilityInput,
+    StreamTextCapabilityInput
 };
 
 /**

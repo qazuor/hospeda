@@ -49,6 +49,13 @@ export type {
 } from './moderate.capability.js';
 export { executeModerate } from './moderate.capability.js';
 
+// streamText (T-024)
+export type {
+    ExecuteStreamTextInput,
+    StreamTextCapabilityInput
+} from './stream-text.capability.js';
+export { executeStreamText } from './stream-text.capability.js';
+
 // embed (V2 stub)
 export type {
     EmbedInput,

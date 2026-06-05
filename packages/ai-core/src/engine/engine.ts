@@ -82,7 +82,11 @@ import {
     AiNoEnabledProviderError
 } from './errors.js';
 import type { ProviderAttempt } from './errors.js';
-import { buildInputModerationText, runModerationPass } from './moderation-pass.js';
+import {
+    buildInputModerationText,
+    runModerationPass,
+    wrapStreamWithOutputModeration
+} from './moderation-pass.js';
 import { MAX_ATTEMPTS_PER_PROVIDER, isRetryableError, withRetry } from './retry.js';
 
 // ---------------------------------------------------------------------------
@@ -707,9 +711,21 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 await checkCeiling({ feature: req.feature, now: getNow() });
             }
 
+            // Input moderation (T-024): moderate user-supplied content once before
+            // any provider stream is opened. System prompts are NOT moderated.
+            // Flagged input throws AiModerationBlockedError before the stream opens.
+            await runModerationPass({
+                feature: req.feature,
+                direction: 'input',
+                text: buildInputModerationText(req.prompt, req.messages),
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
+
             const providersConfig = await getProvidersConfig();
 
-            return routeWithFallback(
+            const result = await routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.streamText(req),
@@ -718,6 +734,19 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent,
                 providersConfig
             );
+
+            // Output moderation (T-024): wrap the stream so that after all chunks
+            // are yielded, the accumulated text is moderated. If flagged, the
+            // async generator throws AiModerationBlockedError after the last token.
+            // Fail-open: moderation provider errors emit moderation_error and the
+            // stream completes normally (same policy as generateText T-020).
+            return wrapStreamWithOutputModeration({
+                result,
+                feature: req.feature,
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
         },
 
         // -----------------------------------------------------------------------

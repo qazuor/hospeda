@@ -1,12 +1,15 @@
 /**
- * Content-moderation pass for the AI routing engine (SPEC-173 T-020).
+ * Content-moderation pass for the AI routing engine (SPEC-173 T-020, T-024).
  *
- * This module provides a single internal helper, {@link runModerationPass}, that
- * is called by the three capabilities that require moderation:
+ * This module provides two public helpers:
  *
- * - `generateText`  — input + output moderation.
- * - `generateObject` — input + output moderation (output is JSON-stringified).
- * - `extractIntent`  — input-only moderation (output is an internal typed intent).
+ * - {@link runModerationPass}: called by `generateText`, `generateObject`,
+ *   `extractIntent`, and the input-moderation step of `streamText` to evaluate
+ *   user-supplied or model-generated text against the moderation provider.
+ *
+ * - {@link wrapStreamWithOutputModeration}: wraps a `StreamTextResult` so that
+ *   after all chunks are yielded, the accumulated text is moderated. If flagged,
+ *   the generator throws `AiModerationBlockedError` after the last token.
  *
  * ## Fail-open guarantee
  *
@@ -23,13 +26,13 @@
  * @module ai-core/engine/moderation-pass
  */
 
-import type { AiFeature, AiProviderId } from '@repo/schemas';
-import type { AiProvider } from '../providers/ai-provider.interface.js';
+import type { AiFeature, AiProviderId, StreamTextChunk } from '@repo/schemas';
+import type { AiProvider, StreamTextResult } from '../providers/ai-provider.interface.js';
 import type { AiEngineEvent } from './engine.js';
 import { AiModerationBlockedError } from './errors.js';
 
 // ---------------------------------------------------------------------------
-// Input type
+// runModerationPass — Input type
 // ---------------------------------------------------------------------------
 
 /**
@@ -80,7 +83,7 @@ export interface RunModerationPassInput {
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// runModerationPass — Implementation
 // ---------------------------------------------------------------------------
 
 /**
@@ -161,6 +164,10 @@ export async function runModerationPass(input: RunModerationPassInput): Promise<
     }
 }
 
+// ---------------------------------------------------------------------------
+// buildInputModerationText — Helper
+// ---------------------------------------------------------------------------
+
 /**
  * Builds the text string to moderate from a `generateText`-style request.
  *
@@ -188,4 +195,108 @@ export function buildInputModerationText(
         return userParts.join('\n');
     }
     return '';
+}
+
+// ---------------------------------------------------------------------------
+// wrapStreamWithOutputModeration — Output moderation for streamText (T-024)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link wrapStreamWithOutputModeration}.
+ */
+export interface WrapStreamWithOutputModerationInput {
+    /**
+     * The raw `StreamTextResult` returned by `routeWithFallback`.
+     * The wrapper drains this stream, yielding each chunk to the consumer,
+     * and runs the output moderation pass once the stream ends naturally.
+     */
+    readonly result: StreamTextResult;
+
+    /**
+     * The AI feature context — included in the emitted events and the thrown
+     * error so callers can discriminate which feature was blocked.
+     */
+    readonly feature: AiFeature;
+
+    /**
+     * The configured moderation provider ID.
+     */
+    readonly moderationProviderId: AiProviderId;
+
+    /**
+     * Provider factory injected from the engine.
+     */
+    readonly getProvider: (id: AiProviderId) => AiProvider;
+
+    /**
+     * Optional event sink for moderation events.
+     */
+    readonly recordEvent?: (event: AiEngineEvent) => void;
+}
+
+/**
+ * Wraps a `StreamTextResult` with output moderation applied at drain.
+ *
+ * **Behaviour**:
+ * 1. Yields every chunk from the underlying stream to the consumer unchanged.
+ * 2. Accumulates the full text via `chunk.delta` concatenation.
+ * 3. When the underlying stream ends naturally, runs `runModerationPass` on
+ *    the accumulated text (`direction: 'output'`).
+ * 4. If flagged: emits a `moderation_blocked` event then the generator throws
+ *    `AiModerationBlockedError` after the last token, so the SSE consumer
+ *    can emit an error event and the client can discard the shown content.
+ * 5. If the moderation call throws (network error, provider down): emits a
+ *    `moderation_error` event and the generator returns normally (fail-open,
+ *    identical to T-020 for `generateText`).
+ * 6. If accumulated text is empty: skips the moderation pass entirely.
+ *
+ * The original `meta` promise is forwarded untouched — adapters resolve `meta`
+ * after drain and this wrapper fully drains the original stream, so `meta` still
+ * resolves correctly.
+ *
+ * Owner decision (2026-06-05): output moderation at drain + final throw is the
+ * approved design. T-029 (SSE route) consumes `service.streamText` and must
+ * handle `AiModerationBlockedError` thrown from the async generator.
+ *
+ * @param input - {@link WrapStreamWithOutputModerationInput}
+ * @returns A new `StreamTextResult` whose `stream` includes output moderation.
+ *
+ * @throws {AiModerationBlockedError} Thrown from within the async generator
+ *   after the last token if the output is flagged by the moderation provider.
+ */
+export function wrapStreamWithOutputModeration(
+    input: WrapStreamWithOutputModerationInput
+): StreamTextResult {
+    const { result, feature, moderationProviderId, getProvider, recordEvent } = input;
+
+    async function* moderatedStream(): AsyncGenerator<StreamTextChunk> {
+        let accumulated = '';
+
+        for await (const chunk of result.stream) {
+            accumulated += chunk.delta;
+            yield chunk;
+        }
+
+        // Skip moderation pass if nothing was accumulated.
+        if (accumulated.trim().length === 0) {
+            return;
+        }
+
+        // Run output moderation after all chunks have been yielded.
+        // runModerationPass throws AiModerationBlockedError when flagged,
+        // or records moderation_error and returns (fail-open) on provider errors.
+        await runModerationPass({
+            feature,
+            direction: 'output',
+            text: accumulated,
+            moderationProviderId,
+            getProvider,
+            recordEvent
+        });
+    }
+
+    return {
+        stream: moderatedStream(),
+        meta: result.meta
+    };
 }
