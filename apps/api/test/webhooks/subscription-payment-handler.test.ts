@@ -13,7 +13,8 @@
  * - missing env access token → error log, ACK
  * - billing instance unavailable → error log, ACK
  * - malformed payload → ACK without crashing
- * - record() throws → error log, ACK still happens
+ * - record() throws → event marked FAILED (T-007 fix — no longer swallowed)
+ * - findLocalSubscription throws → event marked FAILED (T-007 fix)
  * - markEventProcessedByProviderId failure is swallowed
  * - amount conversion (major units → centavos) and currency fallback
  *
@@ -28,7 +29,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('../../src/routes/webhooks/mercadopago/utils', () => ({
-    markEventProcessedByProviderId: vi.fn()
+    markEventProcessedByProviderId: vi.fn(),
+    markEventFailedByProviderId: vi.fn()
 }));
 
 vi.mock('../../src/routes/webhooks/mercadopago/event-handler', () => ({
@@ -108,7 +110,10 @@ import {
     _internals,
     handleSubscriptionAuthorizedPayment
 } from '../../src/routes/webhooks/mercadopago/subscription-payment-handler';
-import { markEventProcessedByProviderId } from '../../src/routes/webhooks/mercadopago/utils';
+import {
+    markEventFailedByProviderId,
+    markEventProcessedByProviderId
+} from '../../src/routes/webhooks/mercadopago/utils';
 import {
     type MPAuthorizedPaymentDetails,
     type MPAuthorizedPaymentResult,
@@ -255,6 +260,7 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         vi.clearAllMocks();
         resetState();
         vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
+        vi.mocked(markEventFailedByProviderId).mockResolvedValue(undefined);
     });
 
     it('happy path: records the payment with mapped status and centavo amount', async () => {
@@ -389,7 +395,7 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
     });
 
-    it('acknowledges + still cleans up when billing.payments.record throws', async () => {
+    it('[T-007 RED] record() throws → event marked FAILED, NOT marked processed', async () => {
         subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
         dedupeResult.rows = [];
         vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
@@ -403,7 +409,11 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         ).resolves.toBeUndefined();
 
         expect(record).toHaveBeenCalledOnce();
-        expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
+        // SHOULD mark FAILED — today the handler swallows and marks processed instead
+        expect(markEventFailedByProviderId).toHaveBeenCalledWith(
+            expect.objectContaining({ providerEventId: 'mp-event-auth-pay-1' })
+        );
+        expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
         expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
     });
 
@@ -418,6 +428,50 @@ describe('handleSubscriptionAuthorizedPayment', () => {
         ).resolves.toBeUndefined();
 
         expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
+    });
+
+    it('[T-007 RED] DB throws in findLocalSubscription → event marked FAILED', async () => {
+        // The inner try block wraps findLocalSubscriptionByPreapprovalId.
+        // A DB failure there is a transient error — must mark failed, not processed.
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        setupBillingMock();
+        // Override the module-level getDb mock to throw on select (DB down scenario).
+        // We intercept via the select counter: make the first select throw synchronously.
+        // Use a flag so subsequent tests still get the normal counter-based mock.
+        const originalNextSelectCall = nextSelectCall;
+        const throwingDb = {
+            select: vi.fn(() => {
+                throw new Error('DB connection refused');
+            })
+        };
+        const { getDb } = await import('@repo/db');
+        vi.mocked(getDb).mockReturnValueOnce(throwingDb as never);
+        nextSelectCall = originalNextSelectCall; // reset after override
+
+        await expect(
+            handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+        ).resolves.toBeUndefined();
+
+        // SHOULD mark FAILED — today the handler swallows and marks processed instead
+        expect(markEventFailedByProviderId).toHaveBeenCalledWith(
+            expect.objectContaining({ providerEventId: 'mp-event-auth-pay-1' })
+        );
+        expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
+    });
+
+    it('handler never throws even when mark-failed itself fails', async () => {
+        subLookupResult.rows = [{ id: 'local-sub-1', customerId: 'cust-1' }];
+        dedupeResult.rows = [];
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+        const record = vi.fn().mockRejectedValue(new Error('storage offline'));
+        vi.mocked(getQZPayBilling).mockReturnValue({
+            payments: { record }
+        } as unknown as ReturnType<typeof getQZPayBilling>);
+        vi.mocked(markEventFailedByProviderId).mockRejectedValue(new Error('mark-failed down'));
+
+        await expect(
+            handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent())
+        ).resolves.toBeUndefined();
     });
 
     it('rounds half-cent transaction amounts correctly (999.555 → 99956 centavos)', async () => {

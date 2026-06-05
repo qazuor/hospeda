@@ -34,7 +34,7 @@ import {
     fetchAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
-import { markEventProcessedByProviderId } from './utils.js';
+import { markEventFailedByProviderId, markEventProcessedByProviderId } from './utils.js';
 
 const MP_PROVIDER_KEY = 'mercadopago';
 const FALLBACK_CURRENCY: QZPayCurrency = 'ARS';
@@ -312,15 +312,36 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
     } catch (recordErr) {
+        // Transient / unexpected error (DB hiccup, record() failure). Mark the
+        // event failed so the dead-letter queue can retry it rather than
+        // silently treating it as processed. MP will not retry acknowledged
+        // events, so our own retry mechanism is the only recovery path.
+        const errMessage = recordErr instanceof Error ? recordErr.message : String(recordErr);
         apiLogger.error(
             {
                 eventId: event.id,
                 requestId,
                 authorizedPaymentId,
-                error: recordErr instanceof Error ? recordErr.message : String(recordErr)
+                error: errMessage
             },
-            'MercadoPago webhook: unexpected error while recording subscription_authorized_payment — event acknowledged'
+            'MercadoPago webhook: unexpected error while recording subscription_authorized_payment — marking event failed for retry'
         );
+        try {
+            await markEventFailedByProviderId({
+                providerEventId: String(event.id),
+                errorMessage: errMessage
+            });
+        } catch (markErr) {
+            apiLogger.warn(
+                {
+                    eventId: event.id,
+                    error: markErr instanceof Error ? markErr.message : String(markErr)
+                },
+                'Failed to mark subscription_authorized_payment event as failed — event may be reprocessed'
+            );
+        }
+        cleanupRequestProviderEventId(requestId);
+        return undefined;
     }
 
     await safeMarkProcessed(event.id);
