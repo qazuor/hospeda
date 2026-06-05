@@ -610,7 +610,7 @@
             "title": "Billing Lifecycle Robustness & Bug Fixes",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-194-billing-lifecycle-robustness",
             "parent": "SPEC-193",
             "created": "2026-06-03T00:00:00Z",

@@ -774,7 +774,7 @@ describe('subscription-poll cron job', () => {
             expect(meta.customerId).toBe('cust_iii');
         });
 
-        it('addon job + processPaymentUpdated returns success=false → job retries (error path)', async () => {
+        it('addon job + processPaymentUpdated returns success=false (generic error) → job retries via error-backoff', async () => {
             const job = buildJob({
                 id: 'addon-job-4',
                 resourceType: 'one_time_payment',
@@ -798,7 +798,7 @@ describe('subscription-poll cron job', () => {
                     metadata: { addonSlug: 'extra-photos', customerId: 'cust_ggg' }
                 }
             ]);
-            // processPaymentUpdated returns success=false → polling should treat as error
+            // Generic success=false (no addonAlreadyActive flag) → should still error-backoff
             mockProcessPaymentUpdated.mockResolvedValueOnce({
                 success: false,
                 addonConfirmed: false
@@ -813,6 +813,109 @@ describe('subscription-poll cron job', () => {
                 (call) => (call[0] as { status?: string }).status === 'succeeded'
             );
             expect(terminalSucceeded).toBeUndefined();
+        });
+
+        // ── T-013: ADDON_ALREADY_ACTIVE → terminal succeeded ───────────────
+        // When processPaymentUpdated signals addonAlreadyActive=true, the
+        // polling job must go TERMINAL 'succeeded' instead of error-backoff.
+        // The purchase already exists; T-012's grant reconciliation handles
+        // any missing grants asynchronously.
+        it('addon job + addonAlreadyActive → terminal succeeded, no error counted (SPEC-194 T-013)', async () => {
+            const job = buildJob({
+                id: 'addon-already-active-1',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_already',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_already',
+                    userId: 'user_already',
+                    orderId: 'addon_extra-photos_cs_addon_already'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_already',
+                    status: 'succeeded',
+                    amount: 150000,
+                    currency: 'ARS',
+                    metadata: {
+                        addonSlug: 'extra-photos',
+                        customerId: 'cust_already',
+                        type: 'addon_purchase'
+                    }
+                }
+            ]);
+            // processPaymentUpdated returns addonAlreadyActive=true — purchase already exists
+            mockProcessPaymentUpdated.mockResolvedValueOnce({
+                success: true,
+                addonConfirmed: false,
+                addonAlreadyActive: true
+            });
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            // Must be terminal succeeded — no error-backoff spinning
+            expect(result.errors).toBe(0);
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalUpdate).toBeDefined();
+            expect(terminalUpdate?.[0]).toMatchObject({
+                status: 'succeeded',
+                completedAt: expect.any(Date)
+            });
+        });
+
+        it('addon job + addonAlreadyActive does NOT match generic success=true (addonConfirmed=true) → normal terminal succeeded path', async () => {
+            // Regression guard: a normal success (addonConfirmed=true, no addonAlreadyActive)
+            // must still go terminal succeeded (existing behavior must be preserved).
+            const job = buildJob({
+                id: 'addon-normal-success',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_addon_normal',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos',
+                    customerId: 'cust_normal',
+                    userId: 'user_normal',
+                    orderId: 'addon_extra-photos_cs_addon_normal'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_normal',
+                    status: 'succeeded',
+                    amount: 150000,
+                    currency: 'ARS',
+                    metadata: {
+                        addonSlug: 'extra-photos',
+                        customerId: 'cust_normal',
+                        type: 'addon_purchase'
+                    }
+                }
+            ]);
+            // Normal success — no addonAlreadyActive flag
+            mockProcessPaymentUpdated.mockResolvedValueOnce({
+                success: true,
+                addonConfirmed: true
+            });
+
+            const result = await subscriptionPollJob.handler(buildContext());
+
+            expect(result.errors).toBe(0);
+            expect(result.success).toBe(true);
+            const terminalUpdate = mockStorageUpdate.mock.calls.find(
+                (call) => (call[0] as { status?: string }).status === 'succeeded'
+            );
+            expect(terminalUpdate).toBeDefined();
         });
     });
 });

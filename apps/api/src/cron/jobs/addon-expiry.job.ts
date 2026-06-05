@@ -6,11 +6,17 @@
  *
  * Features:
  * - Finds and expires add-ons that have passed their expiration date
+ * - Sends ADDON_EXPIRED notification for each expired add-on
  * - Sends ADDON_EXPIRATION_WARNING for add-ons expiring in 3 days
  * - Sends ADDON_EXPIRATION_WARNING for add-ons expiring in 1 day
  * - Uses idempotency keys to prevent duplicate notifications
  * - Fire-and-forget pattern for notification sending
- * - Processes in batches of 100 to avoid memory issues
+ * - Single-source-of-truth expiry: findExpiredAddons() is called once; the same
+ *   list drives both expireAddon() calls and the ADDON_EXPIRED notification loop,
+ *   eliminating the between-fetch gap (SPEC-194 T-014)
+ * - Chunked parallel expiry processing (EXPIRY_CHUNK_SIZE items/chunk, bounded
+ *   concurrency via Promise.allSettled) to stay within the 2-minute cron timeout
+ *   for large batches (SPEC-194 T-015)
  * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions
  *
  * @module cron/jobs/addon-expiry
@@ -23,11 +29,13 @@ import {
     billingNotificationLog,
     billingSubscriptions,
     eq,
+    getDb,
     isNull,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { AddonCatalogService } from '@repo/service-core';
+import { chunkArray } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { sql } from 'drizzle-orm';
 import { getQZPayBilling } from '../../middlewares/billing.js';
@@ -44,6 +52,14 @@ import type { CronJobDefinition } from '../types.js';
 // Replaces static `getAddonBySlug` from `@repo/billing` for display-name
 // resolution and revocation retry. Instantiated once at module level.
 const catalogService = new AddonCatalogService();
+
+/**
+ * Number of expired addon purchases to process concurrently per chunk (SPEC-194 T-015).
+ * Bounded concurrency prevents the cron from hitting the 2-minute timeout with large
+ * batches while still parallelising per-item work within each chunk. Value of 5
+ * balances DB connection pressure against throughput.
+ */
+const EXPIRY_CHUNK_SIZE = 5;
 
 /**
  * Generate idempotency key for an add-on notification.
@@ -130,8 +146,23 @@ async function wasNotificationSent(
 const SPLIT_STATE_BATCH_SIZE = 10;
 
 /**
+ * A Phase 7 row selected inside the lock tx and processed outside (item 7 fix).
+ * Only the fields needed for the post-tx grant + flag-clear are carried over.
+ */
+interface PendingGrantRow {
+    readonly id: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+    readonly metadata: unknown;
+}
+
+/**
  * Discriminated union returned by the withTransaction callback in the cron handler.
  * Allows the outer handler to distinguish lock-skip from real execution results.
+ *
+ * `pendingPostTxGrants` carries Phase 7 rows selected inside the lock tx so
+ * the per-row grant + flag-clear can run AFTER the tx commits (item 7 fix).
+ * External QZPay grant calls must not run while the advisory lock is held.
  */
 type CronTransactionResult =
     | { readonly skipped: true }
@@ -143,6 +174,8 @@ type CronTransactionResult =
           readonly errors: number;
           readonly durationMs: number;
           readonly details: Record<string, unknown>;
+          /** Phase 7 rows to process after the tx commits (external QZPay calls). */
+          readonly pendingPostTxGrants: readonly PendingGrantRow[];
       };
 
 /**
@@ -178,6 +211,7 @@ export const addonExpiryJob: CronJobDefinition = {
         // Service calls (AddonExpirationService, etc.) that internally call getDb() run outside
         // the tx scope — they are not part of the critical section but cannot be refactored here.
         let processed = 0;
+        let failed = 0;
         let errors = 0;
         let warningsSent = 0;
 
@@ -214,7 +248,8 @@ export const addonExpiryJob: CronJobDefinition = {
                         processed: 0,
                         errors: 1,
                         durationMs: Date.now() - startedAt.getTime(),
-                        details: { error: 'billing_not_initialized' }
+                        details: { error: 'billing_not_initialized' },
+                        pendingPostTxGrants: []
                     };
                 }
 
@@ -245,139 +280,192 @@ export const addonExpiryJob: CronJobDefinition = {
                         errors++;
                     }
                 } else {
-                    // Production mode - find expired add-ons first (needed for post-expiry notifications)
-                    const findBeforeExpiry = await addonExpirationService.findExpiredAddons();
-                    const addonsToExpire = findBeforeExpiry.success
-                        ? (findBeforeExpiry.data ?? [])
-                        : [];
+                    // Production mode — single-source-of-truth expiry (SPEC-194 T-014).
+                    // findExpiredAddons() is called ONCE. The resulting list drives both the
+                    // per-item expireAddon() calls AND the ADDON_EXPIRED notification loop,
+                    // so no addon can fall into the between-fetch gap that existed when
+                    // processExpiredAddons() ran its own internal findExpiredAddons() query.
+                    const findResult = await addonExpirationService.findExpiredAddons();
 
-                    // Actually expire add-ons
-                    const processResult = await addonExpirationService.processExpiredAddons();
+                    if (findResult.success) {
+                        const addonsToExpire = findResult.data ?? [];
 
-                    if (processResult.success) {
-                        const result = processResult.data;
-                        if (result) {
-                            processed += result.processed;
-                            errors += result.failed;
+                        logger.info('Found expired add-ons to process', {
+                            count: addonsToExpire.length
+                        });
 
-                            logger.info('Processed expired add-ons', {
-                                processed: result.processed,
-                                failed: result.failed,
-                                errorsDetails: result.errors
-                            });
+                        // Track which purchase IDs failed so we skip their notifications below.
+                        const failedPurchaseIds = new Set<string>();
 
-                            // Build set of purchase IDs that failed so we skip their notifications
-                            const failedPurchaseIds = new Set(
-                                result.errors.map((e: { purchaseId: string }) => e.purchaseId)
+                        // Chunked parallel expiry (SPEC-194 T-015 / GAP-038-42).
+                        // Sequential processing of large batches can exceed the 2-minute cron
+                        // window. Chunks of EXPIRY_CHUNK_SIZE items are fanned out concurrently
+                        // via Promise.allSettled — per-item error isolation is preserved: one
+                        // failure never aborts the rest of the chunk or any subsequent chunk.
+                        const chunks = chunkArray(addonsToExpire, EXPIRY_CHUNK_SIZE);
+
+                        for (const chunk of chunks) {
+                            const chunkResults = await Promise.allSettled(
+                                chunk.map((addon) =>
+                                    addonExpirationService.expireAddon({ purchaseId: addon.id })
+                                )
                             );
 
-                            // Send ADDON_EXPIRED notification for each successfully expired add-on
-                            for (const expiredAddon of addonsToExpire) {
-                                if (failedPurchaseIds.has(expiredAddon.id)) {
-                                    continue;
-                                }
+                            for (let i = 0; i < chunkResults.length; i++) {
+                                const settledResult = chunkResults[i];
+                                const addon = chunk[i];
+                                if (!addon || !settledResult) continue;
 
-                                try {
-                                    // Check idempotency via DB lookup (persists across cron runs)
-                                    if (
-                                        await wasNotificationSent(
-                                            NotificationType.ADDON_EXPIRED,
-                                            expiredAddon.customerId,
-                                            expiredAddon.addonSlug,
-                                            tx
-                                        )
-                                    ) {
-                                        logger.debug(
-                                            'Skipping duplicate ADDON_EXPIRED notification',
-                                            {
-                                                customerId: expiredAddon.customerId,
-                                                addonSlug: expiredAddon.addonSlug
-                                            }
-                                        );
-                                        continue;
-                                    }
-
-                                    // Look up customer details for notification.
-                                    // Reuse the billing instance already retrieved at job startup
-                                    // to avoid redundant getQZPayBilling() calls inside the loop.
-                                    const customerDetails = await lookupCustomerDetails(
-                                        billing,
-                                        expiredAddon.customerId
-                                    );
-                                    if (!customerDetails) {
-                                        logger.warn(
-                                            'Could not look up customer details, skipping ADDON_EXPIRED notification',
-                                            {
-                                                customerId: expiredAddon.customerId,
-                                                addonSlug: expiredAddon.addonSlug
-                                            }
-                                        );
-                                        continue;
-                                    }
-
-                                    // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
-                                    const addonCatalogExpired = await catalogService.getBySlug(
-                                        expiredAddon.addonSlug
-                                    );
-                                    const addonDisplayNameExpired = addonCatalogExpired.success
-                                        ? addonCatalogExpired.data.name
-                                        : expiredAddon.addonSlug;
-
-                                    // Fire-and-forget notification (the notification helper logs to billing_notification_log)
-                                    sendNotification({
-                                        type: NotificationType.ADDON_EXPIRED,
-                                        recipientEmail: customerDetails.email,
-                                        recipientName: customerDetails.name,
-                                        userId: customerDetails.userId,
-                                        customerId: expiredAddon.customerId,
-                                        addonName: addonDisplayNameExpired,
-                                        expirationDate: expiredAddon.expiresAt.toISOString(),
-                                        idempotencyKey: generateIdempotencyKey(
-                                            NotificationType.ADDON_EXPIRED,
-                                            expiredAddon.customerId,
-                                            expiredAddon.addonSlug
-                                        )
-                                    }).catch((notifError) => {
-                                        logger.warn('Add-on expired notification failed', {
-                                            customerId: expiredAddon.customerId,
-                                            addonSlug: expiredAddon.addonSlug,
-                                            error:
-                                                notifError instanceof Error
-                                                    ? notifError.message
-                                                    : String(notifError)
-                                        });
-                                    });
-
-                                    logger.debug('Sent ADDON_EXPIRED notification', {
-                                        customerId: expiredAddon.customerId,
-                                        addonSlug: expiredAddon.addonSlug
-                                    });
-                                } catch (notifLoopError) {
+                                if (settledResult.status === 'rejected') {
+                                    failed++;
                                     errors++;
-                                    Sentry.captureException(notifLoopError, {
+                                    failedPurchaseIds.add(addon.id);
+                                    Sentry.captureException(settledResult.reason, {
                                         tags: {
                                             cronJob: 'addon-expiry',
-                                            phase: 'expired-notification'
+                                            phase: 'expire-addon'
                                         },
                                         extra: {
-                                            customerId: expiredAddon.customerId,
-                                            addonSlug: expiredAddon.addonSlug
+                                            purchaseId: addon.id,
+                                            customerId: addon.customerId,
+                                            addonSlug: addon.addonSlug
                                         }
                                     });
-                                    logger.error('Failed to send ADDON_EXPIRED notification', {
-                                        customerId: expiredAddon.customerId,
-                                        addonSlug: expiredAddon.addonSlug,
+                                    logger.error('expireAddon threw unexpectedly', {
+                                        purchaseId: addon.id,
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug,
                                         error:
-                                            notifLoopError instanceof Error
-                                                ? notifLoopError.message
-                                                : String(notifLoopError)
+                                            settledResult.reason instanceof Error
+                                                ? settledResult.reason.message
+                                                : String(settledResult.reason)
+                                    });
+                                } else if (settledResult.value.success) {
+                                    processed++;
+                                } else {
+                                    failed++;
+                                    errors++;
+                                    failedPurchaseIds.add(addon.id);
+                                    logger.warn('expireAddon returned failure', {
+                                        purchaseId: addon.id,
+                                        customerId: addon.customerId,
+                                        addonSlug: addon.addonSlug,
+                                        error: settledResult.value.error
                                     });
                                 }
                             }
                         }
+
+                        logger.info('Processed expired add-ons', {
+                            processed,
+                            failed
+                        });
+
+                        // Send ADDON_EXPIRED notification for each successfully expired add-on.
+                        // Iterates the SAME list that was just expired — no second DB fetch,
+                        // no between-fetch gap (SPEC-194 T-014 fix).
+                        for (const expiredAddon of addonsToExpire) {
+                            if (failedPurchaseIds.has(expiredAddon.id)) {
+                                continue;
+                            }
+
+                            try {
+                                // Check idempotency via DB lookup (persists across cron runs)
+                                if (
+                                    await wasNotificationSent(
+                                        NotificationType.ADDON_EXPIRED,
+                                        expiredAddon.customerId,
+                                        expiredAddon.addonSlug,
+                                        tx
+                                    )
+                                ) {
+                                    logger.debug('Skipping duplicate ADDON_EXPIRED notification', {
+                                        customerId: expiredAddon.customerId,
+                                        addonSlug: expiredAddon.addonSlug
+                                    });
+                                    continue;
+                                }
+
+                                // Look up customer details for notification.
+                                // Reuse the billing instance already retrieved at job startup
+                                // to avoid redundant getQZPayBilling() calls inside the loop.
+                                const customerDetails = await lookupCustomerDetails(
+                                    billing,
+                                    expiredAddon.customerId
+                                );
+                                if (!customerDetails) {
+                                    logger.warn(
+                                        'Could not look up customer details, skipping ADDON_EXPIRED notification',
+                                        {
+                                            customerId: expiredAddon.customerId,
+                                            addonSlug: expiredAddon.addonSlug
+                                        }
+                                    );
+                                    continue;
+                                }
+
+                                // SPEC-192 T-015: resolve display name from DB-backed catalog; fall back to slug
+                                const addonCatalogExpired = await catalogService.getBySlug(
+                                    expiredAddon.addonSlug
+                                );
+                                const addonDisplayNameExpired = addonCatalogExpired.success
+                                    ? addonCatalogExpired.data.name
+                                    : expiredAddon.addonSlug;
+
+                                // Fire-and-forget notification (the notification helper logs to billing_notification_log)
+                                sendNotification({
+                                    type: NotificationType.ADDON_EXPIRED,
+                                    recipientEmail: customerDetails.email,
+                                    recipientName: customerDetails.name,
+                                    userId: customerDetails.userId,
+                                    customerId: expiredAddon.customerId,
+                                    addonName: addonDisplayNameExpired,
+                                    expirationDate: expiredAddon.expiresAt.toISOString(),
+                                    idempotencyKey: generateIdempotencyKey(
+                                        NotificationType.ADDON_EXPIRED,
+                                        expiredAddon.customerId,
+                                        expiredAddon.addonSlug
+                                    )
+                                }).catch((notifError) => {
+                                    logger.warn('Add-on expired notification failed', {
+                                        customerId: expiredAddon.customerId,
+                                        addonSlug: expiredAddon.addonSlug,
+                                        error:
+                                            notifError instanceof Error
+                                                ? notifError.message
+                                                : String(notifError)
+                                    });
+                                });
+
+                                logger.debug('Sent ADDON_EXPIRED notification', {
+                                    customerId: expiredAddon.customerId,
+                                    addonSlug: expiredAddon.addonSlug
+                                });
+                            } catch (notifLoopError) {
+                                errors++;
+                                Sentry.captureException(notifLoopError, {
+                                    tags: {
+                                        cronJob: 'addon-expiry',
+                                        phase: 'expired-notification'
+                                    },
+                                    extra: {
+                                        customerId: expiredAddon.customerId,
+                                        addonSlug: expiredAddon.addonSlug
+                                    }
+                                });
+                                logger.error('Failed to send ADDON_EXPIRED notification', {
+                                    customerId: expiredAddon.customerId,
+                                    addonSlug: expiredAddon.addonSlug,
+                                    error:
+                                        notifLoopError instanceof Error
+                                            ? notifLoopError.message
+                                            : String(notifLoopError)
+                                });
+                            }
+                        }
                     } else {
-                        logger.error('Failed to process expired add-ons', {
-                            error: processResult.error
+                        logger.error('Failed to find expired add-ons', {
+                            error: findResult.error
                         });
                         errors++;
                     }
@@ -1327,9 +1415,91 @@ export const addonExpiryJob: CronJobDefinition = {
                     });
                 }
 
+                // 7. Grant reconciliation — CLAIM phase (item 7 / SPEC-194 adversarial review).
+                //
+                // Only the SELECT runs here, inside the lock-holding tx. The per-row
+                // grant + flag-clear (external QZPay calls + DB writes) run AFTER the tx
+                // commits so external calls never hold the advisory lock (ADR-019 §Negative).
+                // Mirrors the trial claim/process split from T-005.
+                //
+                // Idempotency: re-applying is safe because qzpay-drizzle's entitlements
+                // grant() is upsert-style — it finds the active grant for
+                // (customerId, entitlementKey) and updates/returns it instead of inserting
+                // a duplicate. Verified at qzpay packages/drizzle/src/repositories/
+                // entitlements.repository.ts:133-152 (item 6 / SPEC-194 adversarial review).
+                let claimedGrantRows: PendingGrantRow[] = [];
+                let grantDryRunCount = 0;
+
+                logger.info('Starting grant reconciliation phase for split-state purchases');
+
+                try {
+                    const db = tx;
+
+                    const pendingGrantSync = await db
+                        .select({
+                            id: billingAddonPurchases.id,
+                            customerId: billingAddonPurchases.customerId,
+                            addonSlug: billingAddonPurchases.addonSlug,
+                            needsEntitlementSync: billingAddonPurchases.needsEntitlementSync,
+                            metadata: billingAddonPurchases.metadata
+                        })
+                        .from(billingAddonPurchases)
+                        .where(
+                            and(
+                                eq(billingAddonPurchases.status, 'active'),
+                                isNull(billingAddonPurchases.deletedAt),
+                                eq(billingAddonPurchases.needsEntitlementSync, true)
+                            )
+                        )
+                        .limit(10);
+
+                    logger.info('Found active purchases with missing entitlement grants', {
+                        count: pendingGrantSync.length
+                    });
+
+                    if (dryRun) {
+                        // Dry-run: count only — no external calls, nothing to defer post-tx.
+                        for (const purchase of pendingGrantSync) {
+                            logger.info(
+                                'Dry run mode - would re-apply entitlement grant for split-state purchase',
+                                {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                }
+                            );
+                            grantDryRunCount++;
+                        }
+                    } else {
+                        // Production: store rows to process after tx commits.
+                        // The advisory lock releases on commit; external calls run outside.
+                        claimedGrantRows = pendingGrantSync.map((p) => ({
+                            id: p.id,
+                            customerId: p.customerId,
+                            addonSlug: p.addonSlug,
+                            metadata: p.metadata
+                        }));
+                    }
+                } catch (grantPhaseError) {
+                    const errMsg =
+                        grantPhaseError instanceof Error
+                            ? grantPhaseError.message
+                            : String(grantPhaseError);
+
+                    errors++;
+
+                    Sentry.captureException(grantPhaseError, {
+                        tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation-claim' }
+                    });
+
+                    logger.error('Grant reconciliation claim phase failed with unexpected error', {
+                        error: errMsg
+                    });
+                }
+
                 const durationMs = Date.now() - startedAt.getTime();
 
-                logger.info('Add-on expiry job completed', {
+                logger.info('Add-on expiry job (lock phase) completed', {
                     processed,
                     errors,
                     warningsSent,
@@ -1339,13 +1509,15 @@ export const addonExpiryJob: CronJobDefinition = {
                     splitStateErrors,
                     entitlementReconciled,
                     entitlementReconcileErrors,
+                    grantClaimedCount: claimedGrantRows.length,
+                    grantDryRunCount,
                     durationMs
                 });
 
                 return {
                     skipped: false,
                     success: true,
-                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements (${errors} errors)`,
+                    message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations, reconciled ${splitStateReconciled} split-state subs, reconciled ${entitlementReconciled} entitlements, ${claimedGrantRows.length} grant rows claimed for post-tx processing (${errors} errors)`,
                     processed: processed + warningsSent,
                     errors,
                     durationMs,
@@ -1358,10 +1530,13 @@ export const addonExpiryJob: CronJobDefinition = {
                         splitStateErrors,
                         entitlementReconciled,
                         entitlementReconcileErrors,
+                        grantReconciled: grantDryRunCount, // dry-run only; live count set post-tx
+                        grantReconcileErrors: 0,
                         dryRun
-                    }
+                    },
+                    pendingPostTxGrants: claimedGrantRows
                 };
-                // End of withTransaction callback — lock auto-releases on commit
+                // End of withTransaction callback — advisory lock auto-releases on commit
             });
 
             // Handle lock-not-acquired case from inside the transaction
@@ -1379,13 +1554,154 @@ export const addonExpiryJob: CronJobDefinition = {
                 };
             }
 
+            // ── Phase 7 PROCESS phase (item 7 / SPEC-194 adversarial review) ──────────
+            // The advisory lock has been released (tx committed). Now run the external
+            // QZPay grant calls and DB flag-clears without holding the lock.
+            let grantReconciled = 0;
+            let grantReconcileErrors = 0;
+
+            if (cronResult.pendingPostTxGrants.length > 0) {
+                const postTxDb = getDb();
+                const billing = getQZPayBilling();
+
+                if (billing) {
+                    logger.info('Starting grant reconciliation post-tx processing', {
+                        count: cronResult.pendingPostTxGrants.length
+                    });
+
+                    for (const purchase of cronResult.pendingPostTxGrants) {
+                        try {
+                            const entitlementService = new AddonEntitlementService(billing);
+
+                            const applyResult = await entitlementService.applyAddonEntitlements({
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                purchaseId: purchase.id
+                            });
+
+                            const meta = (purchase.metadata ?? {}) as Record<string, unknown>;
+                            const retryCount =
+                                typeof meta.grantSyncRetries === 'number'
+                                    ? meta.grantSyncRetries
+                                    : 0;
+                            const newRetryCount = retryCount + 1;
+
+                            if (applyResult.success) {
+                                await postTxDb
+                                    .update(billingAddonPurchases)
+                                    .set({
+                                        needsEntitlementSync: false,
+                                        metadata: { ...meta, grantSyncRetries: newRetryCount },
+                                        updatedAt: new Date()
+                                    })
+                                    .where(eq(billingAddonPurchases.id, purchase.id));
+
+                                grantReconciled++;
+                                clearEntitlementCache(purchase.customerId);
+
+                                logger.info('Grant reconciliation succeeded (post-tx)', {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                });
+                            } else {
+                                await postTxDb
+                                    .update(billingAddonPurchases)
+                                    .set({
+                                        metadata: { ...meta, grantSyncRetries: newRetryCount },
+                                        updatedAt: new Date()
+                                    })
+                                    .where(eq(billingAddonPurchases.id, purchase.id));
+
+                                grantReconcileErrors++;
+
+                                if (newRetryCount >= 3) {
+                                    Sentry.captureException(
+                                        new Error(
+                                            `Entitlement grant reconciliation failed after ${newRetryCount} retries`
+                                        ),
+                                        {
+                                            tags: {
+                                                cronJob: 'addon-expiry',
+                                                phase: 'grant-reconciliation'
+                                            },
+                                            extra: {
+                                                purchaseId: purchase.id,
+                                                customerId: purchase.customerId,
+                                                addonSlug: purchase.addonSlug,
+                                                retryCount: newRetryCount
+                                            }
+                                        }
+                                    );
+                                    logger.error(
+                                        'Grant reconciliation failed after 3 retries — Sentry alert sent',
+                                        {
+                                            purchaseId: purchase.id,
+                                            customerId: purchase.customerId,
+                                            addonSlug: purchase.addonSlug,
+                                            retryCount: newRetryCount
+                                        }
+                                    );
+                                } else {
+                                    logger.warn(
+                                        'Grant reconciliation retry failed, will retry next run',
+                                        {
+                                            purchaseId: purchase.id,
+                                            customerId: purchase.customerId,
+                                            addonSlug: purchase.addonSlug,
+                                            retryCount: newRetryCount
+                                        }
+                                    );
+                                }
+                            }
+                        } catch (grantErr) {
+                            grantReconcileErrors++;
+
+                            Sentry.captureException(grantErr, {
+                                tags: { cronJob: 'addon-expiry', phase: 'grant-reconciliation' },
+                                extra: {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug
+                                }
+                            });
+
+                            logger.error('Unexpected error during grant reconciliation (post-tx)', {
+                                purchaseId: purchase.id,
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                error:
+                                    grantErr instanceof Error ? grantErr.message : String(grantErr)
+                            });
+                        }
+                    }
+
+                    logger.info('Grant reconciliation post-tx processing completed', {
+                        grantReconciled,
+                        grantReconcileErrors
+                    });
+                } else {
+                    apiLogger.error(
+                        'Grant reconciliation post-tx: billing not initialized, skipping grant processing'
+                    );
+                    grantReconcileErrors += cronResult.pendingPostTxGrants.length;
+                }
+            }
+
+            // Merge the live post-tx grant counts into the result details.
+            // In dry-run mode pendingPostTxGrants is always empty and grantReconciled=0;
+            // preserve the dry-run count (set inside the tx) instead of overwriting it.
+            const mergedDetails = dryRun
+                ? cronResult.details
+                : { ...cronResult.details, grantReconciled, grantReconcileErrors };
+
             return {
                 success: cronResult.success,
                 message: cronResult.message,
                 processed: cronResult.processed,
                 errors: cronResult.errors,
                 durationMs: cronResult.durationMs,
-                details: cronResult.details
+                details: mergedDetails
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

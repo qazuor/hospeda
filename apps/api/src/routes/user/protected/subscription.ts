@@ -38,6 +38,10 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     past_due: 'past_due',
     unpaid: 'expired',
     incomplete: 'pending',
+    // Pre-migration-010 legacy window: rows that held 'incomplete_expired' before
+    // the 010-abandoned-status extras migration normalised them to 'abandoned'.
+    // This entry must remain to handle any SDK responses that still use the old key
+    // during the transition window (item 9b / SPEC-194 adversarial review).
     incomplete_expired: 'expired',
     paused: 'paused',
     pending: 'pending'

@@ -1032,6 +1032,7 @@
                 "canceled": "Cancelada",
                 "incomplete": "Incompleta",
                 "incomplete_expired": "Incompleta (expirada)",
+                "abandoned": "Abandonada",
                 "unknown": "Sem status"
             },
             "currentPeriodEnd": "Vence em {{date}}",

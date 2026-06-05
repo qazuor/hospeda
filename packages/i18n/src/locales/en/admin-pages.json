@@ -1032,6 +1032,7 @@
                 "canceled": "Canceled",
                 "incomplete": "Incomplete",
                 "incomplete_expired": "Incomplete (expired)",
+                "abandoned": "Abandoned",
                 "unknown": "Unknown"
             },
             "currentPeriodEnd": "Expires on {{date}}",

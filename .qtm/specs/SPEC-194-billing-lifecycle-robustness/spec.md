@@ -3,7 +3,7 @@ spec-id: SPEC-194
 title: Billing Lifecycle Robustness & Bug Fixes
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-03T00:00:00Z
 effort_estimate_hours: 50-80
 tags: [billing, lifecycle, refunds, dunning, trials, crons, state-machine, robustness, bugfix]
@@ -12,8 +12,8 @@ depends_on: [SPEC-143, SPEC-168]
 relates_to: [SPEC-145, SPEC-149, SPEC-167, SPEC-192]
 blocks: [real-money-go-live]
 priority: high
-worktree: null
-branch: null
+worktree: /home/qazuor/projects/WEBS/hospeda-spec-194-billing-lifecycle-robustness
+branch: spec/SPEC-194-billing-lifecycle-robustness
 base: staging
 ---
 
@@ -35,8 +35,9 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
 **Boundary with sibling specs (do NOT duplicate):**
 
 - Webhook handlers swallowing errors + dead-letter omissions → **SPEC-149** (webhook error-handling).
-- Addon base-plan lookup by slug failing post-SPEC-168 (`addon-entitlement.service.ts:160`) → **SPEC-192 FR-4**
-  (this is the FR-4 bug; 194 references it, 192 fixes it).
+- Addon base-plan lookup by slug failing post-SPEC-168 → **FIXED** (verified 2026-06-04): SPEC-192 landed
+  dual-resolve in `addon-entitlement.service.ts:191-194` and SPEC-127 in `addon.checkout.ts:155-165`
+  (`resolvePlanByIdOrSlug` pattern). No work remains here for 194.
 - `clearEntitlementCache` *wiring* on the gate side + the transversal completeness test → **SPEC-145**.
   194 owns the cache-clear calls that live inside the lifecycle fixes below (refund, dunning-cancel),
   and they feed 145's transversal guard (INV-1).
@@ -52,6 +53,12 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
   illegal transitions. Migrate the free-form `UPDATE ... SET status` sites (webhook, crons, services) onto
   it behind a shim so refund/dunning/cancel/trial all change state safely. This is the substrate for
   T-194-02..05. See audit "state machine has no validation; transitions are free-form".
+  Realign notes (2026-06-04): (a) a validated-transition PATTERN already exists for addon purchases —
+  `packages/service-core/src/services/billing/addon/addon-status-transitions.ts` — mirror it; (b) the
+  transition table must cover the polling-fallback path SPEC-127 added:
+  `pending_provider → (polling job timeout) → abandoned` via the abandoned-pending-subs reaper; (c) the
+  ABANDONED canonicalization (T-194-13) folds in here — the `incomplete_expired → ABANDONED` mapping is
+  documented at `subscription-status.ts:114` but the DB column stores `incomplete_expired`.
 
 ## 3. Phase 1 — CRITICAL
 
@@ -64,9 +71,10 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
   (`qzpay-admin-hooks.ts:398-428`) currently only logs. Per master O-2/INV-1: transition the subscription
   via the state-machine (T-194-01) to `cancelled` (full refund) or keep with audit (partial — see T-194-14),
   revoke entitlements, and call `clearEntitlementCache(customerId)`.
-- **T-194-04 [G-06] Refund (MP webhook) does the same.** `payment-logic.ts:493` /
-  `subscription-payment-handler.ts:74` only flip `billing_payments.status='refunded'`. Apply the same
-  policy as T-194-03 (state transition + revoke + cache clear).
+- **T-194-04 [G-06] Refund (MP webhook) does the same.** `payment-logic.ts:498` /
+  `subscription-payment-handler.ts:75` (lines drifted post-SPEC-127) only flip
+  `billing_payments.status='refunded'`. Apply the same policy as T-194-03 (state transition + revoke +
+  cache clear).
 
 ## 4. Phase 2 — HIGH
 
@@ -83,10 +91,18 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
 ## 5. Phase 3 — MEDIUM
 
 - **T-194-08 [G-08] Addon-purchase split-state reconciliation.** When `applyAddonEntitlements` fails
-  non-fatally during `confirmAddonPurchase` (`addon.checkout.ts:683-699`), the purchase row is `active` but
-  no real grant exists. Add a reconciliation phase (mirror the addon *removal* reconciliation that already
-  exists in addon-expiry).
-- **T-194-09 [G-09] Addon-expiry notification not skipped.** `addon-expiry.job.ts:244-250` does two
+  non-fatally during `confirmAddonPurchase` (`addon.checkout.ts:738-753` post-SPEC-127 rewrite), the
+  purchase row is `active` but no real grant exists. Add a reconciliation phase (mirror the addon
+  *removal* reconciliation that already exists in addon-expiry).
+  Realign notes (2026-06-04, post-SPEC-127): (a) NEW failure loop — the SPEC-127 polling fallback retries
+  `processPaymentUpdated` → `confirmAddonPurchase`, which throws the `ADDON_ALREADY_ACTIVE` sentinel
+  (`addon.checkout.ts:653-655`) when the split-state row exists; the polling job error-backoffs and spins
+  until `maxAttempts`. Reconciliation must make this terminal gracefully (already-active = job succeeded)
+  AND re-apply missing grants when the active row has none. (b) The `SELECT FOR UPDATE` idempotency guard
+  (`addon.checkout.ts:636-656`) is the anchor for a safe re-apply (no double-insert). (c) Out of scope:
+  the non-fatal `scheduleAddonCheckoutPolling` skip (`addon.checkout.ts:119-130`) is intentional
+  (webhook-only fallback) — do not "fix".
+- **T-194-09 [G-09] Addon-expiry notification not skipped.** `addon-expiry.job.ts:249-255` does two
   sequential queries; an addon that expires between them gets expired but skips its `ADDON_EXPIRED` notif.
   Single-fetch or re-check.
 - **T-194-10 [G-10/G-11] Scale/timeout.** Addon-expiry processes sequentially and can exceed the 2-min
@@ -117,19 +133,21 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
 - **T-194-18 [GAP-10] Annual subscription pause behavior.** `subscription-pause.ts:78` calls MP preapproval
   pause, but annual one-time subs have no preapproval to pause. Define + guard the behavior (reject or no-op
   with a clear error).
-- **T-194-19 [GAP-9 cron alerting] Make scheduled-change failures alertable.** When
-  `apply-scheduled-plan-changes` exhausts `MAX_APPLY_ATTEMPTS` (status `failed`), it only `logger.error`s.
-  Return a non-zero error signal / structured result so SPEC-149 can wire the Sentry alert. (Sentry wiring
+- **T-194-19 [GAP-9 cron alerting] Make scheduled-change failures alertable.** PARTIALLY DONE (verified
+  2026-06-04): the handler already returns `{kind: 'failed'}` and the job loop surfaces a non-zero error
+  count in `CronJobResult` (`apply-scheduled-plan-changes.ts:183, 400-408`). Remaining scope: pin the
+  structured-result contract with a test so SPEC-149 can rely on it for Sentry wiring. (Sentry wiring
   itself is SPEC-149.)
 - **T-194-20 [GAP-15] Locale in return URLs.** `RETURN_URL_LOCALE='es'` hardcoded
   (`start-paid.ts:55`). Thread the customer locale. (Candidate to fold into SPEC-150 if it lands first.)
 
 ## 7. Dispute handling (product decision D-4 = manual in v1)
 
-- **T-194-21 Chargeback contract.** Per master D-4, chargeback resolution stays **manual** in v1
-  (`dispute-logic.ts` log + admin notification). Add: an admin notification, a documented runbook, and a
-  test that pins the manual contract (so an accidental auto-cancel regresses visibly). Auto-transition is a
-  post-go-live revisit.
+- **T-194-21 Chargeback contract.** Per master D-4, chargeback resolution stays **manual** in v1.
+  PARTIALLY DONE (verified 2026-06-04): `dispute-logic.ts:38-87` already logs at warn AND dispatches
+  `ADMIN_SYSTEM_EVENT` notifications (severity critical) to `HOSPEDA_ADMIN_NOTIFICATION_EMAILS`.
+  Remaining scope: the documented runbook + a test that pins the manual contract (so an accidental
+  auto-cancel regresses visibly). Auto-transition is a post-go-live revisit.
 
 ## 8. Definition of done
 
@@ -148,6 +166,12 @@ here so they are fixed once, coherently, with a shared state-machine foundation.
 - Engram: `billing/spec-reorg-2026-06`, `#817` (smoke F-findings), audit gaps G-01..G-18 / GAP-1..17.
 - ADRs: 019 (tx isolation + advisory locks — central to T-194-01/02), 016 (fail-open).
 - Code hotspots: `services/trial.service.ts`, `routes/billing/admin/qzpay-admin-hooks.ts`,
-  `routes/webhooks/mercadopago/payment-logic.ts`, `cron/jobs/{dunning,addon-expiry,apply-scheduled-plan-changes,trial-expiry,exchange-rate-fetch,abandoned-pending-subs}.*`,
+  `routes/webhooks/mercadopago/payment-logic.ts`, `cron/jobs/{dunning,addon-expiry,apply-scheduled-plan-changes,trial-expiry,exchange-rate-fetch,abandoned-pending-subs,subscription-poll}.*`,
   `services/{subscription-downgrade,addon.checkout,addon-entitlement,subscription-pause}.*`,
   `routes/billing/plan-change.ts`, `packages/schemas/src/enums/subscription-status.enum.ts`.
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-04 | spec-realign (post SPEC-192/127 merges) | FR-4 boundary marked FIXED (dual-resolve landed in 192/127); T-194-01 notes: addon-status-transitions.ts as pattern ref + polling-timeout→abandoned path + T-194-13 fold-in confirmed; T-194-08 re-anchored to rewritten addon.checkout.ts (738-753) + NEW polling ADDON_ALREADY_ACTIVE retry-loop must go terminal + SELECT FOR UPDATE anchor + scheduling-skip out-of-scope; T-194-19 narrowed (CronJobResult error count already surfaced — pin with test); T-194-21 narrowed (admin notification already wired — runbook + pinning test remain); line drifts fixed (T-194-04/06/07/09); subscription-poll added to hotspots; worktree/branch frontmatter filled | 21 tasks intact: 2 narrowed, 1 expanded (T-194-08), 1 boundary closed (FR-4) |

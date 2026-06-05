@@ -176,7 +176,11 @@ describe('SPEC-143 T-143-34 — admin refund', () => {
                 PermissionEnum.ACCESS_API_PRIVATE,
                 PermissionEnum.ACCESS_API_ADMIN,
                 PermissionEnum.PAYMENT_REFUND,
-                PermissionEnum.PAYMENT_VIEW
+                PermissionEnum.PAYMENT_VIEW,
+                // billingPermMiddleware (SPEC-156) gates /protected/billing/* on
+                // BILLING_VIEW_OWN — the refund flow reads the customer's own
+                // billing state through that tier.
+                PermissionEnum.BILLING_VIEW_OWN
             ]
         });
         adminClient = new E2EApiClient(app, actor);

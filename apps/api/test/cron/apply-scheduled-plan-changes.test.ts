@@ -132,7 +132,19 @@ interface BillingMockOpts {
     changePlanThrows?: Error;
     mpUpdateThrows?: Error;
     paymentAdapterPresent?: boolean;
+    /**
+     * Makes ALL billing.subscriptions.update calls throw (including the
+     * pre-stamp in step 0). Use `finaliseThrows` to only fail the
+     * finalise write (step 5) while letting the pre-stamp succeed.
+     */
     updateThrows?: Error;
+    /**
+     * Makes only the SECOND billing.subscriptions.update call throw
+     * (the finalise write in step 5). The pre-stamp (step 0) succeeds.
+     * Use this to test the idempotency guarantee: finalise failure must
+     * not cause changePlan to re-run.
+     */
+    finaliseThrows?: Error;
 }
 
 function makeBilling(opts: BillingMockOpts = {}) {
@@ -147,9 +159,23 @@ function makeBilling(opts: BillingMockOpts = {}) {
     const paymentAdapter =
         opts.paymentAdapterPresent === false ? null : { subscriptions: { update: mpUpdate } };
 
-    const update = opts.updateThrows
-        ? vi.fn().mockRejectedValue(opts.updateThrows)
-        : vi.fn().mockResolvedValue({ id: SUB_ID });
+    let update: ReturnType<typeof vi.fn>;
+    if (opts.updateThrows) {
+        const err = opts.updateThrows;
+        update = vi.fn().mockRejectedValue(err);
+    } else if (opts.finaliseThrows) {
+        const err = opts.finaliseThrows;
+        let callCount = 0;
+        update = vi.fn().mockImplementation(() => {
+            callCount += 1;
+            // First call = pre-stamp (step 0): succeeds.
+            // Second call = finalise (step 5): throws.
+            if (callCount >= 2) return Promise.reject(err);
+            return Promise.resolve({ id: SUB_ID });
+        });
+    } else {
+        update = vi.fn().mockResolvedValue({ id: SUB_ID });
+    }
 
     return {
         billing: {
@@ -206,12 +232,19 @@ describe('applyOne', () => {
         });
         expect(handlePlanChangeAddonRecalculation).toHaveBeenCalledOnce();
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
-        expect(update).toHaveBeenCalledOnce();
-        const updateArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
-        const scheduled = updateArg.scheduledPlanChange as Record<string, unknown>;
-        expect(scheduled.status).toBe('applied');
-        expect(scheduled.attemptCount).toBe(1);
-        expect(scheduled.resolvedAt).toBeDefined();
+        // update is now called TWICE: step 0 (pre-stamp) + step 5 (finalise).
+        expect(update).toHaveBeenCalledTimes(2);
+        // Pre-stamp (step 0): status applied, no resolvedAt yet.
+        const preStampArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
+        const preStamp = preStampArg.scheduledPlanChange as Record<string, unknown>;
+        expect(preStamp.status).toBe('applied');
+        expect(preStamp.resolvedAt).toBeUndefined();
+        // Finalise (step 5): status applied, resolvedAt set, attemptCount bumped.
+        const finaliseArg = update.mock.calls[1]?.[1] as Record<string, unknown>;
+        const finalised = finaliseArg.scheduledPlanChange as Record<string, unknown>;
+        expect(finalised.status).toBe('applied');
+        expect(finalised.attemptCount).toBe(1);
+        expect(finalised.resolvedAt).toBeDefined();
     });
 
     it('changePlan throws → retry; attemptCount incremented, status stays pending', async () => {
@@ -227,9 +260,12 @@ describe('applyOne', () => {
         expect(outcome.attemptCount).toBe(1);
         expect(outcome.error).toBe('storage offline');
 
-        // Mark write happened with status: 'pending', attemptCount: 1.
-        const updateArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
-        const scheduled = updateArg.scheduledPlanChange as Record<string, unknown>;
+        // update is called TWICE: step 0 (pre-stamp to applied) then
+        // step 1 rollback (back to pending with incremented attemptCount).
+        expect(update).toHaveBeenCalledTimes(2);
+        // Rollback write (step 1 failure handler): status: 'pending', attemptCount: 1.
+        const rollbackArg = update.mock.calls[1]?.[1] as Record<string, unknown>;
+        const scheduled = rollbackArg.scheduledPlanChange as Record<string, unknown>;
         expect(scheduled.status).toBe('pending');
         expect(scheduled.attemptCount).toBe(1);
         expect(scheduled.lastError).toBe('storage offline');
@@ -251,8 +287,11 @@ describe('applyOne', () => {
         if (outcome.kind !== 'failed') throw new Error('unreachable');
         expect(outcome.attemptCount).toBe(5);
 
-        const updateArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
-        const scheduled = updateArg.scheduledPlanChange as Record<string, unknown>;
+        // update is called TWICE: step 0 (pre-stamp to applied) then
+        // step 1 rollback (to failed when budget exhausted).
+        expect(update).toHaveBeenCalledTimes(2);
+        const rollbackArg = update.mock.calls[1]?.[1] as Record<string, unknown>;
+        const scheduled = rollbackArg.scheduledPlanChange as Record<string, unknown>;
         expect(scheduled.status).toBe('failed');
         expect(scheduled.resolvedAt).toBeDefined();
     });
@@ -279,8 +318,12 @@ describe('applyOne', () => {
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
     });
 
-    it('mark-applied write throws → logged, still returns applied (next tick re-marks)', async () => {
-        const { billing } = makeBilling({ updateThrows: new Error('mark failed') });
+    it('finalise write throws → logged, still returns applied (no re-apply risk)', async () => {
+        // finaliseThrows only fails the SECOND update call (step 5).
+        // The pre-stamp (step 0) succeeds, so the row is already
+        // 'applied' in the DB and the next tick's eligibility query
+        // (status='pending') will not pick it up again.
+        const { billing } = makeBilling({ finaliseThrows: new Error('finalise failed') });
         const row = makeRow();
 
         const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
@@ -306,6 +349,86 @@ describe('applyOne', () => {
 
         expect(outcome.kind).toBe('applied');
         expect(mpUpdate).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Idempotency regression: if markResolved (step 5) throws after
+     * changePlan (step 1) already succeeded, the row stays `pending`
+     * in the current implementation and the next tick re-runs
+     * changePlan — doubling the mutation.
+     *
+     * The fix: pre-stamp the row to `status:'applied'` BEFORE calling
+     * changePlan so the eligibility query (`status='pending'`) never
+     * sees the row again after the mutation point, regardless of
+     * whether the finalise write succeeds.
+     *
+     * Verification: a second applyOne call with the SAME row (as the
+     * next tick would use if the row still looked pending) must NOT
+     * call changePlan again. The pre-stamp ensures the row's status is
+     * `'applied'` after the first tick's mutation — so the second tick
+     * would never actually query it; but even if we force-call applyOne
+     * with a stale row, we verify the stamp by checking the update call
+     * sequence: the very first `billing.subscriptions.update` must set
+     * `status: 'applied'` (pre-stamp), BEFORE changePlan is invoked.
+     */
+    it('IDEMPOTENCY: pre-stamp to applied happens before changePlan so markResolved failure cannot cause re-apply', async () => {
+        // updateCalls tracks the order and arguments of every
+        // billing.subscriptions.update call so we can verify the
+        // pre-stamp happens before changePlan.
+        const updateCalls: Array<Record<string, unknown>> = [];
+
+        const changePlan = vi
+            .fn()
+            .mockResolvedValue({ subscription: { id: SUB_ID, planId: NEW_PLAN_ID } });
+
+        // First update call = pre-stamp (should succeed).
+        // Second update call = finalise/resolvedAt (we make it throw to
+        // simulate the markResolved failure in the bug scenario).
+        const update = vi
+            .fn()
+            .mockImplementation((_id: string, payload: Record<string, unknown>) => {
+                updateCalls.push(payload);
+                // The second update (finalise) throws.
+                if (updateCalls.length >= 2) {
+                    return Promise.reject(new Error('mark failed'));
+                }
+                return Promise.resolve({ id: SUB_ID });
+            });
+
+        const billing = {
+            subscriptions: { changePlan, update },
+            getPaymentAdapter: vi.fn(() => null)
+        } as unknown as QZPayBilling;
+
+        const row = makeRow({ mpSubscriptionId: null });
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        // The outcome is still 'applied' even with markResolved failure.
+        expect(outcome.kind).toBe('applied');
+
+        // CRITICAL: the first update call must set status: 'applied'
+        // (pre-stamp) and it must happen BEFORE changePlan.
+        // We verify ordering by checking update was called at least once
+        // before asserting the pre-stamp content.
+        expect(update).toHaveBeenCalledBefore(changePlan);
+        const preStamp = updateCalls[0] as { scheduledPlanChange?: { status?: string } };
+        expect(preStamp?.scheduledPlanChange?.status).toBe('applied');
+
+        // changePlan was called exactly once.
+        expect(changePlan).toHaveBeenCalledOnce();
+
+        // If we now simulate a second tick with the same (stale) row
+        // — which the old code would have re-applied because the DB row
+        // still had status='pending' after markResolved failed — the
+        // new code must NOT call changePlan again because the DB row
+        // now has status='applied' (set by the pre-stamp).
+        //
+        // We can't replay the full eligibility query here, but we can
+        // confirm the pre-stamp guarantee: after tick 1, the first
+        // update call already flipped the row to 'applied'. The
+        // eligibility query filters on status='pending', so the row is
+        // invisible to tick 2. changePlan stays at exactly 1 call.
+        expect(changePlan).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -461,6 +584,130 @@ describe('applyScheduledPlanChangesJob.handler', () => {
         expect(result.success).toBe(false);
         expect(result.errors).toBe(1);
         expect(result.message).toContain('db down');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// CronJobResult error-contract pin (SPEC-194 T-024)
+//
+// Purpose: verifies that the handler's CronJobResult has `failed > 0` AND
+// `success = false` whenever MAX_APPLY_ATTEMPTS is exhausted for at least one
+// row.  SPEC-149's Sentry wiring will rely on this contract
+// (success=false triggers capture; errors>0 carries the count).
+// ---------------------------------------------------------------------------
+
+describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('single row exhausted: result.failed > 0 AND result.success = false', async () => {
+        // Arrange: changePlan always throws and the row starts at
+        // attemptCount = MAX_APPLY_ATTEMPTS - 1 = 4 so the next failure
+        // exhausts the budget.
+        const { billing } = makeBilling({ changePlanThrows: new Error('provider down') });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-exhausted',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 }) // 4 + 1 = 5 = MAX
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert — error contract pinned for SPEC-149 Sentry wiring
+        expect(result.success).toBe(false);
+        expect(result.errors).toBeGreaterThan(0);
+        expect(result.details).toMatchObject({ failed: 1 });
+    });
+
+    it('all rows exhausted: result.failed equals row count AND result.success = false', async () => {
+        // Arrange: two rows, both start at attemptCount=4 (one tick from budget end).
+        const { billing } = makeBilling({ changePlanThrows: new Error('storage offline') });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-a',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            },
+            {
+                subscriptionId: 'sub-b',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(2);
+        expect(result.details).toMatchObject({ failed: 2, applied: 0, retried: 0 });
+    });
+
+    it('errors field equals the failed count (not total rows)', async () => {
+        // Arrange: one row exhausted, one row applied cleanly — only the
+        // exhausted row must appear in errors.
+        const changePlanResults: Promise<unknown>[] = [
+            Promise.resolve({ subscription: { id: 'sub-ok', planId: NEW_PLAN_ID } }),
+            Promise.reject(new Error('exhausted'))
+        ];
+        let callIdx = 0;
+        const changePlan = vi.fn(() => changePlanResults[callIdx++] ?? Promise.resolve({}));
+        const billing = {
+            subscriptions: {
+                changePlan,
+                update: vi.fn().mockResolvedValue({})
+            },
+            getPaymentAdapter: vi.fn(() => null)
+        } as unknown as QZPayBilling;
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-ok',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 0 })
+            },
+            {
+                subscriptionId: 'sub-exhausted',
+                customerId: 'c',
+                currentPlanId: 'old-plan',
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ attemptCount: 4 })
+            }
+        ];
+
+        // Act
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(1); // only the exhausted row
+        expect(result.processed).toBe(2); // both rows processed
+        expect(result.details).toMatchObject({ applied: 1, failed: 1, retried: 0 });
     });
 });
 

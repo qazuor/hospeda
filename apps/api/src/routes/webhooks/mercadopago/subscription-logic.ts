@@ -14,7 +14,7 @@ import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
@@ -404,6 +404,43 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
+    // Step 6b: Guard — verify the transition is permitted by the state machine
+    // before writing. Idempotent webhook redeliveries with the same status are
+    // already short-circuited by the `previousStatus === mappedStatus` check in
+    // Step 6 (above), so by the time we reach here we know the statuses differ.
+    //
+    // If the guard fires it means MP sent a status we cannot legally transition
+    // to from the local state — log an error and skip the write. Skip is safe:
+    // the local subscription row remains authoritative; MP will NOT retry an
+    // event that we acknowledge (return 200). The mismatch should be investigated
+    // via Sentry / ops tooling.
+    //
+    // Side effects that depend on the status write (notifications, polling-job
+    // cleanup, addon cancellation, payment failure tracking) are gated below the
+    // transaction, so skipping the write correctly skips them all — they would
+    // otherwise act on a status that was never actually persisted.
+    const transitionGuard = checkSubscriptionStatusTransition({
+        from: previousStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+        to: mappedStatus,
+        subscriptionId: localSubscription.id
+    });
+    if (!transitionGuard.valid) {
+        apiLogger.error(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                from: previousStatus,
+                to: mappedStatus,
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                providerEventId,
+                source,
+                reason: transitionGuard.reason
+            },
+            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects'
+        );
+        return { success: true, statusChanged: false };
+    }
+
     // Step 7: Update billing_subscriptions and insert audit log in a single transaction.
     // withServiceTransaction is used here instead of db.transaction() to follow the
     // project-wide pattern for atomic multi-write operations (SPEC-059 T-059G-032-C).
@@ -427,9 +464,71 @@ export async function processSubscriptionUpdated({
         updateData.cancelAtPeriodEnd = false;
     }
 
+    // Track whether the transaction observed a status change so callers can decide
+    // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
+    let txStatusChanged = true;
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
+
+        // ── Authoritative TOCTOU guard (item 5 / SPEC-194 adversarial review) ──
+        // The initial SELECT at Step 5 ran OUTSIDE this transaction. Between that
+        // read and now another webhook replica may have written a new status. Re-read
+        // the row with SELECT … FOR UPDATE to serialize concurrent writes, then
+        // re-evaluate the same-status short-circuit and the transition guard on the
+        // FRESH status. The earlier guard (Step 6b above) is a cheap fast path only.
+        const [freshRow] = await tx
+            .select({ status: billingSubscriptions.status })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscription.id))
+            .for('update');
+
+        const freshStatus = freshRow?.status;
+
+        if (!freshStatus) {
+            // Row disappeared between Step 5 and here — nothing to update.
+            apiLogger.warn(
+                { subscriptionId: localSubscription.id, source },
+                'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        if (freshStatus === mappedStatus) {
+            // Another replica already applied this transition — idempotent skip.
+            apiLogger.debug(
+                { subscriptionId: localSubscription.id, freshStatus, mappedStatus, source },
+                'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        const txTransitionGuard = checkSubscriptionStatusTransition({
+            from: freshStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+            to: mappedStatus,
+            subscriptionId: localSubscription.id
+        });
+        if (!txTransitionGuard.valid) {
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    freshStatus,
+                    from: freshStatus,
+                    to: mappedStatus,
+                    previousStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source,
+                    reason: txTransitionGuard.reason
+                },
+                'Subscription webhook tx: invalid transition on fresh status — committing nothing'
+            );
+            txStatusChanged = false;
+            return;
+        }
 
         await tx
             .update(billingSubscriptions)
@@ -475,6 +574,12 @@ export async function processSubscriptionUpdated({
             // Do NOT throw - audit failure is non-blocking; status update must still commit
         }
     });
+
+    // If the tx-internal guard determined no write happened (stale-read scenario),
+    // skip all post-commit side effects and return statusChanged:false.
+    if (!txStatusChanged) {
+        return { success: true, statusChanged: false };
+    }
 
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);

@@ -7,26 +7,36 @@
  * queued by the plan-change route to take effect at
  * `currentPeriodEnd`.
  *
- * The apply sequence mirrors what the legacy synchronous downgrade
- * branch used to do at request time, just deferred:
+ * The apply sequence (SPEC-194 T-011 idempotency fix):
+ *   0. Pre-stamp the row to `status: 'applied'` BEFORE mutating the
+ *      plan. This atomically removes it from the eligibility query
+ *      so a later finalise failure can NEVER cause a re-apply.
  *   1. `billing.subscriptions.changePlan(...)` — flips local planId.
+ *      If this throws, the pre-stamp is rolled back to `status:
+ *      'pending'` (or `'failed'` when budget exhausted).
  *   2. `paymentAdapter.subscriptions.update(...)` — propagates the
  *      new recurring amount to MP — best-effort, logged on failure.
  *   3. `handlePlanChangeAddonRecalculation(...)` — refreshes addon
  *      limits — best-effort.
  *   4. `clearEntitlementCache(customerId)` — flips entitlements to
  *      the new plan in the running process.
- *   5. Mark the scheduledPlanChange as `applied` with `resolvedAt`.
+ *   5. Finalise: update `resolvedAt` + `attemptCount` — pure
+ *      bookkeeping; the row is already `'applied'` from step 0 so
+ *      failure here carries no re-apply risk.
  *
  * Failures:
- *   - Step 1 throws → increment `attemptCount`, set `lastAttemptAt`
- *     + `lastError`, keep status `pending`. After
- *     `MAX_APPLY_ATTEMPTS` failures the change flips to `failed`
- *     and the cron stops retrying — ops needs to intervene
+ *   - Step 0 (pre-stamp) throws → skip this tick; row stays
+ *     `pending`, retried next tick. Nothing mutated.
+ *   - Step 1 throws → rollback pre-stamp; increment `attemptCount`,
+ *     set `lastAttemptAt` + `lastError`, keep status `pending`.
+ *     After `MAX_APPLY_ATTEMPTS` failures the change flips to
+ *     `failed` and the cron stops retrying — ops needs to intervene
  *     (Sentry alert via `apiLogger.error`).
  *   - Steps 2–4 fail → logged, the plan change is still considered
  *     applied (the local change already succeeded, the webhook
  *     reconciliation path eventually fixes MP drift).
+ *   - Step 5 (finalise) fails → logged; `resolvedAt` missing but
+ *     no re-apply risk (row is already `'applied'` from step 0).
  *
  * @module cron/jobs/apply-scheduled-plan-changes
  */
@@ -138,11 +148,28 @@ async function findDueScheduledChanges(): Promise<PendingPlanChangeRow[]> {
  * `ApplyOutcome` so the caller knows whether the row should be
  * retried, marked applied, or marked failed.
  *
- * Step 1 (`changePlan`) is the only step whose failure causes a
- * retry — without the planId flip nothing else makes sense. Steps
- * 2-4 (MP propagate / addon recalc / cache clear) failing are
- * logged but do NOT trigger a retry, because the local change
- * already succeeded.
+ * Idempotency guarantee (SPEC-194 T-011):
+ *
+ *   Before calling `changePlan` (step 1), the row is pre-stamped to
+ *   `status: 'applied'` via a `billing.subscriptions.update` call
+ *   (step 0). This takes the row out of the eligibility query
+ *   (`status = 'pending'`) so that, regardless of what happens to the
+ *   finalise write (step 5), the next tick can never re-run
+ *   `changePlan` on the same row.
+ *
+ *   If `changePlan` subsequently fails, step 0's stamp is rolled back
+ *   to `status: 'pending'` (with incremented `attemptCount`) by
+ *   `markChangeRetryOrFailed`. If the rollback itself fails, the row
+ *   stays `'applied'` — a false-positive is acceptable; re-applying a
+ *   plan change twice is not.
+ *
+ *   Steps 2–4 (MP propagate / addon recalc / cache clear) failing are
+ *   logged but do NOT trigger a retry, because the local change already
+ *   succeeded.
+ *
+ *   Step 5 (finalise: add `resolvedAt`) is pure bookkeeping. Failure
+ *   there does NOT count as an apply-failure and does NOT cause
+ *   `changePlan` to re-run — the pre-stamp already guarantees that.
  */
 async function applyOne(
     row: PendingPlanChangeRow,
@@ -158,8 +185,38 @@ async function applyOne(
     const { newPlanId, newPriceId, targetTransactionAmountMajor } = scheduledPlanChange;
     const now = new Date();
 
-    // STEP 1: commit the plan change locally. If this throws the
-    // whole apply attempt fails and the row stays pending for a retry.
+    // STEP 0: pre-stamp the row to `status: 'applied'` BEFORE mutating
+    // the plan. This atomically removes the row from the
+    // `status = 'pending'` eligibility filter so that a later
+    // markResolved failure cannot cause the next tick to re-run
+    // changePlan. If the pre-stamp itself fails, skip this tick; the
+    // row stays `pending` and will be retried — safe because we have
+    // not yet mutated anything.
+    try {
+        await billing.subscriptions.update(subscriptionId, {
+            scheduledPlanChange: {
+                ...scheduledPlanChange,
+                status: 'applied',
+                lastAttemptAt: now.toISOString()
+            }
+        });
+    } catch (preStampErr) {
+        logger.error('Scheduled plan change: pre-stamp failed, skipping tick', {
+            subscriptionId,
+            error: preStampErr instanceof Error ? preStampErr.message : String(preStampErr)
+        });
+        // Return as retry so the outer handler counts it correctly and
+        // the row stays pending for the next tick.
+        return {
+            kind: 'retry',
+            attemptCount: scheduledPlanChange.attemptCount,
+            error: preStampErr instanceof Error ? preStampErr.message : String(preStampErr)
+        };
+    }
+
+    // STEP 1: commit the plan change locally. If this throws, roll back
+    // the pre-stamp to `pending` so the row re-enters the eligibility
+    // queue on the next tick.
     try {
         await billing.subscriptions.changePlan(subscriptionId, {
             newPlanId,
@@ -172,12 +229,33 @@ async function applyOne(
         const newAttempt = scheduledPlanChange.attemptCount + 1;
         const exhausted = newAttempt >= MAX_APPLY_ATTEMPTS;
 
-        await markChangeRetryOrFailed(billing, subscriptionId, scheduledPlanChange, {
-            attemptCount: newAttempt,
-            lastAttemptAt: now.toISOString(),
-            lastError: message,
-            exhausted
-        });
+        // Roll back the pre-stamp: flip status back to pending (or
+        // failed if budget exhausted) with updated attempt metadata.
+        // Wrap in its own try/catch (item 8 / SPEC-194 adversarial review):
+        // if markChangeRetryOrFailed itself fails, the row stays 'applied'
+        // (the pre-stamp from step 0) but the plan change was NOT applied —
+        // this is a split-state that requires operator investigation.
+        try {
+            await markChangeRetryOrFailed(billing, subscriptionId, scheduledPlanChange, {
+                attemptCount: newAttempt,
+                lastAttemptAt: now.toISOString(),
+                lastError: message,
+                exhausted
+            });
+        } catch (rollbackErr) {
+            // Row remains pre-stamped 'applied' but is NOT applied — operator must
+            // inspect and manually correct (include scheduledChangeId + subscriptionId).
+            logger.error(
+                'Scheduled plan change: rollback of pre-stamp failed — row is stuck as applied but plan NOT applied; manual intervention required',
+                {
+                    subscriptionId,
+                    scheduledChangeId: scheduledPlanChange.requestedAt, // best unique identifier in the shape
+                    rollbackError:
+                        rollbackErr instanceof Error ? rollbackErr.message : String(rollbackErr),
+                    originalError: message
+                }
+            );
+        }
 
         if (exhausted) {
             logger.error('Scheduled plan change exhausted retry budget', {
@@ -246,7 +324,11 @@ async function applyOne(
     // new plan's entitlements.
     clearEntitlementCache(customerId);
 
-    // STEP 5: mark the scheduled change as applied.
+    // STEP 5: finalise — add resolvedAt and bump attemptCount.
+    // This is pure bookkeeping: the row is already `'applied'` from the
+    // pre-stamp (step 0), so failure here does NOT cause changePlan to
+    // re-run. Log any failure so ops can see it, but do not change the
+    // outcome — the plan change IS applied.
     try {
         await billing.subscriptions.update(subscriptionId, {
             scheduledPlanChange: {
@@ -257,16 +339,15 @@ async function applyOne(
                 resolvedAt: now.toISOString()
             }
         });
-    } catch (markErr) {
-        // The plan IS applied; failing to mark just means we'll try
-        // again on the next tick. Returning 'applied' is honest about
-        // the side effects that did land, but log the mark failure
-        // so ops sees it.
+    } catch (finaliseErr) {
+        // Row is already 'applied' from the pre-stamp — no re-apply
+        // risk. Log so ops can reconcile the missing resolvedAt if
+        // needed (e.g. via a future cleanup cron).
         logger.error(
-            'Scheduled plan change applied but failed to mark resolved — will retry mark next tick',
+            'Scheduled plan change applied but finalise write failed — resolvedAt missing (no re-apply risk)',
             {
                 subscriptionId,
-                error: markErr instanceof Error ? markErr.message : String(markErr)
+                error: finaliseErr instanceof Error ? finaliseErr.message : String(finaliseErr)
             }
         );
     }

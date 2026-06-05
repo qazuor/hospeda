@@ -102,6 +102,9 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 vi.mock('../../src/services/addon-expiration.service', () => ({
     AddonExpirationService: vi.fn().mockImplementation(() => ({
         findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+        // expireAddon is called per-item in the SPEC-194 T-014 chunked loop;
+        // processExpiredAddons is no longer called from the cron path.
+        expireAddon: vi.fn().mockResolvedValue({ success: true }),
         processExpiredAddons: vi.fn().mockResolvedValue({
             success: true,
             data: { processed: 0, failed: 0, errors: [] }
@@ -253,6 +256,10 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
                                 }
                             ]
                         }),
+                        // SPEC-194 T-014: cron now calls expireAddon() per-item instead of
+                        // processExpiredAddons(); mock must return success so the notification
+                        // loop proceeds and catalogService.getBySlug is reached.
+                        expireAddon: vi.fn().mockResolvedValue({ success: true }),
                         processExpiredAddons: vi.fn().mockResolvedValue({
                             success: true,
                             data: {
@@ -319,6 +326,9 @@ describe('addon-expiry.job.ts cutover parity (SPEC-192 T-015)', () => {
                                 }
                             ]
                         }),
+                        // SPEC-194 T-014: cron now calls expireAddon() per-item; must succeed
+                        // so the notification loop continues and falls through to getBySlug.
+                        expireAddon: vi.fn().mockResolvedValue({ success: true }),
                         processExpiredAddons: vi.fn().mockResolvedValue({
                             success: true,
                             data: { processed: 1, failed: 0, errors: [] }

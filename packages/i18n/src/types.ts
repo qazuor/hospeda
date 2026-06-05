@@ -3316,6 +3316,7 @@ export type TranslationKey =
     | 'admin-pages.billing.subscription.errorLoading'
     | 'admin-pages.billing.subscription.noActive.description'
     | 'admin-pages.billing.subscription.noActive.title'
+    | 'admin-pages.billing.subscription.status.abandoned'
     | 'admin-pages.billing.subscription.status.active'
     | 'admin-pages.billing.subscription.status.canceled'
     | 'admin-pages.billing.subscription.status.incomplete'

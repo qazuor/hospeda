@@ -1663,3 +1663,4 @@ These endpoints are custom implementations:
 - [Billing Package README](../../../packages/billing/README.md)
 - [Trial System Documentation](./trial-system.md)
 - [Promo Code 100% Discount Handling](./promo-code-100-discount-handling.md)
+- [Chargeback / Dispute Runbook](./runbook-chargeback.md) — manual ops guide for dispute events

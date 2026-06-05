@@ -101,6 +101,7 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         metadata: 'metadata',
         entitlementRemovalPending: 'entitlement_removal_pending',
+        needsEntitlementSync: 'needs_entitlement_sync',
         deletedAt: 'deleted_at',
         canceledAt: 'canceled_at',
         updatedAt: 'updated_at'
@@ -172,6 +173,22 @@ vi.mock('@repo/billing', () => ({
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn(),
     entitlementMiddleware: vi.fn()
+}));
+
+// ---------------------------------------------------------------------------
+// Mock: AddonEntitlementService (used by Phase 6 and Phase 7)
+// Hoisted so tests can control per-call behaviour.
+// ---------------------------------------------------------------------------
+const { mockApplyAddonEntitlements, mockRemoveAddonEntitlements } = vi.hoisted(() => ({
+    mockApplyAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined }),
+    mockRemoveAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
+}));
+
+vi.mock('../../src/services/addon-entitlement.service', () => ({
+    AddonEntitlementService: vi.fn().mockImplementation(() => ({
+        applyAddonEntitlements: mockApplyAddonEntitlements,
+        removeAddonEntitlements: mockRemoveAddonEntitlements
+    }))
 }));
 
 import { getAddonBySlug } from '@repo/billing';
@@ -262,6 +279,10 @@ describe('Add-on Expiry Cron Job', () => {
             success: false,
             error: { code: 'NOT_FOUND', message: 'Add-on not found' }
         });
+
+        // Default: AddonEntitlementService methods succeed (Phase 6 + Phase 7 happy path).
+        mockApplyAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
+        mockRemoveAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
     });
 
     describe('Job Definition', () => {
@@ -278,19 +299,31 @@ describe('Add-on Expiry Cron Job', () => {
 
     describe('Expired Add-ons Processing', () => {
         it('should process expired add-ons successfully', async () => {
-            // Arrange
+            // Arrange — 5 expired addons; all succeed
             const ctx = createMockContext();
+            const addons = Array.from({ length: 5 }, (_, i) => ({
+                id: `purchase-${i}`,
+                customerId: `cust-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
-                    data: []
+                    data: addons
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
-                        processed: 5,
-                        failed: 0,
-                        errors: []
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
                     }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
@@ -310,7 +343,8 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.processed).toBe(5);
             expect(result.errors).toBe(0);
             expect(result.details?.expiredAddons).toBe(5);
-            expect(mockService.processExpiredAddons).toHaveBeenCalledTimes(1);
+            // expireAddon must be called once per addon (not processExpiredAddons)
+            expect(mockService.expireAddon).toHaveBeenCalledTimes(5);
         });
 
         it('should handle no expired add-ons gracefully', async () => {
@@ -321,14 +355,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: {
-                        processed: 0,
-                        failed: 0,
-                        errors: []
-                    }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: []
@@ -344,27 +371,48 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.success).toBe(true);
             expect(result.processed).toBe(0);
             expect(result.errors).toBe(0);
+            expect(mockService.expireAddon).not.toHaveBeenCalled();
         });
 
         it('should handle partial failures during processing', async () => {
-            // Arrange
+            // Arrange — 5 addons; 2 fail, 3 succeed
             const ctx = createMockContext();
+            const addons = Array.from({ length: 5 }, (_, i) => ({
+                id: `purchase-${i}`,
+                customerId: `cust-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
-                    data: []
+                    data: addons
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: {
-                        processed: 3,
-                        failed: 2,
-                        errors: [
-                            { purchaseId: 'purchase-1', error: 'Database error' },
-                            { purchaseId: 'purchase-2', error: 'Not found' }
-                        ]
-                    }
-                }),
+                // First 2 fail, rest succeed
+                expireAddon: vi
+                    .fn()
+                    .mockResolvedValueOnce({
+                        success: false,
+                        error: { code: 'ERR', message: 'Database error' }
+                    })
+                    .mockResolvedValueOnce({
+                        success: false,
+                        error: { code: 'ERR', message: 'Not found' }
+                    })
+                    .mockResolvedValue({
+                        success: true,
+                        data: {
+                            purchaseId: 'x',
+                            customerId: 'c',
+                            addonSlug: 's',
+                            expiredAt: new Date()
+                        }
+                    }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: []
@@ -409,10 +457,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -470,10 +515,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -530,10 +572,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -595,17 +634,40 @@ describe('Add-on Expiry Cron Job', () => {
                 }
             ];
 
+            const expiresAtSameDay = new Date('2024-06-15T00:00:00Z');
+            const sameDay1 = {
+                id: 'addon-same-day-1',
+                customerId: 'cust-same',
+                addonSlug: 'visibility-boost-7d',
+                expiresAt: expiresAtSameDay,
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+            const sameDay2 = {
+                id: 'addon-same-day-2',
+                customerId: 'cust-same',
+                addonSlug: 'visibility-boost-30d',
+                expiresAt: expiresAtSameDay,
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
-                    data: []
+                    data: [sameDay1, sameDay2]
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
-                        processed: 2,
-                        failed: 0,
-                        errors: []
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
                     }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
@@ -632,8 +694,8 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.errors).toBe(0);
             expect(result.details?.expiredAddons).toBe(2);
 
-            // processExpiredAddons is called once (batch, not per addon)
-            expect(mockService.processExpiredAddons).toHaveBeenCalledTimes(1);
+            // expireAddon is called once per addon
+            expect(mockService.expireAddon).toHaveBeenCalledTimes(2);
         });
 
         it('should send warning notifications for two different addons expiring on the same day', async () => {
@@ -662,10 +724,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -764,17 +823,14 @@ describe('Add-on Expiry Cron Job', () => {
     });
 
     describe('Error Handling', () => {
-        it('should handle service errors gracefully', async () => {
-            // Arrange
+        it('should handle service errors gracefully (findExpiredAddons throws)', async () => {
+            // Arrange — findExpiredAddons throws, bubbles to top-level catch
             const ctx = createMockContext();
             const mockService = {
-                findExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: []
-                }),
-                processExpiredAddons: vi
+                findExpiredAddons: vi
                     .fn()
                     .mockRejectedValue(new Error('Database connection failed')),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn()
             };
 
@@ -791,18 +847,15 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.details?.error).toBe('Database connection failed');
         });
 
-        it('should continue processing warnings even if expired processing fails', async () => {
-            // Arrange
+        it('should continue processing warnings even if findExpiredAddons fails', async () => {
+            // Arrange — findExpiredAddons returns a failure result (not a throw); warnings still run
             const ctx = createMockContext();
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: []
-                }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
                     success: false,
                     error: { code: 'ERROR', message: 'Failed' }
                 }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -850,10 +903,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi
                     .fn()
                     .mockResolvedValueOnce({
@@ -907,10 +957,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: []
@@ -931,7 +978,8 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
-                processExpiredAddons: vi.fn(),
+                findExpiredAddons: vi.fn(),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn()
             };
 
@@ -941,12 +989,13 @@ describe('Add-on Expiry Cron Job', () => {
             // Act
             const result = await addonExpiryJob.handler(ctx);
 
-            // Assert - job must fail and return early without calling processExpiredAddons
+            // Assert - job must fail and return early without calling expireAddon
             expect(result.success).toBe(false);
             expect(result.message).toContain('billing');
             expect(result.processed).toBe(0);
             expect(result.errors).toBeGreaterThan(0);
-            expect(mockService.processExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.findExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.expireAddon).not.toHaveBeenCalled();
             expect(mockService.findExpiringAddons).not.toHaveBeenCalled();
         });
     });
@@ -955,14 +1004,30 @@ describe('Add-on Expiry Cron Job', () => {
         it('should return correctly structured CronJobResult', async () => {
             // Arrange
             const ctx = createMockContext();
+            const addons2 = Array.from({ length: 2 }, (_, i) => ({
+                id: `purchase-rs-${i}`,
+                customerId: `cust-rs-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
-                    data: []
+                    data: addons2
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
-                    data: { processed: 2, failed: 0, errors: [] }
+                    data: {
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
+                    }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
@@ -1010,10 +1075,7 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: []
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: []
@@ -1408,14 +1470,30 @@ describe('Add-on Expiry Cron Job', () => {
         it('should still run the expiry and warning phases when retry phase is active', async () => {
             // Arrange: set up a scenario with both expired addons AND an orphaned purchase
             const ctx = createMockContext();
+            const coexistAddons = Array.from({ length: 2 }, (_, i) => ({
+                id: `purchase-coexist-${i}`,
+                customerId: `cust-coexist-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
-                    data: []
+                    data: coexistAddons
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
-                    data: { processed: 2, failed: 0, errors: [] }
+                    data: {
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
+                    }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
@@ -1476,7 +1554,7 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.success).toBe(true);
             expect(result.details?.expiredAddons).toBe(2);
             expect(result.details?.revocationRetried).toBe(1);
-            expect(mockService.processExpiredAddons).toHaveBeenCalledTimes(1);
+            expect(mockService.expireAddon).toHaveBeenCalledTimes(2);
             expect(mockService.findExpiringAddons).toHaveBeenCalledTimes(2); // 3-day + 1-day
         });
 
@@ -1546,6 +1624,86 @@ describe('Add-on Expiry Cron Job', () => {
     // -------------------------------------------------------------------------
 
     describe('ADDON_EXPIRED Notification', () => {
+        // T-014 (SPEC-194 / T-194-09): regression test for the between-fetch gap.
+        // Before the fix the job called findExpiredAddons() to build the list, then
+        // processExpiredAddons() which ran a second findExpiredAddons() internally.
+        // An addon that appeared between the two fetches was expired but never notified.
+        // After the fix the cron uses a single findExpiredAddons() call whose results
+        // drive BOTH expireAddon() and the notification loop — no window exists.
+        it('T-014: notifies exactly the rows it expired (no between-fetch gap)', async () => {
+            // Arrange — addon that findExpiredAddons() returns (single source of truth)
+            const ctx = createMockContext();
+            const lateAddon = {
+                id: 'purchase-late-arrive',
+                customerId: 'cust-late',
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                // findExpiredAddons returns the addon (single unified call)
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [lateAddon]
+                }),
+                // expireAddon succeeds per-item
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: lateAddon.id,
+                        customerId: lateAddon.customerId,
+                        addonSlug: lateAddon.addonSlug,
+                        expiredAt: lateAddon.expiresAt
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                api: 'mock-billing',
+                subscriptions: {
+                    get: vi.fn().mockResolvedValue(null),
+                    cancel: vi.fn().mockResolvedValue(undefined)
+                }
+            } as never);
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: { slug: 'extra-listings', name: 'Extra Listings' }
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'late@example.com',
+                name: 'Late Customer',
+                userId: 'user-late'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — the addon was expired AND notified (no gap)
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED,
+                    customerId: lateAddon.customerId,
+                    expirationDate: lateAddon.expiresAt.toISOString()
+                })
+            );
+            // expireAddon must be called (not processExpiredAddons)
+            expect(mockService.expireAddon).toHaveBeenCalledWith(
+                expect.objectContaining({ purchaseId: lateAddon.id })
+            );
+        });
+
         it('should send ADDON_EXPIRED notification for each successfully expired add-on', async () => {
             // Arrange
             const ctx = createMockContext();
@@ -1565,9 +1723,14 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: [expiredAddon]
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
-                    data: { processed: 1, failed: 0, errors: [] }
+                    data: {
+                        purchaseId: expiredAddon.id,
+                        customerId: expiredAddon.customerId,
+                        addonSlug: expiredAddon.addonSlug,
+                        expiredAt: expiredAddon.expiresAt
+                    }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
@@ -1627,9 +1790,14 @@ describe('Add-on Expiry Cron Job', () => {
                     success: true,
                     data: [expiredAddon]
                 }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
+                expireAddon: vi.fn().mockResolvedValue({
                     success: true,
-                    data: { processed: 1, failed: 0, errors: [] }
+                    data: {
+                        purchaseId: expiredAddon.id,
+                        customerId: expiredAddon.customerId,
+                        addonSlug: expiredAddon.addonSlug,
+                        expiredAt: expiredAddon.expiresAt
+                    }
                 }),
                 findExpiringAddons: vi.fn().mockResolvedValue({
                     success: true,
@@ -1713,10 +1881,7 @@ describe('Add-on Expiry Cron Job', () => {
         function createDefaultMockService() {
             return {
                 findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 0, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
         }
@@ -1959,10 +2124,7 @@ describe('Add-on Expiry Cron Job', () => {
             const ctx = createMockContext();
             const mockService = {
                 findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-                processExpiredAddons: vi.fn().mockResolvedValue({
-                    success: true,
-                    data: { processed: 2, failed: 0, errors: [] }
-                }),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
             };
             vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
@@ -1975,9 +2137,9 @@ describe('Add-on Expiry Cron Job', () => {
             // Act
             const result = await addonExpiryJob.handler(ctx);
 
-            // Assert — job ran normally: processExpiredAddons was called
+            // Assert — job ran normally: findExpiredAddons was called (no processExpiredAddons)
             expect(result.success).toBe(true);
-            expect(mockService.processExpiredAddons).toHaveBeenCalledOnce();
+            expect(mockService.findExpiredAddons).toHaveBeenCalledOnce();
             // skipped flag must NOT be present when the lock was acquired
             expect(result.details?.skipped).toBeUndefined();
         });
@@ -1987,7 +2149,7 @@ describe('Add-on Expiry Cron Job', () => {
             const ctx = createMockContext();
             const mockService = {
                 findExpiredAddons: vi.fn(),
-                processExpiredAddons: vi.fn(),
+                expireAddon: vi.fn(),
                 findExpiringAddons: vi.fn()
             };
             vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
@@ -2008,8 +2170,8 @@ describe('Add-on Expiry Cron Job', () => {
             expect(result.details?.reason).toBe('lock_not_acquired');
 
             // No service calls should have been made
-            expect(mockService.processExpiredAddons).not.toHaveBeenCalled();
             expect(mockService.findExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.expireAddon).not.toHaveBeenCalled();
             expect(mockService.findExpiringAddons).not.toHaveBeenCalled();
         });
 
@@ -2026,6 +2188,393 @@ describe('Add-on Expiry Cron Job', () => {
             // Assert — message communicates that the run was skipped due to the lock
             expect(result.message).toContain('Skipped');
             expect(result.message).toContain('lock');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // unit: Phase 7 — grant reconciliation for active purchases with
+    //       needsEntitlementSync = true (SPEC-194 T-012)
+    // -------------------------------------------------------------------------
+
+    describe('Phase 7: Split-state grant reconciliation (SPEC-194 T-012)', () => {
+        /**
+         * Helper: creates a minimal default mock service that allows Phases 1-6
+         * to pass so Phase 7 can be tested in isolation.
+         */
+        function createDefaultMockService() {
+            return {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                expireAddon: vi.fn(),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }
+
+        /**
+         * Builds a withTransaction stub whose DB select chain returns:
+         *  - empty rows for Phases 4, 5, and 6 (revocation/split-state/entitlement-removal)
+         *  - `phase7Rows` for the Phase 7 needs-entitlement-sync query
+         *  - empty rows for wasNotificationSent
+         *
+         * Phase 7 rows are distinguished by having `needsEntitlementSync` in the
+         * SELECT fields object passed to tx.select(). Phase 6 rows use
+         * `entitlementRemovalPending`. Phase 4 uses `innerJoin`.
+         */
+        function buildTxWithPhase7Rows(
+            phase7Rows: Array<{
+                id: string;
+                customerId: string;
+                addonSlug: string;
+                metadata: Record<string, unknown>;
+            }>
+        ) {
+            const phase7Limit = vi.fn().mockResolvedValue(phase7Rows);
+            const phase7Where = vi.fn().mockReturnValue({ limit: phase7Limit });
+
+            // Phase 4 (revocation retry): uses innerJoin
+            const phase4InnerJoin = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+
+            // Default where for notification checks + Phase 5 + Phase 6
+            const emptyWhere = vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([])
+            });
+
+            const selectMock = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const hasNeedsSync = fields && 'needsEntitlementSync' in fields;
+                if (hasNeedsSync) {
+                    return {
+                        from: vi
+                            .fn()
+                            .mockReturnValue({ where: phase7Where, innerJoin: phase4InnerJoin })
+                    };
+                }
+                return {
+                    from: vi.fn().mockReturnValue({ where: emptyWhere, innerJoin: phase4InnerJoin })
+                };
+            });
+
+            return {
+                select: selectMock,
+                update: mockDbUpdate,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            };
+        }
+
+        it('re-applies entitlement grants for an active purchase with needsEntitlementSync=true', async () => {
+            // Arrange — split-state fixture: active row + missing grant
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-split-1',
+                customerId: 'cust-split-1',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Grant application succeeds on first attempt
+            mockApplyAddonEntitlements.mockResolvedValueOnce({ success: true, data: undefined });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — grant was re-applied
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(result.details?.grantReconcileErrors).toBe(0);
+
+            expect(mockApplyAddonEntitlements).toHaveBeenCalledWith({
+                customerId: 'cust-split-1',
+                addonSlug: 'extra-photos',
+                purchaseId: 'purch-split-1'
+            });
+
+            // needsEntitlementSync flag must be cleared on success
+            expect(mockDbUpdateSet).toHaveBeenCalledWith(
+                expect.objectContaining({ needsEntitlementSync: false })
+            );
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-split-1');
+        });
+
+        it('keeps needsEntitlementSync=true and increments retry counter when grant fails', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-split-2',
+                customerId: 'cust-split-2',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Grant application fails
+            mockApplyAddonEntitlements.mockResolvedValueOnce({
+                success: false,
+                error: { code: 'INTERNAL_ERROR', message: 'QZPay unavailable' }
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — error counted, needsEntitlementSync NOT cleared
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(0);
+            expect(result.details?.grantReconcileErrors).toBe(1);
+
+            // Must NOT have cleared the flag
+            const clearFlagCall = (
+                mockDbUpdateSet.mock.calls as Array<[Record<string, unknown>]>
+            ).find((call) => call[0].needsEntitlementSync === false);
+            expect(clearFlagCall).toBeUndefined();
+        });
+
+        it('processes each purchase in isolation so one failure does not block the rest', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const purchases = [
+                { id: 'purch-iso-1', customerId: 'cust-iso-1', addonSlug: 'addon-a', metadata: {} },
+                { id: 'purch-iso-2', customerId: 'cust-iso-2', addonSlug: 'addon-b', metadata: {} }
+            ];
+
+            const txStub = buildTxWithPhase7Rows(purchases);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // First fails, second succeeds
+            mockApplyAddonEntitlements
+                .mockResolvedValueOnce({
+                    success: false,
+                    error: { code: 'INTERNAL_ERROR', message: 'timeout' }
+                })
+                .mockResolvedValueOnce({ success: true, data: undefined });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — one reconciled, one error
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(result.details?.grantReconcileErrors).toBe(1);
+            expect(mockApplyAddonEntitlements).toHaveBeenCalledTimes(2);
+        });
+
+        it('skips real work in dry-run mode but reports count', async () => {
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitPurchase = {
+                id: 'purch-dry-1',
+                customerId: 'cust-dry-1',
+                addonSlug: 'extra-photos',
+                metadata: {}
+            };
+
+            const txStub = buildTxWithPhase7Rows([splitPurchase]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — dry-run: no actual grant, no DB update, counter incremented
+            expect(result.details?.grantReconciled).toBe(1);
+            expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
+        });
+
+        it('returns zero grantReconciled when no purchases need sync', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            // Phase 7 query returns empty (no split-state purchases)
+            const txStub = buildTxWithPhase7Rows([]);
+            vi.mocked(withTransaction).mockImplementationOnce(async (callback) =>
+                callback(txStub as never)
+            );
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.grantReconciled).toBe(0);
+            expect(result.details?.grantReconcileErrors).toBe(0);
+            expect(mockApplyAddonEntitlements).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // T-015 (SPEC-194 / T-194-10 addon half): chunked processing with bounded
+    // concurrency. Verifies that large batches are processed in parallel chunks
+    // while preserving per-item error isolation and accurate counters.
+    // -------------------------------------------------------------------------
+
+    describe('Phase 1 chunked batch processing (T-015)', () => {
+        it('processes 25 addons in chunks of 5 — all succeed, counter = 25', async () => {
+            // Arrange — 25 expired addons, all succeed
+            const ctx = createMockContext();
+            const addons = Array.from({ length: 25 }, (_, i) => ({
+                id: `chunk-purchase-${i}`,
+                customerId: `chunk-cust-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
+            const expireAddonMock = vi.fn().mockResolvedValue({
+                success: true,
+                data: { purchaseId: 'x', customerId: 'c', addonSlug: 's', expiredAt: new Date() }
+            });
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: addons }),
+                expireAddon: expireAddonMock,
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — all 25 processed, 0 errors
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(25);
+            expect(result.errors).toBe(0);
+            expect(result.details?.expiredAddons).toBe(25);
+            // expireAddon must be called exactly once per addon
+            expect(expireAddonMock).toHaveBeenCalledTimes(25);
+        });
+
+        it('isolates per-item failures within a chunk — one failure does not block the rest', async () => {
+            // Arrange — 10 addons; every 3rd one fails (items 0,3,6,9 fail → 4 failures, 6 succeed)
+            const ctx = createMockContext();
+            const addons = Array.from({ length: 10 }, (_, i) => ({
+                id: `iso-purchase-${i}`,
+                customerId: `iso-cust-${i}`,
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
+            // Items at indices 0, 3, 6, 9 fail; the rest succeed
+            const expireAddonMock = vi
+                .fn()
+                .mockImplementation(({ purchaseId }: { purchaseId: string }) => {
+                    const idx = Number(purchaseId.replace('iso-purchase-', ''));
+                    if (idx % 3 === 0) {
+                        return Promise.resolve({
+                            success: false,
+                            error: { code: 'ERR', message: `Failure for ${purchaseId}` }
+                        });
+                    }
+                    return Promise.resolve({
+                        success: true,
+                        data: { purchaseId, customerId: 'c', addonSlug: 's', expiredAt: new Date() }
+                    });
+                });
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: addons }),
+                expireAddon: expireAddonMock,
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — 6 succeed, 4 fail; job still succeeds overall
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(6);
+            expect(result.errors).toBeGreaterThan(0);
+            // All 10 items were attempted
+            expect(expireAddonMock).toHaveBeenCalledTimes(10);
+        });
+
+        it('handles a chunk where every item fails — remaining chunks still run', async () => {
+            // Arrange — 10 addons; first 5 all fail, last 5 all succeed
+            const ctx = createMockContext();
+            const addons = Array.from({ length: 10 }, (_, i) => ({
+                id: `chunk-fail-${i}`,
+                customerId: `cust-cf-${i}`,
+                addonSlug: 'featured',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            }));
+
+            let callCount = 0;
+            const expireAddonMock = vi.fn().mockImplementation(() => {
+                const i = callCount++;
+                if (i < 5) {
+                    return Promise.resolve({
+                        success: false,
+                        error: { code: 'ERR', message: 'first chunk failure' }
+                    });
+                }
+                return Promise.resolve({
+                    success: true,
+                    data: {
+                        purchaseId: 'x',
+                        customerId: 'c',
+                        addonSlug: 's',
+                        expiredAt: new Date()
+                    }
+                });
+            });
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: addons }),
+                expireAddon: expireAddonMock,
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — second chunk ran despite first chunk's failures
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(5);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(expireAddonMock).toHaveBeenCalledTimes(10);
         });
     });
 });
