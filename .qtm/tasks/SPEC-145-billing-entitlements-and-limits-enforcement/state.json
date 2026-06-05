@@ -8,71 +8,133 @@
             "id": "T-001",
             "title": "Author docs/billing/endpoint-gate-matrix.md (every protected/admin route)",
             "description": "Spec T-145-01. Walk every route under apps/api/src/routes/**/protected/** and gated admin/**; for each: decided EntitlementKey/LimitKey or 'no gate needed' + reason. Seed with the spec's audit candidates (publish/edit accommodations, create-promotions, write-reviews, advanced/basic stats, gallery photos). Include 'reserved — route pending' section for phantom gates and 'reserved' limit stubs (MAX_PROPERTIES/MAX_STAFF_ACCOUNTS). This doc drives T-004..T-009, T-011 and the T-022 snapshot guard — format it machine-checkable (one table, stable route-path keys).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-004", "T-005", "T-006", "T-007", "T-008", "T-009", "T-022"],
             "subtasks": [
-                { "title": "Route walk + decisions table", "completed": false },
-                { "title": "Reserved/phantom sections", "completed": false }
+                {
+                    "title": "Route walk + decisions table",
+                    "completed": true
+                },
+                {
+                    "title": "Reserved/phantom sections",
+                    "completed": true
+                }
             ],
             "tags": ["docs", "matrix", "foundation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": "2026-06-05T04:53:38Z",
+                "completed": "2026-06-05T05:02:13Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Unify gate error contract to ServiceError (INV-2)",
             "description": "Spec T-145-02 (narrowed by realign). Refactor the 12 phantom gates (tourist-entitlements.ts:109-534, accommodation-entitlements.ts:238-368+) plus requireEntitlement (entitlement.ts:704) and requireLimit (entitlement.ts:759,768) from HTTPException(403, JSON.stringify(...)) to ServiceError(ENTITLEMENT_REQUIRED | LIMIT_REACHED) with proper code/message/details — matching the 3 live gates already on Pattern A. Verify onError mapping (response.ts:286-310). Update entitlement.test.ts assertions (it covers all gates).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "Refactor 12 phantom gates", "completed": false },
-                { "title": "Refactor requireEntitlement/requireLimit", "completed": false },
-                { "title": "Update test assertions", "completed": false }
+                {
+                    "title": "Refactor 12 phantom gates",
+                    "completed": true
+                },
+                {
+                    "title": "Refactor requireEntitlement/requireLimit",
+                    "completed": true
+                },
+                {
+                    "title": "Update test assertions",
+                    "completed": true
+                }
             ],
             "tags": ["error-contract", "inv-2"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": "2026-06-05T05:02:13Z",
+                "completed": "2026-06-05T05:19:23Z"
+            }
         },
         {
             "id": "T-003",
             "title": "Remove residual as-EntitlementKey/LimitKey casts (ADR-021)",
             "description": "Spec T-145-23 (absorbed SPEC-192 residue). Remove the 6+ casts in entitlement.ts (~lines 323,409,415,429,435) and the rest across apps/api/src (~11 total — grep first). Replace with proper narrowing/validation per ADR-021. No behavior change; typecheck is the gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Grep + replace all cast sites", "completed": false },
-                { "title": "Typecheck clean", "completed": false }
+                {
+                    "title": "Grep + replace all cast sites",
+                    "completed": true
+                },
+                {
+                    "title": "Typecheck clean",
+                    "completed": true
+                }
             ],
             "tags": ["types", "cleanup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": "2026-06-05T05:19:23Z",
+                "completed": "2026-06-05T05:43:49Z"
+            }
         },
         {
             "id": "T-004",
             "title": "Wire accommodation entitlement gates (publish + edit)",
             "description": "Spec T-145-03 (accommodation slice). Per matrix: PUBLISH_ACCOMMODATIONS on create/createDraft/host-onboarding-start (on top of existing enforceAccommodationLimit), EDIT_ACCOMMODATION_INFO on update/patch (alongside existing gateRichDescription/gateVideoEmbed). Follow the existing wired-gate pattern exactly. Unit tests per route (mocked middleware level).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
-                { "title": "Publish gates (create/draft/onboarding)", "completed": false },
-                { "title": "Edit gates (update/patch)", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Publish gates (create/draft/onboarding)",
+                    "completed": false
+                },
+                {
+                    "title": "Edit gates (update/patch)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["gates", "accommodation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": "2026-06-05T05:43:49Z",
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -83,32 +145,66 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
-                { "title": "Promotion gates", "completed": false },
-                { "title": "Review gates (accom + destination)", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Promotion gates",
+                    "completed": false
+                },
+                {
+                    "title": "Review gates (accom + destination)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["gates", "promotions", "reviews"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
             "title": "Wire stats + gallery gates",
-            "description": "Spec T-145-03 (stats slice). Per matrix: VIEW_ADVANCED_STATS on hostFavoritesBreakdown + hostMarketComparison; VIEW_BASIC_STATS on conversations response-rate + monthly-inquiries; MAX_PHOTOS_PER_ACCOMMODATION on protected gallery media upload (mirror the admin upload inline pattern at media/admin/upload.ts:371-435). Unit tests per route.",
+            "description": "Spec T-145-03 (stats slice). Per matrix: VIEW_ADVANCED_STATS on hostFavoritesBreakdown + hostMarketComparison; VIEW_BASIC_STATS on conversations response-rate + monthly-inquiries; MAX_PHOTOS_PER_ACCOMMODATION on protected gallery media upload (mirror the admin upload inline pattern at media/admin/upload.ts:371-435). Unit tests per route. [T-001 finding: media/protected/upload.ts ALREADY has the inline MAX_PHOTOS check — verify before re-adding; T-006 scope may shrink to stats gates only.]",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-012", "T-013"],
             "subtasks": [
-                { "title": "Advanced/basic stats gates", "completed": false },
-                { "title": "Protected gallery photo limit", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Advanced/basic stats gates",
+                    "completed": false
+                },
+                {
+                    "title": "Protected gallery photo limit",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["gates", "stats", "media"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -119,12 +215,23 @@
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
-                { "title": "Decision + wiring or reserved registration", "completed": false }
+                {
+                    "title": "Decision + wiring or reserved registration",
+                    "completed": false
+                }
             ],
             "tags": ["limits"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -134,11 +241,24 @@
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
-            "subtasks": [{ "title": "Decisions + wiring + tests", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Decisions + wiring + tests",
+                    "completed": false
+                }
+            ],
             "tags": ["gates", "favorites"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -148,11 +268,24 @@
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
-            "subtasks": [{ "title": "Comments + matrix entries", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Comments + matrix entries",
+                    "completed": false
+                }
+            ],
             "tags": ["docs", "phantom-gates"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -163,30 +296,58 @@
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "JSDoc on gates", "completed": false },
-                { "title": "Staff-vs-tourist e2e", "completed": false }
+                {
+                    "title": "JSDoc on gates",
+                    "completed": false
+                },
+                {
+                    "title": "Staff-vs-tourist e2e",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "staff-bypass", "inv-6"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
             "title": "Build admin customer-entitlement grant/revoke route pair",
             "description": "Spec T-145-12 route half (expanded by realign — route does not exist). Minimal admin route pair under billing/admin (e.g. customer-entitlements.ts): POST grant + DELETE revoke a one-off customer entitlement via billing.entitlements, PermissionEnum-gated (pick the right enum per existing billing admin routes), calling clearEntitlementCache(customerId) on both. createAdminRoute factory + ResponseFactory + schemas from @repo/schemas. Unit tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Grant + revoke routes with cache clear", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Grant + revoke routes with cache clear",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
             ],
             "tags": ["admin", "route", "entitlements"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": "2026-06-05T05:19:23Z",
+                "completed": "2026-06-05T05:43:49Z"
+            }
         },
         {
             "id": "T-012",
@@ -197,13 +358,27 @@
             "blockedBy": ["T-002", "T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
-                { "title": "Block test per gate", "completed": false },
-                { "title": "No-mutation assertions", "completed": false }
+                {
+                    "title": "Block test per gate",
+                    "completed": false
+                },
+                {
+                    "title": "No-mutation assertions",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "block"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -213,11 +388,24 @@
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
-            "subtasks": [{ "title": "Allow test per gate", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Allow test per gate",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "allow"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -228,13 +416,27 @@
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
-                { "title": "Accommodations + promotions N+1", "completed": false },
-                { "title": "Favorites + photos N+1", "completed": false }
+                {
+                    "title": "Accommodations + promotions N+1",
+                    "completed": false
+                },
+                {
+                    "title": "Favorites + photos N+1",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "limits"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -245,13 +447,27 @@
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
-                { "title": "Upgrade elevation e2e", "completed": false },
-                { "title": "Downgrade restriction e2e", "completed": false }
+                {
+                    "title": "Upgrade elevation e2e",
+                    "completed": false
+                },
+                {
+                    "title": "Downgrade restriction e2e",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "plan-change"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -261,11 +477,24 @@
             "complexity": 2,
             "blockedBy": ["T-011", "T-012"],
             "blocks": [],
-            "subtasks": [{ "title": "Grant/revoke e2e", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Grant/revoke e2e",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "admin-override"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -275,11 +504,24 @@
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
-            "subtasks": [{ "title": "Elevation + expiry e2e", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Elevation + expiry e2e",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "addons"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -289,11 +531,24 @@
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
-            "subtasks": [{ "title": "Refund + cancel route-level e2e", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Refund + cancel route-level e2e",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "refund"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -303,11 +558,24 @@
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
-            "subtasks": [{ "title": "Trial grant + expiry e2e", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Trial grant + expiry e2e",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "trial"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -317,11 +585,24 @@
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
-            "subtasks": [{ "title": "Stale + cleared scenarios", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Stale + cleared scenarios",
+                    "completed": false
+                }
+            ],
             "tags": ["e2e", "cache", "inv-1"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -332,12 +613,23 @@
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
-                { "title": "Event enumeration + per-event assertion", "completed": false }
+                {
+                    "title": "Event enumeration + per-event assertion",
+                    "completed": false
+                }
             ],
             "tags": ["tests", "cache", "inv-1"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -348,13 +640,27 @@
             "blockedBy": ["T-001", "T-004", "T-005", "T-006", "T-008", "T-009"],
             "blocks": [],
             "subtasks": [
-                { "title": "Route walker + matrix parser", "completed": false },
-                { "title": "Exception handling + CI verification", "completed": false }
+                {
+                    "title": "Route walker + matrix parser",
+                    "completed": false
+                },
+                {
+                    "title": "Exception handling + CI verification",
+                    "completed": false
+                }
             ],
             "tags": ["tests", "snapshot-guard"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -364,11 +670,24 @@
             "complexity": 1,
             "blockedBy": ["T-022"],
             "blocks": [],
-            "subtasks": [{ "title": "Doc", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Doc",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-024",
@@ -378,11 +697,24 @@
             "complexity": 1,
             "blockedBy": ["T-022"],
             "blocks": [],
-            "subtasks": [{ "title": "Both CLAUDE.md updates", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Both CLAUDE.md updates",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-025",
@@ -392,11 +724,24 @@
             "complexity": 2,
             "blockedBy": ["T-002", "T-009"],
             "blocks": [],
-            "subtasks": [{ "title": "Chunked runs + gap fills", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Chunked runs + gap fills",
+                    "completed": false
+                }
+            ],
             "tags": ["coverage"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-026",
@@ -422,11 +767,24 @@
                 "T-025"
             ],
             "blocks": ["T-027"],
-            "subtasks": [{ "title": "Sweep + fixes + targeted re-runs", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Sweep + fixes + targeted re-runs",
+                    "completed": false
+                }
+            ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-027",
@@ -437,13 +795,27 @@
             "blockedBy": ["T-026"],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Gates green", "completed": false },
-                { "title": "Adversarial review + fixes", "completed": false }
+                {
+                    "title": "Gates green",
+                    "completed": false
+                },
+                {
+                    "title": "Adversarial review + fixes",
+                    "completed": false
+                }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-028",
@@ -453,11 +825,24 @@
             "complexity": 1,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
-            "subtasks": [{ "title": "Smoke list entry", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Smoke list entry",
+                    "completed": false
+                }
+            ],
             "tags": ["docs", "tracking"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-029",
@@ -468,20 +853,34 @@
             "blockedBy": ["T-028"],
             "blocks": [],
             "subtasks": [
-                { "title": "PR + CI + merge", "completed": false },
-                { "title": "Closeout", "completed": false }
+                {
+                    "title": "PR + CI + merge",
+                    "completed": false
+                },
+                {
+                    "title": "Closeout",
+                    "completed": false
+                }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-05T04:50:45Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T04:50:45Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 29,
-        "pending": 29,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 24,
+        "inProgress": 1,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }
