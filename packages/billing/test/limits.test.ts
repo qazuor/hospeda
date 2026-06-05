@@ -6,13 +6,13 @@ describe('Limits Configuration', () => {
     describe('LIMIT_METADATA', () => {
         const allLimitKeys = Object.values(LimitKey);
 
-        it('should have entries for all 6 LimitKey values', () => {
+        it('should have entries for all 10 LimitKey values', () => {
             // Arrange
             const metadataKeys = Object.keys(LIMIT_METADATA);
 
             // Act & Assert
-            expect(metadataKeys).toHaveLength(6);
-            expect(allLimitKeys).toHaveLength(6);
+            expect(metadataKeys).toHaveLength(10);
+            expect(allLimitKeys).toHaveLength(10);
         });
 
         it('should have an entry for MAX_ACCOMMODATIONS', () => {
@@ -37,6 +37,22 @@ describe('Limits Configuration', () => {
 
         it('should have an entry for MAX_STAFF_ACCOUNTS', () => {
             expect(LIMIT_METADATA[LimitKey.MAX_STAFF_ACCOUNTS]).toBeDefined();
+        });
+
+        it('should have an entry for MAX_AI_TEXT_IMPROVE_PER_MONTH', () => {
+            expect(LIMIT_METADATA[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]).toBeDefined();
+        });
+
+        it('should have an entry for MAX_AI_CHAT_PER_MONTH', () => {
+            expect(LIMIT_METADATA[LimitKey.MAX_AI_CHAT_PER_MONTH]).toBeDefined();
+        });
+
+        it('should have an entry for MAX_AI_SEARCH_PER_MONTH', () => {
+            expect(LIMIT_METADATA[LimitKey.MAX_AI_SEARCH_PER_MONTH]).toBeDefined();
+        });
+
+        it('should have an entry for MAX_AI_SUPPORT_PER_MONTH', () => {
+            expect(LIMIT_METADATA[LimitKey.MAX_AI_SUPPORT_PER_MONTH]).toBeDefined();
         });
 
         it('should have keys matching LimitKey enum values exactly', () => {

@@ -195,17 +195,34 @@ describe('Entitlement Configuration', () => {
             }
         });
 
-        it('should have all 4 categories totaling to the full definitions count', () => {
+        it('should have all 5 categories totaling to the full definitions count', () => {
             // Arrange
             const ownerCount = 12;
             const accommodationCount = 7;
             const complexCount = 6;
             const touristCount = 15;
+            const aiCount = 4; // AI feature entitlements added in SPEC-173
 
             // Act & Assert
-            expect(ownerCount + accommodationCount + complexCount + touristCount).toBe(
+            expect(ownerCount + accommodationCount + complexCount + touristCount + aiCount).toBe(
                 ENTITLEMENT_DEFINITIONS.length
             );
+        });
+
+        it('should have 4 AI feature entitlements (SPEC-173)', () => {
+            // Arrange
+            const aiKeys: readonly EntitlementKey[] = [
+                EntitlementKey.AI_TEXT_IMPROVE,
+                EntitlementKey.AI_CHAT,
+                EntitlementKey.AI_SEARCH,
+                EntitlementKey.AI_SUPPORT
+            ] as const;
+
+            // Act & Assert
+            expect(aiKeys).toHaveLength(4);
+            for (const key of aiKeys) {
+                expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
+            }
         });
     });
 });

@@ -35,12 +35,20 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.VIEW_BASIC_STATS,
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.CAN_USE_CALENDAR,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 1),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 10)
     ]
 };
 
@@ -71,12 +79,20 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 30)
     ]
 };
 
@@ -112,12 +128,20 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        EntitlementKey.HAS_VERIFICATION_BADGE
+        EntitlementKey.HAS_VERIFICATION_BADGE,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1) // unlimited
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, -1) // unlimited
     ]
 };
 
@@ -143,13 +167,21 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
         EntitlementKey.CAN_USE_CALENDAR,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 2),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 15)
     ]
 };
 
@@ -184,13 +216,21 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 20),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 40)
     ]
 };
 
@@ -232,13 +272,21 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        EntitlementKey.HAS_VERIFICATION_BADGE
+        EntitlementKey.HAS_VERIFICATION_BADGE,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, -1), // unlimited
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, -1), // unlimited
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1) // unlimited
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, -1) // unlimited
     ]
 };
 
@@ -261,9 +309,17 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
-    limits: [limit(LimitKey.MAX_FAVORITES, 3)]
+    limits: [
+        limit(LimitKey.MAX_FAVORITES, 3),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 10),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 5)
+    ]
 };
 
 export const TOURIST_PLUS_PLAN: PlanDefinition = {
@@ -291,9 +347,17 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
         EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
-    limits: [limit(LimitKey.MAX_FAVORITES, 20)]
+    limits: [
+        limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 50),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, 20)
+    ]
 };
 
 export const TOURIST_VIP_PLAN: PlanDefinition = {
@@ -326,10 +390,16 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
         EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH,
+        EntitlementKey.AI_SUPPORT
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, -1) // unlimited
+        limit(LimitKey.MAX_FAVORITES, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SUPPORT_PER_MONTH, -1) // unlimited
     ]
 };
 

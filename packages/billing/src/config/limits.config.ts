@@ -29,5 +29,23 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
     [LimitKey.MAX_STAFF_ACCOUNTS]: {
         name: 'Staff accounts',
         description: 'Maximum number of staff accounts per complex'
+    },
+    // AI usage limits (SPEC-173)
+    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: {
+        name: 'AI text improvements per month',
+        description: 'Maximum number of AI text improvement requests allowed per calendar month'
+    },
+    [LimitKey.MAX_AI_CHAT_PER_MONTH]: {
+        name: 'AI chat interactions per month',
+        description: 'Maximum number of AI chat assistant interactions allowed per calendar month'
+    },
+    [LimitKey.MAX_AI_SEARCH_PER_MONTH]: {
+        name: 'AI search queries per month',
+        description: 'Maximum number of AI-powered search queries allowed per calendar month'
+    },
+    [LimitKey.MAX_AI_SUPPORT_PER_MONTH]: {
+        name: 'AI support interactions per month',
+        description:
+            'Maximum number of AI support assistant interactions allowed per calendar month'
     }
 };

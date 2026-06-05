@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import {
     ALL_PLANS,
     COMPLEX_BASICO_PLAN,
+    COMPLEX_PREMIUM_PLAN,
     OWNER_BASICO_PLAN,
+    OWNER_PRO_PLAN,
     PLANS_BY_CATEGORY,
     TOURIST_FREE_PLAN,
+    TOURIST_VIP_PLAN,
     getDefaultPlan,
     getPlanBySlug,
     getUnlimitedEntitlements
@@ -124,6 +127,81 @@ describe('Plan Configuration', () => {
             );
             expect(propertiesLimit).toBeDefined();
             expect(propertiesLimit?.value).toBeGreaterThan(0);
+        });
+    });
+
+    describe('AI entitlements and limits matrix (SPEC-173)', () => {
+        it('tourist-free should NOT have AI_TEXT_IMPROVE gate', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(EntitlementKey.AI_TEXT_IMPROVE);
+        });
+
+        it('tourist-free should NOT have max_ai_text_improve_per_month limit', () => {
+            const found = TOURIST_FREE_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH
+            );
+            expect(found).toBeUndefined();
+        });
+
+        it('tourist-free max_ai_chat_per_month should be 10', () => {
+            const found = TOURIST_FREE_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_CHAT_PER_MONTH
+            );
+            expect(found).toBeDefined();
+            expect(found?.value).toBe(10);
+        });
+
+        it('tourist-vip AI limits should all be -1 (unlimited)', () => {
+            const aiLimitKeys = [
+                LimitKey.MAX_AI_CHAT_PER_MONTH,
+                LimitKey.MAX_AI_SEARCH_PER_MONTH,
+                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+            ] as const;
+            for (const key of aiLimitKeys) {
+                const found = TOURIST_VIP_PLAN.limits.find((l) => l.key === key);
+                expect(found).toBeDefined();
+                expect(found?.value).toBe(-1);
+            }
+        });
+
+        it('owner-pro max_ai_text_improve_per_month should be 100', () => {
+            const found = OWNER_PRO_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH
+            );
+            expect(found).toBeDefined();
+            expect(found?.value).toBe(100);
+        });
+
+        it('complex-premium all 4 AI limits should be -1 (unlimited)', () => {
+            const aiLimitKeys = [
+                LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+                LimitKey.MAX_AI_CHAT_PER_MONTH,
+                LimitKey.MAX_AI_SEARCH_PER_MONTH,
+                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+            ] as const;
+            for (const key of aiLimitKeys) {
+                const found = COMPLEX_PREMIUM_PLAN.limits.find((l) => l.key === key);
+                expect(found).toBeDefined();
+                expect(found?.value).toBe(-1);
+            }
+        });
+
+        it('every plan with an AI gate should have the matching AI limit and vice versa', () => {
+            // Map each AI entitlement key to its corresponding limit key
+            const aiGateToLimit: ReadonlyArray<readonly [EntitlementKey, LimitKey]> = [
+                [EntitlementKey.AI_TEXT_IMPROVE, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH],
+                [EntitlementKey.AI_CHAT, LimitKey.MAX_AI_CHAT_PER_MONTH],
+                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH],
+                [EntitlementKey.AI_SUPPORT, LimitKey.MAX_AI_SUPPORT_PER_MONTH]
+            ] as const;
+
+            for (const plan of ALL_PLANS) {
+                for (const [gateKey, limitKey] of aiGateToLimit) {
+                    const hasGate = plan.entitlements.includes(gateKey);
+                    const hasLimit = plan.limits.some((l) => l.key === limitKey);
+                    // Gate and limit must be present together or absent together
+                    expect(hasGate).toBe(hasLimit);
+                }
+            }
         });
     });
 
