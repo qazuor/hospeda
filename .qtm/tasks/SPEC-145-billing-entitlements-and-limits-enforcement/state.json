@@ -848,7 +848,7 @@
             "id": "T-029",
             "title": "PR to staging, CI green, merge, closeout",
             "description": "Orphan-commit guard; push with remote-ref verification (rtk silent no-op gotcha); resync staging early if behind. PR notes: new gates list (behavior change: previously-open routes now 403 for under-plan users — flag for review), error-contract unification, new admin route, snapshot guard. Merge only on CI Pass SUCCESS. Closeout: index-sync + engram.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": [],
@@ -859,28 +859,28 @@
                 },
                 {
                     "title": "Closeout",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["pr", "release"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T09:23:18Z",
-                "completed": null
+                "completed": "2026-06-05T10:18:13Z"
             }
         }
     ],
     "summary": {
         "total": 29,
         "pending": 0,
-        "inProgress": 1,
-        "completed": 28,
+        "inProgress": 0,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.3
     }
