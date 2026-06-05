@@ -113,288 +113,288 @@
             "id": "T-004",
             "title": "Add getTopViewedEntities to EntityViewModel",
             "description": "Add getTopViewedEntities({entityType, windowDays, limit}) to packages/db/src/models/entity-view/entity-view.model.ts per spec §4.1 method A. Raw SQL via Drizzle sql tag, lazy getClient, PG reserved words quoted (AS \"unique\"), ::entity_type_enum cast, limit bound as parameter (never string-interpolated). Returns EntityViewStats[] ordered by total DESC, length ≤ limit. Unit tests in packages/db/src/models/entity-view/__tests__/entity-view-admin.model.test.ts: mock db.execute, assert ordering by total DESC and length ≤ limit; empty fixture returns empty array.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Implement getTopViewedEntities with parameterized SQL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: ordering, limit, empty fixture",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "model", "sql"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Add getDailySeries to EntityViewModel",
             "description": "Add getDailySeries({windowDays}) to entity-view.model.ts per spec §4.1 method B. Returns Array<{date: 'YYYY-MM-DD', entityType, total}> for days WITH data only — gap-filling is a SERVICE concern, not model. to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD'), 30-min bucket dedup for total, ORDER BY date ASC, entity_type ASC. Unit tests in entity-view-admin.model.test.ts: mock db.execute with rows for 3 entity types across 10 days, assert valid YYYY-MM-DD date strings, assert model does NOT gap-fill.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Implement getDailySeries SQL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests: date format, no gap-fill",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "model", "sql"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add getAdminSummaryTotals model method + new admin Zod schemas",
             "description": "Add getAdminSummaryTotals({windowDays}) to entity-view.model.ts per spec §4.1 method C: groups by entity_type WITHOUT an IN-list, returns Array<{entityType, unique, total}>. Add Zod schemas to packages/schemas/src/entities/entityView/ and barrel export (spec §4.4): AdminViewSummaryItemSchema, AdminViewSummaryResponseSchema, AdminViewBatchQuerySchema (comma-split transform, UUID validation, min 1 max 100, zodError keys from T-003), AdminViewTopQuerySchema (limit 1-50 default 10), AdminViewDailySeriesItemSchema, AdminViewDailySeriesResponseSchema. Run pnpm exec tsx scripts/extract-zod-keys.ts --verify. Unit tests: model method normalization to per-entityType shape; schema parse/reject cases (101 ids, invalid UUID, limit 0/51).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Implement getAdminSummaryTotals",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add 6 Zod schemas + barrel exports",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests for model + schemas",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run extract-zod-keys --verify",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "model", "schemas", "zod"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Add four admin methods to EntityViewService",
             "description": "Add getAdminSummary, getAdminBatch, getAdminTopEntities, getAdminDailySeries to packages/service-core/src/services/entityView/entityView.service.ts per spec §4.2. All use runWithLoggingAndValidation + hasPermission(actor, PermissionEnum.ANALYTICS_VIEW). CRITICAL: preserve lazy getter pattern — NO constructor dereference of @repo/db exports. getAdminBatch validates entityIds ≤ 100 (VALIDATION_ERROR) and zero-fills missing ids. getAdminTopEntities validates limit ≤ 50. getAdminDailySeries gap-fills to exactly 90 rows (3 types × 30 days). Tests in packages/service-core/src/services/entityView/__tests__/entityView-admin.service.test.ts: PERMISSION_DENIED without ANALYTICS_VIEW, VALIDATION_ERROR for >100 ids and limit >50, gap-fill from 5 model rows to 90 rows. Run pnpm build before trusting cross-package suites.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004", "T-005", "T-006"],
             "blocks": ["T-008", "T-009", "T-010", "T-011"],
             "subtasks": [
                 {
                     "title": "Implement getAdminSummary (zero-fill missing types)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getAdminBatch (≤100 validation, zero-fill)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getAdminTopEntities (limit ≤50)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement getAdminDailySeries (gap-fill 90 rows)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Permission + validation + gap-fill tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "permissions"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:20:00.000Z",
+                "completed": "2026-06-05T20:45:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Create admin views router + GET /admin/views/summary",
             "description": "Create apps/api/src/routes/views/admin/index.ts (registers all four routes, mounted at /api/v1/admin/views/) and summary.ts implementing GET /admin/views/summary per spec §4.3 (query: window=7d|30d default 30d; permission ANALYTICS_VIEW; verify which admin route factory existing analytics routes use, e.g. app-logs/list.ts). Integration tests in apps/api/src/routes/views/admin/__tests__/views-admin.routes.test.ts: 403 without permission, 200 with correct Zod-validated shape. Add endpoint-gate-matrix.md row (Decision=none, admin-tier permission-gated).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-015", "T-019"],
             "subtasks": [
                 {
                     "title": "Create admin/index.ts router + mount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement summary.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (403/200/shape)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate-matrix row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Implement GET /admin/views/batch",
             "description": "Create apps/api/src/routes/views/admin/batch.ts per spec §4.3: query entityType + entityIds (comma-separated UUIDs, max 100) + window. Permission ANALYTICS_VIEW. Response: one EntityViewStats entry per requested id, zero-view entities included as {unique:0, total:0}. Integration tests: 403, 200 shape, 101-item → 400, invalid UUID → 400. Add gate-matrix row.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-016", "T-017"],
             "subtasks": [
                 {
                     "title": "Implement batch.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests incl. 101-item and invalid-UUID",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate-matrix row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Implement GET /admin/views/top",
             "description": "Create apps/api/src/routes/views/admin/top.ts per spec §4.3: query entityType + window (default 30d) + limit (1-50, default 10). Permission ANALYTICS_VIEW. Response EntityViewStats[] ordered by total DESC. Integration tests: 403, 200 shape, limit=0 → 400, limit=51 → 400. Add gate-matrix row.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Implement top.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests incl. limit bounds",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate-matrix row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Implement GET /admin/views/daily-series",
             "description": "Create apps/api/src/routes/views/admin/daily-series.ts per spec §4.3: no query params (hardcoded 30d for V1). Permission ANALYTICS_VIEW. Response always 90 rows (3 types × 30 days), zero-filled. Integration tests: 403, 200, exactly 90 rows, every row has valid YYYY-MM-DD date. Add gate-matrix row.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Implement daily-series.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests incl. 90-row invariant",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate-matrix row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
             }
         },
         {
@@ -588,7 +588,7 @@
             "id": "T-017",
             "title": "Add 'Vistas (30d)' derived column to accommodations list",
             "description": "Add display-only derived column to the accommodations entity list config per spec §5.4: secondary useQuery (enabled: !!entityIds.length) calling GET /admin/views/batch with current page ids, result in Map<entityId, total>, cell renderer reads map. enableSorting: false — header NOT clickable, no sort indicator. staleTime 5 min. i18n key list.column.views30d. States: '…'/skeleton while loading, '0' for zero views, '—' on error (no toast). Column hidden + no API call without ANALYTICS_VIEW. Tests in apps/admin/src/features/accommodations/__tests__/views-column.test.tsx: presence/absence by permission, loading skeleton, error '—'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-018", "T-020"],
@@ -615,7 +615,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
+                "started": "2026-06-05T21:10:00.000Z",
                 "completed": null
             }
         },
@@ -623,7 +623,7 @@
             "id": "T-018",
             "title": "Add 'Vistas (30d)' column to posts and events lists",
             "description": "Replicate the T-017 derived-column pattern on the posts and events entity list configs (same batch endpoint with entityType=POST / EVENT, same states, same permission guard, NOT sortable). Extract shared logic into a reusable hook if the T-017 implementation allows (e.g. useViewsBatchColumn). Tests: equivalent views-column tests for posts and events features.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-020"],
@@ -650,7 +650,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
+                "started": "2026-06-05T21:10:00.000Z",
                 "completed": null
             }
         },
@@ -770,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 17,
-        "inProgress": 0,
-        "completed": 4,
+        "pending": 7,
+        "inProgress": 2,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.2
     }
