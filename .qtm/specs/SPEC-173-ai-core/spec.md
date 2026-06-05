@@ -13,10 +13,10 @@ relatedSpecs:
   - SPEC-154  # admin config-driven IA — admin AI-settings page slots into this
   - SPEC-164  # admin billing super-only — AI_SETTINGS_MANAGE follows the same super-only pattern
 childSpecs:
-  - "(pending) AI Feature — HOST text improvement"
-  - "(pending) AI Feature — Natural-language search"
-  - "(pending) AI Feature — Accommodation chat (tourist)"
-  - "(pending) AI Feature — Admin tech-support assistant"
+  - SPEC-197  # AI Feature — HOST text improvement (draft)
+  - SPEC-198  # AI Feature — Natural-language search (draft)
+  - SPEC-199  # AI Feature — Accommodation chat, tourist (draft)
+  - SPEC-200  # AI Feature — Support assistant (draft; audience open question)
 tags:
   - ai
   - foundation

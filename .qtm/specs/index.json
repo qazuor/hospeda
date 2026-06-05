@@ -691,6 +691,58 @@
             "base": "staging",
             "archived": false,
             "tags": ["billing", "lifecycle", "robustness", "bugfix"]
+        },
+        {
+            "specId": "SPEC-197",
+            "title": "AI Text Improvement (HOST)",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-197-ai-text-improvement",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child A of SPEC-173. HOST text improvement (title/description/etc.), multi-locale, accept/reject UX over the ai-core foundation (feature text_improve, owner/complex plans only). DRAFT with open questions."
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Natural-Language Search",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-198-ai-nl-search",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child B of SPEC-173. NL search: extractIntent -> structured query over existing DB, NO embeddings V1 (feature search). Top open question: anonymous UX vs login-required AI. DRAFT."
+        },
+        {
+            "specId": "SPEC-199",
+            "title": "AI Accommodation Chat (tourist)",
+            "type": "feat",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-199-ai-accommodation-chat",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+        },
+        {
+            "specId": "SPEC-200",
+            "title": "AI Support Assistant",
+            "type": "feat",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-200-ai-support-assistant",
+            "created": "2026-06-05T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "spec-173-child"],
+            "note": "Child D of SPEC-173. Support assistant over docs corpus (feature support). TOP open question: audience — spec says admin tech-support but billing matrix grants ai_support to ALL plans. DRAFT."
         }
     ]
 }
