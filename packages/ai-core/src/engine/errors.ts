@@ -12,7 +12,8 @@
  *         ├── AiFeatureDisabledError   (kill-switch active, AC-9)
  *         ├── AiEngineExhaustedError   (all providers failed, AC-2)
  *         ├── AiCeilingHitError        (cost ceiling breached, AC-8, T-017)
- *         └── AiNoEnabledProviderError (all providers kill-switched off, T-017)
+ *         ├── AiNoEnabledProviderError (all providers kill-switched off, T-017)
+ *         └── AiModerationBlockedError (content moderation flag, T-020)
  * ```
  *
  * `AiFeatureNotConfiguredError` (from the config resolver) is NOT re-exported
@@ -269,5 +270,70 @@ export class AiNoEnabledProviderError extends AiEngineError {
         );
         this.name = 'AiNoEnabledProviderError';
         this.feature = feature;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Moderation-blocked error (T-020)
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown when the content-moderation pass flags either the input or the output
+ * of an AI capability call (SPEC-173 T-020).
+ *
+ * The engine blocks the request immediately — NO provider fallback is attempted
+ * on a flagged output (the content was already generated; regenerating is not
+ * a V1 strategy).
+ *
+ * `direction` identifies whether the violation was detected in the user-supplied
+ * input (before any provider was called) or in the generated output (after the
+ * provider responded). The flagged text itself is NOT carried in this error to
+ * avoid sensitive content leaking into logs.
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await engine.generateText({ feature: 'chat', ... });
+ * } catch (err) {
+ *   if (err instanceof AiModerationBlockedError) {
+ *     return {
+ *       error: `Content policy violation (${err.direction}): ${err.feature}`,
+ *     };
+ *   }
+ * }
+ * ```
+ */
+export class AiModerationBlockedError extends AiEngineError {
+    /** The AI feature whose call was blocked by the moderation pass. */
+    readonly feature: AiFeature;
+
+    /**
+     * Whether the violation was in the user-supplied input (`'input'`) or in
+     * the model-generated output (`'output'`).
+     */
+    readonly direction: 'input' | 'output';
+
+    /**
+     * Per-category flags returned by the moderation provider.
+     *
+     * Keys are provider-defined category names (e.g. `'hate'`, `'violence'`).
+     * `true` means the category was flagged. The flagged text itself is omitted
+     * to prevent sensitive content from appearing in logs or error reporters.
+     */
+    readonly categories: Record<string, boolean>;
+
+    constructor(input: {
+        readonly feature: AiFeature;
+        readonly direction: 'input' | 'output';
+        readonly categories: Record<string, boolean>;
+    }) {
+        super(
+            `AI call for feature '${input.feature}' blocked by content moderation (${input.direction}).`,
+            'MODERATION_BLOCKED'
+        );
+        this.name = 'AiModerationBlockedError';
+        this.feature = input.feature;
+        this.direction = input.direction;
+        this.categories = input.categories;
     }
 }

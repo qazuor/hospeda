@@ -27,6 +27,8 @@ export type {
     AiEngineFallbackEvent,
     AiEngineExhaustedEvent,
     AiEngineKillSwitchEvent,
+    AiEngineModerationBlockedEvent,
+    AiEngineModerationErrorEvent,
     AiEngineSuccessEvent,
     CreateAiEngineInput,
     ProviderOrderStrategy,
@@ -38,6 +40,7 @@ export {
     AiEngineError,
     AiEngineExhaustedError,
     AiFeatureDisabledError,
+    AiModerationBlockedError,
     AiNoEnabledProviderError
 } from './errors.js';
 export type { ProviderAttempt } from './errors.js';

@@ -82,6 +82,7 @@ import {
     AiNoEnabledProviderError
 } from './errors.js';
 import type { ProviderAttempt } from './errors.js';
+import { buildInputModerationText, runModerationPass } from './moderation-pass.js';
 import { MAX_ATTEMPTS_PER_PROVIDER, isRetryableError, withRetry } from './retry.js';
 
 // ---------------------------------------------------------------------------
@@ -130,6 +131,41 @@ export interface AiEngineKillSwitchEvent {
 }
 
 /**
+ * The content-moderation pass flagged either the input or the output of a
+ * capability call (T-020).
+ *
+ * Emitted immediately before `AiModerationBlockedError` is thrown so the event
+ * sink can record the block before the error propagates to the caller.
+ */
+export interface AiEngineModerationBlockedEvent {
+    readonly type: 'moderation_blocked';
+    /** The feature whose call was blocked. */
+    readonly feature: AiFeature;
+    /** Whether the block was on the user input or the generated output. */
+    readonly direction: 'input' | 'output';
+    /**
+     * Per-category boolean flags from the moderation provider.
+     * Keys are provider-defined category names (e.g. `'hate'`, `'violence'`).
+     */
+    readonly categories: Record<string, boolean>;
+}
+
+/**
+ * The moderation provider itself threw an error (network failure, provider
+ * down, unconfigured provider, etc.) and the call is continuing unmoderated
+ * (fail-open — T-020).
+ */
+export interface AiEngineModerationErrorEvent {
+    readonly type: 'moderation_error';
+    /** The feature whose call triggered the failed moderation attempt. */
+    readonly feature: AiFeature;
+    /** Whether the error occurred during the input or the output pass. */
+    readonly direction: 'input' | 'output';
+    /** Human-readable error message from the moderation provider. */
+    readonly errorMessage: string;
+}
+
+/**
  * Union of all events emitted by the engine via `recordEvent`.
  *
  * The injected sink (T-016/T-018/T-035) receives one of these per routing
@@ -140,7 +176,9 @@ export type AiEngineEvent =
     | AiEngineSuccessEvent
     | AiEngineFallbackEvent
     | AiEngineExhaustedEvent
-    | AiEngineKillSwitchEvent;
+    | AiEngineKillSwitchEvent
+    | AiEngineModerationBlockedEvent
+    | AiEngineModerationErrorEvent;
 
 // ---------------------------------------------------------------------------
 // Provider-order strategy (V2 seam)
@@ -616,9 +654,20 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 await checkCeiling({ feature: req.feature, now: getNow() });
             }
 
+            // Input moderation (T-020): moderate user-supplied content once before
+            // any provider is called. System prompts (our code) are NOT moderated.
+            await runModerationPass({
+                feature: req.feature,
+                direction: 'input',
+                text: buildInputModerationText(req.prompt, req.messages),
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
+
             const providersConfig = await getProvidersConfig();
 
-            return routeWithFallback(
+            const response = await routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.generateText(req),
@@ -627,6 +676,18 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent,
                 providersConfig
             );
+
+            // Output moderation (T-020): moderate the generated text.
+            await runModerationPass({
+                feature: req.feature,
+                direction: 'output',
+                text: response.text,
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
+
+            return response;
         },
 
         // -----------------------------------------------------------------------
@@ -679,9 +740,19 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 await checkCeiling({ feature: req.feature, now: getNow() });
             }
 
+            // Input moderation (T-020): generateObject has a single `prompt` field.
+            await runModerationPass({
+                feature: req.feature,
+                direction: 'input',
+                text: req.prompt,
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
+
             const providersConfig = await getProvidersConfig();
 
-            return routeWithFallback(
+            const response = await routeWithFallback(
                 req.feature,
                 featureConfig,
                 (provider) => provider.generateObject(req, outputSchema),
@@ -690,6 +761,19 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 recordEvent,
                 providersConfig
             );
+
+            // Output moderation (T-020): JSON-stringify the object so the moderation
+            // provider can evaluate any user-facing text it contains.
+            await runModerationPass({
+                feature: req.feature,
+                direction: 'output',
+                text: JSON.stringify(response.object),
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
+
+            return response;
         },
 
         // -----------------------------------------------------------------------
@@ -708,6 +792,18 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             if (checkCeiling !== undefined && getNow !== undefined) {
                 await checkCeiling({ feature, now: getNow() });
             }
+
+            // Input moderation (T-020): extractIntent output is an internal typed
+            // intent — never served as user-facing content — so only the input is
+            // moderated.
+            await runModerationPass({
+                feature,
+                direction: 'input',
+                text: req.query,
+                moderationProviderId,
+                getProvider,
+                recordEvent
+            });
 
             const providersConfig = await getProvidersConfig();
 

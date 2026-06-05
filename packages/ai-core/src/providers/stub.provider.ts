@@ -261,16 +261,41 @@ export class StubProvider implements AiProvider {
     // -------------------------------------------------------------------------
 
     /**
-     * Always returns a clean moderation result.
+     * Returns a deterministic moderation result based on the input text.
      *
-     * `flagged` is always `false`. `categories` is always `{}`.
+     * **Magic-marker convention** (consistent with `buildEcho` prefix markers
+     * used by `generateText` / `streamText`):
+     *
+     * - If `input.input` contains the substring `[stub:flagged]`, the response
+     *   is `{ flagged: true, categories: { test: true } }`. Use this marker in
+     *   test inputs to exercise the moderation-blocked path without a real
+     *   provider.
+     * - Otherwise, the response is `{ flagged: false, categories: {} }` —
+     *   the same clean result as before T-020.
+     *
      * No `scores` field is included (providers that don't return scores may
      * omit it; the stub follows that pattern).
      *
-     * @param _input - The moderation request (ignored by the stub).
-     * @returns A deterministic moderation response indicating no violations.
+     * @param input - The moderation request.
+     * @returns A deterministic moderation response.
+     *
+     * @example
+     * ```ts
+     * const stub = new StubProvider();
+     * const clean = await stub.moderate({ input: 'hello' });
+     * // clean.flagged === false
+     *
+     * const flagged = await stub.moderate({ input: 'bad content [stub:flagged]' });
+     * // flagged.flagged === true, flagged.categories === { test: true }
+     * ```
      */
-    moderate(_input: ModerateRequest): Promise<ModerateResponse> {
+    moderate(input: ModerateRequest): Promise<ModerateResponse> {
+        if (input.input.includes('[stub:flagged]')) {
+            return Promise.resolve({
+                flagged: true,
+                categories: { test: true }
+            });
+        }
         return Promise.resolve({
             flagged: false,
             categories: {}
