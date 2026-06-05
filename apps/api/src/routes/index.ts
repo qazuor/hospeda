@@ -98,6 +98,7 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { viewsRoutes } from './views';
 import {
     brevoWebhookRoutes,
     createMercadoPagoWebhookRoutes,
@@ -217,6 +218,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
+
+        // Cross-entity view tracking capture (SPEC-159 T-008)
+        // Fire-and-forget; always 202. No auth required.
+        app.route('/api/v1/public', viewsRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
