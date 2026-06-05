@@ -6,7 +6,7 @@ import type {
     AccommodationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
 import type { ServiceConfig } from '../../../src/types';
@@ -66,6 +66,7 @@ describe('create', () => {
             rating: reviewInput.rating,
             averageRating: 0,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
+            moderationState: ModerationStatusEnum.APPROVED,
             createdAt: now,
             updatedAt: now,
             deletedAt: undefined,

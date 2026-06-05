@@ -750,7 +750,8 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
                 communication: 5,
                 location: 5
             },
-            averageRating: 5
+            averageRating: 5,
+            moderationState: 'APPROVED'
         },
         sensitiveFields: STANDARD_SENSITIVE_FIELDS
     },
@@ -903,7 +904,8 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             helpfulVotes: 0,
             totalVotes: 0,
             hasOwnerResponse: false,
-            isBusinessTravel: false
+            isBusinessTravel: false,
+            moderationState: 'APPROVED'
         },
         sensitiveFields: [
             ...STANDARD_SENSITIVE_FIELDS,
