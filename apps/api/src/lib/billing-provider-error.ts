@@ -165,7 +165,7 @@ function extractProviderStatus(err: QZPayProviderSyncError): number | undefined 
 
         // Shape 3: real QZPayMercadoPagoError shape — status nested inside originalError
         // (the raw MP SDK axios/fetch response object carries the HTTP status there)
-        const originalError = (cause as Record<string, unknown>).originalError;
+        const originalError = (cause as unknown as Record<string, unknown>).originalError;
         if (
             originalError !== undefined &&
             originalError !== null &&
