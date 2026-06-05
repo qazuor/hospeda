@@ -766,7 +766,7 @@
             "id": "T-027",
             "title": "Post-change mock sweep + per-package typecheck",
             "description": "Mandatory sweep (SPEC-192/127 precedent): grep ALL test files mocking the touched modules (trial.service, qzpay-admin-hooks, payment-logic, dunning/addon-expiry/apply-scheduled-plan-changes/trial-expiry/exchange-rate/abandoned-pending-subs/subscription-poll jobs, subscription-downgrade, addon-entitlement, subscription-pause, plan-change, the new state-machine module). Fix stale enumerated vi.mock factories. Targeted sequential runs only.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-003",
@@ -791,96 +791,96 @@
             "subtasks": [
                 {
                     "title": "Sweep + fixes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Targeted re-runs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "sweep"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": "2026-06-04T23:27:13Z",
-                "completed": null
+                "completed": "2026-06-05T00:21:38Z"
             }
         },
         {
             "id": "T-028",
             "title": "Quality gate: typecheck + lint + targeted suites + coverage",
             "description": "Per-package typecheck on touched packages, lint, targeted test files sequential (owner constraint: no full suite). 100% functional coverage on touched lifecycle services/crons (chunked per SPEC-143). Adversarial fresh-context review before PR (money-handling).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-027"],
             "blocks": ["T-029"],
             "subtasks": [
                 {
                     "title": "Gates green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Adversarial review + fixes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["quality-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-05T00:21:38Z"
             }
         },
         {
             "id": "T-029",
             "title": "Register deferred smoke sections + docs",
             "description": "Add SPEC-194's deferred staging-smoke sections (refund, dunning, trial, scheduled-change — billing CORE per spec §8) to the SPEC-193 pending-staging-smoke.md list, following the established entry format. Commit .qtm tracking separately.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-028"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "Smoke list entry",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "tracking"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T00:21:38Z",
+                "completed": "2026-06-05T02:46:05Z"
             }
         },
         {
             "id": "T-030",
             "title": "PR(s) to staging, CI green, merge",
             "description": "Orphan-commit guard before push; verify remote ref after push (rtk silent no-op gotcha). Given the spec size (~30 tasks), evaluate chained PRs (foundation+critical / high+medium / low) vs single PR with the owner BEFORE pushing. Merge only via gh pr merge --merge with CI Pass SUCCESS. After merge: index-sync closeout + engram.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-029"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "PR strategy decision with owner",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Push + PR + CI + merge",
@@ -900,16 +900,16 @@
             },
             "timestamps": {
                 "created": "2026-06-04T20:32:33Z",
-                "started": null,
+                "started": "2026-06-05T00:21:38Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 30,
-        "pending": 3,
+        "pending": 0,
         "inProgress": 1,
-        "completed": 26,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.2
     }
