@@ -4,16 +4,23 @@
  * `applyRefundLifecycle` applies the correct side effects when a payment is
  * refunded:
  *
- * - Full refund  → persist refunded_amount on billing_payments, transition
- *                  subscription to `cancelled`, insert audit event, clear cache.
- * - Partial refund → accumulate refunded_amount on billing_payments, insert
- *                    `payment.partial_refund` audit event; subscription unchanged,
- *                    no cache clear. When accumulated total reaches payment.amount,
- *                    the full cancel path is taken instead.
+ * - Full refund  → atomic triple-write in a single transaction: persist
+ *                  refunded_amount (= payment.amount) on billing_payments,
+ *                  transition subscription to `cancelled`, insert audit event.
+ *                  clearEntitlementCache runs OUTSIDE the transaction.
+ * - Partial refund → atomic SQL increment on billing_payments via RETURNING,
+ *                    insert `payment.partial_refund` audit event; subscription
+ *                    unchanged, no cache clear. When accumulated total >=
+ *                    payment.amount, the full cancel+revoke path is taken.
  * - No subscription linked → no-op (logs info, no DB writes).
  * - Invalid transition (e.g. sub already cancelled) → skip status write, still
  *   clear cache (idempotent).
  * - DB errors → logged; cache cleared defensively; function does not throw.
+ *
+ * Regression: items 1–3 (SPEC-194 adversarial review)
+ * - Item 1 (BLOCKER): accumulated-to-full now writes payment.amount, not partialAmount.
+ * - Item 2 (BLOCKER): full-refund triple-write is wrapped in withServiceTransaction.
+ * - Item 3 (MAJOR): partial accumulation uses atomic SQL increment (RETURNING).
  *
  * @module test/services/refund-lifecycle.service
  */
@@ -28,7 +35,15 @@ vi.mock('drizzle-orm', async (importOriginal) => {
     const actual = await importOriginal<typeof import('drizzle-orm')>();
     return {
         ...actual,
-        eq: vi.fn((col: unknown, val: unknown) => ({ _type: 'eq', col, val }))
+        eq: vi.fn((col: unknown, val: unknown) => ({ _type: 'eq', col, val })),
+        sql: Object.assign(
+            vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
+                _type: 'sql',
+                strings,
+                values
+            })),
+            { raw: vi.fn((s: string) => ({ _type: 'sql_raw', s })) }
+        )
     };
 });
 
@@ -75,9 +90,20 @@ vi.mock('@repo/schemas', async (importOriginal) => {
 
 // importOriginal spread preserves checkSubscriptionStatusTransition as a real
 // pure function so the state-machine logic is exercised in these tests.
+// withServiceTransaction is overridden to run the callback with the same db
+// mock's transaction method so assertions on tx writes still work.
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
-    return { ...actual };
+    const { getDb } = await import('@repo/db');
+    return {
+        ...actual,
+        withServiceTransaction: vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
+            const db = getDb() as {
+                transaction: (fn: (tx: unknown) => Promise<unknown>) => Promise<unknown>;
+            };
+            return db.transaction(async (tx: unknown) => cb({ tx, hookState: {} }));
+        })
+    };
 });
 
 vi.mock('../../src/middlewares/entitlement', () => ({
@@ -131,22 +157,27 @@ function buildPayment(overrides: Partial<Payment> = {}): Payment {
 }
 
 /**
- * Build a DB mock that handles the select-then-update(×2)-then-insert sequence
- * used by applyRefundLifecycle on the full-refund path.
+ * Build a DB mock for the full-refund path (items 1–2 fix).
  *
- * Full refund path:
- *   select[0] → subscription status
- *   update[0] → billingPayments.refundedAmount
- *   update[1] → billingSubscriptions.status
- *   insert[0] → billingSubscriptionEvents
+ * Full refund path (after fix):
+ *   select[0] → subscription status (pre-transaction check)
+ *   db.transaction(tx => ...)
+ *     tx.update[0] → billingPayments.refundedAmount (payment.amount)
+ *     tx.update[1] → billingSubscriptions.status → cancelled
+ *     tx.insert[0] → billingSubscriptionEvents
  *
- * @param subscriptionStatus - The status returned by the SELECT query.
+ * The transaction mock delegates to db.transaction() so the withServiceTransaction
+ * override (in the @repo/service-core mock above) can call it with the tx proxy.
+ *
+ * @param subscriptionStatus - The status returned by the initial SELECT query.
  */
 function buildDbMock(subscriptionStatus = 'active') {
     const selectWhere = vi.fn().mockResolvedValue([{ status: subscriptionStatus }]);
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
     const select = vi.fn().mockReturnValue({ from: selectFrom });
 
+    // updateWhere used by the tx-internal writes. Needs to support the
+    // full chain: update(...).set(...).where(...) — no .returning() on these.
     const updateWhere = vi.fn().mockResolvedValue(undefined);
     const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
     const update = vi.fn().mockReturnValue({ set: updateSet });
@@ -154,8 +185,17 @@ function buildDbMock(subscriptionStatus = 'active') {
     const insertValues = vi.fn().mockResolvedValue(undefined);
     const insert = vi.fn().mockReturnValue({ values: insertValues });
 
+    // transaction mock: delegates to the callback with `this` db as tx proxy
+    // (same shape so assertions on tx.update / tx.insert apply).
+    const txProxy = { update, insert, select };
+    const transaction = vi
+        .fn()
+        .mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(txProxy));
+
+    const db = { select, update, insert, transaction };
+
     return {
-        db: { select, update, insert },
+        db,
         spies: {
             select,
             selectFrom,
@@ -164,89 +204,128 @@ function buildDbMock(subscriptionStatus = 'active') {
             updateSet,
             updateWhere,
             insert,
-            insertValues
+            insertValues,
+            transaction
         }
     };
 }
 
 /**
- * Build a DB mock for the partial-refund path (T-019).
+ * Build a DB mock for the partial-refund path (item 3 fix — atomic increment).
  *
- * Partial refund path (pure partial, no accumulation to full):
- *   select[0] → billingPayments.refundedAmount (prior value)
- *   update[0] → billingPayments.refundedAmount (accumulated)
+ * Partial refund path (after fix):
+ *   update[0].set(...).where(...).returning(...) → [{ refundedAmount: priorAmount + partial }]
  *   insert[0] → billingSubscriptionEvents (partial_refund event)
  *
- * @param priorRefundedAmount - Current value of billing_payments.refunded_amount.
+ * Note: there is NO initial SELECT anymore — the atomic UPDATE RETURNING replaces it.
+ *
+ * @param returnedAccumulated - What the atomic increment RETURNS (post-update value).
+ *   This should be priorAmount + partialAmount, capped at payment.amount.
  */
-function buildPartialRefundDbMock(priorRefundedAmount = 0) {
-    const selectWhere = vi.fn().mockResolvedValue([{ refundedAmount: priorRefundedAmount }]);
-    const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
-    const select = vi.fn().mockReturnValue({ from: selectFrom });
-
-    const updateWhere = vi.fn().mockResolvedValue(undefined);
+function buildPartialRefundDbMock(returnedAccumulated: number) {
+    // Partial path: update().set().where().returning() → [{ refundedAmount: returnedAccumulated }]
+    const updateReturning = vi.fn().mockResolvedValue([{ refundedAmount: returnedAccumulated }]);
+    const updateWhere = vi.fn().mockReturnValue({ returning: updateReturning });
     const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
     const update = vi.fn().mockReturnValue({ set: updateSet });
 
     const insertValues = vi.fn().mockResolvedValue(undefined);
     const insert = vi.fn().mockReturnValue({ values: insertValues });
 
+    // select is NOT called on the pure-partial path after the fix
+    const select = vi.fn();
+
+    // transaction is NOT called on the pure-partial path
+    const transaction = vi.fn();
+
+    const db = { select, update, insert, transaction };
+
     return {
-        db: { select, update, insert },
+        db,
         spies: {
             select,
-            selectFrom,
-            selectWhere,
             update,
             updateSet,
             updateWhere,
+            updateReturning,
             insert,
-            insertValues
+            insertValues,
+            transaction
         }
     };
 }
 
 /**
- * Build a DB mock for accumulated-partials-reach-full (T-019).
+ * Build a DB mock for accumulated-partials-reach-full path (items 1+3 fix).
  *
- * This path:
- *   select[0] → billingPayments.refundedAmount (prior value)
- *   [detects accumulated >= payment.amount, falls through to full cancel path]
- *   select[1] → billingSubscriptions.status
- *   update[0] → billingPayments.refundedAmount (to payment.amount)
- *   update[1] → billingSubscriptions.status → cancelled
- *   insert[0] → billingSubscriptionEvents (full_refund event)
+ * After the fix:
+ *   update[0].set(...).where(...).returning(...) → [{ refundedAmount: payment.amount }]
+ *   (falls through to full-cancel path)
+ *   select[0] → billingSubscriptions.status
+ *   db.transaction(tx => ...)
+ *     tx.update[1] → billingPayments.refundedAmount (payment.amount — idempotent)
+ *     tx.update[2] → billingSubscriptions.status → cancelled
+ *     tx.insert[0] → billingSubscriptionEvents (full_refund event)
+ *
+ * Item 1 regression: effectiveRefundedAmount must be payment.amount (1000), NOT
+ * the raw partialAmount (e.g. 300 when prior=700).
  */
-function buildAccumulatedFullDbMock(priorRefundedAmount: number, subscriptionStatus = 'active') {
-    const rows = [[{ refundedAmount: priorRefundedAmount }], [{ status: subscriptionStatus }]];
-    let selectCount = 0;
+function buildAccumulatedFullDbMock(
+    accumulatedReturnedValue: number,
+    subscriptionStatus = 'active'
+) {
+    // Atomic increment returns accumulated = payment.amount (full reached).
+    const updateReturning = vi
+        .fn()
+        .mockResolvedValue([{ refundedAmount: accumulatedReturnedValue }]);
+    // tx-internal writes (inside transaction) have no .returning()
+    const txUpdateWhere = vi.fn().mockResolvedValue(undefined);
+    const txUpdateSet = vi.fn().mockReturnValue({ where: txUpdateWhere });
 
-    const selectWhere = vi.fn().mockImplementation(() => {
-        const i = selectCount;
-        selectCount += 1;
-        return Promise.resolve(rows[i] ?? []);
+    // The update spy needs to differentiate: the first call (partial atomic increment)
+    // returns the chain with .returning(); subsequent calls (inside tx) return the
+    // chain without .returning().
+    let updateCallCount = 0;
+    const update = vi.fn().mockImplementation(() => {
+        updateCallCount++;
+        if (updateCallCount === 1) {
+            // First call: atomic increment on billingPayments — needs .returning()
+            return {
+                set: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({ returning: updateReturning })
+                })
+            };
+        }
+        // Subsequent calls: inside tx — no .returning()
+        return { set: txUpdateSet };
     });
+
+    const selectWhere = vi.fn().mockResolvedValue([{ status: subscriptionStatus }]);
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
     const select = vi.fn().mockReturnValue({ from: selectFrom });
-
-    const updateWhere = vi.fn().mockResolvedValue(undefined);
-    const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
-    const update = vi.fn().mockReturnValue({ set: updateSet });
 
     const insertValues = vi.fn().mockResolvedValue(undefined);
     const insert = vi.fn().mockReturnValue({ values: insertValues });
 
+    const txProxy = { update, insert, select };
+    const transaction = vi
+        .fn()
+        .mockImplementation((fn: (tx: unknown) => Promise<unknown>) => fn(txProxy));
+
+    const db = { select, update, insert, transaction };
+
     return {
-        db: { select, update, insert },
+        db,
         spies: {
             select,
-            selectFrom,
             selectWhere,
             update,
-            updateSet,
-            updateWhere,
+            updateReturning,
+            txUpdateSet,
+            txUpdateWhere,
             insert,
-            insertValues
+            insertValues,
+            transaction
         }
     };
 }
@@ -294,11 +373,12 @@ describe('applyRefundLifecycle', () => {
         });
     });
 
-    // ── Partial refund (T-019) ──────────────────────────────────────────────
+    // ── Partial refund (T-019 + item 3: atomic increment) ──────────────────
 
-    describe('partial refund (refundAmount < payment.amount) — T-019', () => {
-        it('reads prior refunded_amount from billing_payments', async () => {
-            const { db, spies } = buildPartialRefundDbMock(0);
+    describe('partial refund (refundAmount < payment.amount) — T-019 / item-3 atomic increment', () => {
+        it('calls atomic UPDATE RETURNING instead of SELECT-then-UPDATE', async () => {
+            // returnedAccumulated = 400 (prior=0 + partial=400, below payment.amount=1000)
+            const { db, spies } = buildPartialRefundDbMock(400);
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -307,63 +387,22 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            expect(spies.select).toHaveBeenCalledTimes(1);
-        });
-
-        it('writes accumulated refunded_amount to billing_payments', async () => {
-            const { db, spies } = buildPartialRefundDbMock(0);
-            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
-
-            await applyRefundLifecycle({
-                payment: buildPayment({ amount: 1000 }),
-                refundAmount: 400,
-                adminUserId: ADMIN_USER_ID
-            });
-
+            // No SELECT on the partial path — atomic update replaces it.
+            expect(spies.select).not.toHaveBeenCalled();
+            // The update must have been called (for the atomic increment).
             expect(spies.update).toHaveBeenCalledTimes(1);
-            const setArg = vi.mocked(spies.updateSet).mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(setArg.refundedAmount).toBe(400);
-            expect(setArg.updatedAt).toBeInstanceOf(Date);
+            // .returning() must have been invoked on the update chain.
+            expect(spies.updateReturning).toHaveBeenCalledTimes(1);
         });
 
-        it('accumulates partial amounts across multiple partial refunds', async () => {
-            const { db, spies } = buildPartialRefundDbMock(200); // prior = 200
-            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
-
-            await applyRefundLifecycle({
-                payment: buildPayment({ amount: 1000 }),
-                refundAmount: 300, // new partial = 300 → total 500
-                adminUserId: ADMIN_USER_ID
-            });
-
-            const setArg = vi.mocked(spies.updateSet).mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(setArg.refundedAmount).toBe(500); // 200 + 300
-        });
-
-        it('caps accumulated at payment.amount (pure partial capped below full)', async () => {
-            // prior=600, partial=300 → 900 (still < 1000 → pure partial path).
-            // The written refundedAmount must be 900, NOT 901 or more.
-            const { db, spies } = buildPartialRefundDbMock(600);
+        it('inserts a payment.partial_refund audit event with correct accumulated value', async () => {
+            // returnedAccumulated = 500 (e.g. prior=200 + partial=300)
+            const { db, spies } = buildPartialRefundDbMock(500);
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
                 payment: buildPayment({ amount: 1000 }),
                 refundAmount: 300,
-                adminUserId: ADMIN_USER_ID
-            });
-
-            const setArg = vi.mocked(spies.updateSet).mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(setArg).toBeDefined();
-            expect(setArg.refundedAmount).toBe(900); // 600 + 300, below 1000
-        });
-
-        it('inserts a payment.partial_refund audit event in billing_subscription_events', async () => {
-            const { db, spies } = buildPartialRefundDbMock(0);
-            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
-
-            await applyRefundLifecycle({
-                payment: buildPayment({ amount: 1000 }),
-                refundAmount: 400,
                 adminUserId: ADMIN_USER_ID,
                 source: 'admin'
             });
@@ -379,9 +418,8 @@ describe('applyRefundLifecycle', () => {
                 metadata: expect.objectContaining({
                     action: 'payment.partial_refund',
                     paymentId: PAYMENT_ID,
-                    partialRefundAmount: 400,
-                    priorRefundedAmount: 0,
-                    newAccumulatedRefundedAmount: 400,
+                    partialRefundAmount: 300,
+                    newAccumulatedRefundedAmount: 500,
                     paymentAmount: 1000,
                     adminUserId: ADMIN_USER_ID,
                     source: 'admin'
@@ -389,8 +427,8 @@ describe('applyRefundLifecycle', () => {
             });
         });
 
-        it('does NOT update the subscription status for a pure partial refund', async () => {
-            const { db, spies } = buildPartialRefundDbMock(0);
+        it('does NOT update subscription status for a pure partial refund', async () => {
+            const { db, spies } = buildPartialRefundDbMock(400);
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -399,17 +437,14 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Only the billingPayments update should fire — NOT a billingSubscriptions update.
-            // (Both would use the same `update` spy, but status = 'cancelled' must NOT appear.)
-            const setArgs = vi
-                .mocked(spies.updateSet)
-                .mock.calls.map((call) => call[0] as Record<string, unknown>);
-            const hasStatusUpdate = setArgs.some((a) => a.status === 'cancelled');
-            expect(hasStatusUpdate).toBe(false);
+            // No transaction should be opened; only one update (atomic increment).
+            expect(spies.transaction).not.toHaveBeenCalled();
+            // The single update call is the atomic increment, not a status update.
+            expect(spies.update).toHaveBeenCalledTimes(1);
         });
 
         it('does NOT clear the entitlement cache', async () => {
-            const { db } = buildPartialRefundDbMock(0);
+            const { db } = buildPartialRefundDbMock(400);
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -421,8 +456,8 @@ describe('applyRefundLifecycle', () => {
             expect(clearEntitlementCache).not.toHaveBeenCalled();
         });
 
-        it('logs info (not warn) after a successful partial refund', async () => {
-            const { db } = buildPartialRefundDbMock(0);
+        it('logs info after a successful partial refund', async () => {
+            const { db } = buildPartialRefundDbMock(600);
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -442,50 +477,39 @@ describe('applyRefundLifecycle', () => {
         });
     });
 
-    // ── Accumulated partials reach full (T-019) ────────────────────────────
+    // ── Accumulated partials reach full (items 1+3 fix) ───────────────────
 
-    describe('partial refund that accumulates to full amount — T-019', () => {
-        it('flips to full cancel path when accumulated total equals payment.amount', async () => {
-            // prior=700, new partial=300 → 1000 = payment.amount → full cancel
-            const { db, spies } = buildAccumulatedFullDbMock(700, 'active');
+    describe('partial refund that accumulates to full amount — T-019 / items 1+3', () => {
+        it('REGRESSION item-1: writes payment.amount (not partialAmount) when accumulated reaches full', async () => {
+            // Fixture: prior=7000, partial=3000 → returned=10000 (=payment.amount).
+            // The BUG was that effectiveRefundedAmount was set to refundAmount (3000)
+            // instead of payment.amount (10000). After the fix, the tx must write 10000.
+            const { db, spies } = buildAccumulatedFullDbMock(10000, 'active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
-                payment: buildPayment({ amount: 1000 }),
-                refundAmount: 300,
+                payment: buildPayment({ amount: 10000 }),
+                refundAmount: 3000,
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Subscription update (to cancelled) + billingPayments update both happen.
-            expect(spies.update).toHaveBeenCalledTimes(2);
-            const setArgs = vi
-                .mocked(spies.updateSet)
-                .mock.calls.map((call) => call[0] as Record<string, unknown>);
-            expect(setArgs.some((a) => a.status === 'cancelled')).toBe(true);
+            // Transaction must have been opened (full cancel path).
+            expect(spies.transaction).toHaveBeenCalledTimes(1);
+            // The insert (audit event) must have been called once.
             expect(spies.insert).toHaveBeenCalledTimes(1);
-            expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
-        });
-
-        it('flips to full cancel path when accumulated total exceeds payment.amount', async () => {
-            // prior=800, new partial=400 → 1200 capped to 1000 → >= payment.amount → full
-            const { db, spies } = buildAccumulatedFullDbMock(800, 'active');
-            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
-
-            await applyRefundLifecycle({
-                payment: buildPayment({ amount: 1000 }),
-                refundAmount: 400,
-                adminUserId: ADMIN_USER_ID
-            });
-
-            const setArgs = vi
-                .mocked(spies.updateSet)
-                .mock.calls.map((call) => call[0] as Record<string, unknown>);
-            expect(setArgs.some((a) => a.status === 'cancelled')).toBe(true);
+            const eventArg = vi.mocked(spies.insertValues).mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            // Audit metadata must record payment.amount (10000), not partialAmount (3000).
+            expect((eventArg.metadata as Record<string, unknown>).refundAmount).toBe(10000);
+            // Cache must be cleared.
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
         });
 
         it('writes full_refund audit event (not partial_refund) when accumulated reaches full', async () => {
-            const { db, spies } = buildAccumulatedFullDbMock(700, 'active');
+            // prior=700, partial=300 → accumulated=1000 = payment.amount
+            const { db, spies } = buildAccumulatedFullDbMock(1000, 'active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -507,12 +531,25 @@ describe('applyRefundLifecycle', () => {
                 })
             });
         });
+
+        it('clears entitlement cache when accumulated partials reach full', async () => {
+            const { db } = buildAccumulatedFullDbMock(1000, 'active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 300,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+        });
     });
 
-    // ── Full refund — happy path ────────────────────────────────────────────
+    // ── Full refund — happy path (item 2: atomic triple-write in tx) ────────
 
     describe('full refund — explicit amount equal to payment.amount', () => {
-        it('updates both billing_payments.refunded_amount and subscription status', async () => {
+        it('REGRESSION item-2: wraps billingPayments + subscription + audit in a single transaction', async () => {
             const { db, spies } = buildDbMock('active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -522,21 +559,15 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Both update calls fire: billingPayments + billingSubscriptions.
+            // withServiceTransaction (mocked to db.transaction) must be called once.
+            expect(spies.transaction).toHaveBeenCalledTimes(1);
+            // Two updates inside the transaction.
             expect(spies.update).toHaveBeenCalledTimes(2);
-            const setArgs = vi
-                .mocked(spies.updateSet)
-                .mock.calls.map((call) => call[0] as Record<string, unknown>);
-            // Payment refunded_amount update.
-            expect(setArgs.some((a) => typeof a.refundedAmount === 'number')).toBe(true);
-            // Subscription status update.
-            const statusUpdate = setArgs.find((a) => a.status === 'cancelled');
-            expect(statusUpdate).toBeDefined();
-            expect(statusUpdate?.canceledAt).toBeInstanceOf(Date);
-            expect(statusUpdate?.updatedAt).toBeInstanceOf(Date);
+            // One insert inside the transaction.
+            expect(spies.insert).toHaveBeenCalledTimes(1);
         });
 
-        it('persists refundedAmount equal to the passed refundAmount', async () => {
+        it('persists refundedAmount equal to payment.amount inside the transaction', async () => {
             const { db, spies } = buildDbMock('active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -551,6 +582,25 @@ describe('applyRefundLifecycle', () => {
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);
             const paymentUpdate = setArgs.find((a) => typeof a.refundedAmount === 'number');
             expect(paymentUpdate?.refundedAmount).toBe(1000);
+        });
+
+        it('updates subscription status to cancelled inside the transaction', async () => {
+            const { db, spies } = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 1000,
+                adminUserId: ADMIN_USER_ID
+            });
+
+            const setArgs = vi
+                .mocked(spies.updateSet)
+                .mock.calls.map((call) => call[0] as Record<string, unknown>);
+            const statusUpdate = setArgs.find((a) => a.status === 'cancelled');
+            expect(statusUpdate).toBeDefined();
+            expect(statusUpdate?.canceledAt).toBeInstanceOf(Date);
+            expect(statusUpdate?.updatedAt).toBeInstanceOf(Date);
         });
 
         it('inserts an audit event with the correct triggerSource, action, and metadata', async () => {
@@ -584,7 +634,7 @@ describe('applyRefundLifecycle', () => {
             });
         });
 
-        it('clears the entitlement cache for the customer', async () => {
+        it('clears the entitlement cache OUTSIDE the transaction', async () => {
             const { db } = buildDbMock('active');
             vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
 
@@ -612,6 +662,7 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
+            expect(spies.transaction).toHaveBeenCalledTimes(1);
             expect(spies.update).toHaveBeenCalledTimes(2);
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
         });
@@ -629,7 +680,6 @@ describe('applyRefundLifecycle', () => {
             const eventArg = vi.mocked(spies.insertValues).mock.calls[0]?.[0] as {
                 metadata: { refundAmount: number };
             };
-            // Falls back to payment.amount when refundAmount is undefined
             expect(eventArg.metadata.refundAmount).toBe(2000);
         });
 
@@ -664,7 +714,8 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Transition is invalid → subscription update NOT called; insert NOT called.
+            // No transaction on invalid transition.
+            expect(spies.transaction).not.toHaveBeenCalled();
             const setArgs = vi
                 .mocked(spies.updateSet)
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);
@@ -682,7 +733,6 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Idempotent: cache clear is always safe — clears stale entry if present.
             expect(clearEntitlementCache).toHaveBeenCalledTimes(1);
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
         });
@@ -717,10 +767,12 @@ describe('applyRefundLifecycle', () => {
             const select = vi.fn().mockReturnValue({ from: selectFrom });
             const update = vi.fn();
             const insert = vi.fn();
+            const transaction = vi.fn();
             vi.mocked(getDb).mockReturnValue({
                 select,
                 update,
-                insert
+                insert,
+                transaction
             } as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -731,25 +783,27 @@ describe('applyRefundLifecycle', () => {
 
             expect(update).not.toHaveBeenCalled();
             expect(insert).not.toHaveBeenCalled();
+            expect(transaction).not.toHaveBeenCalled();
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
         });
     });
 
-    // ── Full refund — DB error on write ────────────────────────────────────
+    // ── Full refund — DB transaction failure ──────────────────────────────
 
-    describe('full refund when DB write fails', () => {
-        it('clears the cache even if the update throws', async () => {
+    describe('full refund when transaction fails', () => {
+        it('clears the cache even if the transaction throws', async () => {
             const selectWhere = vi.fn().mockResolvedValue([{ status: 'active' }]);
             const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
             const select = vi.fn().mockReturnValue({ from: selectFrom });
-            const updateWhere = vi.fn().mockRejectedValue(new Error('DB unavailable'));
-            const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
-            const update = vi.fn().mockReturnValue({ set: updateSet });
+            // transaction throws to simulate mid-write failure
+            const transaction = vi.fn().mockRejectedValue(new Error('DB unavailable'));
+            const update = vi.fn();
             const insert = vi.fn();
             vi.mocked(getDb).mockReturnValue({
                 select,
                 update,
-                insert
+                insert,
+                transaction
             } as unknown as ReturnType<typeof getDb>);
 
             await applyRefundLifecycle({
@@ -758,7 +812,7 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
-            // Fail-open: cache is cleared despite DB write failure.
+            // Fail-open: cache is cleared despite transaction failure.
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
         });
 
@@ -769,7 +823,8 @@ describe('applyRefundLifecycle', () => {
             vi.mocked(getDb).mockReturnValue({
                 select,
                 update: vi.fn(),
-                insert: vi.fn()
+                insert: vi.fn(),
+                transaction: vi.fn()
             } as unknown as ReturnType<typeof getDb>);
 
             await expect(
@@ -795,6 +850,7 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
+            expect(spies.transaction).toHaveBeenCalledTimes(1);
             const setArgs = vi
                 .mocked(spies.updateSet)
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);
@@ -814,6 +870,7 @@ describe('applyRefundLifecycle', () => {
                 adminUserId: ADMIN_USER_ID
             });
 
+            expect(spies.transaction).toHaveBeenCalledTimes(1);
             const setArgs = vi
                 .mocked(spies.updateSet)
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);
@@ -834,6 +891,7 @@ describe('applyRefundLifecycle', () => {
             });
 
             // expired → cancelled is NOT a valid transition
+            expect(spies.transaction).not.toHaveBeenCalled();
             const setArgs = vi
                 .mocked(spies.updateSet)
                 .mock.calls.map((call) => call[0] as Record<string, unknown>);

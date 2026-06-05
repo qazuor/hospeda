@@ -38,8 +38,8 @@
 import type { QZPayPayment } from '@qazuor/qzpay-core';
 import { billingPayments, billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition } from '@repo/service-core';
-import { eq } from 'drizzle-orm';
+import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
+import { eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 
@@ -139,10 +139,18 @@ export async function applyRefundLifecycle({
     const db = getDb();
 
     // ── Partial refund path ────────────────────────────────────────────────────
-    // Read, accumulate, persist refunded_amount; insert partial_refund audit
-    // event. When accumulated total reaches payment.amount, fall through to the
-    // full-refund cancel path. Entitlement cache is NOT cleared for partial
-    // refunds — they do not change subscription status or entitlements.
+    // Atomic SQL increment: UPDATE billing_payments SET refunded_amount =
+    // LEAST(COALESCE(refunded_amount,0) + ${partial}, ${payment.amount})
+    // WHERE id = ... RETURNING refunded_amount
+    //
+    // This eliminates the SELECT-then-UPDATE read-modify-write race that allowed
+    // concurrent partial refunds to lose each other's amounts (item 3 fix). The
+    // RETURNING value is the post-increment accumulated total; branching on it
+    // also fixes the fall-through bug (item 1) where the full path used the raw
+    // partialAmount instead of the capped accumulated total.
+    //
+    // Entitlement cache is NOT cleared for partial refunds — they do not change
+    // subscription status or entitlements.
 
     const isPartial = !isFullRefund(payment, refundAmount);
 
@@ -152,27 +160,31 @@ export async function applyRefundLifecycle({
         // and < payment.amount.
         const partialAmount = refundAmount as number;
 
-        // Read current accumulated refundedAmount to compute the new total.
-        let priorRefundedAmount = 0;
+        // Atomic increment: avoids SELECT-then-UPDATE race for concurrent partials.
+        // LEAST caps at payment.amount so accumulated never exceeds the original.
+        let newAccumulated: number;
         try {
             const rows = await db
-                .select({ refundedAmount: billingPayments.refundedAmount })
-                .from(billingPayments)
-                .where(eq(billingPayments.id, paymentId));
-            priorRefundedAmount = rows[0]?.refundedAmount ?? 0;
+                .update(billingPayments)
+                .set({
+                    refundedAmount: sql<number>`LEAST(COALESCE(${billingPayments.refundedAmount}, 0) + ${partialAmount}, ${payment.amount})`,
+                    updatedAt: new Date()
+                })
+                .where(eq(billingPayments.id, paymentId))
+                .returning({ refundedAmount: billingPayments.refundedAmount });
+            newAccumulated = rows[0]?.refundedAmount ?? partialAmount;
         } catch (err) {
             apiLogger.error(
                 { paymentId, customerId, subscriptionId, err, adminUserId, source },
-                'Refund lifecycle: DB error reading current refunded_amount — using 0 as baseline'
+                'Refund lifecycle: DB error on atomic partial-refund increment — subscription state unchanged'
             );
+            return;
         }
 
-        const newAccumulated = priorRefundedAmount + partialAmount;
-        // Cap accumulation at the original payment amount.
-        const cappedAccumulated = Math.min(newAccumulated, payment.amount);
-
-        // Check if this partial brings us to a full refund.
-        const accumulatedIsFullRefund = cappedAccumulated >= payment.amount;
+        // priorRefundedAmount is derivable for audit purposes only.
+        const priorRefundedAmount = newAccumulated - partialAmount;
+        // Check if this partial brings us to a full refund (based on returned value).
+        const accumulatedIsFullRefund = newAccumulated >= payment.amount;
 
         if (accumulatedIsFullRefund) {
             apiLogger.info(
@@ -182,23 +194,22 @@ export async function applyRefundLifecycle({
                     subscriptionId,
                     partialAmount,
                     priorRefundedAmount,
-                    cappedAccumulated,
+                    newAccumulated,
                     paymentAmount: payment.amount,
                     adminUserId,
                     source
                 },
                 'Refund lifecycle: accumulated partials reach full refund — taking full cancel path'
             );
-            // Fall through to full-refund logic below (update refundedAmount
-            // there as well so the column reflects the full amount).
+            // Fall through to full-refund logic below. The billing_payments row is
+            // already updated with the capped accumulated value (payment.amount). The
+            // full-refund path will update subscription status + insert audit event.
+            // We pass `payment.amount` as effectiveRefundedAmount explicitly so the
+            // audit event is correct regardless of the raw partialAmount.
         } else {
-            // Pure partial: write refunded_amount and insert audit event only.
+            // Pure partial path: billing_payments already updated atomically above.
+            // Only need to insert the audit event.
             try {
-                await db
-                    .update(billingPayments)
-                    .set({ refundedAmount: cappedAccumulated, updatedAt: new Date() })
-                    .where(eq(billingPayments.id, paymentId));
-
                 await db.insert(billingSubscriptionEvents).values({
                     subscriptionId,
                     triggerSource: 'partial-refund',
@@ -207,7 +218,7 @@ export async function applyRefundLifecycle({
                         paymentId,
                         partialRefundAmount: partialAmount,
                         priorRefundedAmount,
-                        newAccumulatedRefundedAmount: cappedAccumulated,
+                        newAccumulatedRefundedAmount: newAccumulated,
                         paymentAmount: payment.amount,
                         adminUserId,
                         source
@@ -216,7 +227,7 @@ export async function applyRefundLifecycle({
             } catch (err) {
                 apiLogger.error(
                     { paymentId, customerId, subscriptionId, err, adminUserId, source },
-                    'Refund lifecycle: DB error persisting partial refund — subscription state unchanged'
+                    'Refund lifecycle: DB error inserting partial-refund audit event'
                 );
             }
 
@@ -227,7 +238,7 @@ export async function applyRefundLifecycle({
                     subscriptionId,
                     partialRefundAmount: partialAmount,
                     priorRefundedAmount,
-                    newAccumulatedRefundedAmount: cappedAccumulated,
+                    newAccumulatedRefundedAmount: newAccumulated,
                     paymentAmount: payment.amount,
                     adminUserId,
                     source
@@ -239,12 +250,17 @@ export async function applyRefundLifecycle({
     }
 
     // ── Full refund: transition subscription to cancelled ─────────────────────
+    // This path is reached either from a direct full refund (isPartial=false)
+    // or from the accumulated-partials-reach-full fall-through above.
+    // In the fall-through case billing_payments.refunded_amount is already written
+    // (by the atomic increment). For a direct full refund it has not been written
+    // yet and will be written inside the transaction below.
     apiLogger.info(
         { paymentId, customerId, subscriptionId, refundAmount, adminUserId, source },
         'Refund lifecycle: full refund — transitioning subscription to cancelled'
     );
 
-    // Look up the current subscription status before writing.
+    // Look up the current subscription status before the transaction.
     let currentStatus: string | undefined;
     try {
         const rows = await db
@@ -297,50 +313,60 @@ export async function applyRefundLifecycle({
         return;
     }
 
-    // The effective refunded amount to persist: full payment.amount for a full
-    // refund (including accumulated-partials-reaching-full), or the explicit
-    // refundAmount if provided.
-    const effectiveRefundedAmount = refundAmount !== undefined ? refundAmount : payment.amount;
+    // The effective refunded amount for the full-refund path is always
+    // payment.amount — this is correct for:
+    // (a) direct full refund (refundAmount undefined or >= payment.amount), and
+    // (b) accumulated partials reaching full (fall-through from above where
+    //     billing_payments is already updated; writing payment.amount again is
+    //     idempotent since that is what the atomic increment set it to).
+    const effectiveRefundedAmount = payment.amount;
 
-    // Write: persist refunded_amount, update subscription status, insert audit event.
+    // Atomic triple-write: persist refunded_amount, update subscription status,
+    // and insert audit event in a single transaction (item 2 fix).
+    // clearEntitlementCache runs OUTSIDE the transaction — it is not rollback-able.
     try {
-        await db
-            .update(billingPayments)
-            .set({ refundedAmount: effectiveRefundedAmount, updatedAt: new Date() })
-            .where(eq(billingPayments.id, paymentId));
+        await withServiceTransaction(async (ctx) => {
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            const tx = ctx.tx!;
 
-        await db
-            .update(billingSubscriptions)
-            .set({
-                status: SubscriptionStatusEnum.CANCELLED,
-                canceledAt: new Date(),
-                updatedAt: new Date()
-            })
-            .where(eq(billingSubscriptions.id, subscriptionId));
+            await tx
+                .update(billingPayments)
+                .set({ refundedAmount: effectiveRefundedAmount, updatedAt: new Date() })
+                .where(eq(billingPayments.id, paymentId));
 
-        await db.insert(billingSubscriptionEvents).values({
-            subscriptionId,
-            previousStatus: currentStatus,
-            newStatus: SubscriptionStatusEnum.CANCELLED,
-            triggerSource: 'admin-refund',
-            metadata: {
-                action: 'payment.full_refund',
-                paymentId,
-                refundAmount: effectiveRefundedAmount,
-                adminUserId,
-                source
-            }
+            await tx
+                .update(billingSubscriptions)
+                .set({
+                    status: SubscriptionStatusEnum.CANCELLED,
+                    canceledAt: new Date(),
+                    updatedAt: new Date()
+                })
+                .where(eq(billingSubscriptions.id, subscriptionId));
+
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId,
+                previousStatus: currentStatus,
+                newStatus: SubscriptionStatusEnum.CANCELLED,
+                triggerSource: 'admin-refund',
+                metadata: {
+                    action: 'payment.full_refund',
+                    paymentId,
+                    refundAmount: effectiveRefundedAmount,
+                    adminUserId,
+                    source
+                }
+            });
         });
     } catch (err) {
         apiLogger.error(
             { subscriptionId, paymentId, customerId, err, adminUserId, source },
-            'Refund lifecycle: DB error during status write — clearing cache despite write failure'
+            'Refund lifecycle: DB error during transactional status write — clearing cache despite write failure'
         );
     }
 
     // Always clear cache, even if the DB write failed (fail-open: better to
     // re-load entitlements from QZPay than to leave a stale cancelled-plan user
-    // with active entitlements).
+    // with active entitlements). Intentionally outside the transaction.
     clearEntitlementCache(customerId);
 
     apiLogger.info(
