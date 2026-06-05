@@ -310,27 +310,27 @@
             "id": "T-011",
             "title": "No-server-retry pinning + Retry-After e2e",
             "description": "Spec Part D (descoped): pinning test that a transient provider error (429/timeout) results in exactly ONE adapter call (no hidden retry) + the 503 carries Retry-After. Document the no-retry decision + in-flight-cache gap in the helper JSDoc and docs/billing (future-spec note).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Pinning test + docs note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "docs"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T23:55:00Z",
+                "completed": "2026-06-06T00:00:00Z"
             }
         },
         {
