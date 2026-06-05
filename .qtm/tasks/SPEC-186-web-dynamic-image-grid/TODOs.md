@@ -1,6 +1,6 @@
 # SPEC-186: Web Dynamic Image Grid
 
-## Progress: 6/18 tasks (33%)
+## Progress: 8/18 tasks (44%)
 
 **Average Complexity:** 2.2/10
 **Critical Path:** T-001 → T-002 → T-003 → T-008 → T-009 → T-012 → T-013 → T-017 → T-018 (9 steps)
@@ -25,7 +25,7 @@
 - [x] **T-004** (complexity: 1) - Remove outer gallery pre-slice in alojamientos/[slug].astro
   - Realign D-1: pass FULL gallery to the island (was capped at featured+3)
   - Blocked by: T-002 | Blocks: T-017
-- [ ] **T-006** (complexity: 3) - Count-aware CoverPlusGridVariant
+- [x] **T-006** (complexity: 3) - Count-aware CoverPlusGridVariant
   - Replace slice(0,6) + fixed 3-col track, reuse T-003 cell classes
   - Blocked by: T-003 | Blocks: T-007
 - [ ] **T-008** (complexity: 2) - Fixed aspect-ratio + object-fit on every gallery cell
@@ -46,7 +46,7 @@
 
 ### Testing Phase
 
-- [ ] **T-005** (complexity: 3) - Vitest coverage for detail variant count logic + overlay
+- [x] **T-005** (complexity: 3) - Vitest coverage for detail variant count logic + overlay
   - Blocked by: T-003 | Blocks: T-017
 - [ ] **T-007** (complexity: 2) - Vitest coverage for cover-plus-grid variant
   - Blocked by: T-006 | Blocks: T-017

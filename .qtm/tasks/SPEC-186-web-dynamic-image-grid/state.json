@@ -123,7 +123,7 @@
             "id": "T-005",
             "title": "Vitest coverage for detail variant count logic + overlay",
             "description": "New test file for ImageGallery detail variant (testing-library): assert rendered cell count at 1/2/3/4/5+ images; overlay present with correct '+N' label ONLY at 5+; overlay keyboard activation (Enter/Space) opens lightbox at the right index; no overlay at <=4; alt text preserved per cell.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-017"],
@@ -131,21 +131,21 @@
             "tags": ["web", "testing", "gallery"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:40:00.000Z",
+                "completed": "2026-06-05T08:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Count-aware CoverPlusGridVariant",
             "description": "In ImageGallery.client.tsx CoverPlusGridVariant (~line 277): replace rest.slice(0,6) + fixed .inlineGrid repeat(3,1fr) (~module.css line 161) with count-aware column tracks per spec §5, reusing T-003 cell classes; '+N más' overlay at cap, same behavior as detail variant.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-007"],
@@ -153,14 +153,14 @@
             "tags": ["web", "react", "gallery"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-05T06:18:57.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:40:00.000Z",
+                "completed": "2026-06-05T08:00:00.000Z"
             }
         },
         {
@@ -439,9 +439,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 12,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.2
     }
