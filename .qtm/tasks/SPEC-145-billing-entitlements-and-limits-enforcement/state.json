@@ -291,31 +291,31 @@
             "id": "T-010",
             "title": "Staff bypass JSDoc + e2e (INV-6)",
             "description": "Spec T-145-07 + T-145-16. JSDoc the bypass on each gateXxx and requireEntitlement; e2e: staff actor passes a gate a tourist-free actor fails (use the seeded dev users / createMockAdminActor patterns; real route through full middleware stack).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "JSDoc on gates",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Staff-vs-tourist e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "staff-bypass", "inv-6"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:56:49Z",
+                "completed": "2026-06-05T07:21:19Z"
             }
         },
         {
@@ -353,289 +353,289 @@
             "id": "T-012",
             "title": "E2e block tests: 403 ENTITLEMENT_REQUIRED per wired gate",
             "description": "Spec T-145-08. One block test per wired gate (publish, edit, promotions, reviews, advanced/basic stats, photos): user whose plan lacks the entitlement → 403 with code ENTITLEMENT_REQUIRED, correct body shape (post T-002 contract), NO DB mutation. SPEC-143 patterns: billing-factories, withRollback, real production routes through full middleware stack.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Block test per gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "No-mutation assertions",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "block"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T06:17:12Z",
-                "completed": null
+                "completed": "2026-06-05T06:39:55Z"
             }
         },
         {
             "id": "T-013",
             "title": "E2e allow tests: 2xx + side effect under granting plan",
             "description": "Spec T-145-09. Same routes as T-012 under a plan that grants the entitlement → 2xx and the side effect lands in DB. Pair each with its block test (same file).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Allow test per gate",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "allow"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
                 "started": "2026-06-05T06:17:12Z",
-                "completed": null
+                "completed": "2026-06-05T06:39:55Z"
             }
         },
         {
             "id": "T-014",
             "title": "E2e limit tests: N+1 hits LIMIT_REACHED over real routes",
             "description": "Spec T-145-10. N+1 attempts where the (N+1)th hits MAX_* → 403 LIMIT_REACHED with currentCount/maxAllowed/remaining details (post T-002 contract). Cover: accommodations, promotions, favorites, photos.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Accommodations + promotions N+1",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Favorites + photos N+1",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "limits"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:39:55Z",
+                "completed": "2026-06-05T06:56:49Z"
             }
         },
         {
             "id": "T-015",
             "title": "E2e plan-change elevation/restriction",
             "description": "Spec T-145-11. Post-upgrade: previously-blocked route → 2xx immediately (no TTL wait — cache cleared by lifecycle). Post-downgrade (scheduled + cron apply, per 167 policy): premium route → 403. Use the apply-scheduled-plan-changes flow from SPEC-194 (now idempotent).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Upgrade elevation e2e",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Downgrade restriction e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "plan-change"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:21:19Z",
+                "completed": "2026-06-05T07:37:17Z"
             }
         },
         {
             "id": "T-016",
             "title": "E2e admin override: grant → 2xx, revoke → 403 immediately",
             "description": "Spec T-145-12 e2e half. Against the T-011 routes: admin grants a one-off entitlement → gated route 2xx; admin revokes → 403 immediately (cache invalidation proven).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011", "T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Grant/revoke e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "admin-override"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T06:56:49Z",
+                "completed": "2026-06-05T07:21:19Z"
             }
         },
         {
             "id": "T-017",
             "title": "E2e addon limit elevation",
             "description": "Spec T-145-13. Cheap plan MAX_ACCOMMODATIONS=1 + extra-accommodations-5 addon → allows up to 6 over the real create route; after addon-expiry cron → back to 1 (next create → LIMIT_REACHED). Data plumbing verified working (checkout writes billing_customer_limits; middleware overrides plan limits).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Elevation + expiry e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "addons"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:21:19Z",
+                "completed": "2026-06-05T07:37:17Z"
             }
         },
         {
             "id": "T-018",
             "title": "E2e refund/cancellation revocation at route level",
             "description": "Spec T-145-14 (behavior exists via SPEC-194 refund-lifecycle.service). Assert the ROUTE-level effect: full refund → previously-allowed premium route now 403; cancellation same. Drive via the established webhook/admin-hook e2e patterns.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Refund + cancel route-level e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "refund"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:37:17Z",
+                "completed": "2026-06-05T07:49:03Z"
             }
         },
         {
             "id": "T-019",
             "title": "E2e trial grant/expiry at route level",
             "description": "Spec T-145-15. Trial start grants the trialed plan's entitlements at route level (2xx on premium route); trial expiry (blockExpiredTrials — SPEC-194-restructured) revokes (403). Use trial-lifecycle e2e file patterns.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Trial grant + expiry e2e",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "trial"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:37:17Z",
+                "completed": "2026-06-05T07:49:03Z"
             }
         },
         {
             "id": "T-020",
             "title": "Stale-cache regression guard (INV-1)",
             "description": "Spec T-145-17. Pre-populate cache, mutate sub state in DB WITHOUT clearEntitlementCache → assert the gated route serves stale (test documents the failure mode); add the clear → passes. This is the canary proving cache invalidation matters.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Stale + cleared scenarios",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "cache", "inv-1"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:49:03Z",
+                "completed": "2026-06-05T07:59:37Z"
             }
         },
         {
             "id": "T-021",
             "title": "Transversal cache-invalidation test (INV-1 master guard)",
-            "description": "Spec T-145-18. Enumerate every money-mutating event (activation, upgrade, downgrade-cron, cancel, pause, resume, addon purchase/expiry/cancel, trial start/expire, refund, dunning-cancel, admin grant/revoke) and assert each calls clearEntitlementCache. Drift report found ~24 existing call sites incl. SPEC-194's refund (4 sites) + dunning (:318) — the test pins the full set. Admin grant/revoke sites come from T-011.",
-            "status": "pending",
+            "description": "Spec T-145-18. Enumerate every money-mutating event (activation, upgrade, downgrade-cron, cancel, pause, resume, addon purchase/expiry/cancel, trial start/expire, refund, dunning-cancel, admin grant/revoke) and assert each calls clearEntitlementCache. Drift report found ~24 existing call sites incl. SPEC-194's refund (4 sites) + dunning (:318) — the test pins the full set. Admin grant/revoke sites come from T-011. [LIVE GAP found by T-017: addonExpiryJob expiry path does NOT call clearEntitlementCache (DB limit drops, cache stays stale until TTL) — FIX it in this task (one-line + test in the cron) so the transversal test passes honestly; T-017 e2e currently clears manually with a documented note — update that test after the fix.]",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Event enumeration + per-event assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["tests", "cache", "inv-1"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:49:03Z",
+                "completed": "2026-06-05T07:59:37Z"
             }
         },
         {
             "id": "T-022",
             "title": "Route snapshot guard test (CI gate)",
             "description": "Spec T-145-19. Walk every registered route; any routes/**/protected/** or gated admin/** route must appear in endpoint-gate-matrix.md (gate or justified 'no gate needed'); phantom/reserved excepted explicitly. Fails CI when a new protected route lands without a matrix entry. Parse the matrix table (machine-checkable format from T-001).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-001", "T-004", "T-005", "T-006", "T-008", "T-009"],
             "blocks": [],
@@ -658,7 +658,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T07:59:37Z",
                 "completed": null
             }
         },
@@ -720,7 +720,7 @@
             "id": "T-025",
             "title": "Chunked coverage: 100% functional on the 4 enforcement files",
             "description": "Spec T-145-22. entitlement.ts, tourist-entitlements.ts, accommodation-entitlements.ts, limit-enforcement.ts — chunked coverage per SPEC-143 (full --coverage OOMs, engram #636). Note: tourist/accommodation have no standalone test files (covered in entitlement.test.ts). Fill gaps found.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-002", "T-009"],
             "blocks": [],
@@ -739,7 +739,7 @@
             },
             "timestamps": {
                 "created": "2026-06-05T04:50:45Z",
-                "started": null,
+                "started": "2026-06-05T07:59:37Z",
                 "completed": null
             }
         },
@@ -789,7 +789,7 @@
         {
             "id": "T-027",
             "title": "Quality gate + adversarial fresh-context review",
-            "description": "Per-package typecheck, lint, targeted suites sequential (owner constraints). Adversarial review of the full diff (enforcement = security-adjacent: hunt for gates that fail open, bypass paths, ServiceError leaking internals, e2e asserting mocks instead of behavior). Fix round on confirmed findings.",
+            "description": "Per-package typecheck, lint, targeted suites sequential (owner constraints). Adversarial review of the full diff (enforcement = security-adjacent: hunt for gates that fail open, bypass paths, ServiceError leaking internals, e2e asserting mocks instead of behavior). Fix round on confirmed findings. [E2E findings for review: (1) test DB in worktree lacked SPEC-166 moderation_state columns — check test-DB provisioning; (2) PATCH /accommodations/:id with unknown UUID returns 500 not 404 — possible pre-existing bug, flag in PR.]",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-026"],
@@ -878,9 +878,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 17,
+        "pending": 6,
         "inProgress": 2,
-        "completed": 10,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.3
     }
