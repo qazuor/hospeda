@@ -661,14 +661,14 @@
             "title": "Admin View-Stats Surfaces",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "approved",
             "path": "SPEC-197-admin-view-stats-surfaces",
             "created": "2026-06-05T00:00:00.000Z",
             "dependsOn": ["SPEC-159"],
             "archived": false,
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["analytics", "views", "admin", "dashboards", "recharts", "phase-2"],
-            "note": "SPEC-159 phase-2 consumer, owner-approved 2026-06-05: fills the 3 SPEC-155 deferred dashboard slots + ADMIN summary card + detail chips + list columns + /analytics/views page (top-N + daily series). 4 new /admin/views/* endpoints (ANALYTICS_VIEW). Tasks pending atomization."
+            "note": "SPEC-159 phase-2 consumer, owner-approved 2026-06-05: fills the 3 SPEC-155 deferred dashboard slots + ADMIN summary card + detail chips + list columns + /analytics/views page (top-N + daily series). 4 new /admin/views/* endpoints (ANALYTICS_VIEW). 21 tasks generated 2026-06-05."
         }
     ]
 }
