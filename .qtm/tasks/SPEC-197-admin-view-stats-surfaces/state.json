@@ -436,152 +436,152 @@
             "id": "T-013",
             "title": "Fill HOST card G views deferredSlot with locked-state-aware source",
             "description": "Register host.stats.views source in apps/admin/src/lib/dashboard-sources/host.ts with PROACTIVE locked-state detection per spec §5.2: read cached host.billing.plan entitlements (GET /protected/users/me/entitlements already fetched), return {locked: true} if view_basic_stats absent (NO views fetch made); if entitlements not yet resolved return {locked: false, loading: true}. Defensive: 403 from views endpoint → locked UI, not error. Update dashboards.ts HOST card G replacing the deferredSlot with the live source IN THE SAME COMMIT (config + source atomically — config validation test must never see intermediate state). Locked UI: lock icon from @repo/icons, i18n dashboard.host.views.locked.description ('Disponible con un plan activo') + .cta → /billing/plans. Add i18n keys (es/en/pt) incl. dashboard.host.views.empty. Tests in apps/admin/src/lib/dashboard-sources/__tests__/host-views.test.ts: no fetchApi call when entitlement absent; correct path + window param when present. Uses SPEC-159 protected endpoint /protected/views/accommodations/me with WindowToggle.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-012"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Register host.stats.views source with locked detection",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swap deferredSlot → source in dashboards.ts (same commit)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Locked-state UI + i18n keys (es/en/pt)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Resolver tests (locked / entitled paths)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "dashboard", "billing", "entitlements"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Fill EDITOR cards E/F views deferredSlots",
             "description": "Register editor.posts.views and editor.events.views sources in apps/admin/src/lib/dashboard-sources/editor.ts (consume SPEC-159 protected endpoints /protected/views/posts and /protected/views/events). Update dashboards.ts EDITOR cards E and F replacing both deferredSlots with live sources atomically (same commit as source registration). Each widget has independent window selection via shared WindowToggle, default 30d. Empty state i18n dashboard.editor.views.empty (es/en/pt). Component tests: list rendering with counts, window toggle re-fetch, empty state.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Register both editor sources",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Swap deferredSlots → sources in dashboards.ts (same commit)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n keys + component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "dashboard"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Add admin-card-views summary card to adminBaseDashboard",
             "description": "Register admin.views.summary source in apps/admin/src/lib/dashboard-sources/admin.ts (consumes GET /admin/views/summary). Add new card admin-card-views to adminBaseDashboard in dashboards.ts: 'Vistas de plataforma' (i18n dashboard.admin.views.title), three rows (ACCOMMODATION/POST/EVENT) with unique + total + window label, shared WindowToggle default 30d, ADMIN + SUPER_ADMIN only (NOT visible on HOST dashboard). UPDATE the SPEC-155 card-count assertion in apps/admin/src/config/ia/__tests__/dashboards.config.test.ts atomically with the new card (verify which export variant carries the count). Add i18n keys (es/en/pt). Component tests: card renders 3 rows, toggle re-fetch, skeleton loading.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-012"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Register admin.views.summary source",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add admin-card-views to adminBaseDashboard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update dashboards.config.test.ts card count (same commit)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n keys + component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "dashboard"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Implement EntityViewStatChips on detail pages (accommodation/post/event)",
             "description": "Create apps/admin/src/components/views/EntityViewStatChips.tsx: four chips (7d únicos / 7d totales / 30d únicos / 30d totales) via GET /admin/views/batch, i18n keys entity.stats.chips.unique/.total with window prefix + aria-labels. Inject via section/card system per spec §5.3: new 'stats-chips' SectionConfig entry in apps/admin/src/features/{accommodations,posts,events}/config/ (extend SectionConfig union + renderer case if needed — additive). viewOnly: true (NOT in edit mode), positioned before main info section, hidden without ANALYTICS_VIEW (no API call made). Skeleton chips while loading (not '—'/'0'), '0' chips for zero views (not hidden), '—' chips on error. Component tests: loading/zero/error states, permission guard (no fetch), absent in edit mode.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Implement EntityViewStatChips component",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add 'stats-chips' section type + renderer case",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire into 3 entity configs (viewOnly)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n keys + component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "component", "detail-pages"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T21:40:00.000Z",
+                "completed": "2026-06-05T22:05:00.000Z"
             }
         },
         {
@@ -595,28 +595,28 @@
             "subtasks": [
                 {
                     "title": "Derived column + batch useQuery for accommodations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Permission guard + loading/error states",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n key + column tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "lists", "derived-column"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": "2026-06-05T21:10:00.000Z",
-                "completed": null
+                "completed": "2026-06-05T21:35:00.000Z"
             }
         },
         {
@@ -630,106 +630,106 @@
             "subtasks": [
                 {
                     "title": "Posts column",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Events column",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests for both",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "lists", "derived-column"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
                 "started": "2026-06-05T21:10:00.000Z",
-                "completed": null
+                "completed": "2026-06-05T21:35:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Create /analytics/views page (tiles + top-10 + 30d chart)",
             "description": "Create apps/admin/src/routes/_authed/analytics/views.tsx per spec §5.5, sibling of business.tsx/usage.tsx (SidebarPageLayout, title key admin-pages.titles.analyticsViews, same beforeLoad ANALYTICS_VIEW guard pattern — verify guard on business.tsx/usage.tsx and apply same). Three sections: (1) summary KPI tiles per entity type + WindowToggle → /admin/views/summary; (2) three top-10 ranked lists (30d fixed) → /admin/views/top, entity names resolved via second query (admin list endpoints by ids, enabled: !!topEntityIds.length, fallback to entityId if unresolved); (3) recharts ResponsiveContainer > LineChart with 3 Lines (ACCOMMODATION #2563eb, POST #16a34a, EVENT #d97706), XAxis DD/MM, Tooltip + Legend, zero-filled lines never break → /admin/views/daily-series. Independent loading states per section (chart skeleton does not block tiles/lists). Add i18n keys + page title (es/en/pt).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-010", "T-011", "T-012"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Route + guard + SidebarPageLayout skeleton",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Summary tiles + WindowToggle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Top-10 lists with name resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Recharts 3-line daily series chart",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n keys + page title",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "analytics", "recharts"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T23:00:00.000Z",
+                "completed": "2026-06-05T23:30:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Analytics page tests + full typecheck/test/build gate",
             "description": "Add page tests in apps/admin/src/routes/_authed/analytics/__tests__/views.test.tsx: chart renders without error from mocked 90-row daily-series, three Line components present (smoke, no pixel assertions). Then run the full gate per spec §6.5: pnpm typecheck (all affected packages), pnpm test (packages/db, packages/service-core, apps/api, apps/admin), pnpm build (cross-package import errors only surface at build). Also run CI guards locally: scripts/check-type-casts.sh, scripts/check-schema-drift.sh, pnpm exec tsx scripts/extract-zod-keys.ts --verify, pnpm --filter @repo/i18n check-locales. All green before smoke.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-018", "T-019"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "views.test.tsx page tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "pnpm typecheck + test + build green",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Local CI guards green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "build-gate"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T23:30:00.000Z",
+                "completed": "2026-06-06T00:15:00.000Z"
             }
         },
         {
@@ -770,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 7,
-        "inProgress": 2,
-        "completed": 12,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.2
     }
