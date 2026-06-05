@@ -29,6 +29,11 @@ import {
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import {
+    isBillingProviderError,
+    mapProviderErrorToServiceError
+} from '../../lib/billing-provider-error';
+import { captureBillingError } from '../../lib/sentry';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
@@ -186,10 +191,16 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
  * - 404 when the plan slug is unknown, has no active price for the
  *   requested interval, or (annual only) the resolved customer cannot
  *   be loaded.
- * - 422 when the promo code is not a valid `free_trial_extension` (D9).
+ * - 422 when the promo code is not a valid `free_trial_extension` (D9),
+ *   or when the payment provider rejects the request as a validation error
+ *   (e.g. invalid card — maps to `VALIDATION_ERROR` / HTTP 400 via global handler).
  * - 500 when the qzpay create call returns no init point (adapter bug),
  *   or when any other unexpected error bubbles out.
- * - 503 when billing is not configured.
+ * - 502 when the payment provider returns a 5xx or unrecognised error
+ *   (`PROVIDER_ERROR` via global error handler, SPEC-149).
+ * - 503 when billing is not configured, or the payment provider is
+ *   rate-limiting us (`PROVIDER_RATE_LIMITED`, SPEC-149).
+ * - 504 when the payment provider times out (`PROVIDER_TIMEOUT`, SPEC-149).
  */
 export const handleStartPaidSubscription = async (
     c: Context,
@@ -277,6 +288,30 @@ export const handleStartPaidSubscription = async (
 
         if (error instanceof HTTPException) {
             throw error;
+        }
+
+        // SPEC-149 Part B+C: detect QZPayProviderSyncError, map to typed
+        // ServiceError (so the global handler returns 502/503/504/400 instead of
+        // the generic 500), and capture to Sentry with billing tags.
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'subscription_create'
+            });
+
+            // Extract providerStatus from the mapped ServiceError details
+            // (ProviderErrorDetails shape from billing-provider-error.ts).
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+
+            captureBillingError(serviceError, {
+                operation: 'start_paid_checkout',
+                planId: body.planSlug,
+                providerStatus: details?.providerStatus
+            });
+
+            throw serviceError;
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);

@@ -28,6 +28,24 @@ vi.mock('../../src/middlewares/billing', () => ({
     requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
+vi.mock('../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
+    return {
+        ...actual,
+        captureBillingError: vi.fn()
+    };
+});
+
+vi.mock('../../src/lib/billing-provider-error', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/billing-provider-error')>();
+    return { ...actual };
+});
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return { ...actual };
+});
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         info: vi.fn(),
@@ -80,6 +98,10 @@ vi.mock('@repo/db', () => {
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
+import { captureBillingError } from '../../src/lib/sentry';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { _internals, handleStartPaidSubscription } from '../../src/routes/billing/start-paid';
 
@@ -719,5 +741,254 @@ describe('handleStartPaidSubscription — locale threading (SPEC-194 T-025)', ()
 
         const callArg = billing.subscriptions.create.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(callArg.paymentMethodReturnUrl).toContain('/es/suscriptores/checkout/success/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Provider error wiring tests (SPEC-149 T-004)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a "stub shape" cause — numeric `status` property, mirrors
+ * `buildHttpLikeError` in `test/e2e/helpers/mp-stub.ts`.
+ */
+function buildStubCause(status: number, code?: string): Error {
+    const err = new Error(`Stub error ${status}`) as Error & {
+        status: number;
+        code?: string;
+    };
+    err.name = 'MpStubHttpError';
+    err.status = status;
+    if (code !== undefined) {
+        err.code = code;
+    }
+    return err;
+}
+
+/**
+ * Wrap a cause in a `QZPayProviderSyncError` (thrown when
+ * `providerSyncErrorStrategy: 'throw'`).
+ */
+function buildProviderSyncError(
+    cause?: Error,
+    operation = 'subscription_create'
+): QZPayProviderSyncError {
+    return new QZPayProviderSyncError(
+        'Failed in mercadopago',
+        'mercadopago',
+        operation,
+        { customerId: 'cust_test' },
+        cause
+    );
+}
+
+describe('handleStartPaidSubscription — provider error wiring (SPEC-149 T-004)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        // Re-establish the captureBillingError mock after clearAllMocks wipes it.
+        vi.mocked(captureBillingError).mockReturnValue('sentinel-event-id');
+    });
+
+    // ── Monthly path ─────────────────────────────────────────────────────────
+
+    it('monthly: MP 429 → ServiceError PROVIDER_RATE_LIMITED (not a generic 500)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.PROVIDER_RATE_LIMITED
+        );
+    });
+
+    it('monthly: MP 408 timeout → ServiceError PROVIDER_TIMEOUT', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.PROVIDER_TIMEOUT
+        );
+    });
+
+    it('monthly: MP 500 → ServiceError PROVIDER_ERROR (not 500 HTTPException)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(500, 'SERVER_ERROR'));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.PROVIDER_ERROR
+        );
+    });
+
+    it('monthly: MP 422 validation → ServiceError VALIDATION_ERROR', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(422, 'INVALID_CARD'));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.VALIDATION_ERROR
+        );
+    });
+
+    it('monthly: captureBillingError called with operation=start_paid_checkout, customerId, planId, providerStatus on 429', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toBeInstanceOf(ServiceError);
+
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [capturedErr, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedErr).toBeInstanceOf(ServiceError);
+        expect(capturedCtx).toMatchObject({
+            operation: 'start_paid_checkout',
+            providerStatus: 429
+        });
+        // customerId and planId should NOT be email/PII — just IDs.
+        expect(capturedCtx).toHaveProperty('planId');
+    });
+
+    it('monthly: captureBillingError called once on MP 500 with correct providerStatus', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(500));
+        mockBilling(createBillingMock({ createThrows: providerErr }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toBeInstanceOf(ServiceError);
+
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedCtx).toMatchObject({ providerStatus: 500 });
+    });
+
+    // ── Annual path ──────────────────────────────────────────────────────────
+
+    it('annual: MP 429 → ServiceError PROVIDER_RATE_LIMITED (not generic 500)', async () => {
+        const providerErr = buildProviderSyncError(
+            buildStubCause(429, 'RATE_LIMITED'),
+            'checkout_create'
+        );
+        const billing = createAnnualBillingMock();
+        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.PROVIDER_RATE_LIMITED
+        );
+    });
+
+    it('annual: MP 500 → ServiceError PROVIDER_ERROR', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(500), 'checkout_create');
+        const billing = createAnnualBillingMock();
+        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toSatisfy(
+            (err: unknown) =>
+                err instanceof ServiceError && err.code === ServiceErrorCode.PROVIDER_ERROR
+        );
+    });
+
+    it('annual: captureBillingError called with operation=start_paid_checkout and providerStatus on 429', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429), 'checkout_create');
+        const billing = createAnnualBillingMock();
+        billing.checkout.create = vi.fn().mockRejectedValue(providerErr);
+        mockBilling(billing);
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'owner-premium',
+                billingInterval: 'annual'
+            })
+        ).rejects.toBeInstanceOf(ServiceError);
+
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedCtx).toMatchObject({
+            operation: 'start_paid_checkout',
+            providerStatus: 429
+        });
+    });
+
+    // ── Regression guard: non-provider errors still go the OLD path ──────────
+
+    it('regression: plain Error (non-provider) still throws HTTPException 500', async () => {
+        const plainError = new Error('unexpected DB blowup');
+        mockBilling(createBillingMock({ createThrows: plainError }));
+
+        const ctx = createMockContext();
+        const caught = await handleStartPaidSubscription(ctx as never, {
+            planSlug: 'owner-premium',
+            billingInterval: 'monthly'
+        }).catch((e: unknown) => e);
+
+        // Must be HTTPException (not ServiceError) — old path still works.
+        expect(caught).not.toBeInstanceOf(ServiceError);
+        expect(caught).toMatchObject({ status: 500 });
+        // captureBillingError must NOT be called for non-provider errors.
+        expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
+    });
+
+    it('regression: SubscriptionCheckoutError still maps via mapServiceErrorToHttp', async () => {
+        // PLAN_NOT_FOUND → 404 (existing path must remain intact)
+        mockBilling(createBillingMock({ plans: [] }));
+
+        const ctx = createMockContext();
+        await expect(
+            handleStartPaidSubscription(ctx as never, {
+                planSlug: 'no-such-plan',
+                billingInterval: 'monthly'
+            })
+        ).rejects.toMatchObject({ status: 404 });
+
+        expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
     });
 });
