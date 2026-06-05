@@ -22,13 +22,22 @@
  * authenticated actor and use `runWithLoggingAndValidation` with permission checks
  * via `PermissionEnum` (never role checks — matches the repo-wide convention).
  *
+ * **SPEC-197 admin methods:**
+ * `getAdminSummary`, `getAdminBatch`, `getAdminTopEntities`, and
+ * `getAdminDailySeries` gate on `ANALYTICS_VIEW` permission. They follow the same
+ * `runWithLoggingAndValidation` pattern with no constructor-time dereference of
+ * `@repo/db` exports (lazy getter pattern preserved).
+ *
  * @see packages/db/src/models/entity-view/entity-view.model.ts
  * @see packages/schemas/src/entities/entityView/entityView.crud.schema.ts
  * @see SPEC-159 §4.1, §5
+ * @see SPEC-197 §4.2
  */
 
 import {
     AccommodationModel as AccommodationModelClass,
+    type AdminSummaryTotalsRow,
+    type DailySeriesRow,
     type EntityViewModel,
     entityViewModel
 } from '@repo/db';
@@ -138,6 +147,69 @@ const GetStatsForEditorEntitiesSchema = z.object({
 });
 
 // ---------------------------------------------------------------------------
+// Input schemas for SPEC-197 admin aggregation methods
+// ---------------------------------------------------------------------------
+
+/**
+ * Input schema for {@link EntityViewService.getAdminSummary}.
+ * Only `window` is needed — the model aggregates all entity types without an
+ * ID filter.
+ */
+const GetAdminSummarySchema = z.object({
+    /** Rolling window for the aggregation ('7d' or '30d'). */
+    window: EntityViewWindowSchema
+});
+
+/**
+ * Input schema for {@link EntityViewService.getAdminBatch}.
+ * `entityIds` must be a non-empty array of max 100 UUIDs. The service validates
+ * the cap here rather than relying on the Zod schema used by the HTTP layer so
+ * that direct service callers are also protected.
+ */
+const GetAdminBatchSchema = z.object({
+    /** Entity type shared by all IDs in the batch. */
+    entityType: z.enum([
+        EntityTypeEnum.ACCOMMODATION,
+        EntityTypeEnum.POST,
+        EntityTypeEnum.EVENT
+    ] as const),
+    /**
+     * Entity UUIDs to query. Must be non-empty and bounded at 100.
+     * The service throws VALIDATION_ERROR before reaching the model if exceeded.
+     */
+    entityIds: z
+        .array(z.string().uuid({ message: 'zodError.entityView.entityId.invalidUuid' }))
+        .min(1, { message: 'zodError.adminView.batch.entityIds.empty' }),
+    /** Rolling window for the aggregation ('7d' or '30d'). */
+    window: EntityViewWindowSchema
+});
+
+/**
+ * Input schema for {@link EntityViewService.getAdminTopEntities}.
+ */
+const GetAdminTopEntitiesSchema = z.object({
+    /** Entity type to rank by total views. */
+    entityType: z.enum([
+        EntityTypeEnum.ACCOMMODATION,
+        EntityTypeEnum.POST,
+        EntityTypeEnum.EVENT
+    ] as const),
+    /** Rolling window in days (derived from window string by the method). */
+    windowDays: z.number().int().positive(),
+    /** Maximum number of entities to return. Must be in [1, 50]. */
+    limit: z.number().int().min(1).max(50)
+});
+
+/**
+ * Input schema for {@link EntityViewService.getAdminDailySeries}.
+ * V1 only accepts windowDays = 30.
+ */
+const GetAdminDailySeriesSchema = z.object({
+    /** Rolling window in days. Fixed at 30 for V1. */
+    windowDays: z.number().int().positive()
+});
+
+// ---------------------------------------------------------------------------
 // Public input/output types
 // ---------------------------------------------------------------------------
 
@@ -203,6 +275,57 @@ export interface GetStatsForEditorEntitiesInput {
     readonly entityIds: readonly string[];
     /** Rolling window for the aggregation ('7d' or '30d'). */
     readonly window: EntityViewWindow;
+}
+
+/**
+ * Input for {@link EntityViewService.getAdminSummary}.
+ */
+export interface GetAdminSummaryInput {
+    /** Authenticated actor performing the request (must have ANALYTICS_VIEW). */
+    readonly actor: Actor;
+    /** Rolling window for the aggregation ('7d' or '30d'). */
+    readonly window: EntityViewWindow;
+}
+
+/**
+ * Input for {@link EntityViewService.getAdminBatch}.
+ */
+export interface GetAdminBatchInput {
+    /** Authenticated actor performing the request (must have ANALYTICS_VIEW). */
+    readonly actor: Actor;
+    /** Entity type shared by all IDs in the batch. */
+    readonly entityType: TrackableEntityType;
+    /**
+     * Array of entity UUIDs to query. Must be non-empty and ≤ 100 items.
+     * Exceeding 100 returns a VALIDATION_ERROR ServiceError.
+     */
+    readonly entityIds: readonly string[];
+    /** Rolling window for the aggregation ('7d' or '30d'). */
+    readonly window: EntityViewWindow;
+}
+
+/**
+ * Input for {@link EntityViewService.getAdminTopEntities}.
+ */
+export interface GetAdminTopEntitiesInput {
+    /** Authenticated actor performing the request (must have ANALYTICS_VIEW). */
+    readonly actor: Actor;
+    /** Entity type to rank by total views. */
+    readonly entityType: TrackableEntityType;
+    /** Rolling window in days (7 or 30). */
+    readonly windowDays: number;
+    /** Maximum number of entities to return. Must be in [1, 50]; defaults to 10. */
+    readonly limit: number;
+}
+
+/**
+ * Input for {@link EntityViewService.getAdminDailySeries}.
+ */
+export interface GetAdminDailySeriesInput {
+    /** Authenticated actor performing the request (must have ANALYTICS_VIEW). */
+    readonly actor: Actor;
+    /** Rolling window in days. Fixed at 30 for V1. */
+    readonly windowDays: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -490,6 +613,222 @@ export class EntityViewService extends BaseService {
             }
         });
     }
+
+    // -------------------------------------------------------------------------
+    // SPEC-197: Admin aggregation methods (require ANALYTICS_VIEW permission)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns platform-wide view totals per entity type for a given window.
+     *
+     * **Permission:** `ANALYTICS_VIEW`.
+     *
+     * **Zero-fill guarantee:** The result always contains exactly three items —
+     * one per trackable entity type (ACCOMMODATION, POST, EVENT). Entity types
+     * absent from the model result (zero views in the window) are zero-filled.
+     *
+     * @param input - Actor and rolling window ('7d' or '30d').
+     * @returns Array of three `AdminSummaryTotalsRow` items, one per entity type.
+     *
+     * @example
+     * ```ts
+     * const result = await entityViewService.getAdminSummary({ actor, window: '30d' });
+     * if (!result.error) {
+     *   // result.data has exactly 3 items
+     * }
+     * ```
+     */
+    public async getAdminSummary(
+        input: GetAdminSummaryInput
+    ): Promise<ServiceOutput<AdminSummaryTotalsRow[]>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminSummary',
+            input: { actor, ...params },
+            schema: GetAdminSummarySchema,
+            execute: async (validated, validatedActor) => {
+                if (!hasPermission(validatedActor, PermissionEnum.ANALYTICS_VIEW)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ANALYTICS_VIEW required to access admin view summary'
+                    );
+                }
+
+                const windowDays = WINDOW_DAYS[validated.window];
+                const rows = await this.model.getAdminSummaryTotals({ windowDays });
+                return normalizeAdminSummary(rows);
+            }
+        });
+    }
+
+    /**
+     * Returns view-count statistics for a caller-supplied batch of entity IDs.
+     *
+     * **Permission:** `ANALYTICS_VIEW`.
+     *
+     * **entityIds cap:** Max 100 IDs. Exceeding this limit returns a
+     * `VALIDATION_ERROR` ServiceError before the model is called.
+     *
+     * **Zero-fill guarantee:** Every requested entity ID appears in the result.
+     * IDs absent from the model result (zero views) are zero-filled.
+     *
+     * @param input - Actor, entity type, entity IDs (≤100), and rolling window.
+     * @returns One `EntityViewStats` entry per requested ID.
+     *
+     * @example
+     * ```ts
+     * const result = await entityViewService.getAdminBatch({
+     *   actor,
+     *   entityType: 'ACCOMMODATION',
+     *   entityIds: ['uuid1', 'uuid2'],
+     *   window: '30d',
+     * });
+     * ```
+     */
+    public async getAdminBatch(
+        input: GetAdminBatchInput
+    ): Promise<ServiceOutput<EntityViewStats[]>> {
+        const { actor, ...params } = input;
+
+        // Validate the 100-item cap before runWithLoggingAndValidation so the
+        // error is typed as VALIDATION_ERROR and not wrapped as INTERNAL_ERROR.
+        if (params.entityIds.length > 100) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'entityIds must contain at most 100 items',
+                    details: { count: params.entityIds.length, max: 100 }
+                }
+            };
+        }
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminBatch',
+            input: { actor, ...params },
+            schema: GetAdminBatchSchema,
+            execute: async (validated, validatedActor) => {
+                if (!hasPermission(validatedActor, PermissionEnum.ANALYTICS_VIEW)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ANALYTICS_VIEW required to access admin batch stats'
+                    );
+                }
+
+                const windowDays = WINDOW_DAYS[validated.window];
+                const modelStats = await this.model.getStatsForEntities({
+                    entityType: validated.entityType,
+                    entityIds: validated.entityIds,
+                    windowDays
+                });
+
+                return normalizeStats(validated.entityIds, modelStats);
+            }
+        });
+    }
+
+    /**
+     * Returns the top-N most-viewed entities for a given entity type and window.
+     *
+     * **Permission:** `ANALYTICS_VIEW`.
+     *
+     * **limit cap:** Max 50. Exceeding this limit returns a `VALIDATION_ERROR`
+     * ServiceError before the model is called.
+     *
+     * @param input - Actor, entity type, windowDays, and limit (≤50, default 10).
+     * @returns Array of `EntityViewStats` ordered by `total DESC`, length ≤ limit.
+     *
+     * @example
+     * ```ts
+     * const result = await entityViewService.getAdminTopEntities({
+     *   actor,
+     *   entityType: 'POST',
+     *   windowDays: 30,
+     *   limit: 10,
+     * });
+     * ```
+     */
+    public async getAdminTopEntities(
+        input: GetAdminTopEntitiesInput
+    ): Promise<ServiceOutput<EntityViewStats[]>> {
+        const { actor, ...params } = input;
+
+        // Validate the 50-item cap before runWithLoggingAndValidation.
+        if (params.limit > 50) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'limit must be at most 50',
+                    details: { limit: params.limit, max: 50 }
+                }
+            };
+        }
+
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminTopEntities',
+            input: { actor, ...params },
+            schema: GetAdminTopEntitiesSchema,
+            execute: async (validated, validatedActor) => {
+                if (!hasPermission(validatedActor, PermissionEnum.ANALYTICS_VIEW)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ANALYTICS_VIEW required to access admin top entities'
+                    );
+                }
+
+                return this.model.getTopViewedEntities({
+                    entityType: validated.entityType,
+                    windowDays: validated.windowDays,
+                    limit: validated.limit
+                });
+            }
+        });
+    }
+
+    /**
+     * Returns the 30-day daily view-count series grouped by entity type,
+     * gap-filled to exactly 90 rows (3 entity types × 30 days).
+     *
+     * **Permission:** `ANALYTICS_VIEW`.
+     *
+     * **Gap-fill semantics:** For any (date, entityType) pair absent from the
+     * model result, the service emits `{ date, entityType, total: 0 }`. The
+     * date range is the last `windowDays` calendar days in UTC, matching the
+     * `DATE_TRUNC('day', viewed_at)` bucketing used by the SQL query.
+     *
+     * @param input - Actor and windowDays (fixed at 30 for V1).
+     * @returns Exactly 90 `DailySeriesRow` items ordered by date ASC, entityType ASC.
+     *
+     * @example
+     * ```ts
+     * const result = await entityViewService.getAdminDailySeries({ actor, windowDays: 30 });
+     * if (!result.error) {
+     *   // result.data.length === 90
+     * }
+     * ```
+     */
+    public async getAdminDailySeries(
+        input: GetAdminDailySeriesInput
+    ): Promise<ServiceOutput<DailySeriesRow[]>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminDailySeries',
+            input: { actor, ...params },
+            schema: GetAdminDailySeriesSchema,
+            execute: async (validated, validatedActor) => {
+                if (!hasPermission(validatedActor, PermissionEnum.ANALYTICS_VIEW)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ANALYTICS_VIEW required to access admin daily series'
+                    );
+                }
+
+                const modelRows = await this.model.getDailySeries({
+                    windowDays: validated.windowDays
+                });
+                return gapFillDailySeries(modelRows, validated.windowDays);
+            }
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -511,6 +850,82 @@ function normalizeStats(
 ): EntityViewStats[] {
     const statsMap = new Map<string, EntityViewStats>(modelStats.map((s) => [s.entityId, s]));
     return requestedIds.map((id) => statsMap.get(id) ?? { entityId: id, unique: 0, total: 0 });
+}
+
+/** All trackable entity types, in stable order for zero-fill iteration. */
+const TRACKABLE_ENTITY_TYPES: readonly TrackableEntityType[] = [
+    EntityTypeEnum.ACCOMMODATION,
+    EntityTypeEnum.POST,
+    EntityTypeEnum.EVENT
+];
+
+/**
+ * Normalizes admin summary rows to guarantee all three entity types are present.
+ * Model rows absent from the DB result (zero views) are zero-filled.
+ *
+ * @param modelRows - Partial array from `getAdminSummaryTotals` (may omit types).
+ * @returns Array of exactly three rows, one per trackable entity type.
+ */
+function normalizeAdminSummary(
+    modelRows: readonly AdminSummaryTotalsRow[]
+): AdminSummaryTotalsRow[] {
+    const rowMap = new Map<TrackableEntityType, AdminSummaryTotalsRow>(
+        modelRows.map((r) => [r.entityType, r])
+    );
+    return TRACKABLE_ENTITY_TYPES.map(
+        (entityType) => rowMap.get(entityType) ?? { entityType, unique: 0, total: 0 }
+    );
+}
+
+/**
+ * Gap-fills a daily series result so that every (date, entityType) combination
+ * in the last `windowDays` calendar days (UTC) has an entry.
+ *
+ * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
+ * bucketing used by the model SQL query. "Today" is the current UTC date; the
+ * range includes `windowDays` dates: from `today - (windowDays - 1) days` through
+ * `today` inclusive (so a 30-day window yields exactly 30 distinct dates).
+ *
+ * Missing (date, entityType) pairs are emitted as `{ date, entityType, total: 0 }`.
+ *
+ * @param modelRows - Rows returned by `getDailySeries` (only days with data).
+ * @param windowDays - Number of calendar days in the window (always 30 for V1).
+ * @returns Gap-filled array of exactly `windowDays * 3` rows ordered by date ASC,
+ *   entityType ASC.
+ */
+function gapFillDailySeries(
+    modelRows: readonly DailySeriesRow[],
+    windowDays: number
+): DailySeriesRow[] {
+    // Build a lookup keyed by "date|entityType" for O(1) access.
+    const rowMap = new Map<string, DailySeriesRow>(
+        modelRows.map((r) => [`${r.date}|${r.entityType}`, r])
+    );
+
+    // Generate the date list in UTC. Today = UTC midnight of the current day.
+    // The window is [today - (windowDays - 1) days .. today] inclusive.
+    const nowUtc = new Date();
+    const todayUtc = new Date(
+        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+    );
+
+    const result: DailySeriesRow[] = [];
+
+    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
+        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
+        const d = new Date(dayMs);
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        for (const entityType of TRACKABLE_ENTITY_TYPES) {
+            const key = `${dateStr}|${entityType}`;
+            result.push(rowMap.get(key) ?? { date: dateStr, entityType, total: 0 });
+        }
+    }
+
+    return result;
 }
 
 // ---------------------------------------------------------------------------
