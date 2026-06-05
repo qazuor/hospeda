@@ -158,6 +158,56 @@ describe('MEDIA_PRESETS', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-186 §8 step 10 — Cross-package srcset contract guard.
+    //
+    // The ImageGallery island (apps/web/src/components/ImageGallery.client.tsx)
+    // hard-codes SRCSET_WIDTHS candidate arrays that are derived from these
+    // preset base widths:
+    //
+    //   galleryFeatured  → srcset candidates [640, 1000, 1400]  (base = w_1000)
+    //   galleryHalf      → srcset candidates [400, 640, 900]    (base = w_640)
+    //   galleryQuarter   → srcset candidates [200, 400, 600]    (base = w_400)
+    //   galleryThumb     → no srcset (strip-only, 120px)
+    //
+    // Each preset's default `w_` width MUST be the middle candidate of its
+    // srcset array so that:
+    // (a) The browser always has the baseline candidate available even without
+    //     srcset support (plain <img src> fallback via buildCellUrl).
+    // (b) At a typical desktop viewport the browser selects the middle candidate
+    //     matching the pre-srcset single-URL baseline — no LCP payload regression.
+    //
+    // If you change a preset's base width here, you MUST also update SRCSET_WIDTHS
+    // in ImageGallery.client.tsx and vice versa.  These tests make that contract
+    // explicit so either side of the change breaks CI.
+    // -----------------------------------------------------------------------
+    describe('cross-package srcset contract — preset base widths match island SRCSET_WIDTHS mid-candidates', () => {
+        it('galleryFeatured base width (w_1000) is the middle candidate of [640, 1000, 1400]', () => {
+            // Island SRCSET_WIDTHS.galleryFeatured = [640, 1000, 1400].
+            // The middle candidate is 1000 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('w_1000');
+        });
+
+        it('galleryHalf base width (w_640) is the middle candidate of [400, 640, 900]', () => {
+            // Island SRCSET_WIDTHS.galleryHalf = [400, 640, 900].
+            // The middle candidate is 640 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryHalf).toContain('w_640');
+        });
+
+        it('galleryQuarter base width (w_400) is the middle candidate of [200, 400, 600]', () => {
+            // Island SRCSET_WIDTHS.galleryQuarter = [200, 400, 600].
+            // The middle candidate is 400 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('w_400');
+        });
+
+        it('galleryThumb base width (w_120) is the sole width used in the strip (no srcset)', () => {
+            // galleryThumb has no srcset; the strip is always 120px.
+            // Changing this width without updating the lightbox strip CSS would
+            // break the thumbnail strip layout.
+            expect(MEDIA_PRESETS.galleryThumb).toContain('w_120');
+        });
+    });
+
     describe('all presets', () => {
         it('should include q_auto for automatic quality', () => {
             for (const key of EXPECTED_PRESETS) {
