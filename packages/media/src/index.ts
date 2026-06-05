@@ -15,7 +15,7 @@
 
 export { extractPublicId } from './extract-public-id.js';
 
-export { getMediaUrl } from './get-media-url.js';
+export { getMediaUrl, stripCloudinaryTransform } from './get-media-url.js';
 export type { GetMediaUrlOptions } from './get-media-url.js';
 
 export { MEDIA_PRESETS } from './presets.js';

@@ -633,7 +633,7 @@ export function toAccommodationDetailPageProps({
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
-                // HeroGallery + fotos can surface them (GAP-078-136).
+                // photo page and lightbox views can surface them (GAP-078-136).
                 galleryItems,
                 videos
             };

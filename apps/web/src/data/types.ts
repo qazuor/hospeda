@@ -572,9 +572,9 @@ export interface AccommodationDetailData {
         readonly images: readonly string[];
         /**
          * Gallery items carrying the image URL plus optional caption and
-         * description metadata preserved from the API response. Rendered by
-         * HeroGallery and the full photo page; kept alongside `images` for
-         * backward compatibility.
+         * description metadata preserved from the API response. Consumed by
+         * the full photo page and lightbox integrations; kept alongside
+         * `images` for backward compatibility.
          */
         readonly galleryItems: readonly {
             readonly url: string;

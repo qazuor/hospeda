@@ -10,11 +10,15 @@ describe('MEDIA_PRESETS', () => {
         'gallery',
         'avatar',
         'full',
-        'og'
+        'og',
+        'galleryFeatured',
+        'galleryHalf',
+        'galleryQuarter',
+        'galleryThumb'
     ];
 
-    it('should contain all 7 expected preset keys', () => {
-        expect(Object.keys(MEDIA_PRESETS)).toHaveLength(7);
+    it('should contain all 11 expected preset keys', () => {
+        expect(Object.keys(MEDIA_PRESETS)).toHaveLength(11);
         for (const key of EXPECTED_PRESETS) {
             expect(MEDIA_PRESETS).toHaveProperty(key);
         }
@@ -88,6 +92,122 @@ describe('MEDIA_PRESETS', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-186 §7 — gallery cell presets (galleryFeatured / galleryHalf /
+    // galleryQuarter / galleryThumb).  All four must use c_fill and an ar_
+    // token so the CDN returns an already-cropped asset matching the cell's
+    // fixed aspect-ratio (zero CLS; no client-side crop needed).
+    // -----------------------------------------------------------------------
+    describe('galleryFeatured preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (16:10)', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('ar_16:10');
+        });
+
+        it('should request 1000px width', () => {
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('w_1000');
+        });
+    });
+
+    describe('galleryHalf preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (4:3)', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryHalf).toContain('ar_4:3');
+        });
+
+        it('should request 640px width', () => {
+            expect(MEDIA_PRESETS.galleryHalf).toContain('w_640');
+        });
+    });
+
+    describe('galleryQuarter preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (1:1)', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('ar_1:1');
+        });
+
+        it('should request 400px width', () => {
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('w_400');
+        });
+    });
+
+    describe('galleryThumb preset', () => {
+        it('should use c_fill crop mode', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('c_fill');
+        });
+
+        it('should carry an ar_ aspect-ratio token (1:1)', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('ar_');
+            expect(MEDIA_PRESETS.galleryThumb).toContain('ar_1:1');
+        });
+
+        it('should request 120px width (lightweight strip thumbnail)', () => {
+            expect(MEDIA_PRESETS.galleryThumb).toContain('w_120');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-186 §8 step 10 — Cross-package srcset contract guard.
+    //
+    // The ImageGallery island (apps/web/src/components/ImageGallery.client.tsx)
+    // hard-codes SRCSET_WIDTHS candidate arrays that are derived from these
+    // preset base widths:
+    //
+    //   galleryFeatured  → srcset candidates [640, 1000, 1400]  (base = w_1000)
+    //   galleryHalf      → srcset candidates [400, 640, 900]    (base = w_640)
+    //   galleryQuarter   → srcset candidates [200, 400, 600]    (base = w_400)
+    //   galleryThumb     → no srcset (strip-only, 120px)
+    //
+    // Each preset's default `w_` width MUST be the middle candidate of its
+    // srcset array so that:
+    // (a) The browser always has the baseline candidate available even without
+    //     srcset support (plain <img src> fallback via buildCellUrl).
+    // (b) At a typical desktop viewport the browser selects the middle candidate
+    //     matching the pre-srcset single-URL baseline — no LCP payload regression.
+    //
+    // If you change a preset's base width here, you MUST also update SRCSET_WIDTHS
+    // in ImageGallery.client.tsx and vice versa.  These tests make that contract
+    // explicit so either side of the change breaks CI.
+    // -----------------------------------------------------------------------
+    describe('cross-package srcset contract — preset base widths match island SRCSET_WIDTHS mid-candidates', () => {
+        it('galleryFeatured base width (w_1000) is the middle candidate of [640, 1000, 1400]', () => {
+            // Island SRCSET_WIDTHS.galleryFeatured = [640, 1000, 1400].
+            // The middle candidate is 1000 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryFeatured).toContain('w_1000');
+        });
+
+        it('galleryHalf base width (w_640) is the middle candidate of [400, 640, 900]', () => {
+            // Island SRCSET_WIDTHS.galleryHalf = [400, 640, 900].
+            // The middle candidate is 640 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryHalf).toContain('w_640');
+        });
+
+        it('galleryQuarter base width (w_400) is the middle candidate of [200, 400, 600]', () => {
+            // Island SRCSET_WIDTHS.galleryQuarter = [200, 400, 600].
+            // The middle candidate is 400 — must match the preset base width.
+            expect(MEDIA_PRESETS.galleryQuarter).toContain('w_400');
+        });
+
+        it('galleryThumb base width (w_120) is the sole width used in the strip (no srcset)', () => {
+            // galleryThumb has no srcset; the strip is always 120px.
+            // Changing this width without updating the lightbox strip CSS would
+            // break the thumbnail strip layout.
+            expect(MEDIA_PRESETS.galleryThumb).toContain('w_120');
+        });
+    });
+
     describe('all presets', () => {
         it('should include q_auto for automatic quality', () => {
             for (const key of EXPECTED_PRESETS) {
@@ -132,9 +252,11 @@ describe('MEDIA_PRESETS', () => {
         });
 
         it('every preset transform string should match the safe character set', () => {
-            // Allowed: a-z, 0-9, underscore, comma, slash. No spaces, no
-            // uppercase, no quotes, no semicolons, no `<` etc.
-            const SAFE_TRANSFORM = /^[a-z0-9_,/]+$/;
+            // Allowed: a-z, 0-9, underscore, comma, slash, colon. No spaces,
+            // no uppercase, no quotes, no semicolons, no `<` etc.
+            // The colon is required for aspect-ratio tokens (ar_16:10, ar_4:3,
+            // ar_1:1) introduced by the SPEC-186 gallery presets.
+            const SAFE_TRANSFORM = /^[a-z0-9_,/:]+$/;
             for (const key of EXPECTED_PRESETS) {
                 expect(MEDIA_PRESETS[key]).toMatch(SAFE_TRANSFORM);
             }

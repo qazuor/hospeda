@@ -3,7 +3,7 @@ specId: SPEC-186
 title: Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images
 slug: web-dynamic-image-grid
 type: feature
-status: draft
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-06-02
@@ -479,6 +479,12 @@ natural pause point.
 
 1. Replace `DetailVariant`'s `slice(0,3)` + binary `mosaicWithThumbs` with count-aware
    composition (1/2/3/4/5+) and the `+N más` overlay on the last cell at 5+.
+1b. Remove the OUTER pre-slice in `apps/web/src/pages/[lang]/alojamientos/[slug].astro`
+   (lines ~293-310): the page builds `galleryImages` as `[featured, ...gallery.slice(0, 3)]`
+   before passing it to the island, so the island never receives more than 4 images on
+   accommodation pages. Pass the full gallery; the island now owns all capping. Without
+   this, the 5+ overlay is unreachable on the most important entity. (Events and posts
+   already pass the full gallery — no page-level change needed there.)
 2. Add the `.grid` / `.cellFeatured` / `.cellHalf` / `.cellQuarter` / `.moreOverlay`
    classes and the per-count rules in `ImageGallery.module.css`.
 3. Vitest + testing-library: assert cell count, the overlay presence + label at 5+,
@@ -519,6 +525,9 @@ natural pause point.
 
 11. Replace the `columns:3` masonry in `fotos.astro` with the fixed-ratio
     `.fotosGrid`/`.fotosCell` system (all photos + videos, `c_fill`, breakpoints per §5).
+    NOTE: the current masonry media queries use `1024px→2` / `768px→1`; the locked §5
+    breakpoints are `≥1024=3` / `640–1023=2` / `<640=1` — replace BOTH media queries,
+    not just the `columns` rule (the 768px query must not survive).
 12. Verify video thumbnail + play overlay + GLightbox still work; reflow test at the
     three breakpoints.
 
@@ -536,7 +545,7 @@ natural pause point.
 ### Phase 7 — Closeout & visual smoke
 
 16. Manual visual validation of the gallery at 1/2/3/4/5+ images on all four entities
-    + `/fotos` at the three breakpoints; flip spec + task index to completed.
+    - `/fotos` at the three breakpoints; flip spec + task index to completed.
 
 ## 9. Risk and rollback
 
@@ -626,3 +635,10 @@ Per the project's Test-Informed Development rules (Vitest + testing-library, AAA
 - **Regression:** any bug found during the work gets a reproducing test before the fix.
 - **Manual web smoke (Phase 7):** accommodation/event/destination (detail) + post
   (cover-plus-grid) + `/fotos`, at 1/2/3/4/5+ images, all three locales for the new strings.
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-05 | spec-realign | D-1: Phase 1 step 1b added — remove outer gallery pre-slice in `alojamientos/[slug].astro` (island never received >4 images; 5+ overlay unreachable on accommodations). D-10: Phase 5 note — replace BOTH masonry media queries (current 1024/768px vs locked 1024/640px). Verified vs staging 2026-06-05: zero drift elsewhere; HeroGallery confirmed dead (4 JSDoc refs only); SPEC-191 `/colaborar/fotos` does not overlap. | Spec amended, status draft → in-progress |
+| 2026-06-05 | closeout | 18/18 tasks done. T-018 browser smoke PASSED (counts 1/2/3/4/5+, 4 entities, /fotos 3 breakpoints, es/en/pt, GLightbox video). 3 extra fixes shipped from smoke findings: per-count container aspect-ratio locks gallery height (12/5 · 8/3 · 16/10); "Ver todas las fotos" CTA to the previously-orphan /fotos; data-astro-reload across the /fotos boundary (ClientRouter head swap dropped the island stylesheet on back nav). Videos-in-lightbox confirmed out-of-scope (§11) — follow-up spec. | status → completed |
