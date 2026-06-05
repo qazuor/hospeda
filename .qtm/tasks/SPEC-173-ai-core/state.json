@@ -1254,35 +1254,35 @@
             "id": "T-035",
             "title": "Wire Sentry + PostHog observability",
             "description": "Wire Sentry (provider failures, timeouts, fallbacks, ceiling trips) and PostHog (per-feature usage events) as observability sinks (§5.13). All external emits pass through the PII scrubber (T-019/AC-11). RO-RO, JSDoc. Tests: unit tests with Sentry/PostHog mocked asserting an error breadcrumb on fallback and a usage event per feature, both PII-scrubbed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Sentry error/fallback/ceiling wiring",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "PostHog per-feature usage events",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Scrub PII before emit + write tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "observability", "ai-core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T13:30:00.000Z",
+                "completed": "2026-06-05T14:20:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 36,
+        "completed": 37,
         "blocked": 0,
         "averageComplexity": 2.5
     }
