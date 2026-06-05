@@ -1289,35 +1289,35 @@
             "id": "T-036",
             "title": "Write AC-4 no-env/no-vault static guard test",
             "description": "Add a test/lint check (AC-4) asserting @repo/ai-core source contains NO process.env access and NO @repo/db access outside src/storage/, and no vault access. Scan src/** programmatically. Wire into the package test run / CI guard. Tests: the guard itself is the test — must fail if a process.env or out-of-storage db import is introduced.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-024"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Static scan for process.env in src/**",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Static scan for @repo/db outside src/storage/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire guard into test run / CI",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "security", "ai-core"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T14:40:00.000Z",
+                "completed": "2026-06-05T15:00:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 37,
+        "completed": 38,
         "blocked": 0,
         "averageComplexity": 2.5
     }
