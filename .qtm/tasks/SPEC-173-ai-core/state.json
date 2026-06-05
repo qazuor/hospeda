@@ -1036,39 +1036,39 @@
             "id": "T-029",
             "title": "Implement createStreamingRoute() SSE factory",
             "description": "Add createStreamingRoute() to apps/api route factories + a streaming path in ResponseFactory emitting text/event-stream (§5.9/FR-10/AC-10), extending the existing factory pattern. Adapt an AiService.streamText async iterable to SSE token events. Tests: route unit tests asserting Content-Type text/event-stream and incremental token frames (AC-10) using StubProvider.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": ["T-031", "T-038"],
             "subtasks": [
                 {
                     "title": "createStreamingRoute() factory",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ResponseFactory SSE/event-stream path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "streamText → SSE adapter",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SSE route unit tests (AC-10)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["integration", "api", "streaming"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T07:05:00.000Z",
+                "completed": "2026-06-05T07:50:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 29,
+        "completed": 30,
         "blocked": 0,
         "averageComplexity": 2.5
     }
