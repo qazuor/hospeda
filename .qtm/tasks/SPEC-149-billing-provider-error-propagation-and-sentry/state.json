@@ -167,27 +167,27 @@
             "id": "T-006",
             "title": "Wire mapping + Sentry into plan-change path",
             "description": "Spec Parts B+C. Same treatment for the plan-change flow (routes/billing/plan-change.ts + subscription-downgrade/upgrade services — find where provider calls can throw). Tests per the established pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Wiring + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["plan-change", "wiring"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T18:20:47Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T21:15:00Z",
+                "completed": "2026-06-05T21:55:00Z"
             }
         },
         {
