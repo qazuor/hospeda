@@ -202,15 +202,11 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         // Arrange: real guard — should always return valid for this edge
         // (no spy, uses actual checkSubscriptionStatusTransition)
         const returningChain = {
-            where: vi
-                .fn()
-                .mockReturnValue({
-                    returning: vi
-                        .fn()
-                        .mockResolvedValue([
-                            { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }
-                        ])
-                })
+            where: vi.fn().mockReturnValue({
+                returning: vi
+                    .fn()
+                    .mockResolvedValue([{ id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }])
+            })
         };
         const setChain = { set: vi.fn().mockReturnValue(returningChain) };
         mockTx.update.mockReturnValue(setChain);
@@ -231,15 +227,11 @@ describe('abandonedPendingSubsJob handler — transition guard (SPEC-194 T-002)'
         // Arrange: capture the value passed to tx.update().set()
         let capturedSetArg: Record<string, unknown> | undefined;
         const returningChain = {
-            where: vi
-                .fn()
-                .mockReturnValue({
-                    returning: vi
-                        .fn()
-                        .mockResolvedValue([
-                            { id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }
-                        ])
-                })
+            where: vi.fn().mockReturnValue({
+                returning: vi
+                    .fn()
+                    .mockResolvedValue([{ id: 'sub-1', customerId: 'cust-1', planId: 'plan-1' }])
+            })
         };
         const setChain = {
             set: vi.fn().mockImplementation((arg: Record<string, unknown>) => {
