@@ -171,7 +171,7 @@
             "specId": "SPEC-159",
             "title": "Cross-Entity View Tracking",
             "status": "in-progress",
-            "progress": "2/15",
+            "progress": "4/15",
             "path": "SPEC-159-cross-entity-view-tracking",
             "branch": "spec/SPEC-159-cross-entity-view-tracking"
         }

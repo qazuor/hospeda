@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 2/15 tasks (13%)
+## Progress: 4/15 tasks (27%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -14,7 +14,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) - Create entityView Zod schemas in @repo/schemas
+- [x] **T-001** (complexity: 2) - Create entityView Zod schemas in @repo/schemas
   - Capture/window/query/stats schemas + tests (test-first)
   - Blocked by: none
   - Blocks: T-006, T-007, T-008
@@ -36,7 +36,7 @@
   - Blocked by: T-002
   - Blocks: T-006, T-007, T-011
 
-- [ ] **T-005** (complexity: 3) - Implement server-side visitorHash util + env var
+- [x] **T-005** (complexity: 3) - Implement server-side visitorHash util + env var
   - sha256(dailySalt + truncatedIp + UA), no raw IP; HOSPEDA_VIEWS_HASH_SECRET full env workflow
   - Blocked by: none
   - Blocks: T-008
