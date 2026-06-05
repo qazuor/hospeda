@@ -1,6 +1,6 @@
 # SPEC-159: Cross-Entity View Tracking
 
-## Progress: 1/15 tasks (7%)
+## Progress: 2/15 tasks (13%)
 
 **Average Complexity:** 2.4/10
 **Critical Path:** T-002 -> T-004 -> T-006 -> T-008 -> T-012 -> T-013 -> T-014 -> T-015 (8 steps)
@@ -26,7 +26,7 @@
   - Blocked by: none
   - Blocks: T-003, T-004, T-011
 
-- [ ] **T-003** (complexity: 1) - Add entity_views indexes to migrations/extras
+- [x] **T-003** (complexity: 1) - Add entity_views indexes to migrations/extras
   - Two-carriles rule: idempotent SQL mirroring model indexes
   - Blocked by: T-002
   - Blocks: none

@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Create entityView Zod schemas in @repo/schemas",
             "description": "Create packages/schemas/src/entities/entityView/ (follow existing entity schema layout): EntityViewCaptureSchema ({ entityType: ACCOMMODATION|POST|EVENT subset of EntityTypeEnumSchema, entityId: uuid }), EntityViewWindowEnumSchema ('7d'|'30d'), EntityViewQuerySchema ({ window }), EntityViewStatsSchema ({ entityId, unique, total }) and response array schemas. Export from package index. Tests (write first — pure logic): packages/schemas/test/entities/entityView/*.test.ts — valid/invalid entityType (reject DESTINATION etc.), invalid uuid, window enum validation, type inference.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006", "T-007", "T-008"],
@@ -52,21 +52,21 @@
             "id": "T-003",
             "title": "Add entity_views indexes to migrations/extras",
             "description": "Create packages/db/src/migrations/extras/NNN-entity-views.indexes.sql (next free number) mirroring the model indexes per the two-carriles rule, following 008-bookmark.indexes.sql exactly: idx_entity_views_entity_time (entity_type, entity_id, viewed_at), idx_entity_views_time (viewed_at). Idempotent (CREATE INDEX IF NOT EXISTS). Verify pnpm db:apply-extras runs clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
-                { "title": "Idempotent extras SQL", "completed": false },
-                { "title": "db:apply-extras verified", "completed": false }
+                { "title": "Idempotent extras SQL", "completed": true },
+                { "title": "db:apply-extras verified", "completed": true }
             ],
             "tags": ["database", "migration", "extras"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-04T23:03:02.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T01:25:00.000Z",
+                "completed": "2026-06-05T01:35:00.000Z"
             }
         },
         {
@@ -99,7 +99,7 @@
             "id": "T-005",
             "title": "Implement server-side visitorHash util + env var",
             "description": "Create apps/api/src/utils/visitor-hash.ts: computeVisitorHash({ ip, userAgent, date }) = sha256(dailySalt + truncatedIp + userAgent) using Node crypto; dailySalt = hmac(HOSPEDA_VIEWS_HASH_SECRET, yyyy-mm-dd). Authenticated visitors use 'user:<uuid>' instead. Raw IP must NEVER be stored or logged. Env var workflow (ALL steps): register HOSPEDA_VIEWS_HASH_SECRET in packages/config/src/env-registry.*.ts, Zod validation in apps/api/src/utils/env.ts, .env.example placeholder, then STOP and tell the user to set it in Coolify. Tests (write first): same visitor same day -> same hash; cross-day -> different hash; different UA/IP -> different hash; output contains no raw IP substring.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008"],
@@ -340,9 +340,9 @@
     ],
     "summary": {
         "total": 15,
-        "pending": 14,
-        "inProgress": 0,
-        "completed": 1,
+        "pending": 11,
+        "inProgress": 2,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.4
     }
