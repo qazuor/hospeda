@@ -50,8 +50,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 202 (2026-06-03, merge): staging's SPEC-184 (`API_LOG_FORMAT`, 200) and this
  * branch's SPEC-182 (+2, 201) were added independently off the same 199 base;
  * the merged registry holds both sets.
+ *
+ * 203 (2026-06-05, SPEC-159 T-005): added HOSPEDA_VIEWS_HASH_SECRET (server-side
+ * HMAC secret for the cookieless visitor hash used by entity view tracking).
  */
-const EXPECTED_VAR_COUNT = 202;
+const EXPECTED_VAR_COUNT = 203;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
