@@ -580,8 +580,8 @@ update the counter logic and set `Status = wired` in the main table.
 
 | LimitKey | Stub location | Blocking dependency | Spec |
 |---|---|---|---|
-| `max_properties` | `middlewares/limit-enforcement.ts:619` | Multi-property management service (not yet built) | SPEC-145 T-145-04 |
-| `max_staff_accounts` | `middlewares/limit-enforcement.ts:725` | Staff accounts management service (not yet built) | SPEC-145 T-145-04 |
+| `max_properties` | `middlewares/limit-enforcement.ts:620` | Multi-property management service (not yet built) | SPEC-145 T-145-04 |
+| `max_staff_accounts` | `middlewares/limit-enforcement.ts:726` | Staff accounts management service (not yet built) | SPEC-145 T-145-04 |
 
 ---
 

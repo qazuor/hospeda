@@ -20,7 +20,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     enforceAccommodationLimit,
     enforcePhotoLimit,
-    enforcePromotionLimit
+    enforcePromotionLimit,
+    enforcePropertiesLimit,
+    enforceStaffAccountsLimit
 } from '../../src/middlewares/limit-enforcement';
 import type { AppBindings } from '../../src/types';
 
@@ -933,6 +935,140 @@ describe('Limit Enforcement Middleware', () => {
                     upgradeAudience: 'host'
                 });
             }
+        });
+    });
+});
+
+/**
+ * RESERVED-LIMIT pinning tests (SPEC-145 T-007)
+ *
+ * These tests assert the stub-always-passes behaviour for MAX_PROPERTIES and
+ * MAX_STAFF_ACCOUNTS. Both limits have a hardcoded currentCount=0 because the
+ * counting service has not been built yet (see docs/billing/endpoint-gate-matrix.md
+ * "Reserved — Limit Stubs"). The tests intentionally verify that:
+ *   1. The middleware calls next() (never blocks) for an authenticated actor.
+ *   2. No LIMIT_REACHED error is thrown even when the plan ceiling is very low.
+ *
+ * If either test starts failing, it means someone wired a real count source
+ * without updating this file — that is a deliberate break that forces a review.
+ */
+describe('RESERVED-LIMIT stubs — pinning tests (SPEC-145)', () => {
+    let mockContext: Context<AppBindings>;
+    let mockNext: ReturnType<typeof vi.fn>;
+    let mockLimitsMap: Map<LimitKey, number>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        mockLimitsMap = new Map<LimitKey, number>();
+
+        mockContext = {
+            req: {
+                param: vi.fn().mockReturnValue('complex-id-123')
+            },
+            get: vi.fn((key: string) => {
+                if (key === 'userLimits') {
+                    return mockLimitsMap;
+                }
+                return undefined;
+            }),
+            header: vi.fn()
+        } as unknown as Context<AppBindings>;
+
+        mockNext = vi.fn();
+    });
+
+    describe('enforcePropertiesLimit — stub always passes', () => {
+        it('always calls next() because counting service is not built', async () => {
+            // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
+            const actor: Actor = {
+                id: 'host-stub-123',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            // Set the plan limit extremely low — the stub count is 0, so it still passes
+            mockLimitsMap.set(LimitKey.MAX_PROPERTIES, 1);
+
+            const middleware = enforcePropertiesLimit();
+
+            // Act
+            await middleware(mockContext, mockNext);
+
+            // Assert — never blocked; next() must be called
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+
+        it('does not throw ServiceError when plan ceiling is 0 (stub count is 0)', async () => {
+            // Arrange — a plan with ceiling 0 would normally block immediately, but
+            // checkLimit treats 0 as "not configured" / unlimited so the stub still passes
+            const actor: Actor = {
+                id: 'host-stub-456',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            // No limit key in context — checkLimit falls back to unlimited (0 = no limit set)
+            const middleware = enforcePropertiesLimit();
+
+            // Act & Assert
+            await expect(middleware(mockContext, mockNext)).resolves.toBeUndefined();
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('enforceStaffAccountsLimit — stub always passes', () => {
+        it('always calls next() because staff service is not built', async () => {
+            // Arrange — actor is authenticated and limit ceiling is 1 (very tight)
+            const actor: Actor = {
+                id: 'host-staff-stub-123',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            mockContext = {
+                ...mockContext,
+                req: {
+                    param: vi.fn()
+                }
+            } as unknown as Context<AppBindings>;
+
+            mockLimitsMap.set(LimitKey.MAX_STAFF_ACCOUNTS, 1);
+
+            const middleware = enforceStaffAccountsLimit();
+
+            // Act
+            await middleware(mockContext, mockNext);
+
+            // Assert — never blocked; next() must be called
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
+
+        it('does not throw ServiceError even with low ceiling (stub count is 0)', async () => {
+            // Arrange
+            const actor: Actor = {
+                id: 'host-staff-stub-456',
+                role: RoleEnum.HOST,
+                permissions: [PermissionEnum.ACCOMMODATION_LISTING_CREATE]
+            };
+            vi.mocked(getActorFromContext).mockReturnValue(actor);
+
+            mockContext = {
+                ...mockContext,
+                req: {
+                    param: vi.fn()
+                }
+            } as unknown as Context<AppBindings>;
+
+            // No limit key set — checkLimit returns unlimited
+            const middleware = enforceStaffAccountsLimit();
+
+            // Act & Assert
+            await expect(middleware(mockContext, mockNext)).resolves.toBeUndefined();
+            expect(mockNext).toHaveBeenCalledOnce();
         });
     });
 });
