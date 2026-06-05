@@ -216,6 +216,17 @@
 
 /* ── Cover-plus-grid variant ────────────────────────────────────────────── */
 
+/*
+ * .coverPlusGrid stacks the cover (16:9) above the count-aware extras grid.
+ * The extras grid (.inlineGrid) uses data-extras-count to pick the right
+ * column template per the §5 matrix:
+ *
+ *   data-extras-count="1"    → 1 col  (1 half  cell,  4:3)
+ *   data-extras-count="2"    → 2 cols (2 half  cells, 4:3)
+ *   data-extras-count="3"    → 3 cols (3 quarter cells, 1:1)
+ *   data-extras-count="3plus"→ 3 cols (3 quarter cells; last = overlay)
+ */
+
 .coverPlusGrid {
     display: flex;
     flex-direction: column;
@@ -254,39 +265,84 @@
     outline-offset: 2px;
 }
 
+/*
+ * .inlineGrid — count-aware extras grid.
+ * Default (no data-extras-count or "0"): not rendered (JS handles this).
+ * Column template is driven by data-extras-count attribute selectors.
+ */
 .inlineGrid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-2, 8px);
+    /* Fallback: 3 columns (matches the most common 5+ case). */
+    grid-template-columns: repeat(3, 1fr);
 }
 
+/* 1 extra (count=2): single full-width half cell */
+.inlineGrid[data-extras-count="1"] {
+    grid-template-columns: 1fr;
+}
+
+/* 2 extras (count=3): two equal half cells */
+.inlineGrid[data-extras-count="2"] {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* 3 extras (count=4): three equal quarter cells */
+.inlineGrid[data-extras-count="3"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/* 3 extras with overlay (count=5+): three equal quarter cells, last = overlay */
+.inlineGrid[data-extras-count="3plus"] {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+/*
+ * .inlineGridBtn — button wrapper for non-overlay extras cells.
+ * Aspect-ratio is set per cell role via .cellHalf / .cellQuarter (shared classes).
+ * The radius comes from the shared card token.
+ */
 .inlineGridBtn {
     display: block;
+    position: relative;
     overflow: hidden;
     border: none;
     padding: 0;
     background: none;
     cursor: pointer;
-    aspect-ratio: 4 / 3;
+    width: 100%;
+    height: 100%;
     border-radius: var(--radius-card, 24px);
 }
 
-.inlineGridImg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform var(--duration-normal, 0.4s) ease;
-}
-
-.inlineGridBtn:hover .inlineGridImg,
-.inlineGridBtn:focus-visible .inlineGridImg {
+.inlineGridBtn:hover .cellImg,
+.inlineGridBtn:focus-visible .cellImg {
     transform: scale(1.06);
 }
 
 .inlineGridBtn:focus-visible {
     outline: 3px solid var(--primary, oklch(0.55 0.17 264));
     outline-offset: -3px;
+}
+
+/*
+ * Overlay cell border-radius — the shared .moreOverlay does not set radius
+ * because the detail variant uses it inside .thumbGrid (which has no radius).
+ * In the inline extras grid the overlay cell should match the card radius.
+ */
+.inlineGrid .moreOverlay {
+    border-radius: var(--radius-card, 24px);
+}
+
+/*
+ * .cellHalf and .cellQuarter inside the inline grid need border-radius too
+ * (the shared cell classes don't set it — they rely on the container's overflow).
+ * Since .inlineGrid has no overflow:hidden, apply it per-cell.
+ */
+.inlineGrid .cellHalf,
+.inlineGrid .cellQuarter {
+    border-radius: var(--radius-card, 24px);
+    overflow: hidden;
 }
 
 /* ── Lightbox ───────────────────────────────────────────────────────────── */
@@ -508,8 +564,15 @@
         grid-template-columns: repeat(3, 1fr);
     }
 
-    /* cover-plus-grid: extras drop to 2-column row */
-    .inlineGrid {
+    /*
+     * cover-plus-grid mobile — extras collapse to fewer columns per §5 / FR-7:
+     * 1 extra  → stays 1 column (already single-column).
+     * 2 extras → stays 2 columns (fits mobile width).
+     * 3 extras (count=4 or 5+) → drop to 2 columns so cells aren't too narrow.
+     * The fallback (repeat(3,1fr)) is overridden only for the 3-extras cases.
+     */
+    .inlineGrid[data-extras-count="3"],
+    .inlineGrid[data-extras-count="3plus"] {
         grid-template-columns: repeat(2, 1fr);
     }
 

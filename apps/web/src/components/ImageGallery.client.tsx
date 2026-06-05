@@ -348,20 +348,66 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
 
 // ─── Cover-plus-grid variant ─────────────────────────────────────────────────
 
+/**
+ * Derives the data-extras-count attribute value from the total image count in
+ * the cover-plus-grid variant. The cover image is always rendered separately;
+ * this key represents the number of "extras" slots to render in the inline grid.
+ *
+ * | Total | Extras shown | data-extras-count |
+ * |-------|-------------|-------------------|
+ * | 1     | 0 (no grid) | "0"               |
+ * | 2     | 1 half cell | "1"               |
+ * | 3     | 2 half cells | "2"              |
+ * | 4     | 3 quarter cells | "3"           |
+ * | 5+    | 3 quarter cells (last = overlay) | "3plus" |
+ */
+export function getCoverExtrasCountKey(totalCount: number): string {
+    if (totalCount <= 1) return '0';
+    if (totalCount === 2) return '1';
+    if (totalCount === 3) return '2';
+    if (totalCount === 4) return '3';
+    return '3plus'; // 5+
+}
+
+/**
+ * Returns the number of extras cells to render (excluding the cover) for a
+ * given total image count in the cover-plus-grid variant, per the §5 matrix.
+ *
+ * | Total | Visible extras |
+ * |-------|---------------|
+ * | 1     | 0 (cover only) |
+ * | 2     | 1 (1 half cell) |
+ * | 3     | 2 (2 half cells) |
+ * | 4     | 3 (3 quarter cells) |
+ * | 5+    | 3 (3 quarter cells; last = overlay) |
+ */
+export function getVisibleExtrasCount(totalCount: number): number {
+    if (totalCount <= 1) return 0;
+    if (totalCount === 2) return 1;
+    if (totalCount === 3) return 2;
+    return 3; // 4 and 5+
+}
+
 interface CoverPlusGridVariantProps {
     readonly images: ReadonlyArray<GalleryImage>;
     readonly onOpen: (index: number) => void;
-    readonly t: (key: string, fallback?: string) => string;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 }
 
 function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) {
     const [cover, ...rest] = images;
+    const totalCount = images.length;
+    const visibleExtrasCount = getVisibleExtrasCount(totalCount);
+    const visibleExtras = rest.slice(0, visibleExtrasCount);
+    // N in "+N más" = total images minus the cover minus the visible extras.
+    const moreCount = totalCount >= 5 ? totalCount - 4 : 0;
+    const extrasCountKey = getCoverExtrasCountKey(totalCount);
 
     if (!cover) return null;
 
     return (
         <div className={styles.coverPlusGrid}>
-            {/* Cover image */}
+            {/* Cover image — 16:9, eager load */}
             <button
                 type="button"
                 className={styles.coverBtn}
@@ -382,28 +428,76 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                 </span>
             </button>
 
-            {/* Inline grid */}
-            {rest.length > 0 && (
-                <div className={styles.inlineGrid}>
-                    {rest.slice(0, 6).map((img, i) => (
-                        <button
-                            key={img.url}
-                            type="button"
-                            className={styles.inlineGridBtn}
-                            aria-label={t(
-                                'ui.accessibility.openFullscreen',
-                                'Ver en pantalla completa'
-                            )}
-                            onClick={() => onOpen(i + 1)}
-                        >
-                            <img
-                                src={img.url}
-                                alt={img.alt}
-                                className={styles.inlineGridImg}
-                                loading="lazy"
-                            />
-                        </button>
-                    ))}
+            {/* Inline extras grid — count-aware columns, only when extras exist */}
+            {visibleExtras.length > 0 && (
+                <div
+                    className={styles.inlineGrid}
+                    data-extras-count={extrasCountKey}
+                >
+                    {visibleExtras.map((img, i) => {
+                        // Last extras cell at count >= 5 becomes the "+N más" overlay.
+                        const isOverlayCell = moreCount > 0 && i === visibleExtras.length - 1;
+                        // Lightbox opens at index i+1 (cover is index 0).
+                        // Overlay opens at the first hidden image = cover + visibleExtras = index 4.
+                        const lightboxIndex = i + 1;
+
+                        // counts 2-3: half cells (4:3). counts 4-5+: quarter cells (1:1).
+                        const cellClass = totalCount <= 3 ? styles.cellHalf : styles.cellQuarter;
+
+                        if (isOverlayCell) {
+                            return (
+                                <div
+                                    key={img.url}
+                                    className={`${cellClass} ${styles.moreOverlay}`}
+                                >
+                                    <img
+                                        src={img.url}
+                                        alt={img.alt}
+                                        className={styles.cellImg}
+                                        loading="lazy"
+                                        aria-hidden="true"
+                                    />
+                                    {/* Keyboard-accessible overlay — opens lightbox at first hidden image */}
+                                    <button
+                                        type="button"
+                                        className={styles.moreOverlayBtn}
+                                        aria-label={t(
+                                            'accommodations.detail.gallery.moreOverlay',
+                                            `+${moreCount} más`,
+                                            { count: moreCount }
+                                        )}
+                                        onClick={() => onOpen(lightboxIndex + 1)}
+                                    >
+                                        {t(
+                                            'accommodations.detail.gallery.moreOverlay',
+                                            `+${moreCount} más`,
+                                            { count: moreCount }
+                                        )}
+                                    </button>
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <button
+                                key={img.url}
+                                type="button"
+                                className={`${cellClass} ${styles.inlineGridBtn}`}
+                                aria-label={t(
+                                    'ui.accessibility.openFullscreen',
+                                    'Ver en pantalla completa'
+                                )}
+                                onClick={() => onOpen(lightboxIndex)}
+                            >
+                                <img
+                                    src={img.url}
+                                    alt={img.alt}
+                                    className={styles.cellImg}
+                                    loading="lazy"
+                                />
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>
