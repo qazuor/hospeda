@@ -717,35 +717,35 @@
             "id": "T-020",
             "title": "Wire moderation pass into AiService flow",
             "description": "In src/safety/ + engine, route input/output through a moderation pass (AiProvider.moderate, Q4 OpenAI default) before serving/storing (§5.10.3). Block/flag on moderation failure with a controlled error. RO-RO, JSDoc. Tests: unit tests with StubProvider moderation asserting flagged content is blocked and clean content passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Input/output moderation pass wiring",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Controlled error on moderation block",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write moderation-flow unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["core", "service", "safety", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-04T04:53:30.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-05T05:10:00.000Z",
+                "completed": "2026-06-05T05:45:00.000Z"
             }
         },
         {
@@ -1552,9 +1552,9 @@
     ],
     "summary": {
         "total": 43,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.5
     }
