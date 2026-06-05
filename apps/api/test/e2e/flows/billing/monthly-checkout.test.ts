@@ -313,16 +313,18 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(subs).toHaveLength(1);
     });
 
-    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
-        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
-        // (the qzpay default, mirrored by hospeda's middlewares/billing.ts).
-        // When the adapter throws, qzpay logs a warning and returns the
-        // un-enriched local subscription (no providerInitPoint). The hospeda
-        // handler then surfaces MISSING_INIT_POINT as 500.
+    it('returns 500 when the adapter throws a 429 (subscriptions.create re-throws raw, not QZPayProviderSyncError)', async () => {
+        // qzpay-core is constructed with `providerSyncErrorStrategy: 'throw'`
+        // (SPEC-149 T-002). However, the subscriptions.create path re-throws
+        // the raw adapter error — NOT wrapped in QZPayProviderSyncError —
+        // so isBillingProviderError() returns false. The error falls through
+        // to the generic 500 handler. This is distinct from the annual flow
+        // (checkout.create), which DOES wrap in QZPayProviderSyncError and
+        // maps 429 → 503 (PROVIDER_RATE_LIMITED).
         //
-        // This validates the qzpay log-strategy branch end-to-end, distinct
-        // from the previous test which exercised the success-with-missing-url
-        // path. Both reach the same 500 but via different qzpay internals.
+        // This validates the monthly subscriptions.create throw path
+        // end-to-end, distinct from the previous test which exercised the
+        // success-with-missing-url path.
         mpStub.config.setError(
             'subscriptions.create',
             429,
@@ -335,6 +337,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             billingInterval: 'monthly'
         });
 
+        // Monthly flow: subscriptions.create re-throws raw error.
+        // isBillingProviderError() → false → generic 500.
         expect(response.status).toBe(500);
 
         // Adapter was called and threw — outcome recorded as 'error'.
@@ -342,10 +346,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('error');
 
-        // Local subscription row persists despite the provider failure (the
-        // abandoned-pending-subs cron reaper handles it later). qzpay-core's
-        // `log` strategy explicitly keeps the local record so the user can
-        // retry by hitting the endpoint again without an orphaned state.
+        // Local subscription row persists (qzpay-core subscription throw
+        // path keeps the local record for the cron reaper to collect later).
         const subs = await testDb.getDb().select().from(billingSubscriptions);
         expect(subs).toHaveLength(1);
     });

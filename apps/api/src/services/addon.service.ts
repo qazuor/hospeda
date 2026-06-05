@@ -94,6 +94,12 @@ export class AddonService {
      *
      * @param input - Purchase request details
      * @returns Checkout URL, order ID, amount, and expiration
+     *
+     * @throws {ServiceError} With `ServiceErrorCode.PROVIDER_ERROR` (→ HTTP 502),
+     *   `ServiceErrorCode.PROVIDER_RATE_LIMITED` (→ HTTP 503), or
+     *   `ServiceErrorCode.PROVIDER_TIMEOUT` (→ HTTP 504) on MercadoPago provider
+     *   failures (mapped to the appropriate HTTP status by `handleRouteError`).
+     *   All other failures return `ServiceResult` with `success: false` and never throw.
      */
     async purchase(input: PurchaseAddonInput): Promise<ServiceResult<PurchaseAddonResult>> {
         if (!this.billing) {

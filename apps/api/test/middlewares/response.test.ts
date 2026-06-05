@@ -276,6 +276,126 @@ describe('Response Middleware', () => {
             });
         });
 
+        it('should map PROVIDER_ERROR to HTTP 502 with correct code', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-error', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_ERROR,
+                    'Payment provider returned an unexpected error',
+                    { retryAfter: 30 }
+                );
+            });
+
+            const res = await app.request('/provider-error');
+
+            expect(res.status).toBe(502);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('PROVIDER_ERROR');
+            expect(data.error.message).toBe('Payment provider returned an unexpected error');
+        });
+
+        it('should map PROVIDER_RATE_LIMITED to HTTP 503 with correct code', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-rate-limited', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_RATE_LIMITED,
+                    'Payment provider is throttling requests',
+                    { retryAfter: 60 }
+                );
+            });
+
+            const res = await app.request('/provider-rate-limited');
+
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('PROVIDER_RATE_LIMITED');
+            expect(data.error.message).toBe('Payment provider is throttling requests');
+        });
+
+        it('should emit Retry-After header for PROVIDER_RATE_LIMITED with retryAfter detail (SPEC-149)', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-rate-limited-header', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_RATE_LIMITED,
+                    'Payment provider is throttling',
+                    { provider: 'payment-provider', operation: 'checkout_create', retryAfter: 45 }
+                );
+            });
+
+            const res = await app.request('/provider-rate-limited-header');
+
+            expect(res.status).toBe(503);
+            // Retry-After header must be present and equal the value from details
+            expect(res.headers.get('Retry-After')).toBe('45');
+        });
+
+        it('should NOT emit Retry-After header for PROVIDER_RATE_LIMITED without retryAfter detail', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-rate-limited-no-retry', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_RATE_LIMITED,
+                    'Payment provider is throttling (no retry hint)',
+                    { provider: 'payment-provider', operation: 'checkout_create' }
+                );
+            });
+
+            const res = await app.request('/provider-rate-limited-no-retry');
+
+            expect(res.status).toBe(503);
+            // No Retry-After when details.retryAfter is absent
+            expect(res.headers.get('Retry-After')).toBeNull();
+        });
+
+        it('should NOT emit Retry-After header for non-rate-limited errors even with retryAfter detail', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-timeout-no-retry-header', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_TIMEOUT,
+                    'Payment provider timed out',
+                    { provider: 'payment-provider', operation: 'checkout_create', retryAfter: 10 }
+                );
+            });
+
+            const res = await app.request('/provider-timeout-no-retry-header');
+
+            expect(res.status).toBe(504);
+            // PROVIDER_TIMEOUT should NOT emit Retry-After — only PROVIDER_RATE_LIMITED does
+            expect(res.headers.get('Retry-After')).toBeNull();
+        });
+
+        it('should map PROVIDER_TIMEOUT to HTTP 504 with correct code', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/provider-timeout', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PROVIDER_TIMEOUT,
+                    'Payment provider did not respond in time',
+                    { retryAfter: 10 }
+                );
+            });
+
+            const res = await app.request('/provider-timeout');
+
+            expect(res.status).toBe(504);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('PROVIDER_TIMEOUT');
+            expect(data.error.message).toBe('Payment provider did not respond in time');
+        });
+
         it('should format generic errors as internal server error', async () => {
             app.get('/generic-error', () => {
                 throw new Error('Something went wrong');

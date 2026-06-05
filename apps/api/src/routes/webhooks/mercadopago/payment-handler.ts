@@ -11,10 +11,15 @@
 
 import type { QZPayProviderPayment } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
+import { captureBillingError } from '../../../lib/sentry';
 import { apiLogger } from '../../../utils/logger';
 import { cleanupRequestProviderEventId } from './event-handler';
 import { processPaymentUpdated } from './payment-logic';
-import { getWebhookDependencies, markEventProcessedByProviderId } from './utils';
+import {
+    getWebhookDependencies,
+    markEventFailedByProviderId,
+    markEventProcessedByProviderId
+} from './utils';
 
 /**
  * Handler for payment.created events.
@@ -103,20 +108,33 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
         }
 
         // Fetch the full payment object — IPN carries only data.id.
+        // A failure here is a transient provider error — mark failed so the
+        // dead-letter queue can retry it, instead of silently treating it as
+        // processed. MercadoPago will not retry acknowledged (2xx) events, so
+        // we rely on our own retry/DLQ mechanism for recovery.
         let providerPayment: QZPayProviderPayment;
         try {
             providerPayment = await dependencies.paymentAdapter.payments.retrieve(paymentId);
         } catch (retrieveErr) {
+            const errMessage =
+                retrieveErr instanceof Error ? retrieveErr.message : String(retrieveErr);
             apiLogger.error(
                 {
                     paymentId,
                     eventId: event.id,
                     requestId: c.get('requestId'),
-                    error: retrieveErr instanceof Error ? retrieveErr.message : String(retrieveErr)
+                    error: errMessage
                 },
-                'Failed to retrieve payment from MercadoPago — event acknowledged but unprocessed'
+                'Failed to retrieve payment from MercadoPago — marking event failed for retry'
             );
-            await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+            captureBillingError(
+                retrieveErr instanceof Error ? retrieveErr : new Error(errMessage),
+                { operation: 'payment_retrieve' }
+            );
+            await markEventFailedByProviderId({
+                providerEventId: String(event.id),
+                errorMessage: errMessage
+            });
             cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
             return undefined;
         }
@@ -143,15 +161,38 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
             source: 'webhook'
         });
     } catch (error) {
+        // Transient / unexpected error from processPaymentUpdated (e.g. DB
+        // hiccup, provider sync failure). Mark the event failed so the
+        // dead-letter queue can retry it. Never silently treat it as processed.
+        const errMessage = error instanceof Error ? error.message : String(error);
         apiLogger.error(
             {
-                error: error instanceof Error ? error.message : String(error),
+                error: errMessage,
                 stack: error instanceof Error ? error.stack : undefined,
                 eventId: event.id,
                 requestId: c.get('requestId')
             },
-            'Error processing payment.updated in webhook'
+            'Error processing payment.updated in webhook — marking event failed for retry'
         );
+        captureBillingError(error instanceof Error ? error : new Error(errMessage), {
+            operation: 'payment_updated_webhook'
+        });
+        try {
+            await markEventFailedByProviderId({
+                providerEventId: String(event.id),
+                errorMessage: errMessage
+            });
+        } catch (markErr) {
+            apiLogger.warn(
+                {
+                    eventId: event.id,
+                    error: markErr instanceof Error ? markErr.message : String(markErr)
+                },
+                'Failed to mark payment.updated event as failed — event may be reprocessed'
+            );
+        }
+        cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
+        return undefined;
     }
 
     await markEventProcessedByProviderId({ providerEventId: String(event.id) });

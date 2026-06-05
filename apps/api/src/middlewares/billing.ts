@@ -91,12 +91,20 @@ function getBillingInstance(): QZPayBilling | null {
         // event mapping) through hospeda's structured apiLogger.
         const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
 
-        // Create billing instance
+        // Create billing instance.
+        // `providerSyncErrorStrategy: 'throw'` is set explicitly so that
+        // QZPayProviderSyncError surfaces to our Hono error handler on every
+        // environment (including sandbox/test), where it is mapped to the
+        // correct ServiceErrorCode by billing-provider-error.ts (SPEC-149 T-002).
+        // Without this, qzpay-core defaults to 'log' in non-livemode and silently
+        // swallows provider errors — callers would receive a null/undefined result
+        // instead of a typed ServiceError.
         billingInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
-            livemode
+            livemode,
+            providerSyncErrorStrategy: 'throw'
         });
 
         apiLogger.info('✅ QZPay billing initialized successfully');

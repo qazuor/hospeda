@@ -2,7 +2,7 @@
 specId: SPEC-149
 title: Billing provider error propagation + Sentry context + retry policy
 type: refactor
-status: draft
+status: in-progress
 complexity: high
 created: 2026-05-20T00:00:00Z
 discoveredDuring: SPEC-143 T-143-59 reframe
@@ -32,7 +32,11 @@ During reframe (2026-05-20), grep against `apps/api/src/middlewares/billing.ts`,
 - **No Sentry capture in the start-paid path**. The route handler logs to apiLogger but does not call `captureBillingError`. Existing Sentry hooks live in admin-cancel, addon-lifecycle-cancellation, plan-change services — but not in the user-facing start-paid + monthly/annual checkout services.
 - **No retry policy**. The user is told "Please try again" but there is no backoff strategy, retry budget, or retry-after header (relevant for MP 429).
 
-Root cause for the uniform 500 mapping: `apps/api/src/middlewares/billing.ts:91-96` constructs the QZPay billing instance with no explicit `providerSyncErrorStrategy`, so qzpay-core uses the default `'log'` strategy. When the MP adapter throws, qzpay-core LOGS a warning and RETURNS the un-enriched local session (no `providerInitPoint`). The hospeda handler then surfaces `MISSING_INIT_POINT` as 500. The underlying MP error (status code, message, body) is lost before it reaches our error handler.
+Root cause for the uniform 500 mapping — REVISED at realign (2026-06-05): `apps/api/src/middlewares/billing.ts:95-100` constructs the QZPay billing instance with no explicit `providerSyncErrorStrategy`, and qzpay-core NOW defaults to `livemode ? 'throw' : 'log'` (`livemode = !env.HOSPEDA_MERCADO_PAGO_SANDBOX`, billing.ts:83). Consequences:
+
+- **Production/live**: strategy is already `'throw'` — the MP adapter error propagates as `QZPayProviderSyncError {provider, operation, cause: <original adapter error>}` and hits the generic catch (e.g. `start-paid.ts:264`) → still uniform 500, but via the throw path, NOT the log path the original analysis described.
+- **Dev/staging-sandbox**: strategy is `'log'` — the original MISSING_INIT_POINT→500 path applies.
+- The environments behave DIFFERENTLY today; part of this spec's job is making them uniform (explicit `'throw'` everywhere).
 
 T-143-59 has been reframed to a regression-guard test that documents the current 500-uniform behavior. The real work — propagating MP errors with full context, mapping them to user-meaningful HTTP statuses, capturing in Sentry, and gating retries — is captured by this spec.
 
@@ -79,20 +83,22 @@ billingInstance = createQZPayBilling({
 **Pros**: localised, opt-in propagation; no behavioral break for existing callers.
 **Cons**: depends on qzpay-core exposing the hook (may need a qzpay-core feature request).
 
-**Decision**: prefer Option 2 if available; fall back to Option 1 with comprehensive audit + rollout via a feature flag.
+**Decision (realign 2026-06-05)**: Option 2 is DEAD — verified qzpay-core has no `onProviderSyncError` hook anywhere; adding one means a qzpay changeset + npm release cycle for no real gain. Go with **Option 1, explicitly**: set `providerSyncErrorStrategy: 'throw'` in `apps/api/src/middlewares/billing.ts` so dev/staging/prod behave identically (prod is ALREADY throw via the livemode default — the "audit of every caller" risk is therefore largely retired: production has been running on throw, and the SPEC-127/145 e2e suites exercise the checkout catch paths). The thrown error is `QZPayProviderSyncError {provider, operation, cause}` — the original adapter error (with MP status) travels in `cause`; no qzpay changes needed. No feature flag required (prod behavior is unchanged; only dev/sandbox flips to match prod).
 
 ### Part B — Error mapping at the route layer
 
 New helper `apps/api/src/lib/billing-provider-error.ts`:
 
-- `isBillingProviderError(err): boolean` — duck-typing check based on `.status` field.
-- `mapBillingProviderErrorToHttp(err, context): HTTPException`:
+- `isBillingProviderError(err): boolean` — `err instanceof QZPayProviderSyncError` (exported by qzpay-core) plus extraction of the MP status from `err.cause` (duck-type the cause's `.status`/`.statusCode` — verify against the real MP SDK error shape and the mp-stub's error shape).
+- Mapping (status semantics unchanged from the original draft):
   - MP 422 → 422 (business rule violation, user-fixable)
   - MP 429 → 503 with `Retry-After` header
   - MP 408 (timeout) / 504 → 504
   - MP 502/503/500 → 502
   - MP 400/401/403/404 → 502 (our integration issue, not user-fixable)
-  - Malformed response → 502
+  - Malformed response / unknown → 502
+
+**Mechanism (realign 2026-06-05)**: throw `ServiceError`, NOT `HTTPException`. Verified: the global `createErrorHandler` (response.ts:262) maps HTTPException 502/503/504 to body code `INTERNAL_ERROR` (its explicit map only covers 400/401/403/404/409) — the status would be right but the `code` field wrong. Instead: add `ServiceErrorCode.PROVIDER_ERROR` (→502), `PROVIDER_RATE_LIMITED` (→503), `PROVIDER_TIMEOUT` (→504) to `@repo/schemas` + the `ERROR_CODE_TO_HTTP` map, and have the helper throw `ServiceError` with the right code + safe details ({provider: 'payment provider', operation, retryAfter?}). `Retry-After` header: verify how the global handler can attach headers (or set it in the helper via context); if the handler can't carry headers, set it at the route catch site.
 
 User-facing messages mention "payment provider" instead of "MercadoPago" to keep the integration leak-free.
 
@@ -110,17 +116,17 @@ captureBillingError(err, {
 }, 'error');
 ```
 
-Reuse existing `captureBillingError` helper in `apps/api/src/lib/sentry.ts:198`.
+Reuse existing `captureBillingError` helper in `apps/api/src/lib/sentry.ts:218` (line drifted). Realign notes: (a) `BillingContext` has NO `operation`/`mpStatus`/`mpCode` fields — extend the interface (or add a `providerError` sub-object) first; (b) current call sites are all in `billing-error-handler.ts` generic wrappers (:101,:286,:347,:405) — zero capture in start-paid / subscription-checkout / addon.checkout, confirming the gap; (c) addon path (SPEC-127): `createAddonCheckout` has NO try/catch around `billing.checkout.create` — provider errors escape raw to the global 500; Part B/C wiring must add the catch there (mirroring start-paid).
 
-### Part D — Retry policy
+### Part D — Retry policy (DESCOPED at realign 2026-06-05)
 
-For idempotent operations (which start-paid is NOT, but read-only refresh paths might be):
+Verified: the idempotency middleware caches ONLY completed 2xx responses (idempotency-key.ts:209-210) — there is NO in-flight/pending marker. Server-side retries would fire concurrent duplicate requests into qzpay-core. **Server-side automatic retries are therefore OUT OF SCOPE** (in-flight locking is a separate infrastructure feature, not worth its risk for go-live).
 
-- Transient errors (429, 502, 503, 504, timeout) → retry up to N times with exponential backoff
-- 4xx errors → no retry (terminal)
-- Malformed → no retry (terminal)
+Replacement scope:
 
-`X-Idempotency-Key` middleware (SPEC-143 T-143-60) already guarantees per-key idempotency at the request level, so server-side retries are safe for start-paid IF the idempotency middleware caches the in-flight state. Verify this before enabling.
+- 429/503 responses carry `Retry-After` so CLIENTS can back off (Part B).
+- Document the no-server-retry decision + the in-flight-cache gap in the helper's JSDoc and in the billing docs (future spec candidate if MP throttling becomes a real problem).
+- A pinning test asserting transient provider errors return WITHOUT retrying (single adapter call).
 
 ## Acceptance criteria
 
@@ -134,6 +140,20 @@ For idempotent operations (which start-paid is NOT, but read-only refresh paths 
 8. SPEC-143 `mp-error-handling.test.ts` (regression-guard) is updated to assert the new mappings.
 9. `monthly-checkout.test.ts:326-351` 429 → 500 expectation is updated to 429 → 503.
 10. `annual-checkout.test.ts:285-318` 429 → 500 expectation is updated to 429 → 503.
+
+### Scope limitation — monthly preapproval path (added M1 reconciliation, 2026-06-05)
+
+The PROVIDER_* error mapping (criteria 1–7 above) currently applies to:
+
+- **Annual checkout** (`billing.checkout.create`) — qzpay-core wraps errors in `QZPayProviderSyncError` ✓
+- **Addon checkout** (`billing.checkout.create`) — same wrap path ✓
+- **Plan-change** (`billing.checkout.create`) — same wrap path ✓
+
+The **monthly preapproval path** (`billing.subscriptions.create`) is a **known exception**: qzpay-core's `subscriptions.create` re-throws the raw adapter error WITHOUT wrapping it in `QZPayProviderSyncError`. As a result, monthly provider errors fall through to the generic HTTP 500 catch block and do NOT trigger PROVIDER_* mapping or `captureBillingError`.
+
+This is pinned at unit level by `test/routes/start-paid.test.ts` ("REAL BEHAVIOR" test) and at e2e level by `test/e2e/flows/billing/monthly-checkout.test.ts:316-352` and `mp-error-handling.test.ts:25-31`. The unit tests that exercise the catch-block wiring with a synthetic wrapped error are explicitly labelled "(WIRING)" to make this distinction clear.
+
+**Resolution pending**: once qzpay-core wraps `subscriptions.create` errors in `QZPayProviderSyncError`, the monthly path will automatically benefit from the same PROVIDER_* mapping. At that point, remove the "(REAL BEHAVIOR)" pin test and update the "(WIRING)" tests to reflect the new canonical behavior.
 
 ## Implementation strategy (draft)
 
@@ -173,19 +193,22 @@ Under the SPEC-193 master, SPEC-149 is now also the owner of two additional webh
 - `handlePaymentUpdated` (`apps/api/src/routes/webhooks/mercadopago/payment-handler.ts:145`): on an internal error the handler currently catches, logs, and returns a success response — the event is marked `processed` even when the operation failed. This must be corrected so that transient errors (DB timeout, lock acquisition failure, etc.) either re-throw or explicitly mark the event `failed` so it reaches the dead-letter queue and can be retried.
 - `handleSubscriptionAuthorizedPayment` (`apps/api/src/routes/webhooks/mercadopago/subscription-payment-handler.ts:314`): same pattern — errors are swallowed and the event lands in `processed` state regardless of outcome. Same fix required: re-throw on transient errors OR explicitly set `failed` status.
 
-**(b) `webhook-retry.job.ts:208-248` — dead-letter retry omits two event types.**
+**(b) `webhook-retry.job.ts:208-247` — dead-letter retry omits two event types (WORSE than drafted).**
 
-The switch statement in the dead-letter retry job does not handle `subscription_preapproval.created` and `subscription_authorized_payment.*` event types — they fall through to the default (no-op / skip) and are never retried from the dead-letter queue. Both types must be added to the switch so they are retried with the same backoff policy as the other event types.
+The switch statement does not handle `subscription_preapproval.created` and `subscription_authorized_payment.*` — and the `default` case (:241) returns `true`, which marks the dead-letter entry as RESOLVED (`resolvedAt` stamped, permanently closed), not merely skipped (verified at realign 2026-06-05). Both types must be added to the switch with real retry handling; the default for genuinely-unknown types should be considered too (resolve-with-explicit-log vs leave-pending — decide during implementation, document).
 
-### Coordination with SPEC-194
+### Coordination with SPEC-194 — RESOLVED at realign (2026-06-05)
 
-SPEC-194 owns the lifecycle bug fixes (including the `mark-processed` fix for the handlers above). The sequencing constraint is:
+The two specs left the `mark-processed` fix ORPHANED: SPEC-194's boundary section routed "webhook handlers swallowing errors" to SPEC-149, while this spec expected 194 to ship it first. SPEC-194 closed (PR #1455) WITHOUT touching it (verified: payment-handler.ts:145-157 and subscription-payment-handler.ts:314/:326 still swallow + always mark processed). **SPEC-149 now owns the complete fix**: transient-error paths must re-throw or explicitly mark the event `failed` (joining the existing dead-letter path used by handleWebhookError), THEN the Sentry alerting fires on those failures. Red-first per bug policy.
 
-1. SPEC-194's fix (handlers re-throw or mark `failed` on transient errors) ships FIRST — this creates the alertable failure signal.
-2. SPEC-149 then wires the Sentry alerting for those failures (this spec) — the alert has something to fire on.
-
-Additionally, SPEC-149 owns the Sentry alerting for cron failures — for example, `apply-scheduled-plan-changes` exhausting `MAX_APPLY_ATTEMPTS` should fire a Sentry alert. SPEC-194 only makes those failures surface as explicit errors; the wiring of the Sentry alert call belongs here.
+Cron alerting (realign finding): `bootstrap.ts:145-164` ALREADY captures to Sentry when a job THROWS (tags: module=cron, job_name). The gap is narrower than drafted: jobs returning `{success:false, errors>0}` (the SPEC-194 T-024 pinned contract, e.g. apply-scheduled-plan-changes:484) never reach Sentry — wire a capture on `result.success === false` after `recordCronRun` (bootstrap.ts:~123-131).
 
 ## Status
 
-`draft`. Design phase not started. To be picked up after SPEC-143 closes.
+`in-progress` (realigned + design decisions resolved 2026-06-05; SPEC-143/192/127/194/145 all closed).
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-05 | spec-realign (post 192/127/194/145; qzpay 1.11 verified) | Root cause REVISED (qzpay defaults livemode?throw:log — prod already throws; envs diverge); Part A decided: Option 2 dead (no hook in qzpay), Option 1 explicit 'throw' (no flag — prod unchanged); Part B mechanism: ServiceError with NEW ServiceErrorCodes (PROVIDER_ERROR/PROVIDER_RATE_LIMITED/PROVIDER_TIMEOUT) instead of HTTPException (global handler degrades 502/503/504 codes to INTERNAL_ERROR); Part C: BillingContext lacks operation/mpStatus/mpCode — extend; addon path needs try/catch around billing.checkout.create (none today); Part D DESCOPED to Retry-After + no-retry pinning (idempotency middleware has no in-flight cache — server retries unsafe); webhook mark-processed fix ABSORBED (orphaned between 194/149 — 194 closed without it); dead-letter default found WORSE than no-op (resolves permanently); cron alerting narrowed (bootstrap already captures throws — wire success:false); line drifts (billing.ts:95-100, sentry.ts:218) | Scope: same intent, sharper edges; effort unchanged 16-32h |
