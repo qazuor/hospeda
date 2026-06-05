@@ -21,10 +21,10 @@ import {
     getDefaultEntitlements,
     getUnlimitedEntitlements
 } from '@repo/billing';
-import { RoleEnum } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceError } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
@@ -685,7 +685,8 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  */
 export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
-        // If billing failed to load, return 503 instead of silently granting access
+        // If billing failed to load, return 503 instead of silently granting access.
+        // This guard prevents privilege escalation during billing outages.
         if (c.get('billingLoadFailed')) {
             return c.json(
                 {
@@ -701,9 +702,13 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
         const entitlements = c.get('userEntitlements');
 
         if (!entitlements || !entitlements.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' entitlement.`
-            });
+            // Throws ServiceError(ENTITLEMENT_REQUIRED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`.
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                `Access denied. This feature requires the '${key}' entitlement.`,
+                { requiredEntitlement: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();
@@ -756,18 +761,26 @@ export function requireLimit(key: LimitKey): MiddlewareHandler<AppBindings> {
         const limits = c.get('userLimits');
 
         if (!limits || !limits.has(key)) {
-            throw new HTTPException(403, {
-                message: `Access denied. This feature requires the '${key}' limit to be defined.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — the global createErrorHandler()
+            // maps this to HTTP 403 with `{ error: { code: 'LIMIT_REACHED', ... } }`.
+            // "Not defined" means the plan grants no access for this limit key.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. This feature requires the '${key}' limit to be defined.`,
+                { limitKey: key, upgradeUrl: '/billing/plans' }
+            );
         }
 
         const limitValue = limits.get(key);
 
-        // Check if limit is 0 (effectively disabled)
+        // Limit of 0 means feature is explicitly disabled in this plan.
         if (limitValue === 0) {
-            throw new HTTPException(403, {
-                message: `Access denied. The '${key}' limit is set to 0 in your plan.`
-            });
+            // Throws ServiceError(LIMIT_REACHED) — same contract as the "not defined" case.
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Access denied. The '${key}' limit is set to 0 in your plan.`,
+                { limitKey: key, maxAllowed: 0, upgradeUrl: '/billing/plans' }
+            );
         }
 
         await next();

@@ -14,7 +14,6 @@
 import { EntitlementKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
@@ -205,10 +204,6 @@ export function gateVideoEmbed(): AppMiddleware {
  * TODO (SPEC-143 #33): Not wired today. No route exists at
  * `GET /accommodations/:id/calendar`. Smoke B.7 returned 404 confirming
  * the missing surface. Wire this middleware once the calendar route ships.
- * When wiring, also refactor from `HTTPException(403, JSON.stringify(...))`
- * to `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match
- * the pattern shipped for `gateRichDescription` / `gateVideoEmbed` /
- * `gateFavorites` in SPEC-143 PR #1250 + #1252.
  *
  * @returns Middleware handler
  *
@@ -228,30 +223,23 @@ export function gateVideoEmbed(): AppMiddleware {
  */
 export function gateCalendarAccess(): AppMiddleware {
     return async (c, next) => {
-        const canUseCalendar = hasEntitlement(c, EntitlementKey.CAN_USE_CALENDAR);
-
-        if (!canUseCalendar) {
-            apiLogger.warn(
-                `Calendar access denied - user lacks ${EntitlementKey.CAN_USE_CALENDAR}`
-            );
-
-            throw new HTTPException(403, {
-                message: JSON.stringify({
-                    success: false,
-                    error: {
-                        code: 'ENTITLEMENT_REQUIRED',
-                        message:
-                            'Calendar access requires Pro or Premium plan. Upgrade to access availability calendar.',
-                        details: {
-                            requiredEntitlement: EntitlementKey.CAN_USE_CALENDAR,
-                            upgradeUrl: '/billing/plans'
-                        }
-                    }
-                })
-            });
+        if (hasEntitlement(c, EntitlementKey.CAN_USE_CALENDAR)) {
+            await next();
+            return;
         }
 
-        await next();
+        apiLogger.warn(
+            `gateCalendarAccess: blocked — user lacks ${EntitlementKey.CAN_USE_CALENDAR}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Calendar access requires Pro or Premium plan. Upgrade to access availability calendar.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_USE_CALENDAR,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -263,10 +251,7 @@ export function gateCalendarAccess(): AppMiddleware {
  *
  * TODO (SPEC-143 #33): Not wired today. No route exists at
  * `POST /accommodations/:id/calendar/sync`. Depends on the calendar feature
- * surface (same blocker as `gateCalendarAccess`). Wire once the route ships,
- * and refactor from `HTTPException(403, JSON.stringify(...))` to
- * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
- * SPEC-143 #25 pattern.
+ * surface (same blocker as `gateCalendarAccess`). Wire once the route ships.
  *
  * @returns Middleware handler
  *
@@ -286,33 +271,23 @@ export function gateCalendarAccess(): AppMiddleware {
  */
 export function gateExternalCalendarSync(): AppMiddleware {
     return async (c, next) => {
-        const canSyncExternalCalendar = hasEntitlement(
-            c,
-            EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR
-        );
-
-        if (!canSyncExternalCalendar) {
-            apiLogger.warn(
-                `External calendar sync denied - user lacks ${EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR}`
-            );
-
-            throw new HTTPException(403, {
-                message: JSON.stringify({
-                    success: false,
-                    error: {
-                        code: 'ENTITLEMENT_REQUIRED',
-                        message:
-                            'External calendar sync requires Premium plan. Upgrade to sync with Google Calendar, Airbnb, etc.',
-                        details: {
-                            requiredEntitlement: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
-                            upgradeUrl: '/billing/plans'
-                        }
-                    }
-                })
-            });
+        if (hasEntitlement(c, EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)) {
+            await next();
+            return;
         }
 
-        await next();
+        apiLogger.warn(
+            `gateExternalCalendarSync: blocked — user lacks ${EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'External calendar sync requires Premium plan. Upgrade to sync with Google Calendar, Airbnb, etc.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -326,10 +301,7 @@ export function gateExternalCalendarSync(): AppMiddleware {
  * `whatsappNumber` or `contactWhatsApp` fields. WhatsApp display is a UI-only
  * feature derived from `contactInfo.mobilePhone`. Wire this middleware only
  * after the schema gains explicit WhatsApp fields (product decision needed:
- * is it a separate field or just a flag on mobilePhone?). When wiring, also
- * refactor from `HTTPException(403, JSON.stringify(...))` to
- * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
- * SPEC-143 #25 pattern.
+ * is it a separate field or just a flag on mobilePhone?).
  *
  * @returns Middleware handler
  *
@@ -349,52 +321,45 @@ export function gateExternalCalendarSync(): AppMiddleware {
  */
 export function gateWhatsAppDisplay(): AppMiddleware {
     return async (c, next) => {
-        try {
-            const canDisplayWhatsApp = hasEntitlement(
-                c,
-                EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
-            );
+        const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
 
-            if (!canDisplayWhatsApp) {
-                // Get request body
-                const body = await c.req.json();
-
-                // Check if trying to add WhatsApp number
-                if (body.whatsappNumber || body.contactWhatsApp) {
-                    apiLogger.warn(
-                        `WhatsApp number blocked - user lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY}`
-                    );
-
-                    throw new HTTPException(403, {
-                        message: JSON.stringify({
-                            success: false,
-                            error: {
-                                code: 'ENTITLEMENT_REQUIRED',
-                                message:
-                                    'Displaying WhatsApp number requires Pro or Premium plan. Upgrade to show your WhatsApp contact.',
-                                details: {
-                                    requiredEntitlement:
-                                        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-                                    upgradeUrl: '/billing/plans'
-                                }
-                            }
-                        })
-                    });
-                }
-            }
-
+        if (canDisplayWhatsApp) {
             await next();
-        } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in WhatsApp display gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            await next();
+            return;
         }
+
+        // Read body without consuming the stream — clone so downstream
+        // zValidator / handler can re-read.
+        let body: { whatsappNumber?: unknown; contactWhatsApp?: unknown };
+        try {
+            body = (await c.req.raw.clone().json()) as {
+                whatsappNumber?: unknown;
+                contactWhatsApp?: unknown;
+            };
+        } catch {
+            // Non-JSON or empty body: nothing to gate, let handler decide.
+            await next();
+            return;
+        }
+
+        if (!body.whatsappNumber && !body.contactWhatsApp) {
+            // Not exercising the gated capability — pass through.
+            await next();
+            return;
+        }
+
+        apiLogger.warn(
+            `gateWhatsAppDisplay: blocked — user lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Displaying WhatsApp number requires Pro or Premium plan. Upgrade to show your WhatsApp contact.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -407,10 +372,7 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  * TODO (SPEC-143 #33): Not wired today. The accommodation schema has no
  * `whatsappDirectLink` or `enableWhatsAppDirect` fields. Same blocker as
  * `gateWhatsAppDisplay`: the WhatsApp feature surface is UI-only. Wire only
- * after the schema gains explicit fields. When wiring, also refactor from
- * `HTTPException(403, JSON.stringify(...))` to
- * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
- * SPEC-143 #25 pattern.
+ * after the schema gains explicit fields.
  *
  * @returns Middleware handler
  *
@@ -430,51 +392,45 @@ export function gateWhatsAppDisplay(): AppMiddleware {
  */
 export function gateWhatsAppDirect(): AppMiddleware {
     return async (c, next) => {
-        try {
-            const canUseWhatsAppDirect = hasEntitlement(
-                c,
-                EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
-            );
+        const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
 
-            if (!canUseWhatsAppDirect) {
-                // Get request body
-                const body = await c.req.json();
-
-                // Check if trying to enable direct WhatsApp link
-                if (body.whatsappDirectLink === true || body.enableWhatsAppDirect === true) {
-                    apiLogger.warn(
-                        `WhatsApp direct link blocked - user lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT}`
-                    );
-
-                    throw new HTTPException(403, {
-                        message: JSON.stringify({
-                            success: false,
-                            error: {
-                                code: 'ENTITLEMENT_REQUIRED',
-                                message:
-                                    'Clickable WhatsApp link requires Premium plan. Upgrade to enable direct WhatsApp chat.',
-                                details: {
-                                    requiredEntitlement: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-                                    upgradeUrl: '/billing/plans'
-                                }
-                            }
-                        })
-                    });
-                }
-            }
-
+        if (canUseWhatsAppDirect) {
             await next();
-        } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in WhatsApp direct gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            await next();
+            return;
         }
+
+        // Read body without consuming the stream — clone so downstream
+        // zValidator / handler can re-read.
+        let body: { whatsappDirectLink?: unknown; enableWhatsAppDirect?: unknown };
+        try {
+            body = (await c.req.raw.clone().json()) as {
+                whatsappDirectLink?: unknown;
+                enableWhatsAppDirect?: unknown;
+            };
+        } catch {
+            // Non-JSON or empty body: nothing to gate, let handler decide.
+            await next();
+            return;
+        }
+
+        if (body.whatsappDirectLink !== true && body.enableWhatsAppDirect !== true) {
+            // Not exercising the gated capability — pass through.
+            await next();
+            return;
+        }
+
+        apiLogger.warn(
+            `gateWhatsAppDirect: blocked — user lacks ${EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Clickable WhatsApp link requires Premium plan. Upgrade to enable direct WhatsApp chat.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -487,10 +443,7 @@ export function gateWhatsAppDirect(): AppMiddleware {
  * TODO (SPEC-143 #33): Not wired today. No respond-to-review endpoint
  * exists. Smoke B.6 confirmed only `POST /reviews` (create) is implemented;
  * there is no `POST /accommodations/:id/reviews/:reviewId/response`. Wire
- * this middleware once the response endpoint ships, and refactor from
- * `HTTPException(403, JSON.stringify(...))` to
- * `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, ...)` to match the
- * SPEC-143 #25 pattern.
+ * this middleware once the response endpoint ships.
  *
  * @returns Middleware handler
  *
@@ -510,27 +463,22 @@ export function gateWhatsAppDirect(): AppMiddleware {
  */
 export function gateReviewResponse(): AppMiddleware {
     return async (c, next) => {
-        const canRespondToReviews = hasEntitlement(c, EntitlementKey.RESPOND_REVIEWS);
-
-        if (!canRespondToReviews) {
-            apiLogger.warn(`Review response denied - user lacks ${EntitlementKey.RESPOND_REVIEWS}`);
-
-            throw new HTTPException(403, {
-                message: JSON.stringify({
-                    success: false,
-                    error: {
-                        code: 'ENTITLEMENT_REQUIRED',
-                        message:
-                            'Responding to reviews requires Pro or Premium plan. Upgrade to engage with your guests.',
-                        details: {
-                            requiredEntitlement: EntitlementKey.RESPOND_REVIEWS,
-                            upgradeUrl: '/billing/plans'
-                        }
-                    }
-                })
-            });
+        if (hasEntitlement(c, EntitlementKey.RESPOND_REVIEWS)) {
+            await next();
+            return;
         }
 
-        await next();
+        apiLogger.warn(
+            `gateReviewResponse: blocked — user lacks ${EntitlementKey.RESPOND_REVIEWS}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Responding to reviews requires Pro or Premium plan. Upgrade to engage with your guests.',
+            {
+                requiredEntitlement: EntitlementKey.RESPOND_REVIEWS,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }

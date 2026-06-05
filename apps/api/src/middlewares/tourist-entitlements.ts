@@ -25,7 +25,6 @@ import { EntitlementKey, type LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import type { AppBindings, AppMiddleware } from '../types';
 import { checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
@@ -103,73 +102,55 @@ export function gateFavorites(): AppMiddleware {
  */
 export function gateAlerts(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.PRICE_ALERTS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'Las alertas de precio solo están disponibles en los planes Plus y VIP. Actualiza tu plan para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.PRICE_ALERTS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
+        // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED
+        // before reaching any limit check.
+        if (!hasEntitlement(c, EntitlementKey.PRICE_ALERTS)) {
+            apiLogger.warn(`gateAlerts: blocked — user lacks ${EntitlementKey.PRICE_ALERTS}`);
 
-            // Get current active alerts count from context (set by route handler)
-            const currentCountValue = c.get('currentActiveAlertsCount' as never);
-            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
-
-            // Check limit (max_active_alerts)
-            // Note: This limit key needs to be added to LimitKey enum in @repo/billing
-            const limitKey = 'max_active_alerts' as LimitKey;
-            const limitCheck = checkLimit({
-                context: c as Context<AppBindings>,
-                limitKey,
-                currentCount
-            });
-
-            if (!limitCheck.allowed) {
-                apiLogger.warn(
-                    `Active alerts limit reached: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
-                );
-
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                remaining: limitCheck.remaining,
-                                upgradeAudience: 'tourist'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement and limit OK - proceed
-            await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in alerts gate: ${error instanceof Error ? error.message : String(error)}`
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'Las alertas de precio solo están disponibles en los planes Plus y VIP. Actualiza tu plan para acceder.',
+                {
+                    requiredEntitlement: EntitlementKey.PRICE_ALERTS,
+                    upgradeUrl: '/billing/plans'
+                }
             );
-            throw error;
         }
+
+        // Get current active alerts count from context (set by route handler)
+        const currentCountValue = c.get('currentActiveAlertsCount' as never);
+        const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
+
+        // Check limit (max_active_alerts)
+        // Note: This limit key needs to be added to LimitKey enum in @repo/billing
+        const limitKey = 'max_active_alerts' as LimitKey;
+        const limitCheck = checkLimit({
+            context: c as Context<AppBindings>,
+            limitKey,
+            currentCount
+        });
+
+        if (!limitCheck.allowed) {
+            apiLogger.warn(
+                `gateAlerts: limit reached — ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
+            );
+
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                limitCheck.upgradeMessage ??
+                    'Has alcanzado el límite de alertas activas. Actualiza tu plan para crear más.',
+                {
+                    limitKey,
+                    currentCount: limitCheck.currentCount,
+                    maxAllowed: limitCheck.maxAllowed,
+                    remaining: limitCheck.remaining,
+                    upgradeAudience: 'tourist'
+                }
+            );
+        }
+
+        // Entitlement and limit OK - proceed
+        await next();
     };
 }
 
@@ -200,72 +181,56 @@ export function gateAlerts(): AppMiddleware {
  */
 export function gateComparator(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.CAN_COMPARE_ACCOMMODATIONS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'El comparador de alojamientos solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Get current compare items count from context (set by route handler)
-            const currentCountValue = c.get('currentCompareItemsCount' as never);
-            const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
-
-            // Check limit
-            const limitKey = 'max_compare_items' as LimitKey;
-            const limitCheck = checkLimit({
-                context: c as Context<AppBindings>,
-                limitKey,
-                currentCount
-            });
-
-            if (!limitCheck.allowed) {
-                apiLogger.warn(
-                    `Compare items limit reached: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
-                );
-
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                remaining: limitCheck.remaining,
-                                upgradeAudience: 'tourist'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement and limit OK - proceed
-            await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in comparator gate: ${error instanceof Error ? error.message : String(error)}`
+        // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED
+        // before reaching any limit check.
+        if (!hasEntitlement(c, EntitlementKey.CAN_COMPARE_ACCOMMODATIONS)) {
+            apiLogger.warn(
+                `gateComparator: blocked — user lacks ${EntitlementKey.CAN_COMPARE_ACCOMMODATIONS}`
             );
-            throw error;
+
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'El comparador de alojamientos solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
+                {
+                    requiredEntitlement: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
+                    upgradeUrl: '/billing/plans'
+                }
+            );
         }
+
+        // Get current compare items count from context (set by route handler)
+        const currentCountValue = c.get('currentCompareItemsCount' as never);
+        const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
+
+        // Check limit
+        const limitKey = 'max_compare_items' as LimitKey;
+        const limitCheck = checkLimit({
+            context: c as Context<AppBindings>,
+            limitKey,
+            currentCount
+        });
+
+        if (!limitCheck.allowed) {
+            apiLogger.warn(
+                `gateComparator: limit reached — ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
+            );
+
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                limitCheck.upgradeMessage ??
+                    'Has alcanzado el límite de elementos en el comparador. Actualiza tu plan para comparar más.',
+                {
+                    limitKey,
+                    currentCount: limitCheck.currentCount,
+                    maxAllowed: limitCheck.maxAllowed,
+                    remaining: limitCheck.remaining,
+                    upgradeAudience: 'tourist'
+                }
+            );
+        }
+
+        // Entitlement and limit OK - proceed
+        await next();
     };
 }
 
@@ -293,37 +258,23 @@ export function gateComparator(): AppMiddleware {
  */
 export function gateReviewPhotos(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'Adjuntar fotos a reseñas es una funcionalidad exclusiva de los planes Plus y VIP. Actualiza para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement OK - proceed
+        if (hasEntitlement(c, EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS)) {
             await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in review photos gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
+            return;
         }
+
+        apiLogger.warn(
+            `gateReviewPhotos: blocked — user lacks ${EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Adjuntar fotos a reseñas es una funcionalidad exclusiva de los planes Plus y VIP. Actualiza para acceder.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -351,37 +302,23 @@ export function gateReviewPhotos(): AppMiddleware {
  */
 export function gateSearchHistory(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement OK - proceed
+        if (hasEntitlement(c, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)) {
             await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in search history gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
+            return;
         }
+
+        apiLogger.warn(
+            `gateSearchHistory: blocked — user lacks ${EntitlementKey.CAN_VIEW_SEARCH_HISTORY}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'El historial de búsqueda solo está disponible en los planes Plus y VIP. Actualiza tu plan para acceder.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -409,37 +346,23 @@ export function gateSearchHistory(): AppMiddleware {
  */
 export function gateRecommendations(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.CAN_VIEW_RECOMMENDATIONS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'Las recomendaciones personalizadas están disponibles en todos los planes. Inicia sesión para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement OK - proceed
+        if (hasEntitlement(c, EntitlementKey.CAN_VIEW_RECOMMENDATIONS)) {
             await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in recommendations gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
+            return;
         }
+
+        apiLogger.warn(
+            `gateRecommendations: blocked — user lacks ${EntitlementKey.CAN_VIEW_RECOMMENDATIONS}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Las recomendaciones personalizadas están disponibles en todos los planes. Inicia sesión para acceder.',
+            {
+                requiredEntitlement: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -467,37 +390,23 @@ export function gateRecommendations(): AppMiddleware {
  */
 export function gateExclusiveDeals(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.EXCLUSIVE_DEALS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'Las ofertas exclusivas son solo para miembros VIP. Actualiza tu plan para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.EXCLUSIVE_DEALS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Entitlement OK - proceed
+        if (hasEntitlement(c, EntitlementKey.EXCLUSIVE_DEALS)) {
             await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in exclusive deals gate: ${error instanceof Error ? error.message : String(error)}`
-            );
-            throw error;
+            return;
         }
+
+        apiLogger.warn(
+            `gateExclusiveDeals: blocked — user lacks ${EntitlementKey.EXCLUSIVE_DEALS}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            'Las ofertas exclusivas son solo para miembros VIP. Actualiza tu plan para acceder.',
+            {
+                requiredEntitlement: EntitlementKey.EXCLUSIVE_DEALS,
+                upgradeUrl: '/billing/plans'
+            }
+        );
     };
 }
 
@@ -528,74 +437,59 @@ export function gateExclusiveDeals(): AppMiddleware {
  */
 export function gateEarlyEventAccess(): AppMiddleware {
     return async (c, next) => {
-        try {
-            // Check entitlement
-            if (!hasEntitlement(c, EntitlementKey.EARLY_ACCESS_EVENTS)) {
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'ENTITLEMENT_REQUIRED',
-                            message:
-                                'El acceso anticipado a eventos es exclusivo de los planes Plus y VIP. Actualiza para acceder.',
-                            details: {
-                                entitlement: EntitlementKey.EARLY_ACCESS_EVENTS,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
-
-            // Get event start date from context (set by route handler)
-            const eventStartDateValue = c.get('eventStartDate' as never) as unknown;
-            const eventStartDate =
-                eventStartDateValue instanceof Date ? eventStartDateValue : undefined;
-
-            if (eventStartDate) {
-                // Check if event is within 24-hour early access window
-                const now = new Date();
-                const publicSaleStart = new Date(eventStartDate);
-                const earlyAccessStart = new Date(publicSaleStart.getTime() - 24 * 60 * 60 * 1000);
-
-                // If current time is before early access window, deny
-                if (now < earlyAccessStart) {
-                    throw new HTTPException(403, {
-                        message: JSON.stringify({
-                            success: false,
-                            error: {
-                                code: 'EARLY_ACCESS_NOT_STARTED',
-                                message:
-                                    'El acceso anticipado para este evento aún no ha comenzado.',
-                                details: {
-                                    earlyAccessStart: earlyAccessStart.toISOString(),
-                                    publicSaleStart: publicSaleStart.toISOString()
-                                }
-                            }
-                        })
-                    });
-                }
-
-                // If current time is after public sale start, no need for early access
-                // (anyone can access now)
-                if (now >= publicSaleStart) {
-                    apiLogger.debug(
-                        'Event is now in public sale period, early access no longer needed'
-                    );
-                }
-            }
-
-            // Entitlement and timing OK - proceed
-            await next();
-        } catch (error) {
-            if (error instanceof HTTPException) {
-                throw error;
-            }
-
-            apiLogger.error(
-                `Error in early event access gate: ${error instanceof Error ? error.message : String(error)}`
+        // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED.
+        if (!hasEntitlement(c, EntitlementKey.EARLY_ACCESS_EVENTS)) {
+            apiLogger.warn(
+                `gateEarlyEventAccess: blocked — user lacks ${EntitlementKey.EARLY_ACCESS_EVENTS}`
             );
-            throw error;
+
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'El acceso anticipado a eventos es exclusivo de los planes Plus y VIP. Actualiza para acceder.',
+                {
+                    requiredEntitlement: EntitlementKey.EARLY_ACCESS_EVENTS,
+                    upgradeUrl: '/billing/plans'
+                }
+            );
         }
+
+        // Get event start date from context (set by route handler)
+        const eventStartDateValue = c.get('eventStartDate' as never) as unknown;
+        const eventStartDate =
+            eventStartDateValue instanceof Date ? eventStartDateValue : undefined;
+
+        if (eventStartDate) {
+            // Check if event is within 24-hour early access window
+            const now = new Date();
+            const publicSaleStart = new Date(eventStartDate);
+            const earlyAccessStart = new Date(publicSaleStart.getTime() - 24 * 60 * 60 * 1000);
+
+            // If current time is before early access window, deny with FORBIDDEN + timing details.
+            if (now < earlyAccessStart) {
+                apiLogger.warn(
+                    `gateEarlyEventAccess: early access window not yet open (starts ${earlyAccessStart.toISOString()})`
+                );
+
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'El acceso anticipado para este evento aún no ha comenzado.',
+                    {
+                        earlyAccessStart: earlyAccessStart.toISOString(),
+                        publicSaleStart: publicSaleStart.toISOString()
+                    }
+                );
+            }
+
+            // If current time is after public sale start, no need for early access
+            // (anyone can access now)
+            if (now >= publicSaleStart) {
+                apiLogger.debug(
+                    'Event is now in public sale period, early access no longer needed'
+                );
+            }
+        }
+
+        // Entitlement and timing OK - proceed
+        await next();
     };
 }
