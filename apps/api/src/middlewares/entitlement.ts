@@ -19,7 +19,9 @@ import {
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
-    getUnlimitedEntitlements
+    getUnlimitedEntitlements,
+    isEntitlementKey,
+    isLimitKey
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { RoleEnum, ServiceError } from '@repo/service-core';
@@ -239,13 +241,23 @@ async function buildHostDraftDefaultsResult(): Promise<LoadEntitlementsResult> {
             return buildDefaultEntitlementsResult();
         }
 
-        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>
+        // BillingPlanResponse.limits is Record<string, number>; convert to Map<LimitKey, number>.
+        // Filter to known LimitKey values — unknown keys from a mis-configured DB
+        // plan are silently dropped rather than trusted blindly.
         const limits = new Map<LimitKey, number>(
-            Object.entries(result.data.limits) as [LimitKey, number][]
+            Object.entries(result.data.limits).filter((entry): entry is [LimitKey, number] =>
+                isLimitKey(entry[0])
+            )
         );
 
         return {
-            entitlements: new Set<EntitlementKey>(result.data.entitlements as EntitlementKey[]),
+            // BillingPlanResponse.entitlements is string[] (Zod z.array(z.string())).
+            // Filter to known EntitlementKey values — unknown strings from a
+            // mis-configured DB plan are silently dropped (same as a cast would do
+            // for valid values, but without silently trusting garbage).
+            entitlements: new Set<EntitlementKey>(
+                result.data.entitlements.filter(isEntitlementKey)
+            ),
             limits,
             shouldCache: true
         };
@@ -319,9 +331,8 @@ function buildStaffUnlimitedResult(): LoadEntitlementsResult {
     const unlimited = getUnlimitedEntitlements();
     return {
         entitlements: new Set<EntitlementKey>(unlimited.entitlements),
-        limits: new Map<LimitKey, number>(
-            unlimited.limits.map((l) => [l.key as LimitKey, l.value])
-        ),
+        // LimitDefinition.key is already LimitKey — no cast needed.
+        limits: new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value])),
         shouldCache: true
     };
 }
@@ -405,14 +416,22 @@ async function loadEntitlements(
             };
         }
 
-        // Extract entitlements from plan (entitlements is string[])
-        const entitlements = new Set<EntitlementKey>((plan.entitlements || []) as EntitlementKey[]);
+        // Extract entitlements from plan. QZPay returns string[]; filter to known
+        // EntitlementKey values — unexpected strings from a mis-configured plan are
+        // silently dropped (filter-out strategy, matching prior cast behaviour for
+        // valid values without blindly trusting garbage).
+        const entitlements = new Set<EntitlementKey>(
+            (plan.entitlements ?? []).filter(isEntitlementKey)
+        );
 
-        // Extract limits from plan (limits is Record<string, number>)
+        // Extract limits from plan. QZPay returns Record<string, number>; filter to
+        // known LimitKey values — unknown keys are silently dropped.
         const limits = new Map<LimitKey, number>();
         if (plan.limits) {
             for (const [key, value] of Object.entries(plan.limits)) {
-                limits.set(key as LimitKey, value);
+                if (isLimitKey(key)) {
+                    limits.set(key, value);
+                }
             }
         }
 
@@ -423,16 +442,23 @@ async function loadEntitlements(
         let shouldCache = true;
 
         try {
-            // Fetch customer-level entitlements and merge with plan entitlements (union)
+            // Fetch customer-level entitlements and merge with plan entitlements (union).
+            // QZPay returns QZPayCustomerEntitlement where entitlementKey is string —
+            // filter to known keys; unknown keys are silently dropped.
             const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
             for (const ce of customerEntitlements) {
-                entitlements.add(ce.entitlementKey as EntitlementKey);
+                if (isEntitlementKey(ce.entitlementKey)) {
+                    entitlements.add(ce.entitlementKey);
+                }
             }
 
-            // Fetch customer-level limits and override plan-level values (customer takes precedence)
+            // Fetch customer-level limits and override plan-level values (customer takes precedence).
+            // QZPay returns QZPayCustomerLimit where limitKey is string — filter to known keys.
             const customerLimits = await billing.limits.getByCustomerId(customerId);
             for (const cl of customerLimits) {
-                limits.set(cl.limitKey as LimitKey, cl.maxValue);
+                if (isLimitKey(cl.limitKey)) {
+                    limits.set(cl.limitKey, cl.maxValue);
+                }
             }
         } catch (customerError) {
             const errorMessage =

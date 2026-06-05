@@ -63,5 +63,13 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
     [LimitKey.MAX_STAFF_ACCOUNTS]: {
         name: 'Staff accounts',
         description: 'Maximum number of staff accounts per complex'
+    },
+    [LimitKey.MAX_ACTIVE_ALERTS]: {
+        name: 'Active price alerts',
+        description: 'Maximum number of active price-alert subscriptions'
+    },
+    [LimitKey.MAX_COMPARE_ITEMS]: {
+        name: 'Compare items',
+        description: 'Maximum number of accommodations that can be compared simultaneously'
     }
 };

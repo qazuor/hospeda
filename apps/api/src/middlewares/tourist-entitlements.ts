@@ -21,7 +21,7 @@
  * @module middlewares/tourist-entitlements
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -122,8 +122,7 @@ export function gateAlerts(): AppMiddleware {
         const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
 
         // Check limit (max_active_alerts)
-        // Note: This limit key needs to be added to LimitKey enum in @repo/billing
-        const limitKey = 'max_active_alerts' as LimitKey;
+        const limitKey = LimitKey.MAX_ACTIVE_ALERTS;
         const limitCheck = checkLimit({
             context: c as Context<AppBindings>,
             limitKey,
@@ -203,7 +202,7 @@ export function gateComparator(): AppMiddleware {
         const currentCount = typeof currentCountValue === 'number' ? currentCountValue : 0;
 
         // Check limit
-        const limitKey = 'max_compare_items' as LimitKey;
+        const limitKey = LimitKey.MAX_COMPARE_ITEMS;
         const limitCheck = checkLimit({
             context: c as Context<AppBindings>,
             limitKey,

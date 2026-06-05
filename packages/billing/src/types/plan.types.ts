@@ -10,7 +10,11 @@ export enum LimitKey {
     MAX_ACTIVE_PROMOTIONS = 'max_active_promotions',
     MAX_FAVORITES = 'max_favorites',
     MAX_PROPERTIES = 'max_properties',
-    MAX_STAFF_ACCOUNTS = 'max_staff_accounts'
+    MAX_STAFF_ACCOUNTS = 'max_staff_accounts',
+    /** Maximum number of active price-alert subscriptions (tourist plans) */
+    MAX_ACTIVE_ALERTS = 'max_active_alerts',
+    /** Maximum number of accommodations that can be compared simultaneously (tourist plans) */
+    MAX_COMPARE_ITEMS = 'max_compare_items'
 }
 
 /**

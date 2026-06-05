@@ -14,7 +14,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import type { EntitlementKey, LimitKey } from '@repo/billing';
+import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { AddonCatalogService, PlanService } from '@repo/service-core';
@@ -584,8 +584,11 @@ export class AddonEntitlementService {
                         Array.isArray(purchase.entitlementAdjustments) &&
                         purchase.entitlementAdjustments.length > 0
                     ) {
-                        entitlement = purchase.entitlementAdjustments[0]
-                            ?.entitlementKey as EntitlementKey;
+                        // entitlementAdjustments is DB JSONB — the key is string.
+                        // Guard to known EntitlementKey; unknown keys produce undefined
+                        // (matching prior cast behaviour for valid values).
+                        const rawEntKey = purchase.entitlementAdjustments[0]?.entitlementKey;
+                        entitlement = isEntitlementKey(rawEntKey) ? rawEntKey : undefined;
                     }
 
                     // Extract limit from limitAdjustments
@@ -596,7 +599,10 @@ export class AddonEntitlementService {
                         Array.isArray(purchase.limitAdjustments) &&
                         purchase.limitAdjustments.length > 0
                     ) {
-                        limitKey = purchase.limitAdjustments[0]?.limitKey as LimitKey;
+                        // limitAdjustments is DB JSONB — the key is string.
+                        // Guard to known LimitKey; unknown keys produce undefined.
+                        const rawLimitKey = purchase.limitAdjustments[0]?.limitKey;
+                        limitKey = isLimitKey(rawLimitKey) ? rawLimitKey : undefined;
                         limitIncrease = purchase.limitAdjustments[0]?.increase;
                     }
 
