@@ -244,6 +244,7 @@
         },
         "gallery": {
             "viewAll": "View all photos",
+            "moreOverlay": "+{{count}} more",
             "viewFullscreen": "View photo {n} fullscreen",
             "backToAccommodation": "← Back to accommodation",
             "photosSubpage": "Photos"
