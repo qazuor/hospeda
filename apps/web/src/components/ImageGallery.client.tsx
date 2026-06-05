@@ -58,6 +58,21 @@ interface ImageGalleryProps {
 // ─── Per-cell URL builder ─────────────────────────────────────────────────────
 
 /**
+ * Returns `true` when `url` is a Cloudinary delivery URL.
+ *
+ * This mirrors the internal check inside `getMediaUrl` and
+ * `stripCloudinaryTransform` so callers can decide whether it is worth
+ * building a `srcset` (non-Cloudinary URLs pass through width-override
+ * calls unchanged, producing identical candidates — emitting a srcset
+ * in that case wastes bytes and confuses the browser).
+ *
+ * @param url - Any image URL.
+ */
+function isCloudinaryUrl(url: string): boolean {
+    return url.includes('res.cloudinary.com');
+}
+
+/**
  * Builds a Cloudinary-optimized URL for a specific gallery cell role.
  *
  * For Cloudinary URLs that have already been transformed with a generic preset
@@ -79,6 +94,90 @@ interface ImageGalleryProps {
 function buildCellUrl(url: string, preset: MediaPreset): string {
     const baseUrl = stripCloudinaryTransform(url);
     return getMediaUrl(baseUrl, { preset });
+}
+
+/**
+ * Candidate widths (in pixels) for each gallery cell preset's `srcset`.
+ *
+ * Values are taken from the spec §7 annotation on each preset.
+ * The order (ascending) matches the `srcset` convention so browsers can
+ * parse them efficiently.
+ *
+ * Lightbox (`full`) and thumb strip (`galleryThumb`) are intentionally absent:
+ * the lightbox main image uses a single `src` (no crop applied, FR-4 scope),
+ * and the 120px thumb strip is already at its final pixel size.
+ */
+const SRCSET_WIDTHS: Readonly<
+    Record<'galleryFeatured' | 'galleryHalf' | 'galleryQuarter', readonly number[]>
+> = Object.freeze({
+    galleryFeatured: [640, 1000, 1400],
+    galleryHalf: [400, 640, 900],
+    galleryQuarter: [200, 400, 600]
+});
+
+/**
+ * `sizes` attribute values for each gallery cell role.
+ *
+ * Derived from the locked §5 layout matrix and CSS breakpoints:
+ *
+ * - `galleryFeatured`:
+ *   Mobile (≤640px): single-column full-width → `100vw`.
+ *   Tablet + Desktop (>640px): `2fr` in a `2fr 1fr` grid →
+ *   approximately `66vw` (two-thirds of the viewport).
+ *   At a typical 1280px desktop `66vw ≈ 845px`, so the browser selects the
+ *   `1000w` candidate — matching the previous single `w_1000` URL. No LCP
+ *   regression: the candidate chosen at desktop is identical in weight to the
+ *   pre-srcset baseline.
+ *
+ * - `galleryHalf`:
+ *   Mobile: stacks to full width (detail count=2 single-col; cover extras single-col) → `100vw`.
+ *   Tablet + Desktop: half of the container width → `50vw`.
+ *
+ * - `galleryQuarter`:
+ *   Mobile: thumb strip in detail variant uses 2–3 equal columns → `50vw`
+ *   (safest upper bound; narrows further at 3-up but 50vw avoids under-fetching).
+ *   Tablet + Desktop: `1fr` column in `2fr 1fr` or `repeat(3,1fr)` grid → `33vw`.
+ */
+const CELL_SIZES: Readonly<Record<'galleryFeatured' | 'galleryHalf' | 'galleryQuarter', string>> =
+    Object.freeze({
+        galleryFeatured: '(max-width: 640px) 100vw, 66vw',
+        galleryHalf: '(max-width: 640px) 100vw, 50vw',
+        galleryQuarter: '(max-width: 640px) 50vw, 33vw'
+    });
+
+/**
+ * Builds a `srcset` attribute string for a gallery cell.
+ *
+ * Generates width candidates by overriding the preset's `w_` token via
+ * `getMediaUrl({ preset, width })`. Each candidate is formatted as
+ * `<url> <width>w` per the HTML specification.
+ *
+ * Returns `undefined` for non-Cloudinary URLs (placeholders, YouTube poster
+ * frames, mock URLs in tests) because `getMediaUrl` is a pass-through for
+ * those — all candidates would be identical strings, which wastes bandwidth
+ * and produces a confusing srcset that the browser cannot use for selection.
+ *
+ * @param url - Original image URL (may carry an existing Cloudinary transform).
+ * @param preset - Cell role preset; must be one of the srcset-capable presets.
+ * @returns Comma-separated `srcset` string, or `undefined` if the URL is not
+ *   a Cloudinary URL.
+ */
+function buildCellSrcset(
+    url: string,
+    preset: 'galleryFeatured' | 'galleryHalf' | 'galleryQuarter'
+): string | undefined {
+    if (!isCloudinaryUrl(url)) {
+        // Non-Cloudinary URLs pass through width-override calls unchanged.
+        // Emitting a srcset with identical candidates would waste bytes and
+        // give the browser no useful density information. Return undefined so
+        // the caller falls back to a plain `src`.
+        return undefined;
+    }
+
+    const baseUrl = stripCloudinaryTransform(url);
+    const widths = SRCSET_WIDTHS[preset];
+
+    return widths.map((w) => `${getMediaUrl(baseUrl, { preset, width: w })} ${w}w`).join(', ');
 }
 
 /**
@@ -290,7 +389,12 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
             {/* Featured image — LCP candidate, eager load, full priority.
                 Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto)
                 so the CDN crops server-side to the fixed 16:10 ratio — zero CLS,
-                no client-side crop, right-sized payload (SPEC-186 FR-3 §7). */}
+                no client-side crop, right-sized payload (SPEC-186 FR-3 §7).
+                srcset candidates: 640w / 1000w / 1400w (Cloudinary only).
+                sizes: 100vw mobile, 66vw tablet/desktop (2fr in 2fr+1fr grid).
+                At a typical 1280px desktop, 66vw ≈ 845px → browser selects 1000w,
+                identical to the previous single-URL w_1000 baseline. No LCP
+                regression (SPEC-186 FR-4 §8 step 10). */}
             <button
                 type="button"
                 className={styles.cellFeatured}
@@ -299,6 +403,8 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
             >
                 <img
                     src={buildCellUrl(featured.url, 'galleryFeatured')}
+                    srcSet={buildCellSrcset(featured.url, 'galleryFeatured')}
+                    sizes={isCloudinaryUrl(featured.url) ? CELL_SIZES.galleryFeatured : undefined}
                     alt={featured.alt}
                     className={styles.cellImg}
                     loading="eager"
@@ -337,7 +443,7 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
 
                         const cellClass = count === 2 ? styles.cellHalf : styles.cellQuarter;
                         // count=2 uses half cells (4:3 ratio); count>=3 uses quarter cells (1:1).
-                        const thumbPreset: MediaPreset =
+                        const thumbPreset: 'galleryHalf' | 'galleryQuarter' =
                             count === 2 ? 'galleryHalf' : 'galleryQuarter';
 
                         if (isOverlayCell) {
@@ -348,6 +454,12 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                                 >
                                     <img
                                         src={buildCellUrl(img.url, thumbPreset)}
+                                        srcSet={buildCellSrcset(img.url, thumbPreset)}
+                                        sizes={
+                                            isCloudinaryUrl(img.url)
+                                                ? CELL_SIZES[thumbPreset]
+                                                : undefined
+                                        }
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -387,6 +499,12 @@ function DetailVariant({ images, onOpen, t }: DetailVariantProps) {
                             >
                                 <img
                                     src={buildCellUrl(img.url, thumbPreset)}
+                                    srcSet={buildCellSrcset(img.url, thumbPreset)}
+                                    sizes={
+                                        isCloudinaryUrl(img.url)
+                                            ? CELL_SIZES[thumbPreset]
+                                            : undefined
+                                    }
                                     alt={img.alt}
                                     className={styles.cellImg}
                                     loading="lazy"
@@ -465,7 +583,9 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                 Uses galleryFeatured preset (w_1000, ar_16:10, c_fill, g_auto).
                 The spec §5 maps both the detail "featured" and cover-plus-grid "cover"
                 to the galleryFeatured preset family (closest available to 16:9 — §7
-                defines no dedicated 16:9 preset; 16:10 is the locked choice per §7). */}
+                defines no dedicated 16:9 preset; 16:10 is the locked choice per §7).
+                srcset candidates: 640w / 1000w / 1400w (Cloudinary only).
+                sizes: 100vw at all viewports (cover spans full container width). */}
             <button
                 type="button"
                 className={styles.coverBtn}
@@ -474,6 +594,8 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
             >
                 <img
                     src={buildCellUrl(cover.url, 'galleryFeatured')}
+                    srcSet={buildCellSrcset(cover.url, 'galleryFeatured')}
+                    sizes={isCloudinaryUrl(cover.url) ? CELL_SIZES.galleryFeatured : undefined}
                     alt={cover.alt}
                     className={styles.coverImg}
                     loading="eager"
@@ -502,7 +624,7 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                         // counts 2-3: half cells (4:3). counts 4-5+: quarter cells (1:1).
                         const cellClass = totalCount <= 3 ? styles.cellHalf : styles.cellQuarter;
                         // Use the preset that matches the cell's fixed aspect-ratio (SPEC-186 FR-3 §7).
-                        const extrasPreset: MediaPreset =
+                        const extrasPreset: 'galleryHalf' | 'galleryQuarter' =
                             totalCount <= 3 ? 'galleryHalf' : 'galleryQuarter';
 
                         if (isOverlayCell) {
@@ -513,6 +635,12 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                                 >
                                     <img
                                         src={buildCellUrl(img.url, extrasPreset)}
+                                        srcSet={buildCellSrcset(img.url, extrasPreset)}
+                                        sizes={
+                                            isCloudinaryUrl(img.url)
+                                                ? CELL_SIZES[extrasPreset]
+                                                : undefined
+                                        }
                                         alt={img.alt}
                                         className={styles.cellImg}
                                         loading="lazy"
@@ -552,6 +680,12 @@ function CoverPlusGridVariant({ images, onOpen, t }: CoverPlusGridVariantProps) 
                             >
                                 <img
                                     src={buildCellUrl(img.url, extrasPreset)}
+                                    srcSet={buildCellSrcset(img.url, extrasPreset)}
+                                    sizes={
+                                        isCloudinaryUrl(img.url)
+                                            ? CELL_SIZES[extrasPreset]
+                                            : undefined
+                                    }
                                     alt={img.alt}
                                     className={styles.cellImg}
                                     loading="lazy"
