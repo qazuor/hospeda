@@ -1,0 +1,352 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-186",
+    "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+    "created": "2026-06-05T06:18:57.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add i18n keys for gallery overlay strings (es/en/pt)",
+            "description": "Add the new user-facing strings to @repo/i18n: '+N más' overlay label (with count interpolation) and 'ver todas las fotos' CTA, in es/en/pt locale files under the existing gallery namespace (alongside viewAll/viewFullscreen/photosSubpage). Regenerate i18n types. Tests: locale-completeness check passes for the 3 locales; key lookup returns interpolated count.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                { "title": "Add keys to es/en/pt locale JSON", "completed": false },
+                { "title": "Regenerate types.ts and verify typecheck", "completed": false }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Count-aware composition in DetailVariant + '+N más' overlay",
+            "description": "In apps/web/src/components/ImageGallery.client.tsx DetailVariant (~line 200): replace thumbs.slice(0,3) + binary mosaicWithThumbs with count-aware composition for 1/2/3/4/5+ images per spec §5 layout matrix. At 5+, render the '+N más' overlay as a keyboard-accessible button on the last visible cell that opens the lightbox at that index. Use the T-001 i18n keys. Tests are written in T-005 (same PR).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004"],
+            "subtasks": [
+                { "title": "Per-count cell composition (1/2/3/4/5+)", "completed": false },
+                { "title": "+N overlay button (aria-label, opens lightbox)", "completed": false }
+            ],
+            "tags": ["web", "react", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Per-count CSS rules in ImageGallery.module.css (detail variant)",
+            "description": "Add .grid/.cellFeatured/.cellHalf/.cellQuarter/.moreOverlay classes (spec §6) and per-count layout rules to apps/web/src/components/ImageGallery.module.css; remove the unconditional grid-template-rows: repeat(3,1fr) on .thumbGrid (~line 84). Add the tablet breakpoint rules per spec FR-7 (641-1023px) alongside the existing 640px query. Visual result: no empty reserved rows at any count.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005", "T-006", "T-008"],
+            "subtasks": [
+                { "title": "Cell classes + per-count rules", "completed": false },
+                { "title": "Tablet breakpoint (641-1023px)", "completed": false }
+            ],
+            "tags": ["web", "css", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Remove outer gallery pre-slice in alojamientos/[slug].astro",
+            "description": "Spec §8 step 1b (realign D-1): apps/web/src/pages/[lang]/alojamientos/[slug].astro (~lines 293-310) builds galleryImages as [featured, ...gallery.slice(0,3)] before passing to the island, capping accommodations at 4 images and making the 5+ overlay unreachable. Pass the FULL gallery; the island now owns all capping. Events/posts already pass full galleries — no change there.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "astro", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Vitest coverage for detail variant count logic + overlay",
+            "description": "New test file for ImageGallery detail variant (testing-library): assert rendered cell count at 1/2/3/4/5+ images; overlay present with correct '+N' label ONLY at 5+; overlay keyboard activation (Enter/Space) opens lightbox at the right index; no overlay at <=4; alt text preserved per cell.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "testing", "gallery"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Count-aware CoverPlusGridVariant",
+            "description": "In ImageGallery.client.tsx CoverPlusGridVariant (~line 277): replace rest.slice(0,6) + fixed .inlineGrid repeat(3,1fr) (~module.css line 161) with count-aware column tracks per spec §5, reusing T-003 cell classes; '+N más' overlay at cap, same behavior as detail variant.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["web", "react", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Vitest coverage for cover-plus-grid variant",
+            "description": "Mirror T-005 tests for CoverPlusGridVariant: per-count column composition, overlay only above cap, keyboard activation, post detail page coverage.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "testing", "gallery"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Fixed aspect-ratio + object-fit on every gallery cell",
+            "description": "Spec FR-3: give every cell a fixed aspect-ratio + object-fit:cover + object-position:center. detail variant featured (.featuredImg currently relies on max-height:480px, no ratio) and thumbs (no ratio at all) get true ratios; cover-plus-grid already has 16/9 cover + 4/3 inlineGridBtn — align with §5 locked ratios.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-009", "T-014"],
+            "subtasks": [],
+            "tags": ["web", "css", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Request Cloudinary c_fill crop per cell ratio",
+            "description": "Request server-side crop matching each cell's ratio: c_fill + ar_ tokens (interim via raw override on the existing gallery preset until T-011 adds dedicated presets). ar_ is already allowlisted in @repo/media get-media-url.ts ALLOWED_RAW_TOKEN_PREFIXES (line 22). Touch ImageGallery.client.tsx and/or lib/media.ts extractGalleryItems.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010", "T-012"],
+            "subtasks": [],
+            "tags": ["web", "media", "cloudinary"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "CLS test + object-position sanity",
+            "description": "Spec §8 step 7: assert the gallery contributes zero layout shift (fixed-ratio cells render with reserved space before image load); object-position default center sanity check.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "testing", "performance"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add 4 gallery* presets to @repo/media",
+            "description": "Add galleryFeatured/galleryHalf/galleryQuarter/galleryThumb presets to packages/media/src/presets.ts per spec §7 (c_fill + ar_ + width + q_auto,f_auto,dpr_auto). Update preset-count test 7 → 11 and the explicit key list (packages/media/src/__tests__/presets.test.ts:16), plus the safe-token test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["media", "cloudinary"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Wire per-cell srcset/sizes in the island",
+            "description": "Spec FR-4: per cell role, build srcset candidates via @repo/media width override (get-media-url.ts:248-257 regex-replaces w_ in preset — verified working) + sizes attr matching §5 breakpoints. Update extractGalleryItems/lib/media.ts only if cells need the base public-id to build candidates. Featured keeps eager/high-priority loading.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["web", "media", "performance"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Tests for presets + srcset wiring + LCP guard",
+            "description": "Spec §8 step 10: preset transforms contain c_fill+ar_; every cell's srcset has >=2 candidates; featured image keeps loading=eager + fetchPriority=high and does not pick a heavier LCP candidate than today (w_800 baseline).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "testing", "media"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Replace /fotos masonry with fixed-ratio grid",
+            "description": "apps/web/src/pages/[lang]/alojamientos/[slug]/fotos.astro: replace columns:3 masonry (~line 188) with .fotosGrid/.fotosCell fixed-ratio system (all photos + videos, c_fill). Realign D-10: replace BOTH media queries — current masonry uses 1024px→2/768px→1; locked §5 breakpoints are >=1024=3 / 640-1023=2 / <640=1. The 768px query must not survive. GLightbox links (data-glightbox/data-gallery) stay as-is.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Grid system + cells", "completed": false },
+                { "title": "Both breakpoints replaced per §5", "completed": false }
+            ],
+            "tags": ["web", "astro", "gallery"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Verify /fotos videos + GLightbox + reflow at 3 breakpoints",
+            "description": "Spec §8 step 12: video thumbnail + play overlay + GLightbox still work on /fotos after T-014; reflow test at the three §5 breakpoints (>=1024, 640-1023, <640).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "testing", "gallery"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Delete dead HeroGallery.astro + JSDoc cleanup",
+            "description": "Delete apps/web/src/components/accommodation/HeroGallery.astro (verified dead: zero runtime imports, 4 JSDoc refs only). Remove dangling references: lib/media.ts:105 and :275, lib/api/transforms.ts:636, data/types.ts:576. Grep proves zero HeroGallery references remain; build + typecheck green.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Full quality gate: web + media + i18n green",
+            "description": "Run typecheck + lint + tests for apps/web, packages/media, packages/i18n. Everything green before the manual smoke. No .only/.skip committed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-005", "T-007", "T-010", "T-013", "T-015", "T-016"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["testing", "quality-gate"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Manual visual smoke (4 entities + /fotos, 3 breakpoints, 3 locales)",
+            "description": "Spec §8 Phase 7: browser validation of the gallery at 1/2/3/4/5+ images on accommodation/event/destination (detail) + post (cover-plus-grid) + /fotos at the three breakpoints; the new strings in es/en/pt. Then flip spec + task indexes to completed.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["smoke", "closeout"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-05T06:18:57.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 18,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}
