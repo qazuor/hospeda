@@ -47,11 +47,17 @@ export const AccommodationReviewCreateInputSchema = AccommodationReviewSchema.om
  *
  * The original input schema remains intact (service-layer callers and admin
  * tooling still pass the full payload), per the schemas additive-only policy.
+ *
+ * `.strict()` (HTTP boundary hardening, mirrors DestinationReviewCreateBodySchema):
+ * a body that echoes `userId` or `accommodationId` is REJECTED instead of
+ * silently stripped, so impersonation attempts fail loudly at validation.
+ * Strictness is applied only at this HTTP boundary — the service-layer
+ * create input schema stays lax per the additive-only compat policy.
  */
 export const AccommodationReviewCreateBodySchema = AccommodationReviewCreateInputSchema.omit({
     accommodationId: true,
     userId: true
-});
+}).strict();
 
 /**
  * Schema for accommodation review creation response
