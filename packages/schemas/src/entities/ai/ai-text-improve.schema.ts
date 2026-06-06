@@ -57,10 +57,11 @@ export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema
  * - `description`: 5000 chars — matches the rich-text editor budget.
  * - `summary`: 300 chars — matches the live form `maxLength: 300`.
  */
-export const AI_TEXT_IMPROVE_MAX_LENGTH: Readonly<Record<AiTextImproveFieldType, number>> = {
-    description: 5000,
-    summary: 300
-} as const;
+export const AI_TEXT_IMPROVE_MAX_LENGTH: Readonly<Record<AiTextImproveFieldType, number>> =
+    Object.freeze({
+        description: 5000,
+        summary: 300
+    });
 
 // ---------------------------------------------------------------------------
 // Request body
