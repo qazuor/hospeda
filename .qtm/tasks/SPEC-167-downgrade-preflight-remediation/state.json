@@ -26,18 +26,18 @@
             "id": "T-002",
             "title": "Add planRestricted to accommodation + promotion Zod schemas and types",
             "description": "@repo/schemas: add `planRestricted: z.boolean().default(false)` to the accommodation and owner-promotion entity schemas (find via entity-name.schema.ts convention). Regenerate/extend inferred types. Lesson SPEC-145/149: schema package export changes can break 'already green' consumers — note for the sweep. Tests: schema parse defaults; round-trip with the new field.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-007", "T-008"],
             "subtasks": [],
             "tags": ["schemas", "zod"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T16:20:00.000Z",
+                "completed": "2026-06-06T16:25:00.000Z"
             }
         },
         {
