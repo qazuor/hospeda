@@ -404,7 +404,7 @@
             "id": "T-019",
             "title": "e2e: downgrade restriction happy path",
             "description": "New e2e in apps/api/test/e2e/flows/billing/ (closes the T-145-11 gap — no placeholder exists): over-cap host (3 accommodations/cap 1, active promos over cap, photos over cap) schedules downgrade → response carries preview → cron applies → accommodations planRestricted + promos restricted + photos archived → public list/detail exclude restricted → entitlement cache cleared. Use billing-factories + mp-stub harness (SPEC-143). Follow the plan-downgrade-cron.test.ts patterns.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-013", "T-014", "T-016", "T-026"],
             "blocks": ["T-022"],
@@ -412,14 +412,14 @@
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T23:00:00.000Z",
+                "completed": "2026-06-06T23:30:00.000Z"
             }
         },
         {
@@ -579,9 +579,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 26,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
     }
