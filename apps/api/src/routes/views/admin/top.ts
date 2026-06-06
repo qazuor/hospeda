@@ -20,7 +20,7 @@
 
 import {
     AdminViewTopQuerySchema,
-    EntityViewStatsListResponseSchema,
+    EntityViewStatsListSchema,
     PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
@@ -52,7 +52,7 @@ export const adminViewTopRoute = createAdminRoute({
     tags: ['Views'],
     requiredPermissions: [PermissionEnum.ANALYTICS_VIEW],
     requestQuery: AdminViewTopQuerySchema.shape,
-    responseSchema: EntityViewStatsListResponseSchema,
+    responseSchema: EntityViewStatsListSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as {
@@ -76,6 +76,6 @@ export const adminViewTopRoute = createAdminRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     }
 });

@@ -20,7 +20,7 @@
 
 import {
     EntityTypeEnum,
-    EntityViewStatsListResponseSchema,
+    EntityViewStatsListSchema,
     EntityViewWindowSchema,
     PermissionEnum,
     type ServiceErrorCode
@@ -80,7 +80,7 @@ export const postViewStatsRoute = createProtectedRoute({
         window: EntityViewWindowSchema.default('30d'),
         entityIds: entityIdsQuerySchema
     },
-    responseSchema: EntityViewStatsListResponseSchema,
+    responseSchema: EntityViewStatsListSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d'; entityIds: string[] };
@@ -96,7 +96,7 @@ export const postViewStatsRoute = createProtectedRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     },
     options: {
         cacheTTL: 60,

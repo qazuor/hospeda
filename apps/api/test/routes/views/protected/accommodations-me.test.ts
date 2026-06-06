@@ -202,7 +202,7 @@ describe('hostAccommodationViewStatsRoute handler — SPEC-159 T-009', () => {
     // -----------------------------------------------------------------------
 
     describe('on service success', () => {
-        it('returns { data: EntityViewStats[] } for the 30d default window', async () => {
+        it('returns EntityViewStats[] directly for the 30d default window', async () => {
             // Arrange
             mockGetStatsForHostAccommodations.mockResolvedValue({
                 data: SAMPLE_STATS,
@@ -213,13 +213,11 @@ describe('hostAccommodationViewStatsRoute handler — SPEC-159 T-009', () => {
             const ctx = buildMockContext() as unknown as Context;
 
             // Act
-            const result = (await handler(ctx, {}, {}, { window: '30d' })) as {
-                data: typeof SAMPLE_STATS;
-            };
+            const result = (await handler(ctx, {}, {}, { window: '30d' })) as typeof SAMPLE_STATS;
 
-            // Assert
-            expect(result.data).toEqual(SAMPLE_STATS);
-            expect(result.data).toHaveLength(2);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result).toEqual(SAMPLE_STATS);
+            expect(result).toHaveLength(2);
         });
 
         it('returns stats for the 7d window', async () => {
@@ -234,12 +232,15 @@ describe('hostAccommodationViewStatsRoute handler — SPEC-159 T-009', () => {
             const ctx = buildMockContext() as unknown as Context;
 
             // Act
-            const result = (await handler(ctx, {}, {}, { window: '7d' })) as {
-                data: typeof shortWindowStats;
-            };
+            const result = (await handler(
+                ctx,
+                {},
+                {},
+                { window: '7d' }
+            )) as typeof shortWindowStats;
 
-            // Assert
-            expect(result.data).toEqual(shortWindowStats);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result).toEqual(shortWindowStats);
         });
 
         it('returns empty array when host has no accommodations', async () => {
@@ -253,10 +254,10 @@ describe('hostAccommodationViewStatsRoute handler — SPEC-159 T-009', () => {
             const ctx = buildMockContext() as unknown as Context;
 
             // Act
-            const result = (await handler(ctx, {}, {}, { window: '30d' })) as { data: unknown[] };
+            const result = (await handler(ctx, {}, {}, { window: '30d' })) as unknown[];
 
-            // Assert
-            expect(result.data).toEqual([]);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result).toEqual([]);
         });
     });
 

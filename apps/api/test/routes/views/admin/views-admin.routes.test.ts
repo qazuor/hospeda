@@ -208,7 +208,7 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
 
     describe('GET /summary (T-008)', () => {
         describe('happy path', () => {
-            it('returns { data: AdminViewSummaryItem[] } for default 30d window', async () => {
+            it('returns AdminViewSummaryItem[] directly for default 30d window', async () => {
                 // Arrange
                 mockGetAdminSummary.mockResolvedValue({
                     data: SAMPLE_SUMMARY,
@@ -219,13 +219,16 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
                 const ctx = buildMockContext() as unknown as Context;
 
                 // Act
-                const result = (await handler(ctx, {}, {}, { window: '30d' })) as {
-                    data: typeof SAMPLE_SUMMARY;
-                };
+                const result = (await handler(
+                    ctx,
+                    {},
+                    {},
+                    { window: '30d' }
+                )) as typeof SAMPLE_SUMMARY;
 
-                // Assert
-                expect(result.data).toEqual(SAMPLE_SUMMARY);
-                expect(result.data).toHaveLength(3);
+                // Assert — handler returns the bare array; createResponse wraps it once
+                expect(result).toEqual(SAMPLE_SUMMARY);
+                expect(result).toHaveLength(3);
             });
 
             it('calls getAdminSummary with 7d window', async () => {
@@ -292,7 +295,7 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
 
     describe('GET /batch (T-009)', () => {
         describe('happy path', () => {
-            it('returns { data: EntityViewStats[] } for valid batch', async () => {
+            it('returns EntityViewStats[] directly for valid batch', async () => {
                 // Arrange
                 mockGetAdminBatch.mockResolvedValue({
                     data: SAMPLE_STATS,
@@ -312,10 +315,10 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
                         entityIds: ACCOMMODATION_IDS,
                         window: '30d'
                     }
-                )) as { data: typeof SAMPLE_STATS };
+                )) as typeof SAMPLE_STATS;
 
-                // Assert
-                expect(result.data).toEqual(SAMPLE_STATS);
+                // Assert — handler returns the bare array; createResponse wraps it once
+                expect(result).toEqual(SAMPLE_STATS);
             });
 
             it('calls getAdminBatch with actor from context', async () => {
@@ -460,7 +463,7 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
 
     describe('GET /top (T-010)', () => {
         describe('happy path', () => {
-            it('returns { data: EntityViewStats[] } ordered by total DESC', async () => {
+            it('returns EntityViewStats[] directly, ordered by total DESC', async () => {
                 // Arrange
                 const topStats = [
                     { entityId: ACCOMMODATION_IDS[0], unique: 50, total: 200 },
@@ -481,10 +484,10 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
                         window: '30d',
                         limit: 10
                     }
-                )) as { data: typeof topStats };
+                )) as typeof topStats;
 
-                // Assert
-                expect(result.data).toEqual(topStats);
+                // Assert — handler returns the bare array; createResponse wraps it once
+                expect(result).toEqual(topStats);
             });
 
             it('maps window "7d" to windowDays=7 when calling the service', async () => {
@@ -657,7 +660,7 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
         }
 
         describe('happy path', () => {
-            it('returns exactly 90 rows', async () => {
+            it('returns exactly 90 rows directly as array', async () => {
                 // Arrange
                 const rows = buildDailySeriesRows();
                 mockGetAdminDailySeries.mockResolvedValue({ data: rows, error: undefined });
@@ -666,12 +669,10 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
                 const ctx = buildMockContext() as unknown as Context;
 
                 // Act
-                const result = (await handler(ctx, {}, {}, {})) as {
-                    data: typeof rows;
-                };
+                const result = (await handler(ctx, {}, {}, {})) as typeof rows;
 
-                // Assert
-                expect(result.data).toHaveLength(90);
+                // Assert — handler returns the bare array; createResponse wraps it once
+                expect(result).toHaveLength(90);
             });
 
             it('all dates are valid YYYY-MM-DD strings', async () => {
@@ -683,13 +684,11 @@ describe('Admin views routes — SPEC-197 T-008–T-011', () => {
                 const ctx = buildMockContext() as unknown as Context;
 
                 // Act
-                const result = (await handler(ctx, {}, {}, {})) as {
-                    data: typeof rows;
-                };
+                const result = (await handler(ctx, {}, {}, {})) as typeof rows;
 
                 // Assert — every date must match ISO YYYY-MM-DD
                 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-                for (const row of result.data) {
+                for (const row of result) {
                     expect(row.date).toMatch(dateRegex);
                 }
             });

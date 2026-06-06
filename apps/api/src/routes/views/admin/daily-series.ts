@@ -18,7 +18,7 @@
  */
 
 import {
-    AdminViewDailySeriesResponseSchema,
+    AdminViewDailySeriesListSchema,
     PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
@@ -47,7 +47,7 @@ export const adminViewDailySeriesRoute = createAdminRoute({
         'Requires ANALYTICS_VIEW permission.',
     tags: ['Views'],
     requiredPermissions: [PermissionEnum.ANALYTICS_VIEW],
-    responseSchema: AdminViewDailySeriesResponseSchema,
+    responseSchema: AdminViewDailySeriesListSchema,
     handler: async (ctx) => {
         const actor = getActorFromContext(ctx);
 
@@ -60,6 +60,6 @@ export const adminViewDailySeriesRoute = createAdminRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     }
 });

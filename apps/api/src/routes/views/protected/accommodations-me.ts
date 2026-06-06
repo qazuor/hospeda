@@ -17,7 +17,7 @@
 
 import { EntitlementKey } from '@repo/billing';
 import {
-    EntityViewStatsListResponseSchema,
+    EntityViewStatsListSchema,
     EntityViewWindowSchema,
     PermissionEnum,
     type ServiceErrorCode
@@ -47,7 +47,7 @@ export const hostAccommodationViewStatsRoute = createProtectedRoute({
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },
-    responseSchema: EntityViewStatsListResponseSchema,
+    responseSchema: EntityViewStatsListSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
@@ -61,7 +61,7 @@ export const hostAccommodationViewStatsRoute = createProtectedRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     },
     options: {
         // SPEC-145 gate matrix: accommodation view stats live in HOST Card G
