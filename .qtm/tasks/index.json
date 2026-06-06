@@ -224,14 +224,15 @@
         {
             "specId": "SPEC-202",
             "title": "Destination Review Submission Flow (web) + API contract/security fix",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "21/21",
             "path": "SPEC-202-destination-review-submission",
             "branch": "spec/SPEC-202-destination-review-submission",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-202-destination-review-submission",
             "base": "staging",
-            "archived": false,
-            "updatedAt": "2026-06-06T18:06:26Z"
+            "archived": true,
+            "archivedAt": "2026-06-06T18:30:00.000Z",
+            "archiveNote": "Shipped via PR #1474 (21/21, two Chrome smokes GO). Includes user-requested UI delta (collapsible categories, inline CTA) + approved-only stats and reviewer identity fixes. Worktree cleaned up post-merge.",
+            "updatedAt": "2026-06-06T18:30:00.000Z"
         }
     ],
     "standalone": {
