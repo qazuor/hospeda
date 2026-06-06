@@ -333,38 +333,43 @@
             "id": "T-009",
             "title": "AiTextImprovePanel component + tests",
             "description": "Create apps/admin/src/features/accommodations/components/AiTextImprovePanel.tsx per spec §5.3.7. Props: fieldType, fieldValue, locale, onAccept, canUse, className. Render: trigger button (always visible, disabled when !canUse or status in loading|streaming) with title=tooltip (upgrade or trigger), panel (when status !== idle) with role='region' aria-label, loading skeleton, streaming display with caret, error role='alert', done state with Accept+Discard buttons, error state with Dismiss button. Map HTTP status to i18n error code per spec §5.6 table. Then create AiTextImprovePanel.test.tsx per spec §9.4 component tests (13 cases incl. CRITICAL mid-stream error discards tokens, abort on unmount). Use shadcn Button + Card primitives from the admin design system.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-007", "T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Build trigger button with disabled + tooltip logic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build panel state renderer (loading/streaming/done/error)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire HTTP status → i18n error code mapping per §5.6",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply a11y: role=region, aria-label, role=alert, focus mgmt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 13 component tests per spec §9.4",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter admin test for the component",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["frontend", "component", "a11y", "shadcn"],
-            "phase": "core"
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T17:50:00.000Z",
+                "completed": "2026-06-06T18:00:00.000Z"
+            }
         },
         {
             "id": "T-010",

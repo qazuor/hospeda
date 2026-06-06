@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 8/10 tasks (80%)
+## Progress: 9/10 tasks (90%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -66,7 +66,7 @@
   - Blocked by: T-007
   - Blocks: T-009
 
-- [ ] **T-009** (complexity: 5) - AiTextImprovePanel component + tests
+- [x] **T-009** (complexity: 5) - AiTextImprovePanel component + tests
   - Trigger + panel + a11y + HTTP→i18n error map; 13 component tests
   - Files: apps/admin/src/features/accommodations/components/AiTextImprovePanel.tsx + **tests**/
   - Blocked by: T-007, T-008
