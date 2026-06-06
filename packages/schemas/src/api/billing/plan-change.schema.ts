@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BillingIntervalEnum } from '../../enums/billing-interval.enum.js';
-import { KeepSelectionsSchema } from './downgrade-preview.schema.js';
+import { DowngradePreviewSchema, KeepSelectionsSchema } from './downgrade-preview.schema.js';
 
 /**
  * Plan change status enum
@@ -79,6 +79,21 @@ export type PlanChangeRequest = z.infer<typeof PlanChangeRequestSchema>;
  *
  * `status` is `'active'` for immediate-apply and `'scheduled'` for
  * deferred-apply; both share the same payload shape.
+ *
+ * For `status === 'scheduled'` (downgrade path), `restrictionPreview` is
+ * populated with the per-dimension excess computed at request time so the
+ * client (SPEC-203 UI) can surface a "here is what gets restricted" notice
+ * before the period ends.
+ *
+ * **Caveat**: this preview is computed once at schedule time using the
+ * host's current usage snapshot. The apply-time cron (§4.4) recomputes
+ * the excess FRESH — the host may change their usage between request and
+ * period end, so the apply-time result may differ from this preview.
+ * SPEC-203 UI must communicate this uncertainty to the host.
+ *
+ * When absent (field not present in the response), the preview was
+ * unavailable due to a transient error. SPEC-203 UI defaults to
+ * "restrictions will apply per plan limits — exact list TBD at period end".
  */
 export const PlanChangeAppliedResponseSchema = z.object({
     /** The result status of the plan change. */
@@ -113,7 +128,23 @@ export const PlanChangeAppliedResponseSchema = z.object({
             message: 'zodError.billing.planChange.proratedAmount.invalidType'
         })
         .min(0, { message: 'zodError.billing.planChange.proratedAmount.min' })
-        .optional()
+        .optional(),
+    /**
+     * Request-time restriction preview (SPEC-167 T-016 / SPEC-203 UI contract).
+     *
+     * Only present on `status === 'scheduled'` (downgrade path). Absent on upgrades
+     * and on the legacy immediate-apply path.
+     *
+     * **Soft-fail semantics**: the field is absent (not `null`) when preview
+     * computation failed transiently. SPEC-203 UI must treat absence as
+     * "preview unavailable — defaults will apply at period end".
+     *
+     * **Apply-time caveat**: the cron recomputes excess FRESH at apply time
+     * (spec §4.4). This preview reflects the host's usage at schedule time
+     * and may differ from the apply-time result if the host changes usage
+     * between request and period end.
+     */
+    restrictionPreview: DowngradePreviewSchema.optional()
 });
 
 /**
