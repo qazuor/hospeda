@@ -166,26 +166,48 @@
             "id": "T-005",
             "title": "Route handler unit tests",
             "description": "Create apps/api/src/routes/ai/protected/__tests__/text-improve.test.ts per spec §9.2. Mock createConfiguredAiService to return stub stream. Cover: calls aiService.streamText with feature='text_improve', passes fieldValue+fieldType to prompt builder, passes locale from request, defaults locale to 'es' when absent, returns 400 on invalid body, returns 400 on unknown keys (strict schema). Use vi.mock('../../../../services/ai-service.factory.js', ...).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write mock for createConfiguredAiService",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Write all 6 test cases from spec §9.2",
-                    "completed": false
+                    "title": "Mock all 3 route middlewares to no-op pass-throughs",
+                    "completed": true
+                },
+                {
+                    "title": "Mock @repo/ai-core + create-app (transitive missing deps)",
+                    "completed": true
+                },
+                {
+                    "title": "Write 9 test cases (6 spec §9.2 + 2 prompt builder + 1 invalid fieldType)",
+                    "completed": true
                 },
                 {
                     "title": "Run vitest on the test file",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Lint clean + typecheck clean",
+                    "completed": true
                 }
             ],
             "tags": ["test", "api", "mock"],
-            "phase": "core"
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "9/9"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T06:25:00.000Z",
+                "completed": "2026-06-06T06:35:00.000Z"
+            }
         },
         {
             "id": "T-006",

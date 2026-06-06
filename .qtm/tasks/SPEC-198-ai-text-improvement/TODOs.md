@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 5/10 tasks (50%)
+## Progress: 6/10 tasks (60%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -54,9 +54,9 @@
   - Blocked by: T-003
   - Blocks: T-006
 
-- [ ] **T-005** (complexity: 3) - Route handler unit tests
-  - 6 cases; vi.mock createConfiguredAiService
-  - File: apps/api/src/routes/ai/protected/**tests**/text-improve.test.ts
+- [x] **T-005** (complexity: 3) - Route handler unit tests
+  - 9 cases (6 spec §9.2 + 2 prompt builder + 1 invalid fieldType); vi.mock createConfiguredAiService
+  - File: apps/api/test/routes/ai/protected/text-improve.test.ts
   - Blocked by: T-003
   - Blocks: —
 
