@@ -249,6 +249,54 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             // Act & Assert: 3 photos hit the limit, block
             await expect(middleware(c, mockNext)).rejects.toThrow(ServiceError);
         });
+
+        it('should NOT count archivedGallery items when enforcing photo limit (SPEC-167 D-2 invariant)', async () => {
+            // Arrange:
+            // - gallery: 2 photos (counted)
+            // - featuredImage: 1 photo (counted)
+            // - archivedGallery: 10 photos (NOT counted — these are over-cap photos
+            //   moved here by the downgrade restriction service; they are hidden from
+            //   the public read path and MUST NOT inflate the active photo count used
+            //   to gate new uploads)
+            //
+            // Expected: currentPhotoCount = 3 (gallery + featured only).
+            // Limit = 3 → exactly at the limit → should block.
+            // If archivedGallery were accidentally counted, currentPhotoCount would be
+            // 13 and the test outcome would be the same (still blocked), but a count
+            // mismatch would surface in the error details. Use a scenario where the
+            // limit is ABOVE the active count but BELOW active+archived to confirm
+            // archivedGallery items are excluded.
+            mockGetById.mockResolvedValue({
+                data: {
+                    id: 'acc-1',
+                    media: {
+                        featuredImage: {
+                            url: 'https://example.com/featured.jpg',
+                            moderationState: 'APPROVED'
+                        },
+                        gallery: [
+                            { url: 'https://example.com/1.jpg', moderationState: 'APPROVED' }
+                        ],
+                        archivedGallery: Array.from({ length: 10 }, (_, i) => ({
+                            url: `https://example.com/archived-${i}.jpg`,
+                            moderationState: 'APPROVED'
+                        }))
+                    }
+                }
+            });
+
+            // Limit = 5: active count = 2 (1 gallery + 1 featured) → BELOW limit → allowed.
+            // If archivedGallery were counted: active + archived = 12 → above limit → would block.
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5);
+            const c = createMockContext({ id: 'acc-1' }, mockLimitsMap);
+            const middleware = enforcePhotoLimit();
+
+            // Act
+            await middleware(c, mockNext);
+
+            // Assert: allowed (count=2 is below limit=5)
+            expect(mockNext).toHaveBeenCalledOnce();
+        });
     });
 
     describe('blocking behavior', () => {

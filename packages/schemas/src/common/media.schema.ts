@@ -100,7 +100,22 @@ export const MediaSchema = z.object({
      */
     featuredImage: ImageSchema.optional(),
     gallery: z.array(ImageSchema).optional(),
-    videos: z.array(VideoSchema).optional()
+    videos: z.array(VideoSchema).optional(),
+    /**
+     * Photos that were moved out of `gallery` during a plan downgrade when the
+     * host exceeded the target plan's `MAX_PHOTOS_PER_ACCOMMODATION` limit.
+     *
+     * Added by SPEC-167 (downgrade over-limit remediation, realign D-2):
+     * - Written at apply-time by the downgrade restriction service.
+     * - Read (restore) when the host re-upgrades above the photo cap.
+     * - NEVER read by public/API consumers (only `gallery` is served).
+     * - Item shape is identical to `gallery` items (`ImageSchema`).
+     * - No DB migration needed: stored in the existing `media` JSONB column.
+     *
+     * Public/API read paths MUST continue to read only `gallery` and
+     * `featuredImage`; they MUST NOT iterate over or expose this field.
+     */
+    archivedGallery: z.array(ImageSchema).optional()
 });
 export type Media = z.infer<typeof MediaSchema>;
 
