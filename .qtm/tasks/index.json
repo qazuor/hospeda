@@ -212,7 +212,7 @@
             "specId": "SPEC-197",
             "title": "Admin View-Stats Surfaces",
             "status": "in-progress",
-            "progress": "20/21",
+            "progress": "21/21",
             "path": "SPEC-197-admin-view-stats-surfaces",
             "branch": "spec/SPEC-197-admin-view-stats-surfaces",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
