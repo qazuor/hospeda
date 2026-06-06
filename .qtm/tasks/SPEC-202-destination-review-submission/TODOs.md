@@ -1,6 +1,6 @@
 # TODOs: Destination Review Submission Flow (web) + API contract/security fix
 
-Spec: SPEC-202 | Status: in-progress | Progress: 18/18
+Spec: SPEC-202 | Status: in-progress | Progress: 21/21
 
 ## Setup
 
@@ -34,3 +34,9 @@ Spec: SPEC-202 | Status: in-progress | Progress: 18/18
 
 - [x] T-017: Verify endpoint-gate-matrix row for destination review create (complexity: 1) [blocked by T-007]
 - [x] T-018: Local e2e verification (manual smoke) (complexity: 3) [blocked by T-002, T-011, T-014]
+
+## UI delta (user-requested, 2026-06-06)
+
+- [x] T-019: Collapsible category rating UI in review dialog (complexity: 5)
+- [x] T-020: Inline review CTA in reviews section + button normalization (complexity: 3) [blocked by T-019]
+- [x] T-021: Approved-only destination stats + reviewer identity in public list (complexity: 4)

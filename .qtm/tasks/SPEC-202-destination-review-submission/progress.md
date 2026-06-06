@@ -40,6 +40,23 @@ Post-fix gates: web typecheck green, card component tests 15/15 green. Biome doe
 
 **Follow-up noted (NOT SPEC-202):** at max page scroll the sticky `.wave-header__bar` (z-index ~49) covers the bottom of the sticky sidebar, intercepting clicks on whatever card sits there (site-wide DetailLayout/WaveHeader quirk, affects alojamientos too). Saved to engram.
 
+## 2026-06-06 — UI delta (T-019/T-020/T-021) + second Chrome smoke — GO
+
+User-requested changes after the first smoke (PR #1474 already open; user chose to add to the same PR):
+
+1. **T-019 — Collapsible categories**: 18 dims grouped in 5 collapsible categories (`destination-rating.ts` + `DestinationReviewRatingFields.tsx`). Header star row propagates to all dims; expanding allows per-dim override; header then shows the **rounded average of rated dims** (user picked average over hiding the stars). Verified live: category 5 → all dims 5; override Paisaje→4 → header still 5 (avg 4.8); payload landed in DB exactly (landscape=4, beaches=5, gastro=3, safety=5).
+2. **T-020 — Inline CTA + normalization**: review CTA also mounted in the reviews section via a new `actions` slot, same row + same pill style as "Ver todas las reseñas" (verified: radius 9999px, same border/font, sameRow=true). Logged-out: inline sign-in link with clean returnUrl. Includes: dialog centering fix (`margin: auto` vs global reset) and per-instance DOM ids via `useId` (review blocker: two islands coexist).
+3. **T-021 — Stats + identity fixes** (found during the user's verification request):
+   - Stats aggregate counted PENDING/REJECTED reviews (inconsistent with the APPROVED-filtered public list). Now filters `moderationState=APPROVED`; `moderateReview` re-aggregates (best-effort try/catch) + schedules revalidation. Verified live: PENDING submit no longer moves stats; approve → 2→4 reviews, avg 4.06, breakdown updated.
+   - Public list rendered all reviewers as "Anónimo": route used `findAll` without user info. Now batch-enriches `user: { name, image }` mirroring the accommodation public route. Verified live: Miguel Torres / Usuario Invitado / Turista Free / Turista Plus, 0 "Anónimo".
+   - All 4 approved reviews visible in the modal (new + previous + 2 seeds approved via admin endpoint).
+
+Fresh-context adversarial review (code-reviewer agent) before push: blocker (duplicate DOM ids) FIXED with useId; major (unguarded recalc in moderateReview) FIXED with best-effort try/catch; minor/nits evaluated (sign-in inline display nit refuted — base class already sets inline-flex; icon duplication noted as pre-existing pattern).
+
+Gates: web tests 24/24, service-core destinationReview 60/60 + moderation flow 15/15 (full suite 4096 green with guard), api typecheck green, web typecheck green, i18n 626/626, biome clean.
+
+Screenshots: `/tmp/spec202-smoke-6..10-*.png` (normalized buttons, collapsed categories, expanded override, all reviews visible, reviewer names).
+
 ## Pending
 
-- Open PR → staging (after committing smoke fixes + tracking).
+- Push delta to PR #1474, wait CI green, merge (NO merge without CI Pass).

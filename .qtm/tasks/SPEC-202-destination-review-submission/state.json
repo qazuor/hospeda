@@ -430,6 +430,36 @@
                 "completed": null
             },
             "completedAt": "2026-06-06T17:03:21Z"
+        },
+        {
+            "id": "T-019",
+            "title": "Collapsible category rating UI in review dialog",
+            "description": "Group the 18 rating dimensions into 5 collapsible categories. Category header star row propagates to all dims; expanding allows per-dimension override; header shows rounded average of rated dims. User-requested UI change (2026-06-06).",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": [],
+            "phase": "integration",
+            "completedAt": "2026-06-06T18:06:26Z"
+        },
+        {
+            "id": "T-020",
+            "title": "Inline review CTA in reviews section + button normalization",
+            "description": "Mount the review CTA (and sign-in CTA when logged out) in a new 'actions' slot of DestinationReviewsSection, on the same row and with the same pill style as 'Ver todas las resenas'. variant prop on island + astro CTA. Includes dialog centering fix and per-instance DOM ids (useId).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "phase": "integration",
+            "completedAt": "2026-06-06T18:06:26Z"
+        },
+        {
+            "id": "T-021",
+            "title": "Approved-only destination stats + reviewer identity in public list",
+            "description": "Stats aggregate filters moderationState=APPROVED and moderateReview re-aggregates (best-effort) + schedules revalidation. Public destination reviews list batch-enriches user name/avatar (was rendering all reviews as anonymous).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [],
+            "phase": "core",
+            "completedAt": "2026-06-06T18:06:26Z"
         }
     ],
     "summary": {
@@ -440,5 +470,5 @@
         "blocked": 0,
         "averageComplexity": 2.7
     },
-    "updatedAt": "2026-06-06T17:03:21Z"
+    "updatedAt": "2026-06-06T18:06:26Z"
 }
