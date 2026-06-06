@@ -19,6 +19,20 @@
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
+-- Drop the drizzle migration journal schema so drizzle-kit migrate starts
+-- fresh from the baseline migration on the next run.
+--
+-- Without this, the `drizzle` schema (containing __drizzle_migrations)
+-- survives the DROP SCHEMA public CASCADE above. On the next
+-- `drizzle-kit migrate` the journal shows all past migrations as already
+-- applied, so the migration tool skips the baseline and jumps straight to
+-- ALTER TABLE / CREATE INDEX statements — which fail because the tables
+-- they reference were just dropped with `public` (error example:
+-- 'relation "accommodation_reviews" does not exist'). Dropping `drizzle`
+-- here forces the migrator to replay from migration 0000, recreating every
+-- object in order. drizzle-kit recreates the schema automatically.
+DROP SCHEMA IF EXISTS drizzle CASCADE;
+
 -- Restore default schema privileges (PostgreSQL 15 no longer grants CREATE on
 -- public to everyone by default; the migrating role needs it).
 GRANT ALL ON SCHEMA public TO CURRENT_USER;
