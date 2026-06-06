@@ -382,7 +382,7 @@
             "id": "T-018",
             "title": "Fix pause/resume revalidation gap (spec §6)",
             "description": "Realign C confirmed: apps/api/src/services/subscription-pause.service.ts setOwnerServiceSuspension flips accommodations.ownerSuspended directly with NO scheduleRevalidation — stale Cloudflare ISR pages keep showing paused listings. Call scheduleRevalidationBatch (T-010) with the affected accommodation events on suspend AND resume. Regression tests: revalidation scheduled with the right ids both directions; DB write behavior unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": [],
@@ -390,14 +390,14 @@
             "tags": ["revalidation", "bugfix"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T19:55:00.000Z",
+                "completed": "2026-06-06T20:02:00.000Z"
             }
         },
         {
