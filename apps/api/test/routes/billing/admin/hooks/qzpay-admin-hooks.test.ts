@@ -138,6 +138,28 @@ vi.mock('../../../../../src/services/refund-lifecycle.service', () => ({
     applyRefundLifecycle: vi.fn().mockResolvedValue(undefined)
 }));
 
+// SPEC-167 T-014: downgrade restriction + upgrade restoration mocks.
+vi.mock('../../../../../src/services/plan-downgrade-remediation.service', () => ({
+    applyDowngradeRestrictionsOrWarn: vi.fn().mockResolvedValue({
+        restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+        keptBySelection: { accommodations: [], promotions: [] },
+        keptByDefault: { accommodations: [], promotions: [] },
+        grandfatherFlags: []
+    })
+}));
+
+vi.mock('../../../../../src/services/plan-upgrade-restoration.service', () => ({
+    applyUpgradeRestorationsOrWarn: vi.fn().mockResolvedValue({
+        restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
+        stillRestricted: { accommodations: [], promotions: [] }
+    })
+}));
+
+vi.mock('../../../../../src/services/subscription-pause.service', () => ({
+    resolveOwnerUserId: vi.fn().mockResolvedValue('owner-user-001'),
+    setOwnerServiceSuspension: vi.fn().mockResolvedValue({ accommodationsUpdated: 0 })
+}));
+
 vi.mock('../../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -152,7 +174,10 @@ import { getQZPayBilling } from '../../../../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../../../../src/middlewares/entitlement';
 import { adminBillingHooks } from '../../../../../src/routes/billing/admin/qzpay-admin-hooks';
 import { revokeAddonForSubscriptionCancellation } from '../../../../../src/services/addon-lifecycle.service';
+import { applyDowngradeRestrictionsOrWarn } from '../../../../../src/services/plan-downgrade-remediation.service';
+import { applyUpgradeRestorationsOrWarn } from '../../../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../../../src/services/refund-lifecycle.service';
+import { resolveOwnerUserId } from '../../../../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
 // Test fixtures + helpers
@@ -270,6 +295,47 @@ function buildBillingMock() {
     return {
         subscriptions: { cancel: vi.fn() },
         customers: { get: vi.fn() }
+    };
+}
+
+/**
+ * Build a QZPay plan fixture with a single price at the given unit amount.
+ * `name` is used as the plan slug by `applyDowngradeRestrictions`.
+ */
+function buildPlan(
+    id: string,
+    name: string,
+    unitAmount: number,
+    billingInterval: 'month' | 'year' = 'month'
+) {
+    return {
+        id,
+        name,
+        prices: [
+            {
+                id: `price-${id}`,
+                billingInterval,
+                intervalCount: 1,
+                unitAmount,
+                active: true
+            }
+        ]
+    };
+}
+
+/**
+ * Build a billing mock that can look up plans by ID.
+ *
+ * Used by onAfterSubscriptionChangePlan tests that need plan price comparison
+ * to determine direction (downgrade vs upgrade vs same-plan).
+ */
+function buildBillingMockWithPlans(planMap: Record<string, ReturnType<typeof buildPlan>>) {
+    return {
+        subscriptions: { cancel: vi.fn() },
+        customers: { get: vi.fn() },
+        plans: {
+            get: vi.fn().mockImplementation(async (planId: string) => planMap[planId] ?? null)
+        }
     };
 }
 
@@ -540,6 +606,15 @@ describe('adminBillingHooks.onAfterSubscriptionCancel', () => {
 // onAfterSubscriptionChangePlan
 // ---------------------------------------------------------------------------
 
+// Plan fixtures for direction-detection tests.
+const PLAN_BRONZE_ID = 'plan-bronze-monthly';
+const PLAN_GOLD_ID = 'plan-gold-monthly';
+const PLAN_BRONZE = buildPlan(PLAN_BRONZE_ID, 'bronze', 1000); // ARS 10/mo
+const PLAN_GOLD = buildPlan(PLAN_GOLD_ID, 'gold', 5000); // ARS 50/mo
+// Annual variant — reserved for future interval-comparison tests.
+const _PLAN_BRONZE_ANNUAL_ID = 'plan-bronze-annual';
+const _PLAN_BRONZE_ANNUAL = buildPlan(_PLAN_BRONZE_ANNUAL_ID, 'bronze', 10000, 'year'); // 10000/yr
+
 describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -548,11 +623,17 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
     it('inserts an audit event with previousPlanId and newPlanId', async () => {
         const { db, spies } = buildDbMock();
         vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                [PLAN_GOLD_ID]: PLAN_GOLD
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
 
         await adminBillingHooks.onAfterSubscriptionChangePlan!({
-            subscription: buildSubscription(),
-            previousPlanId: 'plan-bronze-monthly',
-            newPlanId: 'plan-gold-yearly',
+            subscription: buildSubscription({ planId: PLAN_GOLD_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_GOLD_ID,
             ctx: buildContext()
         });
 
@@ -566,8 +647,8 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
             triggerSource: 'admin-change-plan',
             metadata: {
                 adminUserId: ADMIN_USER_ID,
-                previousPlanId: 'plan-bronze-monthly',
-                newPlanId: 'plan-gold-yearly'
+                previousPlanId: PLAN_BRONZE_ID,
+                newPlanId: PLAN_GOLD_ID
             }
         });
     });
@@ -575,15 +656,277 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
     it('clears the entitlement cache for the customer', async () => {
         const { db } = buildDbMock();
         vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                [PLAN_GOLD_ID]: PLAN_GOLD
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
 
         await adminBillingHooks.onAfterSubscriptionChangePlan!({
-            subscription: buildSubscription(),
-            previousPlanId: 'plan-bronze-monthly',
-            newPlanId: 'plan-gold-yearly',
+            subscription: buildSubscription({ planId: PLAN_GOLD_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_GOLD_ID,
             ctx: buildContext()
         });
 
         expect(clearEntitlementCache).toHaveBeenCalledTimes(1);
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // SPEC-167 T-014 (RED): downgrade → applyDowngradeRestrictionsOrWarn called with defaults.
+    it('calls applyDowngradeRestrictionsOrWarn on a downgrade (gold→bronze)', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_GOLD_ID]: PLAN_GOLD,
+                [PLAN_BRONZE_ID]: PLAN_BRONZE
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+            previousPlanId: PLAN_GOLD_ID,
+            newPlanId: PLAN_BRONZE_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyDowngradeRestrictionsOrWarn).toHaveBeenCalledTimes(1);
+        expect(applyDowngradeRestrictionsOrWarn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 'owner-user-001',
+                customerId: CUSTOMER_ID,
+                targetPlanSlug: 'bronze',
+                keepSelections: undefined
+            })
+        );
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+    });
+
+    // SPEC-167 T-014 (RED): upgrade → applyUpgradeRestorationsOrWarn called.
+    it('calls applyUpgradeRestorationsOrWarn on an upgrade (bronze→gold)', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                [PLAN_GOLD_ID]: PLAN_GOLD
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_GOLD_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_GOLD_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyUpgradeRestorationsOrWarn).toHaveBeenCalledTimes(1);
+        expect(applyUpgradeRestorationsOrWarn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: 'owner-user-001',
+                customerId: CUSTOMER_ID,
+                newPlanId: PLAN_GOLD_ID
+            })
+        );
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+    });
+
+    // SPEC-167 T-014 (RED): two different plans with identical prices → 'same' direction
+    // → neither restriction nor restoration called, but audit log and cache clear still fire.
+    it('calls neither restriction nor restoration when two different plans have identical prices', async () => {
+        // A renamed plan that has the same price as bronze — admin uses it e.g. for a trial correction.
+        const PLAN_BRONZE_V2_ID = 'plan-bronze-v2';
+        const planBronzeV2 = buildPlan(PLAN_BRONZE_V2_ID, 'bronze-v2', 1000); // same price as bronze
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                [PLAN_BRONZE_V2_ID]: planBronzeV2
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_V2_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_BRONZE_V2_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+        // Audit log and cache clear still fire.
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // SPEC-167 T-014 (RED): billing unavailable → remediation skipped, audit+cache still fire.
+    it('skips remediation but completes audit+cache when billing is unavailable', async () => {
+        const { db, spies } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(null);
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription(),
+            previousPlanId: PLAN_GOLD_ID,
+            newPlanId: PLAN_BRONZE_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+        expect(spies.insert).toHaveBeenCalledTimes(1);
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // SPEC-167 T-014 (RED): remediation before cache clear (ordering constraint).
+    it('calls remediation BEFORE clearEntitlementCache (cache reflects post-remediation state)', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_GOLD_ID]: PLAN_GOLD,
+                [PLAN_BRONZE_ID]: PLAN_BRONZE
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        const callOrder: string[] = [];
+        vi.mocked(applyDowngradeRestrictionsOrWarn).mockImplementation(async () => {
+            callOrder.push('restriction');
+            return {
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            };
+        });
+        vi.mocked(clearEntitlementCache).mockImplementation((_customerId: string) => {
+            callOrder.push('cache-clear');
+        });
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+            previousPlanId: PLAN_GOLD_ID,
+            newPlanId: PLAN_BRONZE_ID,
+            ctx: buildContext()
+        });
+
+        const restrictionIdx = callOrder.indexOf('restriction');
+        const cacheIdx = callOrder.indexOf('cache-clear');
+        expect(restrictionIdx).toBeGreaterThanOrEqual(0);
+        expect(cacheIdx).toBeGreaterThan(restrictionIdx);
+    });
+
+    // SPEC-167 T-014 (RED): restriction throws → hook completes, audit log written, cache cleared.
+    it('completes audit log and cache clear even when applyDowngradeRestrictionsOrWarn throws', async () => {
+        const { db, spies } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_GOLD_ID]: PLAN_GOLD,
+                [PLAN_BRONZE_ID]: PLAN_BRONZE
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+        vi.mocked(applyDowngradeRestrictionsOrWarn).mockRejectedValueOnce(
+            new Error('DB transient failure')
+        );
+
+        await expect(
+            adminBillingHooks.onAfterSubscriptionChangePlan!({
+                subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+                previousPlanId: PLAN_GOLD_ID,
+                newPlanId: PLAN_BRONZE_ID,
+                ctx: buildContext()
+            })
+        ).resolves.toBeUndefined();
+
+        expect(spies.insert).toHaveBeenCalledTimes(1);
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // SPEC-167 T-014 (RED): same plan ID admin correction (e.g. admin re-applies same plan
+    // to reset the period). Both plan fetches return the identical plan → normalized
+    // amounts are equal → direction = 'same' → no remediation called.
+    it('treats plan-id-to-itself as same-plan direction (no restriction or restoration)', async () => {
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        // Both previousPlanId and newPlanId resolve to the same plan object.
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_BRONZE_ID,
+            ctx: buildContext()
+        });
+
+        // Identical plans → same direction → no remediation.
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+    });
+
+    // SPEC-167 T-014 (RED): annual→monthly for the same tier where monthly rate
+    // is HIGHER (e.g. monthly=1200, annual=10000/yr=833/mo) → IS a downgrade.
+    it('detects downgrade when annual→monthly and monthly normalized rate is lower', async () => {
+        // Annual: 10000/yr = 833/mo; Monthly: 800/mo. Monthly is cheaper → downgrade.
+        const PLAN_SILVER_CHEAP_MONTHLY_ID = 'plan-silver-cheap-monthly';
+        const planSilverCheapMonthly = buildPlan(PLAN_SILVER_CHEAP_MONTHLY_ID, 'silver-cheap', 800);
+        const PLAN_SILVER_ANNUAL_ID = 'plan-silver-annual';
+        const planSilverAnnual = buildPlan(PLAN_SILVER_ANNUAL_ID, 'silver-annual', 10000, 'year');
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_SILVER_ANNUAL_ID]: planSilverAnnual,
+                [PLAN_SILVER_CHEAP_MONTHLY_ID]: planSilverCheapMonthly
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_SILVER_CHEAP_MONTHLY_ID }),
+            previousPlanId: PLAN_SILVER_ANNUAL_ID,
+            newPlanId: PLAN_SILVER_CHEAP_MONTHLY_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyDowngradeRestrictionsOrWarn).toHaveBeenCalledTimes(1);
+        expect(applyDowngradeRestrictionsOrWarn).toHaveBeenCalledWith(
+            expect.objectContaining({ targetPlanSlug: 'silver-cheap' })
+        );
+    });
+
+    // SPEC-167 T-014 (RED): resolveOwnerUserId returns null → remediation skipped but
+    // hook still completes (no crash, audit log and cache clear fire).
+    it('skips remediation when resolveOwnerUserId returns null but completes audit+cache', async () => {
+        const { db, spies } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_GOLD_ID]: PLAN_GOLD,
+                [PLAN_BRONZE_ID]: PLAN_BRONZE
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        vi.mocked(resolveOwnerUserId).mockResolvedValue(null);
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_ID }),
+            previousPlanId: PLAN_GOLD_ID,
+            newPlanId: PLAN_BRONZE_ID,
+            ctx: buildContext()
+        });
+
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(spies.insert).toHaveBeenCalledTimes(1);
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
     });
 });
