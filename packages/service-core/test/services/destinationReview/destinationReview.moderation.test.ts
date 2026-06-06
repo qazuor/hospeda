@@ -302,6 +302,15 @@ describe('DestinationReviewService.moderateReview (T-015)', () => {
 
         mockModel.findById.mockResolvedValue(review);
         mockModel.update.mockResolvedValue(approved);
+        // Mock recalculateAndUpdateDestinationStats since it uses raw SQL (getDb())
+        const recalcMock = vi
+            .spyOn(
+                service as unknown as {
+                    recalculateAndUpdateDestinationStats: (...args: unknown[]) => Promise<void>;
+                },
+                'recalculateAndUpdateDestinationStats'
+            )
+            .mockResolvedValue();
 
         const result = await service.moderateReview({
             id: review.id,
@@ -320,6 +329,8 @@ describe('DestinationReviewService.moderateReview (T-015)', () => {
                 moderatedAt: expect.any(Date)
             })
         );
+        // Approving must re-aggregate public stats (they only count APPROVED).
+        expect(recalcMock).toHaveBeenCalledWith(approved.destinationId);
     });
 
     it('rejects a PENDING review with a reason', async () => {
@@ -331,6 +342,15 @@ describe('DestinationReviewService.moderateReview (T-015)', () => {
 
         mockModel.findById.mockResolvedValue(review);
         mockModel.update.mockResolvedValue(rejected);
+        // Mock recalculateAndUpdateDestinationStats since it uses raw SQL (getDb())
+        const recalcMock = vi
+            .spyOn(
+                service as unknown as {
+                    recalculateAndUpdateDestinationStats: (...args: unknown[]) => Promise<void>;
+                },
+                'recalculateAndUpdateDestinationStats'
+            )
+            .mockResolvedValue();
 
         const result = await service.moderateReview({
             id: review.id,
@@ -345,6 +365,8 @@ describe('DestinationReviewService.moderateReview (T-015)', () => {
             { id: review.id },
             expect.objectContaining({ moderationReason: 'Spam content' })
         );
+        // Rejecting must also re-aggregate (a previously APPROVED review may drop out).
+        expect(recalcMock).toHaveBeenCalledWith(rejected.destinationId);
     });
 
     it('returns FORBIDDEN when actor lacks DESTINATION_REVIEW_MODERATE', async () => {

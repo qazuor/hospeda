@@ -298,6 +298,11 @@ export class DestinationReviewService extends BaseCrudService<
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given destination.
      * Uses a direct SQL aggregate query to avoid pagination limits that could truncate results.
+     *
+     * Only APPROVED, non-deleted reviews count — public stats must match the
+     * public list, which filters by moderation state. PENDING and REJECTED
+     * reviews are excluded (moderateReview re-runs this on every decision).
+     *
      * @param destinationId - The ID of the destination whose stats need updating
      * @param tx - Optional transaction client for atomic multi-step operations
      */
@@ -331,7 +336,13 @@ export class DestinationReviewService extends BaseCrudService<
                 avgWeatherSatisfaction: sql<number>`coalesce(avg((${table.rating}->>'weatherSatisfaction')::numeric), 0)::float`
             })
             .from(table)
-            .where(and(eq(table.destinationId, destinationId), isNull(table.deletedAt)));
+            .where(
+                and(
+                    eq(table.destinationId, destinationId),
+                    eq(table.moderationState, ModerationStatusEnum.APPROVED),
+                    isNull(table.deletedAt)
+                )
+            );
 
         const row = result[0];
         const reviewsCount = row?.reviewsCount ?? 0;
@@ -772,6 +783,20 @@ export class DestinationReviewService extends BaseCrudService<
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     `Destination review not found after update: ${id}`
+                );
+            }
+
+            // Public stats only count APPROVED reviews, so every moderation
+            // decision must re-aggregate and refresh the destination page.
+            // Best-effort: a stats/revalidation failure must not undo the
+            // moderation decision (the review row is already committed).
+            try {
+                await this.recalculateAndUpdateDestinationStats(updated.destinationId);
+                const destinationSlug = await this._resolveDestinationSlug(updated.destinationId);
+                this._scheduleDestinationRevalidation(destinationSlug);
+            } catch (statsErr) {
+                this.logger.warn(
+                    `destinationReview.moderateReview: stats recalculation failed (best-effort, review ${id} already ${decision}): ${statsErr instanceof Error ? statsErr.message : String(statsErr)}`
                 );
             }
 
