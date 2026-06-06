@@ -360,7 +360,7 @@
             "id": "T-017",
             "title": "Wire downgrade notifications (warning at schedule, confirmation at apply)",
             "description": "Realign B-1: types + templates EXIST in packages/notifications but are NEVER sent. Wire: (1) PLAN_DOWNGRADE_LIMIT_WARNING at schedule time when the preview shows excess (include what-will-be-restricted summary + deep link placeholder for SPEC-203); (2) PLAN_CHANGE_CONFIRMATION at apply time from the cron (template props: recipientName, oldPlanName, newPlanName, renewalDate). Unit tests with notification mocks: sent exactly once per event, NOT sent under cap, send failure is logged + soft, never blocks the flow.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-013"],
             "blocks": [],
@@ -368,14 +368,14 @@
             "tags": ["notifications", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T19:40:00.000Z",
+                "completed": "2026-06-06T19:50:00.000Z"
             }
         },
         {
