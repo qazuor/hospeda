@@ -7,11 +7,11 @@ a compiled binary so the VPS only needs the binary on PATH.
 
 ## Status
 
-V1 shipped. 19 commands across 4 tandas, target-aware (`--target=prod|staging`,
-or `HOPS_DEFAULT_TARGET` env var, defaulting to `prod`) since 2026-05-12. See
-the catalogue below for the full list. The `Runner` interface in
-`src/lib/runner.ts` still marks the seam for a future V2 SshRunner that would
-let the binary proxy commands over SSH from a laptop.
+V1 shipped. 19 commands across 4 tandas, target-aware (`--target=prod|staging`
+or `HOPS_DEFAULT_TARGET` env var) since 2026-05-12. See the catalogue below for
+the full list. The `Runner` interface in `src/lib/runner.ts` still marks the seam
+for a future V2 SshRunner that would let the binary proxy commands over SSH from
+a laptop.
 
 ## Where it runs (V1)
 
@@ -99,17 +99,37 @@ The example file documents which command needs which value.
 ### Target environment (prod vs staging)
 
 `hops` runs the same command against either environment via a single
-binary. The active target is resolved in this order, first hit wins:
+binary. The active target is resolved using the following policy:
 
-1. `--target=<prod|staging>` flag on the command line.
-2. `HOPS_DEFAULT_TARGET` env var in `.env.local`.
-3. Default: `prod`.
+**Write/destructive commands** (`explicit-required` policy — redeploy,
+exec, psql, billing-test-link, billing-test-reset, db-restore, db-migrate,
+db-seed, db-superadmin-pass, app-restart, restart, r2-lifecycle, env-set,
+env-delete, cron-trigger):
+
+- `--target=<prod|staging>` is **mandatory**. The command dies with an
+  actionable error if it is omitted.
+- `HOPS_DEFAULT_TARGET` is deliberately ignored to prevent accidents.
+- Exception: when run from the interactive menu (`hops` with no args),
+  the menu prompts for the target on behalf of the operator.
+
+**Read-only / low-risk commands** (`default-ok` policy — find, env-list,
+logs, db-counts, db-backup-now, db-migrate-test, env-pull, cron-list):
+
+- Resolution order: `--target=` flag > `HOPS_DEFAULT_TARGET` in `.env.local`
+  > interactive prompt.
+- When `HOPS_DEFAULT_TARGET` decides the target, a loud warning is printed
+  so the operator always knows which environment they hit.
+
+**No-target commands** (`none` policy — docker-by-name, prune, free-mem,
+health, update):
+
+- No prod/staging concept. `--target` is accepted on the CLI but ignored.
 
 ```bash
-hops psql 'select 1'                         # prod (default)
-hops --target=staging psql 'select 1'        # staging override
-hops --target=staging db-counts              # row counts in staging DB
-hops --target=staging redeploy api           # redeploy hospeda-api-staging
+hops --target=staging psql 'select 1'        # explicit flag required for psql
+hops --target=staging db-counts              # explicit flag or HOPS_DEFAULT_TARGET
+hops --target=staging redeploy api           # explicit flag required for redeploy
+hops --target=prod db-migrate --no-pull      # explicit flag required for db-migrate
 ```
 
 App container names are stable (`hospeda-<api|web|admin>-<prod|staging>`)

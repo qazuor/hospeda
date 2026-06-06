@@ -165,6 +165,15 @@ export async function runResetSql(params: {
  * current data. Backing up AFTER the reset would snapshot an already-empty
  * schema, making the backup worthless. Callers that don't want a backup pass
  * `undefined`.
+ *
+ * `throwOnError` (default `false`) controls failure behaviour:
+ *   - When `false` (default): each internal step calls `die()` on failure,
+ *     which writes to stderr and calls `process.exit(1)`. This is the
+ *     original behaviour preserved for `db-migrate` and `db-seed`.
+ *   - When `true`: failures throw an `Error` instead of exiting, so the
+ *     caller can catch them, clean up resources, and print its own summary
+ *     before exiting. Used by `db-migrate-test` so it can preserve and
+ *     report the scratch DB on failure.
  */
 export async function runMigrateSequence(params: {
     readonly repoRoot: string;
@@ -173,7 +182,23 @@ export async function runMigrateSequence(params: {
     readonly reset: boolean;
     readonly applyExtras: boolean;
     readonly backup: (() => Promise<void>) | undefined;
+    readonly throwOnError?: boolean;
 }): Promise<void> {
+    /**
+     * Fail helper — respects `throwOnError` so callers that need clean-up can
+     * catch rather than having the process exit under their feet.
+     * Return type is explicitly `never` so TypeScript narrows control flow
+     * correctly at every call site (e.g. after a try/catch where fail() is
+     * the only catch body, TS knows the variable assigned in the try is
+     * always defined after the block).
+     */
+    function fail(message: string): never {
+        if (params.throwOnError) {
+            throw new Error(message);
+        }
+        return die(message);
+    }
+
     // Backup FIRST — before ANY destructive step — so it captures the current
     // data. A backup taken after the reset would snapshot an empty schema.
     if (params.backup) {
@@ -181,13 +206,90 @@ export async function runMigrateSequence(params: {
     }
 
     if (params.reset) {
-        await runResetSql({ repoRoot: params.repoRoot, target: params.target });
+        // When throwOnError is false, runResetSql uses die() internally which
+        // is exactly what we want. When throwOnError is true we inline the same
+        // logic but route errors through fail() so the caller can catch them.
+        if (params.throwOnError) {
+            const container = await findContainer('postgres');
+            const credentials = getDbCredentials(params.target);
+            const resetFiles = [
+                {
+                    path: join(
+                        params.repoRoot,
+                        'packages',
+                        'db',
+                        'scripts',
+                        'reset',
+                        '000-reset-schema.sql'
+                    ),
+                    label: '000-reset-schema.sql'
+                },
+                {
+                    path: join(
+                        params.repoRoot,
+                        'packages',
+                        'db',
+                        'scripts',
+                        'reset',
+                        '001-extensions.sql'
+                    ),
+                    label: '001-extensions.sql'
+                }
+            ];
+            for (const { path, label } of resetFiles) {
+                log.info(`Applying reset SQL: ${label}...`);
+                let sql: string;
+                try {
+                    sql = readFileSync(path, 'utf-8');
+                } catch (err) {
+                    fail(
+                        `Cannot read reset file '${path}': ${err instanceof Error ? err.message : String(err)}`
+                    );
+                }
+                const result = await runInContainer({
+                    container,
+                    argv: ['psql', '-U', credentials.user, '-d', credentials.database],
+                    input: sql
+                });
+                if (result.exitCode !== 0) {
+                    fail(
+                        `Reset SQL '${label}' failed (exit ${result.exitCode}):\n${result.stderr.trim() || result.stdout.trim()}`
+                    );
+                }
+                log.ok(`${label} applied.`);
+            }
+        } else {
+            await runResetSql({ repoRoot: params.repoRoot, target: params.target });
+        }
     }
 
-    await runDbMigrate({ repoRoot: params.repoRoot, databaseUrl: params.databaseUrl });
+    // Run drizzle-kit migrate.
+    log.info('Running drizzle-kit migrate (pnpm --filter @repo/db db:migrate)...');
+    const migrateResult = await runner.run(['pnpm', '--filter', '@repo/db', 'db:migrate'], {
+        cwd: params.repoRoot,
+        inherit: true,
+        env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
+    });
+    if (migrateResult.exitCode !== 0) {
+        fail(
+            `db:migrate failed (exit ${migrateResult.exitCode}). The schema is NOT in sync. Inspect the migration output above. If a backup was taken, use the rollback instructions to restore before retrying.`
+        );
+    }
+    log.ok('drizzle-kit migrate completed.');
 
     if (params.applyExtras) {
-        await runApplyExtras({ repoRoot: params.repoRoot, databaseUrl: params.databaseUrl });
+        log.info('Applying Postgres extras (pnpm db:apply-extras)...');
+        const extrasResult = await runner.run(['pnpm', 'db:apply-extras'], {
+            cwd: params.repoRoot,
+            inherit: true,
+            env: { HOSPEDA_DATABASE_URL: params.databaseUrl }
+        });
+        if (extrasResult.exitCode !== 0) {
+            fail(
+                `db:apply-extras failed (exit ${extrasResult.exitCode}). Triggers, matviews and JSONB CHECK constraints are not in sync. Inspect the output above; if you intentionally want to skip them, pass --no-apply-extras.`
+            );
+        }
+        log.ok('Postgres extras applied.');
     } else {
         log.hint('Skipping db:apply-extras (--no-apply-extras).');
     }

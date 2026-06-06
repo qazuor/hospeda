@@ -33,9 +33,10 @@ export type ContainerKind = 'api' | 'web' | 'admin' | 'postgres' | 'redis' | 'co
  * Single-invocation contract (SPEC-103 T-054):
  *
  * This module-level variable assumes EXACTLY ONE `hops` command runs per
- * process. The CLI parses `--target=<env>` (or `HOPS_DEFAULT_TARGET`) at
- * startup, calls `setActiveTarget` once, then dispatches a single
- * command before exiting. The variable is NOT reset between commands.
+ * process. `src/index.ts` resolves the target (from `--target=` flag or,
+ * for default-ok commands, `HOPS_DEFAULT_TARGET`), calls `setActiveTarget`
+ * once, then dispatches a single command before exiting. The variable is
+ * NOT reset between commands.
  *
  * If a future invocation pattern needs to run multiple commands in a
  * single process (e.g. an interactive shell, an HTTP server wrapper, or
@@ -48,7 +49,7 @@ export type ContainerKind = 'api' | 'web' | 'admin' | 'postgres' | 'redis' | 'co
  * single-invocation contract is preferred (less plumbing, easier to
  * reason about).
  */
-let activeTarget: Target = 'prod';
+let activeTarget: Target | undefined = undefined;
 
 /**
  * Override the target used by subsequent {@link findContainer} calls.
@@ -62,8 +63,18 @@ export function setActiveTarget(target: Target): void {
 
 /**
  * Current active target (for diagnostic / verbose output).
+ *
+ * @throws when called before {@link setActiveTarget} — this indicates a
+ * dispatch bug where a command that uses the target was invoked without
+ * target resolution. Commands with `targetPolicy: 'none'` must NEVER call
+ * this function (they have no prod/staging concept).
  */
 export function getActiveTarget(): Target {
+    if (activeTarget === undefined) {
+        throw new Error(
+            'active target not set — internal dispatch bug (command missing target resolution)'
+        );
+    }
     return activeTarget;
 }
 
@@ -235,7 +246,7 @@ async function tryStrategy(label: string, strategy: Strategy): Promise<string | 
  */
 export async function findContainer(kind: ContainerKind): Promise<string> {
     const config = KIND_CONFIG[kind];
-    const labelValue = resolveResourceName(kind, activeTarget);
+    const labelValue = resolveResourceName(kind, getActiveTarget());
 
     // Strategy 1: Coolify resource-name label, when applicable.
     if (labelValue) {
@@ -274,13 +285,13 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
     }
 
     throw new Error(
-        `No running container resolves to kind '${kind}' for target '${activeTarget}'. Strategies tried in order:\n${
+        `No running container resolves to kind '${kind}' for target '${getActiveTarget()}'. Strategies tried in order:\n${
             labelValue ? `  - Coolify resourceName label '${labelValue}'\n` : ''
         }${
             config.imagePatterns
                 ? `  - image starts-with ${config.imagePatterns.join(' / ')}\n`
                 : ''
-        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running. To switch target, pass \`--target=prod|staging\` or set HOPS_TARGET in .env.local.`
+        }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running. To switch target, pass \`--target=prod|staging\` or set HOPS_DEFAULT_TARGET in .env.local.`
     );
 }
 

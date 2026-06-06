@@ -22,15 +22,16 @@ const HELP = `
 hops env-set <api|web|admin> <KEY> <VALUE>
 hops env-set <api|web|admin> <KEY> --secret
 
-Set or update a single Coolify env var.
+Set or update a single Coolify env var. Requires --target= (this command
+writes data; HOPS_DEFAULT_TARGET is not honoured).
 
   CREATE: Coolify v4 mirrors a new env var into BOTH the production
           and preview environments regardless of is_preview in the
           POST body. After the create, run \`hops env-delete <kind>
           <KEY> --preview\` if you want the preview copy gone.
 
-  UPDATE: scoped to whichever environment matches. By default targets
-          production; pass --preview to target the preview entry.
+  UPDATE: scoped to whichever environment matches. Pass --preview to
+          target the preview entry instead of the production one.
 
 Flags:
   --preview     Target the preview environment instead of production
@@ -42,10 +43,10 @@ Flags:
   --help, -h    Show this help.
 
 Examples:
-  hops env-set api FOO bar
-  hops env-set api MERCADO_PAGO_TOKEN --secret
-  hops env-set api LOG_LEVEL info --yes
-  hops env-set api EXPERIMENTAL_FLAG true --preview
+  hops --target=prod env-set api FOO bar
+  hops --target=prod env-set api MERCADO_PAGO_TOKEN --secret
+  hops --target=staging env-set api LOG_LEVEL info --yes
+  hops --target=prod env-set api EXPERIMENTAL_FLAG true --preview
 
 Notes:
   Coolify does NOT auto-restart the running container after a single
