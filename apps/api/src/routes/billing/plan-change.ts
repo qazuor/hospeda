@@ -15,6 +15,7 @@
  * @module routes/billing/plan-change
  */
 
+import { NotificationType } from '@repo/notifications';
 import { BillingIntervalEnum } from '@repo/schemas';
 import type { DowngradePreview } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
@@ -43,6 +44,7 @@ import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { sendNotification } from '../../utils/notification-helper';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
 
 /**
@@ -432,6 +434,83 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                     },
                     'Downgrade restriction preview unavailable (soft-fail) — schedule succeeded'
                 );
+            }
+
+            // SPEC-167 T-017: send PLAN_DOWNGRADE_LIMIT_WARNING notifications when
+            // the preview shows excess resources. One notification per excess dimension.
+            //
+            // Rules:
+            //   - Only sent when restrictionPreview exists AND hasExcess === true.
+            //   - NOT sent when preview soft-failed (restrictionPreview is undefined):
+            //     cannot summarise what we don't know — document the absence.
+            //   - Sends are SOFT (fire-and-forget): failure → warn log, never blocks
+            //     the 200 response the host is waiting for.
+            if (restrictionPreview?.hasExcess) {
+                const actorEmail = (actor as unknown as { email?: string }).email;
+                const actorName = (actor as unknown as { name?: string }).name;
+                if (actorEmail) {
+                    const dimensions: Array<{
+                        limitKey: string;
+                        cap: number;
+                        activeCount: number;
+                    }> = [];
+                    if (restrictionPreview.accommodations.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'accommodations',
+                            cap: restrictionPreview.accommodations.cap,
+                            activeCount: restrictionPreview.accommodations.activeCount
+                        });
+                    }
+                    if (restrictionPreview.promotions.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'promotions',
+                            cap: restrictionPreview.promotions.cap,
+                            activeCount: restrictionPreview.promotions.activeCount
+                        });
+                    }
+                    for (const dim of dimensions) {
+                        void Promise.resolve(
+                            sendNotification({
+                                type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
+                                recipientEmail: actorEmail,
+                                recipientName: actorName ?? actorEmail,
+                                userId: actor.id,
+                                customerId: billingCustomerId,
+                                limitKey: dim.limitKey,
+                                // oldLimit: exact current-plan cap is not in the preview shape.
+                                // Use activeCount as "old plan allowed at least this many" —
+                                // template shows it as "Límite anterior"; this is the safest
+                                // approximation without an extra billing.plans.get call here.
+                                oldLimit: dim.activeCount,
+                                newLimit: dim.cap,
+                                currentUsage: dim.activeCount,
+                                planName: targetPlan.name as string
+                            })
+                        ).catch((notifErr: unknown) => {
+                            // SOFT: notification failure must never block the schedule response.
+                            apiLogger.warn(
+                                {
+                                    customerId: billingCustomerId,
+                                    subscriptionId: scheduleResult.subscriptionId,
+                                    limitKey: dim.limitKey,
+                                    error:
+                                        notifErr instanceof Error
+                                            ? notifErr.message
+                                            : String(notifErr)
+                                },
+                                'PLAN_DOWNGRADE_LIMIT_WARNING send failed (soft-fail) — schedule succeeded'
+                            );
+                        });
+                    }
+                } else {
+                    apiLogger.debug(
+                        {
+                            customerId: billingCustomerId,
+                            subscriptionId: scheduleResult.subscriptionId
+                        },
+                        'PLAN_DOWNGRADE_LIMIT_WARNING skipped — actor has no email in context'
+                    );
+                }
             }
 
             return {

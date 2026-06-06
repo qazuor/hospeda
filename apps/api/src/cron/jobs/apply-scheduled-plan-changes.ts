@@ -43,12 +43,14 @@
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
 import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
 import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /**
@@ -423,6 +425,100 @@ async function applyOne(
             );
             restrictionFailed = true;
         }
+    }
+
+    // STEP 3c: PLAN_CHANGE_CONFIRMATION notification — informational, SOFT.
+    //
+    // Sent after the plan change applies (step 1) so the host receives a
+    // confirmation email once the new plan is in effect.
+    //
+    // Asymmetry with restriction failure (step 3b): notification failure does
+    // NOT set `restrictionFailed` and does NOT flip `result.success`. A missed
+    // confirmation email is unfortunate but does not indicate a data-integrity
+    // problem — the plan change is applied regardless. Restriction failure, by
+    // contrast, leaves the host over-cap (revenue-leak risk) and warrants a
+    // Sentry alert.
+    //
+    // Exactly-once guarantee: this step runs once per `applyOne` invocation.
+    // `applyOne` is only called when the row passes the `status='pending'`
+    // eligibility filter — the pre-stamp in step 0 flips it to 'applied'
+    // before `changePlan` runs, so the cron can never re-apply the same row.
+    try {
+        // Resolve customer email for the confirmation address.
+        const customer = await billing.customers.get(customerId);
+        if (customer) {
+            // Resolve plan names for the "old plan → new plan" display copy.
+            let oldPlanName: string | undefined;
+            let newPlanName: string | undefined;
+            try {
+                const [oldPlan, newPlan] = await Promise.all([
+                    billing.plans.get(currentPlanId),
+                    billing.plans.get(newPlanId)
+                ]);
+                oldPlanName = oldPlan?.name ?? currentPlanId;
+                newPlanName = newPlan?.name ?? newPlanId;
+            } catch (planErr) {
+                logger.warn(
+                    'Scheduled plan change: could not resolve plan names for confirmation',
+                    {
+                        subscriptionId,
+                        customerId,
+                        error: planErr instanceof Error ? planErr.message : String(planErr)
+                    }
+                );
+                // Names default to IDs — still send the notification (better than nothing).
+                oldPlanName = currentPlanId;
+                newPlanName = newPlanId;
+            }
+
+            const customerName = String(
+                (customer.metadata as Record<string, unknown> | null | undefined)?.name ??
+                    customer.email
+            );
+
+            void Promise.resolve(
+                sendNotification({
+                    type: NotificationType.PLAN_CHANGE_CONFIRMATION,
+                    recipientEmail: customer.email,
+                    recipientName: customerName,
+                    userId: String(
+                        (customer.metadata as Record<string, unknown> | null | undefined)?.userId ??
+                            null
+                    ),
+                    customerId,
+                    oldPlanName,
+                    newPlanName,
+                    planName: newPlanName
+                })
+            ).catch((notifErr: unknown) => {
+                // SOFT: confirmation failure must never affect the plan-change outcome.
+                // Unlike restriction failure (step 3b), this does NOT set restrictionFailed.
+                logger.warn(
+                    'Scheduled plan change: PLAN_CHANGE_CONFIRMATION send failed (soft-fail)',
+                    {
+                        subscriptionId,
+                        customerId,
+                        error: notifErr instanceof Error ? notifErr.message : String(notifErr)
+                    }
+                );
+            });
+        } else {
+            logger.warn(
+                'Scheduled plan change: PLAN_CHANGE_CONFIRMATION skipped — customer not found',
+                { subscriptionId, customerId }
+            );
+        }
+    } catch (confirmErr) {
+        // Customer lookup or plan resolution failed — warn and skip notification.
+        // The plan change is already applied; this is informational only.
+        logger.warn(
+            'Scheduled plan change: PLAN_CHANGE_CONFIRMATION customer lookup failed (soft-fail)',
+            {
+                subscriptionId,
+                customerId,
+                error: confirmErr instanceof Error ? confirmErr.message : String(confirmErr)
+            }
+        );
     }
 
     // STEP 4: clear entitlement cache so the next request sees the
