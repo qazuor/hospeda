@@ -5,6 +5,7 @@ import {
     InternationalPhoneRegex,
     SlugRegex,
     TimeRegExp,
+    TwitterUrlRegex,
     isValidLatitude,
     isValidLongitude,
     omittedSystemFieldsForActions
@@ -168,6 +169,38 @@ describe('Regular Expressions', () => {
 
                 for (const url of invalidUrls) {
                     expect(InstagramUrlRegex.test(url)).toBe(false);
+                }
+            });
+        });
+
+        describe('TwitterUrlRegex', () => {
+            it('should validate Twitter/X URLs on both domains', () => {
+                const validUrls = [
+                    'https://www.twitter.com/user',
+                    'http://twitter.com/user',
+                    'https://x.com/user',
+                    'https://www.x.com/user',
+                    'http://x.com/user'
+                ];
+
+                for (const url of validUrls) {
+                    expect(TwitterUrlRegex.test(url)).toBe(true);
+                }
+            });
+
+            it('should reject non-Twitter/X URLs', () => {
+                const invalidUrls = [
+                    'https://facebook.com/user',
+                    'twitter.com/user', // Missing protocol
+                    'x.com/user', // Missing protocol
+                    'https://notx.com/user',
+                    'https://fakex.com/user',
+                    'https://mastodon.social/@user',
+                    ''
+                ];
+
+                for (const url of invalidUrls) {
+                    expect(TwitterUrlRegex.test(url)).toBe(false);
                 }
             });
         });
