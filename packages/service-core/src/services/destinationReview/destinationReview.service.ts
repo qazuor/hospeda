@@ -137,8 +137,8 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     /**
-     * Runs the content-moderation check and resolves the initial `moderationState`
-     * for the new destination review.
+     * Enforces one review per user per destination, then runs the content-moderation
+     * check and resolves the initial `moderationState` for the new destination review.
      *
      * Decision logic (spec §3.1 + §3.2):
      * - Destination reviews are unverified (anyone can write) → base default is PENDING.
@@ -148,12 +148,29 @@ export class DestinationReviewService extends BaseCrudService<
      *
      * The `moderationState` is injected into the returned data object so the base
      * create path persists it with the new row.
+     *
+     * @throws {ServiceError} ALREADY_EXISTS if the user already has a review for this destination.
      */
     protected async _beforeCreate(
         data: DestinationReviewCreateInput,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<DestinationReview>> {
+        // Soft-deleted reviews are intentionally INCLUDED in this check: the DB unique
+        // index on (user_id, destination_id) is plain (no deleted_at predicate), so a
+        // soft-deleted row would still reject the insert. Matching the index here turns
+        // that case into a clean 409 instead of an unhandled constraint violation (500).
+        const existing = await this.model.findOne({
+            userId: data.userId,
+            destinationId: data.destinationId
+        });
+        if (existing) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'You have already submitted a review for this destination.'
+            );
+        }
+
         // Content-moderation check — use combined text if available.
         const reviewText = [data.title, data.content].filter(Boolean).join(' ') || '';
         const moderationResult = reviewText
