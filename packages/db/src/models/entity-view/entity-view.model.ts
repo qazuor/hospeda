@@ -381,6 +381,12 @@ export class EntityViewModel {
      * The alias `"total"` needs no quoting, but `"unique"` (a PG reserved word)
      * MUST be double-quoted in the SQL text (SPEC-159 / SPEC-197 rule).
      *
+     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
+     * oldest calendar date in the range, so the SQL window covers exactly the
+     * same `windowDays` calendar dates as the service-layer gap-fill
+     * (`today - (windowDays - 1)` through `today` inclusive). The SQL uses
+     * `viewed_at >= windowStart` (inclusive) to match that range.
+     *
      * @param input - entityType, windowDays, and limit.
      * @param tx - Optional transaction client.
      * @returns Array of `EntityViewStats` ordered by `total DESC`, length ≤ limit.
@@ -395,7 +401,16 @@ export class EntityViewModel {
         const logContext = { entityType, windowDays, limit };
 
         try {
-            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+            // Anchor to UTC midnight of the oldest day in the window so the SQL
+            // range matches the service-layer gap-fill calendar exactly:
+            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
+            const nowUtc = new Date();
+            const todayUtc = new Date(
+                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+            );
+            const windowStart = new Date(
+                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
+            );
 
             /*
              * SELECT
@@ -405,7 +420,7 @@ export class EntityViewModel {
              *                                                          AS "total"
              * FROM entity_views
              * WHERE entity_type = $entityType::entity_type_enum
-             *   AND viewed_at > $windowStart
+             *   AND viewed_at >= $windowStart   -- >= UTC-midnight of oldest gap-filled date
              * GROUP BY entity_id
              * ORDER BY "total" DESC
              * LIMIT $limit
@@ -420,7 +435,7 @@ export class EntityViewModel {
                     ))::int                                                      AS "total"
                 FROM entity_views
                 WHERE entity_type = ${entityType}::entity_type_enum
-                  AND viewed_at > ${windowStart}
+                  AND viewed_at >= ${windowStart}
                 GROUP BY entity_id
                 ORDER BY "total" DESC
                 LIMIT ${limit}
@@ -464,6 +479,11 @@ export class EntityViewModel {
      * Date strings in the result are always in `'YYYY-MM-DD'` format, produced
      * by `to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD')`.
      *
+     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
+     * oldest calendar date in the range so the SQL window covers exactly the same
+     * `windowDays` calendar dates as the service-layer gap-fill. The SQL uses
+     * `viewed_at >= windowStart` (inclusive) to include that day fully.
+     *
      * @param input - windowDays (always 30 for V1 callers).
      * @param tx - Optional transaction client.
      * @returns Array of `DailySeriesRow` ordered by date ASC, entityType ASC.
@@ -478,7 +498,16 @@ export class EntityViewModel {
         const logContext = { windowDays };
 
         try {
-            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+            // Anchor to UTC midnight of the oldest day in the window so the SQL
+            // range matches the service-layer gap-fill calendar exactly:
+            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
+            const nowUtc = new Date();
+            const todayUtc = new Date(
+                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+            );
+            const windowStart = new Date(
+                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
+            );
 
             /*
              * SELECT
@@ -487,7 +516,7 @@ export class EntityViewModel {
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                        AS "total"
              * FROM entity_views
-             * WHERE viewed_at > $windowStart
+             * WHERE viewed_at >= $windowStart   -- >= UTC-midnight of oldest gap-filled date
              * GROUP BY DATE_TRUNC('day', viewed_at), entity_type
              * ORDER BY "date" ASC, entity_type ASC
              */
@@ -500,7 +529,7 @@ export class EntityViewModel {
                         FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
                     ))::int                                              AS "total"
                 FROM entity_views
-                WHERE viewed_at > ${windowStart}
+                WHERE viewed_at >= ${windowStart}
                 GROUP BY DATE_TRUNC('day', viewed_at), entity_type
                 ORDER BY "date" ASC, entity_type ASC
             `);
@@ -543,6 +572,11 @@ export class EntityViewModel {
      * Entity types with zero views in the window are NOT returned — the service
      * layer zero-fills missing entity types.
      *
+     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
+     * oldest calendar date in the range — day-granularity only, not sub-day
+     * precision. The SQL uses `viewed_at >= windowStart` (inclusive) to match
+     * the same `windowDays` calendar dates the service-layer zero-fill iterates.
+     *
      * @param input - windowDays (7 or 30).
      * @param tx - Optional transaction client.
      * @returns Array of `AdminSummaryTotalsRow`, one row per entity type present.
@@ -557,7 +591,16 @@ export class EntityViewModel {
         const logContext = { windowDays };
 
         try {
-            const windowStart = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+            // Anchor to UTC midnight of the oldest day in the window so the SQL
+            // range matches the service-layer zero-fill calendar exactly:
+            //   [today - (windowDays - 1) days .. today] inclusive = windowDays dates.
+            const nowUtc = new Date();
+            const todayUtc = new Date(
+                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+            );
+            const windowStart = new Date(
+                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
+            );
 
             /*
              * SELECT
@@ -566,7 +609,7 @@ export class EntityViewModel {
              *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
              *                                                          AS "total"
              * FROM entity_views
-             * WHERE viewed_at > $windowStart
+             * WHERE viewed_at >= $windowStart   -- >= UTC-midnight of oldest calendar date
              * GROUP BY entity_type
              */
             const rows = await db.execute<RawSummaryTotalsRow>(sql`
@@ -578,7 +621,7 @@ export class EntityViewModel {
                         FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
                     ))::int                                                      AS "total"
                 FROM entity_views
-                WHERE viewed_at > ${windowStart}
+                WHERE viewed_at >= ${windowStart}
                 GROUP BY entity_type
             `);
 
