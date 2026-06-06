@@ -1,110 +1,39 @@
 /**
  * @file DestinationReviewSidebarCard.client.tsx
- * @description Sidebar card island on the destination detail page that lets an
+ * @description Island on the destination detail page that lets an
  * authenticated visitor submit a review. Auth gating is handled at the page
- * level — this card always shows the "Dejar reseña" CTA.
+ * level — this component always shows the "Dejar reseña" CTA.
+ *
+ * Two render variants:
+ * - `card` (default): sidebar card with title + hint + CTA button.
+ * - `inline`: just the CTA button, for mounting under the reviews list.
  *
  * Mirrors ReviewSidebarCard.client.tsx (accommodation) with:
- * - 18 destination rating dimensions instead of 6.
+ * - 18 destination rating dimensions grouped in 5 collapsible categories
+ *   (see DestinationReviewRatingFields).
  * - TITLE_MAX = 50, CONTENT_MAX = 500 (destination schema limits).
  * - Content min = 10 chars (validated client-side).
  * - Success shows pendingNotice (review starts PENDING moderation).
  * - 409 ALREADY_EXISTS → specific "alreadyReviewed" copy.
  */
 import { translateApiError } from '@/lib/api-errors';
-import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import { DestinationReviewRatingFields } from './DestinationReviewRatingFields';
 import styles from './DestinationReviewSidebarCard.module.css';
-
-const RATING_KEYS = [
-    'landscape',
-    'attractions',
-    'accessibility',
-    'safety',
-    'cleanliness',
-    'hospitality',
-    'culturalOffer',
-    'gastronomy',
-    'affordability',
-    'nightlife',
-    'infrastructure',
-    'environmentalCare',
-    'wifiAvailability',
-    'shopping',
-    'beaches',
-    'greenSpaces',
-    'localEvents',
-    'weatherSatisfaction'
-] as const;
-
-type RatingKey = (typeof RATING_KEYS)[number];
-type RatingState = Readonly<Record<RatingKey, number>>;
-
-const INITIAL_RATINGS: RatingState = {
-    landscape: 0,
-    attractions: 0,
-    accessibility: 0,
-    safety: 0,
-    cleanliness: 0,
-    hospitality: 0,
-    culturalOffer: 0,
-    gastronomy: 0,
-    affordability: 0,
-    nightlife: 0,
-    infrastructure: 0,
-    environmentalCare: 0,
-    wifiAvailability: 0,
-    shopping: 0,
-    beaches: 0,
-    greenSpaces: 0,
-    localEvents: 0,
-    weatherSatisfaction: 0
-};
+import {
+    INITIAL_RATINGS,
+    RATING_KEYS,
+    type RatingKey,
+    type RatingState
+} from './destination-rating';
 
 const TITLE_MAX = 50;
 const CONTENT_MAX = 500;
 const CONTENT_MIN = 10;
 
-const DEFAULT_LABELS: Record<RatingKey, string> = {
-    landscape: 'Paisaje',
-    attractions: 'Atracciones',
-    accessibility: 'Accesibilidad',
-    safety: 'Seguridad',
-    cleanliness: 'Limpieza',
-    hospitality: 'Hospitalidad',
-    culturalOffer: 'Oferta cultural',
-    gastronomy: 'Gastronomía',
-    affordability: 'Relación precio-calidad',
-    nightlife: 'Vida nocturna',
-    infrastructure: 'Infraestructura',
-    environmentalCare: 'Cuidado del entorno',
-    wifiAvailability: 'Conectividad wifi',
-    shopping: 'Compras',
-    beaches: 'Playas',
-    greenSpaces: 'Espacios verdes',
-    localEvents: 'Eventos locales',
-    weatherSatisfaction: 'Satisfacción climática'
-};
-
 // --- Small SVG helpers to avoid repeating verbose markup -------------------
-
-function StarIcon() {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            width="100%"
-            height="100%"
-            fill="currentColor"
-            aria-hidden="true"
-            focusable="false"
-        >
-            <title>Estrella</title>
-            <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
-        </svg>
-    );
-}
 
 function CheckIcon() {
     return (
@@ -183,44 +112,19 @@ function ArrowIcon() {
     );
 }
 
-// ---------------------------------------------------------------------------
-
-interface StarRatingRowProps {
-    readonly ratingKey: RatingKey;
-    readonly value: number;
-    readonly label: string;
-    readonly submitting: boolean;
-    readonly onSet: (key: RatingKey, star: number) => void;
-}
-
-/** Renders one labeled star-rating row (ARIA APG radiogroup/radio pattern). */
-function StarRatingRow({ ratingKey, value, label, submitting, onSet }: StarRatingRowProps) {
+function StarBadgeIcon() {
     return (
-        <div className={styles.ratingRow}>
-            <span className={styles.ratingLabel}>{label}</span>
-            {/* biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern for star ratings */}
-            <div
-                className={styles.starGroup}
-                role="radiogroup"
-                aria-label={label}
-            >
-                {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                        key={star}
-                        type="button"
-                        // biome-ignore lint/a11y/useSemanticElements: button+role=radio is the ARIA APG pattern
-                        role="radio"
-                        aria-checked={value === star}
-                        aria-label={`${label}: ${star}`}
-                        className={cn(styles.starButton, star <= value && styles.starButtonOn)}
-                        onClick={() => onSet(ratingKey, star)}
-                        disabled={submitting}
-                    >
-                        <StarIcon />
-                    </button>
-                ))}
-            </div>
-        </div>
+        <svg
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            fill="currentColor"
+            aria-hidden="true"
+            focusable="false"
+        >
+            <title>Estrella</title>
+            <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
+        </svg>
     );
 }
 
@@ -231,24 +135,32 @@ interface DestinationReviewSidebarCardProps {
     readonly destinationName: string;
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
+    /** `card` renders the sidebar card; `inline` renders just the CTA button. */
+    readonly variant?: 'card' | 'inline';
 }
 
 /**
- * Sidebar card island for submitting a destination review.
+ * Review submission island for a destination.
  *
- * Always shows the "Dejar reseña" CTA. Auth gating happens at the page level.
+ * Always shows the "Dejar reseña" CTA (auth gating happens at page level).
  * The form opens in a native <dialog> for automatic focus-trap and ESC.
  *
- * @param props - Destination context and API base URL
+ * @param props - Destination context, API base URL, and render variant
  */
 export function DestinationReviewSidebarCard({
     destinationId,
     destinationName,
     locale,
-    apiUrl
+    apiUrl,
+    variant = 'card'
 }: DestinationReviewSidebarCardProps) {
     const { t } = createTranslations(locale);
     const dialogRef = useRef<HTMLDialogElement>(null);
+    // Two instances of this island coexist on the page (sidebar card + inline
+    // CTA in the reviews section) — scope every DOM id per instance.
+    const uid = useId();
+    const dialogTitleId = `${uid}-dest-review-dialog-title`;
+    const cardTitleId = `${uid}-dest-review-card-title`;
 
     const [open, setOpen] = useState(false);
     const [ratings, setRatings] = useState<RatingState>(INITIAL_RATINGS);
@@ -286,8 +198,16 @@ export function DestinationReviewSidebarCard({
         }, 200);
     }, []);
 
-    const setStar = useCallback((key: RatingKey, value: number) => {
+    const setDimension = useCallback((key: RatingKey, value: number) => {
         setRatings((prev) => ({ ...prev, [key]: value }));
+    }, []);
+
+    const setCategory = useCallback((dims: readonly RatingKey[], value: number) => {
+        setRatings((prev) => {
+            const next: Record<RatingKey, number> = { ...prev };
+            for (const dim of dims) next[dim] = value;
+            return next;
+        });
     }, []);
 
     const handleSubmit = useCallback(
@@ -370,56 +290,59 @@ export function DestinationReviewSidebarCard({
         ]
     );
 
+    const ctaLabel = t('review.destinationSidebar.cta', 'Dejar reseña');
+
     return (
         <>
-            <aside
-                className={styles.card}
-                aria-labelledby="dest-review-sidebar-card-title"
-            >
-                <div className={styles.cardHeader}>
-                    <span
-                        className={styles.cardBadge}
-                        aria-hidden="true"
-                    >
-                        <svg
-                            viewBox="0 0 24 24"
-                            width="18"
-                            height="18"
-                            fill="currentColor"
+            {variant === 'card' ? (
+                <aside
+                    className={styles.card}
+                    aria-labelledby={cardTitleId}
+                >
+                    <div className={styles.cardHeader}>
+                        <span
+                            className={styles.cardBadge}
                             aria-hidden="true"
-                            focusable="false"
                         >
-                            <title>Estrella</title>
-                            <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
-                        </svg>
-                    </span>
-                    <h3
-                        id="dest-review-sidebar-card-title"
-                        className={styles.cardTitle}
+                            <StarBadgeIcon />
+                        </span>
+                        <h3
+                            id={cardTitleId}
+                            className={styles.cardTitle}
+                        >
+                            {t('review.destinationSidebar.title', 'Tu opinión')}
+                        </h3>
+                    </div>
+                    <p className={styles.cardText}>
+                        {t(
+                            'review.destinationSidebar.canLeaveReview',
+                            'Compartí tu experiencia en este destino para ayudar a otros viajeros.'
+                        )}
+                    </p>
+                    <button
+                        type="button"
+                        className={styles.cardCta}
+                        onClick={handleOpen}
                     >
-                        {t('review.destinationSidebar.title', 'Tu opinión')}
-                    </h3>
-                </div>
-                <p className={styles.cardText}>
-                    {t(
-                        'review.destinationSidebar.canLeaveReview',
-                        'Compartí tu experiencia en este destino para ayudar a otros viajeros.'
-                    )}
-                </p>
+                        {ctaLabel}
+                        <ArrowIcon />
+                    </button>
+                </aside>
+            ) : (
                 <button
                     type="button"
-                    className={styles.cardCta}
+                    className={styles.inlineCta}
                     onClick={handleOpen}
                 >
-                    {t('review.destinationSidebar.cta', 'Dejar reseña')}
+                    {ctaLabel}
                     <ArrowIcon />
                 </button>
-            </aside>
+            )}
 
             <dialog
                 ref={dialogRef}
                 className={styles.dialog}
-                aria-labelledby="dest-review-dialog-title"
+                aria-labelledby={dialogTitleId}
                 onClose={() => setOpen(false)}
                 onClick={(event) => {
                     if (event.target === dialogRef.current) handleClose();
@@ -449,7 +372,7 @@ export function DestinationReviewSidebarCard({
                             <header className={styles.dialogHeader}>
                                 <div>
                                     <h3
-                                        id="dest-review-dialog-title"
+                                        id={dialogTitleId}
                                         className={styles.dialogTitle}
                                     >
                                         {t('review.list.writeReview', 'Escribir reseña')}
@@ -471,24 +394,14 @@ export function DestinationReviewSidebarCard({
                                 onSubmit={handleSubmit}
                                 noValidate
                             >
-                                <div
-                                    className={styles.ratingList}
-                                    aria-label={t('review.form.ratingLabel', 'Calificación')}
-                                >
-                                    {RATING_KEYS.map((key) => (
-                                        <StarRatingRow
-                                            key={key}
-                                            ratingKey={key}
-                                            value={ratings[key]}
-                                            label={t(
-                                                `destination.rating.dimensions.${key}`,
-                                                DEFAULT_LABELS[key]
-                                            )}
-                                            submitting={submitting}
-                                            onSet={setStar}
-                                        />
-                                    ))}
-                                </div>
+                                <DestinationReviewRatingFields
+                                    ratings={ratings}
+                                    submitting={submitting}
+                                    idPrefix={uid}
+                                    t={t}
+                                    onSetDimension={setDimension}
+                                    onSetCategory={setCategory}
+                                />
 
                                 <label className={styles.field}>
                                     <span className={styles.fieldLabel}>

@@ -467,7 +467,26 @@ const safeDescriptionHtml = renderContent({
 				reviewsCount={stats.reviewsCount}
 				ratingBreakdown={ratingBreakdown}
 				locale={locale}
-			/>
+			>
+				<Fragment slot="actions">
+					{isAuthenticated ? (
+						<DestinationReviewSidebarCard
+							client:idle
+							variant="inline"
+							destinationId={destId}
+							destinationName={name}
+							locale={locale}
+							apiUrl={getApiUrl()}
+						/>
+					) : (
+						<DestinationReviewSignInCta
+							variant="inline"
+							locale={locale}
+							returnPath={`destinos/${path}`}
+						/>
+					)}
+				</Fragment>
+			</DestinationReviewsSection>
 		</div>
 
 		<!-- FAQs (SPEC-158): rendered only when the destination has FAQs -->

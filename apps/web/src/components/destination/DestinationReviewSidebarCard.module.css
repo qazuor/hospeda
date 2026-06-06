@@ -96,6 +96,9 @@
 .dialog {
     width: min(600px, calc(100vw - 32px));
     max-height: 90vh;
+    /* Restore native <dialog> centering — a global reset zeroes margins,
+       which would otherwise pin the dialog to the top-left corner. */
+    margin: auto;
     padding: 0;
     border: none;
     border-radius: var(--radius-card, 20px);
@@ -450,12 +453,134 @@
     max-width: 360px;
 }
 
+/* ── Inline CTA variant (mounted in the reviews section actions row) ──── */
+/* Mirrors .dest-reviews__view-all in DestinationReviewsSection.astro so
+   both buttons share the same pill-outline language on a single row. */
+
+.inlineCta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--brand-primary);
+    background-color: transparent;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease,
+        color var(--duration-fast, 0.15s) ease;
+}
+
+.inlineCta:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+}
+
+.inlineCta:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Collapsible rating categories ─────────────────────────────────────── */
+
+.categoryHint {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+}
+
+.categoryBlock {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+}
+
+.categoryBlock:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.categoryHeader {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: 3px var(--space-2, 8px);
+    border-radius: var(--radius-md, 8px);
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.categoryHeader:hover,
+.categoryHeader:focus-within {
+    background-color: var(--brand-primary-a05);
+}
+
+.categoryToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--core-foreground);
+}
+
+.categoryToggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 8px);
+}
+
+.categoryChevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--core-muted-foreground);
+    transition: transform var(--duration-fast, 0.15s) ease;
+}
+
+.categoryChevronOpen {
+    transform: rotate(180deg);
+}
+
+.categoryLabel {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.categoryCount {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--core-muted-foreground);
+    background-color: var(--core-foreground-a05);
+    border-radius: 999px;
+    padding: 1px 6px;
+}
+
+.categoryDims {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 0 4px var(--space-5, 20px);
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 480px) {
-    .ratingRow {
+    .ratingRow,
+    .categoryHeader {
         grid-template-columns: 1fr;
         gap: 4px;
+    }
+    .categoryDims {
+        padding-left: var(--space-3, 12px);
     }
     .actions {
         justify-content: stretch;

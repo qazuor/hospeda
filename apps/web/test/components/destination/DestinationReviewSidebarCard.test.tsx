@@ -4,10 +4,12 @@
  * Uses @testing-library/react — the component is a React island.
  *
  * Coverage:
- * - Renders the sidebar card with the CTA button
+ * - Renders the sidebar card with the CTA button (card + inline variants)
  * - Clicking the CTA opens the dialog
  * - Submit is disabled until all 18 dimensions are rated
- * - Rating all 18 dimensions enables the submit button
+ * - Rating all 5 category rows (propagation) enables the submit button
+ * - Category rating propagates to every dimension in the category
+ * - Expanding a category allows overriding individual dimensions
  * - Successful submit shows the pendingNotice text and schedules a reload
  * - 409 ALREADY_EXISTS response shows alreadyReviewed text
  * - Network error shows the NETWORK_ERROR message
@@ -57,7 +59,9 @@ const DEFAULT_PROPS = {
     apiUrl: 'http://localhost:3001'
 };
 
-function renderCard(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
+type CardProps = Parameters<typeof DestinationReviewSidebarCard>[0];
+
+function renderCard(overrides: Partial<CardProps> = {}) {
     return render(
         <DestinationReviewSidebarCard
             {...DEFAULT_PROPS}
@@ -83,9 +87,11 @@ function openDialog() {
     fireEvent.click(cta);
 }
 
-/** Click star 5 for all 18 rating dimensions. */
+/** Rate everything by clicking star 5 on each visible star row.
+ *  With categories collapsed (default) this clicks the 5 category rows,
+ *  which propagate the value to all 18 dimensions. */
 function rateAllDimensions() {
-    // All star buttons have aria-label "<dimension label>: <star>".
+    // All star buttons have aria-label "<label>: <star>".
     // We click every button whose aria-label ends with ": 5".
     const fiveStarButtons = screen
         .getAllByRole('radio')
@@ -93,6 +99,12 @@ function rateAllDimensions() {
     for (const btn of fiveStarButtons) {
         fireEvent.click(btn);
     }
+}
+
+/** Expand a collapsed category block by clicking its toggle button. */
+function expandCategory(label: RegExp) {
+    const toggle = screen.getByRole('button', { name: label });
+    fireEvent.click(toggle);
 }
 
 // ---------------------------------------------------------------------------
@@ -298,5 +310,136 @@ describe('DestinationReviewSidebarCard — network error', () => {
         await waitFor(() => {
             expect(screen.getByText(/no pudimos conectar con el servidor/i)).toBeInTheDocument();
         });
+    });
+});
+
+describe('DestinationReviewSidebarCard — collapsible categories', () => {
+    beforeEach(() => {
+        setupDialogMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('renders the 5 category rows collapsed by default (no dimension rows visible)', () => {
+        renderCard();
+        openDialog();
+        // Category star rows are visible…
+        expect(
+            screen.getByRole('radiogroup', { name: /naturaleza y paisaje/i })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('radiogroup', { name: /experiencia y seguridad/i })
+        ).toBeInTheDocument();
+        // …but individual dimension rows are not (collapsed).
+        expect(screen.queryByRole('radiogroup', { name: /^paisaje$/i })).not.toBeInTheDocument();
+    });
+
+    it('rating a category propagates the value to all its dimensions', () => {
+        renderCard();
+        openDialog();
+        const catStar4 = screen.getByRole('radio', { name: /naturaleza y paisaje: 4/i });
+        fireEvent.click(catStar4);
+        expandCategory(/naturaleza y paisaje/i);
+        // All 5 dimensions of the category now show value 4.
+        for (const dim of [/^paisaje: 4$/i, /^playas: 4$/i, /^espacios verdes: 4$/i]) {
+            expect(screen.getByRole('radio', { name: dim })).toHaveAttribute(
+                'aria-checked',
+                'true'
+            );
+        }
+    });
+
+    it('expanding a category allows overriding one dimension; header shows the rounded average', () => {
+        renderCard();
+        openDialog();
+        fireEvent.click(screen.getByRole('radio', { name: /naturaleza y paisaje: 4/i }));
+        expandCategory(/naturaleza y paisaje/i);
+        fireEvent.click(screen.getByRole('radio', { name: /^paisaje: 5$/i }));
+        // The overridden dimension holds its own value…
+        expect(screen.getByRole('radio', { name: /^paisaje: 5$/i })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
+        // …a sibling keeps the category value…
+        expect(screen.getByRole('radio', { name: /^playas: 4$/i })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
+        // …and the header shows the rounded average: (5+4+4+4+4)/5 = 4.2 → 4.
+        expect(screen.getByRole('radio', { name: /^naturaleza y paisaje: 4$/i })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
+    });
+
+    it('header average only counts rated dimensions (partial rating)', () => {
+        renderCard();
+        openDialog();
+        expandCategory(/naturaleza y paisaje/i);
+        // Rate a single dimension: the header average reflects it (5/1 = 5).
+        fireEvent.click(screen.getByRole('radio', { name: /^paisaje: 5$/i }));
+        expect(screen.getByRole('radio', { name: /^naturaleza y paisaje: 5$/i })).toHaveAttribute(
+            'aria-checked',
+            'true'
+        );
+    });
+
+    it('rating all 5 categories enables submit (propagates to all 18 dims)', () => {
+        renderCard();
+        openDialog();
+        rateAllDimensions();
+        expect(screen.getByRole('button', { name: /enviar reseña/i })).not.toBeDisabled();
+    });
+
+    it('shows the rated count per category in the toggle (0/5 → 5/5)', () => {
+        renderCard();
+        openDialog();
+        expect(
+            screen.getByRole('button', { name: /naturaleza y paisaje 0\/5/i })
+        ).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('radio', { name: /naturaleza y paisaje: 3/i }));
+        expect(
+            screen.getByRole('button', { name: /naturaleza y paisaje 5\/5/i })
+        ).toBeInTheDocument();
+    });
+
+    it('submits individual values after a per-dimension override', async () => {
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({})
+        } as Response);
+        global.fetch = fetchMock;
+        renderCard();
+        openDialog();
+        rateAllDimensions(); // all categories → 5
+        expandCategory(/naturaleza y paisaje/i);
+        fireEvent.click(screen.getByRole('radio', { name: /^paisaje: 3$/i }));
+        const form = document.querySelector('form');
+        if (form) fireEvent.submit(form);
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalled();
+        });
+        const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+        expect(body.rating.landscape).toBe(3);
+        expect(body.rating.beaches).toBe(5);
+        expect(body.rating.safety).toBe(5);
+    });
+});
+
+describe('DestinationReviewSidebarCard — inline variant', () => {
+    it('renders only the CTA button (no card title) in inline variant', () => {
+        renderCard({ variant: 'inline' });
+        expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
+        expect(screen.queryByText(/tu opinión/i)).not.toBeInTheDocument();
+    });
+
+    it('inline CTA opens the dialog', () => {
+        setupDialogMocks();
+        renderCard({ variant: 'inline' });
+        openDialog();
+        expect(screen.getByRole('heading', { name: /escribir reseña/i })).toBeInTheDocument();
+        vi.restoreAllMocks();
     });
 });

@@ -20,15 +20,38 @@ interface Props {
     /** The current destination path (e.g. "destinos/entre-rios/colon") used
      *  to build the returnUrl query param on the sign-in link. */
     readonly returnPath: string;
+    /** `card` renders the sidebar card; `inline` renders just the sign-in link. */
+    readonly variant?: 'card' | 'inline';
 }
 
-const { locale, returnPath } = Astro.props;
+const { locale, returnPath, variant = 'card' } = Astro.props;
 const { t } = createTranslations(locale);
 
 const returnUrl = encodeURIComponent(`/${locale}/${returnPath.replace(/^\//, '')}/`);
 const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${returnUrl}`;
 ---
 
+{variant === 'inline' ? (
+    <a href={signInHref} class="dest-review-signin-cta__link dest-review-signin-cta__link--inline">
+        {t('review.destinationSidebar.signInCta', 'Iniciá sesión para opinar')}
+        <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+        >
+            <title>Iniciar sesión</title>
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+        </svg>
+    </a>
+) : (
 <aside class="dest-review-signin-cta" aria-labelledby="dest-review-signin-title">
     <div class="dest-review-signin-cta__header">
         <span class="dest-review-signin-cta__badge" aria-hidden="true">
@@ -66,6 +89,7 @@ const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${ret
         </svg>
     </a>
 </aside>
+)}
 
 <style>
     .dest-review-signin-cta {
@@ -152,5 +176,23 @@ const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${ret
 
     .dest-review-signin-cta__link:hover svg {
         transform: translateX(2px);
+    }
+
+    /* Inline variant: mirrors .dest-reviews__view-all so the sign-in link
+       shares the same pill-outline language in the reviews actions row. */
+    .dest-review-signin-cta__link--inline {
+        width: auto;
+        align-self: flex-start;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--brand-primary);
+        background: transparent;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .dest-review-signin-cta__link--inline:hover {
+        transform: none;
     }
 </style>
