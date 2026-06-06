@@ -24,7 +24,7 @@
         },
         {
             "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance \u2014 Cut Per-File Overhead Without Saturating the Machine",
+            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "completed",
             "progress": "9/21",
             "path": "SPEC-188-vitest-test-performance",
@@ -34,7 +34,7 @@
         },
         {
             "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
+            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "status": "in-progress",
             "progress": "0/14",
             "path": "SPEC-180-sentry-observability"
@@ -58,7 +58,7 @@
         },
         {
             "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 \u2014 filters, grid cards, host portfolio & tags migration",
+            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "status": "completed",
             "progress": "17/17",
             "path": "SPEC-185-admin-entity-lists-v2",
@@ -70,7 +70,7 @@
         },
         {
             "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid \u2014 count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
             "status": "completed",
             "progress": "18/18",
             "path": "SPEC-186-web-dynamic-image-grid",
@@ -82,7 +82,7 @@
         },
         {
             "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions \u2014 per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-187-rich-text-entity-descriptions",
@@ -93,7 +93,7 @@
         },
         {
             "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds \u2014 run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-189-optimize-seed-and-app-builds",
@@ -104,7 +104,7 @@
         },
         {
             "specId": "SPEC-190",
-            "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
@@ -115,7 +115,7 @@
         },
         {
             "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners \u2014 /colaborar hub, report link & recruitment banners",
+            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "status": "completed",
             "progress": "16/16",
             "path": "SPEC-191-web-contribution-pages-and-banners",
@@ -127,7 +127,7 @@
         },
         {
             "specId": "SPEC-192",
-            "title": "Billing Catalog to DB \u2014 complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "status": "completed",
             "progress": "37/37",
             "path": "SPEC-192-billing-catalog-to-db",
@@ -172,11 +172,11 @@
         },
         {
             "specId": "SPEC-196",
-            "title": "Shared Config-as-Code Package \u2014 centralize curated content & catalog files",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-196-shared-content-config-package",
-            "note": "Draft only \u2014 no tasks until activation; decisions D-1..D-6 pending owner workshop."
+            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
         },
         {
             "specId": "SPEC-145",
@@ -237,12 +237,12 @@
             "specId": "SPEC-167",
             "title": "Downgrade Over-Limit Remediation (grandfather + restrict)",
             "status": "in-progress",
-            "progress": "13/26",
+            "progress": "14/26",
             "path": "SPEC-167-downgrade-preflight-remediation",
             "branch": "spec/SPEC-167-downgrade-preflight-remediation",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-167-downgrade-preflight-remediation",
             "base": "staging",
-            "updatedAt": "2026-06-06T18:40:00.000Z"
+            "updatedAt": "2026-06-06T18:55:00.000Z"
         }
     ],
     "standalone": {
