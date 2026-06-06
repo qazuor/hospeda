@@ -247,6 +247,20 @@
             "archived": true,
             "archivedAt": "2026-06-07",
             "note": "PR #1484 merged 2026-06-07; staging smoke deferred to SPEC-193 batch (entry #6); adversarial review fixed 1 blocker + 3 majors; spun off SPEC-203/204"
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "status": "in-progress",
+            "progress": "0/10",
+            "path": "SPEC-198-ai-text-improvement",
+            "branch": "spec/SPEC-198-ai-text-improvement",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-198-ai-text-improvement",
+            "base": "staging",
+            "archived": false,
+            "parentSpec": "SPEC-173",
+            "created": "2026-06-06",
+            "tags": ["ai", "feature", "host", "text-improvement", "spec-173-child"]
         }
     ],
     "standalone": {
