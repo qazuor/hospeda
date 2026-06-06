@@ -412,7 +412,7 @@
             "id": "T-018",
             "title": "Local e2e verification (manual smoke)",
             "description": "With pnpm db:fresh-dev and a tourist test user (<slug>@local.test / Password123!): destination page sidebar shows review card; submit 18 ratings + title + content; success mentions pending moderation; review NOT publicly visible; approve via admin moderation; review becomes visible; second submission attempt shows 'ya enviaste una reseña' (409); logged-out sidebar shows sign-in CTA with redirect. Record results in progress.md.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": ["T-002", "T-011", "T-014"],
             "blocks": [],
@@ -426,15 +426,15 @@
             },
             "timestamps": {
                 "created": "2026-06-06T08:50:00.000Z",
-                "started": null,
+                "started": "2026-06-06T16:41:45Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 18,
-        "pending": 1,
-        "inProgress": 0,
+        "pending": 0,
+        "inProgress": 1,
         "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.7
