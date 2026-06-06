@@ -446,8 +446,9 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             //   - Sends are SOFT (fire-and-forget): failure → warn log, never blocks
             //     the 200 response the host is waiting for.
             if (restrictionPreview?.hasExcess) {
-                const actorEmail = (actor as unknown as { email?: string }).email;
-                const actorName = (actor as unknown as { name?: string }).name;
+                // ActorSchema carries optional email/name since SPEC-113 — no cast needed.
+                const actorEmail = actor.email;
+                const actorName = actor.name;
                 if (actorEmail) {
                     const dimensions: Array<{
                         limitKey: string;
