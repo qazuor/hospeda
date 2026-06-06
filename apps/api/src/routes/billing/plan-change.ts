@@ -175,7 +175,10 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         });
     }
 
-    const { newPlanId, billingInterval } = parseResult.data;
+    // keepSelections is intentionally extracted here but is ONLY forwarded to
+    // the downgrade path below. For upgrades it is silently ignored per spec
+    // §4 decision 3 (see PlanChangeRequestSchema JSDoc).
+    const { newPlanId, billingInterval, keepSelections } = parseResult.data;
 
     const billing = getQZPayBilling();
 
@@ -363,7 +366,12 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 billingInterval: qzpayInterval as 'month' | 'year',
                 intervalCount: qzpayIntervalCount,
                 billing,
-                requestedBy: actor.id
+                requestedBy: actor.id,
+                // keepSelections: forwarded as-is from the request body;
+                // validated inside scheduleSubscriptionDowngrade and stored
+                // in scheduledPlanChange.metadata. For upgrades this code
+                // path is never reached (the isUpgrade branch returns early).
+                keepSelections
             });
 
             apiLogger.info(
