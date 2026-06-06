@@ -8,18 +8,18 @@
             "id": "T-001",
             "title": "Add planRestricted column to accommodations and owner_promotions (DB)",
             "description": "Realign D-3: new boolean column `plan_restricted` (default false, NOT NULL) on BOTH `accommodations` and `owner_promotions` tables in packages/db schema. Do NOT reuse ownerSuspended (pause-flow collision). Generate versioned migration via `pnpm db:generate` (drift guard requires the committed migration file). Promotions need their own marker because a lifecycle flip would lose the 'restricted-by-plan' info needed for selective restore. Tests: model-level defaults; migration applies cleanly on the worktree test DB.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-004", "T-007", "T-008"],
             "subtasks": [],
             "tags": ["db", "migration", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T00:30:00.000Z",
+                "completed": "2026-06-06T16:20:00.000Z"
             }
         },
         {
