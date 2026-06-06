@@ -26,7 +26,7 @@ const { locale, returnPath } = Astro.props;
 const { t } = createTranslations(locale);
 
 const returnUrl = encodeURIComponent(`/${locale}/${returnPath.replace(/^\//, '')}/`);
-const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}/?returnUrl=${returnUrl}`;
+const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${returnUrl}`;
 ---
 
 <aside class="dest-review-signin-cta" aria-labelledby="dest-review-signin-title">
