@@ -38,6 +38,8 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { applyDowngradeRestrictionsOrWarn } from '../../../services/plan-downgrade-remediation.service';
+import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import {
     resolveOwnerUserId,
@@ -344,7 +346,69 @@ const onAfterSubscriptionCancel: NonNullable<
 };
 
 /**
- * After-change-plan hook: audit-log the plan transition.
+ * Determine the direction of a plan change by comparing the cheapest active
+ * price of each plan.
+ *
+ * Normalises by `intervalCount` so multi-month prices are comparable on a
+ * per-interval-unit basis (mirrors the normalization in
+ * `subscription-downgrade.service.ts` and `plan-change.ts`).
+ *
+ * @returns `'downgrade'` | `'upgrade'` | `'same'`
+ */
+function detectPlanChangeDirection(
+    previousPlan: {
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            active: boolean;
+        }>;
+    },
+    newPlan: {
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            active: boolean;
+        }>;
+    }
+): 'downgrade' | 'upgrade' | 'same' {
+    const toNormalized = (
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            active: boolean;
+        }>
+    ) => {
+        const active = prices.filter((p) => p.active);
+        if (active.length === 0) return null;
+        // Use the lowest normalised unit amount for fair cross-interval comparison.
+        return Math.min(
+            ...active.map((p) => {
+                const count = (p.intervalCount ?? 1) > 0 ? (p.intervalCount ?? 1) : 1;
+                return p.unitAmount / count;
+            })
+        );
+    };
+
+    const prevAmount = toNormalized(previousPlan.prices);
+    const newAmount = toNormalized(newPlan.prices);
+
+    if (prevAmount === null || newAmount === null) return 'same';
+    if (newAmount < prevAmount) return 'downgrade';
+    if (newAmount > prevAmount) return 'upgrade';
+    return 'same';
+}
+
+/**
+ * After-change-plan hook: audit-log the plan transition, then apply
+ * restriction (downgrade) or restoration (upgrade) via the shared
+ * remediation services (SPEC-167 T-014, design decision 5).
+ *
+ * **Ordering**: remediation runs BEFORE `clearEntitlementCache` so the
+ * cache is invalidated with post-remediation state.
+ *
+ * **Failure semantics**: both remediation directions are wrapped in
+ * soft-fail helpers — a restriction/restoration error must NOT break the
+ * admin response (the plan change has already committed in QZPay).
  */
 const onAfterSubscriptionChangePlan: NonNullable<
     QZPayAdminLifecycleHooks['onAfterSubscriptionChangePlan']
@@ -352,6 +416,92 @@ const onAfterSubscriptionChangePlan: NonNullable<
     const actor = getActorFromContext(ctx);
     const db = getDb();
 
+    // Step 1: Determine plan-change direction and apply remediation.
+    // Runs BEFORE clearEntitlementCache (cache must reflect post-remediation state).
+    const billing = getQZPayBilling();
+    if (billing) {
+        try {
+            const [previousPlan, newPlan] = await Promise.all([
+                billing.plans.get(previousPlanId),
+                billing.plans.get(newPlanId)
+            ]);
+
+            if (previousPlan && newPlan) {
+                const direction = detectPlanChangeDirection(previousPlan, newPlan);
+
+                if (direction === 'downgrade') {
+                    const userId = await resolveOwnerUserId({
+                        customerId: subscription.customerId
+                    });
+                    if (userId) {
+                        await applyDowngradeRestrictionsOrWarn({
+                            userId,
+                            customerId: subscription.customerId,
+                            targetPlanSlug: newPlan.name,
+                            keepSelections: undefined
+                        });
+                    } else {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                customerId: subscription.customerId,
+                                newPlanId
+                            },
+                            'Admin change-plan hook: could not resolve owner userId — downgrade restriction skipped'
+                        );
+                    }
+                } else if (direction === 'upgrade') {
+                    const userId = await resolveOwnerUserId({
+                        customerId: subscription.customerId
+                    });
+                    if (userId) {
+                        await applyUpgradeRestorationsOrWarn({
+                            userId,
+                            customerId: subscription.customerId,
+                            newPlanId
+                        });
+                    } else {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                customerId: subscription.customerId,
+                                newPlanId
+                            },
+                            'Admin change-plan hook: could not resolve owner userId — upgrade restoration skipped'
+                        );
+                    }
+                }
+                // direction === 'same' → no remediation needed
+            } else {
+                apiLogger.warn(
+                    {
+                        subscriptionId: subscription.id,
+                        previousPlanId,
+                        newPlanId
+                    },
+                    'Admin change-plan hook: could not resolve plans for direction detection — remediation skipped'
+                );
+            }
+        } catch (err) {
+            apiLogger.error(
+                {
+                    subscriptionId: subscription.id,
+                    customerId: subscription.customerId,
+                    previousPlanId,
+                    newPlanId,
+                    error: err instanceof Error ? err.message : String(err)
+                },
+                'Admin change-plan hook: remediation threw unexpectedly — skipped, audit+cache still proceed'
+            );
+        }
+    } else {
+        apiLogger.warn(
+            { subscriptionId: subscription.id, previousPlanId, newPlanId },
+            'Admin change-plan hook: billing service unavailable — remediation skipped'
+        );
+    }
+
+    // Step 2: Audit-log the plan transition (unchanged).
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
         triggerSource: 'admin-change-plan',
@@ -362,6 +512,8 @@ const onAfterSubscriptionChangePlan: NonNullable<
         }
     });
 
+    // Step 3: Clear entitlement cache AFTER remediation so the cache reflects
+    // the post-restriction/post-restoration state.
     clearEntitlementCache(subscription.customerId);
 
     apiLogger.info(

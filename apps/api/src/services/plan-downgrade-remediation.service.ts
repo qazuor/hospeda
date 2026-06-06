@@ -508,3 +508,38 @@ export async function applyDowngradeRestrictions(
         grandfatherFlags: preview.grandfatherFlags
     };
 }
+
+/**
+ * Soft-fail wrapper around {@link applyDowngradeRestrictions}.
+ *
+ * Used in the admin `onAfterSubscriptionChangePlan` hook where a restriction
+ * failure must NOT break the admin response (the plan change has already
+ * committed in QZPay). Errors are logged via `apiLogger.error` (the logger
+ * integration reports to Sentry) and an empty summary is returned.
+ *
+ * @param input - Same as {@link applyDowngradeRestrictions}.
+ * @returns A {@link DowngradeRemediationSummary} (empty on failure).
+ */
+export async function applyDowngradeRestrictionsOrWarn(
+    input: ApplyDowngradeRestrictionsInput
+): Promise<DowngradeRemediationSummary> {
+    try {
+        return await applyDowngradeRestrictions(input);
+    } catch (err) {
+        apiLogger.error(
+            {
+                userId: input.userId,
+                customerId: input.customerId,
+                targetPlanSlug: input.targetPlanSlug,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'plan-downgrade-remediation: restriction failed — non-blocking, plan change already committed'
+        );
+        return {
+            restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+            keptBySelection: { accommodations: [], promotions: [] },
+            keptByDefault: { accommodations: [], promotions: [] },
+            grandfatherFlags: []
+        };
+    }
+}
