@@ -23,8 +23,9 @@
  *   gallery items beyond (cap − 1 when featuredImage exists, or cap otherwise)
  *   are considered overflow.
  * - Grandfather flags (rich description / video embed): informational only.
- *   The detection logic reuses the same patterns as
- *   `gateRichDescription`/`gateVideoEmbed` in
+ *   The detection logic uses `containsRichDescription` / `containsVideoEmbed`
+ *   from `apps/api/src/lib/content-detection.ts`, the same shared module used
+ *   by `gateRichDescription`/`gateVideoEmbed` in
  *   `apps/api/src/middlewares/accommodation-entitlements.ts`.
  *   When the target plan already grants `CAN_USE_RICH_DESCRIPTION` or
  *   `CAN_EMBED_VIDEO`, the corresponding flag is suppressed.
@@ -41,55 +42,7 @@ import type {
     DowngradeExcessItem,
     DowngradePreview
 } from '@repo/schemas';
-
-// ---------------------------------------------------------------------------
-// Detection helpers (mirrors accommodation-entitlements.ts — DO NOT duplicate logic)
-// ---------------------------------------------------------------------------
-
-/**
- * Markdown pattern set (identical to `RICH_DESCRIPTION_PATTERNS` in
- * `apps/api/src/middlewares/accommodation-entitlements.ts`).
- * Kept here as a const-reference so both call-sites can be updated together if
- * patterns change. The alternative (importing the internal helper) would cross
- * the middleware→service boundary and create a circular dependency risk.
- *
- * @internal
- */
-const RICH_DESCRIPTION_PATTERNS: readonly RegExp[] = [
-    /\*\*[^*]+\*\*/, // Bold (**text**)
-    /(?:^|[^*])\*[^*\s][^*]*\*/, // Italic (*text*) — avoid matching bold's **
-    /\[[^\]]+\]\([^)]+\)/, // Markdown links
-    /^#{1,6}\s/m, // ATX headings
-    /^[-*+]\s+\S/m, // Unordered list items
-    /`[^`\n]+`/ // Inline code
-];
-
-/**
- * Video embed URL patterns (identical to `VIDEO_EMBED_PATTERNS` in
- * `apps/api/src/middlewares/accommodation-entitlements.ts`).
- * @internal
- */
-const VIDEO_EMBED_PATTERNS: readonly RegExp[] = [
-    /\bhttps?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/[\w-]+/i,
-    /\bhttps?:\/\/(?:www\.)?vimeo\.com\/\d+/i,
-    /\bhttps?:\/\/(?:www\.)?dailymotion\.com\/video\/[\w-]+/i
-];
-
-/**
- * Returns `true` if the string contains any markdown formatting patterns.
- * Mirrors `hasMarkdownSyntax` in `accommodation-entitlements.ts`.
- */
-function hasMarkdownSyntax(value: string): boolean {
-    return RICH_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(value));
-}
-
-/**
- * Returns `true` if the string contains a recognised video embed URL.
- * Mirrors `hasVideoEmbed` in `accommodation-entitlements.ts`.
- */
-function hasVideoEmbedUrl(value: string): boolean {
-    return VIDEO_EMBED_PATTERNS.some((pattern) => pattern.test(value));
-}
+import { containsRichDescription, containsVideoEmbed } from '../lib/content-detection';
 
 // ---------------------------------------------------------------------------
 // Minimal shape contracts for injected data sources
@@ -457,8 +410,9 @@ export async function computeDowngradeExcess(
     const grandfatherFlagEntries: DowngradePreview['grandfatherFlags'] = [];
 
     for (const acc of accommodations) {
-        const richDetected = !targetHasRichDescription && hasMarkdownSyntax(acc.description ?? '');
-        const videoDetected = !targetHasVideoEmbed && hasVideoEmbedUrl(acc.description ?? '');
+        const richDetected =
+            !targetHasRichDescription && containsRichDescription(acc.description ?? '');
+        const videoDetected = !targetHasVideoEmbed && containsVideoEmbed(acc.description ?? '');
 
         if (!richDetected && !videoDetected) continue;
 

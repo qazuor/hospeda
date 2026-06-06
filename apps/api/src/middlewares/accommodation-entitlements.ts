@@ -14,33 +14,10 @@
 import { EntitlementKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { containsRichDescription, containsVideoEmbed } from '../lib/content-detection';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { hasEntitlement } from './entitlement';
-
-/**
- * Detect markdown syntax in a description string.
- *
- * Returns true if the string contains any of the markdown patterns we care
- * about gating (headings, bold, italic, links, list items, inline code).
- * Used by `gateRichDescription` to decide whether the request actually
- * exercises the rich-description capability or just contains plain text.
- *
- * Conservative on purpose: returns false for plain prose so a user without
- * the entitlement can still update their description with text-only content.
- */
-const RICH_DESCRIPTION_PATTERNS: readonly RegExp[] = [
-    /\*\*[^*]+\*\*/, // Bold (**text**)
-    /(?:^|[^*])\*[^*\s][^*]*\*/, // Italic (*text*) — avoid matching bold's **
-    /\[[^\]]+\]\([^)]+\)/, // Markdown links
-    /^#{1,6}\s/m, // ATX headings
-    /^[-*+]\s+\S/m, // Unordered list items
-    /`[^`\n]+`/ // Inline code
-];
-
-function hasMarkdownSyntax(value: string): boolean {
-    return RICH_DESCRIPTION_PATTERNS.some((pattern) => pattern.test(value));
-}
 
 /**
  * Gates rich description feature (markdown formatting).
@@ -104,7 +81,7 @@ export function gateRichDescription(): AppMiddleware {
         }
 
         const description = body?.description;
-        if (typeof description !== 'string' || !hasMarkdownSyntax(description)) {
+        if (typeof description !== 'string' || !containsRichDescription(description)) {
             await next();
             return;
         }
@@ -122,28 +99,6 @@ export function gateRichDescription(): AppMiddleware {
             }
         );
     };
-}
-
-/**
- * Detect video embed URLs in a description string.
- *
- * Pattern set covers the major embed providers (YouTube, Vimeo, Dailymotion).
- * Conservative on purpose: a plain mention of "youtube" in prose without a
- * URL does NOT trigger the gate.
- *
- * The accommodation schema does not have a dedicated `videoUrl` or
- * `media[type=video]` field today, so the only realistic gating surface
- * for `CAN_EMBED_VIDEO` is video URLs pasted into the description. If
- * those fields are added later, extend the detection to inspect them too.
- */
-const VIDEO_EMBED_PATTERNS: readonly RegExp[] = [
-    /\bhttps?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)\/[\w-]+/i,
-    /\bhttps?:\/\/(?:www\.)?vimeo\.com\/\d+/i,
-    /\bhttps?:\/\/(?:www\.)?dailymotion\.com\/video\/[\w-]+/i
-];
-
-function hasVideoEmbed(value: string): boolean {
-    return VIDEO_EMBED_PATTERNS.some((pattern) => pattern.test(value));
 }
 
 /**
@@ -187,7 +142,7 @@ export function gateVideoEmbed(): AppMiddleware {
         }
 
         const description = body?.description;
-        if (typeof description !== 'string' || !hasVideoEmbed(description)) {
+        if (typeof description !== 'string' || !containsVideoEmbed(description)) {
             await next();
             return;
         }
