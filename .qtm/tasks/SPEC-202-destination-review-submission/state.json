@@ -1,0 +1,349 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-202",
+    "title": "Destination Review Submission Flow (web) + API contract/security fix",
+    "created": "2026-06-06T08:50:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add unique index (user_id, destination_id) to destination_review dbschema",
+            "description": "In packages/db/src/schemas/destination/destination_review.dbschema.ts add uniqueIndex('destination_reviews_user_destination_uniq').on(table.userId, table.destinationId) and the uniqueIndex import. Plain (non-partial) index, matching accommodation_reviews_user_accommodation_uniq semantics.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [],
+            "tags": ["db", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate migration and hand-edit dedup DELETE before unique index",
+            "description": "Run pnpm --filter @repo/db db:generate. Hand-edit the generated SQL to prepend: DELETE FROM destination_reviews keeping the newest row per (user_id, destination_id) via DISTINCT ON ... ORDER BY created_at DESC, followed by --> statement-breakpoint, then the CREATE UNIQUE INDEX. Never use db:push for staging/prod. CI drift guard requires the migration committed with the schema change.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "db:generate", "completed": false },
+                { "title": "prepend dedup DELETE + statement-breakpoint", "completed": false },
+                { "title": "apply locally and verify index exists", "completed": false }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add DestinationReviewCreateBodySchema to @repo/schemas",
+            "description": "In packages/schemas/src/entities/destinationReview/destinationReview.crud.schema.ts add DestinationReviewCreateBodySchema = DestinationReviewCreateInputSchema.omit({ destinationId: true, userId: true }) plus type export DestinationReviewCreateBody. Strict mode is inherited (rejects injected userId/destinationId). Auto-exported via existing export *. Mirror of AccommodationReviewCreateBodySchema (accommodationReview.crud.schema.ts:51-54).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-012"],
+            "subtasks": [],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add 18 destination.rating.dimensions.* i18n keys (es/en/pt)",
+            "description": "In packages/i18n/src/locales/{es,en,pt}/destination.json add destination.rating.dimensions with all 18 keys: landscape, attractions, accessibility, safety, cleanliness, hospitality, culturalOffer, gastronomy, affordability, nightlife, infrastructure, environmentalCare, wifiAvailability, shopping, beaches, greenSpaces, localEvents, weatherSatisfaction. ES labels mirror the hardcoded fallbacks in DestinationRatingBreakdown.astro:38-57 (which becomes multilingual for free since it already calls t(key, fallback)).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["i18n"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add destination review form/sidebar i18n keys (es/en/pt)",
+            "description": "In packages/i18n/src/locales/{es,en,pt}/review.json add: review.form.destination.pendingNotice ('Tu reseña está pendiente de aprobación...'), review.form.destination.alreadyReviewed ('Ya enviaste una reseña para este destino.'), and review.destinationSidebar.{title,canLeaveReview,cta,signInCta,signInCtaHint}. Keep ES voseo; provide proper EN/PT translations.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [],
+            "tags": ["i18n"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Service duplicate pre-check in DestinationReviewService._beforeCreate",
+            "description": "In packages/service-core/src/services/destinationReview/destinationReview.service.ts add a pre-check at the top of _beforeCreate: model.findOne({ userId: data.userId, destinationId: data.destinationId, deletedAt: null }); if found throw ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'You have already submitted a review for this destination.'). Mirrors AccommodationReviewService. handleRouteError already maps ALREADY_EXISTS to HTTP 409.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [],
+            "tags": ["service-core", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Route security fix: body schema + userId from actor",
+            "description": "In apps/api/src/routes/destination/reviews/protected/create.ts switch requestBody from DestinationReviewCreateInputSchema to DestinationReviewCreateBodySchema; in the handler build payload { ...input, destinationId: params.destinationId, userId: actor.id }. Keep requireEntitlement(EntitlementKey.WRITE_REVIEWS) and requiredPermissions unchanged. This closes the impersonation gap (client-supplied userId).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-014", "T-015", "T-017"],
+            "subtasks": [],
+            "tags": ["api", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add destinationReviewsApi.create() to web endpoints-protected",
+            "description": "In apps/web/src/lib/api/endpoints-protected.ts add DestinationReviewRating (18 readonly number fields) and CreateDestinationReviewBody ({ rating, title?, content? }) interfaces, plus destinationReviewsApi.create({ destinationId, body }) using apiClient.postProtected with path `${PROTECTED}/destinations/${destinationId}/reviews`. Mirror reviewsApi (accommodation) at ~line 720.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["web", "api-client"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create DestinationReviewSidebarCard.client.tsx + module.css",
+            "description": "New React island at apps/web/src/components/destination/DestinationReviewSidebarCard.client.tsx modeled on accommodation ReviewSidebarCard.client.tsx (517 lines). Props { destinationId, destinationName, locale, apiUrl } (NO canLeaveReview). RATING_KEYS const with 18 dims; TITLE_MAX=50, CONTENT_MAX=500 (destination schema limits, NOT accommodation's); submit disabled until all 18 rated >=1; fetch with credentials:'include'; success state shows review.form.destination.pendingNotice + reload after 1.4s; special-case error.code==='ALREADY_EXISTS' to review.form.destination.alreadyReviewed; translateApiError for the rest. Extract inline StarRatingRow helper to stay under 500 lines. CSS module copies token structure from ReviewSidebarCard.module.css.",
+            "status": "pending",
+            "complexity": 6,
+            "blockedBy": ["T-004", "T-005", "T-008"],
+            "blocks": ["T-011", "T-016"],
+            "subtasks": [
+                { "title": "component skeleton + state + dialog", "completed": false },
+                { "title": "18 star rows via StarRatingRow helper", "completed": false },
+                { "title": "submit + error handling + success/pending state", "completed": false },
+                { "title": "module.css", "completed": false }
+            ],
+            "tags": ["web", "react-island", "a11y"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create DestinationReviewSignInCta.astro (logged-out CTA)",
+            "description": "New static Astro component (zero JS) at apps/web/src/components/destination/DestinationReviewSignInCta.astro following the dest-cta-card visual pattern from DestinationSidebarCtas.astro. Invites the visitor to sign in to leave a review, linking to the sign-in page with redirect back to the current destination path. i18n via review.destinationSidebar.signInCta/signInCtaHint.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Mount review card / sign-in CTA in destination page sidebar",
+            "description": "In apps/web/src/pages/[lang]/destinos/[...path].astro sidebar slot (after DestinationSidebarCtas, ~line 615): isAuthenticated ? <DestinationReviewSidebarCard client:visible destinationId destinationName locale apiUrl={getApiUrl()} /> : <DestinationReviewSignInCta locale destinationPath={Astro.url.pathname} />. isAuthenticated already computed at lines 254-255.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-018"],
+            "subtasks": [],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Schema tests for DestinationReviewCreateBodySchema",
+            "description": "In packages/schemas/test/entities/destinationReview/destinationReview.crud.schema.test.ts (create or extend): body schema accepts rating-only payload; rejects userId in body (strict); rejects destinationId in body; rating dimension bounds 0-5 enforced; title max 50; content 10-500. AAA pattern.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "schemas"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Service tests for duplicate guard",
+            "description": "Extend packages/service-core/test/services/destinationReview/create.test.ts: _beforeCreate throws ALREADY_EXISTS when model.findOne returns an existing row; proceeds to moderation when findOne returns null; pre-check filter includes deletedAt: null.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "service-core"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "API route security tests (anti-impersonation regression + 409 + gates)",
+            "description": "New apps/api/test/routes/destination-reviews/create.security.test.ts: persisted userId equals actor id regardless of request; body containing userId returns 400 (strict schema); duplicate returns 409 with error.code ALREADY_EXISTS. Extend apps/api/test/routes/promotion-and-review-entitlement-gates.test.ts if needed to keep destination create coverage (entitled 200, lacking 403 ENTITLEMENT_REQUIRED, staff bypass).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "api", "security"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Fix legacy integration smoke test (wrong tier + userId in body)",
+            "description": "apps/api/test/integration/destination-reviews/create.test.ts currently posts to /api/v1/public/destinations/{id}/reviews with userId and an 18-dim rating in the body. Update to POST /api/v1/protected/... with the new body shape (no userId/destinationId). It encodes the wrong contract and will fail after T-007 otherwise.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "api"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Web component tests for DestinationReviewSidebarCard",
+            "description": "New apps/web/test (mirror DestinationReviewsModal.test.tsx mock pattern: vi.mock @/lib/i18n, CSS modules, global.fetch): renders card with CTA; clicking CTA opens dialog; submit disabled until all 18 dims rated; success shows pendingNotice text; 409 response shows alreadyReviewed text; network error shows localized error; ESC closes dialog.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "web"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Verify endpoint-gate-matrix row for destination review create",
+            "description": "Check docs/billing/endpoint-gate-matrix.md row for POST /api/v1/protected/destinations/{id}/reviews reflects the implemented gate status (snapshot guard test endpoint-gate-matrix.guard.test.ts parses the table; a stale row fails CI).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "billing"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Local e2e verification (manual smoke)",
+            "description": "With pnpm db:fresh-dev and a tourist test user (<slug>@local.test / Password123!): destination page sidebar shows review card; submit 18 ratings + title + content; success mentions pending moderation; review NOT publicly visible; approve via admin moderation; review becomes visible; second submission attempt shows 'ya enviaste una reseña' (409); logged-out sidebar shows sign-in CTA with redirect. Record results in progress.md.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-011", "T-014"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["verification", "smoke"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-06T08:50:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 18,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.7
+    }
+}
