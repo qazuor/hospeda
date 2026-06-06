@@ -184,7 +184,7 @@
             "id": "T-009",
             "title": "Photo archive/restore primitive (JSONB gallery move)",
             "description": "archiveAccommodationPhotos({ accommodationId, keepIds }) moves non-kept gallery items from media.gallery to media.archivedGallery; restoreAccommodationPhotos moves back (respecting target cap on restore). featuredImage counts toward the cap but is always kept by default. INV-5: items moved, never dropped — assert total count invariant in tests. Unit tests: move/restore round-trip preserves every item byte-for-byte, keepIds honored, cap edge cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-011", "T-012"],
@@ -192,14 +192,14 @@
             "tags": ["service", "primitives", "media"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:45:00.000Z",
+                "completed": "2026-06-06T17:53:00.000Z"
             }
         },
         {
