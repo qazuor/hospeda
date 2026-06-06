@@ -316,7 +316,7 @@
             "id": "T-015",
             "title": "keepIds selection field: schema + persistence with scheduled change",
             "description": "@repo/schemas: extend the plan-change downgrade request schema with optional keepSelections ({ accommodationIds?, promotionIds?, photoKeepMap? } — align shape with the T-006 preview contract). Persist with the QZPayScheduledPlanChange record (check what metadata/JSON field the qzpay scheduled-change row supports; if none, a sidecar table/column is needed — prefer the simplest carrier that survives until apply). Unit tests: schema validation, persistence round-trip, replacedPriorSchedule overwrites selections.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-013", "T-016"],
@@ -324,14 +324,14 @@
             "tags": ["schemas", "persistence"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T18:00:00.000Z",
+                "completed": "2026-06-06T18:20:00.000Z"
             }
         },
         {
