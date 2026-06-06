@@ -16,6 +16,7 @@
  */
 
 import { BillingIntervalEnum } from '@repo/schemas';
+import type { DowngradePreview } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -30,6 +31,10 @@ import {
     SubscriptionCheckoutError,
     initiatePaidPlanUpgrade
 } from '../../services/subscription-checkout.service';
+import {
+    computeDowngradeExcess,
+    defaultExcessDeps
+} from '../../services/subscription-downgrade-excess.service';
 import {
     SubscriptionDowngradeError,
     scheduleSubscriptionDowngrade
@@ -398,12 +403,44 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 resourceId: scheduleResult.subscriptionId
             });
 
+            // SPEC-167 T-016: compute the request-time restriction preview
+            // (SPEC-203 UI contract). Runs AFTER scheduling (schedule-first
+            // order: the preview reflects the scheduled state and scheduling
+            // is more important than the informational preview).
+            //
+            // Soft-fail: preview failure must NOT fail the scheduling — the
+            // downgrade is already committed at this point. Log a warn and
+            // return the response without the preview field. SPEC-203 UI
+            // treats absent `restrictionPreview` as "preview unavailable —
+            // defaults will apply at period end".
+            //
+            // targetPlan.name == the billing catalog slug (mirrors how
+            // apply-scheduled-plan-changes.ts resolves it: plan?.name).
+            let restrictionPreview: DowngradePreview | undefined;
+            try {
+                restrictionPreview = await computeDowngradeExcess(
+                    { userId: actor.id, targetPlanSlug: targetPlan.name as string },
+                    defaultExcessDeps
+                );
+            } catch (previewErr) {
+                apiLogger.warn(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: scheduleResult.subscriptionId,
+                        newPlanId: scheduleResult.newPlanId,
+                        error: previewErr instanceof Error ? previewErr.message : String(previewErr)
+                    },
+                    'Downgrade restriction preview unavailable (soft-fail) — schedule succeeded'
+                );
+            }
+
             return {
                 status: 'scheduled' as const,
                 subscriptionId: scheduleResult.subscriptionId,
                 previousPlanId: scheduleResult.previousPlanId,
                 newPlanId: scheduleResult.newPlanId,
-                effectiveAt: scheduleResult.applyAt
+                effectiveAt: scheduleResult.applyAt,
+                ...(restrictionPreview !== undefined && { restrictionPreview })
             };
         } catch (downgradeError) {
             if (downgradeError instanceof SubscriptionDowngradeError) {
