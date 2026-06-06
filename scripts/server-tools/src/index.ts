@@ -20,8 +20,10 @@ import { cronTrigger } from './commands/cron-trigger.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
+import { dbMigrateTest } from './commands/db-migrate-test.ts';
 import { dbRestore } from './commands/db-restore.ts';
 import { dbSeed } from './commands/db-seed.ts';
+import { dbSuperAdminPass } from './commands/db-superadmin-pass.ts';
 import { dockerByName } from './commands/docker-by-name.ts';
 import { envDelete } from './commands/env-delete.ts';
 import { envList } from './commands/env-list.ts';
@@ -131,10 +133,21 @@ const COMMANDS: ReadonlyArray<Command> = [
         run: dbMigrate
     },
     {
+        name: 'db-migrate-test',
+        summary:
+            'Rehearse pending migrations against a scratch clone of the target DB (non-destructive).',
+        run: dbMigrateTest
+    },
+    {
         name: 'db-seed',
         summary:
             'Run @repo/seed against the target DB (reset+required+example by default; destructive).',
         run: dbSeed
+    },
+    {
+        name: 'db-superadmin-pass',
+        summary: 'Reset the super admin credential-account password after a fresh seed.',
+        run: dbSuperAdminPass
     },
     {
         name: 'app-restart',
