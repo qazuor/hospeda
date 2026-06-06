@@ -46,6 +46,9 @@ import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
+import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
+import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
+import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /**
@@ -105,9 +108,17 @@ interface PendingPlanChangeRow {
  * Outcome of attempting to apply one scheduled change. Returned by
  * `applyOne` and aggregated by the cron handler for the
  * CronJobResult.
+ *
+ * `restrictionFailed` is set to `true` when the plan change was applied
+ * successfully but the downgrade restriction step (SPEC-167 T-013) threw.
+ * The plan change stays committed; the handler uses this flag to set
+ * `result.success=false` so SPEC-149's bootstrap Sentry capture fires.
+ * The restriction is idempotent — the next cron tick or a manual re-trigger
+ * of remediation will retry it. An over-cap-but-unrestricted host is the
+ * old status quo (revenue leak), not data corruption.
  */
 type ApplyOutcome =
-    | { kind: 'applied' }
+    | { kind: 'applied'; restrictionFailed?: boolean }
     | { kind: 'retry'; attemptCount: number; error: string }
     | { kind: 'failed'; attemptCount: number; error: string };
 
@@ -303,6 +314,9 @@ async function applyOne(
     }
 
     // STEP 3: addon recalc — best-effort.
+    // Note: restriction (step 3b) does NOT touch addons; addon recalc is
+    // independent and runs first so it always reflects the new plan's base limits
+    // regardless of which excess resources are subsequently restricted.
     try {
         await handlePlanChangeAddonRecalculation({
             customerId,
@@ -320,8 +334,100 @@ async function applyOne(
         });
     }
 
+    // STEP 3b: downgrade restriction (SPEC-167 T-013) — runs BEFORE cache clear
+    // so the cache is invalidated with the post-restriction state.
+    //
+    // Direction detection: `metadata.source === 'plan-change-downgrade'` is set
+    // by `scheduleSubscriptionDowngrade` (subscription-downgrade.service.ts).
+    // The QZPayScheduledPlanChange TypeScript type does not expose a `changeType`
+    // field; the cron's documented shape comment is aspirational — the actual
+    // runtime marker we rely on is the metadata source field. Scheduled upgrades
+    // do not go through this cron (upgrades are applied immediately via the
+    // webhook path which calls applyUpgradeRestorationsOrWarn), so a row without
+    // source='plan-change-downgrade' is treated as non-downgrade and skipped.
+    //
+    // Failure semantics: restriction failure must NOT roll back the applied plan
+    // change (the pre-stamp from step 0 already committed; the plan change is
+    // the source of truth). Instead, catch the error, log loudly, and signal
+    // restrictionFailed=true to the handler — the handler sets result.success=false
+    // so SPEC-149's bootstrap Sentry capture fires.
+    //
+    // Recovery path: applyDowngradeRestrictions is idempotent. The next cron tick
+    // or a manual invocation of the remediation service will retry and complete
+    // the restriction. An over-cap-but-unrestricted host is the old status quo
+    // (revenue leak), not data corruption.
+    const meta = scheduledPlanChange.metadata as Record<string, unknown> | undefined | null;
+    const isDowngrade = meta?.source === 'plan-change-downgrade';
+    let restrictionFailed = false;
+    if (isDowngrade) {
+        try {
+            // Resolve the userId (owner) from the billing customer ID.
+            const userId = await resolveOwnerUserId({ customerId });
+
+            if (userId) {
+                // Resolve the target plan slug from the plan ID so
+                // applyDowngradeRestrictions can look up limits.
+                let targetPlanSlug: string | null = null;
+                try {
+                    const plan = await billing.plans.get(newPlanId);
+                    targetPlanSlug = plan?.name ?? null;
+                } catch (slugErr) {
+                    logger.warn(
+                        'Scheduled plan change: could not resolve target plan slug for restriction',
+                        {
+                            subscriptionId,
+                            customerId,
+                            newPlanId,
+                            error: slugErr instanceof Error ? slugErr.message : String(slugErr)
+                        }
+                    );
+                }
+
+                if (targetPlanSlug) {
+                    // Read host's persisted keepSelections from the scheduled change
+                    // metadata. Returns undefined when absent → defaults apply in
+                    // applyDowngradeRestrictions (most-recently-updated sort).
+                    const keepSelections = getKeepSelectionsForChange(scheduledPlanChange);
+
+                    await applyDowngradeRestrictions({
+                        userId,
+                        customerId,
+                        targetPlanSlug,
+                        keepSelections
+                    });
+                } else {
+                    logger.warn(
+                        'Scheduled plan change: skipping restriction — target plan slug unresolvable',
+                        { subscriptionId, customerId, newPlanId }
+                    );
+                }
+            } else {
+                logger.warn(
+                    'Scheduled plan change: skipping restriction — could not resolve owner userId',
+                    { subscriptionId, customerId }
+                );
+            }
+        } catch (restrictionErr) {
+            // Log loudly so Sentry captures it via the logger integration.
+            logger.error(
+                'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied)',
+                {
+                    subscriptionId,
+                    customerId,
+                    newPlanId,
+                    error:
+                        restrictionErr instanceof Error
+                            ? restrictionErr.message
+                            : String(restrictionErr)
+                }
+            );
+            restrictionFailed = true;
+        }
+    }
+
     // STEP 4: clear entitlement cache so the next request sees the
-    // new plan's entitlements.
+    // new plan's entitlements. Runs AFTER restriction (step 3b) so the
+    // cache reflects the post-restriction state on first invalidation.
     clearEntitlementCache(customerId);
 
     // STEP 5: finalise — add resolvedAt and bump attemptCount.
@@ -356,9 +462,10 @@ async function applyOne(
         subscriptionId,
         customerId,
         oldPlanId: currentPlanId,
-        newPlanId
+        newPlanId,
+        restrictionFailed
     });
-    return { kind: 'applied' };
+    return { kind: 'applied', ...(restrictionFailed ? { restrictionFailed: true } : {}) };
 }
 
 /**
@@ -456,12 +563,20 @@ export const applyScheduledPlanChangesJob: CronJobDefinition = {
         let applied = 0;
         let retried = 0;
         let failed = 0;
+        // Tracks rows where the plan change applied cleanly but the downgrade
+        // restriction step (SPEC-167 T-013) failed. The plan change itself is
+        // committed; this count drives result.success=false so SPEC-149's
+        // bootstrap Sentry capture fires. The restriction is idempotent and
+        // can be retried on the next tick or via manual remediation.
+        let restrictionErrors = 0;
 
         for (const row of dueRows) {
             try {
                 const outcome = await applyOne(row, billing, logger);
-                if (outcome.kind === 'applied') applied += 1;
-                else if (outcome.kind === 'retry') retried += 1;
+                if (outcome.kind === 'applied') {
+                    applied += 1;
+                    if (outcome.restrictionFailed) restrictionErrors += 1;
+                } else if (outcome.kind === 'retry') retried += 1;
                 else failed += 1;
             } catch (unexpectedErr) {
                 // applyOne is wrapped internally for every failure
@@ -481,12 +596,12 @@ export const applyScheduledPlanChangesJob: CronJobDefinition = {
         }
 
         return {
-            success: failed === 0,
-            message: `Applied ${applied}, retried ${retried}, failed ${failed}`,
+            success: failed === 0 && restrictionErrors === 0,
+            message: `Applied ${applied}, retried ${retried}, failed ${failed}${restrictionErrors > 0 ? `, restrictionErrors ${restrictionErrors}` : ''}`,
             processed: applied + retried + failed,
-            errors: failed,
+            errors: failed + restrictionErrors,
             durationMs: Date.now() - startMs,
-            details: { applied, retried, failed, due: dueRows.length }
+            details: { applied, retried, failed, restrictionErrors, due: dueRows.length }
         };
     }
 };
