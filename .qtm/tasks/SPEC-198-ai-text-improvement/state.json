@@ -44,7 +44,7 @@
             "id": "T-002",
             "title": "Schema unit tests",
             "description": "Create packages/schemas/src/entities/ai/__tests__/ai-text-improve.schema.test.ts per spec §9.1. Cover: valid description/summary requests, optional locale, empty fieldValue rejected, >5000 chars description rejected, >300 chars summary rejected (incl. boundary 301 rejected, 300 accepted), unknown fieldType rejected, unknown keys rejected (strict mode), valid en/pt/es locale, unknown locale rejected. ENUM-RESILIENCE: assert toContain for members, NEVER toHaveLength.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
@@ -63,7 +63,18 @@
                 }
             ],
             "tags": ["test", "schema", "enum-resilience"],
-            "phase": "setup"
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass",
+                "coverage": "100%"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:40:00.000Z",
+                "completed": "2026-06-06T05:55:00.000Z"
+            }
         },
         {
             "id": "T-003",
