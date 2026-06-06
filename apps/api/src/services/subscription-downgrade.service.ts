@@ -19,6 +19,7 @@ import type {
     QZPayScheduledPlanChange,
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
+import { type KeepSelections, KeepSelectionsSchema } from '@repo/schemas';
 
 /**
  * Discriminated error codes surfaced by
@@ -67,6 +68,22 @@ export interface ScheduleSubscriptionDowngradeInput {
     readonly billing: QZPayBilling;
     /** Optional user id of the actor that requested the downgrade. */
     readonly requestedBy?: string;
+    /**
+     * Optional explicit host selection for which accommodations, promotions,
+     * and photos to keep active after the downgrade applies (SPEC-167 T-015).
+     *
+     * When provided, validated via {@link KeepSelectionsSchema} and persisted
+     * into `QZPayScheduledPlanChange.metadata.keepSelections` so the
+     * `apply-scheduled-plan-changes` cron can read it back at apply time.
+     *
+     * When absent (or when all sub-arrays are empty), the cron uses the
+     * default keep order: most-recently-updated / most-viewed items first.
+     *
+     * On `replacedPriorSchedule` (overwriting an existing pending downgrade):
+     * the NEW selections REPLACE the old ones entirely. There is no merge —
+     * the host's latest intent wins.
+     */
+    readonly keepSelections?: KeepSelections;
     /** Clock override for tests (otherwise `new Date()`). */
     readonly now?: Date;
 }
@@ -159,9 +176,25 @@ export async function scheduleSubscriptionDowngrade(
         billingInterval,
         intervalCount,
         billing,
-        requestedBy
+        requestedBy,
+        keepSelections: rawKeepSelections
     } = input;
     const now = input.now ?? new Date();
+
+    // Validate and normalise the optional keepSelections input.
+    // `safeParse` so a malformed caller payload doesn't crash the service —
+    // an invalid shape is treated as absent (logged at debug level) rather
+    // than blocking the schedule. The cron will fall back to the default
+    // keep order, which is the safe degradation.
+    let keepSelections: KeepSelections | undefined;
+    if (rawKeepSelections !== undefined) {
+        const parsed = KeepSelectionsSchema.safeParse(rawKeepSelections);
+        if (parsed.success) {
+            keepSelections = parsed.data;
+        }
+        // Invalid shapes: silently degrade — the host's schedule proceeds
+        // without a custom selection; the cron applies the default sort.
+    }
 
     const sub: QZPaySubscriptionWithHelpers | null =
         await billing.subscriptions.get(currentSubscriptionId);
@@ -273,7 +306,15 @@ export async function scheduleSubscriptionDowngrade(
         attemptCount: 0,
         metadata: {
             source: 'plan-change-downgrade',
-            previousPlanId: sub.planId
+            previousPlanId: sub.planId,
+            // keepSelections is serialised to a JSON string because
+            // QZPayMetadata's index signature restricts values to
+            // QZPayMetadataValue (scalar types — string | number | boolean).
+            // The read-back helper `getKeepSelectionsForChange` parses it
+            // back into a KeepSelections object.
+            ...(keepSelections !== undefined
+                ? { keepSelections: JSON.stringify(keepSelections) }
+                : {})
         }
     };
 
@@ -315,6 +356,63 @@ export async function clearPendingScheduledPlanChange(
     }
     await billing.subscriptions.update(subscriptionId, { scheduledPlanChange: null });
     return { cleared: true };
+}
+
+/**
+ * Extract the persisted `keepSelections` from a `QZPayScheduledPlanChange`
+ * metadata blob.
+ *
+ * Called by the `apply-scheduled-plan-changes` cron (T-013) when it applies
+ * a scheduled downgrade and needs to know which items the host explicitly
+ * selected to keep active.
+ *
+ * Returns `undefined` when:
+ *   - The scheduled change has no metadata.
+ *   - The metadata has no `keepSelections` key.
+ *   - The stored value fails schema validation (corrupt / schema-evolved data).
+ *
+ * The caller MUST treat `undefined` as "use the default keep order" — the
+ * cron's restriction step applies the most-recently-updated / most-viewed
+ * sort when no explicit selection is present.
+ *
+ * @param scheduledChange - The `QZPayScheduledPlanChange` object from the
+ *   subscription row (already fetched by the cron from the DB).
+ * @returns Parsed `KeepSelections` if present and valid, `undefined` otherwise.
+ *
+ * @example
+ * ```ts
+ * const selections = getKeepSelectionsForChange(row.scheduledPlanChange);
+ * if (selections?.accommodationIds?.length) {
+ *   // apply explicit keep list
+ * } else {
+ *   // apply default keep sort
+ * }
+ * ```
+ */
+export function getKeepSelectionsForChange(
+    scheduledChange: Pick<QZPayScheduledPlanChange, 'metadata'>
+): KeepSelections | undefined {
+    const meta = scheduledChange.metadata as Record<string, unknown> | undefined | null;
+    if (!meta || typeof meta !== 'object') {
+        return undefined;
+    }
+    const raw = meta.keepSelections;
+    if (raw === undefined || raw === null) {
+        return undefined;
+    }
+    // keepSelections is stored as a JSON string (QZPayMetadata restricts values
+    // to scalar types — see storage comment in scheduleSubscriptionDowngrade).
+    // Parse back to an object before schema validation.
+    let parsed: unknown = raw;
+    if (typeof raw === 'string') {
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            return undefined;
+        }
+    }
+    const result = KeepSelectionsSchema.safeParse(parsed);
+    return result.success ? result.data : undefined;
 }
 
 /**
