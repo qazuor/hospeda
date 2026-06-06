@@ -40,8 +40,10 @@ COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile
+# --concurrency=1: sequential package builds to cap memory peak on the 3.8 GB
+# Coolify VPS (see apps/admin/Dockerfile for the 2026-06-06 incident rationale).
 RUN echo "[build] Sentry release: ${HOSPEDA_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
-    pnpm turbo run build --filter=hospeda-api
+    pnpm turbo run build --filter=hospeda-api --concurrency=1
 # `pnpm deploy` resolves workspace deps as real packages and ships only prod
 # deps into a self-contained directory at /prod/api. This is the critical
 # layer that keeps the runner image small (avoids shipping playwright +
