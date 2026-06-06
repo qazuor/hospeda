@@ -15,7 +15,11 @@
             "subtasks": [],
             "tags": ["db", "migration", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": "2026-06-06T00:30:00.000Z",
@@ -33,7 +37,11 @@
             "subtasks": [],
             "tags": ["schemas", "zod"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": "2026-06-06T16:20:00.000Z",
@@ -51,7 +59,11 @@
             "subtasks": [],
             "tags": ["schemas", "zod", "media"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": "2026-06-06T16:28:00.000Z",
@@ -69,7 +81,11 @@
             "subtasks": [],
             "tags": ["api", "visibility", "enforcement"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": "2026-06-06T16:30:00.000Z",
@@ -87,7 +103,11 @@
             "subtasks": [],
             "tags": ["tests", "tdd"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -105,7 +125,11 @@
             "subtasks": [],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -123,7 +147,11 @@
             "subtasks": [],
             "tags": ["service", "primitives"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -141,7 +169,11 @@
             "subtasks": [],
             "tags": ["service", "primitives"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -159,7 +191,11 @@
             "subtasks": [],
             "tags": ["service", "primitives", "media"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -177,7 +213,11 @@
             "subtasks": [],
             "tags": ["revalidation", "service-core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -195,7 +235,11 @@
             "subtasks": [],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -213,7 +257,11 @@
             "subtasks": [],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -231,7 +279,11 @@
             "subtasks": [],
             "tags": ["cron", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -249,7 +301,11 @@
             "subtasks": [],
             "tags": ["admin", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -267,7 +323,11 @@
             "subtasks": [],
             "tags": ["schemas", "persistence"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -285,7 +345,11 @@
             "subtasks": [],
             "tags": ["api", "routes"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -303,7 +367,11 @@
             "subtasks": [],
             "tags": ["notifications", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -321,7 +389,11 @@
             "subtasks": [],
             "tags": ["revalidation", "bugfix"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -334,12 +406,16 @@
             "description": "New e2e in apps/api/test/e2e/flows/billing/ (closes the T-145-11 gap — no placeholder exists): over-cap host (3 accommodations/cap 1, active promos over cap, photos over cap) schedules downgrade → response carries preview → cron applies → accommodations planRestricted + promos restricted + photos archived → public list/detail exclude restricted → entitlement cache cleared. Use billing-factories + mp-stub harness (SPEC-143). Follow the plan-downgrade-cron.test.ts patterns.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-004", "T-013", "T-014", "T-016"],
+            "blockedBy": ["T-004", "T-013", "T-014", "T-016", "T-026"],
             "blocks": ["T-022"],
             "subtasks": [],
             "tags": ["e2e", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -357,7 +433,11 @@
             "subtasks": [],
             "tags": ["e2e", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -375,7 +455,11 @@
             "subtasks": [],
             "tags": ["tests", "pinning"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -393,7 +477,11 @@
             "subtasks": [],
             "tags": ["sweep", "quality"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -411,7 +499,11 @@
             "subtasks": [],
             "tags": ["review", "quality"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -429,7 +521,11 @@
             "subtasks": [],
             "tags": ["smoke", "docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
                 "started": null,
@@ -447,17 +543,43 @@
             "subtasks": [],
             "tags": ["pr", "closeout"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Fix getByDestination visibility gap (ownerSuspended + planRestricted)",
+            "description": "Absorbed pre-existing bug (owner approved 2026-06-06, found in T-004 audit): accommodation getByDestination uses raw findAll WITHOUT the ownerSuspended filter — suspended (and now plan-restricted) listings leak through destination pages. Fix: apply the same public visibility predicate (ownerSuspended=false AND planRestricted=false, with the same isOwnScope/VIP exemptions as search) to getByDestination in accommodation.service/model. Regression test reproducing the leak FIRST (bug-fix rule), then fix. Re-run the T-004 test files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["bugfix", "visibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
                 "started": null,
                 "completed": null
             }
         }
     ],
     "summary": {
-        "total": 25,
-        "pending": 25,
+        "total": 26,
+        "pending": 26,
         "inProgress": 0,
         "completed": 0,
         "blocked": 0,
