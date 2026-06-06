@@ -100,6 +100,9 @@
 .dialog {
     width: min(560px, calc(100vw - 32px));
     max-height: 90vh;
+    /* Restore native <dialog> centering — a global reset zeroes margins,
+       which would otherwise pin the dialog to the top-left corner. */
+    margin: auto;
     padding: 0;
     border: none;
     border-radius: var(--radius-card, 20px);
