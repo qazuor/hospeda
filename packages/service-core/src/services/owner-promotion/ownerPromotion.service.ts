@@ -131,7 +131,10 @@ export class OwnerPromotionService extends BaseCrudService<
         // leakage via query-param manipulation. Admin path (adminList ->
         // _executeAdminSearch) is unaffected and honors caller filters.
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        return this.model.findAll(filterParams, { page, pageSize });
+        // SPEC-167 T-004: plan-restricted promotions are excluded from all public
+        // reads. Restricted promotions are not "active" from the public perspective.
+        const publicFilter = { ...filterParams, planRestricted: false };
+        return this.model.findAll(publicFilter, { page, pageSize });
     }
 
     protected async _executeCount(
@@ -144,7 +147,12 @@ export class OwnerPromotionService extends BaseCrudService<
         // result set returned by _executeSearch. Force-override ensures count
         // and items never diverge even if a caller injects a lifecycleState.
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
-        const count = await this.model.count(filterParams);
+        // SPEC-167 T-004: plan-restricted promotions must NOT count toward the
+        // MAX_ACTIVE_PROMOTIONS cap. A restricted promo is not active — if it
+        // were counted, a host at cap could never create new ones even after
+        // re-upgrading, breaking the remediation math.
+        const publicFilter = { ...filterParams, planRestricted: false };
+        const count = await this.model.count(publicFilter);
         return { count };
     }
 }

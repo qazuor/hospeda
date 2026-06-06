@@ -1681,6 +1681,10 @@ export class AccommodationService extends BaseCrudService<
         // An owner listing their OWN accommodations (ownerId === self) still
         // sees their service-suspended listings; for everyone else (non-VIP)
         // suspended listings are hidden. Admins / VIP see all. (SPEC-143 #29)
+        //
+        // SPEC-167 T-004: plan-restricted accommodations follow the same owner
+        // visibility rule — owner always sees their own restricted items (so they
+        // can choose/restore); everyone else (non-VIP) has them hidden.
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.searchWithRelations({
@@ -1690,7 +1694,8 @@ export class AccommodationService extends BaseCrudService<
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1711,12 +1716,15 @@ export class AccommodationService extends BaseCrudService<
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         // Mirror _executeSearch so count and search agree on what is visible.
+        // SPEC-167 T-004: plan-restricted items are excluded from public counts
+        // but owners always see their own (isOwnScope mirrors ownerSuspended rule).
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.countByFilters({
             ...params,
             excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1772,12 +1780,15 @@ export class AccommodationService extends BaseCrudService<
                 const isOwnScope =
                     !!processedParams.ownerId && processedParams.ownerId === validatedActor.id;
 
+                // SPEC-167 T-004: plan-restricted accommodations are excluded from
+                // public reads, but owners always see their own restricted items.
                 const modelParams = {
                     ...processedParams,
                     page,
                     pageSize,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+                    excludePlanRestricted: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1836,7 +1847,10 @@ export class AccommodationService extends BaseCrudService<
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: top-rated list is always a public view (no
+                    // own-scope), so plan-restricted mirrors ownerSuspended exactly.
+                    excludePlanRestricted: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -2027,7 +2041,9 @@ export class AccommodationService extends BaseCrudService<
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: destination top-rated is always a public view.
+                    excludePlanRestricted: !hasVipAccess
                 });
 
                 const accommodations =

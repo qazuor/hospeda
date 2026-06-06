@@ -378,6 +378,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         params: AccommodationSearchInput & {
             excludeRestricted?: boolean;
             excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public counts. */
+            excludePlanRestricted?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ count: number }> {
@@ -405,6 +407,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeOwnerSuspended) {
             whereClauses.push(eq(accommodations.ownerSuspended, false));
+        }
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        // Mirrors excludeOwnerSuspended treatment (same layers, same query helper).
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -510,6 +517,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         params: AccommodationSearchInput & {
             excludeRestricted?: boolean;
             excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
+            excludePlanRestricted?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ items: Accommodation[]; total: number }> {
@@ -537,6 +546,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeOwnerSuspended) {
             whereClauses.push(eq(accommodations.ownerSuspended, false));
+        }
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -668,6 +681,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         params: AccommodationSearchInput & {
             excludeRestricted?: boolean;
             excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
+            excludePlanRestricted?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{
@@ -703,6 +718,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeOwnerSuspended) {
             whereClauses.push(eq(accommodations.ownerSuspended, false));
+        }
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -896,6 +915,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             onlyFeatured?: boolean;
             excludeRestricted?: boolean;
             excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public top-rated lists. */
+            excludePlanRestricted?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<Accommodation[]> {
@@ -906,7 +927,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             type,
             onlyFeatured = false,
             excludeRestricted = false,
-            excludeOwnerSuspended = false
+            excludeOwnerSuspended = false,
+            excludePlanRestricted = false
         } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
@@ -919,6 +941,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
                 if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
+                // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+                if (excludePlanRestricted) clauses.push(eq(fields.planRestricted, false));
                 return and(...clauses);
             },
             with: {

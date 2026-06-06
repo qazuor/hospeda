@@ -300,6 +300,61 @@ describe('Accommodation Permissions', () => {
         ).not.toThrow();
     });
 
+    // SPEC-167 T-004: plan-restricted accommodation visibility
+    it('checkCanView hides a plan-restricted accommodation as NOT_FOUND for the public', () => {
+        const restricted = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            planRestricted: true
+        };
+        try {
+            checkCanView(createActor([], 'someone-else'), restricted);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+            }
+        }
+    });
+
+    it('checkCanView lets the owner view their own plan-restricted accommodation', () => {
+        const restricted = {
+            ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
+            planRestricted: true
+        };
+        expect(() => checkCanView(createActor([], mockUserId), restricted)).not.toThrow();
+    });
+
+    it('checkCanView lets ACCOMMODATION_VIEW_ALL view a plan-restricted accommodation', () => {
+        const restricted = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            planRestricted: true
+        };
+        expect(() =>
+            checkCanView(
+                createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id'),
+                restricted
+            )
+        ).not.toThrow();
+    });
+
+    it('checkCanView returns NOT_FOUND (not FORBIDDEN) for plan-restricted to avoid leaking existence', () => {
+        const restricted = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            planRestricted: true
+        };
+        try {
+            checkCanView(createActor([]), restricted);
+            throw new Error('Should have thrown');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                expect(err.code).not.toBe(ServiceErrorCode.FORBIDDEN);
+            }
+        }
+    });
+
     it('checkCanList always allows', () => {
         expect(() => checkCanList(createActor([]))).not.toThrow();
     });
