@@ -101,6 +101,32 @@ describe('createAccommodationConsolidatedConfig — view-stat chips section (AC-
         // Assert
         expect(typeof chipsSection?.customRender).toBe('function');
     });
+
+    it('chips section should have a non-empty title (smoke — key returned by mockT)', () => {
+        // Arrange
+        const config = createAccommodationConsolidatedConfig(
+            mockT,
+            mockAccommodationTypeOptions,
+            ENTITY_ID
+        );
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert — mockT returns the key string; production t() returns the translation
+        expect(chipsSection?.title).toBeTruthy();
+    });
+
+    it('chips section should have defaultCollapsed: false so it opens even after anchor reordering (AC-17)', () => {
+        // Arrange
+        const config = createAccommodationConsolidatedConfig(
+            mockT,
+            mockAccommodationTypeOptions,
+            ENTITY_ID
+        );
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert
+        expect(chipsSection?.defaultCollapsed).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -154,6 +180,24 @@ describe('createPostConsolidatedConfig — view-stat chips section (AC-22)', () 
         // Assert
         expect(typeof chipsSection?.customRender).toBe('function');
     });
+
+    it('chips section for post should have a non-empty title', () => {
+        // Arrange
+        const config = createPostConsolidatedConfig(mockT, ENTITY_ID);
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert
+        expect(chipsSection?.title).toBeTruthy();
+    });
+
+    it('chips section for post should have defaultCollapsed: false (AC-17)', () => {
+        // Arrange
+        const config = createPostConsolidatedConfig(mockT, ENTITY_ID);
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert
+        expect(chipsSection?.defaultCollapsed).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -206,5 +250,23 @@ describe('createEventConsolidatedConfig — view-stat chips section (AC-22)', ()
 
         // Assert
         expect(typeof chipsSection?.customRender).toBe('function');
+    });
+
+    it('chips section for event should have a non-empty title', () => {
+        // Arrange
+        const config = createEventConsolidatedConfig(mockT, ENTITY_ID);
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert
+        expect(chipsSection?.title).toBeTruthy();
+    });
+
+    it('chips section for event should have defaultCollapsed: false (AC-17)', () => {
+        // Arrange
+        const config = createEventConsolidatedConfig(mockT, ENTITY_ID);
+        const chipsSection = config.sections.find((s) => s.id === 'view-stat-chips');
+
+        // Assert
+        expect(chipsSection?.defaultCollapsed).toBe(false);
     });
 });

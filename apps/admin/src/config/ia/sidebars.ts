@@ -884,6 +884,14 @@ const analisisSidebar: SidebarInput = {
             route: '/analytics/business',
             permissions: ['ANALYTICS_VIEW']
         },
+        {
+            type: 'link',
+            id: 'analytics-views',
+            label: { es: 'Vistas', en: 'Views', pt: 'Visualizações' },
+            icon: 'EyeIcon',
+            route: '/analytics/views',
+            permissions: ['ANALYTICS_VIEW']
+        },
         { type: 'separator', id: 'sep-debug' },
         // ── Debug — SUPER_ADMIN only (onMissing: 'hide') ─────────────────
         {

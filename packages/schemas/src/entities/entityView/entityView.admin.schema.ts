@@ -73,6 +73,21 @@ export const AdminViewSummaryResponseSchema = z.object({
 /** TypeScript type for the summary response, inferred from {@link AdminViewSummaryResponseSchema}. */
 export type AdminViewSummaryResponse = z.infer<typeof AdminViewSummaryResponseSchema>;
 
+/**
+ * Bare array schema for `GET /api/v1/admin/views/summary` handler return value.
+ *
+ * The route handler returns this array directly; the response middleware wraps it
+ * into the `{ success, data }` envelope. Use this schema as `responseSchema` in
+ * `createAdminRoute` so `createResponse()` receives the payload — not a
+ * pre-wrapped object — and produces the correct single-level envelope.
+ *
+ * @see AdminViewSummaryItemSchema for the per-item shape.
+ */
+export const AdminViewSummaryListSchema = z.array(AdminViewSummaryItemSchema);
+
+/** TypeScript type for the bare summary array, inferred from {@link AdminViewSummaryListSchema}. */
+export type AdminViewSummaryList = z.infer<typeof AdminViewSummaryListSchema>;
+
 // ============================================================================
 // BATCH QUERY
 // ============================================================================
@@ -226,3 +241,17 @@ export const AdminViewDailySeriesResponseSchema = z.object({
 
 /** TypeScript type for the daily series response, inferred from {@link AdminViewDailySeriesResponseSchema}. */
 export type AdminViewDailySeriesResponse = z.infer<typeof AdminViewDailySeriesResponseSchema>;
+
+/**
+ * Bare array schema for `GET /api/v1/admin/views/daily-series` handler return value.
+ *
+ * Same rationale as {@link AdminViewSummaryListSchema}: the handler returns this
+ * array directly so `createResponse()` wraps it once into the `{ success, data }`
+ * envelope. Always 90 rows (3 entity types × 30 days, gap-filled).
+ *
+ * @see AdminViewDailySeriesItemSchema for the per-item shape.
+ */
+export const AdminViewDailySeriesListSchema = z.array(AdminViewDailySeriesItemSchema);
+
+/** TypeScript type for the bare daily-series array, inferred from {@link AdminViewDailySeriesListSchema}. */
+export type AdminViewDailySeriesList = z.infer<typeof AdminViewDailySeriesListSchema>;

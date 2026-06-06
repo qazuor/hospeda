@@ -220,9 +220,6 @@ export function EntityViewStatChips({ entityId, entityType }: EntityViewStatChip
             aria-label={t('admin-entities.detail.viewStats.sectionTitle' as TranslationKey)}
             className="space-y-2"
         >
-            <h3 className="font-medium text-muted-foreground text-sm">
-                {t('admin-entities.detail.viewStats.sectionTitle' as TranslationKey)}
-            </h3>
             <ChipGroup stats={stats} />
         </section>
     );

@@ -41,3 +41,25 @@
 - i18n keys `common.window.{7d,30d,ariaLabel}` es/en/pt; `packages/i18n/src/types.ts`
   regenerated via `pnpm --filter @repo/i18n generate-types` (required for new keys).
 - Admin test setup mocks `useTranslations` as `t: (key) => key` — tests assert raw keys.
+
+## 2026-06-05/06 — Core through closeout (21/21)
+
+- **Core + routes (T-004..T-011)**: 3 EntityViewModel methods, 6 admin Zod schemas,
+  4 EntityViewService admin methods (ANALYTICS_VIEW gate, lazy getter preserved),
+  4 /admin/views/* routes via createAdminRoute + gate-matrix rows.
+- **Frontend (T-013..T-019)**: new `views` widget type (ViewsWidget) filling the 3
+  SPEC-159 deferred slots + admin-card-views; EntityViewStatChips via customRender
+  SectionConfig; "Vistas (30d)" derived column ×3 (self-gated); /analytics/views page
+  with requireAnalyticsViewAccess guard.
+- **T-020 gate**: build 18/18, typecheck 36/36, ~18.9k tests green, CI guards green.
+- **Impl PR #1472 merged** (pre-PR review caught UTC-window blocker + 4 majors, fixed
+  with regression tests before opening).
+- **T-021 real-DB + Chrome smoke** (4 roles: SUPER_ADMIN/ADMIN/EDITOR/HOST) found 4
+  more issues → **PR #1473**: response envelope double-wrap on all 7 views routes,
+  leftover SPEC-159 deferredSlot (editor card A), chips section raw-id title +
+  collapsed default, missing analytics-views entry in `analisisSidebar` (sidebars.ts
+  is the real menu source, not menu.ts).
+- **Flags for owner**: locked state unreachable (billing defaults grant
+  view_basic_stats with plan:null); editor dashboard legacy links 404
+  (/contenido/posts, /catalogo/eventos); "ERRORES %" display bug in system status
+  card; flaky addon-limit-recalculation timeouts in CI (engram: ci/flaky-addon-limit-recalculation-timeouts).

@@ -499,15 +499,7 @@ const editorDashboard: DashboardInput = {
                 emptyDescription:
                     'Cuando publiques tu primer post, va a aparecer acá con sus métricas.',
                 errorText: 'No pudimos cargar las publicaciones',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        label: 'Vistas',
-                        description:
-                            'Vistas totales por post — disponible cuando se implemente el tracking de vistas (SPEC-159).'
-                    }
-                ]
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 

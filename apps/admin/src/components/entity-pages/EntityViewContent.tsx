@@ -144,9 +144,13 @@ export const EntityViewContent = ({
         );
     }
 
-    // 2. First section is open by default; rest are collapsed
-    const defaultOpenIds =
-        orderedSections.length > 0 && orderedSections[0] ? [orderedSections[0].id] : [];
+    // 2. Build open-by-default set:
+    //    - First section in the list starts open (original behaviour).
+    //    - Any section with `defaultCollapsed: false` explicitly set also starts
+    //      open, regardless of its position after anchor reordering (AC-17 fix).
+    const defaultOpenIds = orderedSections
+        .filter((s, i) => i === 0 || s.defaultCollapsed === false)
+        .map((s) => s.id);
 
     return (
         <div className={`space-y-3 ${className ?? ''}`}>
@@ -158,6 +162,10 @@ export const EntityViewContent = ({
                         customFn: sectionSummarizers?.[section.id]
                     });
 
+                    // A section is collapsed by default unless it is the first
+                    // section OR it explicitly opts in via `defaultCollapsed: false`.
+                    const isDefaultCollapsed = index !== 0 && section.defaultCollapsed !== false;
+
                     return (
                         <SectionAccordionItem
                             key={section.id || `section-${index}`}
@@ -166,7 +174,7 @@ export const EntityViewContent = ({
                             icon={section.icon}
                             badge={section.badge}
                             collapsedSummary={collapsedSummary}
-                            defaultCollapsed={index !== 0}
+                            defaultCollapsed={isDefaultCollapsed}
                         >
                             {buildSectionBody(section, index)}
                         </SectionAccordionItem>

@@ -17,7 +17,7 @@
  */
 
 import {
-    AdminViewSummaryResponseSchema,
+    AdminViewSummaryListSchema,
     EntityViewWindowSchema,
     PermissionEnum,
     type ServiceErrorCode
@@ -46,7 +46,7 @@ export const adminViewSummaryRoute = createAdminRoute({
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },
-    responseSchema: AdminViewSummaryResponseSchema,
+    responseSchema: AdminViewSummaryListSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
@@ -60,6 +60,6 @@ export const adminViewSummaryRoute = createAdminRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     }
 });

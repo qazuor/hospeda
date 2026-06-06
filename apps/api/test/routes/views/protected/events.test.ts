@@ -169,7 +169,7 @@ describe('eventViewStatsRoute handler — SPEC-159 T-010', () => {
     // -----------------------------------------------------------------------
 
     describe('on service success', () => {
-        it('returns { data: EntityViewStats[] } for valid entityIds and 30d window', async () => {
+        it('returns EntityViewStats[] directly for valid entityIds and 30d window', async () => {
             // Arrange
             mockGetStatsForEditorEntities.mockResolvedValue({
                 data: SAMPLE_STATS,
@@ -188,10 +188,10 @@ describe('eventViewStatsRoute handler — SPEC-159 T-010', () => {
                     window: '30d',
                     entityIds: SAMPLE_EVENT_IDS
                 }
-            )) as { data: typeof SAMPLE_STATS };
+            )) as typeof SAMPLE_STATS;
 
-            // Assert
-            expect(result.data).toEqual(SAMPLE_STATS);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result).toEqual(SAMPLE_STATS);
         });
 
         it('returns stats for the 7d window', async () => {
@@ -214,10 +214,10 @@ describe('eventViewStatsRoute handler — SPEC-159 T-010', () => {
                     window: '7d',
                     entityIds: SAMPLE_EVENT_IDS
                 }
-            )) as { data: typeof shortWindowStats };
+            )) as typeof shortWindowStats;
 
-            // Assert
-            expect(result.data).toEqual(shortWindowStats);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result).toEqual(shortWindowStats);
         });
 
         it('zero-view entries returned for IDs absent from the DB window', async () => {
@@ -243,10 +243,10 @@ describe('eventViewStatsRoute handler — SPEC-159 T-010', () => {
                     window: '30d',
                     entityIds: SAMPLE_EVENT_IDS
                 }
-            )) as { data: typeof zeroedStats };
+            )) as typeof zeroedStats;
 
-            // Assert
-            expect(result.data.every((s) => s.unique === 0 && s.total === 0)).toBe(true);
+            // Assert — handler returns the bare array; createResponse wraps it once
+            expect(result.every((s) => s.unique === 0 && s.total === 0)).toBe(true);
         });
     });
 

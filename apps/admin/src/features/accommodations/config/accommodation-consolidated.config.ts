@@ -22,13 +22,22 @@ import { createStatisticsConsolidatedSection } from './sections/statistics.conso
  * fields. It is view-mode only and positioned before the main content sections.
  * The component itself guards the fetch on `ANALYTICS_VIEW` permission.
  *
+ * `defaultCollapsed: false` ensures the accordion opens this section by default
+ * regardless of its position after permission-based anchor reordering (AC-17).
+ *
+ * @param t - Translation function from `useTranslations()`.
  * @param entityId - UUID of the accommodation being viewed.
  */
-const createViewStatChipsSection = (entityId: string): ConsolidatedSectionConfig => ({
+const createViewStatChipsSection = (
+    t: ReturnType<typeof useTranslations>['t'],
+    entityId: string
+): ConsolidatedSectionConfig => ({
     id: 'view-stat-chips',
+    title: t('admin-entities.detail.viewStats.sectionTitle' as Parameters<typeof t>[0]),
     layout: LayoutTypeEnum.GRID,
     modes: ['view'],
     fields: [],
+    defaultCollapsed: false,
     customRender: () =>
         createElement(EntityViewStatChips, {
             entityId,
@@ -50,7 +59,7 @@ export const createAccommodationConsolidatedConfig = (
     entityId?: string
 ): ConsolidatedEntityConfig => {
     const sections = [
-        ...(entityId ? [createViewStatChipsSection(entityId)] : []),
+        ...(entityId ? [createViewStatChipsSection(t, entityId)] : []),
         createBasicInfoConsolidatedSection(t, accommodationTypeOptions),
         createContactInfoConsolidatedSection(t),
         createLocationInfoConsolidatedSection(t),

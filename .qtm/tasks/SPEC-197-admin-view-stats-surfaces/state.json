@@ -736,43 +736,43 @@
             "id": "T-021",
             "title": "Real-DB smoke of all four admin endpoints",
             "description": "Per spec §6.6: pnpm db:fresh-dev, fire 10-20 view beacons via POST /api/v1/public/views (mixed entity types/ids), then verify GET /admin/views/summary?window=30d non-zero and matching, GET /admin/views/daily-series today's row non-zero, GET /admin/views/top?entityType=ACCOMMODATION&limit=10 ranked order correct. Validates SQL semantics (uniqueness, 30-min dedup window) that unit tests mock out. Sign-off noted in PR description.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Seed DB + fire beacons",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify summary/daily-series/top against expectations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sign-off in PR description",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "smoke", "real-db"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-05T19:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T05:00:00.000Z",
+                "completed": "2026-06-06T06:40:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 21,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.2
     }

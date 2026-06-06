@@ -20,7 +20,7 @@
 
 import {
     AdminViewBatchQuerySchema,
-    EntityViewStatsListResponseSchema,
+    EntityViewStatsListSchema,
     PermissionEnum,
     type ServiceErrorCode
 } from '@repo/schemas';
@@ -47,7 +47,7 @@ export const adminViewBatchRoute = createAdminRoute({
     tags: ['Views'],
     requiredPermissions: [PermissionEnum.ANALYTICS_VIEW],
     requestQuery: AdminViewBatchQuerySchema.shape,
-    responseSchema: EntityViewStatsListResponseSchema,
+    responseSchema: EntityViewStatsListSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         // AdminViewBatchQuerySchema transforms the comma-separated entityIds string
@@ -71,6 +71,6 @@ export const adminViewBatchRoute = createAdminRoute({
             throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
         }
 
-        return { data: result.data };
+        return result.data;
     }
 });
