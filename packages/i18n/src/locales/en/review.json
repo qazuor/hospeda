@@ -38,7 +38,8 @@
         },
         "destination": {
             "pendingNotice": "Your review is pending approval and will be visible once it has been checked.",
-            "alreadyReviewed": "You have already submitted a review for this destination."
+            "alreadyReviewed": "You have already submitted a review for this destination.",
+            "categoryHint": "Rate each category, or expand it to fine-tune each aspect."
         }
     },
     "locked": {

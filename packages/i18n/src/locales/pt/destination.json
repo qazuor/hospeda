@@ -212,6 +212,13 @@
             "greenSpaces": "Áreas verdes",
             "localEvents": "Eventos locais",
             "weatherSatisfaction": "Satisfação climática"
+        },
+        "categories": {
+            "nature": "Natureza e paisagem",
+            "cultureAttractions": "Atrações e cultura",
+            "foodShopping": "Gastronomia e compras",
+            "services": "Serviços e infraestrutura",
+            "experienceSafety": "Experiência e segurança"
         }
     }
 }

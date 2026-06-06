@@ -38,7 +38,8 @@
         },
         "destination": {
             "pendingNotice": "Sua avaliação está pendente de aprovação e ficará visível após a revisão.",
-            "alreadyReviewed": "Você já enviou uma avaliação para este destino."
+            "alreadyReviewed": "Você já enviou uma avaliação para este destino.",
+            "categoryHint": "Avalie cada categoria ou expanda para ajustar cada aspecto."
         }
     },
     "locked": {
