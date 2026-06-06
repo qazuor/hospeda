@@ -299,5 +299,28 @@
         "done": "Concluído",
         "replay": "Ver guia",
         "replayPage": "Ver guia desta página"
+    },
+    "aiTextImprove": {
+        "trigger": "Melhorar com IA",
+        "triggerTooltip": "Obter uma sugestão de melhoria com inteligência artificial",
+        "upgradeTooltip": "Seu plano não inclui melhoria de texto com IA. Atualize seu plano para ter acesso.",
+        "panelLabel": "Sugestão de IA",
+        "loading": "Gerando sugestão...",
+        "accept": "Aceitar",
+        "discard": "Descartar",
+        "dismiss": "Fechar",
+        "error": {
+            "VALIDATION_ERROR": "Solicitação inválida. Por favor recarregue a página e tente novamente.",
+            "ENTITLEMENT_REQUIRED": "Seu plano não inclui melhoria de texto com IA. Atualize seu plano para ter acesso.",
+            "LIMIT_REACHED": "Limite mensal de melhorias com IA atingido. Atualize seu plano ou aguarde o próximo mês.",
+            "MODERATION_BLOCKED": "Violação da política de conteúdo — seu texto original não foi modificado.",
+            "RATE_LIMIT_EXCEEDED": "Muitas solicitações. Aguarde um momento e tente novamente.",
+            "ENGINE_EXHAUSTED": "Provedores de IA temporariamente indisponíveis. Tente mais tarde.",
+            "FEATURE_DISABLED": "A melhoria de texto com IA está temporariamente desativada.",
+            "CEILING_HIT": "Limite de custo de IA atingido. Tente mais tarde.",
+            "SERVICE_UNAVAILABLE": "Serviço temporariamente indisponível. Tente mais tarde.",
+            "INTERNAL_ERROR": "Ocorreu um erro inesperado. Seu texto original não foi modificado.",
+            "default": "Erro ao gerar sugestão. Seu texto original não foi modificado."
+        }
     }
 }
