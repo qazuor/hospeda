@@ -294,7 +294,7 @@
             "id": "T-014",
             "title": "Wire restriction + restoration into admin change-plan hook",
             "description": "Realign D-1: apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts onAfterSubscriptionChangePlan (~line 349) \u2014 admin plan changes are IMMEDIATE. Compare old vs new plan: downgrade \u2192 applyDowngradeRestrictions synchronously (no selections \u2014 default keep policy); upgrade \u2192 applyUpgradeRestorations. Keep existing audit-log + clearEntitlementCache untouched. Unit tests: both directions, same-plan no-op, restriction error does not break the admin response (log + Sentry, hook contract preserved \u2014 check how other hooks handle errors).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012"],
             "blocks": ["T-019"],
@@ -302,14 +302,14 @@
             "tags": ["admin", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T19:17:00.000Z",
+                "completed": "2026-06-06T19:24:00.000Z"
             }
         },
         {
