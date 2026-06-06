@@ -206,7 +206,7 @@
             "id": "T-010",
             "title": "Add targeted batch revalidation helper",
             "description": "Realign B-2: packages/service-core/src/revalidation/revalidation.service.ts has scheduleRevalidation (per-entity, debounced) and revalidateByEntityType (ALL of a type — too broad). Add scheduleRevalidationBatch({ events }) for a targeted id list (loop with debounce reuse is fine; keep fire-and-forget semantics). Unit tests: N events scheduled, debounce key per entity preserved.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-011", "T-018"],
@@ -214,14 +214,14 @@
             "tags": ["revalidation", "service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:53:00.000Z",
+                "completed": "2026-06-06T18:00:00.000Z"
             }
         },
         {
