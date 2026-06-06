@@ -225,12 +225,13 @@
             "specId": "SPEC-202",
             "title": "Destination Review Submission Flow (web) + API contract/security fix",
             "status": "in-progress",
-            "progress": "17/18",
+            "progress": "18/18",
             "path": "SPEC-202-destination-review-submission",
             "branch": "spec/SPEC-202-destination-review-submission",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-202-destination-review-submission",
             "base": "staging",
-            "archived": false
+            "archived": false,
+            "updatedAt": "2026-06-06T17:03:21Z"
         }
     ],
     "standalone": {

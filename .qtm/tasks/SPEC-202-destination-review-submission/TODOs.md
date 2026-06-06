@@ -1,6 +1,6 @@
 # TODOs: Destination Review Submission Flow (web) + API contract/security fix
 
-Spec: SPEC-202 | Status: in-progress | Progress: 17/18
+Spec: SPEC-202 | Status: in-progress | Progress: 18/18
 
 ## Setup
 
@@ -33,4 +33,4 @@ Spec: SPEC-202 | Status: in-progress | Progress: 17/18
 ## Docs
 
 - [x] T-017: Verify endpoint-gate-matrix row for destination review create (complexity: 1) [blocked by T-007]
-- [ ] T-018: Local e2e verification (manual smoke) (complexity: 3) [blocked by T-002, T-011, T-014]
+- [x] T-018: Local e2e verification (manual smoke) (complexity: 3) [blocked by T-002, T-011, T-014]
