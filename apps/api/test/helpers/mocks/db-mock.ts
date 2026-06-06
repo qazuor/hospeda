@@ -437,6 +437,28 @@ export function createDbMock() {
             }
         },
 
+        // Accommodation table stubs (SPEC-167 T-007: plan-restriction.service imports
+        // accommodations.id / accommodations.deletedAt for inArray/isNull WHERE clauses)
+        accommodations: {
+            id: 'id',
+            ownerId: 'owner_id',
+            planRestricted: 'plan_restricted',
+            ownerSuspended: 'owner_suspended',
+            deletedAt: 'deleted_at',
+            updatedAt: 'updated_at'
+        },
+
+        // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
+        // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
+        ownerPromotions: {
+            id: 'id',
+            ownerId: 'owner_id',
+            planRestricted: 'plan_restricted',
+            lifecycleState: 'lifecycle_state',
+            deletedAt: 'deleted_at',
+            updatedAt: 'updated_at'
+        },
+
         // Billing schema stubs
         billingAddonPurchases: billingAddonPurchasesCols,
         billingNotificationLogs: billingNotificationLogsCols,
