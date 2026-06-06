@@ -129,6 +129,37 @@ export const startCronScheduler = async (): Promise<void> => {
                         finishedAt: new Date(),
                         result
                     });
+
+                    // Soft-failure: job completed but reported errors — capture once
+                    // per run so silent partial failures are visible in Sentry.
+                    // Use level=warning (not error) to distinguish from thrown
+                    // exceptions. No PII in details; errors count is safe.
+                    if (!result.success) {
+                        Sentry.captureException(
+                            new Error(
+                                `[cron] soft-failure: ${job.name} — ${result.errors} error(s)`
+                            ),
+                            {
+                                level: 'warning',
+                                tags: {
+                                    module: 'cron',
+                                    job_name: job.name,
+                                    ...(job.name === 'dunning'
+                                        ? { event_type: 'dunning_failure' }
+                                        : { event_type: 'cron_soft_failure' })
+                                },
+                                contexts: {
+                                    cron: {
+                                        jobName: job.name,
+                                        schedule: job.schedule,
+                                        durationMs: Date.now() - startTime,
+                                        errors: result.errors,
+                                        processed: result.processed
+                                    }
+                                }
+                            }
+                        );
+                    }
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
                     apiLogger.error({

@@ -33,7 +33,10 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
     [ServiceErrorCode.QUOTA_EXCEEDED]: 429,
     [ServiceErrorCode.LIMIT_REACHED]: 403,
-    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403
+    [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403,
+    [ServiceErrorCode.PROVIDER_ERROR]: 502,
+    [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
+    [ServiceErrorCode.PROVIDER_TIMEOUT]: 504
 };
 
 /**
@@ -362,6 +365,22 @@ export const createErrorHandler = () => {
 
         // Add response headers (includes preserved CORS headers)
         const headers = addResponseHeaders(c);
+
+        // Emit Retry-After for rate-limited provider responses (SPEC-149 Part B).
+        // The helper sets retryAfter in ServiceError.details when MP returns 429.
+        // Clients must honour this header and back off before retrying — there is
+        // no server-side automatic retry (idempotency cache has no in-flight lock).
+        if (
+            errorCode === ServiceErrorCode.PROVIDER_RATE_LIMITED &&
+            errorDetails !== null &&
+            typeof errorDetails === 'object' &&
+            'retryAfter' in (errorDetails as Record<string, unknown>) &&
+            typeof (errorDetails as Record<string, unknown>).retryAfter === 'number'
+        ) {
+            headers['Retry-After'] = String(
+                (errorDetails as Record<string, unknown>).retryAfter as number
+            );
+        }
 
         return c.json(formattedError, statusCode as ContentfulStatusCode, headers);
     };

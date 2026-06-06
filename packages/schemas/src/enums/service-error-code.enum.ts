@@ -37,5 +37,23 @@ export enum ServiceErrorCode {
      * Used by the API-layer entitlement enforcement middlewares (`gate*`) when the
      * user's current plan does not include the entitlement required by the action.
      */
-    ENTITLEMENT_REQUIRED = 'ENTITLEMENT_REQUIRED'
+    ENTITLEMENT_REQUIRED = 'ENTITLEMENT_REQUIRED',
+    /**
+     * Upstream payment-provider returned an unexpected error response.
+     * Maps to HTTP 502 Bad Gateway. The `details` field may carry a `retryAfter`
+     * hint (seconds) when the provider includes one in its error response.
+     */
+    PROVIDER_ERROR = 'PROVIDER_ERROR',
+    /**
+     * Upstream payment-provider is throttling requests (rate-limit hit on our
+     * side against the provider). Maps to HTTP 503 Service Unavailable. The
+     * `details` field may carry a `retryAfter` hint (seconds).
+     */
+    PROVIDER_RATE_LIMITED = 'PROVIDER_RATE_LIMITED',
+    /**
+     * Upstream payment-provider did not respond within the configured timeout.
+     * Maps to HTTP 504 Gateway Timeout. The `details` field may carry a
+     * `retryAfter` hint (seconds) for client-side back-off.
+     */
+    PROVIDER_TIMEOUT = 'PROVIDER_TIMEOUT'
 }

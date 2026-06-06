@@ -339,3 +339,19 @@ export const createAdminListRoute = (options: AdminListRouteOptions) => {
         }
     });
 };
+
+// ============================================================================
+// Streaming Route Factory (SSE) — re-exported here for discoverability
+// ============================================================================
+
+export {
+    createProtectedStreamingRoute,
+    createStreamingRoute
+} from './streaming-route-factory';
+export type {
+    ProtectedStreamingRouteOptions,
+    StreamHandlerContext,
+    StreamHandlerResult,
+    StreamTextChunk,
+    StreamingRouteOptions
+} from './streaming-route-factory';

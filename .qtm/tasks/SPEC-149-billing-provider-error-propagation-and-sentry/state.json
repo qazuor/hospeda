@@ -1,0 +1,462 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-149",
+    "title": "Billing provider error propagation + Sentry context + retry policy",
+    "created": "2026-06-05T18:20:47Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add provider ServiceErrorCodes to @repo/schemas",
+            "description": "Spec Part B mechanism. Add ServiceErrorCode.PROVIDER_ERROR (→502), PROVIDER_RATE_LIMITED (→503), PROVIDER_TIMEOUT (→504) to packages/schemas/src/enums/service-error-code.enum.ts AND the ERROR_CODE_TO_HTTP map the global handler uses (find it — response.ts or schemas). Unit tests for the new mappings. WARNING (SPEC-145 lesson): adding enum members can break exhaustive Records and enumerated vi.mock factories — grep consumers of ServiceErrorCode for exhaustive maps before committing; the T-012 sweep re-checks.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Enum + HTTP map + tests",
+                    "completed": true
+                },
+                {
+                    "title": "Exhaustive-consumer grep",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "foundation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:23:12Z",
+                "completed": "2026-06-05T18:29:08Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Build billing-provider-error helper (detect + map + Retry-After)",
+            "description": "Spec Part B. New apps/api/src/lib/billing-provider-error.ts: isBillingProviderError (instanceof QZPayProviderSyncError from @qazuor/qzpay-core), MP-status extraction from err.cause (verify the real MP SDK error shape AND the mp-stub error shape — both must be detected), mapping per spec table (422→422, 429→503+Retry-After, 408/504→504, 5xx/other-4xx/malformed→502) throwing ServiceError with the new codes + safe details (say 'payment provider', never 'MercadoPago'). Resolve the Retry-After mechanism (global handler header support vs route-site). Exhaustive unit tests (every mapping row + non-provider errors pass through untouched).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005", "T-006", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Detection + cause-status extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Mapping + ServiceError + Retry-After",
+                    "completed": true
+                },
+                {
+                    "title": "Exhaustive unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["helper", "error-mapping"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:29:08Z",
+                "completed": "2026-06-05T19:04:02Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Explicit throw strategy + extended BillingContext",
+            "description": "Spec Part A decision + Part C prerequisite. (a) apps/api/src/middlewares/billing.ts (~:95-100): set providerSyncErrorStrategy: 'throw' explicitly (prod unchanged — already throw via livemode default; dev/sandbox flips to match; update the config JSDoc). (b) apps/api/src/lib/sentry.ts: extend BillingContext (or add providerError sub-object) with operation/mpStatus/mpCode for captureBillingError (:218). Tests: billing middleware config assertion + a captureBillingError call-shape test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Explicit strategy + JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "BillingContext extension",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "sentry"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:29:08Z",
+                "completed": "2026-06-05T19:04:02Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Wire mapping + Sentry into start-paid (monthly + annual)",
+            "description": "Spec Parts B+C. In start-paid.ts / subscription-checkout.service.ts catches: detect provider errors via the T-002 helper → throw the mapped ServiceError + captureBillingError with operation/customer/plan/mpStatus tags. Red-first: unit tests asserting MP 429 → 503 (+Retry-After), 422→422, timeout→504, 500→502, and the Sentry call. The mapped path must preserve the existing non-provider error handling (mapServiceErrorToHttp at start-paid.ts:155-179) untouched. [T-003 note: 3 pre-existing failures reported in monthly/annual checkout e2e (entitlement catalog gap, webhook activation flakiness) claimed UNRELATED — verify before trusting; mp-error-handling 24/24 green post-flip.]",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Monthly + annual wiring",
+                    "completed": true
+                },
+                {
+                    "title": "Red-first mapping tests + Sentry assertions",
+                    "completed": true
+                }
+            ],
+            "tags": ["start-paid", "wiring"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T19:15:00Z",
+                "completed": "2026-06-05T20:23:00Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wire mapping + Sentry into addon purchase path",
+            "description": "Spec Part C realign note (c): createAddonCheckout (apps/api/src/services/addon.checkout.ts) has NO try/catch around billing.checkout.create — provider errors escape raw to global 500. Add the catch: provider error → mapped ServiceError (the route layer must let it propagate — check how the addon route consumes ServiceResult vs thrown errors and keep the contract coherent) + captureBillingError. Mind the SPEC-127 polling schedule (scheduleAddonCheckoutPolling runs only on success — verify ordering unaffected). Tests in addon.checkout.test.ts (39 tests green baseline).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Catch + map + capture in addon checkout",
+                    "completed": true
+                },
+                {
+                    "title": "Route contract coherence + tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["addons", "wiring"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T20:30:00Z",
+                "completed": "2026-06-05T21:10:00Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire mapping + Sentry into plan-change path",
+            "description": "Spec Parts B+C. Same treatment for the plan-change flow (routes/billing/plan-change.ts + subscription-downgrade/upgrade services — find where provider calls can throw). Tests per the established pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Wiring + tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["plan-change", "wiring"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T21:15:00Z",
+                "completed": "2026-06-05T21:55:00Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Webhook handlers mark failed on transient errors (absorbed fix)",
+            "description": "Spec webhook ownership (a) — orphaned between 194/149, now owned here. payment-handler.ts (catch :145-155, markEventProcessedByProviderId :157 outside the catch) and subscription-payment-handler.ts (catch :314, safeMarkProcessed :326): on TRANSIENT errors (DB timeout, lock failure — define the transient classification, reuse/extend any existing one) re-throw or explicitly mark the event failed so it joins the dead-letter queue (READ how handleWebhookError marks failures — reuse that path). TERMINAL errors (malformed payload) may still mark processed with an error log (document per branch). Red-first: failing tests proving transient errors currently land processed; then green. Sentry capture on the failed-marking per spec.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Red tests (transient → processed today)",
+                    "completed": true
+                },
+                {
+                    "title": "Mark-failed wiring both handlers + Sentry",
+                    "completed": true
+                }
+            ],
+            "tags": ["webhooks", "bugfix"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:30:00Z",
+                "completed": "2026-06-05T16:51:00Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Dead-letter retry covers the two missing event types",
+            "description": "Spec webhook ownership (b). webhook-retry.job.ts switch (:208-247): add subscription_preapproval.created and subscription_authorized_payment.* with real retry handling (route to the same handlers the live webhook uses — find them). The default case currently returns true → marks RESOLVED permanently (worse than skip): decide + document the unknown-type behavior (explicit log + resolve vs leave pending; prefer resolve-with-loud-log to avoid queue rot, but justify). Red-first: failing test proving the two types currently get resolved without retry.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Red tests for the two types",
+                    "completed": true
+                },
+                {
+                    "title": "Switch cases + default decision",
+                    "completed": true
+                }
+            ],
+            "tags": ["webhooks", "dead-letter"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T17:00:00Z",
+                "completed": "2026-06-05T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Sentry capture on cron success:false results",
+            "description": "Spec cron-alerting (narrowed): bootstrap.ts already captures thrown job exceptions (:145-164); wire an additional captureException/captureMessage when result.success === false (after recordCronRun, ~:123-131) with job_name + errors count tags (the SPEC-194 T-024 pinned contract supplies the signal). Test: job returning success:false → Sentry called; success:true → not called; thrown → existing path unchanged.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Wiring + tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["cron", "sentry"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T17:03:00Z",
+                "completed": "2026-06-05T17:04:30Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update e2e error-mapping expectations (AC 8-10)",
+            "description": "mp-error-handling.test.ts (all modes currently expect 500 — update to the new mapping table), monthly-checkout.test.ts:338 (429→500 becomes 429→503), annual-checkout.test.ts:306 (same). Assert Retry-After presence on 503. These are e2e (--config vitest.config.e2e.ts).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005", "T-006"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Three e2e files updated + green",
+                    "completed": true
+                }
+            ],
+            "tags": ["e2e", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T22:00:00Z",
+                "completed": "2026-06-05T22:40:00Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "No-server-retry pinning + Retry-After e2e",
+            "description": "Spec Part D (descoped): pinning test that a transient provider error (429/timeout) results in exactly ONE adapter call (no hidden retry) + the 503 carries Retry-After. Document the no-retry decision + in-flight-cache gap in the helper JSDoc and docs/billing (future-spec note).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Pinning test + docs note",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "docs"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T23:55:00Z",
+                "completed": "2026-06-06T00:00:00Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Mock sweep + per-package typechecks",
+            "description": "Mandatory sweep. Touched surfaces: @repo/schemas (NEW ServiceErrorCode members — exhaustive Records + enumerated factories!), billing middleware config, sentry.ts BillingContext, start-paid/subscription-checkout/addon.checkout, payment-handler/subscription-payment-handler/webhook-retry.job, bootstrap.ts. SPEC-145 LESSON: re-run files previously marked 'already green' whenever a shared package's export surface changed — do NOT trust exclusion lists for @repo/schemas consumers. Sequential targeted runs; typecheck apps/api + packages/schemas.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-011"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Sweep + fixes + re-runs",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "sweep"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:01:00Z",
+                "completed": "2026-06-05T18:10:00Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Quality gate + adversarial review",
+            "description": "Typecheck/lint/targeted suites sequential. Adversarial fresh-context review (error-handling code: hunt for swallowed errors, wrong transient classification, Sentry PII leaks in details, the dead-letter default decision, mapping table edge cases). Fix round on confirmed findings.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Gates green",
+                    "completed": true
+                },
+                {
+                    "title": "Adversarial review + fixes",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality-gate"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": "2026-06-05T18:17:00Z",
+                "completed": "2026-06-05T18:27:00Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Smoke registration + Sentry alert coordination note",
+            "description": "Register deferred smoke sections in the SPEC-193 pending list (provider-error mapping against real MP sandbox throttling, webhook failed-marking + dead-letter retry, cron alert firing). Add the Sentry alert-tuning coordination note (spec risk: billing-tag flood — point at the sentry-alerts-runbook). Tracking commits separate.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Smoke entry + runbook note",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "tracking"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "PR to staging, CI green, merge, closeout",
+            "description": "Orphan guard; resync staging if behind; push with remote-ref verification (rtk silent no-op — VERIFY EVERY PUSH). PR notes: behavior changes (error statuses change from 500 to 422/502/503/504 on provider failures — API consumers note; dev/sandbox now throws like prod), webhook failed-marking semantics, dead-letter coverage. Merge only on CI Pass SUCCESS. Closeout: index-sync + engram + worktree cleanup ask.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "PR + CI + merge",
+                    "completed": false
+                },
+                {
+                    "title": "Closeout",
+                    "completed": false
+                }
+            ],
+            "tags": ["pr", "release"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T18:20:47Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 10,
+        "inProgress": 0,
+        "completed": 5,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    },
+    "status": "completed"
+}

@@ -9,11 +9,17 @@
  * - `confirmAddonPurchase` — T-013: verifies purchaseId propagation, unique
  *   constraint handling, subscription re-check, and pre-condition guards.
  *
+ * - Provider error wiring (SPEC-149 T-005): QZPayProviderSyncError from
+ *   billing.checkout.create → mapped ServiceError + captureBillingError.
+ *
  * @module test/services/addon.checkout.test
  */
 
+import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
@@ -121,6 +127,23 @@ vi.mock('../../src/utils/logger', () => ({
         error: vi.fn()
     }
 }));
+
+// SPEC-149 T-005: mock captureBillingError so tests can assert on Sentry calls
+// without initialising the real Sentry SDK (which requires a DSN).
+vi.mock('../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
+    return {
+        ...actual,
+        captureBillingError: vi.fn()
+    };
+});
+
+// SPEC-149 T-005: pass-through so isBillingProviderError + mapProviderErrorToServiceError
+// use their real implementations (no stubbing needed — the logic is unit-tested separately).
+vi.mock('../../src/lib/billing-provider-error', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/billing-provider-error')>();
+    return { ...actual };
+});
 
 // SPEC-127 T-007: capture the billing.checkout.create() call to assert on the
 // required fields (customerEmail, customerName, lineItems, idempotencyKey, etc.)
@@ -1532,5 +1555,401 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(result.error?.code).toBe('NOT_FOUND');
             expect(mockPollingJobsCreate).not.toHaveBeenCalled();
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-149 T-005 — provider error wiring for createAddonCheckout
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a "stub shape" cause with a numeric `status` field, mirroring
+ * `buildHttpLikeError` in `test/e2e/helpers/mp-stub.ts` (same helper
+ * pattern as start-paid.test.ts T-004 tests).
+ */
+function buildStubCause(status: number, code?: string): Error {
+    const err = new Error(`Stub MP error ${status}`) as Error & {
+        status: number;
+        code?: string;
+    };
+    err.name = 'MpStubHttpError';
+    err.status = status;
+    if (code !== undefined) {
+        err.code = code;
+    }
+    return err;
+}
+
+/**
+ * Wrap a cause in a `QZPayProviderSyncError` (thrown when
+ * `providerSyncErrorStrategy: 'throw'`, which T-003 made the default).
+ */
+function buildProviderSyncError(
+    cause?: Error,
+    operation = 'checkout_create'
+): QZPayProviderSyncError {
+    return new QZPayProviderSyncError(
+        'Failed in mercadopago',
+        'mercadopago',
+        operation,
+        { customerId: 'cust_test' },
+        cause
+    );
+}
+
+describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    const defaultCustomer = {
+        id: 'cust_abc',
+        email: 'owner@example.com',
+        metadata: { name: 'Test Owner' }
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+
+        // Re-set checkout create mock after clearAllMocks
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
+        });
+
+        // Re-set UUID mock
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        // Re-set polling mock (non-fatal — don't throw by default)
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Re-set addon catalog mock — extra-photos-20 is active
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
+
+        // Default plan lookups: NOT_FOUND (allows checkout through targetCategories gate)
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
+
+        // Re-establish captureBillingError mock so assertions are clean
+        const { captureBillingError } = await import('../../src/lib/sentry');
+        vi.mocked(captureBillingError).mockReturnValue('sentry-event-id');
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // ── MP 429 → PROVIDER_RATE_LIMITED ───────────────────────────────────────
+
+    it('MP 429 → throws ServiceError with PROVIDER_RATE_LIMITED (not a ServiceResult)', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert — must throw ServiceError, not return a ServiceResult
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_RATE_LIMITED);
+    });
+
+    // ── MP 408 timeout → PROVIDER_TIMEOUT ────────────────────────────────────
+
+    it('MP 408 timeout → throws ServiceError with PROVIDER_TIMEOUT', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_TIMEOUT);
+    });
+
+    // ── MP 500 → PROVIDER_ERROR ───────────────────────────────────────────────
+
+    it('MP 500 → throws ServiceError with PROVIDER_ERROR (not a generic CHECKOUT_ERROR)', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(500, 'SERVER_ERROR'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_ERROR);
+    });
+
+    // ── MP 422 validation → VALIDATION_ERROR ─────────────────────────────────
+
+    it('MP 422 validation → throws ServiceError with VALIDATION_ERROR', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(422, 'INVALID_CARD'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    // ── captureBillingError called with correct tags ───────────────────────────
+
+    it('captureBillingError called with operation=addon_checkout and providerStatus on MP 429', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act — swallow throw so we can assert on the mock
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [capturedErr, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedErr).toBeInstanceOf(ServiceError);
+        expect(capturedCtx).toMatchObject({
+            operation: 'addon_checkout',
+            providerStatus: 429
+        });
+        // Must not include email or PII
+        expect(capturedCtx).not.toHaveProperty('email');
+        expect(capturedCtx).not.toHaveProperty('customerEmail');
+    });
+
+    it('captureBillingError called with addonIds and providerStatus=500 on MP 500', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(500));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedCtx).toMatchObject({ providerStatus: 500 });
+    });
+
+    // ── Polling NOT scheduled on provider error ───────────────────────────────
+
+    it('polling NOT scheduled when billing.checkout.create throws a provider error', async () => {
+        // Arrange — provider error fires before polling call
+        const providerErr = buildProviderSyncError(buildStubCause(500));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act — swallow throw
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert — polling must NOT have been attempted
+        expect(mockPollingJobsCreate).not.toHaveBeenCalled();
+    });
+
+    // ── Non-provider errors keep old behavior (regression guard) ──────────────
+
+    it('regression: plain Error (non-provider) still returns { success: false, error.code: CHECKOUT_ERROR }', async () => {
+        // Arrange — a generic Error (not QZPayProviderSyncError) thrown by checkout
+        mockBillingCheckoutCreate.mockRejectedValue(new Error('unexpected DB blowup'));
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act — must NOT throw; must return a ServiceResult
+        const result = await createAddonCheckout(billing, defaultInput);
+
+        // Assert — old path still returns CHECKOUT_ERROR ServiceResult (not throws)
+        expect(result.success).toBe(false);
+        expect(result.error?.code).toBe('CHECKOUT_ERROR');
+    });
+
+    it('regression: captureBillingError NOT called for plain non-provider errors', async () => {
+        // Arrange
+        mockBillingCheckoutCreate.mockRejectedValue(new Error('network timeout'));
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act
+        await createAddonCheckout(billing, defaultInput);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// No server-side retry pinning (SPEC-149 descope pin)
+//
+// Part D of SPEC-149 (server-side retry on transient provider errors) was
+// DESCOPED during the spec realign.  Reason: the idempotency middleware does
+// not cache in-flight requests, so a naive server-side retry would hit the
+// provider a second time before the first request is known to have failed —
+// creating a double-charge risk.
+//
+// The replacement deliverable is this pinning suite: assert that on a
+// retryable provider error (429 / timeout / 5xx) the server performs EXACTLY
+// ONE provider call per request.  If anyone later adds retries, these tests
+// fail and force them to confront the idempotency problem before merging.
+// ---------------------------------------------------------------------------
+
+describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    const defaultCustomer = {
+        id: 'cust_abc',
+        email: 'owner@example.com',
+        metadata: { name: 'Test Owner' }
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+
+        // Re-set checkout create mock (happy path by default; individual tests override)
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
+        });
+
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Default addon catalog mock
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            return { success: false, error: { code: 'NOT_FOUND', message: `Not found: ${slug}` } };
+        });
+
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
+    });
+
+    it('billing.checkout.create called exactly once on MP 429 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Exactly one provider call — no retry loop.
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 503 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 408 timeout (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
     });
 });

@@ -18,6 +18,11 @@
 import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
+import {
+    isBillingProviderError,
+    mapProviderErrorToServiceError
+} from '../../lib/billing-provider-error';
+import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
@@ -402,6 +407,28 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         // Re-throw HTTP exceptions as-is
         if (error instanceof HTTPException) {
             throw error;
+        }
+
+        // SPEC-149 T-006: detect QZPayProviderSyncError, map to typed ServiceError
+        // (so the global handler returns 502/503/504/400 instead of generic 500),
+        // and capture to Sentry with billing operation tags (no PII).
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'plan_change'
+            });
+
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+
+            captureBillingError(serviceError, {
+                operation: 'plan_change',
+                planId: newPlanId,
+                providerStatus: details?.providerStatus
+            });
+
+            throw serviceError;
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);
