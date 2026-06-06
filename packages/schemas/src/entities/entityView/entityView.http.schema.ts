@@ -143,3 +143,24 @@ export const EntityViewStatsListResponseSchema = z.object({
 
 /** TypeScript type for the list stats response. */
 export type EntityViewStatsListResponse = z.infer<typeof EntityViewStatsListResponseSchema>;
+
+/**
+ * Bare array schema for bulk view-stats route handlers.
+ *
+ * Route handlers for batch, top-N, and protected editor/host endpoints return
+ * this array directly. The response middleware (`createResponse`) wraps it once
+ * into the `{ success, data }` envelope. Use this as `responseSchema` in route
+ * factories to avoid double-wrapping.
+ *
+ * @example
+ * ```ts
+ * // Handler returns:
+ * return result.data; // EntityViewStats[]
+ * // Wire body becomes:
+ * // { success: true, data: [{ entityId, unique, total }, ...] }
+ * ```
+ */
+export const EntityViewStatsListSchema = z.array(EntityViewStatsSchema);
+
+/** TypeScript type for the bare view-stats array, inferred from {@link EntityViewStatsListSchema}. */
+export type EntityViewStatsList = z.infer<typeof EntityViewStatsListSchema>;
