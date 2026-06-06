@@ -233,6 +233,11 @@ export class AccommodationReviewService extends BaseCrudService<
     /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given accommodation.
      * Uses a direct SQL aggregate query to avoid pagination limits that could truncate results.
+     *
+     * Only APPROVED, non-deleted reviews count — public stats must match the
+     * public list, which filters by moderation state. PENDING and REJECTED
+     * reviews are excluded (moderateReview re-runs this on every decision).
+     *
      * @param accommodationId - The ID of the accommodation to update stats for
      * @param tx - Optional transaction client to propagate DB writes into an existing transaction
      */
@@ -254,7 +259,13 @@ export class AccommodationReviewService extends BaseCrudService<
                 avgLocation: sql<number>`coalesce(avg((${table.rating}->>'location')::numeric), 0)::float`
             })
             .from(table)
-            .where(and(eq(table.accommodationId, accommodationId), isNull(table.deletedAt)));
+            .where(
+                and(
+                    eq(table.accommodationId, accommodationId),
+                    eq(table.moderationState, ModerationStatusEnum.APPROVED),
+                    isNull(table.deletedAt)
+                )
+            );
 
         const row = result[0];
         const reviewsCount = row?.reviewsCount ?? 0;
@@ -385,6 +396,22 @@ export class AccommodationReviewService extends BaseCrudService<
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     `Accommodation review not found after update: ${id}`
+                );
+            }
+
+            // Public stats only count APPROVED reviews, so every moderation
+            // decision must re-aggregate and refresh the accommodation page.
+            // Best-effort: a stats/revalidation failure must not undo the
+            // moderation decision (the review row is already committed).
+            try {
+                await this.recalculateAndUpdateAccommodationStats(updated.accommodationId);
+                const accommodationSlug = await this._resolveAccommodationSlug(
+                    updated.accommodationId
+                );
+                this._scheduleAccommodationRevalidation(accommodationSlug);
+            } catch (statsErr) {
+                this.logger.warn(
+                    `accommodationReview.moderateReview: stats recalculation failed (best-effort, review ${id} already ${decision}): ${statsErr instanceof Error ? statsErr.message : String(statsErr)}`
                 );
             }
 
