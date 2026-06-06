@@ -20,10 +20,20 @@ import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
+
+/** Permission flag — default true so existing tests pass unchanged. */
+let mockHasPermission = true;
+
+vi.mock('@/hooks/use-user-permissions', () => ({
+    useHasPermission: () => mockHasPermission,
+    useUserPermissions: () => []
+}));
+
 const mockedFetchApi = vi.mocked(fetchApi);
 
 afterEach(() => {
     vi.clearAllMocks();
+    mockHasPermission = true;
 });
 
 function createWrapper() {

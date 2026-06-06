@@ -25,10 +25,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 
+/**
+ * Permission flag controlled per test.
+ * Default is true (permission granted) so existing tests continue to pass.
+ * Set to false to test the self-gating path (FIX-4, SPEC-197 review).
+ */
+let mockHasPermission = true;
+
+vi.mock('@/hooks/use-user-permissions', () => ({
+    useHasPermission: () => mockHasPermission,
+    useUserPermissions: () => []
+}));
+
 const mockedFetchApi = vi.mocked(fetchApi);
 
 afterEach(() => {
     vi.clearAllMocks();
+    mockHasPermission = true; // reset between tests
 });
 
 /** Minimal QueryClientProvider wrapper with retries disabled. */
@@ -164,6 +177,35 @@ describe('Views30dCell — zero views (AC-26)', () => {
 
         // Assert — zero renders as "0", not blank
         await waitFor(() => expect(screen.getByText('0')).toBeInTheDocument());
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Views30dCell — self-gate: no render + no fetch without ANALYTICS_VIEW (FIX-4)
+// ---------------------------------------------------------------------------
+
+describe('Views30dCell — self-gate without ANALYTICS_VIEW (FIX-4, SPEC-197 review)', () => {
+    it('should render nothing and NOT call fetchApi when user lacks ANALYTICS_VIEW', () => {
+        // Arrange — permission denied
+        mockHasPermission = false;
+
+        const Wrapper = createWrapper();
+
+        // Act
+        const { container } = render(
+            React.createElement(
+                Wrapper,
+                null,
+                React.createElement(Views30dCell, {
+                    entityId: 'entity-no-perm',
+                    entityType: 'ACCOMMODATION'
+                })
+            )
+        );
+
+        // Assert — component renders null
+        expect(container.firstChild).toBeNull();
+        expect(mockedFetchApi).not.toHaveBeenCalled();
     });
 });
 

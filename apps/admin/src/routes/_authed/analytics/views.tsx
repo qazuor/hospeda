@@ -27,8 +27,7 @@ import { fetchApi } from '@/lib/api/client';
 import type { AuthState } from '@/lib/auth-session';
 import { PermissionEnum } from '@repo/schemas';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { redirect } from '@tanstack/react-router';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -350,7 +349,8 @@ function TopEntityTable({
     const { t } = useTranslations();
 
     const { data: topRows, isLoading: isLoadingTop } = useQuery({
-        queryKey: ['admin-views-top', entityType] as const,
+        // INVARIANT: top-10 table is fixed to 30d; key includes it defensively.
+        queryKey: ['admin-views-top', entityType, '30d'] as const,
         queryFn: () => fetchViewsTop(entityType),
         staleTime: STALE_5_MIN
     });

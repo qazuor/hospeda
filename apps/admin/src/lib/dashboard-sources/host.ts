@@ -1347,11 +1347,12 @@ registerDataSource('host.stats.views', (ctx) => ({
             const entitlements = entResult.data.data?.entitlements ?? [];
             hasViewBasicStats = entitlements.includes('view_basic_stats');
         } catch (err) {
-            // 503 (billing unavailable) or network failure: optimistic pass-through.
-            // Any other status is unexpected; let it fall through to the views fetch.
+            // 503 (billing unavailable): optimistic pass-through — try the views fetch
+            // and let the AC-6 403 guard below handle locked state if needed.
+            // Any other error is re-thrown so useQuery surfaces its error state
+            // (consistent with fetchHostViews in ViewsWidget.tsx — no sentinel shapes).
             if (!(err instanceof ApiError && err.status === 503)) {
-                // Unknown error: return loading state to avoid false locked-UI.
-                return { locked: false, loading: true } as const;
+                throw err;
             }
         }
 

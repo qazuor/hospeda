@@ -96,7 +96,9 @@ export function useViewsBatch({
     const isQueryEnabled = enabled && sortedIds.length > 0;
 
     const { data, isLoading, isError } = useQuery({
-        queryKey: ['views-batch', entityType, sortedIds] as const,
+        // INVARIANT: this hook is fixed to window=30d; key includes it defensively
+        // so that any future window-parameterised sibling cannot collide with this entry.
+        queryKey: ['views-batch', entityType, '30d', sortedIds] as const,
         queryFn: async (): Promise<ReadonlyMap<string, number>> => {
             const idsParam = sortedIds.join(',');
             const response = await fetchApi<ViewsBatchResponse>({

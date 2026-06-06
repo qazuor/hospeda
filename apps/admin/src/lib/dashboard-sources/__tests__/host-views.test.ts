@@ -156,6 +156,34 @@ describe('host.stats.views resolver (SPEC-197 T-013)', () => {
         expect(result).toEqual({ locked: true });
     });
 
+    // ── Unknown entitlements error propagates (not swallowed as sentinel) ─────
+
+    it('re-throws unknown entitlement errors so useQuery surfaces the error state', async () => {
+        // Any error that is NOT a 503 ApiError must propagate — callers must NOT
+        // receive a { locked: false, loading: true } sentinel (FIX-2, SPEC-197 review).
+        const networkError = new Error('Network timeout');
+        mockFetchApi.mockRejectedValueOnce(networkError);
+
+        await expect(runSource('host.stats.views')).rejects.toThrow('Network timeout');
+
+        // Must NOT have called the views endpoint (error happened in entitlements call)
+        expect(mockFetchApi).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes through 503 ApiError and tries the views endpoint optimistically', async () => {
+        // 503 from billing → optimistic path: still attempts the views endpoint.
+        mockFetchApi.mockRejectedValueOnce(new ApiError('Service Unavailable', { status: 503 }));
+
+        // Views endpoint call returns success.
+        mockFetchApi.mockResolvedValueOnce(envelope({ success: true, data: [] }));
+
+        const result = await runSource('host.stats.views');
+
+        // Must NOT be locked, must have tried views endpoint.
+        expect((result as { locked: boolean }).locked).toBe(false);
+        expect(mockFetchApi).toHaveBeenCalledTimes(2);
+    });
+
     // ── Query key shape ────────────────────────────────────────────────────────
 
     it('builds a queryKey starting with [dashboard, host.stats.views, HOST, own]', () => {

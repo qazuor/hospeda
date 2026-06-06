@@ -411,11 +411,10 @@ async function fetchHostViews(window: TimeWindow): Promise<HostViewsData> {
         });
         const entitlements = entResult.data.data?.entitlements ?? [];
         hasViewBasicStats = entitlements.includes('view_basic_stats');
-    } catch (err) {
-        if (!(err instanceof ApiError && err.status === 503)) {
-            // Unknown error — optimistic pass-through (do not lock on network flap).
-        }
-        // 503 (billing unavailable): optimistic pass-through.
+    } catch (_err) {
+        // Both 503 (billing unavailable) and unknown errors fall through
+        // optimistically: try the views endpoint and let the 403 guard below
+        // handle the locked state if needed.
     }
 
     if (!hasViewBasicStats) {
