@@ -9,26 +9,36 @@
             "id": "T-001",
             "title": "Schema: AiTextImproveRequestSchema in @repo/schemas",
             "description": "Create packages/schemas/src/entities/ai/ai-text-improve.schema.ts per spec §5.2. Exports: AiTextImproveFieldTypeSchema (z.enum(['description', 'summary'])), AI_TEXT_IMPROVE_MAX_LENGTH const (description:5000, summary:300), AiTextImproveRequestSchema (strict + superRefine for per-field cap), AiTextImprove type. Re-export from packages/schemas/src/entities/ai/index.ts. Import LanguageEnumSchema from ../user/user.settings.schema.js.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
                 {
                     "title": "Create ai-text-improve.schema.ts with all exports",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add barrel re-export in entities/ai/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm typecheck to verify schema compiles",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schema", "shared-package", "zod"],
-            "phase": "setup"
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:00:00.000Z",
+                "completed": "2026-06-06T05:35:00.000Z"
+            }
         },
         {
             "id": "T-002",
@@ -171,30 +181,40 @@
             "id": "T-007",
             "title": "i18n keys aiTextImprove.* in es/en/pt",
             "description": "Add the aiTextImprove block per spec §8 to packages/i18n/src/locales/{es,en,pt}/admin-common.json. Keys: trigger, triggerTooltip, upgradeTooltip, panelLabel, loading, accept, discard, dismiss, error.{VALIDATION_ERROR, ENTITLEMENT_REQUIRED, LIMIT_REACHED, MODERATION_BLOCKED, RATE_LIMIT_EXCEEDED, ENGINE_EXHAUSTED, FEATURE_DISABLED, CEILING_HIT, SERVICE_UNAVAILABLE, INTERNAL_ERROR, default}. Spanish copy per §8 (Rioplatense natural — vos form for upgradeTooltip 'Actualizá'). English + Portuguese per §8. Run pnpm --filter @repo/i18n check-locales to verify parity.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Add aiTextImprove to es/admin-common.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add aiTextImprove to en/admin-common.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add aiTextImprove to pt/admin-common.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter @repo/i18n check-locales",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "admin", "locale-parity"],
-            "phase": "setup"
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:00:00.000Z",
+                "completed": "2026-06-06T05:35:00.000Z"
+            }
         },
         {
             "id": "T-008",
