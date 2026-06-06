@@ -1966,6 +1966,17 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Gets accommodations by destination.
+     *
+     * Uses `searchWithRelations` (not the raw `findAll`) so the public visibility
+     * predicate is enforced at the DB query level:
+     * - `ownerSuspended=true` accommodations are hidden from public actors.
+     * - `planRestricted=true` accommodations are hidden from public actors.
+     *
+     * SPEC-167 T-026: this is a public-only path — there is no `ownerId` in the
+     * params, so there is no own-scope exemption. The only bypass is VIP access
+     * (`vip_promotions_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
+     * which mirrors the predicate applied by `getTopRatedByDestination`.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
      * @param ctx - Optional service context for transaction propagation
@@ -1980,23 +1991,30 @@ export class AccommodationService extends BaseCrudService<
             methodName: 'getByDestination',
             input: { ...data, actor },
             schema: AccommodationByDestinationParamsSchema,
-            execute: async (validated, actor) => {
-                await this._canList(actor);
-                const result = await this.model.findAll(
+            execute: async (validated, validatedActor) => {
+                await this._canList(validatedActor);
+
+                const hasVipAccess =
+                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
+
+                const result = await this.model.searchWithRelations(
                     {
-                        destinationId: validated.destinationId
+                        destinationId: validated.destinationId,
+                        page: validated.page ?? 1,
+                        pageSize: validated.pageSize ?? 10,
+                        // SPEC-167 T-026: destination list is always a public view (no
+                        // own-scope), so both visibility flags mirror each other exactly.
+                        excludeOwnerSuspended: !hasVipAccess,
+                        excludePlanRestricted: !hasVipAccess
                     },
-                    {
-                        page: validated.page,
-                        pageSize: validated.pageSize
-                    },
-                    undefined,
                     ctx?.tx
                 );
 
                 const accommodations = Array.isArray(result.items)
                     ? result.items.map(
-                          (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                          (item) =>
+                              normalizeAccommodationOutput(item, validatedActor) as Accommodation
                       )
                     : [];
 
