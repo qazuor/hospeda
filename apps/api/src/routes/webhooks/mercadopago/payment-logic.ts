@@ -27,8 +27,10 @@ import { checkSubscriptionStatusTransition } from '@repo/service-core';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { AddonService } from '../../../services/addon.service';
+import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
+import { resolveOwnerUserId } from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
@@ -377,6 +379,35 @@ async function confirmPlanUpgrade(input: {
     // no I/O — safe to call unconditionally. Mirrors the same call in
     // confirmAnnualSubscription and processSubscriptionUpdated.
     clearEntitlementCache(changeResult.subscription.customerId);
+
+    // Step 1b: restore plan-restricted resources for the host (SPEC-167 T-012).
+    // Runs after the plan change commits — resources that were restricted when
+    // the host downgraded are now eligible for restoration under the new plan's
+    // higher caps. Uses the soft-fail wrapper: restoration failure must NOT
+    // block the upgrade response (the plan change already committed in QZPay).
+    // Errors are logged and reported to Sentry via the logger integration.
+    {
+        const userId = await resolveOwnerUserId({
+            customerId: changeResult.subscription.customerId
+        });
+        if (userId) {
+            await applyUpgradeRestorationsOrWarn({
+                userId,
+                customerId: changeResult.subscription.customerId,
+                newPlanId
+            });
+        } else {
+            apiLogger.warn(
+                {
+                    planChangeUpgradeId,
+                    newPlanId,
+                    customerId: changeResult.subscription.customerId,
+                    source
+                },
+                'Plan upgrade: could not resolve owner userId for upgrade restoration — skipped'
+            );
+        }
+    }
 
     // Step 2: propagate to MP preapproval — best-effort.
     const mpSubscriptionId = sub.providerSubscriptionIds?.mercadopago;

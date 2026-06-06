@@ -1,0 +1,665 @@
+/**
+ * Plan Upgrade Restoration Service (SPEC-167 T-012).
+ *
+ * `applyUpgradeRestorations` is the inverse of `applyDowngradeRestrictions`
+ * (T-011). When a host upgrades to a higher plan, any resources that were
+ * previously plan-restricted (accommodations, promotions, archived gallery
+ * photos) are restored up to the new plan's caps.
+ *
+ * **Algorithm (per run):**
+ *   1. Resolve the new plan's caps via `deps.getPlanCaps(newPlanSlug)`.
+ *   2. Per dimension: fetch currently-restricted items; compute headroom
+ *      (headroom = cap - activeCount). Select the `headroom` most-recently-
+ *      restricted items (descending `updatedAt`) for restoration. If cap is
+ *      `-1` (unlimited), restore ALL restricted items.
+ *   3. For photos: call `restoreAccommodationPhotos({ toCap: photoCap })`
+ *      per accommodation that has archived photos. The primitive handles
+ *      FIFO ordering and the "already at cap" no-op.
+ *   4. Execute all mutations inside a single Drizzle transaction.
+ *   5. AFTER the tx commits: schedule batch revalidation for every
+ *      accommodation that had accommodations or photos restored. Side effects
+ *      (revalidation) never go inside the tx because they cannot be rolled back.
+ *   6. Returns a structured {@link UpgradeRestorationSummary}.
+ *
+ * **Restore order:**
+ *   Items are restored most-recently-restricted first (descending `updatedAt`).
+ *   This is the natural inverse of the downgrade restriction default (which kept
+ *   most-recently-updated, i.e., restricted most-recently-updated LAST). By
+ *   restoring newest-restricted first, the items that were most recently
+ *   visible are re-surfaced first, which is the most useful behavior for the
+ *   host. Ties in `updatedAt` are broken arbitrarily (DB ordering).
+ *
+ * **Partial restore at cap:**
+ *   When `headroom < restrictedCount`, only `headroom` items are restored and
+ *   the rest remain in `stillRestricted`. The host can manually swap them later
+ *   once SPEC-203 self-serve UI is available.
+ *
+ * **Idempotent:**
+ *   If no dimension has restricted items, all primitive calls are skipped.
+ *
+ * **Transaction boundary:**
+ * - INSIDE tx: `restoreAccommodations`, `restorePromotions`,
+ *   `restoreAccommodationPhotos`. All DB mutations are atomic.
+ * - AFTER tx: `scheduleRevalidationBatch`. Fire-and-forget, never inside tx.
+ *
+ * **Soft-fail wrapper (`applyUpgradeRestorationsOrWarn`):**
+ *   Wraps the main function for the webhook/upgrade-success path. Restoration
+ *   failure must NOT block the upgrade (the plan change already committed in
+ *   QZPay). Errors are logged via `apiLogger.error` (triggers Sentry via the
+ *   logger integration) and an empty summary is returned.
+ *
+ * @module services/plan-upgrade-restoration
+ */
+
+import { LimitKey, getPlanBySlug } from '@repo/billing';
+import type { PlanDefinition } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
+import { withTransaction } from '@repo/db';
+import { getRevalidationService } from '@repo/service-core';
+import type { EntityChangeData } from '@repo/service-core';
+import { apiLogger } from '../utils/logger';
+import { restoreAccommodationPhotos } from './plan-photo-restriction.service';
+import { restoreAccommodations, restorePromotions } from './plan-restriction.service';
+
+// ---------------------------------------------------------------------------
+// Input / output contracts
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-dimension restricted item shape (minimal — only id + updatedAt needed
+ * for sort ordering).
+ */
+export interface RestrictedItem {
+    readonly id: string;
+    readonly updatedAt: Date;
+}
+
+/**
+ * Accommodation with archived gallery photos shape.
+ */
+export interface AccommodationWithArchivedPhotos {
+    readonly accommodationId: string;
+    /** Current gallery item count (excludes archived). */
+    readonly galleryCount: number;
+    /** Number of items currently in archivedGallery. */
+    readonly archivedCount: number;
+}
+
+/**
+ * Plan caps resolved for the upgrade target plan.
+ * A value of `-1` means unlimited (no cap enforced).
+ */
+export interface PlanCaps {
+    readonly accommodationsCap: number;
+    readonly promotionsCap: number;
+    readonly photosPerAccommodationCap: number;
+}
+
+/**
+ * External dependencies injected into {@link applyUpgradeRestorations}.
+ * Provided as a DI record for unit-testability.
+ */
+export interface UpgradeRestorationDeps {
+    /**
+     * Resolves the plan slug for a billing plan UUID.
+     * Production: looks up `billingPlans.name` from the DB via `billing.plans.get(id)`.
+     */
+    getPlanSlug(planId: string): Promise<string | null>;
+
+    /**
+     * Returns the caps for the given plan slug.
+     * Production: wraps `getPlanBySlug` from `@repo/billing`.
+     * Returns { -1, -1, -1 } when the slug is not found (treat as unlimited).
+     */
+    getPlanCaps(planSlug: string): PlanCaps;
+
+    /**
+     * Fetches all accommodations with `planRestricted = true` owned by userId,
+     * ordered by `updatedAt` DESC (most-recently-restricted first).
+     */
+    getRestrictedAccommodations(userId: string): Promise<RestrictedItem[]>;
+
+    /**
+     * Returns the count of NON-restricted active accommodations for the user.
+     * Used to compute headroom (cap - activeCount).
+     */
+    getActiveAccommodationCount(userId: string): Promise<number>;
+
+    /**
+     * Fetches all promotions with `planRestricted = true` owned by userId,
+     * ordered by `updatedAt` DESC (most-recently-restricted first).
+     */
+    getRestrictedPromotions(userId: string): Promise<RestrictedItem[]>;
+
+    /**
+     * Returns the count of NON-restricted active promotions for the user.
+     */
+    getActivePromotionCount(userId: string): Promise<number>;
+
+    /**
+     * Fetches accommodations owned by userId that have non-empty
+     * `media.archivedGallery`, with their current gallery and archived counts.
+     */
+    getAccommodationsWithArchivedPhotos(userId: string): Promise<AccommodationWithArchivedPhotos[]>;
+
+    /**
+     * Fetches accommodation slugs for revalidation events.
+     * Returns a map `accommodationId → slug`.
+     */
+    fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>>;
+}
+
+/**
+ * Input for {@link applyUpgradeRestorations}.
+ */
+export interface ApplyUpgradeRestorationsInput {
+    /** The internal user/owner ID. */
+    readonly userId: string;
+    /** The billing customer ID (for log attribution only). */
+    readonly customerId: string;
+    /** The billing plan UUID the subscription has just been upgraded TO. */
+    readonly newPlanId: string;
+    /**
+     * Optional Drizzle client. Production callers typically omit this;
+     * the service opens its own transaction via `withTransaction`.
+     */
+    readonly db?: DrizzleClient;
+    /**
+     * Injected dependencies. Defaults to production implementations when omitted.
+     */
+    readonly deps?: UpgradeRestorationDeps;
+}
+
+/**
+ * Per-dimension counts in the restoration summary.
+ */
+export interface UpgradeRestorationCounts {
+    /** IDs restored in this run. */
+    readonly accommodations: readonly string[];
+    /** IDs of promotions restored in this run. */
+    readonly promotions: readonly string[];
+    /**
+     * Per-accommodation photo restore counts.
+     * Key = accommodation ID, value = number of items moved from archivedGallery to gallery.
+     */
+    readonly photosByAccommodation: Readonly<Record<string, number>>;
+}
+
+/**
+ * Structured summary returned by {@link applyUpgradeRestorations}.
+ */
+export interface UpgradeRestorationSummary {
+    /**
+     * Items restored in this run. Empty arrays when nothing was restricted
+     * (idempotent no-op).
+     */
+    readonly restored: UpgradeRestorationCounts;
+    /**
+     * Items that remain restricted after this run because the new plan's cap
+     * still limits them (partial restore). The host can manually swap them
+     * later once SPEC-203 self-serve UI is available.
+     */
+    readonly stillRestricted: {
+        readonly accommodations: readonly string[];
+        readonly promotions: readonly string[];
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Default production dependencies
+// ---------------------------------------------------------------------------
+
+const defaultDeps: UpgradeRestorationDeps = {
+    async getPlanSlug(planId: string): Promise<string | null> {
+        const { getQZPayBilling } = await import('../middlewares/billing');
+        const billing = getQZPayBilling();
+        if (!billing) return null;
+        try {
+            const plan = await billing.plans.get(planId);
+            // qzpay stores slug as plan.name (mirrors resolvePlanBySlug in checkout service)
+            return plan?.name ?? null;
+        } catch {
+            return null;
+        }
+    },
+
+    getPlanCaps(planSlug: string): PlanCaps {
+        const plan: PlanDefinition | undefined = getPlanBySlug(planSlug);
+        if (!plan) {
+            // Unknown slug → treat as unlimited (safe fallback: restores everything)
+            return { accommodationsCap: -1, promotionsCap: -1, photosPerAccommodationCap: -1 };
+        }
+
+        const getLimit = (key: LimitKey): number => {
+            const def = plan.limits.find((l) => l.key === key);
+            return def?.value ?? -1;
+        };
+
+        return {
+            accommodationsCap: getLimit(LimitKey.MAX_ACCOMMODATIONS),
+            promotionsCap: getLimit(LimitKey.MAX_ACTIVE_PROMOTIONS),
+            photosPerAccommodationCap: getLimit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION)
+        };
+    },
+
+    async getRestrictedAccommodations(userId: string): Promise<RestrictedItem[]> {
+        const {
+            accommodations: accsTable,
+            getDb,
+            and,
+            eq,
+            isNull,
+            desc
+        } = await import('@repo/db');
+        const db = getDb();
+        const rows = await db
+            .select({ id: accsTable.id, updatedAt: accsTable.updatedAt })
+            .from(accsTable)
+            .where(
+                and(
+                    eq(accsTable.ownerId, userId),
+                    eq(accsTable.planRestricted, true),
+                    isNull(accsTable.deletedAt)
+                )
+            )
+            .orderBy(desc(accsTable.updatedAt));
+        return rows.map((r) => ({ id: r.id, updatedAt: r.updatedAt }));
+    },
+
+    async getActiveAccommodationCount(userId: string): Promise<number> {
+        const {
+            accommodations: accsTable,
+            getDb,
+            and,
+            eq,
+            isNull,
+            count
+        } = await import('@repo/db');
+        const db = getDb();
+        const [row] = await db
+            .select({ n: count(accsTable.id) })
+            .from(accsTable)
+            .where(
+                and(
+                    eq(accsTable.ownerId, userId),
+                    eq(accsTable.planRestricted, false),
+                    isNull(accsTable.deletedAt)
+                )
+            );
+        return Number(row?.n ?? 0);
+    },
+
+    async getRestrictedPromotions(userId: string): Promise<RestrictedItem[]> {
+        const {
+            ownerPromotions: promosTable,
+            getDb,
+            and,
+            eq,
+            isNull,
+            desc
+        } = await import('@repo/db');
+        const db = getDb();
+        const rows = await db
+            .select({ id: promosTable.id, updatedAt: promosTable.updatedAt })
+            .from(promosTable)
+            .where(
+                and(
+                    eq(promosTable.ownerId, userId),
+                    eq(promosTable.planRestricted, true),
+                    isNull(promosTable.deletedAt)
+                )
+            )
+            .orderBy(desc(promosTable.updatedAt));
+        return rows.map((r) => ({ id: r.id, updatedAt: r.updatedAt }));
+    },
+
+    async getActivePromotionCount(userId: string): Promise<number> {
+        const {
+            ownerPromotions: promosTable,
+            getDb,
+            and,
+            eq,
+            isNull,
+            count
+        } = await import('@repo/db');
+        const db = getDb();
+        const [row] = await db
+            .select({ n: count(promosTable.id) })
+            .from(promosTable)
+            .where(
+                and(
+                    eq(promosTable.ownerId, userId),
+                    eq(promosTable.planRestricted, false),
+                    isNull(promosTable.deletedAt)
+                )
+            );
+        return Number(row?.n ?? 0);
+    },
+
+    async getAccommodationsWithArchivedPhotos(
+        userId: string
+    ): Promise<AccommodationWithArchivedPhotos[]> {
+        const {
+            accommodations: accsTable,
+            getDb,
+            and,
+            eq,
+            isNull,
+            sql: drizzleSql
+        } = await import('@repo/db');
+        const db = getDb();
+
+        // Select accommodations owned by this user that have non-empty archivedGallery
+        const rows = await db
+            .select({ id: accsTable.id, media: accsTable.media })
+            .from(accsTable)
+            .where(
+                and(
+                    eq(accsTable.ownerId, userId),
+                    isNull(accsTable.deletedAt),
+                    // JSONB: archivedGallery exists and is non-empty
+                    drizzleSql`${accsTable.media}->'archivedGallery' IS NOT NULL AND jsonb_array_length(${accsTable.media}->'archivedGallery') > 0`
+                )
+            );
+
+        return rows.map((r) => {
+            const media = r.media as {
+                gallery?: Array<unknown>;
+                archivedGallery?: Array<unknown>;
+            } | null;
+            return {
+                accommodationId: r.id,
+                galleryCount: media?.gallery?.length ?? 0,
+                archivedCount: media?.archivedGallery?.length ?? 0
+            };
+        });
+    },
+
+    async fetchAccommodationSlugs(ids: readonly string[]): Promise<Record<string, string>> {
+        if (ids.length === 0) return {};
+        const { accommodationModel } = await import('@repo/db');
+        const rows = await accommodationModel.findAll(
+            { id: { in: ids as string[] } },
+            { pageSize: ids.length + 10 }
+        );
+        const map: Record<string, string> = {};
+        for (const row of rows.items ?? []) {
+            if (row.id && row.slug) map[row.id] = row.slug;
+        }
+        return map;
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Headroom helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Given the full list of restricted items (sorted most-recently-restricted
+ * first by caller convention) and the headroom available, returns:
+ * - `toRestore`: slice of ids to restore (up to headroom).
+ * - `toLeave`: the remainder that stays restricted.
+ *
+ * When `cap === -1` (unlimited), ALL items are scheduled for restoration.
+ */
+function splitByHeadroom(params: {
+    readonly restricted: readonly RestrictedItem[];
+    readonly cap: number;
+    readonly activeCount: number;
+}): { readonly toRestore: readonly string[]; readonly toLeave: readonly string[] } {
+    const { restricted, cap, activeCount } = params;
+
+    if (restricted.length === 0) {
+        return { toRestore: [], toLeave: [] };
+    }
+
+    if (cap === -1) {
+        // Unlimited — restore everything
+        return { toRestore: restricted.map((r) => r.id), toLeave: [] };
+    }
+
+    const headroom = Math.max(0, cap - activeCount);
+    if (headroom === 0) {
+        return { toRestore: [], toLeave: restricted.map((r) => r.id) };
+    }
+
+    const toRestore = restricted.slice(0, headroom).map((r) => r.id);
+    const toLeave = restricted.slice(headroom).map((r) => r.id);
+    return { toRestore, toLeave };
+}
+
+// ---------------------------------------------------------------------------
+// Main exported function
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply upgrade restorations for a host transitioning to a higher plan.
+ *
+ * Resolves new plan caps, restores restricted resources up to the new cap
+ * (most-recently-restricted first), and schedules cache revalidation after
+ * the transaction commits.
+ *
+ * **Idempotent**: if no restricted items exist, returns immediately with an
+ * empty summary and no primitive calls are made.
+ *
+ * **Transaction boundary:**
+ * - INSIDE tx: `restoreAccommodations`, `restorePromotions`,
+ *   `restoreAccommodationPhotos`. All DB mutations are atomic.
+ * - AFTER tx: `scheduleRevalidationBatch`. Side effects are fire-and-forget
+ *   and must not run if the tx fails.
+ *
+ * @param input - Host identity, new plan id, optional db, optional deps.
+ * @returns A {@link UpgradeRestorationSummary}.
+ * @throws {Error} When `userId` or `newPlanId` is empty.
+ * @throws Re-throws primitive errors (wrap with {@link applyUpgradeRestorationsOrWarn}
+ *   in the upgrade webhook path where failures must not block the response).
+ *
+ * @example
+ * ```ts
+ * const summary = await applyUpgradeRestorations({
+ *   userId: changeResult.subscription.customerId,
+ *   customerId: changeResult.subscription.customerId,
+ *   newPlanId: changeResult.subscription.planId,
+ * });
+ * ```
+ */
+export async function applyUpgradeRestorations(
+    input: ApplyUpgradeRestorationsInput
+): Promise<UpgradeRestorationSummary> {
+    const { userId, customerId, newPlanId, db } = input;
+    const deps = input.deps ?? defaultDeps;
+
+    // ── Input validation ────────────────────────────────────────────────────
+    if (!userId || userId.trim() === '') {
+        throw new Error('applyUpgradeRestorations: userId is required');
+    }
+    if (!newPlanId || newPlanId.trim() === '') {
+        throw new Error('applyUpgradeRestorations: newPlanId is required');
+    }
+
+    apiLogger.info(
+        { userId, customerId, newPlanId },
+        'plan-upgrade-restoration: starting restoration pass'
+    );
+
+    // ── 1. Resolve plan caps ────────────────────────────────────────────────
+    const planSlug = await deps.getPlanSlug(newPlanId);
+    const caps = deps.getPlanCaps(planSlug ?? '');
+
+    // ── 2. Fetch restricted items per dimension ─────────────────────────────
+    const [
+        restrictedAccs,
+        activeAccCount,
+        restrictedPromos,
+        activePromoCount,
+        accsWithArchivedPhotos
+    ] = await Promise.all([
+        deps.getRestrictedAccommodations(userId),
+        deps.getActiveAccommodationCount(userId),
+        deps.getRestrictedPromotions(userId),
+        deps.getActivePromotionCount(userId),
+        deps.getAccommodationsWithArchivedPhotos(userId)
+    ]);
+
+    const hasAnything =
+        restrictedAccs.length > 0 ||
+        restrictedPromos.length > 0 ||
+        accsWithArchivedPhotos.length > 0;
+
+    if (!hasAnything) {
+        apiLogger.info(
+            { userId, customerId, newPlanId },
+            'plan-upgrade-restoration: nothing restricted — idempotent no-op'
+        );
+        return {
+            restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
+            stillRestricted: { accommodations: [], promotions: [] }
+        };
+    }
+
+    // ── 3. Compute what to restore per dimension ────────────────────────────
+    const { toRestore: accRestoreIds, toLeave: accLeaveIds } = splitByHeadroom({
+        restricted: restrictedAccs,
+        cap: caps.accommodationsCap,
+        activeCount: activeAccCount
+    });
+
+    const { toRestore: promoRestoreIds, toLeave: promoLeaveIds } = splitByHeadroom({
+        restricted: restrictedPromos,
+        cap: caps.promotionsCap,
+        activeCount: activePromoCount
+    });
+
+    // ── 4. Execute mutations in a transaction ──────────────────────────────
+    const restoredAccIds: string[] = [];
+    const restoredPromoIds: string[] = [];
+    const photosByAccommodation: Record<string, number> = {};
+
+    await withTransaction(async (tx) => {
+        // Accommodations
+        if (accRestoreIds.length > 0) {
+            const result = await restoreAccommodations({
+                ids: accRestoreIds,
+                db: tx as DrizzleClient
+            });
+            restoredAccIds.push(...result.affectedIds);
+        }
+
+        // Promotions
+        if (promoRestoreIds.length > 0) {
+            const result = await restorePromotions({
+                ids: promoRestoreIds,
+                db: tx as DrizzleClient
+            });
+            restoredPromoIds.push(...result.affectedIds);
+        }
+
+        // Photos — restore up to cap per accommodation
+        for (const acc of accsWithArchivedPhotos) {
+            const toCap =
+                caps.photosPerAccommodationCap === -1
+                    ? acc.galleryCount + acc.archivedCount // restore all = total
+                    : caps.photosPerAccommodationCap;
+
+            const result = await restoreAccommodationPhotos({
+                accommodationId: acc.accommodationId,
+                toCap,
+                db: tx as DrizzleClient
+            });
+
+            if (result.movedCount > 0) {
+                photosByAccommodation[acc.accommodationId] = result.movedCount;
+            }
+        }
+    }, db);
+
+    // ── 5. Schedule revalidation AFTER tx ──────────────────────────────────
+    const allTouchedIds = [...new Set([...restoredAccIds, ...Object.keys(photosByAccommodation)])];
+
+    if (allTouchedIds.length > 0) {
+        const revalidationService = getRevalidationService();
+        if (revalidationService) {
+            try {
+                const slugMap = await deps.fetchAccommodationSlugs(allTouchedIds);
+                const events: EntityChangeData[] = allTouchedIds.map((id) => ({
+                    entityType: 'accommodation' as const,
+                    slug: slugMap[id] ?? id
+                }));
+                revalidationService.scheduleRevalidationBatch({
+                    events,
+                    reason: `plan-upgrade-restoration: ${planSlug ?? newPlanId}`
+                });
+            } catch (err) {
+                apiLogger.warn(
+                    { err, userId, customerId },
+                    'plan-upgrade-restoration: revalidation scheduling failed (non-blocking)'
+                );
+            }
+        }
+    }
+
+    // ── 6. Build summary ───────────────────────────────────────────────────
+    apiLogger.info(
+        {
+            userId,
+            customerId,
+            newPlanId,
+            planSlug,
+            restoredAccommodations: restoredAccIds.length,
+            restoredPromotions: restoredPromoIds.length,
+            photoAccommodations: Object.keys(photosByAccommodation).length,
+            stillRestrictedAccommodations: accLeaveIds.length,
+            stillRestrictedPromotions: promoLeaveIds.length
+        },
+        'plan-upgrade-restoration: restoration pass complete'
+    );
+
+    return {
+        restored: {
+            accommodations: restoredAccIds,
+            promotions: restoredPromoIds,
+            photosByAccommodation
+        },
+        stillRestricted: {
+            accommodations: accLeaveIds,
+            promotions: promoLeaveIds
+        }
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Soft-fail wrapper for the upgrade webhook path
+// ---------------------------------------------------------------------------
+
+/**
+ * Soft-fail wrapper around {@link applyUpgradeRestorations}.
+ *
+ * Used in the paid-upgrade webhook success path where a restoration failure
+ * must NOT block the upgrade response (the plan change has already committed
+ * in QZPay). Errors are logged via `apiLogger.error` (the logger integration
+ * reports to Sentry) and an empty summary is returned.
+ *
+ * @param input - Same as {@link applyUpgradeRestorations}.
+ * @returns A {@link UpgradeRestorationSummary} (empty on failure).
+ */
+export async function applyUpgradeRestorationsOrWarn(
+    input: ApplyUpgradeRestorationsInput
+): Promise<UpgradeRestorationSummary> {
+    try {
+        return await applyUpgradeRestorations(input);
+    } catch (err) {
+        apiLogger.error(
+            {
+                userId: input.userId,
+                customerId: input.customerId,
+                newPlanId: input.newPlanId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'plan-upgrade-restoration: restoration failed — non-blocking, upgrade already committed'
+        );
+        return {
+            restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
+            stillRestricted: { accommodations: [], promotions: [] }
+        };
+    }
+}
