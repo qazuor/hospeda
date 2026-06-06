@@ -21,6 +21,14 @@
  * - Handler counters `failed` includes an `applyOne` throw bypassing
  *   the internal try/catch.
  *
+ * SPEC-167 T-013 additions:
+ * - Downgrade: applyDowngradeRestrictions called after changePlan succeeds,
+ *   before clearEntitlementCache (ordering), with keepSelections from metadata.
+ * - Non-downgrade (upgrade): applyDowngradeRestrictions NOT called.
+ * - Restriction failure: job continues (plan change stays applied),
+ *   result.success=false so SPEC-149 Sentry capture fires.
+ * - Restriction failure: pre-stamp idempotency untouched (row stays 'applied').
+ *
  * @module test/cron/apply-scheduled-plan-changes
  */
 
@@ -45,6 +53,26 @@ vi.mock('../../src/services/addon-plan-change.service', () => ({
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
+}));
+
+// SPEC-167 T-013: mock the downgrade restriction service.
+vi.mock('../../src/services/plan-downgrade-remediation.service', () => ({
+    applyDowngradeRestrictions: vi.fn().mockResolvedValue({
+        restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+        keptBySelection: { accommodations: [], promotions: [] },
+        keptByDefault: { accommodations: [], promotions: [] },
+        grandfatherFlags: []
+    })
+}));
+
+// SPEC-167 T-013: mock resolveOwnerUserId (subscription-pause service).
+vi.mock('../../src/services/subscription-pause.service', () => ({
+    resolveOwnerUserId: vi.fn().mockResolvedValue('user-1')
+}));
+
+// SPEC-167 T-013: mock getKeepSelectionsForChange (subscription-downgrade service).
+vi.mock('../../src/services/subscription-downgrade.service', () => ({
+    getKeepSelectionsForChange: vi.fn().mockReturnValue(undefined)
 }));
 
 // Drizzle mock — returns rows the test feeds into `dueRows`.
@@ -85,6 +113,9 @@ import {
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
+import { applyDowngradeRestrictions } from '../../src/services/plan-downgrade-remediation.service';
+import { getKeepSelectionsForChange } from '../../src/services/subscription-downgrade.service';
+import { resolveOwnerUserId } from '../../src/services/subscription-pause.service';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -92,14 +123,29 @@ import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-pla
 
 const SUB_ID = 'sub-1';
 const CUSTOMER_ID = 'cust-1';
+const USER_ID = 'user-1';
 const OLD_PLAN_ID = 'plan_pro';
 const NEW_PLAN_ID = 'plan_basic';
+const NEW_PLAN_SLUG = 'owner-basico';
 const NEW_PRICE_ID = 'price_basic_monthly';
 const MP_SUB_ID = 'mp-pre-1';
 
+/**
+ * Direction of the scheduled change. Controls whether `metadata.source` is
+ * set to `'plan-change-downgrade'` (SPEC-167 T-013 direction detection).
+ */
+type ChangeDirection = 'downgrade' | 'upgrade' | 'none';
+
 function makeScheduled(
-    overrides: Partial<QZPayScheduledPlanChange> = {}
+    overrides: Partial<QZPayScheduledPlanChange> & { direction?: ChangeDirection } = {}
 ): QZPayScheduledPlanChange {
+    const { direction = 'downgrade', ...rest } = overrides;
+    const metadata =
+        direction === 'downgrade'
+            ? { source: 'plan-change-downgrade', previousPlanId: OLD_PLAN_ID }
+            : direction === 'upgrade'
+              ? { source: 'plan-change-upgrade' }
+              : undefined;
     return {
         newPlanId: NEW_PLAN_ID,
         newPriceId: NEW_PRICE_ID,
@@ -108,7 +154,8 @@ function makeScheduled(
         requestedAt: '2026-05-15T00:00:00.000Z',
         status: 'pending',
         attemptCount: 0,
-        ...overrides
+        ...(metadata !== undefined ? { metadata } : {}),
+        ...rest
     };
 }
 
@@ -132,6 +179,8 @@ interface BillingMockOpts {
     changePlanThrows?: Error;
     mpUpdateThrows?: Error;
     paymentAdapterPresent?: boolean;
+    /** Plan slug returned by billing.plans.get(planId) (default: NEW_PLAN_SLUG). */
+    planSlug?: string | null;
     /**
      * Makes ALL billing.subscriptions.update calls throw (including the
      * pre-stamp in step 0). Use `finaliseThrows` to only fail the
@@ -159,6 +208,10 @@ function makeBilling(opts: BillingMockOpts = {}) {
     const paymentAdapter =
         opts.paymentAdapterPresent === false ? null : { subscriptions: { update: mpUpdate } };
 
+    // billing.plans.get — used by the cron to resolve the target plan slug.
+    const planSlug = opts.planSlug === undefined ? NEW_PLAN_SLUG : opts.planSlug;
+    const planGet = vi.fn().mockResolvedValue(planSlug !== null ? { name: planSlug } : null);
+
     let update: ReturnType<typeof vi.fn>;
     if (opts.updateThrows) {
         const err = opts.updateThrows;
@@ -183,11 +236,13 @@ function makeBilling(opts: BillingMockOpts = {}) {
                 changePlan,
                 update
             },
+            plans: { get: planGet },
             getPaymentAdapter: vi.fn(() => paymentAdapter)
         } as unknown as QZPayBilling,
         changePlan,
         mpUpdate,
         update,
+        planGet,
         paymentAdapter
     };
 }
@@ -210,7 +265,20 @@ function makeCtx(opts: { dryRun?: boolean } = {}) {
 
 describe('applyOne', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        // Use mockReset + set defaults instead of clearAllMocks to prevent
+        // sticky mockRejectedValue leaking between tests (T-012 lesson).
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
     });
 
     it('happy path: changePlan + MP + recalc + cache + mark applied', async () => {
@@ -438,7 +506,19 @@ describe('applyOne', () => {
 
 describe('applyScheduledPlanChangesJob.handler', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        // Use mockReset + defaults to prevent sticky mockRejectedValue (T-012 lesson).
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
         dueRowsState.rows = [];
     });
 
@@ -598,7 +678,19 @@ describe('applyScheduledPlanChangesJob.handler', () => {
 
 describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
+        dueRowsState.rows = [];
     });
 
     it('single row exhausted: result.failed > 0 AND result.success = false', async () => {
@@ -708,6 +800,266 @@ describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
         expect(result.errors).toBe(1); // only the exhausted row
         expect(result.processed).toBe(2); // both rows processed
         expect(result.details).toMatchObject({ applied: 1, failed: 1, retried: 0 });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-167 T-013: Downgrade restriction wiring
+//
+// Purpose: verifies that applyDowngradeRestrictions is called correctly
+// for downgrade scheduled changes, NOT called for upgrades, and that
+// restriction failures are handled as soft-fails (plan change stays applied,
+// result.success=false so SPEC-149 Sentry capture fires).
+// ---------------------------------------------------------------------------
+
+describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
+    beforeEach(() => {
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
+    });
+
+    it('downgrade: applyDowngradeRestrictions called after changePlan succeeds', async () => {
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyDowngradeRestrictions).toHaveBeenCalledOnce();
+        expect(applyDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                targetPlanSlug: NEW_PLAN_SLUG
+            })
+        );
+    });
+
+    it('downgrade: keepSelections from metadata passed to applyDowngradeRestrictions', async () => {
+        const keepSels = { accommodationIds: ['acc-1', 'acc-2'], promotionIds: [] };
+        vi.mocked(getKeepSelectionsForChange).mockReturnValue(keepSels);
+
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(applyDowngradeRestrictions).toHaveBeenCalledWith(
+            expect.objectContaining({ keepSelections: keepSels })
+        );
+    });
+
+    it('upgrade: applyDowngradeRestrictions NOT called for upgrade changeType', async () => {
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'upgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
+    });
+
+    it('no metadata.source: applyDowngradeRestrictions NOT called (safe default for legacy rows)', async () => {
+        // A change without metadata.source (legacy row before SPEC-167) — must not
+        // crash and must not call restrictions (cannot confirm direction, so skip).
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'none' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
+    });
+
+    it('restriction BEFORE cache clear: applyDowngradeRestrictions called before clearEntitlementCache', async () => {
+        // Ordering: restriction must happen BEFORE cache clear so the cache
+        // reflects the post-restriction state when first invalidated.
+        const callOrder: string[] = [];
+        vi.mocked(applyDowngradeRestrictions).mockImplementation(async () => {
+            callOrder.push('restriction');
+            return {
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            };
+        });
+        vi.mocked(clearEntitlementCache).mockImplementation((_id: string) => {
+            callOrder.push('cacheClean');
+        });
+
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        const restrictionIdx = callOrder.indexOf('restriction');
+        const cacheIdx = callOrder.indexOf('cacheClean');
+        expect(restrictionIdx).toBeGreaterThanOrEqual(0);
+        expect(cacheIdx).toBeGreaterThanOrEqual(0);
+        expect(restrictionIdx).toBeLessThan(cacheIdx);
+    });
+
+    it('restriction failure: plan change stays applied (outcome kind = applied)', async () => {
+        // Failure semantics (SPEC-167 T-013): restriction failure must NOT roll
+        // back the applied plan change. The pre-stamp from step 0 is already
+        // committed; the plan change is considered successful.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(new Error('restriction tx failed'));
+        const { billing, update } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        // Plan change is still 'applied' — restriction failure does NOT roll back.
+        expect(outcome.kind).toBe('applied');
+        // update is called for pre-stamp (step 0) + finalise (step 5) — NOT rolled back.
+        expect(update).toHaveBeenCalledTimes(2);
+        const preStampArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
+        const preStamp = preStampArg.scheduledPlanChange as Record<string, unknown>;
+        expect(preStamp.status).toBe('applied');
+    });
+
+    it('restriction failure: result includes restrictionFailed=true flag', async () => {
+        // The applyOne return value carries a flag so the handler can count the
+        // restriction failure as result.success=false for Sentry capture.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(new Error('restriction tx failed'));
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        // The outcome carries a restrictionFailed flag so the handler can set
+        // result.success=false.
+        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBe(true);
+    });
+
+    it('restriction failure: userId cannot be resolved → restriction skipped (no crash)', async () => {
+        vi.mocked(resolveOwnerUserId).mockResolvedValue(null);
+
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
+    });
+});
+
+describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => {
+    beforeEach(() => {
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
+        dueRowsState.rows = [];
+    });
+
+    it('restriction failure for a downgrade row → handler result.success=false (SPEC-149 Sentry)', async () => {
+        // CRITICAL: restriction failure must NOT roll back the plan change but
+        // MUST set result.success=false so SPEC-149's bootstrap Sentry capture fires.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(new Error('restriction tx failed'));
+        const { billing } = makeBilling();
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: SUB_ID,
+                customerId: CUSTOMER_ID,
+                currentPlanId: OLD_PLAN_ID,
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+            }
+        ];
+
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        // Plan change applied: processed=1, but success=false due to restriction error.
+        expect(result.processed).toBe(1);
+        expect(result.success).toBe(false);
+        // The plan change itself is 'applied' — not a retry or failed plan change.
+        expect(result.details).toMatchObject({ applied: 1, retried: 0, failed: 0 });
+    });
+
+    it('restriction failure for one row, plain apply for another → success=false, correct counts', async () => {
+        // First row: downgrade with restriction failure. Second: clean downgrade.
+        let restrictionCallCount = 0;
+        vi.mocked(applyDowngradeRestrictions).mockImplementation(async () => {
+            restrictionCallCount += 1;
+            if (restrictionCallCount === 1) throw new Error('restriction tx failed');
+            return {
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            };
+        });
+
+        const { billing } = makeBilling();
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        dueRowsState.rows = [
+            {
+                subscriptionId: 'sub-fail',
+                customerId: CUSTOMER_ID,
+                currentPlanId: OLD_PLAN_ID,
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+            },
+            {
+                subscriptionId: 'sub-ok',
+                customerId: CUSTOMER_ID,
+                currentPlanId: OLD_PLAN_ID,
+                mpSubscriptionId: null,
+                scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+            }
+        ];
+
+        const { ctx } = makeCtx();
+        const result = await applyScheduledPlanChangesJob.handler(ctx);
+
+        expect(result.processed).toBe(2);
+        expect(result.success).toBe(false);
+        // Both plan changes applied; restriction failure on one doesn't affect plan counts.
+        expect(result.details).toMatchObject({ applied: 2, retried: 0, failed: 0 });
     });
 });
 
