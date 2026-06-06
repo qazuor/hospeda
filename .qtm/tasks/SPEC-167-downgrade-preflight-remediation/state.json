@@ -140,7 +140,7 @@
             "id": "T-007",
             "title": "Accommodation restrict/restore primitives",
             "description": "Service primitives: restrictAccommodations({ ids }) sets planRestricted=true; restoreAccommodations({ ids }) unsets. Through @repo/db models (BaseModel), no raw SQL. Both return affected ids. INV-5: no other field touched, nothing deleted. Unit tests: set/unset round-trip, empty ids no-op, ownerSuspended untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-011", "T-012"],
@@ -148,21 +148,21 @@
             "tags": ["service", "primitives"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:30:00.000Z",
+                "completed": "2026-06-06T17:39:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Promotion restrict/restore primitives",
             "description": "restrictPromotions({ ids }) sets planRestricted=true (lifecycle stays untouched — the flag excludes them from active counts/reads per T-004); restorePromotions({ ids }) unsets. No batch-deactivate exists today (realign finding 6) — build on OwnerPromotionService/model. Unit tests: round-trip, lifecycle untouched, restricted excluded from active count.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-011", "T-012"],
@@ -170,14 +170,14 @@
             "tags": ["service", "primitives"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:30:00.000Z",
+                "completed": "2026-06-06T17:39:00.000Z"
             }
         },
         {
