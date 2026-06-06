@@ -558,7 +558,7 @@
             "id": "T-026",
             "title": "Fix getByDestination visibility gap (ownerSuspended + planRestricted)",
             "description": "Absorbed pre-existing bug (owner approved 2026-06-06, found in T-004 audit): accommodation getByDestination uses raw findAll WITHOUT the ownerSuspended filter — suspended (and now plan-restricted) listings leak through destination pages. Fix: apply the same public visibility predicate (ownerSuspended=false AND planRestricted=false, with the same isOwnScope/VIP exemptions as search) to getByDestination in accommodation.service/model. Regression test reproducing the leak FIRST (bug-fix rule), then fix. Re-run the T-004 test files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-019"],
@@ -566,14 +566,14 @@
             "tags": ["bugfix", "visibility"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T20:02:32.000Z",
+                "completed": "2026-06-06T20:02:32.000Z"
             }
         }
     ],
