@@ -7,6 +7,9 @@
  * no ownerSuspended, no deletedAt). They are the building blocks called by the
  * shared restriction coordinator (T-011).
  *
+ * Photo archive/restore primitives (T-009) live in the sibling module
+ * `plan-photo-restriction.service.ts` (extracted to keep files ≤500 lines).
+ *
  * **Semantic choice — set-based idempotent:**
  * `affectedIds` returns ALL requested ids that now hold the target state after
  * the operation, regardless of whether they were already in that state before
