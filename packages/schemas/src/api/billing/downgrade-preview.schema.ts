@@ -231,3 +231,89 @@ export const ComputeDowngradeExcessInputSchema = z.object({
     targetPlanSlug: z.string().min(1)
 });
 export type ComputeDowngradeExcessInput = z.infer<typeof ComputeDowngradeExcessInputSchema>;
+
+// ---------------------------------------------------------------------------
+// keepSelections — host's explicit override for which items to keep active
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional host selection that overrides the default (most-recently-updated)
+ * keep order applied by the cron at downgrade-apply time.
+ *
+ * Shape mirrors the preview contract identities defined above:
+ * - `accommodationIds`: UUIDs of accommodations the host wants to keep active.
+ *   The cron restricts all OTHER active accommodations that exceed the cap.
+ * - `promotionIds`: UUIDs of promotions the host wants to keep active.
+ *   The cron deactivates all OTHER active promotions that exceed the cap.
+ * - `photoKeepMap`: Per-accommodation map of photo URLs to keep in the
+ *   visible `gallery` array. URL identity matches `AccommodationPhotoExcessSchema`
+ *   (T-009 decision — FIFO restore, identity = image `url` string).
+ *   Photos NOT listed that are currently in the gallery and within the cap
+ *   are kept by position (gallery order); excess URLs are moved to
+ *   `archivedGallery` per spec §3.
+ *
+ * All fields are optional (partial override). An absent field means "use the
+ * default keep order for that dimension". An empty array (`[]`) is treated
+ * the same as absent (the cron falls back to the default sort).
+ *
+ * This schema is used:
+ *   1. As the `keepSelections` field on the plan-change downgrade request body
+ *      (SPEC-167 T-015, §4 decision 3).
+ *   2. Persisted into `QZPayScheduledPlanChange.metadata.keepSelections` so
+ *      the cron can read it back at apply time (T-013 consumer).
+ *   3. Exposed in the read-back helper `getKeepSelectionsForChange` (T-015).
+ *
+ * Upgrades MUST NOT send this field; the route ignores / strips it (see
+ * `PlanChangeRequestSchema` JSDoc for the upgrade-path semantic).
+ *
+ * @example
+ * ```ts
+ * const sel: KeepSelections = {
+ *   accommodationIds: ['accom-uuid-1'],
+ *   promotionIds: [],
+ *   photoKeepMap: {
+ *     'accom-uuid-1': ['https://cdn.example.com/img1.jpg']
+ *   }
+ * };
+ * KeepSelectionsSchema.parse(sel); // ok
+ * ```
+ *
+ * @module api/billing/downgrade-preview
+ */
+export const KeepSelectionsSchema = z.object({
+    /**
+     * Accommodation UUIDs the host explicitly wants to KEEP active after
+     * the downgrade applies. All other active accommodations exceeding the
+     * cap will be plan-restricted (unpublished / `planRestricted` flag).
+     *
+     * The list is intersected with the actual set of active accommodations
+     * owned by the host at apply time — stale UUIDs are silently ignored.
+     */
+    accommodationIds: z.array(z.string().uuid()).optional(),
+    /**
+     * Promotion UUIDs the host explicitly wants to KEEP active after
+     * the downgrade applies. All other active promotions exceeding the
+     * cap will be deactivated.
+     *
+     * Stale UUIDs (promotions that no longer exist or are already inactive)
+     * are silently ignored at apply time.
+     */
+    promotionIds: z.array(z.string().uuid()).optional(),
+    /**
+     * Per-accommodation map of photo URLs the host wants to keep in the
+     * visible `gallery`. Key = accommodation UUID (must be a valid UUID).
+     * Value = array of photo URL strings to keep visible.
+     *
+     * Photos currently in `gallery` that are NOT listed here and exceed
+     * the per-accommodation cap are moved to `archivedGallery` (JSONB
+     * field on `accommodations.media`). Photo identity = URL string
+     * (T-009 decision).
+     *
+     * Stale URLs (not present in the accommodation's current gallery at
+     * apply time) are silently ignored.
+     */
+    photoKeepMap: z.record(z.string().uuid(), z.array(z.string().url())).optional()
+});
+
+/** TypeScript type inferred from {@link KeepSelectionsSchema}. */
+export type KeepSelections = z.infer<typeof KeepSelectionsSchema>;

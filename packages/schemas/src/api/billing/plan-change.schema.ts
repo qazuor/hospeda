@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BillingIntervalEnum } from '../../enums/billing-interval.enum.js';
+import { KeepSelectionsSchema } from './downgrade-preview.schema.js';
 
 /**
  * Plan change status enum
@@ -26,8 +27,18 @@ export const PlanChangeStatusEnumSchema = z.nativeEnum(PlanChangeStatusEnum, {
 });
 
 /**
- * Schema for plan change request body
- * Validates the input when a user requests to change their subscription plan
+ * Schema for plan change request body.
+ *
+ * Validates the input when a user requests to change their subscription plan.
+ *
+ * **Upgrade-path semantic for `keepSelections`** (SPEC-167 T-015, §4 decision 3):
+ * The field is defined on the shared request schema and is optional for all
+ * callers. For UPGRADES the route handler IGNORES the field entirely — it is
+ * never forwarded to `initiatePaidPlanUpgrade` and has no effect on the upgrade
+ * flow. This "silent ignore" avoids a schema fork (separate upgrade/downgrade
+ * request types) and keeps the client contract simple: clients may always send
+ * `keepSelections`; for upgrades it is a no-op. The route-level JSDoc and
+ * OpenAPI description document this behaviour so API consumers are not confused.
  */
 export const PlanChangeRequestSchema = z.object({
     /** The ID of the target plan to change to */
@@ -40,7 +51,22 @@ export const PlanChangeRequestSchema = z.object({
     /** The billing interval for the new plan */
     billingInterval: z.nativeEnum(BillingIntervalEnum, {
         error: () => ({ message: 'zodError.billing.planChange.billingInterval.invalid' })
-    })
+    }),
+    /**
+     * Optional host selection for which items to keep active after a DOWNGRADE
+     * applies (SPEC-167 T-015). Persisted into the scheduled-change metadata
+     * and consumed by the `apply-scheduled-plan-changes` cron (T-013).
+     *
+     * **For UPGRADES**: this field is silently ignored by the route handler.
+     * Clients may always send it; it has no effect on the upgrade flow.
+     *
+     * **For DOWNGRADES**: when present, its `accommodationIds`, `promotionIds`,
+     * and `photoKeepMap` override the default keep order (most-recently-updated).
+     * Absent or empty arrays fall back to the default sort at apply time.
+     *
+     * See {@link KeepSelectionsSchema} for the full field contract.
+     */
+    keepSelections: KeepSelectionsSchema.optional()
 });
 
 /** TypeScript type inferred from PlanChangeRequestSchema */
