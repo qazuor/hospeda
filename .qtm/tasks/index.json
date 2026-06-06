@@ -211,13 +211,15 @@
         {
             "specId": "SPEC-197",
             "title": "Admin View-Stats Surfaces",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "21/21",
             "path": "SPEC-197-admin-view-stats-surfaces",
-            "branch": "spec/SPEC-197-admin-view-stats-surfaces",
+            "branch": "fix/SPEC-197-smoke-findings",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
             "base": "staging",
-            "note": "Spec approved by owner 2026-06-05; 21 tasks generated via task-from-spec 2026-06-05 (state.json + TODOs.md in tasks dir)."
+            "archived": true,
+            "archivedAt": "2026-06-06",
+            "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
         }
     ],
     "standalone": {

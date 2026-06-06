@@ -3,7 +3,7 @@ specId: SPEC-197
 title: Admin View-Stats Surfaces
 type: feature
 complexity: high
-status: draft
+status: completed
 created: 2026-06-05
 owner: qazuor
 dependsOn:
