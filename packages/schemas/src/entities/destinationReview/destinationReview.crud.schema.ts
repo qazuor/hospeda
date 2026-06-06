@@ -38,6 +38,28 @@ export const DestinationReviewCreateInputSchema = DestinationReviewSchema.omit({
 }).strict();
 
 /**
+ * Body-only variant of {@link DestinationReviewCreateInputSchema} for HTTP
+ * routes where `destinationId` is sourced from the URL path and `userId`
+ * is resolved from the authenticated actor. Validating against this variant
+ * lets the client POST just the review payload (rating + optional title +
+ * optional content) without redundantly echoing identifiers the server
+ * already knows.
+ *
+ * The original input schema remains intact (service-layer callers and admin
+ * tooling still pass the full payload), per the schemas additive-only policy.
+ */
+export const DestinationReviewCreateBodySchema = DestinationReviewCreateInputSchema.omit({
+    destinationId: true,
+    userId: true
+});
+
+/**
+ * Type for the body-only variant of the destination review create input.
+ * Contains only the review payload fields (rating + optional title + optional content).
+ */
+export type DestinationReviewCreateBody = z.infer<typeof DestinationReviewCreateBodySchema>;
+
+/**
  * Schema for destination review creation response
  * Returns the complete destination review object
  */

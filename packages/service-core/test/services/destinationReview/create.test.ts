@@ -6,7 +6,12 @@ import type {
     DestinationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
 import type { ServiceConfig } from '../../../src/types';
@@ -73,26 +78,18 @@ describe('create', () => {
         ...overrides
     });
 
-    it('creates a review and updates destination stats', async () => {
-        // Arrange
-        const actor = createActor({
-            id: getMockId('user', 'actor-1') as UserIdType,
-            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
-        });
-        const destinationId = getMockId('destination', 'dest-1') as DestinationIdType;
-        const userId = getMockId('user', 'user-1') as UserIdType;
-        const reviewInput = buildReviewInput();
+    const buildCreatedReview = (input: DestinationReviewCreateInput): DestinationReview => {
         const now = new Date();
-        const createdReview: DestinationReview = {
+        return {
             id: getMockId('feature', 'review-1') as DestinationReviewIdType,
-            destinationId,
-            userId,
-            title: reviewInput.title,
-            content: reviewInput.content,
-            rating: reviewInput.rating,
+            destinationId: input.destinationId,
+            userId: input.userId,
+            title: input.title,
+            content: input.content,
+            rating: input.rating,
             averageRating: 0,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
-            moderationState: ModerationStatusEnum.APPROVED,
+            moderationState: ModerationStatusEnum.PENDING,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,
@@ -104,9 +101,21 @@ describe('create', () => {
             createdAt: now,
             updatedAt: now,
             deletedAt: undefined,
-            createdById: userId,
-            updatedById: userId
+            createdById: input.userId,
+            updatedById: input.userId
         };
+    };
+
+    it('creates a review and updates destination stats', async () => {
+        // Arrange
+        const actor = createActor({
+            id: getMockId('user', 'actor-1') as UserIdType,
+            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
+        });
+        const destinationId = getMockId('destination', 'dest-1') as DestinationIdType;
+        const reviewInput = buildReviewInput();
+        const createdReview = buildCreatedReview(reviewInput);
+        vi.spyOn(reviewModel, 'findOne').mockResolvedValue(null);
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
         vi.spyOn(reviewModel, 'findAll').mockResolvedValue({ items: [createdReview], total: 1 });
         vi.spyOn(reviewModel, 'update').mockResolvedValue(createdReview);
@@ -130,5 +139,85 @@ describe('create', () => {
         expect(result.data?.id).toBe(createdReview.id);
         expect(recalcMock).toHaveBeenCalledTimes(1);
         expect(recalcMock).toHaveBeenCalledWith(destinationId, undefined);
+    });
+
+    // ===========================================================================
+    // SPEC-202 T-013 — duplicate guard in _beforeCreate
+    // ===========================================================================
+
+    it('throws ALREADY_EXISTS when a non-deleted review already exists for the user+destination', async () => {
+        // Arrange — model.findOne resolves an existing (non-deleted) review row
+        const actor = createActor({
+            id: getMockId('user', 'actor-1') as UserIdType,
+            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
+        });
+        const reviewInput = buildReviewInput();
+        const existingReview = buildCreatedReview(reviewInput);
+        vi.spyOn(reviewModel, 'findOne').mockResolvedValue(existingReview);
+
+        // Act
+        const result = await service.create(actor, reviewInput);
+
+        // Assert
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
+    });
+
+    it('proceeds to create when findOne resolves null (no existing review)', async () => {
+        // Arrange — model.findOne returns null → no prior review exists
+        const actor = createActor({
+            id: getMockId('user', 'actor-1') as UserIdType,
+            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
+        });
+        const reviewInput = buildReviewInput();
+        const createdReview = buildCreatedReview(reviewInput);
+        vi.spyOn(reviewModel, 'findOne').mockResolvedValue(null);
+        vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
+        vi.spyOn(reviewModel, 'update').mockResolvedValue(createdReview);
+        vi.spyOn(reviewModel, 'updateById').mockResolvedValue();
+        vi.spyOn(
+            service as unknown as {
+                recalculateAndUpdateDestinationStats: (...args: unknown[]) => Promise<void>;
+            },
+            'recalculateAndUpdateDestinationStats'
+        ).mockResolvedValue();
+
+        // Act
+        const result = await service.create(actor, reviewInput);
+
+        // Assert
+        expect(result.data).toBeDefined();
+        expect(result.error).toBeUndefined();
+    });
+
+    it('omits deletedAt from the findOne filter (soft-deleted rows also block re-submission, matching the plain unique index)', async () => {
+        // Arrange
+        const actor = createActor({
+            id: getMockId('user', 'actor-1') as UserIdType,
+            permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE]
+        });
+        const reviewInput = buildReviewInput();
+        const createdReview = buildCreatedReview(reviewInput);
+        const findOneSpy = vi.spyOn(reviewModel, 'findOne').mockResolvedValue(null);
+        vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
+        vi.spyOn(reviewModel, 'update').mockResolvedValue(createdReview);
+        vi.spyOn(reviewModel, 'updateById').mockResolvedValue();
+        vi.spyOn(
+            service as unknown as {
+                recalculateAndUpdateDestinationStats: (...args: unknown[]) => Promise<void>;
+            },
+            'recalculateAndUpdateDestinationStats'
+        ).mockResolvedValue();
+
+        // Act
+        await service.create(actor, reviewInput);
+
+        // Assert — the duplicate pre-check must NOT filter on deletedAt: the DB
+        // unique index on (user_id, destination_id) is plain, so a soft-deleted
+        // row would still reject the insert; matching it here yields a clean 409.
+        expect(findOneSpy).toHaveBeenCalledWith({
+            userId: reviewInput.userId,
+            destinationId: reviewInput.destinationId
+        });
     });
 });

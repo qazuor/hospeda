@@ -220,6 +220,18 @@
             "archived": true,
             "archivedAt": "2026-06-06",
             "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
+        },
+        {
+            "specId": "SPEC-202",
+            "title": "Destination Review Submission Flow (web) + API contract/security fix",
+            "status": "in-progress",
+            "progress": "21/21",
+            "path": "SPEC-202-destination-review-submission",
+            "branch": "spec/SPEC-202-destination-review-submission",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-202-destination-review-submission",
+            "base": "staging",
+            "archived": false,
+            "updatedAt": "2026-06-06T18:06:26Z"
         }
     ],
     "standalone": {

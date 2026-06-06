@@ -804,6 +804,78 @@ export const reviewsApi = {
     }
 };
 
+// --- Destination Reviews (Protected) ---
+
+/** Rating dimensions required for a destination review (18 aspects) */
+export interface DestinationReviewRating {
+    readonly landscape: number;
+    readonly attractions: number;
+    readonly accessibility: number;
+    readonly safety: number;
+    readonly cleanliness: number;
+    readonly hospitality: number;
+    readonly culturalOffer: number;
+    readonly gastronomy: number;
+    readonly affordability: number;
+    readonly nightlife: number;
+    readonly infrastructure: number;
+    readonly environmentalCare: number;
+    readonly wifiAvailability: number;
+    readonly shopping: number;
+    readonly beaches: number;
+    readonly greenSpaces: number;
+    readonly localEvents: number;
+    readonly weatherSatisfaction: number;
+}
+
+/** Data sent when creating a destination review. userId and destinationId are NOT included. */
+export interface CreateDestinationReviewBody {
+    readonly rating: DestinationReviewRating;
+    readonly title?: string;
+    readonly content?: string;
+}
+
+/** Protected destination review API endpoints */
+export const destinationReviewsApi = {
+    /**
+     * Create a new review for a destination.
+     *
+     * The authenticated user's id is injected server-side; do NOT include
+     * `userId` in the body — the endpoint will reject it with a 400.
+     *
+     * @param params - Destination ID and review data
+     * @returns The created review record (moderationState will be PENDING)
+     *
+     * @example
+     * ```ts
+     * const result = await destinationReviewsApi.create({
+     *   destinationId: 'dest-uuid',
+     *   body: {
+     *     rating: { landscape: 5, attractions: 4, accessibility: 4, safety: 5,
+     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, gastronomy: 5,
+     *               affordability: 4, nightlife: 3, infrastructure: 4, environmentalCare: 4,
+     *               wifiAvailability: 3, shopping: 3, beaches: 5, greenSpaces: 4,
+     *               localEvents: 4, weatherSatisfaction: 5 },
+     *     title: 'Hermoso lugar',
+     *     content: 'Pasamos un finde excelente, mucha naturaleza.'
+     *   }
+     * });
+     * ```
+     */
+    create({
+        destinationId,
+        body
+    }: {
+        readonly destinationId: string;
+        readonly body: CreateDestinationReviewBody;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/destinations/${destinationId}/reviews`,
+            body
+        });
+    }
+};
+
 // --- Exchange Rates (Public) ---
 
 /**

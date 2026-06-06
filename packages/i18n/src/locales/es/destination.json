@@ -190,5 +190,35 @@
         "accommodationCount_other": "{{count}} alojamientos disponibles",
         "eventCount_one": "{{count}} evento proximo",
         "eventCount_other": "{{count}} eventos proximos"
+    },
+    "rating": {
+        "outOf": "de 5",
+        "dimensions": {
+            "landscape": "Paisaje",
+            "attractions": "Atracciones",
+            "accessibility": "Accesibilidad",
+            "safety": "Seguridad",
+            "cleanliness": "Limpieza",
+            "hospitality": "Hospitalidad",
+            "culturalOffer": "Oferta cultural",
+            "gastronomy": "Gastronomía",
+            "affordability": "Relación precio-calidad",
+            "nightlife": "Vida nocturna",
+            "infrastructure": "Infraestructura",
+            "environmentalCare": "Cuidado del entorno",
+            "wifiAvailability": "Conectividad wifi",
+            "shopping": "Compras",
+            "beaches": "Playas",
+            "greenSpaces": "Espacios verdes",
+            "localEvents": "Eventos locales",
+            "weatherSatisfaction": "Satisfacción climática"
+        },
+        "categories": {
+            "nature": "Naturaleza y paisaje",
+            "cultureAttractions": "Atracciones y cultura",
+            "foodShopping": "Gastronomía y compras",
+            "services": "Servicios e infraestructura",
+            "experienceSafety": "Experiencia y seguridad"
+        }
     }
 }

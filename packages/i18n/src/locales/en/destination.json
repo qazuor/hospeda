@@ -190,5 +190,35 @@
         "accommodationCount_other": "{{count}} accommodations available",
         "eventCount_one": "{{count}} upcoming event",
         "eventCount_other": "{{count}} upcoming events"
+    },
+    "rating": {
+        "outOf": "out of 5",
+        "dimensions": {
+            "landscape": "Landscape",
+            "attractions": "Attractions",
+            "accessibility": "Accessibility",
+            "safety": "Safety",
+            "cleanliness": "Cleanliness",
+            "hospitality": "Hospitality",
+            "culturalOffer": "Cultural offer",
+            "gastronomy": "Gastronomy",
+            "affordability": "Value for money",
+            "nightlife": "Nightlife",
+            "infrastructure": "Infrastructure",
+            "environmentalCare": "Environmental care",
+            "wifiAvailability": "Wi-Fi availability",
+            "shopping": "Shopping",
+            "beaches": "Beaches",
+            "greenSpaces": "Green spaces",
+            "localEvents": "Local events",
+            "weatherSatisfaction": "Weather satisfaction"
+        },
+        "categories": {
+            "nature": "Nature & scenery",
+            "cultureAttractions": "Attractions & culture",
+            "foodShopping": "Food & shopping",
+            "services": "Services & infrastructure",
+            "experienceSafety": "Experience & safety"
+        }
     }
 }

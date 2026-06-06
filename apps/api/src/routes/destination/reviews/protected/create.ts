@@ -6,7 +6,7 @@ import type { z } from '@hono/zod-openapi';
 import { EntitlementKey } from '@repo/billing';
 import {
     DestinationIdSchema,
-    DestinationReviewCreateInputSchema,
+    DestinationReviewCreateBodySchema,
     DestinationReviewProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -19,7 +19,12 @@ import { createProtectedRoute } from '../../../../utils/route-factory';
 
 /**
  * POST /api/v1/protected/destinations/:destinationId/reviews
- * Create destination review - Protected endpoint
+ * Create destination review - Protected endpoint.
+ *
+ * The route validates ONLY the review payload (rating + optional title +
+ * optional content). `destinationId` and `userId` are supplied by the
+ * URL path and the authenticated actor respectively, so the client never
+ * needs to echo them in the body.
  */
 export const protectedCreateDestinationReviewRoute = createProtectedRoute({
     method: 'post',
@@ -32,14 +37,15 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
     requestParams: {
         destinationId: DestinationIdSchema
     },
-    requestBody: DestinationReviewCreateInputSchema,
+    requestBody: DestinationReviewCreateBodySchema,
     responseSchema: DestinationReviewProtectedSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const input = body as z.infer<typeof DestinationReviewCreateInputSchema>;
+        const input = body as z.infer<typeof DestinationReviewCreateBodySchema>;
         const payload = {
             ...input,
-            destinationId: params.destinationId as z.infer<typeof DestinationIdSchema>
+            destinationId: params.destinationId as z.infer<typeof DestinationIdSchema>,
+            userId: actor.id
         };
         const service = new DestinationReviewService({ logger: apiLogger });
         const result = await service.create(actor, payload);

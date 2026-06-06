@@ -33,6 +33,9 @@ import {
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
+import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
+import { getApiUrl } from '@/lib/env';
 import {
 	toAccommodationCardProps,
 	toDestinationFaqs,
@@ -464,7 +467,26 @@ const safeDescriptionHtml = renderContent({
 				reviewsCount={stats.reviewsCount}
 				ratingBreakdown={ratingBreakdown}
 				locale={locale}
-			/>
+			>
+				<Fragment slot="actions">
+					{isAuthenticated ? (
+						<DestinationReviewSidebarCard
+							client:idle
+							variant="inline"
+							destinationId={destId}
+							destinationName={name}
+							locale={locale}
+							apiUrl={getApiUrl()}
+						/>
+					) : (
+						<DestinationReviewSignInCta
+							variant="inline"
+							locale={locale}
+							returnPath={`destinos/${path}`}
+						/>
+					)}
+				</Fragment>
+			</DestinationReviewsSection>
 		</div>
 
 		<!-- FAQs (SPEC-158): rendered only when the destination has FAQs -->
@@ -612,6 +634,24 @@ const safeDescriptionHtml = renderContent({
 			eventsCount={stats.eventsCount}
 			locale={locale}
 		/>
+
+		{isAuthenticated ? (
+			/* client:idle (NOT client:visible): the sticky sidebar is taller than
+			   the viewport, so this last card only intersects at full page scroll —
+			   with client:visible the CTA renders as a dead SSR button until then. */
+			<DestinationReviewSidebarCard
+				client:idle
+				destinationId={destId}
+				destinationName={name}
+				locale={locale}
+				apiUrl={getApiUrl()}
+			/>
+		) : (
+			<DestinationReviewSignInCta
+				locale={locale}
+				returnPath={`destinos/${path}`}
+			/>
+		)}
 	</div>
 </DetailLayout>
 
