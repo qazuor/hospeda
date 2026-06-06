@@ -96,7 +96,7 @@
             "id": "T-005",
             "title": "Red-first unit tests for computeDowngradeExcess",
             "description": "Write the failing test suite for the excess-diff helper BEFORE implementing (spec §3 dimensions): accommodations over MAX_ACCOMMODATIONS, active promotions over MAX_ACTIVE_PROMOTIONS, photos per accommodation over MAX_PHOTOS_PER_ACCOMMODATION, rich-description and video grandfather detection. Cases: under-cap (empty diff), exactly-at-cap, over-cap with default keep selection (most-recently-updated first), unlimited target (no limit key). Test file colocated with subscription-downgrade.service tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006"],
@@ -104,21 +104,21 @@
             "tags": ["tests", "tdd"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:00:00.000Z",
+                "completed": "2026-06-06T21:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Implement computeDowngradeExcess (read-only diff helper)",
             "description": "In apps/api/src/services/subscription-downgrade.service.ts (or sibling module if >500 lines): RO-RO helper computing usage-vs-target excess for all §3 dimensions + the default keep selection (most-recently-updated; most-viewed as tiebreaker if view data is cheap to reach). Read-only — NO mutations. Returns a structured preview object (this shape IS the SPEC-203 preview contract — export its Zod schema from @repo/schemas). Make T-005 tests green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-011", "T-016"],
@@ -126,14 +126,14 @@
             "tags": ["service", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T17:00:00.000Z",
+                "completed": "2026-06-06T21:30:00.000Z"
             }
         },
         {
