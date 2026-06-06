@@ -80,36 +80,50 @@
             "id": "T-003",
             "title": "API route: text-improve.ts",
             "description": "Create apps/api/src/routes/ai/protected/text-improve.ts per spec §5.1. Use createProtectedStreamingRoute from apps/api/src/utils/streaming-route-factory.ts. Middleware order (CRITICAL — wrong order = 503 on every request): entitlementMiddleware(), ...createAiRateLimitMiddlewares('text_improve'), createAiQuotaMiddleware('text_improve'). Handler: build user prompt with fieldValue+fieldType, call createConfiguredAiService().streamText({feature:'text_improve', prompt, locale:locale ?? 'es'}), return {stream, meta}. FEATURE const = 'text_improve' (AiFeature type). DO NOT mount this route in apps/api/src/routes/ai/index.ts (admin barrel).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
                 {
                     "title": "Create route file with full middleware composition",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement buildTextImprovePrompt helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire streamHandler to aiService.streamText",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Run pnpm typecheck on apps/api",
-                    "completed": false
+                    "title": "Add gate matrix row to docs/billing/endpoint-gate-matrix.md (status=to-wire)",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck + lint on apps/api",
+                    "completed": true
                 }
             ],
             "tags": ["api", "streaming", "sse", "hono"],
-            "phase": "core"
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "deferred-to-T-005"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:55:00.000Z",
+                "completed": "2026-06-06T06:20:00.000Z"
+            }
         },
         {
             "id": "T-004",
             "title": "Create barrel apps/api/src/routes/ai/protected/index.ts + mount in routes/index.ts",
             "description": "Per spec §5.1 X1 convention. Create apps/api/src/routes/ai/protected/index.ts that exports protectedAiRoutes via createRouter().route('/text-improve', protectedAiTextImproveRoute). Add a comment slot for SPEC-199 (search-intent) and SPEC-200 (chat) to add later. In apps/api/src/routes/index.ts add: import { protectedAiRoutes } from './ai/protected/index.js' and app.route('/api/v1/protected/ai', protectedAiRoutes). If the sibling specs already created the barrel, ADD to it — do not recreate. Do NOT export from routes/ai/index.ts (admin barrel).",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-006"],
@@ -125,10 +139,18 @@
                 {
                     "title": "Verify route is reachable at POST /api/v1/protected/ai/text-improve",
                     "completed": false
+                },
+                {
+                    "title": "Flip matrix row status from to-wire to wired",
+                    "completed": false
                 }
             ],
             "tags": ["api", "routing", "convention"],
-            "phase": "core"
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T06:20:00.000Z"
+            }
         },
         {
             "id": "T-005",

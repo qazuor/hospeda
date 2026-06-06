@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 0/10 tasks (0%)
+## Progress: 4/10 tasks (40%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -22,19 +22,19 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 2) - Schema: AiTextImproveRequestSchema in @repo/schemas
+- [x] **T-001** (complexity: 2) - Schema: AiTextImproveRequestSchema in @repo/schemas
   - AiTextImproveFieldTypeSchema, AI_TEXT_IMPROVE_MAX_LENGTH const, AiTextImproveRequestSchema (strict + superRefine)
   - Files: packages/schemas/src/entities/ai/ai-text-improve.schema.ts, index.ts
   - Blocked by: none
   - Blocks: T-002, T-003
 
-- [ ] **T-002** (complexity: 2) - Schema unit tests
+- [x] **T-002** (complexity: 2) - Schema unit tests
   - 13 cases per spec §9.1; enum-resilience (toContain, NEVER toHaveLength)
   - File: packages/schemas/src/entities/ai/**tests**/ai-text-improve.schema.test.ts
   - Blocked by: T-001
   - Blocks: —
 
-- [ ] **T-007** (complexity: 2) - i18n keys aiTextImprove.* in es/en/pt
+- [x] **T-007** (complexity: 2) - i18n keys aiTextImprove.* in es/en/pt
   - 11 error codes × 3 locales + base keys; check-locales gate
   - Files: packages/i18n/src/locales/{es,en,pt}/admin-common.json
   - Blocked by: none
@@ -42,7 +42,7 @@
 
 ### Core Phase
 
-- [ ] **T-003** (complexity: 4) - API route: text-improve.ts
+- [x] **T-003** (complexity: 4) - API route: text-improve.ts
   - createProtectedStreamingRoute + middleware stack (entitlement FIRST) + buildTextImprovePrompt + streamHandler
   - File: apps/api/src/routes/ai/protected/text-improve.ts
   - Blocked by: T-001
