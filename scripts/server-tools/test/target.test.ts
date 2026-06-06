@@ -11,6 +11,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
+    type TargetSource,
     getAppResourceName,
     getDbCredentials,
     getDbResourceName,
@@ -61,63 +62,85 @@ afterEach(() => {
 });
 
 describe('resolveTarget(argv)', () => {
-    it('defaults to prod when no flag, no env var', () => {
-        const result = resolveTarget(['logs', 'api']);
-        expect(result.target).toBe('prod');
-        expect(result.remainingArgv).toEqual(['logs', 'api']);
+    describe('no flag, no env var', () => {
+        it('returns target=undefined, source=none when neither flag nor env var is set', () => {
+            const result = resolveTarget(['logs', 'api']);
+            expect(result.target).toBeUndefined();
+            expect(result.source).toBe('none' satisfies TargetSource);
+            expect(result.remainingArgv).toEqual(['logs', 'api']);
+        });
+
+        it('does NOT fall back to prod silently', () => {
+            const result = resolveTarget([]);
+            expect(result.target).toBeUndefined();
+            expect(result.source).toBe('none');
+        });
     });
 
-    it('parses --target=staging (single token)', () => {
-        const result = resolveTarget(['--target=staging', 'logs', 'api']);
-        expect(result.target).toBe('staging');
-        expect(result.remainingArgv).toEqual(['logs', 'api']);
+    describe('--target= flag', () => {
+        it('parses --target=staging (single token)', () => {
+            const result = resolveTarget(['--target=staging', 'logs', 'api']);
+            expect(result.target).toBe('staging');
+            expect(result.source).toBe('flag' satisfies TargetSource);
+            expect(result.remainingArgv).toEqual(['logs', 'api']);
+        });
+
+        it('parses --target staging (two tokens)', () => {
+            const result = resolveTarget(['--target', 'staging', 'logs', 'api']);
+            expect(result.target).toBe('staging');
+            expect(result.source).toBe('flag');
+            expect(result.remainingArgv).toEqual(['logs', 'api']);
+        });
+
+        it('parses --target=prod and strips it from argv', () => {
+            const result = resolveTarget(['logs', '--target=prod', 'api']);
+            expect(result.target).toBe('prod');
+            expect(result.source).toBe('flag');
+            expect(result.remainingArgv).toEqual(['logs', 'api']);
+        });
+
+        it('returns empty remainingArgv when only the flag is present', () => {
+            const result = resolveTarget(['--target=staging']);
+            expect(result.target).toBe('staging');
+            expect(result.source).toBe('flag');
+            expect(result.remainingArgv).toEqual([]);
+        });
+
+        it('preserves order of remaining argv tokens', () => {
+            const result = resolveTarget(['exec', '--target=staging', 'api', '--', 'node', '-v']);
+            expect(result.target).toBe('staging');
+            expect(result.source).toBe('flag');
+            expect(result.remainingArgv).toEqual(['exec', 'api', '--', 'node', '-v']);
+        });
+
+        it('throws for an invalid --target value', () => {
+            expect(() => resolveTarget(['--target=production', 'health'])).toThrow(
+                /Invalid --target value 'production'/
+            );
+        });
     });
 
-    it('parses --target staging (two tokens)', () => {
-        const result = resolveTarget(['--target', 'staging', 'logs', 'api']);
-        expect(result.target).toBe('staging');
-        expect(result.remainingArgv).toEqual(['logs', 'api']);
-    });
+    describe('HOPS_DEFAULT_TARGET env var', () => {
+        it('uses HOPS_DEFAULT_TARGET when no flag is given', () => {
+            process.env.HOPS_DEFAULT_TARGET = 'staging';
+            const result = resolveTarget(['db-counts']);
+            expect(result.target).toBe('staging');
+            expect(result.source).toBe('env' satisfies TargetSource);
+        });
 
-    it('parses --target=prod and strips it from argv', () => {
-        const result = resolveTarget(['logs', '--target=prod', 'api']);
-        expect(result.target).toBe('prod');
-        expect(result.remainingArgv).toEqual(['logs', 'api']);
-    });
+        it('CLI flag overrides HOPS_DEFAULT_TARGET (flag wins)', () => {
+            process.env.HOPS_DEFAULT_TARGET = 'staging';
+            const result = resolveTarget(['--target=prod', 'db-counts']);
+            expect(result.target).toBe('prod');
+            expect(result.source).toBe('flag');
+        });
 
-    it('falls back to HOPS_DEFAULT_TARGET when no flag is given', () => {
-        process.env.HOPS_DEFAULT_TARGET = 'staging';
-        const result = resolveTarget(['health']);
-        expect(result.target).toBe('staging');
-    });
-
-    it('CLI flag overrides HOPS_DEFAULT_TARGET', () => {
-        process.env.HOPS_DEFAULT_TARGET = 'staging';
-        const result = resolveTarget(['--target=prod', 'health']);
-        expect(result.target).toBe('prod');
-    });
-
-    it('throws for an invalid target value', () => {
-        expect(() => resolveTarget(['--target=production', 'health'])).toThrow(
-            /Invalid target 'production'/
-        );
-    });
-
-    it('throws for an invalid HOPS_DEFAULT_TARGET value', () => {
-        process.env.HOPS_DEFAULT_TARGET = 'dev';
-        expect(() => resolveTarget(['health'])).toThrow(/Invalid target 'dev'/);
-    });
-
-    it('returns empty remainingArgv when only the flag is present', () => {
-        const result = resolveTarget(['--target=staging']);
-        expect(result.target).toBe('staging');
-        expect(result.remainingArgv).toEqual([]);
-    });
-
-    it('preserves order of remaining argv tokens', () => {
-        const result = resolveTarget(['exec', '--target=staging', 'api', '--', 'node', '-v']);
-        expect(result.target).toBe('staging');
-        expect(result.remainingArgv).toEqual(['exec', 'api', '--', 'node', '-v']);
+        it('throws for an invalid HOPS_DEFAULT_TARGET value', () => {
+            process.env.HOPS_DEFAULT_TARGET = 'dev';
+            expect(() => resolveTarget(['db-counts'])).toThrow(
+                /Invalid HOPS_DEFAULT_TARGET value 'dev'/
+            );
+        });
     });
 });
 

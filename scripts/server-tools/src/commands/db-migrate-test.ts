@@ -81,6 +81,11 @@ Without --pull / --no-pull the command asks interactively.
 Without --yes on prod, the command prompts for confirmation (pg_dump +
 restore + migrate run on the same instance — avoid during peak hours).
 
+Warning:
+  The scratch clone runs inside the TARGET Postgres container — it uses
+  the same disk and competes for I/O with live traffic. Avoid running
+  this against prod during peak hours.
+
 Examples:
   hops db-migrate-test --target=staging --no-pull
   hops db-migrate-test --target=prod --pull --no-build --yes

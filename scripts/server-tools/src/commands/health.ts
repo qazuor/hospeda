@@ -26,6 +26,10 @@ Args:
                 / admin.hospeda.com.ar.
   staging       Smoke-tests staging.hospeda.com.ar et al.
 
+Note:
+  The environment is a positional argument (prod|staging), NOT the global
+  --target= flag. HOPS_DEFAULT_TARGET has no effect on this command.
+
 Flags:
   --help, -h    Show this help.
 
