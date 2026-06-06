@@ -617,8 +617,11 @@ const safeDescriptionHtml = renderContent({
 		/>
 
 		{isAuthenticated ? (
+			/* client:idle (NOT client:visible): the sticky sidebar is taller than
+			   the viewport, so this last card only intersects at full page scroll —
+			   with client:visible the CTA renders as a dead SSR button until then. */
 			<DestinationReviewSidebarCard
-				client:visible
+				client:idle
 				destinationId={destId}
 				destinationName={name}
 				locale={locale}
