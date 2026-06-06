@@ -413,7 +413,7 @@
             "title": "Downgrade Over-Limit Remediation (grandfather + restrict)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-167-downgrade-preflight-remediation",
             "parent": "SPEC-193",
             "created": "2026-05-27T00:00:00.000Z",
@@ -738,6 +738,33 @@
             "archived": false,
             "tags": ["web", "api", "reviews", "destinations", "security", "migration", "i18n"],
             "note": "Web has no UI to create destination reviews (backend complete). Adds sidebar review form (18 dims), fixes impersonation gap (client-supplied userId) and adds unique (user_id,destination_id). Worktree active."
+        },
+        {
+            "specId": "SPEC-203",
+            "title": "Self-serve plan management UI (web)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-203-web-plan-management-ui",
+            "parent": "SPEC-193",
+            "created": "2026-06-06T00:00:00Z",
+            "dependsOn": ["SPEC-167", "SPEC-147"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["billing", "web", "ui", "plan-change", "cancellation"],
+            "note": "Spun off SPEC-167 realign D-4 (owner 2026-06-06); consumes 167 preview contract + 147 cancel API."
+        },
+        {
+            "specId": "SPEC-204",
+            "title": "Accommodation gallery migration to relational table",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-204-accommodation-gallery-relational-migration",
+            "created": "2026-06-06T00:00:00Z",
+            "dependsOn": ["SPEC-167"],
+            "firstAllocatedViaEngramProtocol": true,
+            "tags": ["media", "gallery", "db", "migration", "post-go-live"],
+            "note": "Spun off SPEC-167 realign D-2 (owner 2026-06-06); archivedGallery JSONB is the interim. Post go-live."
         }
     ]
 }
