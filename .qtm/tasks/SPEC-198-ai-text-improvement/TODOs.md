@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 4/10 tasks (40%)
+## Progress: 5/10 tasks (50%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -48,7 +48,7 @@
   - Blocked by: T-001
   - Blocks: T-004, T-005
 
-- [ ] **T-004** (complexity: 2) - Barrel routes/ai/protected/index.ts + mount
+- [x] **T-004** (complexity: 2) - Barrel routes/ai/protected/index.ts + mount
   - protectedAiRoutes router; mount at /api/v1/protected/ai; sibling-spec slots
   - Files: apps/api/src/routes/ai/protected/index.ts, routes/index.ts
   - Blocked by: T-003

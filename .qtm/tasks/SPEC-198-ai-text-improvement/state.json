@@ -123,33 +123,43 @@
             "id": "T-004",
             "title": "Create barrel apps/api/src/routes/ai/protected/index.ts + mount in routes/index.ts",
             "description": "Per spec §5.1 X1 convention. Create apps/api/src/routes/ai/protected/index.ts that exports protectedAiRoutes via createRouter().route('/text-improve', protectedAiTextImproveRoute). Add a comment slot for SPEC-199 (search-intent) and SPEC-200 (chat) to add later. In apps/api/src/routes/index.ts add: import { protectedAiRoutes } from './ai/protected/index.js' and app.route('/api/v1/protected/ai', protectedAiRoutes). If the sibling specs already created the barrel, ADD to it — do not recreate. Do NOT export from routes/ai/index.ts (admin barrel).",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Create routes/ai/protected/index.ts barrel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add mount in routes/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify route is reachable at POST /api/v1/protected/ai/text-improve",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Flip matrix row status from to-wire to wired",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Run endpoint-gate-matrix guard test (734/734 pass)",
+                    "completed": true
                 }
             ],
             "tags": ["api", "routing", "convention"],
             "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "guard-test-pass"
+            },
             "timestamps": {
                 "created": "2026-06-06T00:00:00.000Z",
-                "started": "2026-06-06T06:20:00.000Z"
+                "started": "2026-06-06T06:20:00.000Z",
+                "completed": "2026-06-06T06:25:00.000Z"
             }
         },
         {
