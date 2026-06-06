@@ -62,6 +62,18 @@
 */
 html {
     overflow-x: clip;
+    /* Programmatic scrolls (anchor links, keyboard focus, scrollIntoView)
+       must land BELOW the sticky navbar, never under it. */
+    scroll-padding-top: calc(var(--navbar-height, 80px) + 8px);
+}
+
+/* Listing/detail pages add the sticky compact wave-header bar below the
+   navbar. Without the extra padding, focus/anchor targets scroll under that
+   bar and end up visually covered + click-dead (e.g. the last sidebar card
+   on detail pages). 78 = compact bar height (~70px, tracked by the map page
+   as var(--wave-bar-compact, 77px)) + 8px breathing room. */
+html:has(.wave-header) {
+    scroll-padding-top: calc(var(--navbar-height, 80px) + 78px);
 }
 
 body {
