@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 6/10 tasks (60%)
+## Progress: 7/10 tasks (70%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -74,7 +74,7 @@
 
 ### Integration Phase
 
-- [ ] **T-006** (complexity: 4) - API integration tests (live DB)
+- [x] **T-006** (complexity: 4) - API integration tests (live DB)
   - 10 cases per spec §9.3; mock-actor headers + entitlement mock; 100% middleware order
   - File: apps/api/test/integration/ai/text-improve.test.ts
   - Blocked by: T-004

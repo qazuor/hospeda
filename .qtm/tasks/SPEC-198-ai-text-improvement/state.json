@@ -213,34 +213,44 @@
             "id": "T-006",
             "title": "API integration tests (live DB)",
             "description": "Create apps/api/test/integration/ai/text-improve.test.ts per spec §9.3. Use vitest.config.e2e.ts (live DB). Mock-actor headers pattern (x-mock-actor-id, x-mock-actor-role, x-mock-actor-permissions). Mock entitlementMiddleware via vi.mock('../../../src/middlewares/entitlement', ...) to inject userEntitlements/userLimits/billingLoadFailed. Cover: 401 unauthenticated, 403 ENTITLEMENT_REQUIRED (tourist), 403 LIMIT_REACHED (quota exhausted), 503 SERVICE_UNAVAILABLE (billingLoadFailed=true), 400 missing fieldValue, 400 unknown fieldType, 400 exceeds per-type max, 200 SSE stream with tokens+done, Content-Type text/event-stream. 100% middleware order coverage required (per spec §9.5).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create test/integration/ai/ directory",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write mock-actor header helpers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write entitlementMiddleware mock",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write all 10 test cases from spec §9.3",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm test:e2e — all 10 cases green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["test", "integration", "e2e", "api"],
-            "phase": "integration"
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "10/10"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T07:00:00.000Z",
+                "completed": "2026-06-06T14:12:00.000Z"
+            }
         },
         {
             "id": "T-007",
