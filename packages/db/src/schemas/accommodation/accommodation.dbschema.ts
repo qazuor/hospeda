@@ -54,6 +54,13 @@ export const accommodations = pgTable(
         // users.service_suspended; this column is the hot-path denormalization so
         // public queries do not join users. Flipped in bulk on pause/resume.
         ownerSuspended: boolean('owner_suspended').notNull().default(false),
+        // SPEC-167: true when this accommodation was restricted by the downgrade
+        // remediation flow (host exceeded their new plan's MAX_ACCOMMODATIONS cap).
+        // Separate from ownerSuspended — the pause-flow flips/restores ALL of an
+        // owner's accommodations in bulk; downgrade restriction is selective and
+        // the two states must NOT collide. Reversible: flipped back to false on
+        // re-upgrade or manual restore by the host once back under cap.
+        planRestricted: boolean('plan_restricted').notNull().default(false),
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
@@ -87,6 +94,9 @@ export const accommodations = pgTable(
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
         accommodations_ownerSuspended_idx: index('accommodations_ownerSuspended_idx').on(
             table.ownerSuspended
+        ),
+        accommodations_planRestricted_idx: index('accommodations_planRestricted_idx').on(
+            table.planRestricted
         ),
         accommodations_visibility_idx: index('accommodations_visibility_idx').on(table.visibility),
         accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
