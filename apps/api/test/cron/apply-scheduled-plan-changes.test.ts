@@ -33,6 +33,7 @@
  */
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
+import { NotificationType } from '@repo/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +42,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
+}));
+
+// SPEC-167 T-017: mock sendNotification for confirmation notification tests.
+const { sendNotificationMock } = vi.hoisted(() => ({ sendNotificationMock: vi.fn() }));
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: sendNotificationMock
 }));
 
 vi.mock('../../src/middlewares/entitlement', () => ({
@@ -208,9 +215,18 @@ function makeBilling(opts: BillingMockOpts = {}) {
     const paymentAdapter =
         opts.paymentAdapterPresent === false ? null : { subscriptions: { update: mpUpdate } };
 
-    // billing.plans.get — used by the cron to resolve the target plan slug.
+    // billing.plans.get — used by the cron to resolve the target plan slug and
+    // plan names for the PLAN_CHANGE_CONFIRMATION notification (T-017).
     const planSlug = opts.planSlug === undefined ? NEW_PLAN_SLUG : opts.planSlug;
     const planGet = vi.fn().mockResolvedValue(planSlug !== null ? { name: planSlug } : null);
+
+    // billing.customers.get — used by the cron for PLAN_CHANGE_CONFIRMATION (T-017).
+    // Default: returns a minimal customer so notification tests don't fail on null.
+    const customersGet = vi.fn().mockResolvedValue({
+        id: CUSTOMER_ID,
+        email: 'customer@example.com',
+        metadata: { name: 'Test Customer', userId: USER_ID }
+    });
 
     let update: ReturnType<typeof vi.fn>;
     if (opts.updateThrows) {
@@ -236,6 +252,7 @@ function makeBilling(opts: BillingMockOpts = {}) {
                 changePlan,
                 update
             },
+            customers: { get: customersGet },
             plans: { get: planGet },
             getPaymentAdapter: vi.fn(() => paymentAdapter)
         } as unknown as QZPayBilling,
@@ -243,6 +260,7 @@ function makeBilling(opts: BillingMockOpts = {}) {
         mpUpdate,
         update,
         planGet,
+        customersGet,
         paymentAdapter
     };
 }
@@ -267,6 +285,7 @@ describe('applyOne', () => {
     beforeEach(() => {
         // Use mockReset + set defaults instead of clearAllMocks to prevent
         // sticky mockRejectedValue leaking between tests (T-012 lesson).
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
@@ -507,6 +526,7 @@ describe('applyOne', () => {
 describe('applyScheduledPlanChangesJob.handler', () => {
     beforeEach(() => {
         // Use mockReset + defaults to prevent sticky mockRejectedValue (T-012 lesson).
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
@@ -678,6 +698,7 @@ describe('applyScheduledPlanChangesJob.handler', () => {
 
 describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
     beforeEach(() => {
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
@@ -814,6 +835,7 @@ describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
 
 describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
     beforeEach(() => {
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
@@ -1078,5 +1100,180 @@ describe('applyScheduledPlanChangesJob definition', () => {
 
     it('has a unique-enough name to be queried via the cron API', () => {
         expect(applyScheduledPlanChangesJob.name).toBe('apply-scheduled-plan-changes');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-167 T-017: PLAN_CHANGE_CONFIRMATION notification at apply time
+//
+// Rules:
+//   - Confirmation sent once per applied change (after changePlan succeeds)
+//   - Payload carries oldPlanName + newPlanName + recipientEmail/Name
+//   - Send failure does NOT flip result.success — notification is informational,
+//     unlike restriction failure (asymmetry documented in code comment)
+//   - NOT sent when changePlan fails (retry/failed outcome)
+// ---------------------------------------------------------------------------
+
+/**
+ * Makes a billing mock with specific customers/plans for T-017 confirmation tests.
+ * Uses makeBilling base but overrides customer and plan name resolution.
+ */
+function makeBillingWithCustomers(
+    opts: BillingMockOpts & {
+        customerEmail?: string;
+        customerName?: string;
+        oldPlanName?: string;
+        newPlanName?: string;
+    } = {}
+) {
+    const base = makeBilling(opts);
+    const customerEmail = opts.customerEmail ?? 'host@example.com';
+    const customerName = opts.customerName ?? 'Test Host';
+    const oldPlanName = opts.oldPlanName ?? 'owner-pro';
+    const newPlanName = opts.newPlanName ?? NEW_PLAN_SLUG;
+    const customersGet = vi.fn().mockResolvedValue({
+        id: CUSTOMER_ID,
+        email: customerEmail,
+        metadata: { name: customerName }
+    });
+    // Override plans.get to return distinct names for old and new plan.
+    const plansGet = vi.fn().mockImplementation((id: string) => {
+        if (id === NEW_PLAN_ID) return Promise.resolve({ name: newPlanName });
+        return Promise.resolve({ name: oldPlanName });
+    });
+    return {
+        ...base,
+        billing: {
+            ...base.billing,
+            customers: { get: customersGet },
+            plans: { get: plansGet }
+        } as unknown as QZPayBilling,
+        customersGet,
+        plansGet
+    };
+}
+
+describe('SPEC-167 T-017: PLAN_CHANGE_CONFIRMATION notification at apply time (applyOne)', () => {
+    beforeEach(() => {
+        sendNotificationMock.mockReset().mockResolvedValue(undefined);
+        vi.mocked(applyDowngradeRestrictions)
+            .mockReset()
+            .mockResolvedValue({
+                restricted: { accommodations: [], promotions: [], photosByAccommodation: {} },
+                keptBySelection: { accommodations: [], promotions: [] },
+                keptByDefault: { accommodations: [], promotions: [] },
+                grandfatherFlags: []
+            });
+        vi.mocked(resolveOwnerUserId).mockReset().mockResolvedValue(USER_ID);
+        vi.mocked(getKeepSelectionsForChange).mockReset().mockReturnValue(undefined);
+        vi.mocked(handlePlanChangeAddonRecalculation).mockClear();
+        vi.mocked(clearEntitlementCache).mockReset();
+    });
+
+    it('sends PLAN_CHANGE_CONFIRMATION after changePlan succeeds', async () => {
+        const { billing } = makeBillingWithCustomers();
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const confirmCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        );
+        expect(confirmCalls.length).toBe(1);
+    });
+
+    it('confirmation payload carries oldPlanName, newPlanName, recipientEmail, recipientName', async () => {
+        const { billing } = makeBillingWithCustomers({
+            customerEmail: 'owner@test.com',
+            customerName: 'Owner Name',
+            oldPlanName: 'owner-pro',
+            newPlanName: 'owner-basico'
+        });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        const calls = sendNotificationMock.mock.calls as Array<[Record<string, unknown>]>;
+        const confirmCall = calls.find(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        );
+        expect(confirmCall).toBeDefined();
+        const payload = confirmCall?.[0];
+        expect(payload?.recipientEmail).toBe('owner@test.com');
+        expect(payload?.recipientName).toBe('Owner Name');
+        expect(payload?.oldPlanName).toBe('owner-pro');
+        expect(payload?.newPlanName).toBe('owner-basico');
+        expect(payload?.userId).toBeDefined();
+    });
+
+    it('exactly once per applied change — not sent when changePlan fails (retry outcome)', async () => {
+        const { billing } = makeBillingWithCustomers({
+            changePlanThrows: new Error('provider down')
+        });
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('retry');
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const confirmCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        );
+        expect(confirmCalls.length).toBe(0);
+    });
+
+    it('confirmation send failure does NOT flip result.success (informational — asymmetry with restriction)', async () => {
+        sendNotificationMock.mockRejectedValue(new Error('email service down'));
+        const { billing } = makeBillingWithCustomers();
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        // Notification failure must not affect the plan-change outcome.
+        expect(outcome.kind).toBe('applied');
+        // Unlike restriction failure, no restrictionFailed flag — the cron result.success stays true.
+        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBeUndefined();
+    });
+
+    it('confirmation also sent for non-downgrade (upgrade) changes applied via the cron (edge case)', async () => {
+        // Upgrades don't normally go through this cron (they apply via webhook),
+        // but if one does arrive (e.g. manual seed), confirmation should still fire.
+        const { billing } = makeBillingWithCustomers();
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'upgrade' }) });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(outcome.kind).toBe('applied');
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const confirmCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        );
+        expect(confirmCalls.length).toBe(1);
+    });
+
+    it('confirmation customer lookup failure: warn log, notification skipped, plan change still applied', async () => {
+        const base = makeBilling();
+        // Override customers.get to throw.
+        const billing = {
+            ...base.billing,
+            customers: { get: vi.fn().mockRejectedValue(new Error('customer not found')) },
+            plans: { get: vi.fn().mockResolvedValue({ name: NEW_PLAN_SLUG }) }
+        } as unknown as QZPayBilling;
+        const row = makeRow({ scheduledPlanChange: makeScheduled({ direction: 'downgrade' }) });
+        const { logger } = makeCtx();
+
+        const outcome = await _internals.applyOne(row, billing, logger);
+
+        expect(outcome.kind).toBe('applied');
+        // Notification skipped (no confirmation sent)
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const confirmCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_CHANGE_CONFIRMATION
+        );
+        expect(confirmCalls.length).toBe(0);
+        // Warn logged (soft-fail)
+        expect(vi.mocked(logger.warn)).toHaveBeenCalled();
     });
 });

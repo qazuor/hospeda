@@ -71,6 +71,12 @@ vi.mock('../../../src/utils/env', () => ({
     }
 }));
 
+// SPEC-167 T-017: mock sendNotification so warning tests stay unit-level.
+const { sendNotificationMock } = vi.hoisted(() => ({ sendNotificationMock: vi.fn() }));
+vi.mock('../../../src/utils/notification-helper', () => ({
+    sendNotification: sendNotificationMock
+}));
+
 // Mock the downgrade service so the route test stays focused on
 // branch-dispatch / response-shape / error-mapping concerns. The
 // service itself has its own unit tests
@@ -107,6 +113,7 @@ vi.mock('../../../src/services/subscription-checkout.service', async (importOrig
 // Imports (after mocks).
 // ---------------------------------------------------------------------------
 
+import { NotificationType } from '@repo/notifications';
 import type { DowngradePreview } from '@repo/schemas';
 import { getQZPayBilling } from '../../../src/middlewares/billing';
 import { handlePlanChange } from '../../../src/routes/billing/plan-change';
@@ -127,11 +134,18 @@ const CURRENT_PLAN_ID = 'plan_pro';
 const TARGET_PLAN_ID = 'plan_basic';
 const APPLY_AT_ISO = '2026-07-01T00:00:00.000Z';
 
+const ACTOR_EMAIL = 'actor@test.com';
+const ACTOR_NAME = 'Test Actor';
+
 function makeContext(body: unknown = { newPlanId: TARGET_PLAN_ID, billingInterval: 'monthly' }) {
     const store = new Map<string, unknown>([
         ['billingEnabled', true],
         ['billingCustomerId', CUSTOMER_ID],
-        ['actor', { id: ACTOR_ID, role: 'USER', permissions: [] }]
+        // Include email + name so PLAN_DOWNGRADE_LIMIT_WARNING tests can assert on them.
+        [
+            'actor',
+            { id: ACTOR_ID, role: 'USER', permissions: [], email: ACTOR_EMAIL, name: ACTOR_NAME }
+        ]
     ]);
     return {
         get: vi.fn((k: string) => store.get(k)),
@@ -587,5 +601,240 @@ describe('handlePlanChange — SPEC-167 T-016: restrictionPreview in downgrade r
         await handlePlanChange(ctx as never).catch(() => undefined);
 
         expect(vi.mocked(computeDowngradeExcess)).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-167 T-017: PLAN_DOWNGRADE_LIMIT_WARNING notification at schedule time
+//
+// Rules:
+//   - WARNING sent when restrictionPreview.hasExcess === true
+//     (one notification per excess dimension)
+//   - NOT sent when preview.hasExcess === false (under-cap)
+//   - NOT sent when computeDowngradeExcess throws (no preview → no summary)
+//   - Send failure MUST NOT block scheduling (soft-fail: warn log, still 200)
+//   - upgrade path: NOT sent
+// ---------------------------------------------------------------------------
+
+describe('handlePlanChange — SPEC-167 T-017: PLAN_DOWNGRADE_LIMIT_WARNING at schedule time', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        sendNotificationMock.mockResolvedValue(undefined);
+        // Default: over-cap preview (accommodations + promotions).
+        vi.mocked(computeDowngradeExcess).mockResolvedValue(makeExcessPreview());
+        vi.mocked(scheduleSubscriptionDowngrade).mockResolvedValue({
+            subscriptionId: SUB_ID,
+            previousPlanId: CURRENT_PLAN_ID,
+            newPlanId: TARGET_PLAN_ID,
+            applyAt: APPLY_AT_ISO,
+            replacedPriorSchedule: false
+        });
+    });
+
+    it('sends PLAN_DOWNGRADE_LIMIT_WARNING when preview has excess accommodations', async () => {
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        await handlePlanChange(ctx as never);
+
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const warnCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCalls.length).toBeGreaterThan(0);
+    });
+
+    it('warning payload includes correct limitKey, oldLimit, newLimit, currentUsage', async () => {
+        // Build a preview with only accommodations excess for a clean assertion.
+        const preview: DowngradePreview = {
+            accommodations: { cap: 1, activeCount: 3, excessCount: 2, items: [] },
+            promotions: { cap: 0, activeCount: 0, excessCount: 0, items: [] },
+            photos: [],
+            grandfatherFlags: [],
+            hasExcess: true
+        };
+        vi.mocked(computeDowngradeExcess).mockResolvedValue(preview);
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        await handlePlanChange(ctx as never);
+
+        const calls = sendNotificationMock.mock.calls as Array<[Record<string, unknown>]>;
+        const warnCall = calls.find(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCall).toBeDefined();
+        const payload = warnCall?.[0];
+        expect(payload?.limitKey).toBe('accommodations');
+        expect(payload?.newLimit).toBe(1);
+        expect(payload?.currentUsage).toBe(3);
+        expect(payload?.planName).toBe(TARGET_PLAN_ID);
+    });
+
+    it('warning includes recipient info from actor (userId + email)', async () => {
+        const preview: DowngradePreview = {
+            accommodations: { cap: 1, activeCount: 3, excessCount: 2, items: [] },
+            promotions: { cap: 0, activeCount: 0, excessCount: 0, items: [] },
+            photos: [],
+            grandfatherFlags: [],
+            hasExcess: true
+        };
+        vi.mocked(computeDowngradeExcess).mockResolvedValue(preview);
+        // Inject actor with email
+        const store = new Map<string, unknown>([
+            ['billingEnabled', true],
+            ['billingCustomerId', CUSTOMER_ID],
+            [
+                'actor',
+                {
+                    id: ACTOR_ID,
+                    role: 'USER',
+                    permissions: [],
+                    email: 'host@test.com',
+                    name: 'Test Host'
+                }
+            ]
+        ]);
+        const ctx = {
+            get: vi.fn((k: string) => store.get(k)),
+            req: {
+                json: vi
+                    .fn()
+                    .mockResolvedValue({ newPlanId: TARGET_PLAN_ID, billingInterval: 'monthly' })
+            }
+        };
+        mockBilling(makeDowngradeBillingMock());
+
+        await handlePlanChange(ctx as never);
+
+        const calls = sendNotificationMock.mock.calls as Array<[Record<string, unknown>]>;
+        const warnCall = calls.find(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCall?.[0]?.recipientEmail).toBe('host@test.com');
+        expect(warnCall?.[0]?.recipientName).toBe('Test Host');
+        expect(warnCall?.[0]?.userId).toBe(ACTOR_ID);
+    });
+
+    it('sends one notification per excess dimension (accommodations + promotions = 2)', async () => {
+        const preview: DowngradePreview = {
+            accommodations: { cap: 1, activeCount: 3, excessCount: 2, items: [] },
+            promotions: { cap: 0, activeCount: 2, excessCount: 2, items: [] },
+            photos: [],
+            grandfatherFlags: [],
+            hasExcess: true
+        };
+        vi.mocked(computeDowngradeExcess).mockResolvedValue(preview);
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        await handlePlanChange(ctx as never);
+
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const warnCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCalls.length).toBe(2);
+        const limitKeys = warnCalls.map(([p]) => (p as Record<string, unknown>).limitKey);
+        expect(limitKeys).toContain('accommodations');
+        expect(limitKeys).toContain('promotions');
+    });
+
+    it('does NOT send warning when preview.hasExcess === false (under-cap)', async () => {
+        vi.mocked(computeDowngradeExcess).mockResolvedValue(makeNoExcessPreview());
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        await handlePlanChange(ctx as never);
+
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const warnCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCalls.length).toBe(0);
+    });
+
+    it('does NOT send warning when computeDowngradeExcess throws (no preview available)', async () => {
+        vi.mocked(computeDowngradeExcess).mockRejectedValue(new Error('preview failed'));
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        // Must not throw — soft-fail
+        await expect(handlePlanChange(ctx as never)).resolves.toMatchObject({
+            status: 'scheduled'
+        });
+
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const warnCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCalls.length).toBe(0);
+    });
+
+    it('send failure does NOT block scheduling — still returns 200 with scheduled status', async () => {
+        sendNotificationMock.mockRejectedValue(new Error('email transport down'));
+        const billing = makeDowngradeBillingMock();
+        mockBilling(billing);
+
+        const ctx = makeContext();
+        const result = await handlePlanChange(ctx as never);
+
+        expect(result).toMatchObject({ status: 'scheduled', subscriptionId: SUB_ID });
+    });
+
+    it('does NOT send warning for upgrade path', async () => {
+        const upgradeBilling = {
+            subscriptions: {
+                getByCustomerId: vi.fn().mockResolvedValue([
+                    {
+                        id: 'sub_up',
+                        planId: 'plan_basic',
+                        status: 'active',
+                        interval: 'month',
+                        intervalCount: 1
+                    }
+                ]),
+                changePlan: vi.fn()
+            },
+            plans: {
+                get: vi.fn().mockImplementation((id: string) => {
+                    if (id === 'plan_basic') {
+                        return Promise.resolve({
+                            id: 'plan_basic',
+                            name: 'owner-basico',
+                            prices: [
+                                { billingInterval: 'month', unitAmount: 5_000, intervalCount: 1 }
+                            ]
+                        });
+                    }
+                    return Promise.resolve({
+                        id: 'plan_pro',
+                        name: 'owner-pro',
+                        prices: [{ billingInterval: 'month', unitAmount: 15_000, intervalCount: 1 }]
+                    });
+                })
+            }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            upgradeBilling as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        const { initiatePaidPlanUpgrade } = await import(
+            '../../../src/services/subscription-checkout.service'
+        );
+        vi.mocked(initiatePaidPlanUpgrade).mockRejectedValue(new Error('upgrade fail'));
+
+        const ctx = makeContext({ newPlanId: 'plan_pro', billingInterval: 'monthly' });
+        await handlePlanChange(ctx as never).catch(() => undefined);
+
+        const calls = sendNotificationMock.mock.calls as Array<[{ type: string }]>;
+        const warnCalls = calls.filter(
+            ([p]) => p.type === NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING
+        );
+        expect(warnCalls.length).toBe(0);
     });
 });
