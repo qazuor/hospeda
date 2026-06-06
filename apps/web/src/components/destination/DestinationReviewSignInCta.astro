@@ -1,0 +1,156 @@
+---
+/**
+ * @file DestinationReviewSignInCta.astro
+ * @description Static (zero-JS) sidebar card shown to logged-out visitors on
+ * the destination detail page. Invites them to sign in to leave a review.
+ *
+ * Uses the same card visual pattern as DestinationSidebarCtas (scoped CSS,
+ * CSS custom properties, no Tailwind).
+ *
+ * The sign-in link encodes the current destination path as `returnUrl` so
+ * the user lands back on the destination page after authenticating — matching
+ * the pattern used in `apps/web/src/lib/middleware-helpers.ts` (line ~286).
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /** The current destination path (e.g. "destinos/entre-rios/colon") used
+     *  to build the returnUrl query param on the sign-in link. */
+    readonly returnPath: string;
+}
+
+const { locale, returnPath } = Astro.props;
+const { t } = createTranslations(locale);
+
+const returnUrl = encodeURIComponent(`/${locale}/${returnPath.replace(/^\//, '')}/`);
+const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}/?returnUrl=${returnUrl}`;
+---
+
+<aside class="dest-review-signin-cta" aria-labelledby="dest-review-signin-title">
+    <div class="dest-review-signin-cta__header">
+        <span class="dest-review-signin-cta__badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true" focusable="false">
+                <title>Estrella</title>
+                <path d="M12 2l2.92 5.92 6.53.95-4.72 4.6 1.11 6.5L12 17.6l-5.84 3.07 1.11-6.5-4.72-4.6 6.53-.95L12 2z" />
+            </svg>
+        </span>
+        <h3 id="dest-review-signin-title" class="dest-review-signin-cta__title">
+            {t('review.destinationSidebar.title', 'Tu opinión')}
+        </h3>
+    </div>
+
+    <p class="dest-review-signin-cta__hint">
+        {t('review.destinationSidebar.signInCtaHint', 'Necesitás una cuenta para dejar tu reseña.')}
+    </p>
+
+    <a href={signInHref} class="dest-review-signin-cta__link">
+        {t('review.destinationSidebar.signInCta', 'Iniciá sesión para opinar')}
+        <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+            focusable="false"
+        >
+            <title>Iniciar sesión</title>
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+        </svg>
+    </a>
+</aside>
+
+<style>
+    .dest-review-signin-cta {
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .dest-review-signin-cta__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+    }
+
+    .dest-review-signin-cta__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+    }
+
+    .dest-review-signin-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--core-foreground);
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .dest-review-signin-cta__hint {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.45;
+    }
+
+    .dest-review-signin-cta__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: var(--brand-primary);
+        background: var(--brand-primary-a08);
+        border: 1px solid var(--brand-primary-a20);
+        border-radius: var(--radius-button, 10px);
+        padding: var(--space-2, 8px) var(--space-4, 16px);
+        text-decoration: none;
+        transition: background-color var(--duration-fast, 0.15s) ease,
+            color var(--duration-fast, 0.15s) ease,
+            transform var(--duration-fast, 0.15s) ease;
+    }
+
+    .dest-review-signin-cta__link:hover {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #fff);
+        transform: translateY(-1px);
+    }
+
+    .dest-review-signin-cta__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .dest-review-signin-cta__link svg {
+        transition: transform var(--duration-fast, 0.15s) ease;
+        flex-shrink: 0;
+    }
+
+    .dest-review-signin-cta__link:hover svg {
+        transform: translateX(2px);
+    }
+</style>

@@ -33,6 +33,9 @@ import {
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
+import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
+import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
+import { getApiUrl } from '@/lib/env';
 import {
 	toAccommodationCardProps,
 	toDestinationFaqs,
@@ -612,6 +615,21 @@ const safeDescriptionHtml = renderContent({
 			eventsCount={stats.eventsCount}
 			locale={locale}
 		/>
+
+		{isAuthenticated ? (
+			<DestinationReviewSidebarCard
+				client:visible
+				destinationId={destId}
+				destinationName={name}
+				locale={locale}
+				apiUrl={getApiUrl()}
+			/>
+		) : (
+			<DestinationReviewSignInCta
+				locale={locale}
+				returnPath={`destinos/${path}`}
+			/>
+		)}
 	</div>
 </DetailLayout>
 
