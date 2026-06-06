@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 7/10 tasks (70%)
+## Progress: 8/10 tasks (80%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -60,8 +60,8 @@
   - Blocked by: T-003
   - Blocks: —
 
-- [ ] **T-008** (complexity: 4) - useAiTextImprove hook + tests
-  - State machine + SSE parser + AbortController; 9 hook tests
+- [x] **T-008** (complexity: 4) - useAiTextImprove hook + tests
+  - State machine + SSE parser + AbortController; 19 tests (9 spec-mandated + 10 safety)
   - Files: apps/admin/src/features/accommodations/hooks/useAiTextImprove.ts + **tests**/
   - Blocked by: T-007
   - Blocks: T-009

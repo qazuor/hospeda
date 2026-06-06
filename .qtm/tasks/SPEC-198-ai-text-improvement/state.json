@@ -295,34 +295,39 @@
             "id": "T-008",
             "title": "useAiTextImprove hook + tests",
             "description": "Create apps/admin/src/features/accommodations/hooks/useAiTextImprove.ts per spec §5.3.4 and §5.3.5. State machine: idle→loading→streaming→done|error, with CRITICAL mid-stream moderation rule: when error event arrives after token events, set suggestion='' and status='error' (NEVER expose partial moderation-blocked content). SSE parsing: use native fetch + ReadableStream (EventSource cannot POST). Parse 'event:' / 'data:' lines, blank line = frame boundary. AbortController for unmount cleanup. Then create useAiTextImprove.test.ts per spec §9.4 hook tests (9 cases: idle, loading, streaming, accumulates tokens, done, error clears suggestion, discard, accept, idle-after-accept).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Implement state machine types (Status, AiTextImproveState)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement SSE parser with mid-stream error handling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire AbortController for unmount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 9 hook tests per spec §9.4",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm --filter admin test for the hook",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["frontend", "hook", "sse", "state-machine"],
-            "phase": "core"
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T14:30:00.000Z",
+                "completed": "2026-06-06T17:45:00.000Z"
+            }
         },
         {
             "id": "T-009",
