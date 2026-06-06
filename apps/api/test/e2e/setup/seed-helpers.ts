@@ -28,12 +28,16 @@ const TEST_BILLING_CURRENCY = 'ARS';
 /**
  * Stable names for the two baseline test plans seeded by {@link seedBillingTestPlans}.
  *
- * These are intentionally distinct from production plan names (Free / Starter / Pro / ...)
- * so test runs against a dev DB never collide with real seeded plans.
+ * These MUST equal valid billing catalog slugs (e.g. 'owner-basico', 'owner-pro').
+ * The cron job apply-scheduled-plan-changes resolves the target plan by calling
+ * `billing.plans.get(planId)?.name` and then passes that name to
+ * `computeDowngradeExcess` as `targetPlanSlug`, which calls `getPlanBySlug(slug)`.
+ * If the name is not a catalog slug, getPlanBySlug returns undefined, computeDowngradeExcess
+ * throws, and the cron marks result.success=false (restrictionFailed=true).
  */
 const TEST_PLAN_NAMES = {
-    cheap: 'Test Cheap Plan',
-    expensive: 'Test Expensive Plan'
+    cheap: 'owner-basico',
+    expensive: 'owner-pro'
 } as const;
 
 /**
@@ -348,9 +352,18 @@ async function ensureBaselinePlan(
             {
                 name,
                 description: `Baseline e2e ${input.kind} plan`,
+                // Use valid EntitlementKey values so the isEntitlementKey guard in the
+                // entitlement middleware does not silently drop these after ADR-021 (commit
+                // 00585b9ee). 'publish_accommodations' = cheap baseline; 'view_advanced_stats'
+                // distinguishes the expensive plan so tests can assert presence/absence.
                 entitlements:
-                    input.kind === 'cheap' ? ['public:read'] : ['public:read', 'expensive:feature'],
-                limits: input.kind === 'cheap' ? { ads_per_month: 5 } : { ads_per_month: 100 },
+                    input.kind === 'cheap'
+                        ? ['publish_accommodations']
+                        : ['publish_accommodations', 'view_advanced_stats'],
+                // Use valid LimitKey values (max_accommodations) so isLimitKey guard does not
+                // drop them. cheap=1, expensive=3 — gives a clear delta the entitlement tests can pin.
+                limits:
+                    input.kind === 'cheap' ? { max_accommodations: 1 } : { max_accommodations: 3 },
                 metadata: {
                     slug: `test-${input.kind}-plan`,
                     category: 'test-baseline',

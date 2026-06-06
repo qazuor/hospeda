@@ -993,6 +993,37 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
         expect(outcome.kind).toBe('applied');
         expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
     });
+
+    it('target plan slug not in billing catalog → restrictionFailed=true, result.success=false, plan change stays applied', async () => {
+        // SPEC-167 hard semantics: if billing.plans.get resolves a name but that name
+        // is not a valid catalog slug, computeDowngradeExcess (called inside
+        // applyDowngradeRestrictions) throws "Target plan '...' not found in the billing
+        // catalog". The cron treats this as restrictionFailed=true rather than rolling back
+        // the plan change — the host is now over-cap, which is an alert-worthy revenue-leak
+        // risk captured by Sentry via result.success=false (SPEC-149 gate).
+        //
+        // In the unit test, applyDowngradeRestrictions is mocked, so we simulate the
+        // catalog-miss by having it throw. This pins the intentional hard semantics:
+        // plan change stays applied, restrictionFailed=true, handler sees success=false.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
+            new Error("Target plan 'non-catalog-slug' not found in the billing catalog")
+        );
+        const { billing, update } = makeBilling({ planSlug: 'non-catalog-slug' });
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        // Plan change stays applied — restriction failure does NOT roll back.
+        expect(outcome.kind).toBe('applied');
+        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBe(true);
+        // update is called for pre-stamp (step 0) + finalise (step 5) — not rolled back.
+        expect(update).toHaveBeenCalledTimes(2);
+        const preStampArg = update.mock.calls[0]?.[1] as Record<string, unknown>;
+        const preStamp = preStampArg.scheduledPlanChange as Record<string, unknown>;
+        expect(preStamp.status).toBe('applied');
+    });
 });
 
 describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => {

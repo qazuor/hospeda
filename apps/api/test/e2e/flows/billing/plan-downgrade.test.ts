@@ -446,8 +446,8 @@ describe('SPEC-143 T-143-12 — plan downgrade scheduling', () => {
 
         // ACT 1: probe BEFORE scheduling. The sub is active on the
         // expensive plan, so loadEntitlements returns the expensive
-        // plan's declared entitlements ('public:read' + 'expensive:feature')
-        // and limits (ads_per_month=100). The set lands in the cache.
+        // plan's declared entitlements ('publish_accommodations' + 'view_advanced_stats')
+        // and limits (max_accommodations=3). The set lands in the cache.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
         const preBody = (await preRes.json()) as {
@@ -455,9 +455,9 @@ describe('SPEC-143 T-143-12 — plan downgrade scheduling', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toContain('public:read');
-        expect(preBody.entitlements).toContain('expensive:feature');
-        expect(preBody.limits.ads_per_month).toBe(100);
+        expect(preBody.entitlements).toContain('publish_accommodations');
+        expect(preBody.entitlements).toContain('view_advanced_stats');
+        expect(preBody.limits.max_accommodations).toBe(3);
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot cache size. The downgrade scheduling MUST NOT
@@ -502,9 +502,9 @@ describe('SPEC-143 T-143-12 — plan downgrade scheduling', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(postBody.entitlements).toContain('public:read');
-        expect(postBody.entitlements).toContain('expensive:feature');
-        expect(postBody.limits.ads_per_month).toBe(100);
+        expect(postBody.entitlements).toContain('publish_accommodations');
+        expect(postBody.entitlements).toContain('view_advanced_stats');
+        expect(postBody.limits.max_accommodations).toBe(3);
 
         // ASSERT: sub.scheduledPlanChange IS populated (the schedule
         // landed) AND sub.plan_id is still expensive. Pinning both
