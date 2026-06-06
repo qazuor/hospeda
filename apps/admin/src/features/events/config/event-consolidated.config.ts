@@ -12,13 +12,22 @@ import { createStatesModerationConsolidatedSection } from './sections/states-mod
 /**
  * Creates the view-stat chips section for events (SPEC-197 T-016).
  *
+ * `defaultCollapsed: false` ensures the accordion opens this section by default
+ * regardless of its position after permission-based anchor reordering (AC-17).
+ *
+ * @param t - Translation function from `useTranslations()`.
  * @param entityId - UUID of the event being viewed.
  */
-const createViewStatChipsSection = (entityId: string): ConsolidatedSectionConfig => ({
+const createViewStatChipsSection = (
+    t: ReturnType<typeof useTranslations>['t'],
+    entityId: string
+): ConsolidatedSectionConfig => ({
     id: 'view-stat-chips',
+    title: t('admin-entities.detail.viewStats.sectionTitle' as Parameters<typeof t>[0]),
     layout: LayoutTypeEnum.GRID,
     modes: ['view'],
     fields: [],
+    defaultCollapsed: false,
     customRender: () =>
         createElement(EntityViewStatChips, {
             entityId,
@@ -51,7 +60,7 @@ export const createEventConsolidatedConfig = (
     entityId?: string
 ): EventConsolidatedConfig => ({
     sections: [
-        ...(entityId ? [createViewStatChipsSection(entityId)] : []),
+        ...(entityId ? [createViewStatChipsSection(t, entityId)] : []),
         createBasicInfoConsolidatedSection(),
         createDatePricingConsolidatedSection(),
         createContactMediaConsolidatedSection(),
