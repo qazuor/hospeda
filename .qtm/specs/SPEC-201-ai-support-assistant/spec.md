@@ -199,6 +199,7 @@ in `ai-quota.ts` line ~194: "Unlimited — no quota check needed").
 No streaming — standard JSON response via `ResponseFactory`.
 
 **Route module location**:
+
 - `apps/api/src/routes/ai/support/support.route.ts` — route handler
 - `apps/api/src/routes/ai/support/index.ts` — barrel export
 
@@ -410,6 +411,7 @@ Output: `RankedArticle[]` (length ≤ topN, sorted descending by score; ties bro
 5. **Slice**: return the first `topN` elements.
 
 **Example** (pseudo-test):
+
 ```
 queryTokens = ['rotate', 'api', 'key']
 article 001 (title "Billing Operations", tags ["billing"])     → score 0
@@ -535,6 +537,7 @@ have no billing subscription — they would fail the entitlement check and recei
 which is wrong.
 
 **Resolved approach for V1**:
+
 - Route is gated by `AI_SUPPORT_USE` permission (via `createAdminRoute`).
 - No `createAiQuotaMiddleware` in the middleware stack.
 - After a successful AI call, the route handler calls `recordAiUsage(...)` manually
@@ -642,6 +645,7 @@ export * from './ai-support.schema.js';
 ### 7.2 No new DB tables
 
 This feature adds NO new database tables. It uses:
+
 - `ai_usage` (existing, append-only) for usage metering.
 - `ai_request_log` (existing, append-only) for audit.
 - `ai_prompt_versions` (existing) for admin-managed prompt overrides.
@@ -669,6 +673,7 @@ migration file. Drizzle-kit assigns the next sequential number automatically
 (do NOT hard-code; `0005_breezy_beast.sql` is the latest at spec time).
 
 Expected generated content:
+
 ```sql
 ALTER TYPE "public"."permission_enum" ADD VALUE 'ai.support.use';
 ```

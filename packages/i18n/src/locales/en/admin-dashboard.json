@@ -4,6 +4,32 @@
         "refresh": "Refresh",
         "create": "Create"
     },
+    "dashboard": {
+        "host": {
+            "views": {
+                "empty": "No views in this period.",
+                "locked": {
+                    "description": "Available with an active plan",
+                    "cta": "View plans"
+                }
+            }
+        },
+        "editor": {
+            "views": {
+                "empty": "No views in this period."
+            }
+        },
+        "admin": {
+            "views": {
+                "title": "Platform views",
+                "entityTypes": {
+                    "ACCOMMODATION": "Accommodations",
+                    "POST": "Posts",
+                    "EVENT": "Events"
+                }
+            }
+        }
+    },
     "kpis": {
         "visitors": "Visitors",
         "posts": "Posts",

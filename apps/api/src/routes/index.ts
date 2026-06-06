@@ -104,7 +104,7 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
-import { protectedViewsRoutes, viewsRoutes } from './views';
+import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import {
     brevoWebhookRoutes,
     createMercadoPagoWebhookRoutes,
@@ -356,6 +356,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin app log viewer (SPEC-184)
         app.route('/api/v1/admin/logs', adminAppLogRoutes);
+
+        // Admin view stats (SPEC-197 T-008–T-011)
+        app.route('/api/v1/admin/views', adminViewsRoutes);
 
         // Conversations admin (SPEC-085 T-011)
         app.route('/api/v1/admin/conversations', adminConversationsRouter);

@@ -16,3 +16,6 @@ export * from './entityView.query.schema.js';
 
 // HTTP wire schemas (path params, request bodies, response items)
 export * from './entityView.http.schema.js';
+
+// Admin schemas (SPEC-197 admin-tier endpoints)
+export * from './entityView.admin.schema.js';

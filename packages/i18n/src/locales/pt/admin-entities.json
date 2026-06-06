@@ -181,6 +181,7 @@
         "banReason": "Motivo do Banimento",
         "banExpires": "Banimento Expira",
         "avatar": "Avatar",
+        "views30d": "Visualizações (30d)",
         "appLog": {
             "loggedAt": "Data/Hora",
             "level": "Nível",
@@ -323,6 +324,15 @@
             "relations": "Relações",
             "metadata": "Metadados",
             "audit": "Auditoria"
+        },
+        "viewStats": {
+            "sectionTitle": "Estatísticas de visualizações",
+            "chips": {
+                "unique": "Únicos",
+                "total": "Totais",
+                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal": "{{window}}: {{count}} visualizações totais"
+            }
         }
     },
     "form": {

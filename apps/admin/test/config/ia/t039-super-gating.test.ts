@@ -55,8 +55,8 @@ const ADMIN_BASE_IDS = new Set([
 // ============================================================================
 
 describe('T-039 ADMIN role — adminBaseDashboard (7 cards, no H/I)', () => {
-    it('adminBaseDashboard has exactly 8 widgets (cards A–G + whats-new, SPEC-175)', () => {
-        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(8);
+    it('adminBaseDashboard has exactly 9 widgets (cards A–G + admin-card-views + whats-new, SPEC-197)', () => {
+        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(9);
     });
 
     it('adminBaseDashboard contains all 7 base widget IDs (A–G)', () => {
@@ -91,8 +91,8 @@ describe('T-039 ADMIN role — adminBaseDashboard (7 cards, no H/I)', () => {
 // ============================================================================
 
 describe('T-039 SUPER_ADMIN role — superAdminDashboard (9 cards = base + super-only)', () => {
-    it('superAdminDashboard has exactly 10 widgets (8 base incl. whats-new + 2 super-only)', () => {
-        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(10);
+    it('superAdminDashboard has exactly 11 widgets (9 base incl. views + whats-new + 2 super-only)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(11);
     });
 
     it('superAdminDashboard contains all 7 base widget IDs (A–G)', () => {

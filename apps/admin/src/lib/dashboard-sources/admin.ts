@@ -597,6 +597,101 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
 }));
 
 // ============================================================================
+// Admin views summary card (SPEC-197 T-015)
+// ============================================================================
+
+/** Shape of GET /api/v1/admin/views/summary response. */
+interface AdminViewSummaryApiResponse {
+    readonly success: boolean;
+    readonly data?: ReadonlyArray<{
+        readonly entityType: 'ACCOMMODATION' | 'POST' | 'EVENT';
+        readonly unique: number;
+        readonly total: number;
+    }>;
+}
+
+/**
+ * ADMIN base dashboard — "Vistas de plataforma" card.
+ *
+ * Fetches platform-wide unique + total view counts per entity type
+ * (ACCOMMODATION, POST, EVENT) over a rolling 30-day window. The service
+ * always returns exactly three items (missing entity types are zero-filled).
+ *
+ * Requires `ANALYTICS_VIEW` permission (ADMIN + SUPER_ADMIN hold it per seed).
+ * The card is present ONLY in `adminBaseDashboard` — HOST dashboard never
+ * receives it (AC-14 compliance enforced by dashboard config, not here).
+ *
+ * Source ID: `'admin.views.summary'`
+ * Scope: `'all'`
+ * Endpoint: GET /api/v1/admin/views/summary?window=30d
+ *
+ * @see SPEC-197 T-015, §3.3
+ */
+registerDataSource('admin.views.summary', (ctx) => ({
+    queryKey: buildDashboardQueryKey('admin.views.summary', ctx),
+    queryFn: async () => {
+        const result = await fetchApi<AdminViewSummaryApiResponse>({
+            path: '/api/v1/admin/views/summary?window=30d'
+        });
+        const items = result.data.data ?? [];
+
+        // Normalize to KpiData GRID MODE shape (kpis array) so the card renders
+        // one mini-tile per entity type.
+        const ORDER: ReadonlyArray<'ACCOMMODATION' | 'POST' | 'EVENT'> = [
+            'ACCOMMODATION',
+            'POST',
+            'EVENT'
+        ];
+        const byType = new Map(items.map((item) => [item.entityType, item]));
+
+        const kpis = ORDER.map((entityType) => {
+            const stat = byType.get(entityType);
+            return {
+                key: entityType,
+                label: {
+                    es:
+                        entityType === 'ACCOMMODATION'
+                            ? 'Alojamientos'
+                            : entityType === 'POST'
+                              ? 'Posts'
+                              : 'Eventos',
+                    en:
+                        entityType === 'ACCOMMODATION'
+                            ? 'Accommodations'
+                            : entityType === 'POST'
+                              ? 'Posts'
+                              : 'Events',
+                    pt:
+                        entityType === 'ACCOMMODATION'
+                            ? 'Acomodações'
+                            : entityType === 'POST'
+                              ? 'Posts'
+                              : 'Eventos'
+                },
+                value: stat?.total ?? 0,
+                accent:
+                    entityType === 'ACCOMMODATION'
+                        ? 'river'
+                        : entityType === 'POST'
+                          ? 'success'
+                          : 'warning',
+                icon:
+                    entityType === 'ACCOMMODATION'
+                        ? 'buildings'
+                        : entityType === 'POST'
+                          ? 'article'
+                          : 'calendar',
+                // Expose unique count alongside total for the widget to display.
+                extra: { unique: stat?.unique ?? 0 }
+            };
+        });
+
+        return { kpis, window: '30d' as const };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
 // NOTE — already registered in T-017 base module
 // ============================================================================
 // `admin.entities.counts` (Card A) — registered in dashboard-sources.ts
@@ -606,10 +701,10 @@ registerDataSource('admin.moderation.pending', (ctx) => ({
 // ============================================================================
 // NOTE — deferred / needs new backend
 // ============================================================================
-// Card D — cron failed/last-run: 🟢 wired (SPEC-161). admin.crons.list enriches
+// Card D — cron failed/last-run: wired (SPEC-161). admin.crons.list enriches
 //   each job with its last-run status from GET /admin/cron/runs/summary.
 //
-// Card E — maintenance-mode flag: 🟡 confirm the SYSTEM_MAINTENANCE_MODE flag
+// Card E — maintenance-mode flag: confirm the SYSTEM_MAINTENANCE_MODE flag
 //   is readable. Once confirmed, add it to the admin.system.health queryFn above.
 
 // ============================================================================

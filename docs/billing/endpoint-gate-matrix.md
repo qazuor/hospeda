@@ -548,6 +548,11 @@
 | `GET /api/v1/admin/metrics` | `metrics/index.ts` | none | - | n/a | Admin/ops metrics; PermissionEnum-gated |
 | **AUTH — ADMIN** | | | | | |
 | `* /api/v1/admin/auth/*` | `auth/index.ts (admin)` | none | - | n/a | Admin auth monitoring; PermissionEnum-gated |
+| **VIEW STATS — ADMIN** | | | | | |
+| `GET /api/v1/admin/views/summary` | `views/admin/summary.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
+| `GET /api/v1/admin/views/batch` | `views/admin/batch.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
+| `GET /api/v1/admin/views/top` | `views/admin/top.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
+| `GET /api/v1/admin/views/daily-series` | `views/admin/daily-series.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 
 ---
 

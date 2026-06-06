@@ -118,7 +118,7 @@ which defines the filter dimensions the NL mapper can target:
 | `checkIn` / `checkOut` | `z.coerce.date()` | Availability dates |
 | `isAvailable` | boolean | Availability flag |
 | `isFeatured` | boolean | Featured listings only |
-| `sortBy` / `sortOrder` | string / `'asc'|'desc'` | Sorting |
+| `sortBy` / `sortOrder` | string / `'asc'\|'desc'` | Sorting |
 
 The NL mapper translates `SearchIntent.entities` slots to a subset of these
 parameters. It does NOT invent new filter dimensions.
@@ -526,6 +526,7 @@ export function mapIntentToSearchParams(
 | `locationType` | (internal hint only) | Never emitted as a query param |
 
 **Location priority rule** (exclusive — at most one location strategy):
+
 1. If `destinationId` is present → use `destinationId`; ignore `city`, `latitude`, `longitude`, `radius`.
 2. Else if `latitude` AND `longitude` are present → use geo params (+ `radius` if present).
 3. Else if `city` is present → use `city` as the `q` param (as a fallback keyword).
@@ -538,6 +539,7 @@ above is silently dropped. Never forward `locationType`, `amenitySlugs`, or any
 unrecognized key to the output.
 
 **Out-of-range handling**:
+
 - Guests: `minGuests` and `maxGuests` clamped to [1, 50]. If after clamping
   `minGuests > maxGuests`, drop `maxGuests`.
 - Price: `minPrice` and `maxPrice` must be non-negative. If `minPrice > maxPrice`
@@ -810,6 +812,7 @@ apps/web/src/components/ai-search/
 ```
 
 **`AiSearchTrigger.astro`** (Astro, server-rendered):
+
 - A fixed-position floating button rendered on the accommodations listing page
   and optionally on the home page.
 - Text comes from i18n key `aiSearch.triggerLabel` (see §5.7).
@@ -818,6 +821,7 @@ apps/web/src/components/ai-search/
 **`AiSearchPanel.client.tsx`** (React island, `client:visible`):
 
 Props:
+
 ```ts
 interface AiSearchPanelProps {
   readonly locale: 'es' | 'en' | 'pt';
@@ -827,6 +831,7 @@ interface AiSearchPanelProps {
 ```
 
 State managed by this component:
+
 - `isOpen: boolean` — panel open/closed
 - `query: string` — user input (max 500 chars)
 - `status: 'idle' | 'loading' | 'success' | 'error'`
@@ -835,6 +840,7 @@ State managed by this component:
 - `intentChips: ChipDef[]` — derived from `mappedParams` on success
 
 **Anonymous flow** (step-by-step):
+
 1. `isAuthenticated === false`.
 2. User opens the panel and types a query.
 3. User submits (Enter or button).
@@ -845,6 +851,7 @@ State managed by this component:
 6. No API call is made.
 
 **Authenticated flow** (step-by-step):
+
 1. User opens the panel, types a query (max 500 chars enforced in `<textarea>`).
 2. Track `AiSearchSubmitted` event on submit.
 3. Set `status = 'loading'`. POST to `/api/v1/protected/ai/search-intent` with
@@ -873,6 +880,7 @@ State managed by this component:
 
 Reads `sessionStorage.ai_search_chips` on mount. Renders one chip per
 `mappedParams` key that has a meaningful display label. On chip removal:
+
 1. Remove that key from the active params.
 2. Update `sessionStorage.ai_search_chips`.
 3. Navigate to `/[lang]/alojamientos/` with the updated params (replacing the
@@ -1142,6 +1150,7 @@ stub responses — never hitting real providers.
 **Test file**: `apps/api/test/integration/ai/search-intent.test.ts` [NEW]
 
 Tests:
+
 1. Authenticated user with `ai_search` entitlement + stub configured to return
    a `SearchIntentOutputSchema`-conforming object with high confidence →
    200 with `fallbackToKeyword: false` and the `confidence` field present in data.
@@ -1299,19 +1308,20 @@ No tests needed for this file alone (covered by integration test T-004b step 1).
 
 **T-004b — API route + buildSearchIntentPrompt helper** (depends on T-001, T-002, T-003, T-004a)
 Create `apps/api/src/routes/ai/protected/search-intent.ts` containing:
-  - `buildSearchIntentPrompt({ query, locale })` pure helper (§5.5) — builds the
+
+- `buildSearchIntentPrompt({ query, locale })` pure helper (§5.5) — builds the
     dynamic per-request prompt (locale-specific amenity allowlist slugs + user query).
-  - The route handler calling `aiService.generateObject({ feature: 'search', prompt: buildSearchIntentPrompt(...), locale }, SearchIntentOutputSchema)`.
+- The route handler calling `aiService.generateObject({ feature: 'search', prompt: buildSearchIntentPrompt(...), locale }, SearchIntentOutputSchema)`.
 Create (or add to) the barrel `apps/api/src/routes/ai/protected/index.ts` — if
 SPEC-198 already created this barrel, ADD the `searchIntentRoute` to it; do NOT
 recreate it or add a second `app.route('/api/v1/protected/ai', ...)` call.
 Verify `routes/index.ts` has the single barrel mount.
 Write unit tests for `buildSearchIntentPrompt` in a collocated test file
 `search-intent.prompt-builder.test.ts`:
-  - Verify the returned string contains the correct slugs for each locale.
-  - Verify the user query is embedded verbatim (including special characters).
-  - Verify de-duplication of slugs from the allowlist values.
-  - Verify locale fallback (unknown locale → 'es').
+- Verify the returned string contains the correct slugs for each locale.
+- Verify the user query is embedded verbatim (including special characters).
+- Verify de-duplication of slugs from the allowlist values.
+- Verify locale fallback (unknown locale → 'es').
   No test asserts a `messages` array — the call uses `prompt` only.
 Write integration tests (§8.2).
 

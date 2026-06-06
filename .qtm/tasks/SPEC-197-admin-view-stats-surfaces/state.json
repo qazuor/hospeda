@@ -1,0 +1,779 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-197",
+    "title": "Admin View-Stats Surfaces",
+    "created": "2026-06-05T19:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Verify ANALYTICS_VIEW seed assignment and VIEW_BASIC_STATS entitlement key",
+            "description": "Verify ANALYTICS_VIEW permission is assigned to ADMIN and SUPER_ADMIN roles in rolePermissions.seed.ts. Verify VIEW_BASIC_STATS is in EntitlementKey (packages/billing/src/types/entitlement.types.ts). Document findings in progress notes. No code changes expected; if the seed assignment is missing, STOP and report before continuing.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-007", "T-008", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Check rolePermissions.seed.ts for ANALYTICS_VIEW on ADMIN + SUPER_ADMIN",
+                    "completed": true
+                },
+                {
+                    "title": "Check EntitlementKey.VIEW_BASIC_STATS in entitlement.types.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Document findings",
+                    "completed": true
+                }
+            ],
+            "tags": ["verification", "permissions", "billing"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Verify entityView schema exports from @repo/schemas",
+            "description": "Verify TrackableEntityTypeSchema and EntityViewStatsSchema are exported and accessible from @repo/schemas entityView barrel. Confirm EntityViewWindowSchema accepts '7d' and '30d'. Document findings. No code changes expected.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Check entityView barrel exports",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm EntityViewWindowSchema values",
+                    "completed": true
+                }
+            ],
+            "tags": ["verification", "schemas"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add zodError translation keys for new admin view schemas",
+            "description": "Add zodError.adminView.batch.entityIds.empty, zodError.adminView.batch.entityIds.tooMany, zodError.adminView.dailySeries.date.invalid to packages/i18n/src/locales/{es,en,pt}/validation.json (GAP-010 guard compliance). Run pnpm --filter @repo/i18n check-locales to verify. Tests: locale check passes for all three locales.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add 3 keys to es/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 keys to en/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 keys to pt/validation.json",
+                    "completed": true
+                },
+                {
+                    "title": "Run check-locales",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "validation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add getTopViewedEntities to EntityViewModel",
+            "description": "Add getTopViewedEntities({entityType, windowDays, limit}) to packages/db/src/models/entity-view/entity-view.model.ts per spec §4.1 method A. Raw SQL via Drizzle sql tag, lazy getClient, PG reserved words quoted (AS \"unique\"), ::entity_type_enum cast, limit bound as parameter (never string-interpolated). Returns EntityViewStats[] ordered by total DESC, length ≤ limit. Unit tests in packages/db/src/models/entity-view/__tests__/entity-view-admin.model.test.ts: mock db.execute, assert ordering by total DESC and length ≤ limit; empty fixture returns empty array.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Implement getTopViewedEntities with parameterized SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: ordering, limit, empty fixture",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "model", "sql"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add getDailySeries to EntityViewModel",
+            "description": "Add getDailySeries({windowDays}) to entity-view.model.ts per spec §4.1 method B. Returns Array<{date: 'YYYY-MM-DD', entityType, total}> for days WITH data only — gap-filling is a SERVICE concern, not model. to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD'), 30-min bucket dedup for total, ORDER BY date ASC, entity_type ASC. Unit tests in entity-view-admin.model.test.ts: mock db.execute with rows for 3 entity types across 10 days, assert valid YYYY-MM-DD date strings, assert model does NOT gap-fill.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Implement getDailySeries SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests: date format, no gap-fill",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "model", "sql"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add getAdminSummaryTotals model method + new admin Zod schemas",
+            "description": "Add getAdminSummaryTotals({windowDays}) to entity-view.model.ts per spec §4.1 method C: groups by entity_type WITHOUT an IN-list, returns Array<{entityType, unique, total}>. Add Zod schemas to packages/schemas/src/entities/entityView/ and barrel export (spec §4.4): AdminViewSummaryItemSchema, AdminViewSummaryResponseSchema, AdminViewBatchQuerySchema (comma-split transform, UUID validation, min 1 max 100, zodError keys from T-003), AdminViewTopQuerySchema (limit 1-50 default 10), AdminViewDailySeriesItemSchema, AdminViewDailySeriesResponseSchema. Run pnpm exec tsx scripts/extract-zod-keys.ts --verify. Unit tests: model method normalization to per-entityType shape; schema parse/reject cases (101 ids, invalid UUID, limit 0/51).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Implement getAdminSummaryTotals",
+                    "completed": true
+                },
+                {
+                    "title": "Add 6 Zod schemas + barrel exports",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for model + schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Run extract-zod-keys --verify",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "model", "schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:00:00.000Z",
+                "completed": "2026-06-05T20:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add four admin methods to EntityViewService",
+            "description": "Add getAdminSummary, getAdminBatch, getAdminTopEntities, getAdminDailySeries to packages/service-core/src/services/entityView/entityView.service.ts per spec §4.2. All use runWithLoggingAndValidation + hasPermission(actor, PermissionEnum.ANALYTICS_VIEW). CRITICAL: preserve lazy getter pattern — NO constructor dereference of @repo/db exports. getAdminBatch validates entityIds ≤ 100 (VALIDATION_ERROR) and zero-fills missing ids. getAdminTopEntities validates limit ≤ 50. getAdminDailySeries gap-fills to exactly 90 rows (3 types × 30 days). Tests in packages/service-core/src/services/entityView/__tests__/entityView-admin.service.test.ts: PERMISSION_DENIED without ANALYTICS_VIEW, VALIDATION_ERROR for >100 ids and limit >50, gap-fill from 5 model rows to 90 rows. Run pnpm build before trusting cross-package suites.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-004", "T-005", "T-006"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Implement getAdminSummary (zero-fill missing types)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement getAdminBatch (≤100 validation, zero-fill)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement getAdminTopEntities (limit ≤50)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement getAdminDailySeries (gap-fill 90 rows)",
+                    "completed": true
+                },
+                {
+                    "title": "Permission + validation + gap-fill tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:20:00.000Z",
+                "completed": "2026-06-05T20:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create admin views router + GET /admin/views/summary",
+            "description": "Create apps/api/src/routes/views/admin/index.ts (registers all four routes, mounted at /api/v1/admin/views/) and summary.ts implementing GET /admin/views/summary per spec §4.3 (query: window=7d|30d default 30d; permission ANALYTICS_VIEW; verify which admin route factory existing analytics routes use, e.g. app-logs/list.ts). Integration tests in apps/api/src/routes/views/admin/__tests__/views-admin.routes.test.ts: 403 without permission, 200 with correct Zod-validated shape. Add endpoint-gate-matrix.md row (Decision=none, admin-tier permission-gated).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-007"],
+            "blocks": ["T-015", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Create admin/index.ts router + mount",
+                    "completed": true
+                },
+                {
+                    "title": "Implement summary.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests (403/200/shape)",
+                    "completed": true
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement GET /admin/views/batch",
+            "description": "Create apps/api/src/routes/views/admin/batch.ts per spec §4.3: query entityType + entityIds (comma-separated UUIDs, max 100) + window. Permission ANALYTICS_VIEW. Response: one EntityViewStats entry per requested id, zero-view entities included as {unique:0, total:0}. Integration tests: 403, 200 shape, 101-item → 400, invalid UUID → 400. Add gate-matrix row.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Implement batch.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests incl. 101-item and invalid-UUID",
+                    "completed": true
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement GET /admin/views/top",
+            "description": "Create apps/api/src/routes/views/admin/top.ts per spec §4.3: query entityType + window (default 30d) + limit (1-50, default 10). Permission ANALYTICS_VIEW. Response EntityViewStats[] ordered by total DESC. Integration tests: 403, 200 shape, limit=0 → 400, limit=51 → 400. Add gate-matrix row.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement top.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests incl. limit bounds",
+                    "completed": true
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement GET /admin/views/daily-series",
+            "description": "Create apps/api/src/routes/views/admin/daily-series.ts per spec §4.3: no query params (hardcoded 30d for V1). Permission ANALYTICS_VIEW. Response always 90 rows (3 types × 30 days), zero-filled. Integration tests: 403, 200, exactly 90 rows, every row has valid YYYY-MM-DD date. Add gate-matrix row.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement daily-series.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests incl. 90-row invariant",
+                    "completed": true
+                },
+                {
+                    "title": "Gate-matrix row",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T20:45:00.000Z",
+                "completed": "2026-06-05T21:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement shared WindowToggle component",
+            "description": "Create apps/admin/src/components/views/WindowToggle.tsx per spec §5.1: props {value: '7d'|'30d', onChange, disabled?}. Shadcn ToggleGroup/ToggleGroupItem, i18n keys common.window.7d / common.window.30d, role=group + aria-label, active data-state=on visual. SINGLE implementation — all six surfaces import this one. Tests in apps/admin/src/components/views/__tests__/WindowToggle.test.tsx: active state per value, onChange('7d') on click, disabled blocks onChange. Add i18n keys (es/en/pt).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-014", "T-015", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement WindowToggle.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add common.window.* i18n keys",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "component", "shared"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T19:45:00.000Z",
+                "completed": "2026-06-05T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Fill HOST card G views deferredSlot with locked-state-aware source",
+            "description": "Register host.stats.views source in apps/admin/src/lib/dashboard-sources/host.ts with PROACTIVE locked-state detection per spec §5.2: read cached host.billing.plan entitlements (GET /protected/users/me/entitlements already fetched), return {locked: true} if view_basic_stats absent (NO views fetch made); if entitlements not yet resolved return {locked: false, loading: true}. Defensive: 403 from views endpoint → locked UI, not error. Update dashboards.ts HOST card G replacing the deferredSlot with the live source IN THE SAME COMMIT (config + source atomically — config validation test must never see intermediate state). Locked UI: lock icon from @repo/icons, i18n dashboard.host.views.locked.description ('Disponible con un plan activo') + .cta → /billing/plans. Add i18n keys (es/en/pt) incl. dashboard.host.views.empty. Tests in apps/admin/src/lib/dashboard-sources/__tests__/host-views.test.ts: no fetchApi call when entitlement absent; correct path + window param when present. Uses SPEC-159 protected endpoint /protected/views/accommodations/me with WindowToggle.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Register host.stats.views source with locked detection",
+                    "completed": true
+                },
+                {
+                    "title": "Swap deferredSlot → source in dashboards.ts (same commit)",
+                    "completed": true
+                },
+                {
+                    "title": "Locked-state UI + i18n keys (es/en/pt)",
+                    "completed": true
+                },
+                {
+                    "title": "Resolver tests (locked / entitled paths)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "dashboard", "billing", "entitlements"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Fill EDITOR cards E/F views deferredSlots",
+            "description": "Register editor.posts.views and editor.events.views sources in apps/admin/src/lib/dashboard-sources/editor.ts (consume SPEC-159 protected endpoints /protected/views/posts and /protected/views/events). Update dashboards.ts EDITOR cards E and F replacing both deferredSlots with live sources atomically (same commit as source registration). Each widget has independent window selection via shared WindowToggle, default 30d. Empty state i18n dashboard.editor.views.empty (es/en/pt). Component tests: list rendering with counts, window toggle re-fetch, empty state.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Register both editor sources",
+                    "completed": true
+                },
+                {
+                    "title": "Swap deferredSlots → sources in dashboards.ts (same commit)",
+                    "completed": true
+                },
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "dashboard"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add admin-card-views summary card to adminBaseDashboard",
+            "description": "Register admin.views.summary source in apps/admin/src/lib/dashboard-sources/admin.ts (consumes GET /admin/views/summary). Add new card admin-card-views to adminBaseDashboard in dashboards.ts: 'Vistas de plataforma' (i18n dashboard.admin.views.title), three rows (ACCOMMODATION/POST/EVENT) with unique + total + window label, shared WindowToggle default 30d, ADMIN + SUPER_ADMIN only (NOT visible on HOST dashboard). UPDATE the SPEC-155 card-count assertion in apps/admin/src/config/ia/__tests__/dashboards.config.test.ts atomically with the new card (verify which export variant carries the count). Add i18n keys (es/en/pt). Component tests: card renders 3 rows, toggle re-fetch, skeleton loading.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Register admin.views.summary source",
+                    "completed": true
+                },
+                {
+                    "title": "Add admin-card-views to adminBaseDashboard",
+                    "completed": true
+                },
+                {
+                    "title": "Update dashboards.config.test.ts card count (same commit)",
+                    "completed": true
+                },
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "dashboard"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T22:05:00.000Z",
+                "completed": "2026-06-05T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Implement EntityViewStatChips on detail pages (accommodation/post/event)",
+            "description": "Create apps/admin/src/components/views/EntityViewStatChips.tsx: four chips (7d únicos / 7d totales / 30d únicos / 30d totales) via GET /admin/views/batch, i18n keys entity.stats.chips.unique/.total with window prefix + aria-labels. Inject via section/card system per spec §5.3: new 'stats-chips' SectionConfig entry in apps/admin/src/features/{accommodations,posts,events}/config/ (extend SectionConfig union + renderer case if needed — additive). viewOnly: true (NOT in edit mode), positioned before main info section, hidden without ANALYTICS_VIEW (no API call made). Skeleton chips while loading (not '—'/'0'), '0' chips for zero views (not hidden), '—' chips on error. Component tests: loading/zero/error states, permission guard (no fetch), absent in edit mode.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Implement EntityViewStatChips component",
+                    "completed": true
+                },
+                {
+                    "title": "Add 'stats-chips' section type + renderer case",
+                    "completed": true
+                },
+                {
+                    "title": "Wire into 3 entity configs (viewOnly)",
+                    "completed": true
+                },
+                {
+                    "title": "i18n keys + component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "component", "detail-pages"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T21:40:00.000Z",
+                "completed": "2026-06-05T22:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add 'Vistas (30d)' derived column to accommodations list",
+            "description": "Add display-only derived column to the accommodations entity list config per spec §5.4: secondary useQuery (enabled: !!entityIds.length) calling GET /admin/views/batch with current page ids, result in Map<entityId, total>, cell renderer reads map. enableSorting: false — header NOT clickable, no sort indicator. staleTime 5 min. i18n key list.column.views30d. States: '…'/skeleton while loading, '0' for zero views, '—' on error (no toast). Column hidden + no API call without ANALYTICS_VIEW. Tests in apps/admin/src/features/accommodations/__tests__/views-column.test.tsx: presence/absence by permission, loading skeleton, error '—'.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-018", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Derived column + batch useQuery for accommodations",
+                    "completed": true
+                },
+                {
+                    "title": "Permission guard + loading/error states",
+                    "completed": true
+                },
+                {
+                    "title": "i18n key + column tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "lists", "derived-column"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T21:10:00.000Z",
+                "completed": "2026-06-05T21:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add 'Vistas (30d)' column to posts and events lists",
+            "description": "Replicate the T-017 derived-column pattern on the posts and events entity list configs (same batch endpoint with entityType=POST / EVENT, same states, same permission guard, NOT sortable). Extract shared logic into a reusable hook if the T-017 implementation allows (e.g. useViewsBatchColumn). Tests: equivalent views-column tests for posts and events features.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Posts column",
+                    "completed": true
+                },
+                {
+                    "title": "Events column",
+                    "completed": true
+                },
+                {
+                    "title": "Tests for both",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "lists", "derived-column"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T21:10:00.000Z",
+                "completed": "2026-06-05T21:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create /analytics/views page (tiles + top-10 + 30d chart)",
+            "description": "Create apps/admin/src/routes/_authed/analytics/views.tsx per spec §5.5, sibling of business.tsx/usage.tsx (SidebarPageLayout, title key admin-pages.titles.analyticsViews, same beforeLoad ANALYTICS_VIEW guard pattern — verify guard on business.tsx/usage.tsx and apply same). Three sections: (1) summary KPI tiles per entity type + WindowToggle → /admin/views/summary; (2) three top-10 ranked lists (30d fixed) → /admin/views/top, entity names resolved via second query (admin list endpoints by ids, enabled: !!topEntityIds.length, fallback to entityId if unresolved); (3) recharts ResponsiveContainer > LineChart with 3 Lines (ACCOMMODATION #2563eb, POST #16a34a, EVENT #d97706), XAxis DD/MM, Tooltip + Legend, zero-filled lines never break → /admin/views/daily-series. Independent loading states per section (chart skeleton does not block tiles/lists). Add i18n keys + page title (es/en/pt).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-010", "T-011", "T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Route + guard + SidebarPageLayout skeleton",
+                    "completed": true
+                },
+                {
+                    "title": "Summary tiles + WindowToggle",
+                    "completed": true
+                },
+                {
+                    "title": "Top-10 lists with name resolution",
+                    "completed": true
+                },
+                {
+                    "title": "Recharts 3-line daily series chart",
+                    "completed": true
+                },
+                {
+                    "title": "i18n keys + page title",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "analytics", "recharts"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T23:00:00.000Z",
+                "completed": "2026-06-05T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Analytics page tests + full typecheck/test/build gate",
+            "description": "Add page tests in apps/admin/src/routes/_authed/analytics/__tests__/views.test.tsx: chart renders without error from mocked 90-row daily-series, three Line components present (smoke, no pixel assertions). Then run the full gate per spec §6.5: pnpm typecheck (all affected packages), pnpm test (packages/db, packages/service-core, apps/api, apps/admin), pnpm build (cross-package import errors only surface at build). Also run CI guards locally: scripts/check-type-casts.sh, scripts/check-schema-drift.sh, pnpm exec tsx scripts/extract-zod-keys.ts --verify, pnpm --filter @repo/i18n check-locales. All green before smoke.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-014", "T-015", "T-016", "T-018", "T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "views.test.tsx page tests",
+                    "completed": true
+                },
+                {
+                    "title": "pnpm typecheck + test + build green",
+                    "completed": true
+                },
+                {
+                    "title": "Local CI guards green",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "build-gate"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": "2026-06-05T23:30:00.000Z",
+                "completed": "2026-06-06T00:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Real-DB smoke of all four admin endpoints",
+            "description": "Per spec §6.6: pnpm db:fresh-dev, fire 10-20 view beacons via POST /api/v1/public/views (mixed entity types/ids), then verify GET /admin/views/summary?window=30d non-zero and matching, GET /admin/views/daily-series today's row non-zero, GET /admin/views/top?entityType=ACCOMMODATION&limit=10 ranked order correct. Validates SQL semantics (uniqueness, 30-min dedup window) that unit tests mock out. Sign-off noted in PR description.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Seed DB + fire beacons",
+                    "completed": false
+                },
+                {
+                    "title": "Verify summary/daily-series/top against expectations",
+                    "completed": false
+                },
+                {
+                    "title": "Sign-off in PR description",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "smoke", "real-db"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-05T19:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 21,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 20,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

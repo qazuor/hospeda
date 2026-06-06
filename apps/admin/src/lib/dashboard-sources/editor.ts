@@ -845,11 +845,160 @@ registerDataSource('editor.comments.recent', (ctx) => ({
 }));
 
 // ============================================================================
+// CARD E — Views per post (SPEC-197 T-014)
+// ============================================================================
+
+/** Shape of GET /api/v1/protected/views/posts response. */
+interface PostViewStatsApiResponse {
+    readonly success: boolean;
+    readonly data?: ReadonlyArray<{
+        readonly entityId: string;
+        readonly unique: number;
+        readonly total: number;
+    }>;
+}
+
+/**
+ * EDITOR card E — views slot: unique + total view counts per post.
+ *
+ * The widget maintains its own independent window state (default 30d). The
+ * source resolver accepts a `window` parameter via extra context (not yet
+ * in ResolverContext; for V1 the resolver fetches 30d as default and the
+ * widget re-fetches with a different queryKey when the window changes).
+ *
+ * Requires the caller to pass the `entityIds` of the posts to query. The
+ * source resolver fetches the latest 50 published posts and queries their
+ * view stats, returning a per-post list sorted by total DESC.
+ *
+ * Source ID: `'editor.posts.views'`
+ * Scope: `'all'`
+ * Endpoints:
+ *   - GET /api/v1/admin/posts?status=ACTIVE&pageSize=50&sort=publishedAt:desc  (post ids)
+ *   - GET /api/v1/protected/views/posts?window=30d&entityIds=...               (view stats)
+ *
+ * @see SPEC-197 T-014, §3.2
+ */
+registerDataSource('editor.posts.views', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.posts.views', ctx),
+    queryFn: async () => {
+        // Step 1: get post IDs from the recent published posts pool.
+        const postsResult = await fetchApi<AdminListApiResponse<PostItem>>({
+            path: '/api/v1/admin/posts?status=ACTIVE&pageSize=50&sort=publishedAt:desc'
+        });
+        const posts = postsResult.data.data?.items ?? [];
+        const postIds = posts.map((p) => p.id);
+
+        if (postIds.length === 0) {
+            return { items: [], window: '30d' as const };
+        }
+
+        // Step 2: fetch view stats for those post IDs.
+        const params = new URLSearchParams({ window: '30d' });
+        for (const id of postIds) {
+            params.append('entityIds', id);
+        }
+        const viewsResult = await fetchApi<PostViewStatsApiResponse>({
+            path: `/api/v1/protected/views/posts?${params}`
+        });
+        const viewItems = viewsResult.data.data ?? [];
+
+        // Build a lookup by entityId for fast join.
+        const viewMap = new Map(viewItems.map((v) => [v.entityId, v]));
+
+        // Merge: one row per post; zero-fill when no views recorded.
+        const items = posts.map((post) => {
+            const stats = viewMap.get(post.id);
+            return {
+                entityId: post.id,
+                name: post.title,
+                unique: stats?.unique ?? 0,
+                total: stats?.total ?? 0
+            };
+        });
+
+        // Sort by total views DESC so top-performing posts float up.
+        items.sort((a, b) => b.total - a.total);
+
+        return { items, window: '30d' as const };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
+// CARD F — Views per event (SPEC-197 T-014)
+// ============================================================================
+
+/** Shape of GET /api/v1/protected/views/events response. */
+interface EventViewStatsApiResponse {
+    readonly success: boolean;
+    readonly data?: ReadonlyArray<{
+        readonly entityId: string;
+        readonly unique: number;
+        readonly total: number;
+    }>;
+}
+
+/**
+ * EDITOR card F — views slot: unique + total view counts per event.
+ *
+ * Mirrors `editor.posts.views` but for the EVENT entity type. Maintains
+ * independent window state (default 30d).
+ *
+ * Source ID: `'editor.events.views'`
+ * Scope: `'all'`
+ * Endpoints:
+ *   - GET /api/v1/admin/events?pageSize=50  (event ids)
+ *   - GET /api/v1/protected/views/events?window=30d&entityIds=...  (view stats)
+ *
+ * @see SPEC-197 T-014, §3.2
+ */
+registerDataSource('editor.events.views', (ctx) => ({
+    queryKey: buildDashboardQueryKey('editor.events.views', ctx),
+    queryFn: async () => {
+        // Step 1: get event IDs from the recent events pool.
+        const eventsResult = await fetchApi<AdminListApiResponse<EventItem>>({
+            path: '/api/v1/admin/events?pageSize=50'
+        });
+        const events = eventsResult.data.data?.items ?? [];
+        const eventIds = events.map((e) => e.id);
+
+        if (eventIds.length === 0) {
+            return { items: [], window: '30d' as const };
+        }
+
+        // Step 2: fetch view stats for those event IDs.
+        const params = new URLSearchParams({ window: '30d' });
+        for (const id of eventIds) {
+            params.append('entityIds', id);
+        }
+        const viewsResult = await fetchApi<EventViewStatsApiResponse>({
+            path: `/api/v1/protected/views/events?${params}`
+        });
+        const viewItems = viewsResult.data.data ?? [];
+
+        const viewMap = new Map(viewItems.map((v) => [v.entityId, v]));
+
+        const items = events.map((event) => {
+            const stats = viewMap.get(event.id);
+            return {
+                entityId: event.id,
+                name: event.name,
+                unique: stats?.unique ?? 0,
+                total: stats?.total ?? 0
+            };
+        });
+
+        items.sort((a, b) => b.total - a.total);
+
+        return { items, window: '30d' as const };
+    },
+    staleTime: DASHBOARD_STALE_TIME_MS
+}));
+
+// ============================================================================
 // NOTE — remaining deferred slots (NO resolver registration)
 // ============================================================================
-// Card C — open rate: 🔴 PHASE 2 (no email-open tracking). Deferred.
-// Card E — views per post: 🔴 PHASE 2 (cross-entity view tracking).
-// Card F — views per event: 🔴 PHASE 2 (cross-entity view tracking).
+// Card C — open rate: PHASE 2 (no email-open tracking). Deferred.
 
 // ============================================================================
 // NOTE — WHATS NEW RECENT (SPEC-175 T-016)

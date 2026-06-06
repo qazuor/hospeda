@@ -16,6 +16,7 @@
  * | `checklist` | ChecklistWidget   | Completeness health checklist  |
  * | `status`    | StatusWidget      | Health/badge-style status card |
  * | `feed`      | CommentsFeedCard  | Recent-comments feed (SPEC-165)|
+ * | `views`     | ViewsWidget       | View-count stats + WindowToggle (SPEC-197)|
  * | all others  | DeferredWidget    | Phase-2 slots (callout…)       |
  *
  * "All others" includes: `callout`, `shortcut`, `map`, `calendar`.
@@ -68,7 +69,8 @@ import {
     DeferredWidget,
     KpiWidget,
     ListWidget,
-    StatusWidget
+    StatusWidget,
+    ViewsWidget
 } from './widgets';
 
 // ============================================================================
@@ -81,6 +83,9 @@ import {
  *
  * `'feed'` was added in SPEC-165 T-016 for the EDITOR recent-comments card H.
  * It dispatches to {@link CommentsFeedCard}.
+ *
+ * `'views'` was added in SPEC-197 T-013..T-015 for views-count widgets.
+ * It dispatches to {@link ViewsWidget}.
  */
 const LIVE_WIDGET_TYPES = new Set<WidgetType>([
     'kpi',
@@ -88,7 +93,8 @@ const LIVE_WIDGET_TYPES = new Set<WidgetType>([
     'chart',
     'checklist',
     'status',
-    'feed'
+    'feed',
+    'views'
 ]);
 
 /**
@@ -143,6 +149,8 @@ function WidgetDispatcher({ widget }: { readonly widget: Widget }) {
             return <StatusWidget widget={widget} />;
         case 'feed':
             return <CommentsFeedCard widget={widget} />;
+        case 'views':
+            return <ViewsWidget widget={widget} />;
         default:
             // Safety net — TypeScript narrowing makes this unreachable given
             // the LIVE_WIDGET_TYPES guard above.

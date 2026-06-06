@@ -34,7 +34,8 @@ export const useAccommodationPage = (entityId: string) => {
     const entityConfig = useMemo(() => {
         const consolidatedConfig = createAccommodationConsolidatedConfig(
             t,
-            accommodationTypeOptions
+            accommodationTypeOptions,
+            entityId
         );
 
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
@@ -45,7 +46,7 @@ export const useAccommodationPage = (entityId: string) => {
             editSections,
             metadata: consolidatedConfig.metadata
         };
-    }, [accommodationTypeOptions, t]);
+    }, [accommodationTypeOptions, t, entityId]);
 
     // Permissions configuration - static
     const permissions = useMemo(

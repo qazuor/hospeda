@@ -259,6 +259,21 @@ export type EntityQueryResponse<TData> = {
 };
 
 /**
+ * Runtime options passed to `EntityConfig.createColumns` by the list page.
+ *
+ * All fields are optional and boolean so that existing column factories that
+ * ignore the second parameter continue to work without modification.
+ */
+export type CreateColumnsOptions = {
+    /**
+     * When `true`, permission-gated derived columns (e.g. "Vistas (30d)")
+     * are included in the returned array. When `false` or omitted, those
+     * columns are excluded and no API calls for them are made.
+     */
+    readonly hasAnalyticsView?: boolean;
+};
+
+/**
  * Main entity configuration
  */
 export type EntityConfig<TData = unknown> = {
@@ -306,7 +321,19 @@ export type EntityConfig<TData = unknown> = {
     readonly defaultSort?: SortConfig;
 
     // Columns
-    readonly createColumns: (t: ColumnTFunction) => readonly ColumnConfig<TData>[];
+    /**
+     * Factory function that returns the column definitions for this entity list.
+     *
+     * The optional second parameter `options` allows callers (e.g. EntityListPage)
+     * to inject runtime context such as permission flags that affect which columns
+     * are included. All existing configs that do not use the second parameter remain
+     * fully compatible — the parameter is optional and typed narrowly so no cast is
+     * required at call sites.
+     */
+    readonly createColumns: (
+        t: ColumnTFunction,
+        options?: CreateColumnsOptions
+    ) => readonly ColumnConfig<TData>[];
 
     /**
      * Curated list of fields to display in the peek drawer.

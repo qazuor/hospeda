@@ -264,15 +264,13 @@ const hostDashboard: DashboardInput = {
         },
 
         // Card G — Estadísticas
-        // Four sub-slots:
+        // Three sub-slots:
         //   1. Ratings: avg rating + total reviews (host.stats.ratings)
         //   2. Favorites: per-accommodation breakdown (host.stats.favorites)
         //   3. Response rate: % answered + avg time (host.stats.response-rate)
-        //   4. Views: unique + total 7/30d → DeferredWidget (SPEC-159, cross-entity view tracking)
         //
-        // The card renderer is responsible for composing all four into one card surface.
-        // The `source` here is the primary (ratings) source; companion sources are listed
-        // in config so the renderer can load them. The views slot is marked deferred.
+        // Views stats are a separate 'views' widget (host-card-g-views) with
+        // its own WindowToggle (SPEC-197 T-013 AC-2).
         {
             id: 'host-card-g',
             type: 'kpi',
@@ -289,20 +287,39 @@ const hostDashboard: DashboardInput = {
                 source: 'host.stats.ratings',
                 accent: 'purple',
                 icon: 'chart',
-                // Companion sources for the card renderer to co-load
+                // Companion sources for the card renderer to co-load (favorites + response rate)
                 companionSources: ['host.stats.favorites', 'host.stats.response-rate'],
-                // Views slot is deferred — no backend yet (PostHog client-side only, no DB)
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        description:
-                            'Vistas únicas y totales por alojamiento (7/30 días) — disponible cuando se implemente el tracking de vistas.'
-                    }
-                ],
                 emptyText: 'Aún no tenemos estadísticas',
                 emptyDescription:
                     'Las métricas van a aparecer a medida que tu alojamiento tenga actividad.',
                 errorText: 'No pudimos cargar tus estadísticas',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card G-views — Vistas de alojamientos (SPEC-197 T-013, AC-2)
+        // Per-accommodation unique + total view counts with independent WindowToggle (7d/30d).
+        // Proactive entitlement check (view_basic_stats) + 403 defensive fallback → locked UI.
+        {
+            id: 'host-card-g-views',
+            type: 'views',
+            label: {
+                es: 'Vistas de alojamientos',
+                en: 'Accommodation views',
+                pt: 'Visualizações de alojamentos'
+            },
+            scope: 'own',
+            // Bento: wide (2×1) — per-accommodation rows + lock state need horizontal room.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'host.stats.views',
+                viewsVariant: 'host',
+                accent: 'sky',
+                icon: 'activity',
+                emptyText: 'Sin vistas en este período.',
+                emptyDescription:
+                    'Las vistas aparecerán a medida que los huéspedes visiten tus alojamientos.',
+                errorText: 'No pudimos cargar las vistas',
                 errorDescription: 'Probá actualizar el panel.'
             }
         },
@@ -597,8 +614,10 @@ const editorDashboard: DashboardInput = {
 
         // Card F — Estadísticas eventos (Row 3 right, ⅔)
         // 6-tile mini-grid: 3 counters (Total / Próximos / Destacados) +
-        // 3 content-health proxies (Sin imagen / Sin ubicación / Sin organizer)
-        // + 2 deferred placeholder tiles (Vistas, Favoritos) below the grid.
+        // 3 content-health proxies (Sin imagen / Sin ubicación / Sin organizer).
+        // Views per event is a separate 'views' widget (editor-card-f-views) with
+        // its own WindowToggle (SPEC-197 T-014 AC-12).
+        // Favoritos (SPEC-EVENT-FAV) remains deferred.
         {
             id: 'editor-card-f',
             type: 'kpi',
@@ -617,13 +636,8 @@ const editorDashboard: DashboardInput = {
                 emptyDescription: 'Cuando agregues el primer evento, vas a ver el total acá.',
                 errorText: 'No pudimos cargar las estadísticas',
                 errorDescription: 'Probá actualizar el panel.',
+                // Favoritos (SPEC-EVENT-FAV) still deferred — requires event favorites schema
                 deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        label: 'Vistas',
-                        description:
-                            'Vistas por evento — disponible cuando se implemente el tracking de vistas (SPEC-159).'
-                    },
                     {
                         phaseSpec: 'SPEC-EVENT-FAV',
                         label: 'Favoritos',
@@ -638,8 +652,10 @@ const editorDashboard: DashboardInput = {
         // Two half-width metric cards. Suscriptores no longer needs a full
         // row — paired with the chart it reads as a single "audience snapshot".
 
-        // Card E — Distribución de publicaciones (Row 4 left, ½)
+        // Card E — Estadísticas blog: posts distribution chart (Row 4 left, ½)
         // status distribution bar chart (Publicados / Borradores / Archivados).
+        // Views per post is a separate 'views' widget (editor-card-e-views) with
+        // its own WindowToggle (SPEC-197 T-014 AC-9).
         {
             id: 'editor-card-e',
             type: 'chart',
@@ -658,14 +674,7 @@ const editorDashboard: DashboardInput = {
                 emptyText: 'Aún sin estadísticas',
                 emptyDescription: 'Las métricas van apareciendo a medida que publiques contenido.',
                 errorText: 'No pudimos cargar las estadísticas',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-159',
-                        description:
-                            'Vistas por post — disponible cuando se implemente el tracking de vistas.'
-                    }
-                ]
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 
@@ -751,6 +760,58 @@ const editorDashboard: DashboardInput = {
                 emptyText: '¡Todo en orden!',
                 emptyDescription: 'Ningún evento tiene observaciones pendientes.',
                 errorText: 'No pudimos evaluar la salud de los eventos',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card E-views — Vistas por post (SPEC-197 T-014, AC-9)
+        // Per-post unique + total view counts with independent WindowToggle (7d/30d).
+        // Independent widget so the toggle state does NOT affect editor-card-f-views.
+        {
+            id: 'editor-card-e-views',
+            type: 'views',
+            label: {
+                es: 'Vistas por post',
+                en: 'Views per post',
+                pt: 'Visualizações por post'
+            },
+            scope: 'all',
+            // Bento: half-width — pairs with editor-card-f-views on the same row.
+            gridSpan: { cols: 'half' },
+            config: {
+                source: 'editor.posts.views',
+                viewsVariant: 'editor-posts',
+                accent: 'river',
+                icon: 'article',
+                emptyText: 'Sin vistas en este período.',
+                emptyDescription: 'Las vistas aparecerán a medida que se publique contenido.',
+                errorText: 'No pudimos cargar las vistas',
+                errorDescription: 'Probá actualizar el panel.'
+            }
+        },
+
+        // Card F-views — Vistas por evento (SPEC-197 T-014, AC-12)
+        // Per-event unique + total view counts with independent WindowToggle (7d/30d).
+        // Independent widget so the toggle state does NOT affect editor-card-e-views.
+        {
+            id: 'editor-card-f-views',
+            type: 'views',
+            label: {
+                es: 'Vistas por evento',
+                en: 'Views per event',
+                pt: 'Visualizações por evento'
+            },
+            scope: 'all',
+            // Bento: half-width — pairs with editor-card-e-views on the same row.
+            gridSpan: { cols: 'half' },
+            config: {
+                source: 'editor.events.views',
+                viewsVariant: 'editor-events',
+                accent: 'cyan',
+                icon: 'calendar',
+                emptyText: 'Sin vistas en este período.',
+                emptyDescription: 'Las vistas aparecerán a medida que se publiquen eventos.',
+                errorText: 'No pudimos cargar las vistas',
                 errorDescription: 'Probá actualizar el panel.'
             }
         },
@@ -982,6 +1043,36 @@ const adminBaseDashboard: DashboardInput = {
                 chartType: 'ranking',
                 accent: 'purple',
                 icon: 'users'
+            }
+        },
+
+        // Card VIEWS — Vistas de plataforma (SPEC-197 T-015)
+        // Platform-wide view-count summary per entity type (ACCOMMODATION / POST / EVENT).
+        // Source: admin.views.summary (requires ANALYTICS_VIEW — ADMIN + SUPER_ADMIN only).
+        // Uses type 'views' → ViewsWidget (WindowToggle + 3-row admin summary).
+        // The card is present ONLY in adminBaseDashboard (and therefore superAdminDashboard).
+        // HOST dashboard never receives it — AC-14 enforcement by config.
+        {
+            id: 'admin-card-views',
+            type: 'views',
+            label: {
+                es: 'Vistas de plataforma',
+                en: 'Platform views',
+                pt: 'Visualizações da plataforma'
+            },
+            scope: 'all',
+            // Bento: wide (2×1) — three entity-type rows read better with horizontal room.
+            gridSpan: { cols: 2 },
+            config: {
+                source: 'admin.views.summary',
+                viewsVariant: 'admin-summary',
+                accent: 'sky',
+                icon: 'activity',
+                emptyText: 'Sin vistas registradas',
+                emptyDescription:
+                    'Las vistas aparecerán a medida que los visitantes accedan al contenido.',
+                errorText: 'No pudimos cargar las vistas',
+                errorDescription: 'Probá actualizar el panel.'
             }
         }
     ]

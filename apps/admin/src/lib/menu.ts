@@ -252,6 +252,11 @@ export const menuTree: readonly MenuItem[] = [
                 titleKey: 'admin-menu.analytics.business',
                 to: '/analytics/business',
                 permission: PermissionEnum.STATS_VIEW
+            },
+            {
+                titleKey: 'admin-menu.analytics.views',
+                to: '/analytics/views',
+                permission: PermissionEnum.ANALYTICS_VIEW
             }
         ]
     }

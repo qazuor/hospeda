@@ -1092,6 +1092,7 @@ middleware passes. For `ai_chat_response_completed`, capture inside the `meta`
 resolution (after `augmentedMeta` resolves) so `usage` fields are available.
 
 **Acceptance criteria for analytics**:
+
 - **AC-17 (event fired)** — `ai_chat_message_sent` is captured in the
   integration test for every successful chat request (spy on the PostHog
   capture method).
@@ -1156,6 +1157,7 @@ resolution (after `augmentedMeta` resolves) so `usage` fields are available.
 **File**: `apps/api/test/services/accommodation-ai-context.test.ts`
 
 Test cases:
+
 - Returns correct Markdown sections when all data is present.
 - Truncates description at 800 chars.
 - Limits FAQs to 10.
@@ -1170,6 +1172,7 @@ Test cases:
 **File**: `apps/web/src/hooks/__tests__/useAccommodationChat.test.ts`
 
 Test cases:
+
 - Initial state: idle, empty messages, null conversationId.
 - `sendMessage` transitions to `streaming`.
 - Token events accumulate in `currentAssistantContent`.
@@ -1194,6 +1197,7 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 ```
 
 Test cases (using `StubProvider`):
+
 1. **AC-1**: no `x-mock-actor-*` headers → 401.
 2. **AC-2**: user at quota limit → 403 `LIMIT_REACHED` + `ai_usage` row with
    `status: 'quota_exceeded'`.
@@ -1223,6 +1227,7 @@ Test cases (using `StubProvider`):
 **File**: `apps/web/src/components/accommodation/__tests__/AiChatWidget.test.tsx`
 
 Test cases:
+
 - FAB renders; click opens panel.
 - Disclaimer header is visible.
 - Input disabled during streaming.

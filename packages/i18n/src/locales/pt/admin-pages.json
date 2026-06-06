@@ -33,7 +33,8 @@
         "settingsCritical": "Configurações - Portal (Crítico)",
         "analyticsUsage": "Análises - Uso",
         "analyticsDebug": "Análises - Debug",
-        "analyticsBusiness": "Análises - Negócio"
+        "analyticsBusiness": "Análises - Negócio",
+        "analyticsViews": "Análises - Visualizações"
     },
     "auth": {
         "signin": {
@@ -374,6 +375,27 @@
             "colP99": "P99 (ms)",
             "rawData": "Dados Brutos de Métricas",
             "loading": "Carregando..."
+        },
+        "views": {
+            "title": "Visualizações de Entidades",
+            "subtitle": "Estatísticas de visualizações por acomodação, publicação e evento",
+            "summaryTitle": "Resumo de Visualizações",
+            "top10Title": "Top 10 por Tipo",
+            "labelAccommodation": "Acomodações",
+            "labelPost": "Publicações",
+            "labelEvent": "Eventos",
+            "labelUnique": "Únicos",
+            "labelTotal": "Totais",
+            "colRank": "#",
+            "colUnique": "Únicos",
+            "colTotal": "Totais",
+            "empty": "Sem visualizações neste período",
+            "chart": {
+                "title": "Série diária (últimos 30 dias)",
+                "accommodation": "Acomodações",
+                "post": "Publicações",
+                "event": "Eventos"
+            }
         }
     },
     "access": {

@@ -432,6 +432,7 @@ export const WidgetTypeSchema = z.enum([
     'list',
     'chart',
     'feed',
+    'views',
     'callout',
     'shortcut',
     'map',

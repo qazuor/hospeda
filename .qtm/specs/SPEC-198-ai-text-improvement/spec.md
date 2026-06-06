@@ -728,6 +728,7 @@ This is the mandatory in-code fallback (AC-12 of SPEC-173). A SUPER_ADMIN can
 override it via `ai_prompt_versions` at runtime without a redeploy.
 
 The route handler builds the **user turn** as:
+
 ```
 Please improve the following accommodation {description|summary}:
 
@@ -790,6 +791,7 @@ None. V1 is stateless server-side. Every call is metered automatically into
 
 A `ai_text_improve_history` table can be added additively in V2 without
 breaking changes. Its schema would be:
+
 ```sql
 -- V2 only — NOT in this spec
 CREATE TABLE ai_text_improve_history (
@@ -867,6 +869,7 @@ CREATE TABLE ai_text_improve_history (
 
 All new keys belong to the `admin-common` namespace (used by admin components).
 Files to modify:
+
 - `packages/i18n/src/locales/es/admin-common.json`
 - `packages/i18n/src/locales/en/admin-common.json`
 - `packages/i18n/src/locales/pt/admin-common.json`
@@ -1005,6 +1008,7 @@ describe('POST /api/v1/protected/ai/text-improve — handler', () => {
 ```
 
 **Mock pattern** (consistent with existing billing tests):
+
 ```ts
 vi.mock('../../../../services/ai-service.factory.js', () => ({
   createConfiguredAiService: vi.fn().mockResolvedValue({
@@ -1025,6 +1029,7 @@ vi.mock('../../../../services/ai-service.factory.js', () => ({
 **Config**: use `vitest.config.e2e.ts` (existing, requires live DB).
 
 **Auth pattern** (mock-actor headers, consistent with existing tests):
+
 ```ts
 // Entitled HOST (owner-basico, has ai_text_improve):
 const entitledHeaders = {
@@ -1045,6 +1050,7 @@ vi.mock('../../../src/middlewares/entitlement', () => ({
 ```
 
 **Test cases**:
+
 ```ts
 describe('POST /api/v1/protected/ai/text-improve', () => {
   it('401 — unauthenticated request (no actor header)');
@@ -1180,8 +1186,8 @@ None (no new tables).
 
 ### Rollback
 
-Revert the route file + remove the `app.route(...)` line from `routes/index.ts`
-+ revert the frontend components. The in-code default prompt in
+Revert the route file, remove the `app.route(...)` line from `routes/index.ts`,
+and revert the frontend components. The in-code default prompt in
 `DEFAULT_PROMPTS['text_improve']` stays (it is shared infrastructure). Any admin
 prompt in `ai_prompt_versions` for `text_improve` can be soft-deleted.
 

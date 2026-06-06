@@ -300,6 +300,19 @@
             }
         }
     },
+    "adminView": {
+        "batch": {
+            "entityIds": {
+                "empty": "The entity IDs list cannot be empty",
+                "tooMany": "No more than 100 entity IDs can be requested at once"
+            }
+        },
+        "dailySeries": {
+            "date": {
+                "invalid": "Date must be in YYYY-MM-DD format"
+            }
+        }
+    },
     "amenity": {
         "bulkOperation": {
             "force": {

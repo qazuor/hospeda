@@ -1,6 +1,11 @@
 {
     "accommodations": "Acomodações",
     "apply": "Aplicar",
+    "window": {
+        "7d": "7 dias",
+        "30d": "30 dias",
+        "ariaLabel": "Período de tempo"
+    },
     "backHome": "Voltar ao início",
     "backToHome": "Voltar ao início",
     "clear": "Limpar",

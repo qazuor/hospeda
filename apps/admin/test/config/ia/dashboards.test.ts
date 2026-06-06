@@ -86,31 +86,33 @@ describe('card counts (AC-4)', () => {
     /**
      * hostDashboard grew from 7 to 10 widgets through SPEC-155 additions
      * (commits c94502f99 → 06b73c15c), then to 11 with the shared 'whats-new'
-     * widget added by SPEC-175 T-017.
+     * widget added by SPEC-175 T-017, then to 12 with host-card-g-views added
+     * by SPEC-197 T-013.
      */
-    it('hostDashboard should have exactly 11 stub widgets', () => {
-        expect(dashboards.hostDashboard?.widgets).toHaveLength(11);
+    it('hostDashboard should have exactly 12 stub widgets', () => {
+        expect(dashboards.hostDashboard?.widgets).toHaveLength(12);
     });
 
     /**
      * editorDashboard grew from 8 to 11 widgets through SPEC-155 additions
      * and the live recent-comments card (commit 06b73c15c), then to 12 with
-     * the shared 'whats-new' widget added by SPEC-175 T-017.
+     * the shared 'whats-new' widget added by SPEC-175 T-017, then to 14 with
+     * editor-card-e-views + editor-card-f-views added by SPEC-197 T-014.
      */
-    it('editorDashboard should have exactly 12 stub widgets', () => {
-        expect(dashboards.editorDashboard?.widgets).toHaveLength(12);
+    it('editorDashboard should have exactly 14 stub widgets', () => {
+        expect(dashboards.editorDashboard?.widgets).toHaveLength(14);
     });
 
-    it('adminBaseDashboard should have exactly 8 stub widgets (cards A–G + whats-new)', () => {
-        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(8);
+    it('adminBaseDashboard should have exactly 9 stub widgets (cards A–G + admin-card-views + whats-new)', () => {
+        expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(9);
     });
 
     it('superAdminOnlySection should have exactly 2 stub widgets (cards H–I)', () => {
         expect(dashboards.superAdminOnlySection?.widgets).toHaveLength(2);
     });
 
-    it('superAdminDashboard should have exactly 10 stub widgets (base 7 + super-only 2 + whats-new)', () => {
-        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(10);
+    it('superAdminDashboard should have exactly 11 stub widgets (base 9 + super-only 2)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(11);
     });
 });
 
@@ -119,16 +121,16 @@ describe('card counts (AC-4)', () => {
 // ---------------------------------------------------------------------------
 
 describe('role wiring (AC-8)', () => {
-    it('adminBaseDashboard has 8 widgets — ADMIN resolves to 8 cards (7 original + whats-new)', () => {
-        // AC-8: ADMIN role → adminBaseDashboard (7 cards + 1 whats-new = 8, SPEC-175 T-017)
+    it('adminBaseDashboard has 9 widgets — ADMIN resolves to 9 cards (7 original + admin-card-views + whats-new)', () => {
+        // AC-8: ADMIN role → adminBaseDashboard (7 cards + 1 admin-card-views + 1 whats-new = 9, SPEC-197 T-015)
         const base = dashboards.adminBaseDashboard;
-        expect(base?.widgets).toHaveLength(8);
+        expect(base?.widgets).toHaveLength(9);
     });
 
-    it('superAdminDashboard has 10 widgets — SUPER_ADMIN resolves to base + section + whats-new (10 cards)', () => {
-        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard 7 + superAdminOnlySection 2 + whats-new 1 = 10, SPEC-175 T-017)
+    it('superAdminDashboard has 11 widgets — SUPER_ADMIN resolves to base + section (11 cards)', () => {
+        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard 9 + superAdminOnlySection 2 = 11, SPEC-197 T-015)
         const assembled = dashboards.superAdminDashboard;
-        expect(assembled?.widgets).toHaveLength(10);
+        expect(assembled?.widgets).toHaveLength(11);
     });
 
     it('superAdminDashboard widgets include all adminBaseDashboard widget IDs', () => {

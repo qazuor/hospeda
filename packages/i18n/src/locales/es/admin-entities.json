@@ -181,6 +181,7 @@
         "banReason": "Razón de Baneo",
         "banExpires": "Baneo Expira",
         "avatar": "Avatar",
+        "views30d": "Vistas (30d)",
         "appLog": {
             "loggedAt": "Fecha/Hora",
             "level": "Nivel",
@@ -323,6 +324,15 @@
             "relations": "Relaciones",
             "metadata": "Metadatos",
             "audit": "Auditoría"
+        },
+        "viewStats": {
+            "sectionTitle": "Estadísticas de vistas",
+            "chips": {
+                "unique": "Únicos",
+                "total": "Totales",
+                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal": "{{window}}: {{count}} vistas totales"
+            }
         }
     },
     "form": {
