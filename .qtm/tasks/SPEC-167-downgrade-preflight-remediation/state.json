@@ -29,7 +29,7 @@
         {
             "id": "T-002",
             "title": "Add planRestricted to accommodation + promotion Zod schemas and types",
-            "description": "@repo/schemas: add `planRestricted: z.boolean().default(false)` to the accommodation and owner-promotion entity schemas (find via entity-name.schema.ts convention). Regenerate/extend inferred types. Lesson SPEC-145/149: schema package export changes can break 'already green' consumers — note for the sweep. Tests: schema parse defaults; round-trip with the new field.",
+            "description": "@repo/schemas: add `planRestricted: z.boolean().default(false)` to the accommodation and owner-promotion entity schemas (find via entity-name.schema.ts convention). Regenerate/extend inferred types. Lesson SPEC-145/149: schema package export changes can break 'already green' consumers \u2014 note for the sweep. Tests: schema parse defaults; round-trip with the new field.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
@@ -51,7 +51,7 @@
         {
             "id": "T-003",
             "title": "Add archivedGallery to media Zod schema",
-            "description": "Realign D-2: add optional `archivedGallery` (same item shape as `gallery`) to the accommodation media JSONB Zod schema in @repo/schemas. NO DB migration (JSONB). Public/API read paths only consume `gallery` so zero read changes — VERIFY that claim with a grep for media.gallery consumers and note any that iterate all keys. Tests: parse with/without archivedGallery; existing media fixtures unaffected.",
+            "description": "Realign D-2: add optional `archivedGallery` (same item shape as `gallery`) to the accommodation media JSONB Zod schema in @repo/schemas. NO DB migration (JSONB). Public/API read paths only consume `gallery` so zero read changes \u2014 VERIFY that claim with a grep for media.gallery consumers and note any that iterate all keys. Tests: parse with/without archivedGallery; existing media fixtures unaffected.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -73,7 +73,7 @@
         {
             "id": "T-004",
             "title": "Exclude planRestricted accommodations from public read paths",
-            "description": "Visibility predicate becomes published && !ownerSuspended && !planRestricted. Audit every public accommodation query (list/detail/search/destination pages) — find where ownerSuspended is filtered today and mirror. Also exclude planRestricted promotions from public/active reads AND from the MAX_ACTIVE_PROMOTIONS count in apps/api/src/middlewares/limit-enforcement.ts (restricted ≠ active). Tests: public list excludes restricted; detail of restricted returns 404/not-visible consistent with ownerSuspended behavior; limit counter ignores restricted promotions.",
+            "description": "Visibility predicate becomes published && !ownerSuspended && !planRestricted. Audit every public accommodation query (list/detail/search/destination pages) \u2014 find where ownerSuspended is filtered today and mirror. Also exclude planRestricted promotions from public/active reads AND from the MAX_ACTIVE_PROMOTIONS count in apps/api/src/middlewares/limit-enforcement.ts (restricted \u2260 active). Tests: public list excludes restricted; detail of restricted returns 404/not-visible consistent with ownerSuspended behavior; limit counter ignores restricted promotions.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002"],
@@ -95,7 +95,7 @@
         {
             "id": "T-005",
             "title": "Red-first unit tests for computeDowngradeExcess",
-            "description": "Write the failing test suite for the excess-diff helper BEFORE implementing (spec §3 dimensions): accommodations over MAX_ACCOMMODATIONS, active promotions over MAX_ACTIVE_PROMOTIONS, photos per accommodation over MAX_PHOTOS_PER_ACCOMMODATION, rich-description and video grandfather detection. Cases: under-cap (empty diff), exactly-at-cap, over-cap with default keep selection (most-recently-updated first), unlimited target (no limit key). Test file colocated with subscription-downgrade.service tests.",
+            "description": "Write the failing test suite for the excess-diff helper BEFORE implementing (spec \u00a73 dimensions): accommodations over MAX_ACCOMMODATIONS, active promotions over MAX_ACTIVE_PROMOTIONS, photos per accommodation over MAX_PHOTOS_PER_ACCOMMODATION, rich-description and video grandfather detection. Cases: under-cap (empty diff), exactly-at-cap, over-cap with default keep selection (most-recently-updated first), unlimited target (no limit key). Test file colocated with subscription-downgrade.service tests.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -117,7 +117,7 @@
         {
             "id": "T-006",
             "title": "Implement computeDowngradeExcess (read-only diff helper)",
-            "description": "In apps/api/src/services/subscription-downgrade.service.ts (or sibling module if >500 lines): RO-RO helper computing usage-vs-target excess for all §3 dimensions + the default keep selection (most-recently-updated; most-viewed as tiebreaker if view data is cheap to reach). Read-only — NO mutations. Returns a structured preview object (this shape IS the SPEC-203 preview contract — export its Zod schema from @repo/schemas). Make T-005 tests green.",
+            "description": "In apps/api/src/services/subscription-downgrade.service.ts (or sibling module if >500 lines): RO-RO helper computing usage-vs-target excess for all \u00a73 dimensions + the default keep selection (most-recently-updated; most-viewed as tiebreaker if view data is cheap to reach). Read-only \u2014 NO mutations. Returns a structured preview object (this shape IS the SPEC-203 preview contract \u2014 export its Zod schema from @repo/schemas). Make T-005 tests green.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
@@ -161,7 +161,7 @@
         {
             "id": "T-008",
             "title": "Promotion restrict/restore primitives",
-            "description": "restrictPromotions({ ids }) sets planRestricted=true (lifecycle stays untouched — the flag excludes them from active counts/reads per T-004); restorePromotions({ ids }) unsets. No batch-deactivate exists today (realign finding 6) — build on OwnerPromotionService/model. Unit tests: round-trip, lifecycle untouched, restricted excluded from active count.",
+            "description": "restrictPromotions({ ids }) sets planRestricted=true (lifecycle stays untouched \u2014 the flag excludes them from active counts/reads per T-004); restorePromotions({ ids }) unsets. No batch-deactivate exists today (realign finding 6) \u2014 build on OwnerPromotionService/model. Unit tests: round-trip, lifecycle untouched, restricted excluded from active count.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
@@ -183,7 +183,7 @@
         {
             "id": "T-009",
             "title": "Photo archive/restore primitive (JSONB gallery move)",
-            "description": "archiveAccommodationPhotos({ accommodationId, keepIds }) moves non-kept gallery items from media.gallery to media.archivedGallery; restoreAccommodationPhotos moves back (respecting target cap on restore). featuredImage counts toward the cap but is always kept by default. INV-5: items moved, never dropped — assert total count invariant in tests. Unit tests: move/restore round-trip preserves every item byte-for-byte, keepIds honored, cap edge cases.",
+            "description": "archiveAccommodationPhotos({ accommodationId, keepIds }) moves non-kept gallery items from media.gallery to media.archivedGallery; restoreAccommodationPhotos moves back (respecting target cap on restore). featuredImage counts toward the cap but is always kept by default. INV-5: items moved, never dropped \u2014 assert total count invariant in tests. Unit tests: move/restore round-trip preserves every item byte-for-byte, keepIds honored, cap edge cases.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
@@ -205,7 +205,7 @@
         {
             "id": "T-010",
             "title": "Add targeted batch revalidation helper",
-            "description": "Realign B-2: packages/service-core/src/revalidation/revalidation.service.ts has scheduleRevalidation (per-entity, debounced) and revalidateByEntityType (ALL of a type — too broad). Add scheduleRevalidationBatch({ events }) for a targeted id list (loop with debounce reuse is fine; keep fire-and-forget semantics). Unit tests: N events scheduled, debounce key per entity preserved.",
+            "description": "Realign B-2: packages/service-core/src/revalidation/revalidation.service.ts has scheduleRevalidation (per-entity, debounced) and revalidateByEntityType (ALL of a type \u2014 too broad). Add scheduleRevalidationBatch({ events }) for a targeted id list (loop with debounce reuse is fine; keep fire-and-forget semantics). Unit tests: N events scheduled, debounce key per entity preserved.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": [],
@@ -227,8 +227,8 @@
         {
             "id": "T-011",
             "title": "Shared restriction service applyDowngradeRestrictions (red-first)",
-            "description": "Realign D-1: THE shared service both the cron and the admin hook call. applyDowngradeRestrictions({ customerId, targetPlanId, selections? }): recompute excess FRESH (T-006), merge host selections (keepIds) with defaults, call primitives (T-007/008/009), schedule batch revalidation (T-010). IDEMPOTENT: second run with same state is a no-op (already-restricted items don't double-count). Red-first unit tests: full flow per dimension, selections honored, idempotency, under-cap no-op, partial failure surfaces an error (no silent swallow — SPEC-149 lesson).",
-            "status": "pending",
+            "description": "Realign D-1: THE shared service both the cron and the admin hook call. applyDowngradeRestrictions({ customerId, targetPlanId, selections? }): recompute excess FRESH (T-006), merge host selections (keepIds) with defaults, call primitives (T-007/008/009), schedule batch revalidation (T-010). IDEMPOTENT: second run with same state is a no-op (already-restricted items don't double-count). Red-first unit tests: full flow per dimension, selections honored, idempotency, under-cap no-op, partial failure surfaces an error (no silent swallow \u2014 SPEC-149 lesson).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010"],
             "blocks": ["T-013", "T-014", "T-017"],
@@ -236,14 +236,14 @@
             "tags": ["service", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-06T18:00:00.000Z",
+                "completed": "2026-06-06T18:40:00.000Z"
             }
         },
         {
@@ -271,7 +271,7 @@
         {
             "id": "T-013",
             "title": "Wire restriction into apply-scheduled-plan-changes cron",
-            "description": "apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts: after changePlan succeeds for a DOWNGRADE (step between plan apply and cache clear), call applyDowngradeRestrictions with persisted selections (T-015). Respect the SPEC-194 pre-stamp idempotency (restriction failure must NOT roll back the applied plan change — instead mark the run result.success=false so SPEC-149's cron soft-failure Sentry capture fires; document the recovery path). Unit tests on the cron with restriction mock: called for downgrades only, failure → soft-fail not throw, selections passed through.",
+            "description": "apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts: after changePlan succeeds for a DOWNGRADE (step between plan apply and cache clear), call applyDowngradeRestrictions with persisted selections (T-015). Respect the SPEC-194 pre-stamp idempotency (restriction failure must NOT roll back the applied plan change \u2014 instead mark the run result.success=false so SPEC-149's cron soft-failure Sentry capture fires; document the recovery path). Unit tests on the cron with restriction mock: called for downgrades only, failure \u2192 soft-fail not throw, selections passed through.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-011", "T-015"],
@@ -293,7 +293,7 @@
         {
             "id": "T-014",
             "title": "Wire restriction + restoration into admin change-plan hook",
-            "description": "Realign D-1: apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts onAfterSubscriptionChangePlan (~line 349) — admin plan changes are IMMEDIATE. Compare old vs new plan: downgrade → applyDowngradeRestrictions synchronously (no selections — default keep policy); upgrade → applyUpgradeRestorations. Keep existing audit-log + clearEntitlementCache untouched. Unit tests: both directions, same-plan no-op, restriction error does not break the admin response (log + Sentry, hook contract preserved — check how other hooks handle errors).",
+            "description": "Realign D-1: apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts onAfterSubscriptionChangePlan (~line 349) \u2014 admin plan changes are IMMEDIATE. Compare old vs new plan: downgrade \u2192 applyDowngradeRestrictions synchronously (no selections \u2014 default keep policy); upgrade \u2192 applyUpgradeRestorations. Keep existing audit-log + clearEntitlementCache untouched. Unit tests: both directions, same-plan no-op, restriction error does not break the admin response (log + Sentry, hook contract preserved \u2014 check how other hooks handle errors).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-011", "T-012"],
@@ -315,7 +315,7 @@
         {
             "id": "T-015",
             "title": "keepIds selection field: schema + persistence with scheduled change",
-            "description": "@repo/schemas: extend the plan-change downgrade request schema with optional keepSelections ({ accommodationIds?, promotionIds?, photoKeepMap? } — align shape with the T-006 preview contract). Persist with the QZPayScheduledPlanChange record (check what metadata/JSON field the qzpay scheduled-change row supports; if none, a sidecar table/column is needed — prefer the simplest carrier that survives until apply). Unit tests: schema validation, persistence round-trip, replacedPriorSchedule overwrites selections.",
+            "description": "@repo/schemas: extend the plan-change downgrade request schema with optional keepSelections ({ accommodationIds?, promotionIds?, photoKeepMap? } \u2014 align shape with the T-006 preview contract). Persist with the QZPayScheduledPlanChange record (check what metadata/JSON field the qzpay scheduled-change row supports; if none, a sidecar table/column is needed \u2014 prefer the simplest carrier that survives until apply). Unit tests: schema validation, persistence round-trip, replacedPriorSchedule overwrites selections.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": [],
@@ -337,7 +337,7 @@
         {
             "id": "T-016",
             "title": "Request-time restriction preview in plan-change downgrade response",
-            "description": "apps/api/src/routes/billing/plan-change.ts downgrade branch (lines ~348-405): include the computeDowngradeExcess preview in the scheduled response + accept/persist keepSelections (T-015). ⚠️ SPEC-149 catch lives in the OUTERMOST catch (~415-431): new code goes inside the inner try; new error types must map BEFORE isBillingProviderError or they 500. Unit tests: preview shape for over-cap host, empty preview under cap, selections persisted, REGRESSION: provider-error mapping (429→503 etc.) still works on this route (re-run plan-change-provider-error.test.ts).",
+            "description": "apps/api/src/routes/billing/plan-change.ts downgrade branch (lines ~348-405): include the computeDowngradeExcess preview in the scheduled response + accept/persist keepSelections (T-015). \u26a0\ufe0f SPEC-149 catch lives in the OUTERMOST catch (~415-431): new code goes inside the inner try; new error types must map BEFORE isBillingProviderError or they 500. Unit tests: preview shape for over-cap host, empty preview under cap, selections persisted, REGRESSION: provider-error mapping (429\u2192503 etc.) still works on this route (re-run plan-change-provider-error.test.ts).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-006", "T-015"],
@@ -380,8 +380,8 @@
         },
         {
             "id": "T-018",
-            "title": "Fix pause/resume revalidation gap (spec §6)",
-            "description": "Realign C confirmed: apps/api/src/services/subscription-pause.service.ts setOwnerServiceSuspension flips accommodations.ownerSuspended directly with NO scheduleRevalidation — stale Cloudflare ISR pages keep showing paused listings. Call scheduleRevalidationBatch (T-010) with the affected accommodation events on suspend AND resume. Regression tests: revalidation scheduled with the right ids both directions; DB write behavior unchanged.",
+            "title": "Fix pause/resume revalidation gap (spec \u00a76)",
+            "description": "Realign C confirmed: apps/api/src/services/subscription-pause.service.ts setOwnerServiceSuspension flips accommodations.ownerSuspended directly with NO scheduleRevalidation \u2014 stale Cloudflare ISR pages keep showing paused listings. Call scheduleRevalidationBatch (T-010) with the affected accommodation events on suspend AND resume. Regression tests: revalidation scheduled with the right ids both directions; DB write behavior unchanged.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-010"],
@@ -403,7 +403,7 @@
         {
             "id": "T-019",
             "title": "e2e: downgrade restriction happy path",
-            "description": "New e2e in apps/api/test/e2e/flows/billing/ (closes the T-145-11 gap — no placeholder exists): over-cap host (3 accommodations/cap 1, active promos over cap, photos over cap) schedules downgrade → response carries preview → cron applies → accommodations planRestricted + promos restricted + photos archived → public list/detail exclude restricted → entitlement cache cleared. Use billing-factories + mp-stub harness (SPEC-143). Follow the plan-downgrade-cron.test.ts patterns.",
+            "description": "New e2e in apps/api/test/e2e/flows/billing/ (closes the T-145-11 gap \u2014 no placeholder exists): over-cap host (3 accommodations/cap 1, active promos over cap, photos over cap) schedules downgrade \u2192 response carries preview \u2192 cron applies \u2192 accommodations planRestricted + promos restricted + photos archived \u2192 public list/detail exclude restricted \u2192 entitlement cache cleared. Use billing-factories + mp-stub harness (SPEC-143). Follow the plan-downgrade-cron.test.ts patterns.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-004", "T-013", "T-014", "T-016", "T-026"],
@@ -425,7 +425,7 @@
         {
             "id": "T-020",
             "title": "e2e: keepIds honored + restore-on-upgrade + idempotent re-apply",
-            "description": "Same e2e harness: (1) host schedules downgrade WITH keepSelections → cron applies → exactly the selected items stay active; (2) re-upgrade → restricted resources restored (planRestricted unset, photos back in gallery); (3) cron re-run of an applied change does NOT double-restrict (idempotency with the SPEC-194 pre-stamp).",
+            "description": "Same e2e harness: (1) host schedules downgrade WITH keepSelections \u2192 cron applies \u2192 exactly the selected items stay active; (2) re-upgrade \u2192 restricted resources restored (planRestricted unset, photos back in gallery); (3) cron re-run of an applied change does NOT double-restrict (idempotency with the SPEC-194 pre-stamp).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-012", "T-019"],
@@ -447,7 +447,7 @@
         {
             "id": "T-021",
             "title": "INV-5 pinning + non-downgrade regression tests",
-            "description": "Pinning suite (SPEC-149 style): (1) INV-5 — restrict+restore round-trip leaves every resource byte-identical (no deletes anywhere in the restriction path: assert row counts + media item counts); (2) upgrades and same-plan changes NEVER invoke restriction; (3) pause/resume does NOT touch planRestricted (D-3 separation pin). These protect the policy decisions against future refactors.",
+            "description": "Pinning suite (SPEC-149 style): (1) INV-5 \u2014 restrict+restore round-trip leaves every resource byte-identical (no deletes anywhere in the restriction path: assert row counts + media item counts); (2) upgrades and same-plan changes NEVER invoke restriction; (3) pause/resume does NOT touch planRestricted (D-3 separation pin). These protect the policy decisions against future refactors.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-011", "T-012"],
@@ -513,7 +513,7 @@
         {
             "id": "T-024",
             "title": "Register staging smoke entry #6 (SPEC-193 batch)",
-            "description": "Billing CORE change (downgrade/plan-change flow + cron) → MUST register deferred smoke sections in .qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md (entry #6, with PR number): scheduled downgrade with over-cap host on staging MP sandbox → preview in response → cron applies → restriction visible (public page excluded post-revalidation) → re-upgrade restores → notifications received. Follow entries #1-5 format.",
+            "description": "Billing CORE change (downgrade/plan-change flow + cron) \u2192 MUST register deferred smoke sections in .qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md (entry #6, with PR number): scheduled downgrade with over-cap host on staging MP sandbox \u2192 preview in response \u2192 cron applies \u2192 restriction visible (public page excluded post-revalidation) \u2192 re-upgrade restores \u2192 notifications received. Follow entries #1-5 format.",
             "status": "pending",
             "complexity": 1,
             "blockedBy": ["T-023"],
@@ -535,7 +535,7 @@
         {
             "id": "T-025",
             "title": "PR to staging + CI + merge + closeout",
-            "description": "Resync with origin/staging first (keep-both on .qtm index conflicts; rebuild dists post-merge before trusting typecheck). PR to staging referencing the smoke entry. CI Pass SUCCESS gate (gh pr view N --json statusCheckRollup; push via /usr/bin/git push + verify rev-parse local==remote — rtk no-ops silently). Merge --merge. Closeout: spec.md + specs/index.json + tasks/index.json completed+archived in the SAME change (index sync rules), engram state save, ask owner OK for worktree cleanup.",
+            "description": "Resync with origin/staging first (keep-both on .qtm index conflicts; rebuild dists post-merge before trusting typecheck). PR to staging referencing the smoke entry. CI Pass SUCCESS gate (gh pr view N --json statusCheckRollup; push via /usr/bin/git push + verify rev-parse local==remote \u2014 rtk no-ops silently). Merge --merge. Closeout: spec.md + specs/index.json + tasks/index.json completed+archived in the SAME change (index sync rules), engram state save, ask owner OK for worktree cleanup.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-023", "T-024"],
@@ -557,7 +557,7 @@
         {
             "id": "T-026",
             "title": "Fix getByDestination visibility gap (ownerSuspended + planRestricted)",
-            "description": "Absorbed pre-existing bug (owner approved 2026-06-06, found in T-004 audit): accommodation getByDestination uses raw findAll WITHOUT the ownerSuspended filter — suspended (and now plan-restricted) listings leak through destination pages. Fix: apply the same public visibility predicate (ownerSuspended=false AND planRestricted=false, with the same isOwnScope/VIP exemptions as search) to getByDestination in accommodation.service/model. Regression test reproducing the leak FIRST (bug-fix rule), then fix. Re-run the T-004 test files.",
+            "description": "Absorbed pre-existing bug (owner approved 2026-06-06, found in T-004 audit): accommodation getByDestination uses raw findAll WITHOUT the ownerSuspended filter \u2014 suspended (and now plan-restricted) listings leak through destination pages. Fix: apply the same public visibility predicate (ownerSuspended=false AND planRestricted=false, with the same isOwnScope/VIP exemptions as search) to getByDestination in accommodation.service/model. Regression test reproducing the leak FIRST (bug-fix rule), then fix. Re-run the T-004 test files.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-002"],
