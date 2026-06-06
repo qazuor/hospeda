@@ -720,12 +720,25 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             readonly billingLoadFailed: boolean;
         };
         // Tourist-free entitlements: SAVE_FAVORITES, WRITE_REVIEWS,
-        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS (4 keys, max_favorites=3).
-        // The exact shape comes from TOURIST_FREE_PLAN.
+        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS, AI_CHAT, AI_SEARCH (6 keys).
+        // The exact shape comes from TOURIST_FREE_PLAN in packages/billing/src/config/plans.config.ts.
+        // AI_CHAT and AI_SEARCH were added by SPEC-173 (ai core, merged ~2026-06-05),
+        // causing this assertion to drift from the original 4-item set.
         expect(new Set(preBody.entitlements)).toEqual(
-            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'can_view_recommendations'])
+            new Set([
+                'save_favorites',
+                'write_reviews',
+                'read_reviews',
+                'can_view_recommendations',
+                'ai_chat',
+                'ai_search'
+            ])
         );
-        expect(preBody.limits).toEqual({ max_favorites: 3 });
+        expect(preBody.limits).toEqual({
+            max_favorites: 3,
+            max_ai_chat_per_month: 10,
+            max_ai_search_per_month: 30
+        });
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot the cache size so we can prove exactly one entry was
