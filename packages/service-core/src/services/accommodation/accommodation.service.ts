@@ -995,7 +995,7 @@ export class AccommodationService extends BaseCrudService<
             try {
                 await this.model.update(
                     { id: entity.id },
-                    { extraInfo: mergedExtra } as unknown as Partial<Accommodation>,
+                    { extraInfo: mergedExtra } as unknown as Partial<Accommodation>, // TYPE-WORKAROUND: extraInfo DB column is jsonb — merge result is Record<string,unknown> which doesn't match the Zod strict shape
                     ctx?.tx
                 );
             } catch (error) {
