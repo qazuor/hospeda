@@ -375,16 +375,19 @@ export async function applyUpgradeRestorations(
     // destination. Non-blocking: recount failure must not block the caller.
     if (restoredAccIds.length > 0) {
         try {
-            const { accommodationModel } = await import('@repo/db');
+            const { accommodations: accsTable, getDb } = await import('@repo/db');
+            const { inArray } = await import('drizzle-orm');
             const { DestinationService } = await import('@repo/service-core');
-            const rows = await accommodationModel.findAll(
-                { id: { in: restoredAccIds as string[] } },
-                { pageSize: restoredAccIds.length + 10 }
-            );
+            // Direct inArray query — accommodationModel.findAll does NOT support the
+            // `{ id: { in: [...] } }` operator (buildWhereClause throws on plain objects).
+            const rows = await getDb()
+                .select({ id: accsTable.id, destinationId: accsTable.destinationId })
+                .from(accsTable)
+                .where(inArray(accsTable.id, restoredAccIds as string[]));
             const destinationIds = [
                 ...new Set(
-                    (rows.items ?? [])
-                        .map((r: { destinationId?: string | null }) => r.destinationId)
+                    rows
+                        .map((r) => r.destinationId)
                         .filter((id): id is string => typeof id === 'string' && id.length > 0)
                 )
             ];

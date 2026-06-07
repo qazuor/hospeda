@@ -339,16 +339,19 @@ async function buildDefaultPhotoKeepIds(params: {
 async function triggerDestinationRecounts(accommodationIds: readonly string[]): Promise<void> {
     if (accommodationIds.length === 0) return;
     try {
-        const { accommodationModel } = await import('@repo/db');
+        const { accommodations: accsTable, getDb } = await import('@repo/db');
+        const { inArray } = await import('drizzle-orm');
         const { DestinationService } = await import('@repo/service-core');
-        const rows = await accommodationModel.findAll(
-            { id: { in: accommodationIds as string[] } },
-            { pageSize: accommodationIds.length + 10 }
-        );
+        // Direct inArray query — accommodationModel.findAll does NOT support the
+        // `{ id: { in: [...] } }` operator (buildWhereClause throws on plain objects).
+        const rows = await getDb()
+            .select({ id: accsTable.id, destinationId: accsTable.destinationId })
+            .from(accsTable)
+            .where(inArray(accsTable.id, accommodationIds as string[]));
         const destinationIds = [
             ...new Set(
-                (rows.items ?? [])
-                    .map((r: { destinationId?: string | null }) => r.destinationId)
+                rows
+                    .map((r) => r.destinationId)
                     .filter((id): id is string => typeof id === 'string' && id.length > 0)
             )
         ];

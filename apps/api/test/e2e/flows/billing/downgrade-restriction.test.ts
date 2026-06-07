@@ -716,6 +716,33 @@ describe('SPEC-167 T-019 — downgrade restriction happy path', () => {
         );
 
         // ────────────────────────────────────────────────────────────────────
+        // ASSERT: destination.accommodationsCount updated after restriction
+        //
+        // triggerDestinationRecounts runs AFTER the transaction using an
+        // inArray SELECT to resolve destinationIds, then calls
+        // DestinationService.updateAccommodationsCount for each.
+        // updateAccommodationsCount counts rows WHERE planRestricted=false
+        // AND lifecycleState='ACTIVE' AND ownerSuspended=false AND deletedAt IS NULL.
+        //
+        // Before restriction: 3 accommodations → count = 3.
+        // After restriction:  acc2 + acc3 planRestricted=true → count = 1.
+        //
+        // This assertion is the real-DB round-trip that would have caught the
+        // original bug (DbError in buildWhereClause → silent no-op → stale count).
+        // ────────────────────────────────────────────────────────────────────
+        const postDestRows = await testDb
+            .getDb()
+            .select({ accommodationsCount: destinations.accommodationsCount })
+            .from(destinations)
+            .where(eq(destinations.id, destId));
+
+        expect(postDestRows).toHaveLength(1);
+        expect(
+            postDestRows[0]?.accommodationsCount,
+            'destination.accommodationsCount must be 1 after downgrade restriction (only acc1 remains public)'
+        ).toBe(1);
+
+        // ────────────────────────────────────────────────────────────────────
         // ASSERT: public list/detail excludes planRestricted accommodations
         //
         // Public reads call accommodationService.search with
