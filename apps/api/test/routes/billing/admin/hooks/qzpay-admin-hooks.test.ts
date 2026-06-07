@@ -329,7 +329,17 @@ function buildPlan(
  * Used by onAfterSubscriptionChangePlan tests that need plan price comparison
  * to determine direction (downgrade vs upgrade vs same-plan).
  */
-function buildBillingMockWithPlans(planMap: Record<string, ReturnType<typeof buildPlan>>) {
+type MockPlanPrice = {
+    id: string;
+    intervalCount: number;
+    unitAmount: number;
+    active: boolean;
+    billingInterval?: 'month' | 'year';
+    currency?: string;
+};
+type MockPlan = { id: string; name: string; prices: MockPlanPrice[] };
+
+function buildBillingMockWithPlans(planMap: Record<string, MockPlan>) {
     return {
         subscriptions: { cancel: vi.fn() },
         customers: { get: vi.fn() },
