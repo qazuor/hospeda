@@ -1099,6 +1099,35 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
 
         expect(sentryCaptureMessage).not.toHaveBeenCalled();
     });
+
+    it('M-2: restriction failure logger.error carries subscriptionId/customerId/newPlanId for ops remediation', async () => {
+        // M-2 fix: the recovery path is MANUAL-ONLY (row stays applied, cron cannot
+        // auto-retry). The logger.error call must carry identifying fields so ops
+        // can locate affected subscriptions without PII.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
+            new Error('restriction db timeout')
+        );
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+        const { logger } = makeCtx();
+
+        await _internals.applyOne(row, billing, logger);
+
+        expect(logger.error).toHaveBeenCalled();
+        const errorCall = vi.mocked(logger.error).mock.calls[0];
+        // logger.error(message, context) — message is arg[0], context is arg[1]
+        const msgArg = errorCall?.[0] as string;
+        const ctxArg = errorCall?.[1] as Record<string, unknown>;
+        expect(msgArg).toContain('MANUAL remediation required');
+        // Context must carry identifying fields so ops can locate affected subscriptions
+        expect(ctxArg.subscriptionId).toBe(SUB_ID);
+        expect(ctxArg.customerId).toBe(CUSTOMER_ID);
+        expect(ctxArg.newPlanId).toBe(NEW_PLAN_ID);
+        expect(ctxArg.error).toBe('restriction db timeout');
+        expect(typeof ctxArg.restrictionFailedAt).toBe('string');
+    });
 });
 
 describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => {

@@ -356,10 +356,14 @@ async function applyOne(
     // restrictionFailed=true to the handler — the handler sets result.success=false
     // so SPEC-149's bootstrap Sentry capture fires.
     //
-    // Recovery path: applyDowngradeRestrictions is idempotent. The next cron tick
-    // or a manual invocation of the remediation service will retry and complete
-    // the restriction. An over-cap-but-unrestricted host is the old status quo
-    // (revenue leak), not data corruption.
+    // Recovery path: applyDowngradeRestrictions is idempotent, but the cron
+    // CANNOT auto-retry this failure. The pre-stamp in step 0 already committed
+    // status='applied', so the eligibility filter (status='pending') will never
+    // pick up this row again. Recovery is MANUAL-ONLY: ops must re-run
+    // applyDowngradeRestrictions directly via the remediation service for the
+    // affected subscription. The Sentry error below (logged via logger.error)
+    // carries subscriptionId/customerId/newPlanId so ops can locate affected
+    // subscriptions without PII exposure.
     const meta = scheduledPlanChange.metadata as Record<string, unknown> | undefined | null;
     const isDowngrade = meta?.source === 'plan-change-downgrade';
     let restrictionFailed = false;
@@ -456,13 +460,22 @@ async function applyOne(
                 // Any other error is a genuine restriction failure — log loudly
                 // so Sentry captures it (via bootstrap.ts error handler) and set
                 // restrictionFailed so the cron result surfaces success=false.
+                // The extra fields (subscriptionId, customerId, newPlanId) allow
+                // ops to locate affected subscriptions for manual remediation
+                // (see Recovery path comment above).
                 const errMsg =
                     restrictionErr instanceof Error
                         ? restrictionErr.message
                         : String(restrictionErr);
                 logger.error(
-                    'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied)',
-                    { subscriptionId, customerId, newPlanId, error: errMsg }
+                    'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied; MANUAL remediation required)',
+                    {
+                        subscriptionId,
+                        customerId,
+                        newPlanId,
+                        error: errMsg,
+                        restrictionFailedAt: new Date().toISOString()
+                    }
                 );
                 restrictionFailed = true;
             }
