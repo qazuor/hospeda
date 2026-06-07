@@ -59,8 +59,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * 206 (2026-06-05, SPEC-173 T-035): added HOSPEDA_POSTHOG_KEY and
  * HOSPEDA_POSTHOG_HOST for server-side AI event analytics.
+ *
+ * 210 (2026-06-07, SPEC-195 PR1): added 4 moderation env vars
+ * (HOSPEDA_MODERATION_PROVIDER, HOSPEDA_OPENAI_API_KEY,
+ * HOSPEDA_MODERATION_CACHE_TTL_SECONDS, HOSPEDA_MODERATION_TIMEOUT_MS).
  */
-const EXPECTED_VAR_COUNT = 206;
+const EXPECTED_VAR_COUNT = 210;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -77,6 +81,7 @@ const EXPECTED_CATEGORIES = [
     'cron',
     'integrations',
     'monitoring',
+    'moderation',
     'testing',
     'debugging',
     'build',

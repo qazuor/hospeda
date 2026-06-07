@@ -1,7 +1,7 @@
 ---
 specId: SPEC-195
 title: Content Auto-Moderation Engine
-status: draft
+status: in-progress
 complexity: medium
 owner: qazuor
 created: 2026-06-04

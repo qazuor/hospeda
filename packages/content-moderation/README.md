@@ -154,6 +154,26 @@ empty and returns `score: 0` for all inputs.
 These variables are registered in `packages/config/src/env-registry.hospeda.ts`
 and validated in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`).
 
+### Compat baseline regeneration protocol
+
+SPEC-166 freezes the public contract of this package. Any intentional change to
+the public API surface requires a follow-up spec before the compat baseline is
+updated.
+
+To regenerate the baseline after such an approved change:
+
+1. Review the proposed API diff and confirm it is explicitly approved by spec.
+2. Run `pnpm --filter @repo/content-moderation test -- --update` if the test is
+   switched to snapshot mode in the future, or update
+   `test/compat/public-api-baseline.json` manually.
+3. Re-run `pnpm --filter @repo/content-moderation test` and confirm the compat
+   test passes.
+4. Document the reason in the PR description.
+
+If the change touches `moderateText`, `ModerationResult`, the category set, or
+`MODERATION_PENDING_THRESHOLD`, treat it as freeze-sensitive and stop until the
+spec explicitly allows it.
+
 ---
 
 ## v1 Stub Behavior

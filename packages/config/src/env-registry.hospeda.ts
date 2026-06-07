@@ -1086,6 +1086,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
+        deprecated: true,
         exampleValue: 'spam,scam,phishing',
         apps: ['api'],
         category: 'messaging',
@@ -1102,6 +1103,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
+        deprecated: true,
         exampleValue: 'mailinator.com,guerrillamail.com',
         apps: ['api'],
         category: 'messaging',
@@ -1109,6 +1111,71 @@ export const HOSPEDA_ENV_VARS = [
             'Comma-separated list (no spaces) of email-domain blacklist used to reject signup/inquiry from disposable email providers. Example: "mailinator.com,guerrillamail.com,tempmail.com".',
         howToObtainEs:
             'Lista separada por comas (sin espacios) de dominios bloqueados para rechazar signups/consultas desde proveedores de email descartables. Ejemplo: "mailinator.com,guerrillamail.com,tempmail.com".'
+    },
+
+    // -------------------------------------------------------------------------
+    // Content auto-moderation (SPEC-195)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_MODERATION_PROVIDER',
+        description:
+            'Content moderation engine provider. "openai" uses OpenAI Moderation API, "local" uses DB word-list, "stub" uses the v1 binary blocklist (kill-switch).',
+        descriptionEs:
+            'Proveedor del motor de moderación de contenido. "openai" usa la API de Moderación de OpenAI, "local" usa la lista de palabras de la DB, "stub" usa la blocklist binaria v1 (kill-switch).',
+        type: 'enum',
+        required: false,
+        secret: false,
+        defaultValue: 'stub',
+        exampleValue: 'stub',
+        enumValues: ['openai', 'local', 'stub'] as const,
+        apps: ['api'],
+        category: 'moderation'
+    },
+    {
+        name: 'HOSPEDA_OPENAI_API_KEY',
+        description:
+            'OpenAI API key for the Moderation API provider. Required when HOSPEDA_MODERATION_PROVIDER=openai.',
+        descriptionEs:
+            'API key de OpenAI para el proveedor de la API de Moderación. Obligatoria cuando HOSPEDA_MODERATION_PROVIDER=openai.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sk-...',
+        apps: ['api'],
+        category: 'moderation',
+        helpUrl: 'https://platform.openai.com/api-keys',
+        howToObtain:
+            'OpenAI Platform → API keys → Create new secret key. Copy the value starting with "sk-". The Moderation API is free-tier; no billing setup required.',
+        howToObtainEs:
+            'OpenAI Platform → API keys → Create new secret key. Copiá el valor que empieza con "sk-". La API de Moderación es free-tier; no requiere setup de billing.'
+    },
+    {
+        name: 'HOSPEDA_MODERATION_CACHE_TTL_SECONDS',
+        description:
+            'TTL in seconds for the in-memory LRU moderation cache. Identical text within this window returns the cached result without calling the provider.',
+        descriptionEs:
+            'TTL en segundos para la cache LRU en memoria de moderación. Texto idéntico dentro de esta ventana devuelve el resultado cacheado sin llamar al proveedor.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '300',
+        exampleValue: '300',
+        apps: ['api'],
+        category: 'moderation'
+    },
+    {
+        name: 'HOSPEDA_MODERATION_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for the OpenAI Moderation API call. If the provider does not respond within this window, the engine falls back to the local word-list path.',
+        descriptionEs:
+            'Timeout en milisegundos para la llamada a la API de Moderación de OpenAI. Si el proveedor no responde dentro de esta ventana, el motor cae al path de lista de palabras local.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '1500',
+        exampleValue: '1500',
+        apps: ['api'],
+        category: 'moderation'
     },
 
     // -------------------------------------------------------------------------

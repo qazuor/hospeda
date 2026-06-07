@@ -37,3 +37,12 @@ export type {
 export { moderateTextInputSchema } from './types.js';
 
 export { moderateText } from './moderate-text.js';
+
+/**
+ * Public moderation threshold constant frozen by SPEC-166.
+ *
+ * Consumers use this value to map a moderation score to an initial
+ * moderation state. Kept here so the public API surface can be snapshotted
+ * independently from service-core internals.
+ */
+export const MODERATION_PENDING_THRESHOLD = 0.5 as const;

@@ -340,7 +340,19 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF,
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
-        PermissionEnum.AI_SETTINGS_MANAGE
+        PermissionEnum.AI_SETTINGS_MANAGE,
+
+        // MODERATION: Content auto-moderation management (SPEC-195)
+        PermissionEnum.MODERATION_TERM_VIEW,
+        PermissionEnum.MODERATION_TERM_CREATE,
+        PermissionEnum.MODERATION_TERM_UPDATE,
+        PermissionEnum.MODERATION_TERM_DELETE,
+        PermissionEnum.MODERATION_TERM_RESTORE,
+        PermissionEnum.MODERATION_TERM_HARD_DELETE,
+        PermissionEnum.MODERATION_THRESHOLD_VIEW,
+        PermissionEnum.MODERATION_THRESHOLD_UPDATE,
+        PermissionEnum.MODERATION_THRESHOLD_RESTORE,
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
     ],
 
     [RoleEnum.ADMIN]: [
@@ -601,7 +613,19 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTINGS_WRITE,
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // MODERATION: Content auto-moderation management (SPEC-195)
+        PermissionEnum.MODERATION_TERM_VIEW,
+        PermissionEnum.MODERATION_TERM_CREATE,
+        PermissionEnum.MODERATION_TERM_UPDATE,
+        PermissionEnum.MODERATION_TERM_DELETE,
+        PermissionEnum.MODERATION_TERM_RESTORE,
+        PermissionEnum.MODERATION_TERM_HARD_DELETE,
+        PermissionEnum.MODERATION_THRESHOLD_VIEW,
+        PermissionEnum.MODERATION_THRESHOLD_UPDATE,
+        PermissionEnum.MODERATION_THRESHOLD_RESTORE,
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
     ],
 
     // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
