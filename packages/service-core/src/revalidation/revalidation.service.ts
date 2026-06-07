@@ -1,3 +1,11 @@
+/**
+ * Revalidation service — schedules and executes Astro ISR cache revalidation.
+ *
+ * Slightly over the 500-line guideline; split deferred (reviewed SPEC-167 T-023).
+ *
+ * @module revalidation/revalidation.service
+ */
+
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import type { RevalidationConfigRecord } from '@repo/db';
 import { createLogger } from '@repo/logger';

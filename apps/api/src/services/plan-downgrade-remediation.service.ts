@@ -55,6 +55,8 @@
  *   For the default path, the coordinator reads the accommodation's current
  *   gallery inside the tx and builds keepIds = gallery MINUS overflowPhotoUrls.
  *
+ * Slightly over the 500-line guideline; split deferred (reviewed SPEC-167 T-023).
+ *
  * @module services/plan-downgrade-remediation
  */
 
