@@ -1,5 +1,8 @@
 import { z } from 'zod';
+import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { UserLocationSchema } from '../../common/location.schema.js';
+import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { UserProfileSchema } from './user.profile.schema.js';
@@ -65,6 +68,33 @@ export const UserProtectedSchema = UserPublicSchema.extend({
 });
 
 /**
+ * User Self Schema
+ * Response contract for SELF-SCOPED profile routes only
+ * (`/protected/users/:id` GET/PUT/PATCH, where ownership is enforced).
+ *
+ * Extends UserProtectedSchema with the JSONB columns where the onboarding
+ * and edit-profile flows actually persist data: `contactInfo.mobilePhone`,
+ * `location.{country,region,city,...}` and `socialNetworks.*`. Without these
+ * fields the response strip (`stripWithSchema`, SPEC-087) silently dropped
+ * them and the web edit-profile form always rehydrated empty.
+ *
+ * Do NOT use this schema for embedded user relations (`owner`, `author`,
+ * reviewer `user`, `sponsorUser`, ...) — those reach users other than the
+ * profile owner and must keep using UserProtectedSchema, which strips the
+ * PII-bearing JSONB blobs.
+ *
+ * `contactInfo` is relaxed with `.partial()` on the read side: the write
+ * schema requires `mobilePhone`, but a stored row may legitimately lack it
+ * (user saved contact data without a phone), and a strip failure would turn
+ * the whole profile GET into a 500.
+ */
+export const UserSelfSchema = UserProtectedSchema.extend({
+    contactInfo: ContactInfoSchema.partial().nullish(),
+    location: UserLocationSchema.nullish(),
+    socialNetworks: SocialNetworkSchema.nullish()
+});
+
+/**
  * User Admin Schema
  * Full access to all fields including audit, lifecycle, and admin-specific data
  * Only accessible by admins
@@ -97,4 +127,5 @@ export const UserAdminSchema = UserProtectedSchema.extend({
  */
 export type UserPublic = z.infer<typeof UserPublicSchema>;
 export type UserProtected = z.infer<typeof UserProtectedSchema>;
+export type UserSelf = z.infer<typeof UserSelfSchema>;
 export type UserAdmin = z.infer<typeof UserAdminSchema>;

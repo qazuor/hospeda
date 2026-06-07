@@ -62,7 +62,7 @@
                 "whatsapp": {
                     "type": "string"
                 },
-                "linkedin": {
+                "linkedIn": {
                     "type": "string",
                     "format": "uri"
                 }

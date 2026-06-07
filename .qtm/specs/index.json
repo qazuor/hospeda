@@ -732,12 +732,13 @@
             "title": "Destination Review Submission Flow (web) + API contract/security fix",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-202-destination-review-submission",
             "created": "2026-06-06T08:55:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-06T18:30:00.000Z",
             "tags": ["web", "api", "reviews", "destinations", "security", "migration", "i18n"],
-            "note": "Web has no UI to create destination reviews (backend complete). Adds sidebar review form (18 dims), fixes impersonation gap (client-supplied userId) and adds unique (user_id,destination_id). Worktree active."
+            "note": "Shipped via PR #1474 (21/21 tasks, two Chrome smokes GO). Collapsible category rating UI, inline CTA, approved-only stats, reviewer identity in public list, impersonation fix, unique index."
         },
         {
             "specId": "SPEC-203",

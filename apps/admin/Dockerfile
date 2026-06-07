@@ -65,8 +65,14 @@ COPY patches ./patches
 COPY apps apps
 COPY packages packages
 RUN pnpm install --frozen-lockfile
+# --concurrency=1 builds workspace packages sequentially. The Coolify VPS has
+# 3.8 GB of RAM shared with the running prod/staging containers; parallel tsup
+# DTS builds (4 at a time, each loading the full type graph) caused enough
+# memory pressure on 2026-06-06 to kill the deploy's control channel (exit 255
+# mid-build with no compiler error, right at @repo/schemas DTS). Sequential
+# builds are slower but keep the peak well under the box's headroom.
 RUN echo "[build] Sentry release: ${VITE_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
-    pnpm turbo run build --filter=admin
+    pnpm turbo run build --filter=admin --concurrency=1
 
 # ----- runner stage ----------------------------------------------------------
 # Nitro's node-server preset bundles its own runtime deps inside .output/,

@@ -20,6 +20,12 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+// CI flake guard: this mock-heavy suite is fast locally (all tests < 300ms) but
+// the first test of the file regularly exceeds the 5s default under shard
+// contention on the self-hosted runner (two unrelated PRs hit the timeout on
+// 2026-06-06). A generous ceiling still catches genuine hangs.
+vi.setConfig({ testTimeout: 15_000 });
+
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
 const { mockGetBySlug, mockWithTransaction, mockPlanGetById, mockPlanGetBySlug } = vi.hoisted(

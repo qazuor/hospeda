@@ -6,7 +6,7 @@ import {
     ServiceErrorCode,
     UserIdSchema,
     UserPatchInputSchema,
-    UserProtectedSchema,
+    UserSelfSchema,
     UserSettingsWebPatchSchema
 } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
@@ -97,7 +97,8 @@ export const protectedPatchUserRoute = createProtectedRoute({
     tags: ['Users'],
     requestParams: { id: UserIdSchema },
     requestBody: UserProtectedPatchInputSchema,
-    responseSchema: UserProtectedSchema,
+    // Self-scoped response: keep contactInfo/location/socialNetworks (UserSelfSchema JSDoc).
+    responseSchema: UserSelfSchema,
     // Ownership is enforced by UserService._canUpdate() which checks actor.id === entity.id
     handler: async (
         ctx: Context,

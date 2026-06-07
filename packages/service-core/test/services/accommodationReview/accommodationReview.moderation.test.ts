@@ -269,6 +269,31 @@ describe('AccommodationReviewService.moderateReview (T-014)', () => {
 
         mockModel.findById.mockResolvedValue(review);
         mockModel.update.mockResolvedValue(approved);
+        // Mock recalculateAndUpdateAccommodationStats since it uses raw SQL (getDb())
+        const recalcMock = vi
+            .spyOn(
+                service as unknown as {
+                    recalculateAndUpdateAccommodationStats: (...args: unknown[]) => Promise<void>;
+                },
+                'recalculateAndUpdateAccommodationStats'
+            )
+            .mockResolvedValue();
+        const slugMock = vi
+            .spyOn(
+                service as unknown as {
+                    _resolveAccommodationSlug: (...args: unknown[]) => Promise<string | undefined>;
+                },
+                '_resolveAccommodationSlug'
+            )
+            .mockResolvedValue(undefined);
+        const revalidateMock = vi
+            .spyOn(
+                service as unknown as {
+                    _scheduleAccommodationRevalidation: (...args: unknown[]) => void;
+                },
+                '_scheduleAccommodationRevalidation'
+            )
+            .mockReturnValue(undefined);
 
         const result = await service.moderateReview({
             id: review.id,
@@ -287,6 +312,11 @@ describe('AccommodationReviewService.moderateReview (T-014)', () => {
                 moderatedAt: expect.any(Date)
             })
         );
+        // Approving must re-aggregate public stats (they only count APPROVED)
+        // and schedule the page revalidation so the CDN cache refreshes.
+        expect(recalcMock).toHaveBeenCalledWith(approved.accommodationId);
+        expect(slugMock).toHaveBeenCalledWith(approved.accommodationId);
+        expect(revalidateMock).toHaveBeenCalled();
     });
 
     it('rejects a PENDING review with a reason', async () => {
@@ -298,6 +328,15 @@ describe('AccommodationReviewService.moderateReview (T-014)', () => {
 
         mockModel.findById.mockResolvedValue(review);
         mockModel.update.mockResolvedValue(rejected);
+        // Mock recalculateAndUpdateAccommodationStats since it uses raw SQL (getDb())
+        const recalcMock = vi
+            .spyOn(
+                service as unknown as {
+                    recalculateAndUpdateAccommodationStats: (...args: unknown[]) => Promise<void>;
+                },
+                'recalculateAndUpdateAccommodationStats'
+            )
+            .mockResolvedValue();
 
         const result = await service.moderateReview({
             id: review.id,
@@ -312,6 +351,8 @@ describe('AccommodationReviewService.moderateReview (T-014)', () => {
             { id: review.id },
             expect.objectContaining({ moderationReason: 'Inappropriate content' })
         );
+        // Rejecting must also re-aggregate (a previously APPROVED review may drop out).
+        expect(recalcMock).toHaveBeenCalledWith(rejected.accommodationId);
     });
 
     it('returns FORBIDDEN when actor lacks ACCOMMODATION_REVIEW_MODERATE', async () => {
