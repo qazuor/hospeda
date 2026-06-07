@@ -76,11 +76,12 @@ Kept admin auth pages: `forbidden.tsx`, `change-password.tsx`,
 
 Two paths, both deliberate:
 
-1. **Host-on-publish (self-serve).** A tourist (role=USER) publishes their
-   first accommodation via the web funnel (`/{locale}/publicar/`); the
-   publish flow promotes them to HOST and creates the trial subscription
+1. **Host-onboarding (self-serve).** A tourist (role=USER) starts the web
+   funnel at `/{locale}/publicar/`; creating or resuming the onboarding draft
+   promotes them to HOST so they can access host surfaces immediately, and the
+   first successful publish starts the owner trial subscription
    (`apps/api/src/services/accommodation-publish-deps.ts`). Host status is
-   earned by action — there is no "sign up as host" form.
+   earned by action — there is no public "sign up as host" form.
 2. **Staff provisioning (back office).** Staff with `USER_CREATE` use the
    "Crear host" modal on the admin users list
    (`apps/admin/src/features/users/components/CreateHostAccountAction.tsx`),
@@ -96,8 +97,8 @@ Two paths, both deliberate:
    branch), and audit-logs the mutation. The old public, Origin-checked
    endpoint is gone.
 
-UI surfaces adapt to host state (D3: `role=HOST` implies ≥1 published
-accommodation):
+UI surfaces adapt to host state (`role=HOST` means the user is in the hosting
+flow, even if they still only have a DRAFT and no published accommodation yet):
 
 - **UserMenu dropdown** (`UserMenu.client.tsx`): permission-driven —
   `access.panelAdmin` shows the panel item; `access.apiAdmin` discriminates

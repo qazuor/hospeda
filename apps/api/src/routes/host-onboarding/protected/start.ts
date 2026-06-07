@@ -14,10 +14,10 @@
  *                    no draft is created. The caller is expected to redirect
  *                    straight to the admin panel.
  *
- * The HOST role is NOT assigned here. Promotion happens later, atomically,
- * when the draft transitions to ACTIVE through the publish flow.
+ * A USER who creates or resumes onboarding is promoted to HOST during the
+ * onboarding flow so they can access host surfaces immediately. The billing
+ * trial still starts later, on the first DRAFT -> ACTIVE publish.
  */
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationCreateDraftHttpSchema,
     AccommodationIdSchema,
@@ -27,7 +27,6 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
-import { requireEntitlement } from '../../../middlewares/entitlement';
 import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { getActorFromContext } from '../../../utils/actor';
@@ -142,24 +141,11 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         };
     },
     options: {
-        // SPEC-143 Finding #8: previously this route bypassed `enforceAccommodationLimit`,
-        // letting a user with MAX_ACCOMMODATIONS at cap create one extra DRAFT via the
-        // publicar/onboarding entry point. The service-layer short-circuits
-        // (`already_host`, `resumed`) are now preceded by the middleware: callers at
-        // limit get 403 LIMIT_REACHED before the create attempt. Privileged users
-        // (HOST/ADMIN/etc) at limit also receive 403 here — this is acceptable: they
-        // would have received `already_host` from the service anyway, indicating they
-        // should go to the admin panel; the 403 conveys the same "you cannot create
-        // more accommodations from this entry point" semantic with the right HTTP
-        // code for limit-reached.
-        // SPEC-145 T-004: entitlement gate BEFORE limit check — caller must have
-        // PUBLISH_ACCOMMODATIONS (granted on all owner/complex plans) before we
-        // consult the accommodation-count limit. This mirrors the create/createDraft
-        // routes.  Already-host and resumed paths short-circuit at the service layer,
-        // but 403 ENTITLEMENT_REQUIRED is the correct early-exit for non-entitled callers.
-        middlewares: [
-            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
-            enforceAccommodationLimit()
-        ]
+        // Funnel exception: `/host-onboarding/start` is the public publish entry
+        // point for authenticated tourists. A tourist-free user must be able to
+        // create the onboarding draft; the 14-day owner trial starts later on the
+        // first DRAFT -> ACTIVE publish, not here. Keep ONLY the limit guard so
+        // existing hosts still cannot exceed max_accommodations via this shortcut.
+        middlewares: [enforceAccommodationLimit()]
     }
 });

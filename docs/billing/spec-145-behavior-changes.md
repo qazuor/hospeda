@@ -27,7 +27,7 @@ After SPEC-145, callers without the required entitlement receive:
 |---|---|---|---|
 | `POST /api/v1/protected/accommodations` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot publish |
 | `POST /api/v1/protected/accommodations/draft` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-standard, tourist-premium | Tourists cannot draft |
-| `POST /api/v1/protected/accommodations/start` | `PUBLISH_ACCOMMODATIONS` | tourist-free, tourist-standard, tourist-premium | Host onboarding blocked for tourists |
+| `POST /api/v1/protected/host-onboarding/start` | exception | none | Onboarding funnel remains open for authenticated tourists; the owner trial still starts on first publish, not at draft creation |
 | `PUT /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot edit accommodation |
 | `PATCH /api/v1/protected/accommodations/{id}` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot patch accommodation |
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `EDIT_ACCOMMODATION_INFO` | tourist-free, tourist-standard, tourist-premium | Tourists cannot add FAQs |
