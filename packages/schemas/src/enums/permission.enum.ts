@@ -58,7 +58,8 @@ export enum PermissionCategoryEnum {
     FEATURED_ACCOMMODATION = 'FEATURED_ACCOMMODATION',
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS',
-    MEDIA = 'MEDIA'
+    MEDIA = 'MEDIA',
+    MODERATION = 'MODERATION'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -826,5 +827,17 @@ export enum PermissionEnum {
     BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
     SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
-    AI_SETTINGS_MANAGE = 'ai.settings.manage' // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
+    AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
+
+    // MODERATION: Content auto-moderation permissions (SPEC-195)
+    MODERATION_TERM_VIEW = 'moderation.term.view', // Allows viewing moderation terms and the term list.
+    MODERATION_TERM_CREATE = 'moderation.term.create', // Allows creating a new moderation term (word or domain).
+    MODERATION_TERM_UPDATE = 'moderation.term.update', // Allows updating an existing moderation term.
+    MODERATION_TERM_DELETE = 'moderation.term.delete', // Allows soft-deleting a moderation term.
+    MODERATION_TERM_RESTORE = 'moderation.term.restore', // Allows restoring a soft-deleted moderation term.
+    MODERATION_TERM_HARD_DELETE = 'moderation.term.hardDelete', // Allows permanently deleting a moderation term.
+    MODERATION_THRESHOLD_VIEW = 'moderation.threshold.view', // Allows viewing moderation threshold configuration.
+    MODERATION_THRESHOLD_UPDATE = 'moderation.threshold.update', // Allows updating moderation threshold values (pending/reject).
+    MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
+    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete' // Allows permanently deleting a moderation threshold.
 }

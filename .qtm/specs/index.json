@@ -636,7 +636,7 @@
             "title": "Content Auto-Moderation Engine",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-195-content-auto-moderation",
             "created": "2026-06-04T00:00:00.000Z",
             "extractedFrom": "SPEC-166",

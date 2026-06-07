@@ -58,6 +58,9 @@ export * from './message-sender-type.schema.js';
 export * from './message-status.enum.js';
 export * from './message-status.schema.js';
 
+export * from './moderation-category.enum.js';
+export * from './moderation-category.schema.js';
+
 export * from './moderation-status.enum.js';
 export * from './moderation-status.schema.js';
 

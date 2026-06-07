@@ -64,6 +64,13 @@
             "when": 1780800000000,
             "tag": "0008_strip_accommodation_description_markdown",
             "breakpoints": true
+        },
+        {
+            "idx": 9,
+            "version": "7",
+            "when": 1780808037703,
+            "tag": "0009_tricky_kat_farrell",
+            "breakpoints": true
         }
     ]
 }

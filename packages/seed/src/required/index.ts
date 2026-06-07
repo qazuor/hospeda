@@ -9,6 +9,7 @@ import { seedBillingEntitlements } from './billingEntitlements.seed.js';
 import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
+import { seedContentModerationData } from './contentModeration.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
@@ -105,6 +106,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 3. Load role permissions (after users to have the actor)
         await seedRolePermissions();
+
+        // 3.1 Seed moderation bootstrap data (SPEC-195)
+        await seedContentModerationData();
 
         // 4. Load amenities (before attractions to have ID mapping)
         await seedAmenities(context);

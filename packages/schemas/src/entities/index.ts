@@ -3,6 +3,7 @@ export * from './accommodation/index.js';
 export * from './ai/index.js';
 export * from './appLogEntry/index.js';
 export * from './conversation/index.js';
+export * from './contentModeration/index.js';
 export * from './cronRun/index.js';
 export * from './accommodationReview/index.js';
 export * from './amenity/index.js';
