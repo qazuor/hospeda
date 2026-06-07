@@ -4,13 +4,14 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
 import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
+import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { AccommodationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 /**
  * Accommodation Edit Route Configuration
@@ -35,6 +36,37 @@ function AccommodationEditPage() {
 
     // Media upload/delete hooks for the gallery field
     const { uploadEntityImage, deleteImage } = useMediaUpload();
+
+    // SPEC-198 AC-12 (SHOULD-only): client-side audit hint tracking which
+    // fields were AI-assisted. This ref is NOT sent to the API — it exists
+    // for future UI use (e.g. a "show AI-assisted fields" toggle).
+    const aiAssistedFieldsRef = useRef(new Set<string>());
+
+    // SPEC-198 AC-11: AiTextImprovePanel mounted ONLY for description + summary.
+    // The addon renders below the field component inside the same grid cell.
+    const fieldAddons = useMemo(
+        () => ({
+            description: (
+                <AiTextImproveFieldAddon
+                    fieldId="description"
+                    fieldType="description"
+                    canUse={entityData.canUseAiTextImprove}
+                    locale="es"
+                    onAiAssisted={(fieldId) => aiAssistedFieldsRef.current.add(fieldId)}
+                />
+            ),
+            summary: (
+                <AiTextImproveFieldAddon
+                    fieldId="summary"
+                    fieldType="summary"
+                    canUse={entityData.canUseAiTextImprove}
+                    locale="es"
+                    onAiAssisted={(fieldId) => aiAssistedFieldsRef.current.add(fieldId)}
+                />
+            )
+        }),
+        [entityData.canUseAiTextImprove]
+    );
 
     /**
      * Field handlers for the accommodation gallery.
@@ -99,6 +131,7 @@ function AccommodationEditPage() {
                         entityType="accommodation"
                         fieldHandlers={galleryFieldHandlers}
                         anchorSectionIds={anchorSectionIds}
+                        fieldAddons={fieldAddons}
                     />
                 </EntityPageBase>
             </div>

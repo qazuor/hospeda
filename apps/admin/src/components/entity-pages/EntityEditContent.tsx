@@ -67,6 +67,15 @@ export interface EntityEditContentProps {
      * adds friction without paying for itself.
      */
     flat?: boolean;
+    /**
+     * Optional per-field addon nodes keyed by fieldId.
+     * Forwarded to EntityFormSection, which renders them below the field
+     * component inside the same grid cell.
+     *
+     * Used by SPEC-198 to mount the AiTextImprovePanel alongside
+     * description and summary fields.
+     */
+    fieldAddons?: Readonly<Record<string, React.ReactNode>>;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,7 +151,8 @@ export const EntityEditContent = ({
     fieldHandlers,
     sectionSummarizers,
     anchorSectionIds,
-    flat = false
+    flat = false,
+    fieldAddons
 }: EntityEditContentProps) => {
     const {
         values,
@@ -267,6 +277,7 @@ export const EntityEditContent = ({
                 entityData={values}
                 userPermissions={userPermissions}
                 fieldHandlers={fieldHandlers}
+                fieldAddons={fieldAddons}
             />
         );
     };
