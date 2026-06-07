@@ -3,7 +3,7 @@ spec-id: SPEC-167
 title: Downgrade Over-Limit Remediation (grandfather + restrict)
 type: feature
 complexity: medium
-status: in-progress
+status: completed
 created: 2026-05-27T00:00:00Z
 rewritten: 2026-06-03T00:00:00Z
 parent: SPEC-193
