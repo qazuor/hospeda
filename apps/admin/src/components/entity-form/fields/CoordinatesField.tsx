@@ -19,19 +19,30 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { DownloadIcon, InfoIcon, LoaderIcon, SearchIcon } from '@repo/icons';
+import { clientOnly } from '@tanstack/react-start';
 import * as React from 'react';
 import { geocodeForward, geocodeReverse } from './nominatim-geocoding';
 
 /**
- * The Leaflet view lives in its own module and is loaded via React.lazy so
- * (a) the `leaflet` runtime never reaches the SSR bundle and (b) the
- * "Map container is already initialized" race observed with react-leaflet 4.x
- * + React 19 StrictMode is sidestepped. The lazy chunk resolves once per
- * field instance and the Suspense boundary keeps the parent stable while
- * it's loading.
+ * The Leaflet view lives in its own module and is loaded via `clientOnly` +
+ * `React.lazy` so (a) the `leaflet` runtime never reaches the SSR bundle and
+ * (b) the "Map container is already initialized" race observed with
+ * react-leaflet 4.x + React 19 StrictMode is sidestepped.
+ *
+ * Why `clientOnly` and not just `React.lazy`: the TanStack-Start babel
+ * compiler strips the inner `import('./CoordinatesMapView')` from the server
+ * build entirely (replaced with a throwing arrow function). `React.lazy`
+ * alone still leaves the dynamic-import statement in the SSR bundle, which
+ * Vite/Nitro resolves eagerly and inlines the leaflet chunk into the server
+ * output — causing `ReferenceError: window is not defined` at runtime.
+ * The lazy chunk resolves once per field instance on the client; the
+ * `isMounted` guard below keeps the component from rendering on the server,
+ * which is what the throwing function would otherwise reject.
  */
-const LazyCoordinatesMapView = React.lazy(() =>
-    import('./CoordinatesMapView').then((mod) => ({ default: mod.CoordinatesMapView }))
+const LazyCoordinatesMapView = React.lazy(
+    clientOnly(() =>
+        import('./CoordinatesMapView').then((mod) => ({ default: mod.CoordinatesMapView }))
+    )
 );
 
 /**

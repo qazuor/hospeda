@@ -11,14 +11,9 @@
  * Controlled via `value`/`onChange` (RO-RO). The host can edit any structured
  * field manually too — typing those fields does NOT trigger geocoding.
  */
-import 'leaflet/dist/leaflet.css';
-
-import L from 'leaflet';
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
-import iconUrl from 'leaflet/dist/images/marker-icon.png';
-import iconShadowUrl from 'leaflet/dist/images/marker-shadow.png';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MapContainer, Marker, TileLayer, useMap } from 'react-leaflet';
+import { clientOnly } from '@tanstack/react-start';
+import * as React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
     type GeocodingSuggestion,
@@ -26,12 +21,20 @@ import {
     useGeocodingReverse
 } from '../../../hooks/useGeocoding';
 
-// TYPE-WORKAROUND: Vite asset imports return `{ src: string }` in dev and a bare string in prod build; fall back to the string form when the object shape is absent.
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: (iconRetinaUrl as { src?: string }).src ?? (iconRetinaUrl as unknown as string),
-    iconUrl: (iconUrl as { src?: string }).src ?? (iconUrl as unknown as string),
-    shadowUrl: (iconShadowUrl as { src?: string }).src ?? (iconShadowUrl as unknown as string)
-});
+/**
+ * Leaflet map lives in `LocationPickerMapInner.tsx` and is loaded via
+ * `clientOnly(() => import(...))` inside `React.lazy`. The TanStack-Start
+ * babel compiler strips the inner dynamic import from the server build
+ * (replaced with a throwing arrow function), so the `leaflet` runtime
+ * (which references `window` at module init) never reaches the SSR bundle.
+ * The `isMounted` guard below keeps the component from rendering on the
+ * server, which is what the throwing function would otherwise reject.
+ */
+const LazyLocationPickerMap = React.lazy(
+    clientOnly(() =>
+        import('./LocationPickerMapInner').then((mod) => ({ default: mod.LocationPickerMapInner }))
+    )
+);
 
 export interface LocationPickerValue {
     coordinates?: { lat: string; long: string };
@@ -54,36 +57,6 @@ const DEFAULT_CENTER: [number, number] = [-31.8, -58.5];
 const DEFAULT_ZOOM = 13;
 const REVERSE_DEBOUNCE_MS = 800;
 const AUTOCOMPLETE_DEBOUNCE_MS = 300;
-
-function PickerMarker({
-    position,
-    onMove,
-    disabled
-}: {
-    position: [number, number] | null;
-    onMove: (lat: number, lng: number) => void;
-    disabled?: boolean;
-}) {
-    const map = useMap();
-    useEffect(() => {
-        if (position) map.setView(position, map.getZoom());
-    }, [map, position]);
-
-    if (!position) return null;
-    return (
-        <Marker
-            position={position}
-            draggable={!disabled}
-            eventHandlers={{
-                dragend: (event) => {
-                    const target = event.target as L.Marker;
-                    const next = target.getLatLng();
-                    onMove(next.lat, next.lng);
-                }
-            }}
-        />
-    );
-}
 
 export function LocationPickerField({
     value,
@@ -206,27 +179,39 @@ export function LocationPickerField({
 
     const showSuggestionsList = suggestions.length > 0 && debouncedQuery.length >= 3;
 
-    const mapMemo = useMemo(
-        () => (
-            <MapContainer
+    // SSR guard — Leaflet touches `window` during map init. Wait for client
+    // mount before rendering the inner map; the rest of the form is safe to
+    // SSR. Mirrors the pattern in apps/web LocationMap.client.tsx and the
+    // other admin map components.
+    const [isMounted, setIsMounted] = useState(false);
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const mapNode = isMounted ? (
+        <React.Suspense
+            fallback={
+                <div
+                    aria-hidden="true"
+                    className="w-full rounded-md border bg-muted"
+                    style={{ height: 360 }}
+                />
+            }
+        >
+            <LazyLocationPickerMap
                 center={center}
-                zoom={defaultZoom}
-                scrollWheelZoom={false}
-                style={{ width: '100%', height: 360, borderRadius: 12 }}
-            >
-                <TileLayer
-                    attribution="© OpenStreetMap contributors"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    maxZoom={19}
-                />
-                <PickerMarker
-                    position={markerPosition}
-                    onMove={handlePinMove}
-                    disabled={disabled}
-                />
-            </MapContainer>
-        ),
-        [center, defaultZoom, markerPosition, handlePinMove, disabled]
+                defaultZoom={defaultZoom}
+                markerPosition={markerPosition}
+                disabled={disabled}
+                onMove={handlePinMove}
+            />
+        </React.Suspense>
+    ) : (
+        <div
+            aria-hidden="true"
+            className="w-full rounded-md border bg-muted"
+            style={{ height: 360 }}
+        />
     );
 
     return (
@@ -284,7 +269,7 @@ export function LocationPickerField({
                 )}
             </div>
 
-            {mapMemo}
+            {mapNode}
             <p className="text-muted-foreground text-xs">
                 Arrastrá el pin para ajustar la ubicación exacta. La dirección se completará
                 automáticamente.
