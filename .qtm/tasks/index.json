@@ -237,12 +237,12 @@
             "specId": "SPEC-167",
             "title": "Downgrade Over-Limit Remediation (grandfather + restrict)",
             "status": "in-progress",
-            "progress": "21/26",
+            "progress": "22/26",
             "path": "SPEC-167-downgrade-preflight-remediation",
             "branch": "spec/SPEC-167-downgrade-preflight-remediation",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-167-downgrade-preflight-remediation",
             "base": "staging",
-            "updatedAt": "2026-06-07T21:05:00.000Z"
+            "updatedAt": "2026-06-07T21:13:00.000Z"
         }
     ],
     "standalone": {
