@@ -26,11 +26,14 @@
  *
  * **Restore order:**
  *   Items are restored most-recently-restricted first (descending `updatedAt`).
- *   This is the natural inverse of the downgrade restriction default (which kept
- *   most-recently-updated, i.e., restricted most-recently-updated LAST). By
- *   restoring newest-restricted first, the items that were most recently
- *   visible are re-surfaced first, which is the most useful behavior for the
- *   host. Ties in `updatedAt` are broken arbitrarily (DB ordering).
+ *   In practice, batch restriction (e.g. from the cron) sets near-identical
+ *   `updatedAt` values for all items restricted in the same run — the ordering
+ *   within a batch is therefore effectively arbitrary (DB tie-breaking), not a
+ *   reliable recency signal. The stated intent (re-surface most-recently-visible
+ *   items first) holds for items restricted in distinct runs but NOT within a
+ *   single batch. Hosts who need precise control over which items are restored
+ *   can use the manual swap UI (SPEC-203). Ties in `updatedAt` are broken
+ *   arbitrarily (DB ordering).
  *
  * **Partial restore at cap:**
  *   When `headroom < restrictedCount`, only `headroom` items are restored and
@@ -590,6 +593,45 @@ export async function applyUpgradeRestorations(
             }
         }
     }, db);
+
+    // ── 4a. Trigger destination recounts AFTER tx ────────────────────────
+    // Restored accommodations are now included in the public predicate,
+    // so destination.accommodationsCount must be updated for every affected
+    // destination. Non-blocking: recount failure must not block the caller.
+    if (restoredAccIds.length > 0) {
+        try {
+            const { accommodationModel } = await import('@repo/db');
+            const { DestinationService } = await import('@repo/service-core');
+            const rows = await accommodationModel.findAll(
+                { id: { in: restoredAccIds as string[] } },
+                { pageSize: restoredAccIds.length + 10 }
+            );
+            const destinationIds = [
+                ...new Set(
+                    (rows.items ?? [])
+                        .map((r: { destinationId?: string | null }) => r.destinationId)
+                        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+                )
+            ];
+            if (destinationIds.length > 0) {
+                const destinationService = new DestinationService({ logger: apiLogger });
+                await Promise.all(
+                    destinationIds.map((destId) =>
+                        destinationService.updateAccommodationsCount(destId)
+                    )
+                );
+                apiLogger.info(
+                    { destinationIds, accommodationCount: restoredAccIds.length },
+                    'plan-upgrade-restoration: destination accommodation counts updated'
+                );
+            }
+        } catch (err) {
+            apiLogger.warn(
+                { err, userId },
+                'plan-upgrade-restoration: destination recount failed (non-blocking)'
+            );
+        }
+    }
 
     // ── 5. Schedule revalidation AFTER tx ──────────────────────────────────
     const allTouchedIds = [...new Set([...restoredAccIds, ...Object.keys(photosByAccommodation)])];

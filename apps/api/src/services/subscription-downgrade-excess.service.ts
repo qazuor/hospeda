@@ -412,7 +412,15 @@ export async function computeDowngradeExcess(
                 0,
                 maxPhotosPerAccommodation - (hasFeaturedImage ? 1 : 0)
             );
-            // Overflow = gallery items beyond gallerySlots, taken from the end of the array
+            // Overflow = gallery items beyond gallerySlots, taken from the end of the
+            // array (array-head order = keep first N items, archive the rest).
+            //
+            // DOCUMENTED DIVERGENCE (spec §2): photos default to array-head ordering
+            // because no per-photo `updatedAt` timestamp exists. Accommodations and
+            // promotions use most-recently-updated as the default keep criteria;
+            // photos cannot — array position is the only stable signal available.
+            // Hosts who want to control which photos survive can provide a
+            // `photoKeepMap` in their keepSelections.
             const overflowGallery = gallery.slice(gallerySlots);
             const excessCount = overflowGallery.length;
 

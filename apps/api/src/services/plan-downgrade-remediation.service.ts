@@ -257,13 +257,20 @@ function resolveKeepIds(params: {
             return { keepIds, fromSelection: [], fromDefault: [...keepIds] };
         }
 
-        // Fill remaining slots from default band to reach cap
+        // Fill remaining slots from default band to reach cap.
+        // Track which ids came from the host's selection vs. which were
+        // filled in from the default band (they are distinct categories:
+        // the host did not explicitly request the default-filled slots).
         const keepIds = new Set(truncated);
+        const defaultFilled: string[] = [];
         for (const id of defaultKeep) {
             if (keepIds.size >= cap) break;
-            keepIds.add(id);
+            if (!keepIds.has(id)) {
+                keepIds.add(id);
+                defaultFilled.push(id);
+            }
         }
-        return { keepIds, fromSelection: [...keepIds], fromDefault: [] };
+        return { keepIds, fromSelection: truncated, fromDefault: defaultFilled };
     }
 
     // Valid selection within cap
@@ -309,6 +316,55 @@ async function buildDefaultPhotoKeepIds(params: {
     } catch {
         // Fallback: empty keepIds archives everything (still reversible per INV-5)
         return new Set<string>();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Destination recount helper
+// ---------------------------------------------------------------------------
+
+/**
+ * After bulk accommodation restriction or restoration, recount accommodations
+ * per affected destination so `destination.accommodationsCount` stays accurate.
+ *
+ * Uses `DestinationService.updateAccommodationsCount` which applies the correct
+ * public-visibility predicate (ACTIVE + not ownerSuspended + not planRestricted).
+ *
+ * Called AFTER the transaction commits (side-effect, cannot roll back).
+ *
+ * @param accommodationIds - IDs of accommodations that were restricted/restored.
+ */
+async function triggerDestinationRecounts(accommodationIds: readonly string[]): Promise<void> {
+    if (accommodationIds.length === 0) return;
+    try {
+        const { accommodationModel } = await import('@repo/db');
+        const { DestinationService } = await import('@repo/service-core');
+        const rows = await accommodationModel.findAll(
+            { id: { in: accommodationIds as string[] } },
+            { pageSize: accommodationIds.length + 10 }
+        );
+        const destinationIds = [
+            ...new Set(
+                (rows.items ?? [])
+                    .map((r: { destinationId?: string | null }) => r.destinationId)
+                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
+            )
+        ];
+        if (destinationIds.length === 0) return;
+        const destinationService = new DestinationService({ logger: apiLogger });
+        await Promise.all(
+            destinationIds.map((destId) => destinationService.updateAccommodationsCount(destId))
+        );
+        apiLogger.info(
+            { destinationIds, accommodationCount: accommodationIds.length },
+            'plan-downgrade-remediation: destination accommodation counts updated'
+        );
+    } catch (err) {
+        // Non-blocking: recount failure must not roll back the restriction.
+        apiLogger.warn(
+            { err, accommodationIds },
+            'plan-downgrade-remediation: destination recount failed (non-blocking)'
+        );
     }
 }
 
@@ -451,7 +507,15 @@ export async function applyDowngradeRestrictions(
         }
     }, db);
 
-    // ── 4. Schedule revalidation AFTER tx ────────────────────────────────
+    // ── 4a. Trigger destination recounts AFTER tx ────────────────────────
+    // Restricted accommodations are now excluded from the public predicate,
+    // so destination.accommodationsCount must be updated for every affected
+    // destination. This runs AFTER the tx so it cannot block rollback.
+    if (restrictedAccIds.length > 0) {
+        await triggerDestinationRecounts(restrictedAccIds);
+    }
+
+    // ── 4b. Schedule revalidation AFTER tx ───────────────────────────────
     const allTouchedIds = [
         ...new Set([...restrictedAccIds, ...Object.keys(photosByAccommodation)])
     ];

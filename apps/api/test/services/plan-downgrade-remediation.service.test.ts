@@ -423,6 +423,91 @@ describe('applyDowngradeRestrictions', () => {
             // Exactly cap=1 items are kept, so 2 are restricted
             expect(callArg.ids).toHaveLength(2);
         });
+
+        it('m-2: over-cap slots filled from default band appear in keptByDefault, not keptBySelection', async () => {
+            // cap = 2, host selects 3 items but only 1 (acc-1) is in the keepByDefault band.
+            // After over-cap truncation: keep acc-1 (intersection of selection with default band),
+            // then fill the 2nd slot from the default band with acc-default.
+            // keptBySelection must contain only acc-1; keptByDefault must contain acc-default.
+            const items = [
+                {
+                    id: 'acc-1',
+                    name: 'Selected1',
+                    updatedAt: '2026-05-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: true // in default band (slot 1)
+                },
+                {
+                    id: 'acc-default',
+                    name: 'DefaultBand',
+                    updatedAt: '2026-04-15T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: true // in default band (slot 2, NOT selected by host)
+                },
+                {
+                    id: 'acc-2',
+                    name: 'Selected2',
+                    updatedAt: '2026-04-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: false // selected but not in default band
+                },
+                {
+                    id: 'acc-3',
+                    name: 'Selected3',
+                    updatedAt: '2026-03-01T00:00:00.000Z',
+                    viewCount: null,
+                    keepByDefault: false // selected but not in default band
+                }
+            ];
+
+            vi.mocked(restrictAccommodations).mockResolvedValue({
+                affectedIds: ['acc-2', 'acc-3']
+            });
+
+            // Use a custom preview with cap=2 so the second default-band slot can be filled.
+            const customPreview = {
+                accommodations: {
+                    cap: 2, // cap = 2 (NOT hardcoded 1 from makePreview)
+                    activeCount: 4,
+                    excessCount: 2,
+                    items
+                },
+                promotions: { cap: 0, activeCount: 0, excessCount: 0, items: [] },
+                photos: [],
+                grandfatherFlags: [],
+                hasExcess: true
+            };
+
+            const deps: DowngradeRemediationDeps = {
+                computeExcess: vi.fn().mockResolvedValue(customPreview),
+                fetchAccommodationSlugs: vi.fn().mockResolvedValue({})
+            };
+
+            // Host selects acc-1, acc-2, acc-3 (3 items, over cap=2)
+            // valid ∩ items = [acc-1, acc-2, acc-3]
+            // defaultBand = [acc-1, acc-default].slice(0, 2) = [acc-1, acc-default]
+            // truncated = valid.filter(in defaultBand) = [acc-1]
+            // Fill from defaultKeep until size=cap: acc-1 is in keepIds, acc-default is NOT → add it
+            // Result: keepIds={acc-1, acc-default}, fromSelection=[acc-1], fromDefault=[acc-default]
+            const result = await applyDowngradeRestrictions({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                targetPlanSlug: TARGET_PLAN_SLUG,
+                keepSelections: { accommodationIds: ['acc-1', 'acc-2', 'acc-3'] },
+                deps
+            });
+
+            // acc-1 was in the host's selection AND in the default band → keptBySelection only
+            expect(result.keptBySelection.accommodations).toContain('acc-1');
+            // acc-default was default-filled (NOT in host's selection) → keptByDefault only
+            expect(result.keptByDefault.accommodations).toContain('acc-default');
+            // acc-2 and acc-3 are restricted (not in default band within cap)
+            expect(result.restricted.accommodations).toContain('acc-2');
+            expect(result.restricted.accommodations).toContain('acc-3');
+            // Ensure no cross-contamination
+            expect(result.keptBySelection.accommodations).not.toContain('acc-default');
+            expect(result.keptByDefault.accommodations).not.toContain('acc-1');
+        });
     });
 
     // ── Full promotion flow ─────────────────────────────────────────────────
