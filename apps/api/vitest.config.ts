@@ -67,6 +67,18 @@ export default defineConfig({
             '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
             '@repo/email': resolve(__dirname, '../../packages/email/src'),
+            // SPEC-187: alias content-moderation so unit tests of files in the
+            // entitlement-filter chain (e.g. entitlement-filter-strip.test.ts
+            // importing stripMarkdown) can resolve the transitive import in
+            // service-core's message.service.ts without needing the package's
+            // dist/ to be built. Mirrors the pattern used for the other
+            // @repo/* packages above.
+            '@repo/content-moderation': resolve(__dirname, '../../packages/content-moderation/src'),
+            // Pre-existing: ai-core has the same dist-required problem; without
+            // this alias, every test that transitively imports
+            // `apps/api/src/utils/ai-error-mapper.ts` (e.g. platform-settings
+            // routes under SPEC-156) fails to load.
+            '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),
             // Subpath aliases for @repo/feedback must be listed before the base alias
             // so Vite matches the more specific path first.
             '@repo/feedback/schemas': resolve(

@@ -30,7 +30,14 @@ export default defineConfig({
             '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
             '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
             '@repo/service-core': resolve(rootDir, 'packages/service-core/src'),
-            '@repo/media': resolve(rootDir, 'packages/media/src')
+            '@repo/media': resolve(rootDir, 'packages/media/src'),
+            // SPEC-187: pre-existing workspace-build fix. The `@repo/feedback`
+            // subpath is missing from this config; without it, every test that
+            // transitively imports `packages/schemas/src/feedback.ts` (which
+            // re-exports from `@repo/feedback/schemas`) fails to load. Mirror
+            // the api vitest.config.ts pattern.
+            '@repo/feedback/schemas': resolve(rootDir, 'packages/feedback/src/schemas'),
+            '@repo/feedback': resolve(rootDir, 'packages/feedback/src')
         }
     },
     optimizeDeps: {
