@@ -55,8 +55,8 @@ const user = serverUser
 /**
  * SPEC-182 (D3): host-mode CTA. This is a Server Island (`server:defer`), so the
  * session is fresh even on cached/SSG pages and the role can be resolved
- * server-side. A HOST always has a published accommodation (host-on-publish
- * model), so role=HOST is enough to point the CTA at the admin panel.
+ * server-side. A HOST may still be mid-onboarding with only a DRAFT, but
+ * role=HOST is still enough to point the CTA at the host surfaces.
  * Unauthenticated visitors and tourists keep the /publicar funnel.
  */
 const adminUrl = getAdminUrl();

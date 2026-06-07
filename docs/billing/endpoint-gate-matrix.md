@@ -39,7 +39,7 @@
 | **ACCOMMODATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/accommodations` | `accommodation/protected/create.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
 | `POST /api/v1/protected/accommodations/draft` | `accommodation/protected/createDraft.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
-| `POST /api/v1/protected/accommodations/start` | `host-onboarding/protected/start.ts` | gate+limit | `publish_accommodations`, `max_accommodations` | wired | requireEntitlement(PUBLISH_ACCOMMODATIONS) before enforceAccommodationLimit() (SPEC-145 T-004) |
+| `POST /api/v1/protected/host-onboarding/start` | `host-onboarding/protected/start.ts` | limit | `max_accommodations` | wired | Funnel exception: tourist-free users may enter onboarding without `publish_accommodations`; first-publish starts the owner trial. `enforceAccommodationLimit()` still prevents over-cap hosts from creating extra drafts. |
 | `GET /api/v1/protected/accommodations` | `accommodation/protected/list.ts` | none | - | n/a | Read own data only; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}` | `accommodation/protected/getById.ts` | none | - | n/a | Read own data only; auth + ownership check in handler |
 | `PUT /api/v1/protected/accommodations/{id}` | `accommodation/protected/update.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |

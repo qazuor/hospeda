@@ -58,8 +58,8 @@ export interface AccommodationPublishDeps {
 /**
  * Outcome of `AccommodationService.createForOnboarding`.
  *
- * - `created`: a fresh DRAFT was inserted for the actor. The actor's role is still
- *   `USER`; promotion to `HOST` happens later, when the draft transitions to ACTIVE.
+ * - `created`: a fresh DRAFT was inserted for the actor and the onboarding flow
+ *   promotes them from `USER` to `HOST` so they can access host surfaces.
  * - `resumed`: the actor already had an active DRAFT — that one is returned and the
  *   caller should resume the onboarding flow on it instead of creating a new one.
  * - `already_host`: the actor is already `HOST` (or higher). No draft is created;

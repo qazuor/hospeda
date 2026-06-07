@@ -529,15 +529,12 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             data: {
                                 ...user,
                                 slug,
-                                // Sign up as USER. Promotion to HOST happens
-                                // atomically when the user publishes their first
-                                // accommodation through the host-onboarding flow
-                                // (AccommodationService.publish). Creating users
-                                // as HOST here would short-circuit the
-                                // permission check on createForOnboarding and
-                                // also break the first-publish trial
-                                // detection because billing_subscriptions stays
-                                // empty until publish.
+                                // Sign up as USER. Self-serve users are promoted
+                                // to HOST when they create or resume the host
+                                // onboarding draft, while the owner trial still
+                                // starts on first publish. Creating users as HOST
+                                // here would skip the intended onboarding funnel
+                                // state transition.
                                 role: RoleEnum.USER,
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
@@ -557,8 +554,8 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                         // when it queries eligibility. We DO NOT auto-start a
                         // trial here anymore: the trial is created atomically
                         // by AccommodationService.publish() on the user's first
-                        // publish, alongside the lifecycleState flip and the
-                        // USER -> HOST role promotion.
+                        // publish. Role promotion to HOST already happened in
+                        // the onboarding draft flow.
                         try {
                             const billing = getQZPayBilling();
                             const syncService = new BillingCustomerSyncService(billing);

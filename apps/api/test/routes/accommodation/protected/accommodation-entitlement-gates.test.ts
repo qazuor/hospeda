@@ -4,7 +4,6 @@
  * Tests the `requireEntitlement` middleware wired on:
  *   - POST /accommodations               (PUBLISH_ACCOMMODATIONS)
  *   - POST /accommodations/draft         (PUBLISH_ACCOMMODATIONS)
- *   - POST /host-onboarding/start        (PUBLISH_ACCOMMODATIONS)
  *   - PUT  /accommodations/:id           (EDIT_ACCOMMODATION_INFO)
  *   - PATCH /accommodations/:id          (EDIT_ACCOMMODATION_INFO)
  *   - POST /accommodations/:id/faqs      (EDIT_ACCOMMODATION_INFO)
@@ -113,7 +112,7 @@ function buildGateApp(key: EntitlementKey): Hono<AppBindings> {
 // PUBLISH_ACCOMMODATIONS gate
 // ===========================================================================
 
-describe('PUBLISH_ACCOMMODATIONS gate (create / createDraft / onboarding start)', () => {
+describe('PUBLISH_ACCOMMODATIONS gate (create / createDraft)', () => {
     let app: Hono<AppBindings>;
 
     beforeEach(() => {

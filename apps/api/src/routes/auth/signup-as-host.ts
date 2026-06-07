@@ -6,8 +6,8 @@
  * Why this exists:
  *   - Better Auth has one server instance shared by `apps/web` and
  *     `apps/admin`, and only one `defaultRole` (`USER`). That default is
- *     correct for tourists signing up from the public web — they are
- *     promoted to HOST later through the host-onboarding funnel.
+ *     correct for tourists signing up from the public web — they become HOST
+ *     only after entering the self-serve host onboarding flow.
  *   - Back-office staff need a way to provision a host account directly so the
  *     new host can sign in to the admin panel without going through the
  *     publish-a-first-listing promotion path.
