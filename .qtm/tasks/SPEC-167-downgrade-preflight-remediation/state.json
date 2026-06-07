@@ -492,7 +492,7 @@
             "id": "T-023",
             "title": "Adversarial fresh-context review + apply confirmed fixes",
             "description": "Fresh-context review (opus) of the full diff. Hunt list: INV-5 violations (anything destructive), restriction/restore asymmetries (restore misses a dimension restrict covers), idempotency holes (double-restrict on retry), selection-vs-default merge bugs, visibility predicate gaps (a public path missing the planRestricted filter = revenue leak persists), revalidation misses, notification PII, SPEC-149 catch collision in plan-change.ts. Apply confirmed fixes via fix agent; re-run affected tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-024", "T-025"],
