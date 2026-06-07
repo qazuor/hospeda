@@ -101,11 +101,33 @@ Before marking SPEC-198 complete, all of the following MUST be green:
 - [ ] PR opened against `staging` with CI green
 - [ ] Real-DB + 4-role Chrome smoke (owner-basico + owner-profesional + tourist-free + complex-basico) signed off
 
+## SPEC-198.2 — FAQ Answer Fields (2026-06-07)
+
+Completed in commit `baf36115c`. Extended the AI text-improvement schema and
+admin FaqManager to support `faq_answer` as a third field type.
+
+- [x] **Schema**: Added `'faq_answer'` to `AiTextImproveFieldTypeSchema` enum,
+      added `faq_answer: 1000` cap to `AI_TEXT_IMPROVE_MAX_LENGTH`.
+- [x] **Schema tests**: 33 tests (8 new for faq_answer: happy path, length
+      boundaries at 1000, per-field cap precision).
+- [x] **Admin FaqManager**: Added optional `canUseAiTextImprove` /
+      `aiTextImproveLocale` props to `FaqManager` and `SortableFaqRow`.
+      Renders `AiTextImprovePanel` inside the Add FAQ form and each edit-mode
+      row, wired to local answer state.
+- [x] **Route wiring**: Accommodation FAQs tab passes `canUseAiTextImprove`
+      from `useMyEntitlements()` → `EntitlementKey.AI_TEXT_IMPROVE`.
+- [x] **All tests green**: schema (33/33), FaqManager (16/16),
+      AiTextImprovePanel (13/13), useAiTextImprove (19/19).
+
+**Pattern note**: FaqManager uses custom rendering (NOT `EntityFormSection`),
+so `AiTextImprovePanel` is rendered directly (not via `AiTextImproveFieldAddon`
+which requires `EntityFormContext`).
+
 ## Out of Scope (V1)
 
 - Web surface (apps/web) — owner-decided 2026-06-05
 - Tourist-facing AI
 - `ai_text_improve_history` table (V2)
-- Fields beyond `description` + `summary` (V2)
+- Fields beyond `description` + `summary` + `faq_answer` (future)
 - Server-side audit `_meta` forwarding (SHOULD only, follow-up)
-- Title, FAQs, SEO fields (V2)
+- Title, SEO fields (future)
