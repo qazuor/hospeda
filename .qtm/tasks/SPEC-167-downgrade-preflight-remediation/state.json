@@ -536,7 +536,7 @@
             "id": "T-025",
             "title": "PR to staging + CI + merge + closeout",
             "description": "Resync with origin/staging first (keep-both on .qtm index conflicts; rebuild dists post-merge before trusting typecheck). PR to staging referencing the smoke entry. CI Pass SUCCESS gate (gh pr view N --json statusCheckRollup; push via /usr/bin/git push + verify rev-parse local==remote — rtk no-ops silently). Merge --merge. Closeout: spec.md + specs/index.json + tasks/index.json completed+archived in the SAME change (index sync rules), engram state save, ask owner OK for worktree cleanup.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023", "T-024"],
             "blocks": [],
@@ -584,5 +584,6 @@
         "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
-    }
+    },
+    "status": "completed"
 }
