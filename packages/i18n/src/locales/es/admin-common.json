@@ -299,5 +299,29 @@
         "done": "Listo",
         "replay": "Ver guía",
         "replayPage": "Ver guía de esta página"
+    },
+    "aiTextImprove": {
+        "trigger": "Mejorar con IA",
+        "triggerTooltip": "Obtener una sugerencia de mejora con inteligencia artificial",
+        "upgradeTooltip": "Tu plan no incluye mejora de texto con IA. Actualizá tu plan para acceder.",
+        "panelLabel": "Sugerencia de IA",
+        "loading": "Generando sugerencia...",
+        "accept": "Aceptar",
+        "discard": "Descartar",
+        "dismiss": "Cerrar",
+        "error": {
+            "VALIDATION_ERROR": "Solicitud inválida. Por favor recargá la página e intentá de nuevo.",
+            "ENTITLEMENT_REQUIRED": "Tu plan no incluye mejora de texto con IA. Actualizá tu plan para acceder.",
+            "LIMIT_REACHED": "Alcanzaste el límite mensual de mejoras con IA. Actualizá tu plan o esperá el próximo mes.",
+            "MODERATION_BLOCKED": "El contenido no pasa las políticas de uso. Tu texto original no fue modificado.",
+            "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá un momento e intentá de nuevo.",
+            "ENGINE_EXHAUSTED": "Los proveedores de IA no están disponibles temporalmente. Intentá más tarde.",
+            "FEATURE_DISABLED": "La mejora de texto con IA está deshabilitada temporalmente.",
+            "CEILING_HIT": "Se alcanzó el límite de costo de IA. Intentá más tarde.",
+            "SERVICE_UNAVAILABLE": "Servicio temporalmente no disponible. Intentá más tarde.",
+            "INTERNAL_ERROR": "Ocurrió un error inesperado. Tu texto original no fue modificado.",
+            "NETWORK_INTERRUPTED": "Se cortó la conexión. Reintentá.",
+            "default": "Error al generar la sugerencia. Tu texto original no fue modificado."
+        }
     }
 }

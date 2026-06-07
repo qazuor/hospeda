@@ -18,3 +18,6 @@ export * from './ai-intent.schema.js';
 
 // Usage reporting aggregate response shapes (SPEC-173 T-018)
 export * from './ai-usage-report.schema.js';
+
+// HTTP request/response schemas for the text-improve child spec (SPEC-198)
+export * from './ai-text-improve.schema.js';

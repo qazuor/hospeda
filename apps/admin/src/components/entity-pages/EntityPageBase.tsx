@@ -100,6 +100,21 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
      * Forwarded as-is to `EntityPageHeader.tabs`. Pass a `<PageTabs>` element.
      */
     headerTabs?: ReactNode;
+    /**
+     * Optional extra data to merge into the save payload before the mutation call.
+     * Use for write-only fields that live outside the form schema
+     * (e.g. client-side audit metadata like `aiAssistedFields`).
+     *
+     * Accepts either a static object or a lazy-evaluated function.
+     * Use a function when the values come from a mutable ref that changes
+     * between render and save time.
+     */
+    extraSavePayload?: Record<string, unknown> | (() => Record<string, unknown>);
+    /**
+     * Optional callback invoked after a successful save (before navigating away).
+     * Use for cleanup such as clearing client-side refs.
+     */
+    onSaveSuccess?: () => void;
     /** Entity data and configuration from the hook */
     entityData: {
         mode: 'view' | 'edit';
@@ -155,6 +170,8 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     qualityScore = null,
     headerExtraActions,
     headerTabs,
+    extraSavePayload,
+    onSaveSuccess,
     entityData
 }: EntityPageBaseProps<T>) => {
     const { t } = useTranslations();
@@ -204,12 +221,22 @@ export const EntityPageBase = <T = Record<string, unknown>>({
             }
 
             const payload = unflattenValues(fieldsToSave);
+
+            // Merge optional extra save payload (e.g. aiAssistedFields audit metadata).
+            // Supports both static objects and lazy-evaluated functions for ref-based data.
+            const extraData =
+                typeof extraSavePayload === 'function' ? extraSavePayload() : extraSavePayload;
+            if (extraData) {
+                Object.assign(payload, extraData);
+            }
+
             adminLogger.debug('[EntityPageBase] Filtered values for API', payload);
 
             await updateMutation.mutateAsync(payload);
+            onSaveSuccess?.();
             goToView();
         },
-        [updateMutation, goToView, entityConfig.editSections]
+        [updateMutation, goToView, entityConfig.editSections, extraSavePayload, onSaveSuccess]
     );
 
     // ------------------------------------------------------------------

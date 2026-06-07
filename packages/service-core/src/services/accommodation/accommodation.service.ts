@@ -878,7 +878,21 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.pendingFeatureIds = data.featureIds;
         }
 
-        return data as Partial<Accommodation>;
+        // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
+        // The _afterUpdate hook persists them into extraInfo JSONB for audit/analytics.
+        const cleanData = { ...data } as Record<string, unknown>;
+        const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
+        cleanData.aiAssistedFields = undefined;
+
+        if (aiAssistedFields !== undefined && ctx.hookState) {
+            ctx.hookState.pendingAiAssistedFields = aiAssistedFields;
+            this.logger.info(
+                { aiAssistedFields },
+                '[accommodation] AI-assisted fields detected in update payload'
+            );
+        }
+
+        return cleanData as Partial<Accommodation>;
     }
 
     /**
@@ -962,6 +976,34 @@ export class AccommodationService extends BaseCrudService<
         // Uses an idempotency guard so this is safe on any ACTIVE-state update.
         if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && entity.ownerId) {
             await this._assignHostRoleIfNeeded(entity.ownerId, ctx);
+        }
+
+        // SPEC-198.1: persist AI-assisted fields into extraInfo JSONB for audit / analytics.
+        // This runs as an additional targeted update because aiAssistedFields is a write-only
+        // input field, not a column on the accommodations table. We merge into extraInfo
+        // so existing keys (capacity, bedrooms, etc.) are preserved.
+        const pendingAi = ctx.hookState?.pendingAiAssistedFields;
+        if (pendingAi !== undefined && pendingAi.length > 0) {
+            // TYPE-WORKAROUND: extraInfo DB column is jsonb $type<Record<string, unknown>>,
+            // but the Zod schema types it as a specific shape. We merge at the DB level
+            // via a raw cast since the schema's strict shape does not include aiAssistedFields.
+            const currentExtra = (entity.extraInfo ?? {}) as Record<string, unknown>;
+            const mergedExtra: Record<string, unknown> = {
+                ...currentExtra,
+                aiAssistedFields: [...pendingAi]
+            };
+            try {
+                await this.model.update(
+                    { id: entity.id },
+                    { extraInfo: mergedExtra } as unknown as Partial<Accommodation>, // TYPE-WORKAROUND: extraInfo DB column is jsonb — merge result is Record<string,unknown> which doesn't match the Zod strict shape
+                    ctx?.tx
+                );
+            } catch (error) {
+                this.logger.warn(
+                    { error, accommodationId: entity.id, aiAssistedFields: pendingAi },
+                    '[accommodation] Failed to persist AI-assisted fields to extraInfo (non-blocking)'
+                );
+            }
         }
 
         return entity;

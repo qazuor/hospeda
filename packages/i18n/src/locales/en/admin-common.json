@@ -299,5 +299,29 @@
         "done": "Done",
         "replay": "View guide",
         "replayPage": "View page guide"
+    },
+    "aiTextImprove": {
+        "trigger": "Improve with AI",
+        "triggerTooltip": "Get an AI-powered improvement suggestion",
+        "upgradeTooltip": "Your plan does not include AI text improvement. Upgrade your plan to access.",
+        "panelLabel": "AI Suggestion",
+        "loading": "Generating suggestion...",
+        "accept": "Accept",
+        "discard": "Discard",
+        "dismiss": "Close",
+        "error": {
+            "VALIDATION_ERROR": "Invalid request. Please refresh the page and try again.",
+            "ENTITLEMENT_REQUIRED": "Your plan does not include AI text improvement. Upgrade your plan to access.",
+            "LIMIT_REACHED": "Monthly AI improvement limit reached. Upgrade your plan or wait for next month.",
+            "MODERATION_BLOCKED": "Content policy violation — your original text is unchanged.",
+            "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a moment and try again.",
+            "ENGINE_EXHAUSTED": "AI providers are temporarily unavailable. Try again later.",
+            "FEATURE_DISABLED": "AI text improvement is currently disabled.",
+            "CEILING_HIT": "AI cost ceiling reached. Try again later.",
+            "SERVICE_UNAVAILABLE": "Service temporarily unavailable. Try again later.",
+            "INTERNAL_ERROR": "An unexpected error occurred. Your original text is unchanged.",
+            "NETWORK_INTERRUPTED": "Connection interrupted. Please try again.",
+            "default": "Error generating suggestion. Your original text is unchanged."
+        }
     }
 }

@@ -1,0 +1,419 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-198",
+    "title": "AI Text Improvement (HOST)",
+    "created": "2026-06-06T00:00:00.000Z",
+    "notes": "Child A of SPEC-173 (AI foundation, completed 2026-06-05, PR #1466). All 10 tasks derived from spec.md §13. SS12 Decision Protocol active: STOP and consult owner on any ambiguity. AC-12 (audit _meta) is SHOULD-only — do NOT modify BaseCrudService. Critical mid-stream moderation: error event after token events MUST discard accumulated tokens.",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Schema: AiTextImproveRequestSchema in @repo/schemas",
+            "description": "Create packages/schemas/src/entities/ai/ai-text-improve.schema.ts per spec §5.2. Exports: AiTextImproveFieldTypeSchema (z.enum(['description', 'summary'])), AI_TEXT_IMPROVE_MAX_LENGTH const (description:5000, summary:300), AiTextImproveRequestSchema (strict + superRefine for per-field cap), AiTextImprove type. Re-export from packages/schemas/src/entities/ai/index.ts. Import LanguageEnumSchema from ../user/user.settings.schema.js.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Create ai-text-improve.schema.ts with all exports",
+                    "completed": true
+                },
+                {
+                    "title": "Add barrel re-export in entities/ai/index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck to verify schema compiles",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "shared-package", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:00:00.000Z",
+                "completed": "2026-06-06T05:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Schema unit tests",
+            "description": "Create packages/schemas/src/entities/ai/__tests__/ai-text-improve.schema.test.ts per spec §9.1. Cover: valid description/summary requests, optional locale, empty fieldValue rejected, >5000 chars description rejected, >300 chars summary rejected (incl. boundary 301 rejected, 300 accepted), unknown fieldType rejected, unknown keys rejected (strict mode), valid en/pt/es locale, unknown locale rejected. ENUM-RESILIENCE: assert toContain for members, NEVER toHaveLength.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write all 13 test cases from spec §9.1",
+                    "completed": false
+                },
+                {
+                    "title": "Run vitest on the test file",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm test:coverage for the schemas package",
+                    "completed": false
+                }
+            ],
+            "tags": ["test", "schema", "enum-resilience"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass",
+                "coverage": "100%"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:40:00.000Z",
+                "completed": "2026-06-06T05:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "API route: text-improve.ts",
+            "description": "Create apps/api/src/routes/ai/protected/text-improve.ts per spec §5.1. Use createProtectedStreamingRoute from apps/api/src/utils/streaming-route-factory.ts. Middleware order (CRITICAL — wrong order = 503 on every request): entitlementMiddleware(), ...createAiRateLimitMiddlewares('text_improve'), createAiQuotaMiddleware('text_improve'). Handler: build user prompt with fieldValue+fieldType, call createConfiguredAiService().streamText({feature:'text_improve', prompt, locale:locale ?? 'es'}), return {stream, meta}. FEATURE const = 'text_improve' (AiFeature type). DO NOT mount this route in apps/api/src/routes/ai/index.ts (admin barrel).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create route file with full middleware composition",
+                    "completed": true
+                },
+                {
+                    "title": "Implement buildTextImprovePrompt helper",
+                    "completed": true
+                },
+                {
+                    "title": "Wire streamHandler to aiService.streamText",
+                    "completed": true
+                },
+                {
+                    "title": "Add gate matrix row to docs/billing/endpoint-gate-matrix.md (status=to-wire)",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck + lint on apps/api",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "streaming", "sse", "hono"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "deferred-to-T-005"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:55:00.000Z",
+                "completed": "2026-06-06T06:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create barrel apps/api/src/routes/ai/protected/index.ts + mount in routes/index.ts",
+            "description": "Per spec §5.1 X1 convention. Create apps/api/src/routes/ai/protected/index.ts that exports protectedAiRoutes via createRouter().route('/text-improve', protectedAiTextImproveRoute). Add a comment slot for SPEC-199 (search-intent) and SPEC-200 (chat) to add later. In apps/api/src/routes/index.ts add: import { protectedAiRoutes } from './ai/protected/index.js' and app.route('/api/v1/protected/ai', protectedAiRoutes). If the sibling specs already created the barrel, ADD to it — do not recreate. Do NOT export from routes/ai/index.ts (admin barrel).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Create routes/ai/protected/index.ts barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Add mount in routes/index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Verify route is reachable at POST /api/v1/protected/ai/text-improve",
+                    "completed": true
+                },
+                {
+                    "title": "Flip matrix row status from to-wire to wired",
+                    "completed": true
+                },
+                {
+                    "title": "Run endpoint-gate-matrix guard test (734/734 pass)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routing", "convention"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "guard-test-pass"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T06:20:00.000Z",
+                "completed": "2026-06-06T06:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Route handler unit tests",
+            "description": "Create apps/api/src/routes/ai/protected/__tests__/text-improve.test.ts per spec §9.2. Mock createConfiguredAiService to return stub stream. Cover: calls aiService.streamText with feature='text_improve', passes fieldValue+fieldType to prompt builder, passes locale from request, defaults locale to 'es' when absent, returns 400 on invalid body, returns 400 on unknown keys (strict schema). Use vi.mock('../../../../services/ai-service.factory.js', ...).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write mock for createConfiguredAiService",
+                    "completed": true
+                },
+                {
+                    "title": "Mock all 3 route middlewares to no-op pass-throughs",
+                    "completed": true
+                },
+                {
+                    "title": "Mock @repo/ai-core + create-app (transitive missing deps)",
+                    "completed": true
+                },
+                {
+                    "title": "Write 9 test cases (6 spec §9.2 + 2 prompt builder + 1 invalid fieldType)",
+                    "completed": true
+                },
+                {
+                    "title": "Run vitest on the test file",
+                    "completed": true
+                },
+                {
+                    "title": "Lint clean + typecheck clean",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "api", "mock"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "9/9"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T06:25:00.000Z",
+                "completed": "2026-06-06T06:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "API integration tests (live DB)",
+            "description": "Create apps/api/test/integration/ai/text-improve.test.ts per spec §9.3. Use vitest.config.e2e.ts (live DB). Mock-actor headers pattern (x-mock-actor-id, x-mock-actor-role, x-mock-actor-permissions). Mock entitlementMiddleware via vi.mock('../../../src/middlewares/entitlement', ...) to inject userEntitlements/userLimits/billingLoadFailed. Cover: 401 unauthenticated, 403 ENTITLEMENT_REQUIRED (tourist), 403 LIMIT_REACHED (quota exhausted), 503 SERVICE_UNAVAILABLE (billingLoadFailed=true), 400 missing fieldValue, 400 unknown fieldType, 400 exceeds per-type max, 200 SSE stream with tokens+done, Content-Type text/event-stream. 100% middleware order coverage required (per spec §9.5).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create test/integration/ai/ directory",
+                    "completed": true
+                },
+                {
+                    "title": "Write mock-actor header helpers",
+                    "completed": true
+                },
+                {
+                    "title": "Write entitlementMiddleware mock",
+                    "completed": true
+                },
+                {
+                    "title": "Write all 10 test cases from spec §9.3",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test:e2e — all 10 cases green",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "integration", "e2e", "api"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "10/10"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T07:00:00.000Z",
+                "completed": "2026-06-06T14:12:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "i18n keys aiTextImprove.* in es/en/pt",
+            "description": "Add the aiTextImprove block per spec §8 to packages/i18n/src/locales/{es,en,pt}/admin-common.json. Keys: trigger, triggerTooltip, upgradeTooltip, panelLabel, loading, accept, discard, dismiss, error.{VALIDATION_ERROR, ENTITLEMENT_REQUIRED, LIMIT_REACHED, MODERATION_BLOCKED, RATE_LIMIT_EXCEEDED, ENGINE_EXHAUSTED, FEATURE_DISABLED, CEILING_HIT, SERVICE_UNAVAILABLE, INTERNAL_ERROR, default}. Spanish copy per §8 (Rioplatense natural — vos form for upgradeTooltip 'Actualizá'). English + Portuguese per §8. Run pnpm --filter @repo/i18n check-locales to verify parity.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Add aiTextImprove to es/admin-common.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add aiTextImprove to en/admin-common.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add aiTextImprove to pt/admin-common.json",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter @repo/i18n check-locales",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "admin", "locale-parity"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T05:00:00.000Z",
+                "completed": "2026-06-06T05:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "useAiTextImprove hook + tests",
+            "description": "Create apps/admin/src/features/accommodations/hooks/useAiTextImprove.ts per spec §5.3.4 and §5.3.5. State machine: idle→loading→streaming→done|error, with CRITICAL mid-stream moderation rule: when error event arrives after token events, set suggestion='' and status='error' (NEVER expose partial moderation-blocked content). SSE parsing: use native fetch + ReadableStream (EventSource cannot POST). Parse 'event:' / 'data:' lines, blank line = frame boundary. AbortController for unmount cleanup. Then create useAiTextImprove.test.ts per spec §9.4 hook tests (9 cases: idle, loading, streaming, accumulates tokens, done, error clears suggestion, discard, accept, idle-after-accept).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Implement state machine types (Status, AiTextImproveState)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement SSE parser with mid-stream error handling",
+                    "completed": true
+                },
+                {
+                    "title": "Wire AbortController for unmount",
+                    "completed": true
+                },
+                {
+                    "title": "Write 9 hook tests per spec §9.4",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter admin test for the hook",
+                    "completed": true
+                }
+            ],
+            "tags": ["frontend", "hook", "sse", "state-machine"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T14:30:00.000Z",
+                "completed": "2026-06-06T17:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "AiTextImprovePanel component + tests",
+            "description": "Create apps/admin/src/features/accommodations/components/AiTextImprovePanel.tsx per spec §5.3.7. Props: fieldType, fieldValue, locale, onAccept, canUse, className. Render: trigger button (always visible, disabled when !canUse or status in loading|streaming) with title=tooltip (upgrade or trigger), panel (when status !== idle) with role='region' aria-label, loading skeleton, streaming display with caret, error role='alert', done state with Accept+Discard buttons, error state with Dismiss button. Map HTTP status to i18n error code per spec §5.6 table. Then create AiTextImprovePanel.test.tsx per spec §9.4 component tests (13 cases incl. CRITICAL mid-stream error discards tokens, abort on unmount). Use shadcn Button + Card primitives from the admin design system.",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Build trigger button with disabled + tooltip logic",
+                    "completed": true
+                },
+                {
+                    "title": "Build panel state renderer (loading/streaming/done/error)",
+                    "completed": true
+                },
+                {
+                    "title": "Wire HTTP status → i18n error code mapping per §5.6",
+                    "completed": true
+                },
+                {
+                    "title": "Apply a11y: role=region, aria-label, role=alert, focus mgmt",
+                    "completed": true
+                },
+                {
+                    "title": "Write 13 component tests per spec §9.4",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm --filter admin test for the component",
+                    "completed": true
+                }
+            ],
+            "tags": ["frontend", "component", "a11y", "shadcn"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T17:50:00.000Z",
+                "completed": "2026-06-06T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Wire panel into RichTextField + TextareaField + useAccommodationPage + edit page",
+            "description": "Per spec §5.3.1 + §5.3.6. Files: apps/admin/src/components/entity-form/fields/RichTextField.tsx (add onAiImprove prop, use editor.commands.setContent + onChange), apps/admin/src/components/entity-form/fields/TextareaField.tsx (add onAiImprove prop, call form.setFieldValue), apps/admin/src/features/accommodations/hooks/useAccommodationPage.ts (compute canUseAiTextImprove = userEntitlements.includes(EntitlementKey.AI_TEXT_IMPROVE), pass down), apps/admin/src/routes/_authed/accommodations/$id_.edit.tsx (mount <AiTextImprovePanel> only for description+summary fields per AC-11, track aiAssistedFields in a React ref for client-side audit hint per AC-12 SHOULD-only). For RichTextField the accept path uses editor.commands.setContent(suggestion, false) (same API as existing useEffect line 169). DO NOT modify BaseCrudService. DO NOT forward _aiMeta to the update API.",
+            "status": "completed",
+            "complexity": 5,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add fieldAddons prop to EntityFormSection + EntityEditContent",
+                    "completed": true
+                },
+                {
+                    "title": "Compute canUseAiTextImprove in useAccommodationPage",
+                    "completed": true
+                },
+                {
+                    "title": "Create AiTextImproveFieldAddon component",
+                    "completed": true
+                },
+                {
+                    "title": "Mount AiTextImprovePanel in $id_.edit.tsx for description+summary only",
+                    "completed": true
+                },
+                {
+                    "title": "Track aiAssistedFields ref for client-side audit hint",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck + lint for admin app",
+                    "completed": true
+                }
+            ],
+            "tags": ["frontend", "wiring", "tiptap", "integration"],
+            "phase": "integration",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T22:00:00.000Z",
+                "completed": "2026-06-06T22:45:00.000Z"
+            },
+            "tags": ["frontend", "wiring", "tiptap", "integration"],
+            "phase": "integration"
+        }
+    ]
+}

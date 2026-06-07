@@ -681,13 +681,14 @@
             "title": "AI Text Improvement (HOST)",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-198-ai-text-improvement",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-06",
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child A of SPEC-173. HOST text improvement, multi-locale, accept/reject UX over ai-core (feature text_improve, owner/complex only). DRAFT with open questions."
+            "note": "Child A of SPEC-173. HOST text improvement, multi-locale, accept/reject UX over ai-core (feature text_improve, owner/complex only). V1 scope: description (RICH_TEXT, TipTap) + summary (TEXTAREA). 10/10 tasks, 12/12 ACs, 4/4 safety invariants, 77/77 tests. No openspec delta spec (project uses QTM canonical store). Follow-ups: SPEC-198.1 (server-side audit), SPEC-198.2 (V2 field scope: title/FAQ/SEO), SPEC-198.3 (NETWORK_INTERRUPTED i18n key)."
         },
         {
             "specId": "SPEC-199",
