@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { i18nText } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
+import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
@@ -55,6 +56,12 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Extra Info (public)
     extraInfo: true
 }).extend({
+    /**
+     * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
+     * for server-side use (restore on re-upgrade), but it must never be exposed
+     * to public consumers. Override the picked field with the input-safe shape.
+     */
+    media: BaseMediaObjectSchema.nullish(),
     /** ISO 8601 creation date (for "Nuevo" badge: < 30 days). Accepts Date for raw service output. */
     createdAt: z.union([z.string(), z.date()]).nullish(),
     /** Public owner data from users table JOIN. No sensitive fields. */
@@ -177,6 +184,12 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
      * the min(30) gate is meaningful.
      */
     description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
+    /**
+     * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
+     * for server-side use, but it must never be exposed to authenticated (non-admin)
+     * consumers either. Override the picked field with the input-safe shape.
+     */
+    media: BaseMediaObjectSchema.nullish(),
     /** Owner data from users table JOIN (protected tier). */
     owner: UserProtectedSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */

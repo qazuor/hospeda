@@ -1220,19 +1220,14 @@ export class AccommodationService extends BaseCrudService<
         // Fetch only when needed: if `data.media` is undefined the DB write won't
         // touch the media column at all, so no action is required.
         let normalizedData = data;
-        if ((data as Record<string, unknown>).media !== undefined) {
+        if (data.media !== undefined) {
             const existing = await this.model.findById(id, ctx?.tx);
-            const existingArchivedGallery = (existing?.media as Record<string, unknown> | undefined)
-                ?.archivedGallery;
+            const existingArchivedGallery = existing?.media?.archivedGallery;
             if (existingArchivedGallery !== undefined) {
-                const incomingMedia = (data as Record<string, unknown>).media as Record<
-                    string,
-                    unknown
-                >;
                 normalizedData = {
                     ...data,
                     media: {
-                        ...incomingMedia,
+                        ...data.media,
                         archivedGallery: existingArchivedGallery
                     }
                 } as AccommodationUpdateInput;

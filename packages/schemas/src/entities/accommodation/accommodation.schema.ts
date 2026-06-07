@@ -9,7 +9,7 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseMediaFields } from '../../common/media.schema.js';
+import { AccommodationEntityMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
@@ -59,7 +59,7 @@ export const AccommodationSchema = z.object({
     ...BaseSeoFields,
     ...BaseContactFields,
     ...AccommodationLocationFields,
-    ...BaseMediaFields,
+    ...AccommodationEntityMediaFields,
     ...BaseAdminFields,
 
     // Accommodation-specific core fields

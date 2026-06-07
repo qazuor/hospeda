@@ -120,13 +120,114 @@ export const MediaSchema = z.object({
 export type Media = z.infer<typeof MediaSchema>;
 
 /**
- * Base media fields (standardized with caption, description, and moderationState)
+ * Base media object shape (without nullish wrapper).
+ * Exported so `AccommodationEntityMediaFields` can extend it without
+ * duplicating the inline definitions.
+ *
+ * Intentionally does NOT include `archivedGallery` — that field is
+ * server-managed and must never appear in create/update inputs.
+ */
+export const BaseMediaObjectSchema = z.object({
+    featuredImage: z
+        .object({
+            url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+            caption: z
+                .string()
+                .min(3, { message: 'zodError.common.media.image.caption.min' })
+                .max(100, { message: 'zodError.common.media.image.caption.max' })
+                .optional(),
+            description: z
+                .string()
+                .min(10, { message: 'zodError.common.media.image.description.min' })
+                .max(300, { message: 'zodError.common.media.image.description.max' })
+                .optional(),
+            alt: z
+                .string()
+                .min(1, { message: 'zodError.common.media.image.alt.min' })
+                .max(200, { message: 'zodError.common.media.image.alt.max' })
+                .optional(),
+            moderationState: ModerationStatusEnumSchema
+        })
+        .optional(),
+    gallery: z
+        .array(
+            z.object({
+                url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+                caption: z
+                    .string()
+                    .min(3, { message: 'zodError.common.media.image.caption.min' })
+                    .max(100, { message: 'zodError.common.media.image.caption.max' })
+                    .optional(),
+                description: z
+                    .string()
+                    .min(10, { message: 'zodError.common.media.image.description.min' })
+                    .max(300, { message: 'zodError.common.media.image.description.max' })
+                    .optional(),
+                alt: z
+                    .string()
+                    .min(1, { message: 'zodError.common.media.image.alt.min' })
+                    .max(200, { message: 'zodError.common.media.image.alt.max' })
+                    .optional(),
+                moderationState: ModerationStatusEnumSchema
+            })
+        )
+        .optional(),
+    videos: z
+        .array(
+            z.object({
+                url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+                caption: z
+                    .string()
+                    .min(3, { message: 'zodError.common.media.video.caption.min' })
+                    .max(100, { message: 'zodError.common.media.video.caption.max' })
+                    .optional(),
+                description: z
+                    .string()
+                    .min(10, { message: 'zodError.common.media.video.description.min' })
+                    .max(300, { message: 'zodError.common.media.video.description.max' })
+                    .optional(),
+                moderationState: ModerationStatusEnumSchema
+            })
+        )
+        .optional()
+});
+
+/**
+ * Base media fields (standardized with caption, description, and moderationState).
+ *
+ * Used by create/update INPUT schemas for ALL entities. Does NOT include
+ * `archivedGallery` — that field is server-managed and must be stripped
+ * from any client-supplied payload.
  */
 export const BaseMediaFields = {
-    media: z
-        .object({
-            featuredImage: z
-                .object({
+    media: BaseMediaObjectSchema.nullish()
+} as const;
+export type BaseMediaFieldsType = typeof BaseMediaFields;
+
+/**
+ * Accommodation-entity-only media fields.
+ *
+ * Extends `BaseMediaObjectSchema` with `archivedGallery`, which is:
+ * - Server-managed (written exclusively by the downgrade-restriction cron).
+ * - Present on the DB row (JSONB `media` column) and on the entity type.
+ * - Absent from create/update inputs (those keep using `BaseMediaFields`).
+ * - Stripped from public/protected response schemas (see `accommodation.access.schema.ts`).
+ *
+ * Item shape is identical to `gallery` items (same inline object, same
+ * constraints) so `gallery.length + archivedGallery.length` conservation
+ * (INV-5) is type-safe end-to-end.
+ */
+export const AccommodationEntityMediaFields = {
+    media: BaseMediaObjectSchema.extend({
+        /**
+         * Photos moved out of `gallery` during a plan downgrade when the host
+         * exceeded the target plan's `MAX_PHOTOS_PER_ACCOMMODATION` limit.
+         * Restored (moved back) when the host re-upgrades above the photo cap.
+         * Never exposed to public or protected consumers.
+         */
+        archivedGallery: z
+            .array(
+                z.object({
                     url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
                     caption: z
                         .string()
@@ -145,49 +246,7 @@ export const BaseMediaFields = {
                         .optional(),
                     moderationState: ModerationStatusEnumSchema
                 })
-                .optional(),
-            gallery: z
-                .array(
-                    z.object({
-                        url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
-                        caption: z
-                            .string()
-                            .min(3, { message: 'zodError.common.media.image.caption.min' })
-                            .max(100, { message: 'zodError.common.media.image.caption.max' })
-                            .optional(),
-                        description: z
-                            .string()
-                            .min(10, { message: 'zodError.common.media.image.description.min' })
-                            .max(300, { message: 'zodError.common.media.image.description.max' })
-                            .optional(),
-                        alt: z
-                            .string()
-                            .min(1, { message: 'zodError.common.media.image.alt.min' })
-                            .max(200, { message: 'zodError.common.media.image.alt.max' })
-                            .optional(),
-                        moderationState: ModerationStatusEnumSchema
-                    })
-                )
-                .optional(),
-            videos: z
-                .array(
-                    z.object({
-                        url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
-                        caption: z
-                            .string()
-                            .min(3, { message: 'zodError.common.media.video.caption.min' })
-                            .max(100, { message: 'zodError.common.media.video.caption.max' })
-                            .optional(),
-                        description: z
-                            .string()
-                            .min(10, { message: 'zodError.common.media.video.description.min' })
-                            .max(300, { message: 'zodError.common.media.video.description.max' })
-                            .optional(),
-                        moderationState: ModerationStatusEnumSchema
-                    })
-                )
-                .optional()
-        })
-        .nullish()
+            )
+            .optional()
+    }).nullish()
 } as const;
-export type BaseMediaFieldsType = typeof BaseMediaFields;
