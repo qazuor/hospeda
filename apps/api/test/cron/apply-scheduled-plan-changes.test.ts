@@ -994,17 +994,21 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
         expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
     });
 
-    it('target plan slug not in billing catalog → restrictionFailed=true, result.success=false, plan change stays applied', async () => {
-        // SPEC-167 hard semantics: if billing.plans.get resolves a name but that name
+    it('target plan slug not in billing catalog → skip restriction (warn, not error), restrictionFailed=false, plan change stays applied', async () => {
+        // SPEC-167 soft-skip semantics: if billing.plans.get resolves a name but that name
         // is not a valid catalog slug, computeDowngradeExcess (called inside
         // applyDowngradeRestrictions) throws "Target plan '...' not found in the billing
-        // catalog". The cron treats this as restrictionFailed=true rather than rolling back
-        // the plan change — the host is now over-cap, which is an alert-worthy revenue-leak
-        // risk captured by Sentry via result.success=false (SPEC-149 gate).
+        // catalog". The cron treats this as a WARN + skip (not a hard error) because the
+        // plan may be a test plan or a plan that predates the restriction feature — we
+        // cannot evaluate excess without catalog metadata, so we skip restriction rather
+        // than surfacing a false-positive Sentry alert via success=false.
+        //
+        // Genuine restriction failures (non-catalog-miss errors) still set
+        // restrictionFailed=true and result.success=false (SPEC-149 gate).
         //
         // In the unit test, applyDowngradeRestrictions is mocked, so we simulate the
-        // catalog-miss by having it throw. This pins the intentional hard semantics:
-        // plan change stays applied, restrictionFailed=true, handler sees success=false.
+        // catalog-miss by having it throw. This pins the new soft-skip semantics:
+        // plan change stays applied, restrictionFailed=false, handler sees success=true.
         vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
             new Error("Target plan 'non-catalog-slug' not found in the billing catalog")
         );
@@ -1015,9 +1019,9 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
 
         const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
 
-        // Plan change stays applied — restriction failure does NOT roll back.
+        // Plan change stays applied — restriction skipped (not a hard failure).
         expect(outcome.kind).toBe('applied');
-        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBe(true);
+        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBeUndefined();
         // update is called for pre-stamp (step 0) + finalise (step 5) — not rolled back.
         expect(update).toHaveBeenCalledTimes(2);
         const preStampArg = update.mock.calls[0]?.[1] as Record<string, unknown>;

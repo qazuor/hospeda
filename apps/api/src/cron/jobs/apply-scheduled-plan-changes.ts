@@ -410,20 +410,28 @@ async function applyOne(
                 );
             }
         } catch (restrictionErr) {
-            // Log loudly so Sentry captures it via the logger integration.
-            logger.error(
-                'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied)',
-                {
-                    subscriptionId,
-                    customerId,
-                    newPlanId,
-                    error:
-                        restrictionErr instanceof Error
-                            ? restrictionErr.message
-                            : String(restrictionErr)
-                }
-            );
-            restrictionFailed = true;
+            const errMsg =
+                restrictionErr instanceof Error ? restrictionErr.message : String(restrictionErr);
+            // "not found in the billing catalog" means the target plan slug is not
+            // registered in the static plan catalog (e.g. a dynamically-created test
+            // plan or a plan that predates the restriction feature). In this case we
+            // cannot evaluate excess, so skip restriction with a warn rather than
+            // treating it as a data-integrity failure.
+            if (errMsg.includes('not found in the billing catalog')) {
+                logger.warn(
+                    'Scheduled plan change: skipping restriction — target plan not in catalog (non-blocking)',
+                    { subscriptionId, customerId, newPlanId, error: errMsg }
+                );
+            } else {
+                // Any other error is a genuine restriction failure — log loudly so
+                // Sentry captures it and set restrictionFailed so the cron result
+                // surfaces success=false.
+                logger.error(
+                    'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied)',
+                    { subscriptionId, customerId, newPlanId, error: errMsg }
+                );
+                restrictionFailed = true;
+            }
         }
     }
 
