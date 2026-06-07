@@ -21,3 +21,6 @@ export * from './ai-usage-report.schema.js';
 
 // HTTP request/response schemas for the text-improve child spec (SPEC-198)
 export * from './ai-text-improve.schema.js';
+
+// HTTP request/response schemas for the AI accommodation chat child spec (SPEC-200)
+export * from './ai-chat.schema.js';
