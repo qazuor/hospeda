@@ -64,6 +64,7 @@ import {
     adminAiSettingsRoutes,
     adminAiUsageRoutes
 } from './ai/index.js';
+import { protectedAiRoutes } from './ai/protected/index.js';
 import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
@@ -277,6 +278,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Protected: host accommodation stats + editor post/event stats.
         // Public capture (T-008) lives under /api/v1/public above.
         app.route('/api/v1/protected/views', protectedViewsRoutes);
+
+        // AI protected (SPEC-198 T-004 — text-improve stream;
+        // SPEC-199 search-intent and SPEC-200 chat will be added as
+        // sibling spec handlers land; see ai/protected/index.ts for slots).
+        app.route('/api/v1/protected/ai', protectedAiRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at

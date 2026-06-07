@@ -3,7 +3,7 @@ spec-id: SPEC-167
 title: Downgrade Over-Limit Remediation (grandfather + restrict)
 type: feature
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-27T00:00:00Z
 rewritten: 2026-06-03T00:00:00Z
 parent: SPEC-193
@@ -60,9 +60,9 @@ The principle (master INV-5): **never destroy data, never hard-block the downgra
 
 | Dimension | Limit/entitlement | Excess condition | Remediation on apply |
 |-----------|-------------------|------------------|----------------------|
-| Accommodations | `MAX_ACCOMMODATIONS` | owned active count > target cap | restrict (unpublish/lock) excess, host picks which to keep; reversible |
-| Active promotions | `MAX_ACTIVE_PROMOTIONS` | active count > target cap | deactivate excess, reversible |
-| Photos per accommodation | `MAX_PHOTOS_PER_ACCOMMODATION` | gallery+featured > target cap | hide over-cap photos (keep data), host picks which to keep |
+| Accommodations | `MAX_ACCOMMODATIONS` | owned active count > target cap | restrict via NEW `planRestricted` boolean column (realign D-3: do NOT reuse `ownerSuspended` — it belongs to the pause flow, which flips/restores ALL of an owner's accommodations in bulk; downgrade restriction is selective and the two states must not collide). Host picks which to keep; reversible |
+| Active promotions | `MAX_ACTIVE_PROMOTIONS` | active count > target cap | deactivate excess, reversible (note: no batch-deactivate primitive exists today — build it; promotions use `LifecycleStatusEnum`) |
+| Photos per accommodation | `MAX_PHOTOS_PER_ACCOMMODATION` | gallery+featured > target cap | move over-cap photos from `media.gallery` → `media.archivedGallery` in the same JSONB (realign D-2: photos are NOT rows; no per-photo visibility flag exists. Public/API reads only `gallery`, so zero read-path changes; restore = move back. Zod schema change in `@repo/schemas` only, no DB migration). Future: full gallery → relational table (see new spec in §9) |
 | Rich description | `CAN_USE_RICH_DESCRIPTION` | description contains markdown | grandfather, read-only for new edits |
 | Embedded video | `CAN_EMBED_VIDEO` | description contains a video URL | grandfather, read-only for new edits |
 
@@ -77,6 +77,18 @@ The principle (master INV-5): **never destroy data, never hard-block the downgra
    the most-recently-updated/most-viewed, restricts the rest.
 4. **Scheduled-change recheck → apply-time computes the excess fresh** and restricts per policy (the host may
    have changed usage between request and apply). No deferral, no block — restrict and notify.
+5. **Admin path → synchronous restriction via a SHARED service (realign D-1, owner 2026-06-06).** The admin
+   `ChangePlanDialog` applies plan changes IMMEDIATELY via the qzpay-hono admin endpoint — it does NOT go
+   through `scheduleSubscriptionDowngrade` and would bypass any cron-only restriction. Extract the restriction
+   logic into a shared, idempotent service: the cron calls it on apply; the admin
+   `onAfterSubscriptionChangePlan` hook (apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts:349) calls it
+   synchronously. Same behavior, two triggers.
+6. **Self-serve UI is OUT of this spec (realign D-4, owner 2026-06-06).** The web app has NO plan-change UI
+   today (only the checkout CTA; `change-plan` is admin-consumed only). SPEC-167 delivers: the restriction
+   preview (request-time response payload), an optional `keepIds` selection field persisted with the scheduled
+   change, and the automatic default (most-recently-updated / most-viewed) when no selection exists. The
+   self-serve plan-management UI (view plan / change plan / choose-what-to-keep selector / cancel button for
+   SPEC-147) becomes its own spec (see §9) consuming the preview contract this spec defines.
 
 ## 5. Affected surfaces
 
@@ -85,9 +97,17 @@ The principle (master INV-5): **never destroy data, never hard-block the downgra
 - `apps/api/src/cron/jobs/apply-scheduled-plan-changes.ts` — apply-time restriction of the excess per policy
   (coordinates with SPEC-194 T-194-07 idempotency and the state-machine INV-4).
 - `apps/api/src/routes/billing/plan-change.ts` — request-time preview (what will be restricted), NOT a block.
-- Self-serve UI (web) — "you'll exceed the new plan" preview + "choose what to keep" selector.
-- Admin downgrade ops — mirror the restriction behavior.
-- Accommodation/promotion restrict + restore primitives (reversible state).
+  ⚠️ SPEC-149 landed a provider-error catch in the OUTERMOST catch (lines ~415-431): new preview/restriction
+  code goes inside the inner try; new error types must not fall through to `isBillingProviderError`.
+- Admin downgrade ops — call the SHARED restriction service synchronously from `onAfterSubscriptionChangePlan`
+  (design decision 5).
+- Accommodation/promotion restrict + restore primitives (reversible state: `planRestricted` column for
+  accommodations, lifecycle flip for promotions, `archivedGallery` for photos).
+- Notifications wiring — `PLAN_CHANGE_CONFIRMATION` and `PLAN_DOWNGRADE_LIMIT_WARNING` types + templates
+  ALREADY EXIST in `packages/notifications` but are NEVER SENT (realign B-1). Wire: warning at schedule time
+  (with what-will-be-restricted summary), confirmation at apply time.
+- Revalidation — `scheduleRevalidation` exists but has NO targeted batch variant (realign B-2); add a batch
+  helper for the affected accommodation IDs (do NOT use `revalidateByEntityType` — it revalidates ALL).
 
 ## 6. Public-page cache revalidation (folded in — was 145 D-5 / F-E1)
 
@@ -112,6 +132,9 @@ the web/Cloudflare ISR layer.
 - Upgrades (no excess possible).
 - Destructive deletion of host content (explicitly forbidden by INV-5).
 - Entitlements with no enforced surface.
+- Self-serve plan-management web UI (realign D-4) → own spec, consumes this spec's preview contract.
+- Gallery → relational table migration (realign D-2 follow-up, owner 2026-06-06) → own spec; `archivedGallery`
+  in JSONB is the interim mechanism.
 
 ## 8. Constraints
 
@@ -125,3 +148,13 @@ the web/Cloudflare ISR layer.
 - Master: SPEC-193 (decision O-2, invariant INV-5). Coordinates with SPEC-145 (going-forward enforcement +
   the post-downgrade-restriction e2e T-145-11), SPEC-194 (state-machine INV-4 + scheduled-change idempotency
   T-194-07). Origin: SPEC-143 smoke F-F1/F-F2/F-E1 (engram `spec-143/smoke-grupo-f-downgrade`).
+- Spun off by this realign (2026-06-06): SPEC-203 (self-serve plan management UI — consumes this spec's
+  preview contract + SPEC-147's cancel API), SPEC-204 (gallery → relational table; `archivedGallery` is the
+  interim mechanism).
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-03 | SPEC-193 O-2 | Full rewrite: preflight hard-block dropped, grandfather+restrict adopted | spec rewritten |
+| 2026-06-06 | spec-realign | D-1: admin path restriction via shared service called sync from `onAfterSubscriptionChangePlan` (design decision 5); D-2: photos via `media.archivedGallery` JSONB move (+ SPEC-204 spun off for relational migration); D-3: new `planRestricted` column (no `ownerSuspended` reuse — pause-flow collision); D-4: self-serve UI out of scope → SPEC-203; B-1: notification types/templates exist but unsent — wiring only; B-2: targeted batch revalidation helper needed; C-3: SPEC-149 catch collision note added to §5 | 4 owner decisions locked, 2 specs spun off (203, 204), affected-surfaces grounded in code |

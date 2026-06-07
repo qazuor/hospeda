@@ -21,7 +21,8 @@ describe('POST /accommodations/{accommodationId}/reviews', () => {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
-                userId: '123e4567-e89b-12d3-a456-426614174001',
+                // userId intentionally NOT sent: the strict body schema rejects
+                // it (anti-impersonation) — the route derives it from the actor.
                 rating: {
                     cleanliness: 4,
                     hospitality: 5,

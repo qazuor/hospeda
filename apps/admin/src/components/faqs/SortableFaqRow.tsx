@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { AiTextImprovePanel } from '@/features/accommodations/components/AiTextImprovePanel';
 import type { FaqItem } from '@/features/faqs/hooks/useFaqs';
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
@@ -69,6 +70,10 @@ export interface SortableFaqRowProps {
         readonly dragHandle: string;
         readonly confirmDelete: string;
     };
+    /** Whether the current user's plan includes the AI text-improve entitlement. */
+    readonly canUseAiTextImprove?: boolean;
+    /** Locale for AI text-improve suggestions. Defaults to 'es'. */
+    readonly aiTextImproveLocale?: string;
 }
 
 /**
@@ -84,7 +89,9 @@ export function SortableFaqRow({
     onDelete,
     isSaving,
     isDeleting,
-    labels
+    labels,
+    canUseAiTextImprove = false,
+    aiTextImproveLocale = 'es'
 }: SortableFaqRowProps) {
     const [isEditing, setIsEditing] = React.useState(false);
     const [question, setQuestion] = React.useState(faq.question);
@@ -247,6 +254,16 @@ export function SortableFaqRow({
                                 >
                                     {errors.answer}
                                 </p>
+                            )}
+
+                            {canUseAiTextImprove && (
+                                <AiTextImprovePanel
+                                    fieldType="faq_answer"
+                                    fieldValue={answer}
+                                    locale={aiTextImproveLocale}
+                                    onAccept={(suggestion) => setAnswer(suggestion)}
+                                    canUse={true}
+                                />
                             )}
                         </div>
 

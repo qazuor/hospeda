@@ -4,8 +4,10 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
+import { EntitlementKey } from '@repo/billing';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
@@ -29,6 +31,10 @@ export const useAccommodationPage = (entityId: string) => {
     const query = useAccommodationQuery(entityId);
     const updateMutation = useUpdateAccommodationMutation(entityId);
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
+
+    // SPEC-198: AI text-improve entitlement gate
+    const { has: hasEntitlement } = useMyEntitlements();
+    const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
 
     // ✅ CONFIGURACIÓN CONSOLIDADA
     const entityConfig = useMemo(() => {
@@ -137,6 +143,9 @@ export const useAccommodationPage = (entityId: string) => {
         userPermissions,
         canView,
         canEdit,
+
+        // SPEC-198: AI text-improve entitlement
+        canUseAiTextImprove,
 
         // Mutations
         updateMutation: {

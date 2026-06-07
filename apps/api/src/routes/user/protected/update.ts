@@ -5,7 +5,7 @@
 import {
     ServiceErrorCode,
     UserIdSchema,
-    UserProtectedSchema,
+    UserSelfSchema,
     UserSettingsWebPatchSchema,
     type UserUpdateInput,
     UserUpdateInputSchema
@@ -80,7 +80,8 @@ export const protectedUpdateUserRoute = createProtectedRoute({
         id: UserIdSchema
     },
     requestBody: UserProtectedUpdateInputSchema,
-    responseSchema: UserProtectedSchema,
+    // Self-scoped response: keep contactInfo/location/socialNetworks (UserSelfSchema JSDoc).
+    responseSchema: UserSelfSchema,
     // Ownership is enforced by UserService._canUpdate() which checks actor.id === entity.id
     handler: async (
         ctx: Context,

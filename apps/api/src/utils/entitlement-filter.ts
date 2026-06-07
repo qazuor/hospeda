@@ -182,10 +182,25 @@ export function filterAccommodationListByEntitlements(
  *
  * Removes common markdown syntax while preserving the text content.
  *
+ * This function is the JS source of truth for the SPEC-187 P0 PL/pgSQL
+ * `strip_markdown()` migration in `packages/db/src/migrations/`. The two
+ * implementations MUST stay in lockstep — a divergence lets stale markdown
+ * slip into the public web render and creates an XSS surface that the strip
+ * was designed to close.
+ *
+ * PD-1: the spec's L240-321 approximation did not include the `1. ` ordered
+ * list marker. The JS regex set in this file is the resolved source of
+ * truth (per engram #3696 P0-T1 decision) and is mirrored verbatim in
+ * `apps/web/src/lib/render-plain.ts#STRIP_MARKDOWN_REGEX_SET`.
+ *
+ * Exported so a unit test (apps/api/test/utils/entitlement-filter-strip.test.ts)
+ * can pin the JS-side behavior against the PL/pgSQL canonical fixture
+ * (defined in the P0-T1 spec scenario at tasks.md:48).
+ *
  * @param text - Text with potential markdown
  * @returns Plain text without markdown
  */
-function stripMarkdown(text: string): string {
+export function stripMarkdown(text: string): string {
     return text
         .replace(/\*\*(.+?)\*\*/g, '$1') // Bold **text**
         .replace(/\*(.+?)\*/g, '$1') // Italic *text*

@@ -65,6 +65,7 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     ownerId: getMockId('user') as string,
     isFeatured: false,
     ownerSuspended: false,
+    planRestricted: false,
 
     // Base review fields
     reviewsCount: 0,

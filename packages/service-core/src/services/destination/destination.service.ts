@@ -1168,8 +1168,18 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Updates accommodationsCount for a destination by counting active accommodations.
-     * Internal system operation called from accommodation services during cascading updates.
+     * Updates accommodationsCount for a destination by counting publicly-visible
+     * accommodations (mirrors the public-list predicate: ACTIVE lifecycle,
+     * not owner-suspended, not plan-restricted).
+     *
+     * Pre-existing behaviour counted `deletedAt: null` only — that inflated
+     * the counter with restricted/suspended accommodations (SPEC-167 §1 fix).
+     *
+     * Internal system operation called from accommodation services during
+     * cascading updates (soft-delete, restore, restrict, unsuspend, etc.).
+     * Also called by the SPEC-167 remediation/restoration coordinators after
+     * bulk plan-restriction or plan-restoration runs.
+     *
      * @param destinationId - The ID of the destination to update
      * @param ctx - Optional service context. When provided with a transaction, the update runs within it.
      * @internal
@@ -1180,7 +1190,10 @@ export class DestinationService extends BaseCrudService<
     ): Promise<void> {
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
-            deletedAt: null
+            deletedAt: null,
+            lifecycleState: 'ACTIVE',
+            ownerSuspended: false,
+            planRestricted: false
         });
         await this.model.updateById(
             destinationId,

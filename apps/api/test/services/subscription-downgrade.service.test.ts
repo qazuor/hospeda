@@ -24,6 +24,7 @@ import {
     SubscriptionDowngradeError,
     _internals,
     clearPendingScheduledPlanChange,
+    getKeepSelectionsForChange,
     scheduleSubscriptionDowngrade
 } from '../../src/services/subscription-downgrade.service';
 
@@ -659,5 +660,305 @@ describe('clearPendingScheduledPlanChange', () => {
 
         expect(result.cleared).toBe(false);
         expect(billing.subscriptions.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// keepSelections persistence — scheduleSubscriptionDowngrade (SPEC-167 T-015)
+// ---------------------------------------------------------------------------
+
+const VALID_UUID_1 = '11111111-1111-4111-8111-111111111111';
+const VALID_UUID_2 = '22222222-2222-4222-8222-222222222222';
+const VALID_URL_1 = 'https://cdn.example.com/img1.jpg';
+const VALID_URL_2 = 'https://cdn.example.com/img2.jpg';
+
+describe('scheduleSubscriptionDowngrade — keepSelections persistence', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('persists keepSelections as a JSON string in metadata when provided', async () => {
+        const billing = createBillingMock();
+
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: {
+                accommodationIds: [VALID_UUID_1],
+                promotionIds: [VALID_UUID_2],
+                photoKeepMap: { [VALID_UUID_1]: [VALID_URL_1] }
+            }
+        });
+
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const scheduled = updateInput.scheduledPlanChange as Record<string, unknown>;
+        const meta = scheduled.metadata as Record<string, unknown>;
+
+        // keepSelections is stored as a JSON string (QZPayMetadata constraint)
+        expect(typeof meta.keepSelections).toBe('string');
+        const decoded = JSON.parse(meta.keepSelections as string);
+        expect(decoded).toMatchObject({
+            accommodationIds: [VALID_UUID_1],
+            promotionIds: [VALID_UUID_2],
+            photoKeepMap: { [VALID_UUID_1]: [VALID_URL_1] }
+        });
+    });
+
+    it('omits keepSelections from metadata when not provided', async () => {
+        const billing = createBillingMock();
+
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY
+            // no keepSelections
+        });
+
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const scheduled = updateInput.scheduledPlanChange as Record<string, unknown>;
+        const meta = scheduled.metadata as Record<string, unknown>;
+        expect(meta.keepSelections).toBeUndefined();
+    });
+
+    it('keeps other metadata fields (source, previousPlanId) alongside keepSelections', async () => {
+        const billing = createBillingMock();
+
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: { accommodationIds: [VALID_UUID_1] }
+        });
+
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const scheduled = updateInput.scheduledPlanChange as Record<string, unknown>;
+        const meta = scheduled.metadata as Record<string, unknown>;
+
+        expect(meta.source).toBe('plan-change-downgrade');
+        expect(meta.previousPlanId).toBe(CURRENT_PLAN_ID);
+        expect(meta.keepSelections).toBeDefined();
+    });
+
+    it('replaces old keepSelections on replacedPriorSchedule (new selections win)', async () => {
+        // Subscription already has a pending schedule (would be overwritten)
+        const billing = createBillingMock({
+            sub: makeSub({
+                scheduledPlanChange: { status: 'pending', newPlanId: 'plan_some_other' }
+            })
+        });
+
+        const newSelections = { accommodationIds: [VALID_UUID_2] };
+
+        const result = await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: newSelections
+        });
+
+        expect(result.replacedPriorSchedule).toBe(true);
+
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const scheduled = updateInput.scheduledPlanChange as Record<string, unknown>;
+        const meta = scheduled.metadata as Record<string, unknown>;
+        const decoded = JSON.parse(meta.keepSelections as string);
+        // The new selection (UUID_2) wins — no trace of the old schedule's UUIDs
+        expect(decoded.accommodationIds).toEqual([VALID_UUID_2]);
+    });
+
+    it('stores only partial selections when only some fields are provided', async () => {
+        const billing = createBillingMock();
+
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: { promotionIds: [VALID_UUID_1] }
+        });
+
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const meta = (updateInput.scheduledPlanChange as Record<string, unknown>)
+            .metadata as Record<string, unknown>;
+        const decoded = JSON.parse(meta.keepSelections as string);
+        expect(decoded.promotionIds).toEqual([VALID_UUID_1]);
+        expect(decoded.accommodationIds).toBeUndefined();
+        expect(decoded.photoKeepMap).toBeUndefined();
+    });
+
+    it('degrades gracefully when keepSelections fails validation (proceeds without it)', async () => {
+        const billing = createBillingMock();
+
+        // Pass an invalid shape — service should still schedule, just without keepSelections
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: { accommodationIds: ['not-a-uuid'] } as unknown as {
+                accommodationIds: string[];
+            }
+        });
+
+        // Still called update (schedule was written)
+        expect(billing.subscriptions.update).toHaveBeenCalledOnce();
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const meta = (updateInput.scheduledPlanChange as Record<string, unknown>)
+            .metadata as Record<string, unknown>;
+        // keepSelections silently omitted — validation failure degrades to absent
+        expect(meta.keepSelections).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// getKeepSelectionsForChange — read-back helper (SPEC-167 T-015)
+// ---------------------------------------------------------------------------
+
+describe('getKeepSelectionsForChange', () => {
+    // biome-ignore lint/suspicious/noExplicitAny: test helper — QZPayMetadata is opaque, cast for structural tests
+    function makeChange(metaOverride?: Record<string, unknown>): { metadata: any } {
+        return {
+            metadata: metaOverride ?? {}
+        };
+    }
+
+    it('returns parsed KeepSelections when stored as a valid JSON string', () => {
+        const stored = {
+            accommodationIds: [VALID_UUID_1],
+            promotionIds: [VALID_UUID_2],
+            photoKeepMap: { [VALID_UUID_1]: [VALID_URL_1, VALID_URL_2] }
+        };
+        const change = makeChange({ keepSelections: JSON.stringify(stored) });
+        const result = getKeepSelectionsForChange(change);
+        expect(result).toMatchObject(stored);
+    });
+
+    it('returns undefined when metadata has no keepSelections key', () => {
+        const change = makeChange({ source: 'plan-change-downgrade' });
+        expect(getKeepSelectionsForChange(change)).toBeUndefined();
+    });
+
+    it('returns undefined when metadata is null', () => {
+        // Direct object with null metadata — cast through any to satisfy QZPayMetadata constraint
+        // biome-ignore lint/suspicious/noExplicitAny: testing null metadata runtime path
+        expect(getKeepSelectionsForChange({ metadata: null } as any)).toBeUndefined();
+    });
+
+    it('returns undefined when metadata is undefined', () => {
+        // biome-ignore lint/suspicious/noExplicitAny: testing undefined metadata runtime path
+        expect(getKeepSelectionsForChange({ metadata: undefined } as any)).toBeUndefined();
+    });
+
+    it('returns undefined when keepSelections is not valid JSON', () => {
+        const change = makeChange({ keepSelections: 'not-json{{{' });
+        expect(getKeepSelectionsForChange(change)).toBeUndefined();
+    });
+
+    it('returns undefined when keepSelections JSON parses but fails schema validation', () => {
+        // Valid JSON but wrong shape (non-UUID in accommodationIds)
+        const invalid = JSON.stringify({ accommodationIds: ['not-a-uuid'] });
+        const change = makeChange({ keepSelections: invalid });
+        expect(getKeepSelectionsForChange(change)).toBeUndefined();
+    });
+
+    it('returns parsed selections with only accommodationIds', () => {
+        const stored = { accommodationIds: [VALID_UUID_1] };
+        const change = makeChange({ keepSelections: JSON.stringify(stored) });
+        const result = getKeepSelectionsForChange(change);
+        expect(result?.accommodationIds).toEqual([VALID_UUID_1]);
+        expect(result?.promotionIds).toBeUndefined();
+    });
+
+    it('returns parsed selections with only photoKeepMap', () => {
+        const stored = { photoKeepMap: { [VALID_UUID_1]: [VALID_URL_1] } };
+        const change = makeChange({ keepSelections: JSON.stringify(stored) });
+        const result = getKeepSelectionsForChange(change);
+        expect(result?.photoKeepMap?.[VALID_UUID_1]).toEqual([VALID_URL_1]);
+    });
+
+    it('returns parsed selections with an empty object (all fields optional)', () => {
+        const stored = {};
+        const change = makeChange({ keepSelections: JSON.stringify(stored) });
+        const result = getKeepSelectionsForChange(change);
+        expect(result).toEqual({});
+    });
+
+    it('returns undefined when keepSelections is null in metadata', () => {
+        const change = makeChange({ keepSelections: null as unknown as string });
+        expect(getKeepSelectionsForChange(change)).toBeUndefined();
+    });
+
+    it('round-trip: stored via scheduleSubscriptionDowngrade, read back correctly', async () => {
+        const billing = createBillingMock();
+        const selections = {
+            accommodationIds: [VALID_UUID_1],
+            promotionIds: [VALID_UUID_2],
+            photoKeepMap: { [VALID_UUID_1]: [VALID_URL_1, VALID_URL_2] }
+        };
+
+        await scheduleSubscriptionDowngrade({
+            currentSubscriptionId: SUB_ID,
+            newPlanId: TARGET_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            // biome-ignore lint/suspicious/noExplicitAny: structural mock
+            billing: billing as any,
+            now: HALFWAY,
+            keepSelections: selections
+        });
+
+        // Extract the stored scheduledPlanChange from the update call
+        const [, updateInput] = billing.subscriptions.update.mock.calls[0] as [
+            string,
+            Record<string, unknown>
+        ];
+        const storedChange = updateInput.scheduledPlanChange as Record<string, unknown>;
+
+        // Use the read-back helper (cast to satisfy QZPayMetadata opaque type)
+        // biome-ignore lint/suspicious/noExplicitAny: QZPayMetadata is opaque; structural cast for test
+        const readBack = getKeepSelectionsForChange(storedChange as any);
+
+        expect(readBack).toMatchObject(selections);
     });
 });

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
+import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -48,7 +49,9 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     deletedAt: true,
     deletedById: true,
     // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true
+    ownerSuspended: true,
+    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+    planRestricted: true
 }).extend({
     slug: z
         .string()
@@ -123,7 +126,9 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
     deletedAt: true,
     deletedById: true,
     // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true
+    ownerSuspended: true,
+    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+    planRestricted: true
 })
     .partial()
     .extend({
@@ -140,7 +145,19 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.accommodation.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /**
+         * Optional list of AI-assisted field types that were modified by the
+         * host via the AI text-improvement panel (SPEC-198.1).
+         *
+         * When present, the service stores these in the accommodation's
+         * `extraInfo` JSONB for audit / analytics. The client converts its
+         * `Set<string>` ref to this array before submitting the update.
+         *
+         * Valid values are members of {@link AiTextImproveFieldTypeSchema}:
+         * `'description' | 'summary' | 'faq_answer'`.
+         */
+        aiAssistedFields: z.array(AiTextImproveFieldTypeSchema).optional()
     });
 
 // Type: Update Input

@@ -82,6 +82,13 @@ export interface EntityFormSectionProps {
      * Passed to GalleryField (and other media fields) for upload/delete wiring.
      */
     fieldHandlers?: Record<string, FieldMediaHandlers>;
+    /**
+     * Optional per-field addon nodes keyed by fieldId.
+     * Rendered below the field component inside the same grid cell.
+     * Used by SPEC-198 to mount the AiTextImprovePanel alongside
+     * description and summary fields without modifying the field components.
+     */
+    fieldAddons?: Readonly<Record<string, React.ReactNode>>;
 }
 
 /**
@@ -102,6 +109,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             currentUser,
             entityData,
             fieldHandlers,
+            fieldAddons,
             ...props
         },
         ref
@@ -588,6 +596,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             resourceLabel={field.label || field.id}
                         />
                         {fieldContent}
+                        {fieldAddons?.[field.id]}
                     </div>
                 );
             }
@@ -595,9 +604,10 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             return (
                 <div
                     key={field.id}
-                    className={colSpanClass}
+                    className={cn(colSpanClass, fieldAddons?.[field.id] ? 'space-y-2' : '')}
                 >
                     {fieldContent}
+                    {fieldAddons?.[field.id]}
                 </div>
             );
         };

@@ -2,6 +2,9 @@
  * Accommodation FAQs Tab Route
  *
  * Renders the FaqManager for FAQs associated with a specific accommodation.
+ * Wires the AI text-improvement entitlement so FAQ answer fields can be
+ * improved via the AiTextImprovePanel (SPEC-198.2).
+ *
  * Mirrors the pattern of $id_.amenities.tsx — uses AccommodationSubTabLayout
  * as the wrapper and fetches the accommodation name for the breadcrumb.
  *
@@ -16,6 +19,8 @@
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { EntitlementKey } from '@repo/billing';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/faqs')({
@@ -25,6 +30,8 @@ export const Route = createFileRoute('/_authed/accommodations/$id_/faqs')({
 function AccommodationFaqsPage() {
     const { id } = Route.useParams();
     const { data: accommodation } = useAccommodationQuery(id);
+    const { has: hasEntitlement } = useMyEntitlements();
+    const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
 
     return (
         <AccommodationSubTabLayout
@@ -35,6 +42,7 @@ function AccommodationFaqsPage() {
                 <FaqManager
                     entityType="accommodations"
                     parentId={id}
+                    canUseAiTextImprove={canUseAiTextImprove}
                 />
             </div>
         </AccommodationSubTabLayout>

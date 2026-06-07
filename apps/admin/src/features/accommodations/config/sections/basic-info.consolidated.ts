@@ -1,4 +1,8 @@
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import {
+    FieldTypeEnum,
+    LayoutTypeEnum,
+    RichTextFeatureEnum
+} from '@/components/entity-form/enums/form-config.enums';
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
@@ -61,7 +65,12 @@ export const createBasicInfoConsolidatedSection = (
         },
         {
             id: 'description',
-            type: FieldTypeEnum.RICH_TEXT,
+            // SPEC-187 FR-2: plain text (TEXTAREA). The previous RICH_TEXT
+            // assignment is reverted because accommodation.description is
+            // semantically a short summary, not formatted content. The
+            // premium rich variant lives on `richDescription` (Phase 2 flips
+            // that entry to RICH_TEXT and renders via `renderRich`).
+            type: FieldTypeEnum.TEXTAREA,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: t('fields.accommodation.description.label'),
@@ -75,12 +84,13 @@ export const createBasicInfoConsolidatedSection = (
                 maxLength: 2000
             }
         },
-        // T-G-007: Rich description field (premium feature)
-        // TODO: This should be a RICH_TEXT field type when implemented
-        // For now, this is a placeholder for when rich text editor is added
+        // T-G-007: Rich description field (premium feature, gated).
+        // SPEC-187 FR-5: declare the toolbar matrix here while the field is
+        // still TEXTAREA. Phase 2 flips the type to RICH_TEXT and the
+        // description web render uses presence-based rule (P2-T9).
         {
             id: 'richDescription',
-            type: FieldTypeEnum.TEXTAREA, // Should be RICH_TEXT when available
+            type: FieldTypeEnum.TEXTAREA, // Phase 2 flips to RICH_TEXT
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Descripción Enriquecida (Premium)',
@@ -93,7 +103,19 @@ export const createBasicInfoConsolidatedSection = (
             entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION, // T-G-007: Gate rich description
             typeConfig: {
                 minRows: 6,
-                maxLength: 5000
+                maxLength: 5000,
+                // SPEC-187 FR-5 matrix: full toolbar set MINUS LINK.
+                // Accommodations intentionally cannot link out from the
+                // rich description (editorial policy, see ADR-032).
+                allowedFeatures: [
+                    RichTextFeatureEnum.BOLD,
+                    RichTextFeatureEnum.ITALIC,
+                    RichTextFeatureEnum.UNDERLINE,
+                    RichTextFeatureEnum.LIST,
+                    RichTextFeatureEnum.ORDERED_LIST,
+                    RichTextFeatureEnum.HEADING,
+                    RichTextFeatureEnum.QUOTE
+                ]
             }
         },
         {

@@ -21,9 +21,10 @@
         "test:e2e": "pnpm run build:deps && vitest run --config vitest.config.e2e.ts",
         "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
         "test:e2e:ci": "mkdir -p test-results && pnpm run build:deps && VITEST_E2E_JSON_OUTPUT=./test-results/e2e-results.json vitest run --config vitest.config.e2e.ts; CODE=$?; node scripts/check-e2e-budget.mjs ./test-results/e2e-results.json || exit 1; exit $CODE",
+        "test:e2e:single": "NODE_OPTIONS=--max-old-space-size=8192 vitest run --config vitest.config.e2e.ts",
         "test:sandbox": "vitest run --config test/e2e/sandbox/vitest.config.sandbox.ts",
         "test:sandbox:watch": "vitest --config test/e2e/sandbox/vitest.config.sandbox.ts",
-        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils"
+        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/feedback --filter=@repo/content-moderation"
     },
     "dependencies": {
         "@hono/node-server": "^1.19.10",

@@ -12,9 +12,13 @@
  *
  *  1. PUBLISH_ACCOMMODATIONS
  *     - Route: POST /api/v1/protected/accommodations/draft (createDraft)
- *     - Route: POST /api/v1/protected/host-onboarding/start
  *     - BLOCK plan:  tourist-free (has WRITE_REVIEWS, lacks PUBLISH_ACCOMMODATIONS)
  *     - ALLOW plan:  owner-basico (has PUBLISH_ACCOMMODATIONS)
+ *
+ *  1b. Host onboarding funnel exception
+ *     - Route: POST /api/v1/protected/host-onboarding/start
+ *     - ALLOW plan: tourist-free (must be able to enter the publish funnel)
+ *     - ALLOW role: HOST without a paid subscription (service returns `already_host`)
  *
  *  2. EDIT_ACCOMMODATION_INFO
  *     - Route: PUT  /api/v1/protected/accommodations/:id (update)
@@ -143,6 +147,18 @@ const E = {
 function makeAccommodationCreateActor(userId: string): Actor {
     return createMockActor(
         RoleEnum.USER,
+        [
+            PermissionEnum.ACCESS_API_PUBLIC,
+            PermissionEnum.ACCESS_API_PRIVATE,
+            PermissionEnum.ACCOMMODATION_CREATE
+        ],
+        userId
+    );
+}
+
+function makeHostOnboardingActor(userId: string): Actor {
+    return createMockActor(
+        RoleEnum.HOST,
         [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
@@ -386,7 +402,7 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
             expect(countAfter).toBe(countBefore);
         });
 
-        it('BLOCK — tourist plan → POST /host-onboarding/start → 403 ENTITLEMENT_REQUIRED, no accommodation row created', async () => {
+        it('ALLOW — tourist plan → POST /host-onboarding/start → gate does not fire', async () => {
             const user = await createTestUser({
                 email: `g1-block-onb-${randomUUID().slice(0, 8)}@example.com`
             });
@@ -404,8 +420,6 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
             const actor = makeAccommodationCreateActor(user.id);
             const client = new E2EApiClient(app, actor);
 
-            const countBefore = (await testDb.getDb().select().from(accommodations)).length;
-
             const res = await client.post('/api/v1/protected/host-onboarding/start', {
                 name: 'Gate Test Onboarding',
                 summary: 'Minimal summary for gate block test',
@@ -413,9 +427,7 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
                 destinationId: randomUUID()
             });
 
-            await expectEntitlementBlock(res);
-            const countAfter = (await testDb.getDb().select().from(accommodations)).length;
-            expect(countAfter).toBe(countBefore);
+            await expectGatePassed(res);
         });
 
         it('ALLOW — owner-basico plan → POST /accommodations/draft → gate passed (not 403 ENTITLEMENT_REQUIRED)', async () => {
@@ -474,6 +486,28 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
             });
 
             await expectGatePassed(res);
+        });
+
+        it('ALLOW — HOST without subscription → POST /host-onboarding/start → already_host short-circuit', async () => {
+            const user = await createTestUser({
+                email: `g1-host-onb-${randomUUID().slice(0, 8)}@example.com`,
+                role: RoleEnum.HOST
+            });
+            const actor = makeHostOnboardingActor(user.id);
+            const client = new E2EApiClient(app, actor);
+
+            const res = await client.post('/api/v1/protected/host-onboarding/start', {
+                name: 'Host Onboarding Already Host',
+                summary: 'Minimal summary for already-host route behavior',
+                type: 'APARTMENT',
+                destinationId: randomUUID()
+            });
+
+            await expectGatePassed(res);
+            const body = (await res.json()) as {
+                data?: { status?: string };
+            };
+            expect(body.data?.status).toBe('already_host');
         });
     });
 

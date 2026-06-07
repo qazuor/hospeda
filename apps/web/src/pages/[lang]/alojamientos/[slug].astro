@@ -16,7 +16,7 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
-import { renderContent } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
@@ -327,14 +327,14 @@ const ogRating = accommodation.averageRating > 0 ? accommodation.averageRating.t
 const ogSubtitle = accommodation.destination?.name || undefined;
 
 // --- Description rendering ---
-// `accommodation.description` may arrive as markdown (current authoring format),
-// HTML (future TipTap admin output), or plain text. `renderContent` normalizes
-// all three into safe HTML for `set:html`. (Previously this field was piped
-// straight into `set:html` without sanitization — pre-existing XSS hole, fixed
-// here alongside the markdown rendering work.)
-const safeDescriptionHtml = renderContent({
-    raw: accommodation.description ?? '',
-    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+// SPEC-187 FR-2 / PD-2 / PD-6:
+// `accommodation.description` is plain text. The P0 strip migration
+// (PR-1) already removed markdown markers from the column; the public
+// detail page MUST render the field through `renderPlain` (text-node
+// sink, HTML-escaped) and NEVER through `renderContent` (which would
+// re-parse the remaining text as markdown and open the door to XSS).
+const safeDescriptionText = renderPlain({
+    raw: accommodation.description ?? ''
 });
 
 // --- JSON-LD (LodgingBusiness) ---
@@ -450,7 +450,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             client:visible
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
-        <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
+        <Description summary={accommodation.summary} descriptionText={safeDescriptionText} />
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />

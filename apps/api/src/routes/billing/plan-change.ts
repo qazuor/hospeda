@@ -15,7 +15,9 @@
  * @module routes/billing/plan-change
  */
 
+import { NotificationType } from '@repo/notifications';
 import { BillingIntervalEnum } from '@repo/schemas';
+import type { DowngradePreview } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -31,6 +33,10 @@ import {
     initiatePaidPlanUpgrade
 } from '../../services/subscription-checkout.service';
 import {
+    computeDowngradeExcess,
+    defaultExcessDeps
+} from '../../services/subscription-downgrade-excess.service';
+import {
     SubscriptionDowngradeError,
     scheduleSubscriptionDowngrade
 } from '../../services/subscription-downgrade.service';
@@ -38,6 +44,7 @@ import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { sendNotification } from '../../utils/notification-helper';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
 
 /**
@@ -175,7 +182,10 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         });
     }
 
-    const { newPlanId, billingInterval } = parseResult.data;
+    // keepSelections is intentionally extracted here but is ONLY forwarded to
+    // the downgrade path below. For upgrades it is silently ignored per spec
+    // §4 decision 3 (see PlanChangeRequestSchema JSDoc).
+    const { newPlanId, billingInterval, keepSelections } = parseResult.data;
 
     const billing = getQZPayBilling();
 
@@ -363,7 +373,12 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 billingInterval: qzpayInterval as 'month' | 'year',
                 intervalCount: qzpayIntervalCount,
                 billing,
-                requestedBy: actor.id
+                requestedBy: actor.id,
+                // keepSelections: forwarded as-is from the request body;
+                // validated inside scheduleSubscriptionDowngrade and stored
+                // in scheduledPlanChange.metadata. For upgrades this code
+                // path is never reached (the isUpgrade branch returns early).
+                keepSelections
             });
 
             apiLogger.info(
@@ -390,12 +405,122 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 resourceId: scheduleResult.subscriptionId
             });
 
+            // SPEC-167 T-016: compute the request-time restriction preview
+            // (SPEC-203 UI contract). Runs AFTER scheduling (schedule-first
+            // order: the preview reflects the scheduled state and scheduling
+            // is more important than the informational preview).
+            //
+            // Soft-fail: preview failure must NOT fail the scheduling — the
+            // downgrade is already committed at this point. Log a warn and
+            // return the response without the preview field. SPEC-203 UI
+            // treats absent `restrictionPreview` as "preview unavailable —
+            // defaults will apply at period end".
+            //
+            // targetPlan.name == the billing catalog slug (mirrors how
+            // apply-scheduled-plan-changes.ts resolves it: plan?.name).
+            let restrictionPreview: DowngradePreview | undefined;
+            try {
+                restrictionPreview = await computeDowngradeExcess(
+                    { userId: actor.id, targetPlanSlug: targetPlan.name as string },
+                    defaultExcessDeps
+                );
+            } catch (previewErr) {
+                apiLogger.warn(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: scheduleResult.subscriptionId,
+                        newPlanId: scheduleResult.newPlanId,
+                        error: previewErr instanceof Error ? previewErr.message : String(previewErr)
+                    },
+                    'Downgrade restriction preview unavailable (soft-fail) — schedule succeeded'
+                );
+            }
+
+            // SPEC-167 T-017: send PLAN_DOWNGRADE_LIMIT_WARNING notifications when
+            // the preview shows excess resources. One notification per excess dimension.
+            //
+            // Rules:
+            //   - Only sent when restrictionPreview exists AND hasExcess === true.
+            //   - NOT sent when preview soft-failed (restrictionPreview is undefined):
+            //     cannot summarise what we don't know — document the absence.
+            //   - Sends are SOFT (fire-and-forget): failure → warn log, never blocks
+            //     the 200 response the host is waiting for.
+            if (restrictionPreview?.hasExcess) {
+                // ActorSchema carries optional email/name since SPEC-113 — no cast needed.
+                const actorEmail = actor.email;
+                const actorName = actor.name;
+                if (actorEmail) {
+                    const dimensions: Array<{
+                        limitKey: string;
+                        cap: number;
+                        activeCount: number;
+                    }> = [];
+                    if (restrictionPreview.accommodations.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'accommodations',
+                            cap: restrictionPreview.accommodations.cap,
+                            activeCount: restrictionPreview.accommodations.activeCount
+                        });
+                    }
+                    if (restrictionPreview.promotions.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'promotions',
+                            cap: restrictionPreview.promotions.cap,
+                            activeCount: restrictionPreview.promotions.activeCount
+                        });
+                    }
+                    for (const dim of dimensions) {
+                        void Promise.resolve(
+                            sendNotification({
+                                type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
+                                recipientEmail: actorEmail,
+                                recipientName: actorName ?? actorEmail,
+                                userId: actor.id,
+                                customerId: billingCustomerId,
+                                limitKey: dim.limitKey,
+                                // oldLimit: exact current-plan cap is not in the preview shape.
+                                // Use activeCount as "old plan allowed at least this many" —
+                                // template shows it as "Límite anterior"; this is the safest
+                                // approximation without an extra billing.plans.get call here.
+                                oldLimit: dim.activeCount,
+                                newLimit: dim.cap,
+                                currentUsage: dim.activeCount,
+                                planName: targetPlan.name as string
+                            })
+                        ).catch((notifErr: unknown) => {
+                            // SOFT: notification failure must never block the schedule response.
+                            apiLogger.warn(
+                                {
+                                    customerId: billingCustomerId,
+                                    subscriptionId: scheduleResult.subscriptionId,
+                                    limitKey: dim.limitKey,
+                                    error:
+                                        notifErr instanceof Error
+                                            ? notifErr.message
+                                            : String(notifErr)
+                                },
+                                'PLAN_DOWNGRADE_LIMIT_WARNING send failed (soft-fail) — schedule succeeded'
+                            );
+                        });
+                    }
+                } else {
+                    apiLogger.debug(
+                        {
+                            customerId: billingCustomerId,
+                            subscriptionId: scheduleResult.subscriptionId
+                        },
+                        'PLAN_DOWNGRADE_LIMIT_WARNING skipped — actor has no email in context'
+                    );
+                }
+            }
+
             return {
                 status: 'scheduled' as const,
                 subscriptionId: scheduleResult.subscriptionId,
                 previousPlanId: scheduleResult.previousPlanId,
                 newPlanId: scheduleResult.newPlanId,
-                effectiveAt: scheduleResult.applyAt
+                effectiveAt: scheduleResult.applyAt,
+                ...(restrictionPreview !== undefined && { restrictionPreview })
             };
         } catch (downgradeError) {
             if (downgradeError instanceof SubscriptionDowngradeError) {

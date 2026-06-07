@@ -224,14 +224,45 @@
         {
             "specId": "SPEC-202",
             "title": "Destination Review Submission Flow (web) + API contract/security fix",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "21/21",
             "path": "SPEC-202-destination-review-submission",
             "branch": "spec/SPEC-202-destination-review-submission",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-202-destination-review-submission",
             "base": "staging",
-            "archived": false,
-            "updatedAt": "2026-06-06T18:06:26Z"
+            "archived": true,
+            "archivedAt": "2026-06-06T18:30:00.000Z",
+            "archiveNote": "Shipped via PR #1474 (21/21, two Chrome smokes GO). Includes user-requested UI delta (collapsible categories, inline CTA) + approved-only stats and reviewer identity fixes. Worktree cleaned up post-merge.",
+            "updatedAt": "2026-06-06T18:30:00.000Z"
+        },
+        {
+            "specId": "SPEC-167",
+            "title": "Downgrade Over-Limit Remediation (grandfather + restrict)",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-167-downgrade-preflight-remediation",
+            "branch": "spec/SPEC-167-downgrade-preflight-remediation",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-167-downgrade-preflight-remediation",
+            "base": "staging",
+            "updatedAt": "2026-06-07T21:42:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-07",
+            "note": "PR #1484 merged 2026-06-07; staging smoke deferred to SPEC-193 batch (entry #6); adversarial review fixed 1 blocker + 3 majors; spun off SPEC-203/204"
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-198-ai-text-improvement",
+            "branch": "spec/SPEC-198-ai-text-improvement",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-198-ai-text-improvement",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-06",
+            "parentSpec": "SPEC-173",
+            "created": "2026-06-06",
+            "tags": ["ai", "feature", "host", "text-improvement", "spec-173-child"],
+            "archiveNote": "10/10 tasks. Verify: 12/12 ACs, 4/4 safety invariants, 77/77 tests. Shipped scope: AiTextImproveRequestSchema (packages/schemas), /api/v1/protected/ai/text-improve SSE route (apps/api), useAiTextImprove hook + AiTextImprovePanel (apps/admin), wired into accommodation edit form (description + summary fields). V1 owner/complex + HOST only. Follow-ups: SPEC-198.1 (server-side audit), SPEC-198.2 (V2 field scope), SPEC-198.3 (NETWORK_INTERRUPTED i18n key)."
         }
     ],
     "standalone": {

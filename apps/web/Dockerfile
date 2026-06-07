@@ -55,8 +55,10 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT \
     HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
 COPY --from=deps /repo /repo
+# --concurrency=1: sequential package builds to cap memory peak on the 3.8 GB
+# Coolify VPS (see apps/admin/Dockerfile for the 2026-06-06 incident rationale).
 RUN echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
-    pnpm turbo run build --filter=hospeda-web
+    pnpm turbo run build --filter=hospeda-web --concurrency=1
 
 # ----- prune stage -----------------------------------------------------------
 # `pnpm deploy` resolves workspace deps as real packages and ships only prod

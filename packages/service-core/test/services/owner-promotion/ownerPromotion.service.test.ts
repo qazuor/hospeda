@@ -175,5 +175,55 @@ describe('OwnerPromotionService — AC-005-01 lifecycle enforcement', () => {
             const [filterParams] = mockModel.count.mock.calls[0] as [Record<string, unknown>];
             expect(filterParams.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
         });
+
+        // SPEC-167 T-004: plan-restricted promotions must not count toward the
+        // MAX_ACTIVE_PROMOTIONS cap (a restricted promo is not active).
+        it('always passes planRestricted=false so restricted promos do not count toward the cap', async () => {
+            // Arrange
+            mockModel.count.mockResolvedValue(2);
+
+            // Act
+            await (
+                service as never as {
+                    _executeCount: (
+                        params: Record<string, unknown>,
+                        actor: Actor,
+                        ctx: ServiceContext
+                    ) => Promise<{ count: number }>;
+                }
+            )._executeCount({ page: 1, pageSize: 20 }, actor, ctx);
+
+            // Assert: planRestricted=false must be in the filter so restricted
+            // promotions are never counted against the host's active-promo cap.
+            expect(mockModel.count).toHaveBeenCalledOnce();
+            const [filterParams] = mockModel.count.mock.calls[0] as [Record<string, unknown>];
+            expect(filterParams.planRestricted).toBe(false);
+        });
+    });
+
+    describe('_executeSearch — SPEC-167 T-004 plan-restricted exclusion', () => {
+        it('always passes planRestricted=false so restricted promos are excluded from public reads', async () => {
+            // Arrange
+            mockModel.findAll.mockResolvedValue({
+                items: [],
+                total: 0
+            });
+
+            // Act
+            await (
+                service as never as {
+                    _executeSearch: (
+                        params: Record<string, unknown>,
+                        actor: Actor,
+                        ctx: ServiceContext
+                    ) => Promise<unknown>;
+                }
+            )._executeSearch({ page: 1, pageSize: 20 }, actor, ctx);
+
+            // Assert: plan-restricted items must be excluded from public search results.
+            expect(mockModel.findAll).toHaveBeenCalledOnce();
+            const [filterParams] = mockModel.findAll.mock.calls[0] as [Record<string, unknown>];
+            expect(filterParams.planRestricted).toBe(false);
+        });
     });
 });

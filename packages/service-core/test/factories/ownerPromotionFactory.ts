@@ -32,6 +32,7 @@ export class OwnerPromotionFactoryBuilder {
             maxRedemptions: 100,
             currentRedemptions: 0,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
+            planRestricted: false,
             createdAt: new Date(),
             updatedAt: new Date(),
             createdById: getMockId('user') as UserIdType,

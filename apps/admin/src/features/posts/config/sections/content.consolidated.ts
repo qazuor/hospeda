@@ -1,4 +1,8 @@
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import {
+    FieldTypeEnum,
+    LayoutTypeEnum,
+    RichTextFeatureEnum
+} from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { PermissionEnum } from '@repo/schemas';
 
@@ -28,10 +32,21 @@ export const createContentConsolidatedSection = (): ConsolidatedSectionConfig =>
                 view: [PermissionEnum.POST_VIEW_ALL],
                 edit: [PermissionEnum.POST_UPDATE]
             },
+            // SPEC-187 FR-5: full toolbar set INCLUDING LINK.
             typeConfig: {
                 type: 'RICH_TEXT',
                 maxLength: 50000,
-                minLength: 100
+                minLength: 100,
+                allowedFeatures: [
+                    RichTextFeatureEnum.BOLD,
+                    RichTextFeatureEnum.ITALIC,
+                    RichTextFeatureEnum.UNDERLINE,
+                    RichTextFeatureEnum.LIST,
+                    RichTextFeatureEnum.ORDERED_LIST,
+                    RichTextFeatureEnum.HEADING,
+                    RichTextFeatureEnum.QUOTE,
+                    RichTextFeatureEnum.LINK
+                ]
             }
         },
         {

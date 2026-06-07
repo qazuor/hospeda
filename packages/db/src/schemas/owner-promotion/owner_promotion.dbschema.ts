@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { LifecycleStatusPgEnum, OwnerPromotionDiscountTypePgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -25,6 +25,12 @@ export const ownerPromotions = pgTable(
         maxRedemptions: integer('max_redemptions'),
         currentRedemptions: integer('current_redemptions').notNull().default(0),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
+        // SPEC-167: true when this promotion was restricted by the downgrade
+        // remediation flow (host exceeded their new plan's MAX_ACTIVE_PROMOTIONS cap).
+        // Separate from lifecycleState deactivation — a lifecycle flip loses the
+        // 'restricted-by-plan' context needed for selective restore on re-upgrade.
+        // Reversible: flipped back to false on re-upgrade or manual restore.
+        planRestricted: boolean('plan_restricted').notNull().default(false),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -46,6 +52,9 @@ export const ownerPromotions = pgTable(
         ownerPromotions_ownerId_lifecycleState_idx: index(
             'ownerPromotions_ownerId_lifecycleState_idx'
         ).on(table.ownerId, table.lifecycleState),
+        ownerPromotions_planRestricted_idx: index('ownerPromotions_planRestricted_idx').on(
+            table.planRestricted
+        ),
         // SPEC-063-gaps T-015 (GAP-033): composite for the dominant query of the
         // hourly archive cron (archive-expired-promotions.job.ts filters on both
         // columns). Latent HIGH at 100k+ promotions.

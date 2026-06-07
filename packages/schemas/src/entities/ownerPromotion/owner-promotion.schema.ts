@@ -76,7 +76,24 @@ export const OwnerPromotionSchema = z.object({
         .number()
         .int({ message: 'zodError.ownerPromotion.currentRedemptions.int' })
         .min(0, { message: 'zodError.ownerPromotion.currentRedemptions.min' })
-        .default(0)
+        .default(0),
+
+    /**
+     * Downgrade-restriction flag (SPEC-167 §3, D-3). Set to `true` by the
+     * apply-scheduled-plan-changes cron (and the admin `onAfterSubscriptionChangePlan`
+     * hook) when a host downgrades and the active promotion count exceeds the target
+     * plan's `MAX_ACTIVE_PROMOTIONS` cap. Cleared automatically on re-upgrade once the
+     * host is back within cap.
+     *
+     * This flag is the per-promotion signal that the promotion was deactivated by a
+     * downgrade restriction, so it can be selectively restored on re-upgrade without
+     * touching promotions that were deactivated for other reasons (lifecycleState).
+     * The two states MUST NOT collide (design decision D-3).
+     *
+     * Server-managed: never set through create/update input (it is omitted from those
+     * schemas); only the downgrade-restriction flow mutates it.
+     */
+    planRestricted: z.boolean().default(false)
 });
 export type OwnerPromotion = z.infer<typeof OwnerPromotionSchema>;
 
@@ -91,7 +108,9 @@ export const OwnerPromotionCreateInputSchema = OwnerPromotionSchema.omit({
     deletedAt: true,
     createdById: true,
     updatedById: true,
-    deletedById: true
+    deletedById: true,
+    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+    planRestricted: true
 }).extend({
     slug: z
         .string({

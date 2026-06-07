@@ -64,10 +64,11 @@ export function HostLandingCta({ locale, adminUrl }: HostLandingCtaProps): JSX.E
 
     const isAuthenticated = !isPending && Boolean(session?.user);
 
-    // SPEC-182 (D3): a HOST always has at least one published accommodation by
-    // the host-on-publish model, so role=HOST is enough to route the CTA to the
-    // admin panel — no extra API call. `role` is a Better Auth additional field
-    // returned in the session but absent from the client's inferred type.
+    // SPEC-182 (D3): role=HOST is enough to route the CTA to host surfaces.
+    // The user may still be mid-onboarding with only a DRAFT, but they should
+    // no longer be sent back through the tourist funnel. `role` is a Better
+    // Auth additional field returned in the session but absent from the
+    // client's inferred type.
     // TYPE-WORKAROUND: cast narrows the runtime shape; falls back to undefined.
     const role = (session?.user as { readonly role?: string } | undefined)?.role;
     const isHostMode = isAuthenticated && role === 'HOST' && Boolean(adminUrl);

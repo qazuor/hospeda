@@ -296,8 +296,7 @@ describe('ProfileEditSchema', () => {
 
         it('accepts valid social network URLs (on the canonical domains)', () => {
             // BETA-34: these must use the same canonical domains the server
-            // enforces via SocialNetworkSchema. `twitter.com` (NOT `x.com`),
-            // `youtube.com`, etc.
+            // enforces via SocialNetworkSchema.
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
                 facebookUrl: 'https://facebook.com/maria',
@@ -305,6 +304,14 @@ describe('ProfileEditSchema', () => {
                 twitterUrl: 'https://twitter.com/maria',
                 linkedinUrl: 'https://linkedin.com/in/maria',
                 youtubeUrl: 'https://youtube.com/@maria'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts an x.com URL for the twitter field (post-rebrand domain)', () => {
+            const result = ProfileEditSchema.safeParse({
+                ...VALID_BASE,
+                twitterUrl: 'https://x.com/maria'
             });
             expect(result.success).toBe(true);
         });
@@ -320,10 +327,11 @@ describe('ProfileEditSchema', () => {
         it('rejects an off-domain social URL the server would also reject (BETA-34)', () => {
             // A syntactically valid URL on the wrong domain used to pass the
             // loose client schema and then 400 on the server. Now the client
-            // regex matches the server (TwitterUrlRegex requires twitter.com).
+            // regex matches the server (TwitterUrlRegex requires twitter.com
+            // or x.com).
             const result = ProfileEditSchema.safeParse({
                 ...VALID_BASE,
-                twitterUrl: 'https://x.com/maria'
+                twitterUrl: 'https://mastodon.social/@maria'
             });
             expect(result.success).toBe(false);
         });

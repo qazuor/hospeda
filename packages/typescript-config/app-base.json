@@ -29,7 +29,15 @@
             "@repo/media": ["../../packages/media/src/index.ts"],
             "@repo/media/server": ["../../packages/media/src/server/index.ts"],
             "@repo/media/test-utils": ["../../packages/media/src/test-utils/index.ts"],
-            "@repo/media/*": ["../../packages/media/src/*"]
+            "@repo/media/*": ["../../packages/media/src/*"],
+            "@repo/email": ["../../packages/email/src/index.ts"],
+            "@repo/email/*": ["../../packages/email/src/*"],
+            "@repo/ai-core": ["../../packages/ai-core/src/index.ts"],
+            "@repo/ai-core/*": ["../../packages/ai-core/src/*"],
+            "@repo/feedback": ["../../packages/feedback/src/index.ts"],
+            "@repo/feedback/*": ["../../packages/feedback/src/*"],
+            "@repo/content-moderation": ["../../packages/content-moderation/src/index.ts"],
+            "@repo/content-moderation/*": ["../../packages/content-moderation/src/*"]
         }
     },
     "include": ["src/**/*"],

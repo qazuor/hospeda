@@ -878,7 +878,21 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.pendingFeatureIds = data.featureIds;
         }
 
-        return data as Partial<Accommodation>;
+        // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
+        // The _afterUpdate hook persists them into extraInfo JSONB for audit/analytics.
+        const cleanData = { ...data } as Record<string, unknown>;
+        const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
+        cleanData.aiAssistedFields = undefined;
+
+        if (aiAssistedFields !== undefined && ctx.hookState) {
+            ctx.hookState.pendingAiAssistedFields = aiAssistedFields;
+            this.logger.info(
+                { aiAssistedFields },
+                '[accommodation] AI-assisted fields detected in update payload'
+            );
+        }
+
+        return cleanData as Partial<Accommodation>;
     }
 
     /**
@@ -962,6 +976,34 @@ export class AccommodationService extends BaseCrudService<
         // Uses an idempotency guard so this is safe on any ACTIVE-state update.
         if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && entity.ownerId) {
             await this._assignHostRoleIfNeeded(entity.ownerId, ctx);
+        }
+
+        // SPEC-198.1: persist AI-assisted fields into extraInfo JSONB for audit / analytics.
+        // This runs as an additional targeted update because aiAssistedFields is a write-only
+        // input field, not a column on the accommodations table. We merge into extraInfo
+        // so existing keys (capacity, bedrooms, etc.) are preserved.
+        const pendingAi = ctx.hookState?.pendingAiAssistedFields;
+        if (pendingAi !== undefined && pendingAi.length > 0) {
+            // TYPE-WORKAROUND: extraInfo DB column is jsonb $type<Record<string, unknown>>,
+            // but the Zod schema types it as a specific shape. We merge at the DB level
+            // via a raw cast since the schema's strict shape does not include aiAssistedFields.
+            const currentExtra = (entity.extraInfo ?? {}) as Record<string, unknown>;
+            const mergedExtra: Record<string, unknown> = {
+                ...currentExtra,
+                aiAssistedFields: [...pendingAi]
+            };
+            try {
+                await this.model.update(
+                    { id: entity.id },
+                    { extraInfo: mergedExtra } as unknown as Partial<Accommodation>, // TYPE-WORKAROUND: extraInfo DB column is jsonb — merge result is Record<string,unknown> which doesn't match the Zod strict shape
+                    ctx?.tx
+                );
+            } catch (error) {
+                this.logger.warn(
+                    { error, accommodationId: entity.id, aiAssistedFields: pendingAi },
+                    '[accommodation] Failed to persist AI-assisted fields to extraInfo (non-blocking)'
+                );
+            }
         }
 
         return entity;
@@ -1209,9 +1251,34 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
+        // INV-5 / B-1: preserve server-managed archivedGallery on any media update.
+        //
+        // `archivedGallery` is written exclusively by the downgrade-restriction cron
+        // (plan-photo-restriction.service) and MUST NOT be cleared by a host edit.
+        // The client input schema (`BaseMediaFields.media`) does not expose this field,
+        // so Zod strips it before the payload reaches here. We carry it forward from
+        // the current DB row whenever `data.media` is present.
+        //
+        // Fetch only when needed: if `data.media` is undefined the DB write won't
+        // touch the media column at all, so no action is required.
+        let normalizedData = data;
+        if (data.media !== undefined) {
+            const existing = await this.model.findById(id, ctx?.tx);
+            const existingArchivedGallery = existing?.media?.archivedGallery;
+            if (existingArchivedGallery !== undefined) {
+                normalizedData = {
+                    ...data,
+                    media: {
+                        ...data.media,
+                        archivedGallery: existingArchivedGallery
+                    }
+                } as AccommodationUpdateInput;
+            }
+        }
+
         // SPEC-172: if junction sync fields are present and no external tx exists,
         // open a transaction so accommodation update + junction sync are atomic.
-        const { amenityIds, featureIds } = data as {
+        const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
@@ -1220,14 +1287,14 @@ export class AccommodationService extends BaseCrudService<
         if (needsJunctionSync && !ctx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
-                    return super.update(actor, id, data, txCtx);
+                    return super.update(actor, id, normalizedData, txCtx);
                 },
                 ctx,
                 { timeoutMs: 10_000 }
             );
         }
 
-        return super.update(actor, id, data, ctx);
+        return super.update(actor, id, normalizedData, ctx);
     }
 
     /**
@@ -1681,6 +1748,10 @@ export class AccommodationService extends BaseCrudService<
         // An owner listing their OWN accommodations (ownerId === self) still
         // sees their service-suspended listings; for everyone else (non-VIP)
         // suspended listings are hidden. Admins / VIP see all. (SPEC-143 #29)
+        //
+        // SPEC-167 T-004: plan-restricted accommodations follow the same owner
+        // visibility rule — owner always sees their own restricted items (so they
+        // can choose/restore); everyone else (non-VIP) has them hidden.
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.searchWithRelations({
@@ -1690,7 +1761,8 @@ export class AccommodationService extends BaseCrudService<
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1711,12 +1783,15 @@ export class AccommodationService extends BaseCrudService<
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         // Mirror _executeSearch so count and search agree on what is visible.
+        // SPEC-167 T-004: plan-restricted items are excluded from public counts
+        // but owners always see their own (isOwnScope mirrors ownerSuspended rule).
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.countByFilters({
             ...params,
             excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1772,12 +1847,15 @@ export class AccommodationService extends BaseCrudService<
                 const isOwnScope =
                     !!processedParams.ownerId && processedParams.ownerId === validatedActor.id;
 
+                // SPEC-167 T-004: plan-restricted accommodations are excluded from
+                // public reads, but owners always see their own restricted items.
                 const modelParams = {
                     ...processedParams,
                     page,
                     pageSize,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope
+                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+                    excludePlanRestricted: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1836,7 +1914,10 @@ export class AccommodationService extends BaseCrudService<
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: top-rated list is always a public view (no
+                    // own-scope), so plan-restricted mirrors ownerSuspended exactly.
+                    excludePlanRestricted: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -1952,6 +2033,17 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Gets accommodations by destination.
+     *
+     * Uses `searchWithRelations` (not the raw `findAll`) so the public visibility
+     * predicate is enforced at the DB query level:
+     * - `ownerSuspended=true` accommodations are hidden from public actors.
+     * - `planRestricted=true` accommodations are hidden from public actors.
+     *
+     * SPEC-167 T-026: this is a public-only path — there is no `ownerId` in the
+     * params, so there is no own-scope exemption. The only bypass is VIP access
+     * (`vip_promotions_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
+     * which mirrors the predicate applied by `getTopRatedByDestination`.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
      * @param ctx - Optional service context for transaction propagation
@@ -1966,23 +2058,30 @@ export class AccommodationService extends BaseCrudService<
             methodName: 'getByDestination',
             input: { ...data, actor },
             schema: AccommodationByDestinationParamsSchema,
-            execute: async (validated, actor) => {
-                await this._canList(actor);
-                const result = await this.model.findAll(
+            execute: async (validated, validatedActor) => {
+                await this._canList(validatedActor);
+
+                const hasVipAccess =
+                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
+
+                const result = await this.model.searchWithRelations(
                     {
-                        destinationId: validated.destinationId
+                        destinationId: validated.destinationId,
+                        page: validated.page ?? 1,
+                        pageSize: validated.pageSize ?? 10,
+                        // SPEC-167 T-026: destination list is always a public view (no
+                        // own-scope), so both visibility flags mirror each other exactly.
+                        excludeOwnerSuspended: !hasVipAccess,
+                        excludePlanRestricted: !hasVipAccess
                     },
-                    {
-                        page: validated.page,
-                        pageSize: validated.pageSize
-                    },
-                    undefined,
                     ctx?.tx
                 );
 
                 const accommodations = Array.isArray(result.items)
                     ? result.items.map(
-                          (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                          (item) =>
+                              normalizeAccommodationOutput(item, validatedActor) as Accommodation
                       )
                     : [];
 
@@ -2027,7 +2126,9 @@ export class AccommodationService extends BaseCrudService<
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
                     excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: destination top-rated is always a public view.
+                    excludePlanRestricted: !hasVipAccess
                 });
 
                 const accommodations =
