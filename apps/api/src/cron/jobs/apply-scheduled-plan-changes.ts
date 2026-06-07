@@ -43,9 +43,16 @@
 
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
+import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
+import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
+import { PlanCatalogMissError } from '../../services/subscription-downgrade-excess.service.js';
+import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
+import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 /**
@@ -105,9 +112,17 @@ interface PendingPlanChangeRow {
  * Outcome of attempting to apply one scheduled change. Returned by
  * `applyOne` and aggregated by the cron handler for the
  * CronJobResult.
+ *
+ * `restrictionFailed` is set to `true` when the plan change was applied
+ * successfully but the downgrade restriction step (SPEC-167 T-013) threw.
+ * The plan change stays committed; the handler uses this flag to set
+ * `result.success=false` so SPEC-149's bootstrap Sentry capture fires.
+ * The restriction is idempotent — the next cron tick or a manual re-trigger
+ * of remediation will retry it. An over-cap-but-unrestricted host is the
+ * old status quo (revenue leak), not data corruption.
  */
 type ApplyOutcome =
-    | { kind: 'applied' }
+    | { kind: 'applied'; restrictionFailed?: boolean }
     | { kind: 'retry'; attemptCount: number; error: string }
     | { kind: 'failed'; attemptCount: number; error: string };
 
@@ -303,6 +318,9 @@ async function applyOne(
     }
 
     // STEP 3: addon recalc — best-effort.
+    // Note: restriction (step 3b) does NOT touch addons; addon recalc is
+    // independent and runs first so it always reflects the new plan's base limits
+    // regardless of which excess resources are subsequently restricted.
     try {
         await handlePlanChangeAddonRecalculation({
             customerId,
@@ -320,8 +338,247 @@ async function applyOne(
         });
     }
 
+    // STEP 3b: downgrade restriction (SPEC-167 T-013) — runs BEFORE cache clear
+    // so the cache is invalidated with the post-restriction state.
+    //
+    // Direction detection: `metadata.source === 'plan-change-downgrade'` is set
+    // by `scheduleSubscriptionDowngrade` (subscription-downgrade.service.ts).
+    // The QZPayScheduledPlanChange TypeScript type does not expose a `changeType`
+    // field; the cron's documented shape comment is aspirational — the actual
+    // runtime marker we rely on is the metadata source field. Scheduled upgrades
+    // do not go through this cron (upgrades are applied immediately via the
+    // webhook path which calls applyUpgradeRestorationsOrWarn), so a row without
+    // source='plan-change-downgrade' is treated as non-downgrade and skipped.
+    //
+    // Failure semantics: restriction failure must NOT roll back the applied plan
+    // change (the pre-stamp from step 0 already committed; the plan change is
+    // the source of truth). Instead, catch the error, log loudly, and signal
+    // restrictionFailed=true to the handler — the handler sets result.success=false
+    // so SPEC-149's bootstrap Sentry capture fires.
+    //
+    // Recovery path: applyDowngradeRestrictions is idempotent, but the cron
+    // CANNOT auto-retry this failure. The pre-stamp in step 0 already committed
+    // status='applied', so the eligibility filter (status='pending') will never
+    // pick up this row again. Recovery is MANUAL-ONLY: ops must re-run
+    // applyDowngradeRestrictions directly via the remediation service for the
+    // affected subscription. The Sentry error below (logged via logger.error)
+    // carries subscriptionId/customerId/newPlanId so ops can locate affected
+    // subscriptions without PII exposure.
+    const meta = scheduledPlanChange.metadata as Record<string, unknown> | undefined | null;
+    const isDowngrade = meta?.source === 'plan-change-downgrade';
+    let restrictionFailed = false;
+    if (isDowngrade) {
+        try {
+            // Resolve the userId (owner) from the billing customer ID.
+            const userId = await resolveOwnerUserId({ customerId });
+
+            if (userId) {
+                // Resolve the target plan slug from the plan ID so
+                // applyDowngradeRestrictions can look up limits.
+                let targetPlanSlug: string | null = null;
+                try {
+                    const plan = await billing.plans.get(newPlanId);
+                    targetPlanSlug = plan?.name ?? null;
+                } catch (slugErr) {
+                    logger.warn(
+                        'Scheduled plan change: could not resolve target plan slug for restriction',
+                        {
+                            subscriptionId,
+                            customerId,
+                            newPlanId,
+                            error: slugErr instanceof Error ? slugErr.message : String(slugErr)
+                        }
+                    );
+                }
+
+                if (targetPlanSlug) {
+                    // Read host's persisted keepSelections from the scheduled change
+                    // metadata. Returns undefined when absent → defaults apply in
+                    // applyDowngradeRestrictions (most-recently-updated sort).
+                    const keepSelections = getKeepSelectionsForChange(scheduledPlanChange);
+
+                    await applyDowngradeRestrictions({
+                        userId,
+                        customerId,
+                        targetPlanSlug,
+                        keepSelections
+                    });
+                } else {
+                    logger.warn(
+                        'Scheduled plan change: skipping restriction — target plan slug unresolvable',
+                        { subscriptionId, customerId, newPlanId }
+                    );
+                }
+            } else {
+                logger.warn(
+                    'Scheduled plan change: skipping restriction — could not resolve owner userId',
+                    { subscriptionId, customerId }
+                );
+            }
+        } catch (restrictionErr) {
+            // PlanCatalogMissError: the target plan slug is not registered in
+            // the static billing catalog (e.g. a test plan or a plan predating
+            // the restriction feature). Without catalog metadata we cannot
+            // evaluate excess, so we soft-skip restriction rather than treating
+            // it as a data-integrity failure.
+            //
+            // Revenue-leak rationale: a catalog-miss on a real downgrade means
+            // an over-cap host went unrestricted (SPEC-148 plan-disable can
+            // cause it). We surface this in Sentry at warning level so it is
+            // visible in alerting without failing the job or rolling back the
+            // plan change. Pattern mirrors webhook-retry.job.ts dead-letter path.
+            if (restrictionErr instanceof PlanCatalogMissError) {
+                const errMsg = restrictionErr.message;
+                logger.warn(
+                    'Scheduled plan change: skipping restriction — target plan not in catalog (non-blocking)',
+                    {
+                        subscriptionId,
+                        customerId,
+                        newPlanId,
+                        planSlug: restrictionErr.planSlug,
+                        error: errMsg
+                    }
+                );
+                Sentry.captureMessage(
+                    'Scheduled plan change: restriction skipped — target plan not in catalog',
+                    {
+                        level: 'warning',
+                        tags: {
+                            module: 'cron',
+                            job_name: 'apply-scheduled-plan-changes',
+                            event_type: 'restriction_catalog_miss'
+                        },
+                        extra: {
+                            subscriptionId,
+                            customerId,
+                            newPlanId,
+                            planSlug: restrictionErr.planSlug
+                        }
+                    }
+                );
+            } else {
+                // Any other error is a genuine restriction failure — log loudly
+                // so Sentry captures it (via bootstrap.ts error handler) and set
+                // restrictionFailed so the cron result surfaces success=false.
+                // The extra fields (subscriptionId, customerId, newPlanId) allow
+                // ops to locate affected subscriptions for manual remediation
+                // (see Recovery path comment above).
+                const errMsg =
+                    restrictionErr instanceof Error
+                        ? restrictionErr.message
+                        : String(restrictionErr);
+                logger.error(
+                    'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied; MANUAL remediation required)',
+                    {
+                        subscriptionId,
+                        customerId,
+                        newPlanId,
+                        error: errMsg,
+                        restrictionFailedAt: new Date().toISOString()
+                    }
+                );
+                restrictionFailed = true;
+            }
+        }
+    }
+
+    // STEP 3c: PLAN_CHANGE_CONFIRMATION notification — informational, SOFT.
+    //
+    // Sent after the plan change applies (step 1) so the host receives a
+    // confirmation email once the new plan is in effect.
+    //
+    // Asymmetry with restriction failure (step 3b): notification failure does
+    // NOT set `restrictionFailed` and does NOT flip `result.success`. A missed
+    // confirmation email is unfortunate but does not indicate a data-integrity
+    // problem — the plan change is applied regardless. Restriction failure, by
+    // contrast, leaves the host over-cap (revenue-leak risk) and warrants a
+    // Sentry alert.
+    //
+    // Exactly-once guarantee: this step runs once per `applyOne` invocation.
+    // `applyOne` is only called when the row passes the `status='pending'`
+    // eligibility filter — the pre-stamp in step 0 flips it to 'applied'
+    // before `changePlan` runs, so the cron can never re-apply the same row.
+    try {
+        // Resolve customer email for the confirmation address.
+        const customer = await billing.customers.get(customerId);
+        if (customer) {
+            // Resolve plan names for the "old plan → new plan" display copy.
+            let oldPlanName: string | undefined;
+            let newPlanName: string | undefined;
+            try {
+                const [oldPlan, newPlan] = await Promise.all([
+                    billing.plans.get(currentPlanId),
+                    billing.plans.get(newPlanId)
+                ]);
+                oldPlanName = oldPlan?.name ?? currentPlanId;
+                newPlanName = newPlan?.name ?? newPlanId;
+            } catch (planErr) {
+                logger.warn(
+                    'Scheduled plan change: could not resolve plan names for confirmation',
+                    {
+                        subscriptionId,
+                        customerId,
+                        error: planErr instanceof Error ? planErr.message : String(planErr)
+                    }
+                );
+                // Names default to IDs — still send the notification (better than nothing).
+                oldPlanName = currentPlanId;
+                newPlanName = newPlanId;
+            }
+
+            const customerName = String(
+                (customer.metadata as Record<string, unknown> | null | undefined)?.name ??
+                    customer.email
+            );
+
+            void Promise.resolve(
+                sendNotification({
+                    type: NotificationType.PLAN_CHANGE_CONFIRMATION,
+                    recipientEmail: customer.email,
+                    recipientName: customerName,
+                    userId: String(
+                        (customer.metadata as Record<string, unknown> | null | undefined)?.userId ??
+                            null
+                    ),
+                    customerId,
+                    oldPlanName,
+                    newPlanName,
+                    planName: newPlanName
+                })
+            ).catch((notifErr: unknown) => {
+                // SOFT: confirmation failure must never affect the plan-change outcome.
+                // Unlike restriction failure (step 3b), this does NOT set restrictionFailed.
+                logger.warn(
+                    'Scheduled plan change: PLAN_CHANGE_CONFIRMATION send failed (soft-fail)',
+                    {
+                        subscriptionId,
+                        customerId,
+                        error: notifErr instanceof Error ? notifErr.message : String(notifErr)
+                    }
+                );
+            });
+        } else {
+            logger.warn(
+                'Scheduled plan change: PLAN_CHANGE_CONFIRMATION skipped — customer not found',
+                { subscriptionId, customerId }
+            );
+        }
+    } catch (confirmErr) {
+        // Customer lookup or plan resolution failed — warn and skip notification.
+        // The plan change is already applied; this is informational only.
+        logger.warn(
+            'Scheduled plan change: PLAN_CHANGE_CONFIRMATION customer lookup failed (soft-fail)',
+            {
+                subscriptionId,
+                customerId,
+                error: confirmErr instanceof Error ? confirmErr.message : String(confirmErr)
+            }
+        );
+    }
+
     // STEP 4: clear entitlement cache so the next request sees the
-    // new plan's entitlements.
+    // new plan's entitlements. Runs AFTER restriction (step 3b) so the
+    // cache reflects the post-restriction state on first invalidation.
     clearEntitlementCache(customerId);
 
     // STEP 5: finalise — add resolvedAt and bump attemptCount.
@@ -356,9 +613,10 @@ async function applyOne(
         subscriptionId,
         customerId,
         oldPlanId: currentPlanId,
-        newPlanId
+        newPlanId,
+        restrictionFailed
     });
-    return { kind: 'applied' };
+    return { kind: 'applied', ...(restrictionFailed ? { restrictionFailed: true } : {}) };
 }
 
 /**
@@ -456,12 +714,20 @@ export const applyScheduledPlanChangesJob: CronJobDefinition = {
         let applied = 0;
         let retried = 0;
         let failed = 0;
+        // Tracks rows where the plan change applied cleanly but the downgrade
+        // restriction step (SPEC-167 T-013) failed. The plan change itself is
+        // committed; this count drives result.success=false so SPEC-149's
+        // bootstrap Sentry capture fires. The restriction is idempotent and
+        // can be retried on the next tick or via manual remediation.
+        let restrictionErrors = 0;
 
         for (const row of dueRows) {
             try {
                 const outcome = await applyOne(row, billing, logger);
-                if (outcome.kind === 'applied') applied += 1;
-                else if (outcome.kind === 'retry') retried += 1;
+                if (outcome.kind === 'applied') {
+                    applied += 1;
+                    if (outcome.restrictionFailed) restrictionErrors += 1;
+                } else if (outcome.kind === 'retry') retried += 1;
                 else failed += 1;
             } catch (unexpectedErr) {
                 // applyOne is wrapped internally for every failure
@@ -481,12 +747,12 @@ export const applyScheduledPlanChangesJob: CronJobDefinition = {
         }
 
         return {
-            success: failed === 0,
-            message: `Applied ${applied}, retried ${retried}, failed ${failed}`,
+            success: failed === 0 && restrictionErrors === 0,
+            message: `Applied ${applied}, retried ${retried}, failed ${failed}${restrictionErrors > 0 ? `, restrictionErrors ${restrictionErrors}` : ''}`,
             processed: applied + retried + failed,
-            errors: failed,
+            errors: failed + restrictionErrors,
             durationMs: Date.now() - startMs,
-            details: { applied, retried, failed, due: dueRows.length }
+            details: { applied, retried, failed, restrictionErrors, due: dueRows.length }
         };
     }
 };

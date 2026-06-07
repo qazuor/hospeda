@@ -48,7 +48,9 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     deletedAt: true,
     deletedById: true,
     // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true
+    ownerSuspended: true,
+    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+    planRestricted: true
 }).extend({
     slug: z
         .string()
@@ -123,7 +125,9 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
     deletedAt: true,
     deletedById: true,
     // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true
+    ownerSuspended: true,
+    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+    planRestricted: true
 })
     .partial()
     .extend({

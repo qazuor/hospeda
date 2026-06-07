@@ -38,6 +38,8 @@ import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { revokeAddonForSubscriptionCancellation } from '../../../services/addon-lifecycle.service';
+import { applyDowngradeRestrictionsOrWarn } from '../../../services/plan-downgrade-remediation.service';
+import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import {
     resolveOwnerUserId,
@@ -344,7 +346,140 @@ const onAfterSubscriptionCancel: NonNullable<
 };
 
 /**
- * After-change-plan hook: audit-log the plan transition.
+ * Determine the direction of a plan change by comparing the cheapest active
+ * price of each plan.
+ *
+ * Short-circuits to `'same'` when:
+ *  (a) `previousPlanId === newPlanId` (same ID — no need to fetch prices), OR
+ *  (b) both plans resolve to the same slug/`name` (interval-only change on the
+ *      same tier product — restriction/restoration passes would be no-ops).
+ *
+ * Normalises by `intervalCount` so multi-month prices are comparable on a
+ * per-interval-unit basis (mirrors the normalization in
+ * `subscription-downgrade.service.ts` and `plan-change.ts`).
+ *
+ * Multi-currency guard: when prices carry a `currency` field, only prices
+ * sharing a common currency are compared (prevents cross-currency apples-to-
+ * oranges comparisons). If no currency overlap exists, returns `'same'` as a
+ * safe no-op — multi-currency plan hierarchies are deferred to SPEC-150.
+ *
+ * @returns `'downgrade'` | `'upgrade'` | `'same'`
+ */
+function detectPlanChangeDirection(
+    previousPlan: {
+        readonly id?: string;
+        readonly name?: string;
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            currency?: string | null;
+            active: boolean;
+        }>;
+    },
+    newPlan: {
+        readonly id?: string;
+        readonly name?: string;
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            currency?: string | null;
+            active: boolean;
+        }>;
+    }
+): 'downgrade' | 'upgrade' | 'same' {
+    // (a) Same plan ID — always a no-op, skip price comparison entirely.
+    if (previousPlan.id !== undefined && previousPlan.id === newPlan.id) {
+        return 'same';
+    }
+
+    // (b) Same slug/name (e.g. monthly ↔ annual variants of the same tier).
+    if (
+        previousPlan.name !== undefined &&
+        newPlan.name !== undefined &&
+        previousPlan.name === newPlan.name
+    ) {
+        return 'same';
+    }
+
+    // Multi-currency guard: restrict comparison to prices sharing a currency.
+    // When no currency field is present on any price, treat as a single
+    // implicit currency (backward-compatible with pre-multi-currency data).
+    const prevActive = previousPlan.prices.filter((p) => p.active);
+    const newActive = newPlan.prices.filter((p) => p.active);
+
+    const hasCurrency =
+        prevActive.some((p) => p.currency != null) || newActive.some((p) => p.currency != null);
+
+    let prevPricesForComparison = prevActive;
+    let newPricesForComparison = newActive;
+
+    if (hasCurrency) {
+        const prevCurrencies = new Set(prevActive.map((p) => p.currency ?? '').filter(Boolean));
+        const newCurrencies = new Set(newActive.map((p) => p.currency ?? '').filter(Boolean));
+        const commonCurrencies = [...prevCurrencies].filter((c) => newCurrencies.has(c));
+
+        if (commonCurrencies.length === 0) {
+            // No common currency: safe no-op — see multi-currency guard JSDoc above.
+            apiLogger.warn(
+                {
+                    previousPlanId: previousPlan.id,
+                    newPlanId: newPlan.id,
+                    prevCurrencies: [...prevCurrencies],
+                    newCurrencies: [...newCurrencies]
+                },
+                'detectPlanChangeDirection: no common currency between plans — returning same (SPEC-150)'
+            );
+            return 'same';
+        }
+
+        // Compare only prices in the intersection currency set.
+        // p.currency is guaranteed non-null here: commonCurrencies excludes empty/null values
+        // (see the .filter(Boolean) above), so only prices with a non-null currency can match.
+        prevPricesForComparison = prevActive.filter((p) =>
+            commonCurrencies.includes(p.currency ?? '')
+        );
+        newPricesForComparison = newActive.filter((p) =>
+            commonCurrencies.includes(p.currency ?? '')
+        );
+    }
+
+    const toNormalized = (
+        prices: ReadonlyArray<{
+            unitAmount: number;
+            intervalCount?: number | null;
+            active: boolean;
+        }>
+    ) => {
+        if (prices.length === 0) return null;
+        // Use the lowest normalised unit amount for fair cross-interval comparison.
+        return Math.min(
+            ...prices.map((p) => {
+                const count = (p.intervalCount ?? 1) > 0 ? (p.intervalCount ?? 1) : 1;
+                return p.unitAmount / count;
+            })
+        );
+    };
+
+    const prevAmount = toNormalized(prevPricesForComparison);
+    const newAmount = toNormalized(newPricesForComparison);
+
+    if (prevAmount === null || newAmount === null) return 'same';
+    if (newAmount < prevAmount) return 'downgrade';
+    if (newAmount > prevAmount) return 'upgrade';
+    return 'same';
+}
+
+/**
+ * After-change-plan hook: audit-log the plan transition, then apply
+ * restriction (downgrade) or restoration (upgrade) via the shared
+ * remediation services (SPEC-167 T-014, design decision 5).
+ *
+ * **Ordering**: remediation runs BEFORE `clearEntitlementCache` so the
+ * cache is invalidated with post-remediation state.
+ *
+ * **Failure semantics**: both remediation directions are wrapped in
+ * soft-fail helpers — a restriction/restoration error must NOT break the
+ * admin response (the plan change has already committed in QZPay).
  */
 const onAfterSubscriptionChangePlan: NonNullable<
     QZPayAdminLifecycleHooks['onAfterSubscriptionChangePlan']
@@ -352,6 +487,92 @@ const onAfterSubscriptionChangePlan: NonNullable<
     const actor = getActorFromContext(ctx);
     const db = getDb();
 
+    // Step 1: Determine plan-change direction and apply remediation.
+    // Runs BEFORE clearEntitlementCache (cache must reflect post-remediation state).
+    const billing = getQZPayBilling();
+    if (billing) {
+        try {
+            const [previousPlan, newPlan] = await Promise.all([
+                billing.plans.get(previousPlanId),
+                billing.plans.get(newPlanId)
+            ]);
+
+            if (previousPlan && newPlan) {
+                const direction = detectPlanChangeDirection(previousPlan, newPlan);
+
+                if (direction === 'downgrade') {
+                    const userId = await resolveOwnerUserId({
+                        customerId: subscription.customerId
+                    });
+                    if (userId) {
+                        await applyDowngradeRestrictionsOrWarn({
+                            userId,
+                            customerId: subscription.customerId,
+                            targetPlanSlug: newPlan.name,
+                            keepSelections: undefined
+                        });
+                    } else {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                customerId: subscription.customerId,
+                                newPlanId
+                            },
+                            'Admin change-plan hook: could not resolve owner userId — downgrade restriction skipped'
+                        );
+                    }
+                } else if (direction === 'upgrade') {
+                    const userId = await resolveOwnerUserId({
+                        customerId: subscription.customerId
+                    });
+                    if (userId) {
+                        await applyUpgradeRestorationsOrWarn({
+                            userId,
+                            customerId: subscription.customerId,
+                            newPlanId
+                        });
+                    } else {
+                        apiLogger.warn(
+                            {
+                                subscriptionId: subscription.id,
+                                customerId: subscription.customerId,
+                                newPlanId
+                            },
+                            'Admin change-plan hook: could not resolve owner userId — upgrade restoration skipped'
+                        );
+                    }
+                }
+                // direction === 'same' → no remediation needed
+            } else {
+                apiLogger.warn(
+                    {
+                        subscriptionId: subscription.id,
+                        previousPlanId,
+                        newPlanId
+                    },
+                    'Admin change-plan hook: could not resolve plans for direction detection — remediation skipped'
+                );
+            }
+        } catch (err) {
+            apiLogger.error(
+                {
+                    subscriptionId: subscription.id,
+                    customerId: subscription.customerId,
+                    previousPlanId,
+                    newPlanId,
+                    error: err instanceof Error ? err.message : String(err)
+                },
+                'Admin change-plan hook: remediation threw unexpectedly — skipped, audit+cache still proceed'
+            );
+        }
+    } else {
+        apiLogger.warn(
+            { subscriptionId: subscription.id, previousPlanId, newPlanId },
+            'Admin change-plan hook: billing service unavailable — remediation skipped'
+        );
+    }
+
+    // Step 2: Audit-log the plan transition (unchanged).
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
         triggerSource: 'admin-change-plan',
@@ -362,6 +583,8 @@ const onAfterSubscriptionChangePlan: NonNullable<
         }
     });
 
+    // Step 3: Clear entitlement cache AFTER remediation so the cache reflects
+    // the post-restriction/post-restoration state.
     clearEntitlementCache(subscription.customerId);
 
     apiLogger.info(

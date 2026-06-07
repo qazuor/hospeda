@@ -9,7 +9,7 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseMediaFields } from '../../common/media.schema.js';
+import { AccommodationEntityMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
@@ -59,7 +59,7 @@ export const AccommodationSchema = z.object({
     ...BaseSeoFields,
     ...BaseContactFields,
     ...AccommodationLocationFields,
-    ...BaseMediaFields,
+    ...AccommodationEntityMediaFields,
     ...BaseAdminFields,
 
     // Accommodation-specific core fields
@@ -77,6 +77,23 @@ export const AccommodationSchema = z.object({
      * those schemas); only the pause/resume flow mutates it.
      */
     ownerSuspended: z.boolean().default(false),
+
+    /**
+     * Downgrade-restriction flag (SPEC-167 §3, D-3). Set to `true` by the
+     * apply-scheduled-plan-changes cron (and the admin `onAfterSubscriptionChangePlan`
+     * hook) when a host downgrades and the accommodation exceeds the target plan's
+     * `MAX_ACCOMMODATIONS` cap. Cleared automatically on re-upgrade once the host is
+     * back within cap.
+     *
+     * This flag is intentionally separate from `ownerSuspended` — `ownerSuspended`
+     * is a bulk pause/resume toggle for ALL of an owner's accommodations; this flag
+     * is a selective, per-accommodation downgrade restriction. The two states MUST
+     * NOT collide (design decision D-3).
+     *
+     * Server-managed: never set through create/update input (it is omitted from those
+     * schemas); only the downgrade-restriction flow mutates it.
+     */
+    planRestricted: z.boolean().default(false),
 
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),

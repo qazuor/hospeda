@@ -136,6 +136,21 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
     }
 
+    // SPEC-167 T-004: plan-restricted accommodations behave identically to
+    // ownerSuspended for public reads — they do not exist (NOT_FOUND, not
+    // FORBIDDEN, so existence is not leaked).
+    // DIVERGENCE NOTE: for ownerSuspended, list queries use isOwnScope to let
+    // the owner see their suspended items; for planRestricted we do the same
+    // (owner is ALWAYS exempt). The host MUST see their own restricted
+    // accommodations to choose which to keep active / restore on re-upgrade.
+    if (
+        entity.planRestricted &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
     if (
         entity.visibility === 'PUBLIC' ||
         (entity.visibility === 'PRIVATE' &&

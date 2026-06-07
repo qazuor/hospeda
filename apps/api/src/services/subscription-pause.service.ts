@@ -18,6 +18,7 @@
  */
 
 import { type DrizzleClient, accommodations, billingCustomers, eq, getDb, users } from '@repo/db';
+import { type EntityChangeData, getRevalidationService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -52,6 +53,11 @@ export async function resolveOwnerUserId(input: {
  * by the user. Idempotent: setting the same value again is a harmless no-op, so
  * resume can always clear without first checking whether the pause was "full".
  *
+ * After both DB writes succeed, schedules ISR revalidation (fire-and-forget) for
+ * every affected accommodation so Cloudflare-cached public pages reflect the new
+ * suspended/active state without waiting for the TTL to expire. Revalidation
+ * failure is non-blocking: the DB writes are already committed at that point.
+ *
  * @param input - The owner user id, the target suspended state, and an
  *   optional db/tx client.
  * @returns The number of accommodations whose flag was updated.
@@ -72,7 +78,7 @@ export async function setOwnerServiceSuspension(input: {
         .update(accommodations)
         .set({ ownerSuspended: input.suspended, updatedAt: new Date() })
         .where(eq(accommodations.ownerId, input.userId))
-        .returning({ id: accommodations.id });
+        .returning({ id: accommodations.id, slug: accommodations.slug });
 
     apiLogger.info(
         {
@@ -82,6 +88,24 @@ export async function setOwnerServiceSuspension(input: {
         },
         'Applied owner service-suspension flags'
     );
+
+    // Schedule ISR revalidation AFTER DB writes succeed so cached public pages
+    // (Cloudflare) reflect the new visibility state without waiting for TTL.
+    // Fire-and-forget: revalidation never blocks the DB operation.
+    if (updated.length > 0) {
+        const revalidationService = getRevalidationService();
+        if (revalidationService) {
+            const direction = input.suspended ? 'suspend' : 'resume';
+            const events: EntityChangeData[] = updated.map((row) => ({
+                entityType: 'accommodation' as const,
+                slug: row.slug
+            }));
+            revalidationService.scheduleRevalidationBatch({
+                events,
+                reason: `owner-service-suspension: ${direction} userId=${input.userId}`
+            });
+        }
+    }
 
     return { accommodationsUpdated: updated.length };
 }

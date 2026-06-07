@@ -553,7 +553,7 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
 
         // ACT 1 — probe BEFORE the cron tick. The sub is still on the
         // expensive plan, so the middleware returns expensive entitlements
-        // ('public:read' + 'expensive:feature') and limits (ads_per_month=100).
+        // ('publish_accommodations' + 'view_advanced_stats') and limits (max_accommodations=3).
         // The set lands in the cache.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
@@ -562,9 +562,9 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toContain('public:read');
-        expect(preBody.entitlements).toContain('expensive:feature');
-        expect(preBody.limits.ads_per_month).toBe(100);
+        expect(preBody.entitlements).toContain('publish_accommodations');
+        expect(preBody.entitlements).toContain('view_advanced_stats');
+        expect(preBody.limits.max_accommodations).toBe(3);
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot cache size. The cron's STEP 4 MUST invalidate the entry
@@ -590,8 +590,8 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
         // ACT 3 — probe AFTER the cron tick. With the cache invalidated,
         // the middleware reloads from the DB and now sees the FLIPPED sub
         // (plan_id = cheap). The response should carry the cheap plan's
-        // entitlements and limits exclusively — `expensive:feature` MUST
-        // be gone and ads_per_month MUST drop from 100 → 5.
+        // entitlements and limits exclusively — `view_advanced_stats` MUST
+        // be gone and max_accommodations MUST drop from 3 → 1.
         const postRes = await probeApp.request('/probe');
         expect(postRes.status).toBe(200);
         const postBody = (await postRes.json()) as {
@@ -599,9 +599,9 @@ describe('SPEC-143 T-143-13 — plan downgrade execution by cron', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(postBody.entitlements).toContain('public:read');
-        expect(postBody.entitlements).not.toContain('expensive:feature');
-        expect(postBody.limits.ads_per_month).toBe(5);
+        expect(postBody.entitlements).toContain('publish_accommodations');
+        expect(postBody.entitlements).not.toContain('view_advanced_stats');
+        expect(postBody.limits.max_accommodations).toBe(1);
         expect(postBody.billingLoadFailed).toBe(false);
     });
 });

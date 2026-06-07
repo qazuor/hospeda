@@ -50,6 +50,13 @@
             "when": 1780736294288,
             "tag": "0006_real_callisto",
             "breakpoints": true
+        },
+        {
+            "idx": 7,
+            "version": "7",
+            "when": 1780773326914,
+            "tag": "0007_amazing_piledriver",
+            "breakpoints": true
         }
     ]
 }
