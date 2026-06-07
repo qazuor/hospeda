@@ -349,28 +349,100 @@ const onAfterSubscriptionCancel: NonNullable<
  * Determine the direction of a plan change by comparing the cheapest active
  * price of each plan.
  *
+ * Short-circuits to `'same'` when:
+ *  (a) `previousPlanId === newPlanId` (same ID — no need to fetch prices), OR
+ *  (b) both plans resolve to the same slug/`name` (interval-only change on the
+ *      same tier product — restriction/restoration passes would be no-ops).
+ *
  * Normalises by `intervalCount` so multi-month prices are comparable on a
  * per-interval-unit basis (mirrors the normalization in
  * `subscription-downgrade.service.ts` and `plan-change.ts`).
+ *
+ * Multi-currency guard: when prices carry a `currency` field, only prices
+ * sharing a common currency are compared (prevents cross-currency apples-to-
+ * oranges comparisons). If no currency overlap exists, returns `'same'` as a
+ * safe no-op — multi-currency plan hierarchies are deferred to SPEC-150.
  *
  * @returns `'downgrade'` | `'upgrade'` | `'same'`
  */
 function detectPlanChangeDirection(
     previousPlan: {
+        readonly id?: string;
+        readonly name?: string;
         prices: ReadonlyArray<{
             unitAmount: number;
             intervalCount?: number | null;
+            currency?: string | null;
             active: boolean;
         }>;
     },
     newPlan: {
+        readonly id?: string;
+        readonly name?: string;
         prices: ReadonlyArray<{
             unitAmount: number;
             intervalCount?: number | null;
+            currency?: string | null;
             active: boolean;
         }>;
     }
 ): 'downgrade' | 'upgrade' | 'same' {
+    // (a) Same plan ID — always a no-op, skip price comparison entirely.
+    if (previousPlan.id !== undefined && previousPlan.id === newPlan.id) {
+        return 'same';
+    }
+
+    // (b) Same slug/name (e.g. monthly ↔ annual variants of the same tier).
+    if (
+        previousPlan.name !== undefined &&
+        newPlan.name !== undefined &&
+        previousPlan.name === newPlan.name
+    ) {
+        return 'same';
+    }
+
+    // Multi-currency guard: restrict comparison to prices sharing a currency.
+    // When no currency field is present on any price, treat as a single
+    // implicit currency (backward-compatible with pre-multi-currency data).
+    const prevActive = previousPlan.prices.filter((p) => p.active);
+    const newActive = newPlan.prices.filter((p) => p.active);
+
+    const hasCurrency =
+        prevActive.some((p) => p.currency != null) || newActive.some((p) => p.currency != null);
+
+    let prevPricesForComparison = prevActive;
+    let newPricesForComparison = newActive;
+
+    if (hasCurrency) {
+        const prevCurrencies = new Set(prevActive.map((p) => p.currency ?? '').filter(Boolean));
+        const newCurrencies = new Set(newActive.map((p) => p.currency ?? '').filter(Boolean));
+        const commonCurrencies = [...prevCurrencies].filter((c) => newCurrencies.has(c));
+
+        if (commonCurrencies.length === 0) {
+            // No common currency: safe no-op — see multi-currency guard JSDoc above.
+            apiLogger.warn(
+                {
+                    previousPlanId: previousPlan.id,
+                    newPlanId: newPlan.id,
+                    prevCurrencies: [...prevCurrencies],
+                    newCurrencies: [...newCurrencies]
+                },
+                'detectPlanChangeDirection: no common currency between plans — returning same (SPEC-150)'
+            );
+            return 'same';
+        }
+
+        // Compare only prices in the intersection currency set.
+        // p.currency is guaranteed non-null here: commonCurrencies excludes empty/null values
+        // (see the .filter(Boolean) above), so only prices with a non-null currency can match.
+        prevPricesForComparison = prevActive.filter((p) =>
+            commonCurrencies.includes(p.currency ?? '')
+        );
+        newPricesForComparison = newActive.filter((p) =>
+            commonCurrencies.includes(p.currency ?? '')
+        );
+    }
+
     const toNormalized = (
         prices: ReadonlyArray<{
             unitAmount: number;
@@ -378,19 +450,18 @@ function detectPlanChangeDirection(
             active: boolean;
         }>
     ) => {
-        const active = prices.filter((p) => p.active);
-        if (active.length === 0) return null;
+        if (prices.length === 0) return null;
         // Use the lowest normalised unit amount for fair cross-interval comparison.
         return Math.min(
-            ...active.map((p) => {
+            ...prices.map((p) => {
                 const count = (p.intervalCount ?? 1) > 0 ? (p.intervalCount ?? 1) : 1;
                 return p.unitAmount / count;
             })
         );
     };
 
-    const prevAmount = toNormalized(previousPlan.prices);
-    const newAmount = toNormalized(newPlan.prices);
+    const prevAmount = toNormalized(prevPricesForComparison);
+    const newAmount = toNormalized(newPricesForComparison);
 
     if (prevAmount === null || newAmount === null) return 'same';
     if (newAmount < prevAmount) return 'downgrade';

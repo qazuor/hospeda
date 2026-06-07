@@ -874,6 +874,89 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
         expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
     });
 
+    // m-4: same slug (interval-only change) → short-circuit to 'same', no remediation.
+    it('m-4: skips remediation when both plans have the same name/slug (interval-only change)', async () => {
+        // Two different plan IDs but same slug (e.g. monthly vs annual of the same tier).
+        // The short-circuit on name equality must prevent needless restriction/restoration.
+        const PLAN_BRONZE_ANNUAL_ID = 'plan-bronze-annual';
+        const planBronzeAnnual = {
+            id: PLAN_BRONZE_ANNUAL_ID,
+            name: 'bronze', // SAME slug as PLAN_BRONZE
+            prices: [
+                { id: 'price-bronze-annual', active: true, unitAmount: 9600, intervalCount: 12 }
+            ]
+        };
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: PLAN_BRONZE,
+                [PLAN_BRONZE_ANNUAL_ID]: planBronzeAnnual
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_BRONZE_ANNUAL_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_BRONZE_ANNUAL_ID,
+            ctx: buildContext()
+        });
+
+        // Same name → direction = 'same' → no remediation.
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+        // Audit log and cache clear still fire.
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    // m-4: no common currency → safe no-op, returns 'same'.
+    it('m-4: skips remediation when plans have prices in different currencies (no common currency)', async () => {
+        // Plan A has only ARS prices; Plan B has only USD prices.
+        // No intersection → safe no-op (SPEC-150 defers multi-currency plan hierarchies).
+        const PLAN_USD_ID = 'plan-usd-only';
+        const planUsd = {
+            id: PLAN_USD_ID,
+            name: 'bronze-usd',
+            prices: [
+                { id: 'price-usd', active: true, unitAmount: 5, intervalCount: 1, currency: 'USD' }
+            ]
+        };
+        const planArs = {
+            id: PLAN_BRONZE_ID,
+            name: 'bronze-ars',
+            prices: [
+                {
+                    id: 'price-ars',
+                    active: true,
+                    unitAmount: 1000,
+                    intervalCount: 1,
+                    currency: 'ARS'
+                }
+            ]
+        };
+        const { db } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            buildBillingMockWithPlans({
+                [PLAN_BRONZE_ID]: planArs,
+                [PLAN_USD_ID]: planUsd
+            }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        await adminBillingHooks.onAfterSubscriptionChangePlan!({
+            subscription: buildSubscription({ planId: PLAN_USD_ID }),
+            previousPlanId: PLAN_BRONZE_ID,
+            newPlanId: PLAN_USD_ID,
+            ctx: buildContext()
+        });
+
+        // No common currency → direction = 'same' → no remediation.
+        expect(applyDowngradeRestrictionsOrWarn).not.toHaveBeenCalled();
+        expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+        // Audit log and cache still fire.
+        expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
     // SPEC-167 T-014 (RED): annual→monthly for the same tier where monthly rate
     // is HIGHER (e.g. monthly=1200, annual=10000/yr=833/mo) → IS a downgrade.
     it('detects downgrade when annual→monthly and monthly normalized rate is lower', async () => {
