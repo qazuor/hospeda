@@ -13,8 +13,11 @@
  *      restricted items (descending `updatedAt`) for restoration. If cap is
  *      `-1` (unlimited), restore ALL restricted items.
  *   3. For photos: call `restoreAccommodationPhotos({ toCap: photoCap })`
- *      per accommodation that has archived photos. The primitive handles
- *      FIFO ordering and the "already at cap" no-op.
+ *      per accommodation that has archived photos AND is not still planRestricted
+ *      after step 2 (n-2: skip photo restore for accommodations that remain
+ *      restricted — they are hidden so restoring photos is wasteful and could
+ *      over-fill the effective cap). The primitive handles FIFO ordering and
+ *      the featuredImage seat reservation (M-3: toCap is the TOTAL cap).
  *   4. Execute all mutations inside a single Drizzle transaction.
  *   5. AFTER the tx commits: schedule batch revalidation for every
  *      accommodation that had accommodations or photos restored. Side effects
@@ -554,8 +557,23 @@ export async function applyUpgradeRestorations(
             restoredPromoIds.push(...result.affectedIds);
         }
 
-        // Photos — restore up to cap per accommodation
+        // Photos — restore up to cap per accommodation.
+        // n-2: skip photo restore for accommodations that remain planRestricted
+        // after the accommodation-restore pass. Restoring photos for a still-
+        // restricted accommodation wastes writes and can over-fill the effective
+        // cap (a restricted accommodation is hidden, so its photos aren't visible
+        // anyway). Skip the restore AND the revalidation event for those.
+        const accLeaveSet = new Set(accLeaveIds);
         for (const acc of accsWithArchivedPhotos) {
+            if (accLeaveSet.has(acc.accommodationId)) {
+                // Accommodation remains restricted — skip photo restore.
+                apiLogger.info(
+                    { accommodationId: acc.accommodationId },
+                    'plan-upgrade-restoration: skipping photo restore — acc still planRestricted (n-2)'
+                );
+                continue;
+            }
+
             const toCap =
                 caps.photosPerAccommodationCap === -1
                     ? acc.galleryCount + acc.archivedCount // restore all = total

@@ -529,6 +529,152 @@ describe('applyUpgradeRestorations', () => {
         });
     });
 
+    // ── n-2: skip photo restore for still-restricted accommodations ───────
+
+    describe('n-2: photo restore skipped for accommodations still planRestricted', () => {
+        it('does NOT call restoreAccommodationPhotos for an acc that remains in accLeaveIds', async () => {
+            // Setup: 2 restricted accs, cap=1, active=0 → headroom=1 → restore only 1
+            // ('acc-newer' is restored, 'acc-older' stays restricted).
+            // 'acc-older' also has archived photos but should be skipped (n-2).
+            const accs = [
+                makeRestrictedAcc('acc-newer', new Date('2026-01-03T10:00:00Z')),
+                makeRestrictedAcc('acc-older', new Date('2026-01-01T10:00:00Z'))
+            ];
+
+            vi.mocked(restoreAccommodations).mockResolvedValue({ affectedIds: ['acc-newer'] });
+            vi.mocked(restoreAccommodationPhotos).mockResolvedValue({
+                movedCount: 3,
+                totalCount: 10
+            });
+
+            const deps = makeDeps({
+                getPlanCaps: vi.fn().mockReturnValue({
+                    accommodationsCap: 1, // only room for 1 → 'acc-newer' restored, 'acc-older' stays
+                    promotionsCap: -1,
+                    photosPerAccommodationCap: 10
+                }),
+                getRestrictedAccommodations: vi.fn().mockResolvedValue(accs),
+                getActiveAccommodationCount: vi.fn().mockResolvedValue(0),
+                getAccommodationsWithArchivedPhotos: vi
+                    .fn()
+                    // both accommodations have archived photos
+                    .mockResolvedValue([
+                        makeAccWithPhotos('acc-newer', 5, 3),
+                        makeAccWithPhotos('acc-older', 2, 4)
+                    ])
+            });
+
+            await applyUpgradeRestorations({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                newPlanId: NEW_PLAN_ID,
+                deps
+            });
+
+            // restoreAccommodationPhotos must be called for 'acc-newer' (restored acc)
+            expect(restoreAccommodationPhotos).toHaveBeenCalledWith(
+                expect.objectContaining({ accommodationId: 'acc-newer' })
+            );
+            // restoreAccommodationPhotos must NOT be called for 'acc-older' (still restricted)
+            const photoCalls = vi.mocked(restoreAccommodationPhotos).mock.calls;
+            const calledIds = photoCalls.map((c) => c[0].accommodationId);
+            expect(calledIds).not.toContain('acc-older');
+        });
+
+        it('calls restoreAccommodationPhotos for acc with archived photos when acc is fully restored', async () => {
+            // All accommodations fit in cap → no accLeaveIds → all photo restores run.
+            vi.mocked(restoreAccommodations).mockResolvedValue({ affectedIds: ['acc-1'] });
+            vi.mocked(restoreAccommodationPhotos).mockResolvedValue({
+                movedCount: 2,
+                totalCount: 8
+            });
+
+            const deps = makeDeps({
+                getPlanCaps: vi.fn().mockReturnValue({
+                    accommodationsCap: 5, // plenty of headroom
+                    promotionsCap: -1,
+                    photosPerAccommodationCap: 10
+                }),
+                getRestrictedAccommodations: vi
+                    .fn()
+                    .mockResolvedValue([makeRestrictedAcc('acc-1')]),
+                getActiveAccommodationCount: vi.fn().mockResolvedValue(0),
+                getAccommodationsWithArchivedPhotos: vi
+                    .fn()
+                    .mockResolvedValue([makeAccWithPhotos('acc-1', 6, 2)])
+            });
+
+            await applyUpgradeRestorations({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                newPlanId: NEW_PLAN_ID,
+                deps
+            });
+
+            // Photo restore SHOULD run for acc-1 (it was restored)
+            expect(restoreAccommodationPhotos).toHaveBeenCalledWith(
+                expect.objectContaining({ accommodationId: 'acc-1' })
+            );
+        });
+
+        it('does NOT schedule revalidation for a still-restricted acc whose photos were skipped', async () => {
+            // 'acc-older' stays restricted → no photo restore → not in revalidation events.
+            const revalSvc = makeRevalidationService();
+            vi.mocked(getRevalidationService).mockReturnValue(revalSvc as never);
+
+            const accs = [
+                makeRestrictedAcc('acc-newer', new Date('2026-01-03T10:00:00Z')),
+                makeRestrictedAcc('acc-older', new Date('2026-01-01T10:00:00Z'))
+            ];
+
+            vi.mocked(restoreAccommodations).mockResolvedValue({ affectedIds: ['acc-newer'] });
+            vi.mocked(restoreAccommodationPhotos).mockResolvedValue({
+                movedCount: 0,
+                totalCount: 0
+            });
+
+            const deps = makeDeps({
+                getPlanCaps: vi.fn().mockReturnValue({
+                    accommodationsCap: 1,
+                    promotionsCap: -1,
+                    photosPerAccommodationCap: 10
+                }),
+                getRestrictedAccommodations: vi.fn().mockResolvedValue(accs),
+                getActiveAccommodationCount: vi.fn().mockResolvedValue(0),
+                getAccommodationsWithArchivedPhotos: vi
+                    .fn()
+                    .mockResolvedValue([makeAccWithPhotos('acc-older', 2, 4)]),
+                fetchAccommodationSlugs: vi.fn().mockResolvedValue({
+                    'acc-newer': 'newer-slug'
+                })
+            });
+
+            await applyUpgradeRestorations({
+                userId: USER_ID,
+                customerId: CUSTOMER_ID,
+                newPlanId: NEW_PLAN_ID,
+                deps
+            });
+
+            // Revalidation should only be for 'acc-newer' (restored), not 'acc-older' (photos skipped)
+            const revalCalls = revalSvc.scheduleRevalidationBatch.mock.calls;
+            if (revalCalls.length > 0) {
+                const firstCallArg = revalCalls[0]?.[0] as
+                    | { events: Array<{ slug: string }> }
+                    | undefined;
+                if (firstCallArg) {
+                    const slugs = firstCallArg.events.map((e) => e.slug);
+                    expect(slugs).not.toContain('acc-older');
+                }
+            }
+            // Photo restore is NOT called for 'acc-older'
+            const calledIds = vi
+                .mocked(restoreAccommodationPhotos)
+                .mock.calls.map((c) => c[0].accommodationId);
+            expect(calledIds).not.toContain('acc-older');
+        });
+    });
+
     // ── Tx atomicity ──────────────────────────────────────────────────────
 
     describe('transaction atomicity', () => {

@@ -718,3 +718,150 @@ describe('plan-photo-restriction.service — FOR UPDATE row lock (M-1 regression
         ).rejects.toThrow('acc-not-found-lock-restore');
     });
 });
+
+// ---------------------------------------------------------------------------
+// M-3 — featuredImage occupies one cap slot in restoreAccommodationPhotos
+//
+// When `toCap` is provided and the accommodation has a `featuredImage`, the
+// effective gallery target must be `toCap - 1` (one slot is reserved for
+// featuredImage). This is symmetric with the restriction side:
+//   gallerySlots = cap - (hasFeaturedImage ? 1 : 0)
+//
+// These tests call the real primitive via a FakeTx (no module mocking of
+// plan-photo-restriction.service).
+// ---------------------------------------------------------------------------
+
+describe('plan-photo-restriction.service — toCap featuredImage seat reservation (M-3 regression)', () => {
+    beforeEach(() => vi.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
+
+    it('toCap with featuredImage: gallery target = toCap - 1 (not toCap)', async () => {
+        // cap = 10, featuredImage present → galleryTarget = 9
+        // gallery currently has 7 → needed = 2 → move 2 from archived
+        const featured = makeImg('https://cdn.example.com/feat.jpg');
+        const g1 = makeImg('https://cdn.example.com/g1.jpg');
+        const g2 = makeImg('https://cdn.example.com/g2.jpg');
+        const g3 = makeImg('https://cdn.example.com/g3.jpg');
+        const g4 = makeImg('https://cdn.example.com/g4.jpg');
+        const g5 = makeImg('https://cdn.example.com/g5.jpg');
+        const g6 = makeImg('https://cdn.example.com/g6.jpg');
+        const g7 = makeImg('https://cdn.example.com/g7.jpg');
+        const arch1 = makeImg('https://cdn.example.com/arch1.jpg');
+        const arch2 = makeImg('https://cdn.example.com/arch2.jpg');
+        const arch3 = makeImg('https://cdn.example.com/arch3.jpg');
+
+        const media: Media = {
+            featuredImage: featured,
+            gallery: [g1, g2, g3, g4, g5, g6, g7], // 7 items
+            archivedGallery: [arch1, arch2, arch3] // 3 archived
+        };
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        const result = await restoreAccommodationPhotos({
+            accommodationId: 'acc-m3-01',
+            toCap: 10, // total cap = 10; featuredImage occupies 1 → gallery target = 9
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        // 9 - 7 = 2 items should be restored
+        expect(result.movedCount).toBe(2);
+        const written = tx.setPayload as Media;
+        expect(written.gallery).toHaveLength(9);
+        expect(written.archivedGallery).toHaveLength(1);
+        // Total (gallery + archived, excluding featuredImage) conserved: 7+3 = 10 total, now 9+1
+        expect((written.gallery?.length ?? 0) + (written.archivedGallery?.length ?? 0)).toBe(10);
+    });
+
+    it('toCap without featuredImage: gallery target = toCap (no reservation)', async () => {
+        // cap = 10, no featuredImage → galleryTarget = 10
+        // gallery currently has 7 → needed = 3 → move 3 from archived
+        const g1 = makeImg('https://cdn.example.com/nf-g1.jpg');
+        const g2 = makeImg('https://cdn.example.com/nf-g2.jpg');
+        const g3 = makeImg('https://cdn.example.com/nf-g3.jpg');
+        const g4 = makeImg('https://cdn.example.com/nf-g4.jpg');
+        const g5 = makeImg('https://cdn.example.com/nf-g5.jpg');
+        const g6 = makeImg('https://cdn.example.com/nf-g6.jpg');
+        const g7 = makeImg('https://cdn.example.com/nf-g7.jpg');
+        const arch1 = makeImg('https://cdn.example.com/nf-arch1.jpg');
+        const arch2 = makeImg('https://cdn.example.com/nf-arch2.jpg');
+        const arch3 = makeImg('https://cdn.example.com/nf-arch3.jpg');
+
+        const media: Media = {
+            // No featuredImage
+            gallery: [g1, g2, g3, g4, g5, g6, g7], // 7 items
+            archivedGallery: [arch1, arch2, arch3] // 3 archived
+        };
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        const result = await restoreAccommodationPhotos({
+            accommodationId: 'acc-m3-02',
+            toCap: 10, // total cap = 10; no featuredImage → gallery target = 10
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        // 10 - 7 = 3 items should be restored
+        expect(result.movedCount).toBe(3);
+        const written = tx.setPayload as Media;
+        expect(written.gallery).toHaveLength(10);
+        expect(written.archivedGallery).toHaveLength(0);
+    });
+
+    it('toCap with featuredImage already at gallery target: no-op', async () => {
+        // cap = 10, featuredImage present → galleryTarget = 9
+        // gallery already has 9 → needed = 0 → no-op
+        const featured = makeImg('https://cdn.example.com/feat2.jpg');
+        const archived = makeImg('https://cdn.example.com/archived2.jpg');
+        const gallery = Array.from({ length: 9 }, (_, i) =>
+            makeImg(`https://cdn.example.com/g${i}.jpg`)
+        );
+
+        const media: Media = {
+            featuredImage: featured,
+            gallery, // 9 items — at effective gallery cap
+            archivedGallery: [archived]
+        };
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        const result = await restoreAccommodationPhotos({
+            accommodationId: 'acc-m3-03',
+            toCap: 10, // featuredImage present → galleryTarget = 9 → already met
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        expect(result.movedCount).toBe(0);
+        // No DB write (no-op)
+        expect(tx.setPayload).toBeNull();
+    });
+
+    it('toCap with featuredImage and FIFO: first-archived item restored first', async () => {
+        // cap = 5, featuredImage → galleryTarget = 4, gallery has 3 → restore 1
+        const featured = makeImg('https://cdn.example.com/feat-fifo.jpg');
+        const g1 = makeImg('https://cdn.example.com/fifo-g1.jpg');
+        const g2 = makeImg('https://cdn.example.com/fifo-g2.jpg');
+        const g3 = makeImg('https://cdn.example.com/fifo-g3.jpg');
+        const first = makeImg('https://cdn.example.com/fifo-arch-first.jpg');
+        const second = makeImg('https://cdn.example.com/fifo-arch-second.jpg');
+
+        const media: Media = {
+            featuredImage: featured,
+            gallery: [g1, g2, g3], // 3 items
+            archivedGallery: [first, second] // 2 archived — only 1 needed
+        };
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        const result = await restoreAccommodationPhotos({
+            accommodationId: 'acc-m3-04',
+            toCap: 5, // featuredImage → galleryTarget = 4; gallery = 3 → restore 1
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        expect(result.movedCount).toBe(1);
+        const written = tx.setPayload as Media;
+        expect(written.gallery).toHaveLength(4);
+        // FIFO: `first` (head of archive) is the one restored
+        expect(written.gallery?.[3]).toStrictEqual(first);
+        // `second` stays in archive
+        expect(written.archivedGallery).toHaveLength(1);
+        expect(written.archivedGallery?.[0]).toStrictEqual(second);
+    });
+});

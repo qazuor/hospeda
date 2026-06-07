@@ -120,6 +120,7 @@ export async function archiveAccommodationPhotos(
                 LIMIT 1
                 FOR UPDATE`
         );
+        // TYPE-WORKAROUND: Drizzle execute() returns an opaque QueryResult; rows are at .rows on pg driver.
         const lockRows = (
             lockResult as unknown as { rows?: Array<{ id: string; media: Media | null }> }
         ).rows;
@@ -204,10 +205,15 @@ export interface RestoreAccommodationPhotosInput {
      */
     readonly restoreCount?: number;
     /**
-     * Restore enough items so that `gallery.length === toCap`. If
-     * `gallery.length` already equals or exceeds `toCap`, this is a no-op.
-     * When there are fewer archived items than needed, all archived items are
-     * restored (partial fill up to cap).
+     * Restore enough items so that `gallery.length + (hasFeaturedImage ? 1 : 0) === toCap`.
+     * In other words, `toCap` is the TOTAL plan cap (gallery + featuredImage combined).
+     * The primitive reserves one slot for `featuredImage` when it is present, so the
+     * effective gallery target is `toCap - 1`. If the gallery already meets or exceeds
+     * the effective target, this is a no-op. When there are fewer archived items than
+     * needed, all archived items are restored (partial fill up to cap).
+     *
+     * This is symmetric with the downgrade restriction side, which computes
+     * `gallerySlots = cap - (hasFeaturedImage ? 1 : 0)` before archiving.
      *
      * Mutually exclusive with `restoreCount`. Provide exactly one.
      */
@@ -222,8 +228,11 @@ export interface RestoreAccommodationPhotosInput {
  * Items are restored FIFO (first-archived first-restored — head of the
  * `archivedGallery` array). Provide exactly one of `restoreCount` or `toCap`:
  * - `restoreCount`: move exactly this many items (or all if fewer exist).
- * - `toCap`: restore enough so that `gallery.length === toCap` (capped at
- *   available archived items).
+ * - `toCap`: restore enough so that the TOTAL occupied cap slots (gallery +
+ *   featuredImage) equal `toCap`. The primitive reads `media.featuredImage`
+ *   under the row lock and subtracts one seat when present, so the effective
+ *   gallery target is `toCap - (hasFeaturedImage ? 1 : 0)`. This is symmetric
+ *   with the restriction side (`gallerySlots = cap - (hasFeaturedImage ? 1 : 0)`).
  *
  * **Idempotent**: if `archivedGallery` is empty or `gallery` already meets the
  * cap, returns `{ movedCount: 0, totalCount }` without a DB write.
@@ -250,6 +259,7 @@ export async function restoreAccommodationPhotos(
                 LIMIT 1
                 FOR UPDATE`
         );
+        // TYPE-WORKAROUND: Drizzle execute() returns an opaque QueryResult; rows are at .rows on pg driver.
         const lockRows = (
             lockResult as unknown as { rows?: Array<{ id: string; media: Media | null }> }
         ).rows;
@@ -270,7 +280,14 @@ export async function restoreAccommodationPhotos(
         if (input.restoreCount !== undefined) {
             count = Math.min(input.restoreCount, currentArchived.length);
         } else if (input.toCap !== undefined) {
-            const needed = Math.max(0, input.toCap - currentGallery.length);
+            // M-3: toCap is the TOTAL plan cap (gallery + featuredImage combined).
+            // Reserve one slot for featuredImage when present — symmetric with the
+            // restriction side: gallerySlots = cap - (hasFeaturedImage ? 1 : 0).
+            const hasFeaturedImage = !!(
+                media.featuredImage && (media.featuredImage as { url?: string }).url
+            );
+            const galleryTarget = Math.max(0, input.toCap - (hasFeaturedImage ? 1 : 0));
+            const needed = Math.max(0, galleryTarget - currentGallery.length);
             count = Math.min(needed, currentArchived.length);
         } else {
             throw new Error(
