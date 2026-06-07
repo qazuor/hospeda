@@ -375,36 +375,43 @@
             "id": "T-010",
             "title": "Wire panel into RichTextField + TextareaField + useAccommodationPage + edit page",
             "description": "Per spec §5.3.1 + §5.3.6. Files: apps/admin/src/components/entity-form/fields/RichTextField.tsx (add onAiImprove prop, use editor.commands.setContent + onChange), apps/admin/src/components/entity-form/fields/TextareaField.tsx (add onAiImprove prop, call form.setFieldValue), apps/admin/src/features/accommodations/hooks/useAccommodationPage.ts (compute canUseAiTextImprove = userEntitlements.includes(EntitlementKey.AI_TEXT_IMPROVE), pass down), apps/admin/src/routes/_authed/accommodations/$id_.edit.tsx (mount <AiTextImprovePanel> only for description+summary fields per AC-11, track aiAssistedFields in a React ref for client-side audit hint per AC-12 SHOULD-only). For RichTextField the accept path uses editor.commands.setContent(suggestion, false) (same API as existing useEffect line 169). DO NOT modify BaseCrudService. DO NOT forward _aiMeta to the update API.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 5,
             "blockedBy": ["T-009"],
             "blocks": [],
             "subtasks": [
                 {
-                    "title": "Add onAiImprove prop to RichTextField with TipTap setContent + onChange",
-                    "completed": false
-                },
-                {
-                    "title": "Add onAiImprove prop to TextareaField with form.setFieldValue",
-                    "completed": false
+                    "title": "Add fieldAddons prop to EntityFormSection + EntityEditContent",
+                    "completed": true
                 },
                 {
                     "title": "Compute canUseAiTextImprove in useAccommodationPage",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Create AiTextImproveFieldAddon component",
+                    "completed": true
                 },
                 {
                     "title": "Mount AiTextImprovePanel in $id_.edit.tsx for description+summary only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Track aiAssistedFields ref for client-side audit hint",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Run typecheck + lint + tests for admin app",
-                    "completed": false
+                    "title": "Run typecheck + lint for admin app",
+                    "completed": true
                 }
             ],
+            "tags": ["frontend", "wiring", "tiptap", "integration"],
+            "phase": "integration",
+            "timestamps": {
+                "created": "2026-06-06T00:00:00.000Z",
+                "started": "2026-06-06T22:00:00.000Z",
+                "completed": "2026-06-06T22:45:00.000Z"
+            },
             "tags": ["frontend", "wiring", "tiptap", "integration"],
             "phase": "integration"
         }

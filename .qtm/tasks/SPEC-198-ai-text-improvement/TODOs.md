@@ -1,6 +1,6 @@
 # SPEC-198: AI Text Improvement (HOST)
 
-## Progress: 9/10 tasks (90%)
+## Progress: 10/10 tasks (100%)
 
 **Average Complexity:** 3.3/10
 **Critical Path:** T-001 → T-003 → T-004 → T-006 + T-007 → T-008 → T-009 → T-010 (10 steps)
@@ -80,9 +80,9 @@
   - Blocked by: T-004
   - Blocks: —
 
-- [ ] **T-010** (complexity: 5) - Wire panel into fields + edit page
-  - RichTextField.onAiImprove (TipTap setContent), TextareaField.onAiImprove (form.setFieldValue), useAccommodationPage.canUseAiTextImprove, $id_.edit.tsx mount, aiAssistedFields ref
-  - Files: RichTextField.tsx, TextareaField.tsx, useAccommodationPage.ts, $id_.edit.tsx
+- [x] **T-010** (complexity: 5) - Wire panel into fields + edit page
+  - fieldAddons prop on EntityFormSection/EntityEditContent, AiTextImproveFieldAddon bridge component, useAccommodationPage.canUseAiTextImprove, $id_.edit.tsx mount for description+summary only, aiAssistedFields ref
+  - Files: EntityFormSection.tsx, EntityEditContent.tsx, AiTextImproveFieldAddon.tsx, useAccommodationPage.ts, $id_.edit.tsx
   - Blocked by: T-009
   - Blocks: —
 
