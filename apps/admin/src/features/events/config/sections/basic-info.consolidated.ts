@@ -1,4 +1,8 @@
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import {
+    FieldTypeEnum,
+    LayoutTypeEnum,
+    RichTextFeatureEnum
+} from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { EventCategoryEnum, PermissionEnum } from '@repo/schemas';
 
@@ -71,7 +75,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         },
         {
             id: 'description',
-            type: FieldTypeEnum.TEXTAREA,
+            type: FieldTypeEnum.RICH_TEXT,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: 'Descripción',
@@ -81,10 +85,22 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                 view: [PermissionEnum.EVENT_VIEW_ALL],
                 edit: [PermissionEnum.EVENT_UPDATE]
             },
+            // SPEC-187 FR-1: TipTap WYSIWYG with full toolbar including LINK.
+            // SPEC-187 FR-5: declared as the full feature set for event.description.
             typeConfig: {
-                minRows: 4,
+                type: 'RICH_TEXT',
                 maxLength: 5000,
-                minLength: 50
+                minLength: 50,
+                allowedFeatures: [
+                    RichTextFeatureEnum.BOLD,
+                    RichTextFeatureEnum.ITALIC,
+                    RichTextFeatureEnum.UNDERLINE,
+                    RichTextFeatureEnum.LIST,
+                    RichTextFeatureEnum.ORDERED_LIST,
+                    RichTextFeatureEnum.HEADING,
+                    RichTextFeatureEnum.QUOTE,
+                    RichTextFeatureEnum.LINK
+                ]
             }
         },
         {
