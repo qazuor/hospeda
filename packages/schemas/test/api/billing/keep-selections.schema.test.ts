@@ -202,6 +202,90 @@ describe('KeepSelectionsSchema', () => {
             expect(typed.accommodationIds).toBeDefined();
         });
     });
+
+    // ── .max(100) caps (m-5) ────────────────────────────────────────────────
+
+    describe('.max(100) caps on accommodationIds and promotionIds', () => {
+        function makeUuid(n: number): string {
+            const hex = n.toString(16).padStart(8, '0');
+            return `${hex}-1111-4111-8111-111111111111`;
+        }
+
+        it('accepts exactly 100 accommodationIds', () => {
+            const result = KeepSelectionsSchema.safeParse({
+                accommodationIds: Array.from({ length: 100 }, (_, i) => makeUuid(i + 1))
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects 101 accommodationIds', () => {
+            const result = KeepSelectionsSchema.safeParse({
+                accommodationIds: Array.from({ length: 101 }, (_, i) => makeUuid(i + 1))
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts exactly 100 promotionIds', () => {
+            const result = KeepSelectionsSchema.safeParse({
+                promotionIds: Array.from({ length: 100 }, (_, i) => makeUuid(i + 1))
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects 101 promotionIds', () => {
+            const result = KeepSelectionsSchema.safeParse({
+                promotionIds: Array.from({ length: 101 }, (_, i) => makeUuid(i + 1))
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('.max(100) cap on photoKeepMap keys', () => {
+        function makeUuid(n: number): string {
+            const hex = n.toString(16).padStart(8, '0');
+            return `${hex}-1111-4111-8111-111111111111`;
+        }
+
+        it('accepts a photoKeepMap with exactly 100 accommodation keys', () => {
+            const photoKeepMap: Record<string, string[]> = {};
+            for (let i = 1; i <= 100; i++) {
+                photoKeepMap[makeUuid(i)] = [VALID_URL_1];
+            }
+            const result = KeepSelectionsSchema.safeParse({ photoKeepMap });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects a photoKeepMap with 101 accommodation keys', () => {
+            const photoKeepMap: Record<string, string[]> = {};
+            for (let i = 1; i <= 101; i++) {
+                photoKeepMap[makeUuid(i)] = [VALID_URL_1];
+            }
+            const result = KeepSelectionsSchema.safeParse({ photoKeepMap });
+            expect(result.success).toBe(false);
+        });
+
+        it('accepts a photoKeepMap entry with exactly 100 photo URLs', () => {
+            const urls = Array.from(
+                { length: 100 },
+                (_, i) => `https://cdn.example.com/img${i}.jpg`
+            );
+            const result = KeepSelectionsSchema.safeParse({
+                photoKeepMap: { [VALID_UUID_1]: urls }
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('rejects a photoKeepMap entry with 101 photo URLs', () => {
+            const urls = Array.from(
+                { length: 101 },
+                (_, i) => `https://cdn.example.com/img${i}.jpg`
+            );
+            const result = KeepSelectionsSchema.safeParse({
+                photoKeepMap: { [VALID_UUID_1]: urls }
+            });
+            expect(result.success).toBe(false);
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------

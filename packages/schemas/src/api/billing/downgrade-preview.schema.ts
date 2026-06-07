@@ -280,40 +280,56 @@ export type ComputeDowngradeExcessInput = z.infer<typeof ComputeDowngradeExcessI
  *
  * @module api/billing/downgrade-preview
  */
-export const KeepSelectionsSchema = z.object({
-    /**
-     * Accommodation UUIDs the host explicitly wants to KEEP active after
-     * the downgrade applies. All other active accommodations exceeding the
-     * cap will be plan-restricted (unpublished / `planRestricted` flag).
-     *
-     * The list is intersected with the actual set of active accommodations
-     * owned by the host at apply time — stale UUIDs are silently ignored.
-     */
-    accommodationIds: z.array(z.string().uuid()).optional(),
-    /**
-     * Promotion UUIDs the host explicitly wants to KEEP active after
-     * the downgrade applies. All other active promotions exceeding the
-     * cap will be deactivated.
-     *
-     * Stale UUIDs (promotions that no longer exist or are already inactive)
-     * are silently ignored at apply time.
-     */
-    promotionIds: z.array(z.string().uuid()).optional(),
-    /**
-     * Per-accommodation map of photo URLs the host wants to keep in the
-     * visible `gallery`. Key = accommodation UUID (must be a valid UUID).
-     * Value = array of photo URL strings to keep visible.
-     *
-     * Photos currently in `gallery` that are NOT listed here and exceed
-     * the per-accommodation cap are moved to `archivedGallery` (JSONB
-     * field on `accommodations.media`). Photo identity = URL string
-     * (T-009 decision).
-     *
-     * Stale URLs (not present in the accommodation's current gallery at
-     * apply time) are silently ignored.
-     */
-    photoKeepMap: z.record(z.string().uuid(), z.array(z.string().url())).optional()
-});
+export const KeepSelectionsSchema = z
+    .object({
+        /**
+         * Accommodation UUIDs the host explicitly wants to KEEP active after
+         * the downgrade applies. All other active accommodations exceeding the
+         * cap will be plan-restricted (unpublished / `planRestricted` flag).
+         *
+         * The list is intersected with the actual set of active accommodations
+         * owned by the host at apply time — stale UUIDs are silently ignored.
+         *
+         * Capped at 100 entries: any host exceeding this has a data or client
+         * bug; the server rejects the payload rather than silently truncating.
+         */
+        accommodationIds: z.array(z.string().uuid()).max(100).optional(),
+        /**
+         * Promotion UUIDs the host explicitly wants to KEEP active after
+         * the downgrade applies. All other active promotions exceeding the
+         * cap will be deactivated.
+         *
+         * Stale UUIDs (promotions that no longer exist or are already inactive)
+         * are silently ignored at apply time.
+         *
+         * Capped at 100 entries (mirrors accommodationIds cap).
+         */
+        promotionIds: z.array(z.string().uuid()).max(100).optional(),
+        /**
+         * Per-accommodation map of photo URLs the host wants to keep in the
+         * visible `gallery`. Key = accommodation UUID (must be a valid UUID).
+         * Value = array of photo URL strings to keep visible.
+         *
+         * Photos currently in `gallery` that are NOT listed here and exceed
+         * the per-accommodation cap are moved to `archivedGallery` (JSONB
+         * field on `accommodations.media`). Photo identity = URL string
+         * (T-009 decision).
+         *
+         * Stale URLs (not present in the accommodation's current gallery at
+         * apply time) are silently ignored.
+         *
+         * Each per-accommodation URL array is capped at 100 entries. The map
+         * itself is capped at 100 keys (accommodations).
+         */
+        photoKeepMap: z.record(z.string().uuid(), z.array(z.string().url()).max(100)).optional()
+    })
+    .refine(
+        (val) => val.photoKeepMap === undefined || Object.keys(val.photoKeepMap).length <= 100,
+        {
+            message: 'photoKeepMap must not exceed 100 accommodation entries',
+            path: ['photoKeepMap']
+        }
+    );
 
 /** TypeScript type inferred from {@link KeepSelectionsSchema}. */
 export type KeepSelections = z.infer<typeof KeepSelectionsSchema>;
