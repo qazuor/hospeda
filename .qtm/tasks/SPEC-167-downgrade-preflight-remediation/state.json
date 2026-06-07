@@ -470,7 +470,7 @@
             "id": "T-022",
             "title": "Verification sweep (typecheck, biome, touched + consumer tests, e2e)",
             "description": "Re-run EVERYTHING touched plus consumers of changed @repo/schemas exports (lesson SPEC-145/149: 'already green' files break when schemas gain exports). Per-package typecheck (api, schemas, db, service-core), biome check on the diff, every touched unit test file sequentially, the 3 billing e2e suites (only pre-existing failures allowed: monthly :506/:771 webhook activation, annual public:read). Rebuild stale dists before believing typecheck errors (lesson SPEC-149 post-merge).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021", "T-017", "T-018"],
             "blocks": ["T-023"],
@@ -478,14 +478,14 @@
             "tags": ["sweep", "quality"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-07T00:18:00.000Z",
+                "completed": "2026-06-07T00:42:00.000Z"
             }
         },
         {
