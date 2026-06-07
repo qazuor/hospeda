@@ -185,6 +185,26 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     return { ...actual };
 });
 
+// SPEC-167 T-012: mock subscription-pause.service (exports more than
+// payment-logic.ts needs — spread importOriginal so the real exports
+// remain available and only resolveOwnerUserId is overridden).
+vi.mock('../../../src/services/subscription-pause.service', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        resolveOwnerUserId: vi.fn().mockResolvedValue('usr-resolved-1')
+    };
+});
+
+// SPEC-167 T-012: mock plan-upgrade-restoration.service — payment-logic.ts
+// only imports applyUpgradeRestorationsOrWarn, so a minimal factory suffices.
+vi.mock('../../../src/services/plan-upgrade-restoration.service', () => ({
+    applyUpgradeRestorationsOrWarn: vi.fn().mockResolvedValue({
+        restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
+        stillRestricted: { accommodations: [], promotions: [] }
+    })
+}));
+
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import * as serviceCore from '@repo/service-core';
 import { clearEntitlementCache } from '../../../src/middlewares/entitlement';
@@ -204,7 +224,9 @@ import {
     extractPlanChangeUpgradeMetadata
 } from '../../../src/routes/webhooks/mercadopago/utils';
 import { AddonService } from '../../../src/services/addon.service';
+import { applyUpgradeRestorationsOrWarn } from '../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../src/services/refund-lifecycle.service';
+import { resolveOwnerUserId } from '../../../src/services/subscription-pause.service';
 
 /** Helper to get the mocked confirmPurchase fn from the hoisted AddonService mock */
 function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
@@ -243,6 +265,12 @@ describe('processPaymentUpdated', () => {
             id: 'cust-1',
             email: 'user@test.com',
             metadata: { name: 'Test User', userId: 'usr-1' }
+        });
+        // SPEC-167 T-012: restore defaults after clearAllMocks wipes them.
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('usr-resolved-1');
+        vi.mocked(applyUpgradeRestorationsOrWarn).mockResolvedValue({
+            restored: { accommodations: [], promotions: [], photosByAccommodation: {} },
+            stillRestricted: { accommodations: [], promotions: [] }
         });
     });
 
@@ -1066,6 +1094,90 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(true);
             expect(result.planUpgradeConfirmed).toBeUndefined();
             expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+        });
+
+        // ── SPEC-167 T-012: upgrade restoration wiring ───────────────────────
+        // resolveOwnerUserId is now wrapped in try/catch so a transient DB
+        // error must NOT cause confirmPlanUpgrade to return handled=false after
+        // the plan change already committed.
+
+        it('T-012: upgrade confirms (handled=true) even when resolveOwnerUserId rejects (CI scenario)', async () => {
+            approvedUpgradePayment();
+            vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Plan change committed — webhook must still be handled=true.
+            expect(result.success).toBe(true);
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(billing.subscriptions.changePlan).toHaveBeenCalledOnce();
+        });
+
+        it('T-012: warns (not errors) when resolveOwnerUserId throws, with correct context', async () => {
+            const { apiLogger } = await import('../../../src/utils/logger');
+            approvedUpgradePayment();
+            vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
+            const billing = makeUpgradeBilling();
+
+            await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    planChangeUpgradeId: UPGRADE_SUB_ID,
+                    newPlanId: NEW_PLAN_ID,
+                    error: 'DB connection lost'
+                }),
+                expect.stringContaining('upgrade restoration step threw unexpectedly')
+            );
+        });
+
+        it('T-012: calls applyUpgradeRestorationsOrWarn with resolved userId on happy path', async () => {
+            approvedUpgradePayment();
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce('usr-happy-1');
+            const billing = makeUpgradeBilling();
+
+            await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            expect(applyUpgradeRestorationsOrWarn).toHaveBeenCalledOnce();
+            expect(applyUpgradeRestorationsOrWarn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: 'usr-happy-1',
+                    newPlanId: NEW_PLAN_ID
+                })
+            );
+        });
+
+        it('T-012: skips applyUpgradeRestorationsOrWarn and warns when userId resolves null', async () => {
+            const { apiLogger } = await import('../../../src/utils/logger');
+            approvedUpgradePayment();
+            vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
+            const billing = makeUpgradeBilling();
+
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Upgrade still confirmed — null userId is non-fatal.
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(applyUpgradeRestorationsOrWarn).not.toHaveBeenCalled();
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    planChangeUpgradeId: UPGRADE_SUB_ID,
+                    newPlanId: NEW_PLAN_ID
+                }),
+                expect.stringContaining('could not resolve owner userId')
+            );
         });
     });
 

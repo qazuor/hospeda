@@ -386,7 +386,11 @@ async function confirmPlanUpgrade(input: {
     // higher caps. Uses the soft-fail wrapper: restoration failure must NOT
     // block the upgrade response (the plan change already committed in QZPay).
     // Errors are logged and reported to Sentry via the logger integration.
-    {
+    // The entire block is wrapped in try/catch so a transient DB error in
+    // resolveOwnerUserId (or any sub-call) cannot fail the webhook after the
+    // plan change already committed — same OrWarn philosophy as the MP
+    // propagation block below.
+    try {
         const userId = await resolveOwnerUserId({
             customerId: changeResult.subscription.customerId
         });
@@ -407,6 +411,20 @@ async function confirmPlanUpgrade(input: {
                 'Plan upgrade: could not resolve owner userId for upgrade restoration — skipped'
             );
         }
+    } catch (restorationErr) {
+        apiLogger.warn(
+            {
+                planChangeUpgradeId,
+                newPlanId,
+                customerId: changeResult.subscription.customerId,
+                source,
+                error:
+                    restorationErr instanceof Error
+                        ? restorationErr.message
+                        : String(restorationErr)
+            },
+            'Plan upgrade: upgrade restoration step threw unexpectedly — plan change committed, manual restoration may be needed'
+        );
     }
 
     // Step 2: propagate to MP preapproval — best-effort.
