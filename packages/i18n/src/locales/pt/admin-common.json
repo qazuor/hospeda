@@ -320,6 +320,7 @@
             "CEILING_HIT": "Limite de custo de IA atingido. Tente mais tarde.",
             "SERVICE_UNAVAILABLE": "Serviço temporariamente indisponível. Tente mais tarde.",
             "INTERNAL_ERROR": "Ocorreu um erro inesperado. Seu texto original não foi modificado.",
+            "NETWORK_INTERRUPTED": "Conexão interrompida. Tente novamente.",
             "default": "Erro ao gerar sugestão. Seu texto original não foi modificado."
         }
     }

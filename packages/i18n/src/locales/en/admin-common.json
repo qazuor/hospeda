@@ -320,6 +320,7 @@
             "CEILING_HIT": "AI cost ceiling reached. Try again later.",
             "SERVICE_UNAVAILABLE": "Service temporarily unavailable. Try again later.",
             "INTERNAL_ERROR": "An unexpected error occurred. Your original text is unchanged.",
+            "NETWORK_INTERRUPTED": "Connection interrupted. Please try again.",
             "default": "Error generating suggestion. Your original text is unchanged."
         }
     }

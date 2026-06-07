@@ -101,4 +101,13 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * Same three-way contract as `pendingAmenityIds`.
      */
     pendingFeatureIds?: readonly string[];
+    /**
+     * AI-assisted field type values extracted from the update input
+     * (SPEC-198.1). Stored here by `_beforeUpdate` so `_afterUpdate` can
+     * persist them into the accommodation's `extraInfo` JSONB column for
+     * audit / analytics.
+     * `undefined` → field was absent in the input (no-op).
+     * `[…]` → list of AiTextImproveFieldType values.
+     */
+    pendingAiAssistedFields?: readonly string[];
 }

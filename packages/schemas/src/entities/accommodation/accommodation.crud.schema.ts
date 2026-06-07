@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
+import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
 /**
@@ -144,7 +145,19 @@ export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
          */
         featureIds: z
             .array(z.string().uuid({ message: 'zodError.accommodation.featureIds.invalidUuid' }))
-            .optional()
+            .optional(),
+        /**
+         * Optional list of AI-assisted field types that were modified by the
+         * host via the AI text-improvement panel (SPEC-198.1).
+         *
+         * When present, the service stores these in the accommodation's
+         * `extraInfo` JSONB for audit / analytics. The client converts its
+         * `Set<string>` ref to this array before submitting the update.
+         *
+         * Valid values are members of {@link AiTextImproveFieldTypeSchema}:
+         * `'description' | 'summary' | 'faq_answer'`.
+         */
+        aiAssistedFields: z.array(AiTextImproveFieldTypeSchema).optional()
     });
 
 // Type: Update Input

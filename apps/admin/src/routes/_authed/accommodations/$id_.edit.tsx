@@ -9,9 +9,13 @@ import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/use
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { AccommodationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AccommodationUpdateInputSchema,
+    type AiTextImproveFieldType,
+    PermissionEnum
+} from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 
 /**
  * Accommodation Edit Route Configuration
@@ -99,6 +103,15 @@ function AccommodationEditPage() {
     // Derive media / subtitle / badges from the loaded entity.
     const headerProps = useAccommodationHeaderProps({ entity: entityData.entity });
 
+    // SPEC-198.1: convert the Set ref to an array and pass as extra save payload.
+    // The `onSaveSuccess` callback clears the ref so a subsequent save does not
+    // re-send stale field names.
+    // eslint-disable-next-line react/hook-use-state -- intentional: ref captures
+    // accumulated field names across renders without causing re-renders.
+    const clearAiAssistedRef = useCallback(() => {
+        aiAssistedFieldsRef.current.clear();
+    }, []);
+
     return (
         <RoutePermissionGuard
             permissions={[
@@ -126,6 +139,12 @@ function AccommodationEditPage() {
                     qualityScore={({ isReduced }) => (
                         <AccommodationQualityScore compact={isReduced} />
                     )}
+                    extraSavePayload={(): Record<string, unknown> => ({
+                        aiAssistedFields: Array.from(
+                            aiAssistedFieldsRef.current
+                        ) as AiTextImproveFieldType[]
+                    })}
+                    onSaveSuccess={clearAiAssistedRef}
                 >
                     <EntityEditContent
                         entityType="accommodation"
