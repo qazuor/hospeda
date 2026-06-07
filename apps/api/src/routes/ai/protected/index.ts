@@ -26,6 +26,7 @@
  */
 
 import { createRouter } from '../../../utils/create-app';
+import { protectedAiChatRoute } from './chat';
 import { protectedAiTextImproveRoute } from './text-improve';
 
 const app = createRouter();
@@ -41,7 +42,7 @@ app.route('/text-improve', protectedAiTextImproveRoute);
 // // SPEC-199 — search-intent AI (POST /search-intent)
 // // app.route('/search-intent', protectedAiSearchIntentRoute);
 //
-// // SPEC-200 — chat AI (POST /chat)
-// // app.route('/chat', protectedAiChatRoute);
+// SPEC-200 — chat AI (POST /chat)
+app.route('/chat', protectedAiChatRoute);
 
 export { app as protectedAiRoutes };
