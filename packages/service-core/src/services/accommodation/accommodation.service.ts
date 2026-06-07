@@ -1209,9 +1209,39 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
+        // INV-5 / B-1: preserve server-managed archivedGallery on any media update.
+        //
+        // `archivedGallery` is written exclusively by the downgrade-restriction cron
+        // (plan-photo-restriction.service) and MUST NOT be cleared by a host edit.
+        // The client input schema (`BaseMediaFields.media`) does not expose this field,
+        // so Zod strips it before the payload reaches here. We carry it forward from
+        // the current DB row whenever `data.media` is present.
+        //
+        // Fetch only when needed: if `data.media` is undefined the DB write won't
+        // touch the media column at all, so no action is required.
+        let normalizedData = data;
+        if ((data as Record<string, unknown>).media !== undefined) {
+            const existing = await this.model.findById(id, ctx?.tx);
+            const existingArchivedGallery = (existing?.media as Record<string, unknown> | undefined)
+                ?.archivedGallery;
+            if (existingArchivedGallery !== undefined) {
+                const incomingMedia = (data as Record<string, unknown>).media as Record<
+                    string,
+                    unknown
+                >;
+                normalizedData = {
+                    ...data,
+                    media: {
+                        ...incomingMedia,
+                        archivedGallery: existingArchivedGallery
+                    }
+                } as AccommodationUpdateInput;
+            }
+        }
+
         // SPEC-172: if junction sync fields are present and no external tx exists,
         // open a transaction so accommodation update + junction sync are atomic.
-        const { amenityIds, featureIds } = data as {
+        const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
@@ -1220,14 +1250,14 @@ export class AccommodationService extends BaseCrudService<
         if (needsJunctionSync && !ctx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
-                    return super.update(actor, id, data, txCtx);
+                    return super.update(actor, id, normalizedData, txCtx);
                 },
                 ctx,
                 { timeoutMs: 10_000 }
             );
         }
 
-        return super.update(actor, id, data, ctx);
+        return super.update(actor, id, normalizedData, ctx);
     }
 
     /**
