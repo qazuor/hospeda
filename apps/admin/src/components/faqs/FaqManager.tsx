@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { AiTextImprovePanel } from '@/features/accommodations/components/AiTextImprovePanel';
 import {
     useFaqCreate,
     useFaqDelete,
@@ -62,6 +63,10 @@ export interface FaqManagerProps {
     readonly entityType: FaqEntityType;
     /** UUID of the parent entity. */
     readonly parentId: string;
+    /** Whether the current user's plan includes the AI text-improve entitlement. */
+    readonly canUseAiTextImprove?: boolean;
+    /** Locale for AI text-improve suggestions. Defaults to 'es'. */
+    readonly aiTextImproveLocale?: string;
 }
 
 interface AddFormState {
@@ -79,7 +84,12 @@ interface AddFormErrors {
 /**
  * Full FAQ management panel for a single parent entity (destination or accommodation).
  */
-export function FaqManager({ entityType, parentId }: FaqManagerProps) {
+export function FaqManager({
+    entityType,
+    parentId,
+    canUseAiTextImprove = false,
+    aiTextImproveLocale = 'es'
+}: FaqManagerProps) {
     const { t } = useTranslations();
 
     // ── Data fetching ──────────────────────────────────────────────────────────
@@ -347,6 +357,18 @@ export function FaqManager({ entityType, parentId }: FaqManagerProps) {
                                 {addErrors.answer}
                             </p>
                         )}
+
+                        {canUseAiTextImprove && (
+                            <AiTextImprovePanel
+                                fieldType="faq_answer"
+                                fieldValue={addForm.answer}
+                                locale={aiTextImproveLocale}
+                                onAccept={(suggestion) =>
+                                    setAddForm((prev) => ({ ...prev, answer: suggestion }))
+                                }
+                                canUse={true}
+                            />
+                        )}
                     </div>
 
                     <FaqCategoryCombobox
@@ -466,6 +488,8 @@ export function FaqManager({ entityType, parentId }: FaqManagerProps) {
                                         deleteMutation.variables === faq.id
                                     }
                                     labels={rowLabels}
+                                    canUseAiTextImprove={canUseAiTextImprove}
+                                    aiTextImproveLocale={aiTextImproveLocale}
                                 />
                             ))}
                         </div>

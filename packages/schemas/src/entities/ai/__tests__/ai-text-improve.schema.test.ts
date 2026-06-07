@@ -11,9 +11,12 @@ import {
 
 const VALID_DESCRIPTION = 'Hermoso departamento en el centro histórico, ideal para familias.';
 const VALID_SUMMARY = 'Departamento céntrico y luminoso';
+const VALID_FAQ_ANSWER = 'Sí, el desayuno está incluido en todas las tarifas.';
 const SUMMARY_300_CHARS = 'a'.repeat(300);
 const SUMMARY_301_CHARS = 'a'.repeat(301);
 const DESCRIPTION_5001_CHARS = 'a'.repeat(5001);
+const FAQ_ANSWER_1000_CHARS = 'a'.repeat(1000);
+const FAQ_ANSWER_1001_CHARS = 'a'.repeat(1001);
 
 const VALID_DESCRIPTION_REQUEST = {
     fieldValue: VALID_DESCRIPTION,
@@ -23,6 +26,11 @@ const VALID_DESCRIPTION_REQUEST = {
 const VALID_SUMMARY_REQUEST = {
     fieldValue: VALID_SUMMARY,
     fieldType: 'summary' as const
+};
+
+const VALID_FAQ_ANSWER_REQUEST = {
+    fieldValue: VALID_FAQ_ANSWER,
+    fieldType: 'faq_answer' as const
 };
 
 // ============================================================================
@@ -41,6 +49,11 @@ describe('AiTextImproveRequestSchema', () => {
 
         it('should accept a summary request', () => {
             const result = AiTextImproveRequestSchema.safeParse(VALID_SUMMARY_REQUEST);
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a faq_answer request', () => {
+            const result = AiTextImproveRequestSchema.safeParse(VALID_FAQ_ANSWER_REQUEST);
             expect(result.success).toBe(true);
         });
 
@@ -125,6 +138,37 @@ describe('AiTextImproveRequestSchema', () => {
             const result = AiTextImproveRequestSchema.safeParse({
                 fieldValue: SUMMARY_300_CHARS,
                 fieldType: 'summary'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject fieldValue exceeding 1000 chars for faq_answer', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                fieldValue: FAQ_ANSWER_1001_CHARS,
+                fieldType: 'faq_answer'
+            });
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues[0];
+                expect(issue?.path).toEqual(['fieldValue']);
+                expect(issue?.code).toBe('too_big');
+                expect(issue?.message).toContain('1000 characters');
+                expect(issue?.message).toContain("fieldType 'faq_answer'");
+            }
+        });
+
+        it('should reject fieldValue of 1001 chars for faq_answer (boundary)', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                fieldValue: FAQ_ANSWER_1001_CHARS,
+                fieldType: 'faq_answer'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept fieldValue of exactly 1000 chars for faq_answer (boundary)', () => {
+            const result = AiTextImproveRequestSchema.safeParse({
+                fieldValue: FAQ_ANSWER_1000_CHARS,
+                fieldType: 'faq_answer'
             });
             expect(result.success).toBe(true);
         });
@@ -229,6 +273,24 @@ describe('AiTextImproveRequestSchema', () => {
             });
             expect(result.success).toBe(false);
         });
+
+        it('should use the faq_answer cap (1000) and not the description cap (5000) for faq_answer requests', () => {
+            // 2000 chars is within the description cap (5000) but over the faq_answer cap (1000)
+            const result = AiTextImproveRequestSchema.safeParse({
+                fieldValue: 'a'.repeat(2000),
+                fieldType: 'faq_answer'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should use the faq_answer cap (1000) and not the summary cap (300) for faq_answer requests', () => {
+            // 500 chars is over the summary cap (300) but within the faq_answer cap (1000)
+            const result = AiTextImproveRequestSchema.safeParse({
+                fieldValue: 'a'.repeat(500),
+                fieldType: 'faq_answer'
+            });
+            expect(result.success).toBe(true);
+        });
     });
 });
 
@@ -238,11 +300,12 @@ describe('AiTextImproveRequestSchema', () => {
 
 describe('AiTextImproveFieldTypeSchema', () => {
     describe('enum resilience', () => {
-        it('should include the V1 members (description, summary)', () => {
-            // CORRECT pattern: assert membership, NOT count — V2 may add members.
+        it('should include all members (description, summary, faq_answer)', () => {
+            // CORRECT pattern: assert membership, NOT count — future versions may add members.
             const values = Object.values(AiTextImproveFieldTypeSchema.enum);
             expect(values).toContain('description');
             expect(values).toContain('summary');
+            expect(values).toContain('faq_answer');
         });
 
         it('should expose values that match AI_TEXT_IMPROVE_MAX_LENGTH keys', () => {
@@ -268,6 +331,10 @@ describe('AI_TEXT_IMPROVE_MAX_LENGTH', () => {
 
     it('should cap summary at 300 chars (matches live form maxLength: 300)', () => {
         expect(AI_TEXT_IMPROVE_MAX_LENGTH.summary).toBe(300);
+    });
+
+    it('should cap faq_answer at 1000 chars (plain text FAQ answer budget)', () => {
+        expect(AI_TEXT_IMPROVE_MAX_LENGTH.faq_answer).toBe(1000);
     });
 
     it('should be deeply readonly', () => {
