@@ -514,7 +514,7 @@
             "id": "T-024",
             "title": "Register staging smoke entry #6 (SPEC-193 batch)",
             "description": "Billing CORE change (downgrade/plan-change flow + cron) → MUST register deferred smoke sections in .qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md (entry #6, with PR number): scheduled downgrade with over-cap host on staging MP sandbox → preview in response → cron applies → restriction visible (public page excluded post-revalidation) → re-upgrade restores → notifications received. Follow entries #1-5 format.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-023"],
             "blocks": ["T-025"],
