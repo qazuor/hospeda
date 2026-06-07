@@ -426,7 +426,7 @@
             "id": "T-020",
             "title": "e2e: keepIds honored + restore-on-upgrade + idempotent re-apply",
             "description": "Same e2e harness: (1) host schedules downgrade WITH keepSelections → cron applies → exactly the selected items stay active; (2) re-upgrade → restricted resources restored (planRestricted unset, photos back in gallery); (3) cron re-run of an applied change does NOT double-restrict (idempotency with the SPEC-194 pre-stamp).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012", "T-019"],
             "blocks": ["T-022"],
@@ -434,14 +434,14 @@
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-06T00:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-07T21:00:00.000Z",
+                "completed": "2026-06-07T21:05:00.000Z"
             }
         },
         {
