@@ -15,11 +15,14 @@
  * the array = first archived = first restored). This is deterministic and
  * requires no additional timestamp metadata on each item.
  *
- * **Concurrency safety:**
- * The read-modify-write is wrapped in `withTransaction` so that concurrent
- * downgrade applies on the same accommodation cannot race. `withTransaction`
- * reuses an outer transaction when the caller passes its `tx` client as `db`,
- * making these primitives composable with the T-011 coordinator.
+ * **Concurrency safety (M-1 fix):**
+ * The read-modify-write runs inside `withTransaction` AND acquires a
+ * pessimistic row lock via `SELECT ... FOR UPDATE` before computing the new
+ * media state. This prevents lost-update races against concurrent media writers
+ * (e.g. host edits) that run under PostgreSQL's default READ COMMITTED
+ * isolation. `withTransaction` reuses an outer transaction when the caller
+ * passes its `tx` client as `db`, making these primitives composable with the
+ * T-011 coordinator.
  *
  * **INV-5 (photo variant):**
  * `gallery.length + archivedGallery.length` is conserved by every operation.
@@ -29,7 +32,15 @@
  * @module services/plan-photo-restriction
  */
 
-import { type DrizzleClient, accommodations, and, eq, isNull, withTransaction } from '@repo/db';
+import {
+    type DrizzleClient,
+    accommodations,
+    and,
+    eq,
+    isNull,
+    sql,
+    withTransaction
+} from '@repo/db';
 import type { Image, Media } from '@repo/schemas';
 import { apiLogger } from '../utils/logger';
 
@@ -99,13 +110,20 @@ export async function archiveAccommodationPhotos(
     input: ArchiveAccommodationPhotosInput
 ): Promise<PhotoArchiveResult> {
     return withTransaction(async (tx) => {
-        // 1. Read current media
-        const [row] = await tx
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(
-                and(eq(accommodations.id, input.accommodationId), isNull(accommodations.deletedAt))
-            );
+        // 1. Acquire a pessimistic row lock (M-1: prevents lost-update races under
+        //    READ COMMITTED). SELECT id, media FOR UPDATE so we read the media column
+        //    under the lock in a single round-trip.
+        const lockResult = await tx.execute<{ id: string; media: Media | null }>(
+            sql`SELECT id, media FROM accommodations
+                WHERE id = ${input.accommodationId}
+                  AND deleted_at IS NULL
+                LIMIT 1
+                FOR UPDATE`
+        );
+        const lockRows = (
+            lockResult as unknown as { rows?: Array<{ id: string; media: Media | null }> }
+        ).rows;
+        const row = lockRows?.[0];
 
         if (!row) {
             throw new Error(
@@ -222,13 +240,20 @@ export async function restoreAccommodationPhotos(
     input: RestoreAccommodationPhotosInput
 ): Promise<PhotoArchiveResult> {
     return withTransaction(async (tx) => {
-        // 1. Read current media
-        const [row] = await tx
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(
-                and(eq(accommodations.id, input.accommodationId), isNull(accommodations.deletedAt))
-            );
+        // 1. Acquire a pessimistic row lock (M-1: prevents lost-update races under
+        //    READ COMMITTED). SELECT id, media FOR UPDATE so we read the media column
+        //    under the lock in a single round-trip.
+        const lockResult = await tx.execute<{ id: string; media: Media | null }>(
+            sql`SELECT id, media FROM accommodations
+                WHERE id = ${input.accommodationId}
+                  AND deleted_at IS NULL
+                LIMIT 1
+                FOR UPDATE`
+        );
+        const lockRows = (
+            lockResult as unknown as { rows?: Array<{ id: string; media: Media | null }> }
+        ).rows;
+        const row = lockRows?.[0];
 
         if (!row) {
             throw new Error(

@@ -56,8 +56,21 @@ vi.mock('@repo/db', () => {
         deletedAt: 'deleted_at'
     };
 
+    // Minimal sql tagged-template stub — the service uses sql`...` to build the
+    // FOR UPDATE query. The FakeTx.execute() receives the result and ignores it
+    // (it returns rows from its own closure), so the stub only needs to return a
+    // non-null sentinel value.
+    const sql = Object.assign(
+        (strings: TemplateStringsArray, ...values: unknown[]) => ({
+            __sql: strings.raw.join('?'),
+            values
+        }),
+        { raw: (s: string) => s }
+    );
+
     return {
         accommodations,
+        sql,
         eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
         isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
         and: vi.fn((...args: unknown[]) => ({ __and: args })),
@@ -110,12 +123,25 @@ interface FakeTx {
     setPayload: Media | null;
     set: (_payload: unknown) => FakeTx;
     updateCalled: boolean;
+    /** M-1: execute() implements SELECT ... FOR UPDATE lock. */
+    execute: (_sql: unknown) => Promise<{ rows: Array<{ id: string; media: Media | null }> }>;
+    executeCalled: boolean;
 }
 
 function makeFakeTx(opts: FakeTxOptions): FakeTx {
     const tx: FakeTx = {
         setPayload: null,
         updateCalled: false,
+        executeCalled: false,
+
+        // M-1: After the FOR UPDATE fix the primitives use execute() for the
+        // initial read. execute() returns the same rows as selectRows so existing
+        // tests covering archive/restore logic still work correctly.
+        async execute(_sql: unknown) {
+            tx.executeCalled = true;
+            const rows = opts.selectRows.map((r, i) => ({ id: `acc-fake-${i}`, media: r.media }));
+            return { rows };
+        },
 
         select(..._args: unknown[]) {
             return tx;
@@ -128,7 +154,8 @@ function makeFakeTx(opts: FakeTxOptions): FakeTx {
             if (tx.updateCalled) {
                 return Promise.resolve([]) as unknown as Promise<Array<{ media: Media | null }>>;
             }
-            // Otherwise behave as the select terminator
+            // Otherwise behave as the select terminator (legacy path — no longer
+            // used after M-1 fix but kept so tests that assert on setPayload work).
             return Promise.resolve(opts.selectRows);
         },
         update(..._args: unknown[]) {
@@ -615,5 +642,79 @@ describe('plan-photo-restriction.service — restoreAccommodationPhotos (T-009)'
         // `second` stays in archive
         expect(written.archivedGallery).toHaveLength(1);
         expect(written.archivedGallery?.[0]).toStrictEqual(second);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// M-1 — FOR UPDATE row lock regression tests
+//
+// After the M-1 fix, both primitives acquire a pessimistic row lock via
+// `tx.execute(sql\`SELECT id, media ... FOR UPDATE\`)` BEFORE computing the
+// new media state and issuing the UPDATE. This prevents lost-update races
+// between concurrent media writers operating under READ COMMITTED.
+//
+// `makeFakeTx` now includes `execute()` support and records `executeCalled`,
+// so these tests simply assert on that flag.
+// ---------------------------------------------------------------------------
+
+describe('plan-photo-restriction.service — FOR UPDATE row lock (M-1 regression)', () => {
+    beforeEach(() => vi.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
+
+    it('archiveAccommodationPhotos acquires FOR UPDATE lock before computing new state', async () => {
+        const img1 = makeImg('https://cdn.example.com/lock-a1.jpg');
+        const img2 = makeImg('https://cdn.example.com/lock-a2.jpg');
+        const media: Media = { gallery: [img1, img2] };
+
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        await archiveAccommodationPhotos({
+            accommodationId: 'acc-lock-01',
+            keepIds: new Set([img1.url]),
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        // Assert: execute() was called (FOR UPDATE lock acquired)
+        expect(tx.executeCalled).toBe(true);
+    });
+
+    it('restoreAccommodationPhotos acquires FOR UPDATE lock before computing new state', async () => {
+        const arch1 = makeImg('https://cdn.example.com/lock-r1.jpg');
+        const media: Media = { gallery: [], archivedGallery: [arch1] };
+
+        const tx = makeFakeTx({ selectRows: [{ media }] });
+
+        await restoreAccommodationPhotos({
+            accommodationId: 'acc-lock-02',
+            restoreCount: 1,
+            db: tx as unknown as import('@repo/db').DrizzleClient
+        });
+
+        // Assert: execute() was called (FOR UPDATE lock acquired)
+        expect(tx.executeCalled).toBe(true);
+    });
+
+    it('archiveAccommodationPhotos throws when accommodation not found (locked row absent)', async () => {
+        const tx = makeFakeTx({ selectRows: [] }); // execute() returns empty rows
+
+        await expect(
+            archiveAccommodationPhotos({
+                accommodationId: 'acc-not-found-lock',
+                keepIds: new Set<string>(),
+                db: tx as unknown as import('@repo/db').DrizzleClient
+            })
+        ).rejects.toThrow('acc-not-found-lock');
+    });
+
+    it('restoreAccommodationPhotos throws when accommodation not found (locked row absent)', async () => {
+        const tx = makeFakeTx({ selectRows: [] }); // execute() returns empty rows
+
+        await expect(
+            restoreAccommodationPhotos({
+                accommodationId: 'acc-not-found-lock-restore',
+                restoreCount: 1,
+                db: tx as unknown as import('@repo/db').DrizzleClient
+            })
+        ).rejects.toThrow('acc-not-found-lock-restore');
     });
 });
