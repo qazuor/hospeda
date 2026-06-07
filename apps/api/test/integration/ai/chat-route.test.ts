@@ -114,8 +114,11 @@ vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
                 c: Parameters<AppMiddleware>[0],
                 next: Parameters<AppMiddleware>[1]
             ): Promise<void> => {
-                c.set('userEntitlements', currentEntitlementsForTest.current);
-                c.set('userLimits', currentLimitsForTest.current);
+                c.set(
+                    'userEntitlements',
+                    currentEntitlementsForTest.current as Set<EntitlementKey>
+                );
+                c.set('userLimits', currentLimitsForTest.current as Map<LimitKey, number>);
                 c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
                 await next();
             };
