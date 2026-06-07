@@ -44,10 +44,12 @@
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service.js';
 import { applyDowngradeRestrictions } from '../../services/plan-downgrade-remediation.service.js';
+import { PlanCatalogMissError } from '../../services/subscription-downgrade-excess.service.js';
 import { getKeepSelectionsForChange } from '../../services/subscription-downgrade.service.js';
 import { resolveOwnerUserId } from '../../services/subscription-pause.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -410,22 +412,54 @@ async function applyOne(
                 );
             }
         } catch (restrictionErr) {
-            const errMsg =
-                restrictionErr instanceof Error ? restrictionErr.message : String(restrictionErr);
-            // "not found in the billing catalog" means the target plan slug is not
-            // registered in the static plan catalog (e.g. a dynamically-created test
-            // plan or a plan that predates the restriction feature). In this case we
-            // cannot evaluate excess, so skip restriction with a warn rather than
-            // treating it as a data-integrity failure.
-            if (errMsg.includes('not found in the billing catalog')) {
+            // PlanCatalogMissError: the target plan slug is not registered in
+            // the static billing catalog (e.g. a test plan or a plan predating
+            // the restriction feature). Without catalog metadata we cannot
+            // evaluate excess, so we soft-skip restriction rather than treating
+            // it as a data-integrity failure.
+            //
+            // Revenue-leak rationale: a catalog-miss on a real downgrade means
+            // an over-cap host went unrestricted (SPEC-148 plan-disable can
+            // cause it). We surface this in Sentry at warning level so it is
+            // visible in alerting without failing the job or rolling back the
+            // plan change. Pattern mirrors webhook-retry.job.ts dead-letter path.
+            if (restrictionErr instanceof PlanCatalogMissError) {
+                const errMsg = restrictionErr.message;
                 logger.warn(
                     'Scheduled plan change: skipping restriction — target plan not in catalog (non-blocking)',
-                    { subscriptionId, customerId, newPlanId, error: errMsg }
+                    {
+                        subscriptionId,
+                        customerId,
+                        newPlanId,
+                        planSlug: restrictionErr.planSlug,
+                        error: errMsg
+                    }
+                );
+                Sentry.captureMessage(
+                    'Scheduled plan change: restriction skipped — target plan not in catalog',
+                    {
+                        level: 'warning',
+                        tags: {
+                            module: 'cron',
+                            job_name: 'apply-scheduled-plan-changes',
+                            event_type: 'restriction_catalog_miss'
+                        },
+                        extra: {
+                            subscriptionId,
+                            customerId,
+                            newPlanId,
+                            planSlug: restrictionErr.planSlug
+                        }
+                    }
                 );
             } else {
-                // Any other error is a genuine restriction failure — log loudly so
-                // Sentry captures it and set restrictionFailed so the cron result
-                // surfaces success=false.
+                // Any other error is a genuine restriction failure — log loudly
+                // so Sentry captures it (via bootstrap.ts error handler) and set
+                // restrictionFailed so the cron result surfaces success=false.
+                const errMsg =
+                    restrictionErr instanceof Error
+                        ? restrictionErr.message
+                        : String(restrictionErr);
                 logger.error(
                     'Scheduled plan change: downgrade restriction failed (non-blocking — plan change stays applied)',
                     { subscriptionId, customerId, newPlanId, error: errMsg }

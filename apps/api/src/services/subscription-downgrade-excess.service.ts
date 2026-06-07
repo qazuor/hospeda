@@ -45,6 +45,30 @@ import type {
 import { containsRichDescription, containsVideoEmbed } from '../lib/content-detection';
 
 // ---------------------------------------------------------------------------
+// Typed errors
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown by {@link computeDowngradeExcess} when the requested `targetPlanSlug`
+ * is not registered in the static billing catalog.
+ *
+ * Callers (e.g. the `apply-scheduled-plan-changes` cron) can distinguish this
+ * from genuine runtime errors via `instanceof PlanCatalogMissError` and apply
+ * soft-skip semantics — a missing catalog entry means no caps are available to
+ * evaluate, not a data-integrity failure.
+ */
+export class PlanCatalogMissError extends Error {
+    /** The slug that was not found. */
+    readonly planSlug: string;
+
+    constructor(planSlug: string) {
+        super(`Target plan '${planSlug}' not found in the billing catalog`);
+        this.name = 'PlanCatalogMissError';
+        this.planSlug = planSlug;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Minimal shape contracts for injected data sources
 // ---------------------------------------------------------------------------
 
@@ -266,7 +290,7 @@ export async function computeDowngradeExcess(
     // ── 1. Resolve target plan ─────────────────────────────────────────────
     const targetPlan = deps.getPlanBySlug(targetPlanSlug);
     if (!targetPlan) {
-        throw new Error(`Target plan '${targetPlanSlug}' not found in the billing catalog`);
+        throw new PlanCatalogMissError(targetPlanSlug);
     }
 
     const targetEntitlementSet = new Set(targetPlan.entitlements);

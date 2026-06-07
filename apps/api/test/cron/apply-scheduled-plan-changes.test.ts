@@ -40,6 +40,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Module mocks
 // ---------------------------------------------------------------------------
 
+// Mock @sentry/node so tests can assert on captureMessage calls without
+// hitting the real Sentry transport.
+const { sentryCaptureMessage } = vi.hoisted(() => ({
+    sentryCaptureMessage: vi.fn()
+}));
+vi.mock('@sentry/node', () => ({
+    captureMessage: sentryCaptureMessage
+}));
+
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
@@ -121,6 +130,7 @@ import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { handlePlanChangeAddonRecalculation } from '../../src/services/addon-plan-change.service';
 import { applyDowngradeRestrictions } from '../../src/services/plan-downgrade-remediation.service';
+import { PlanCatalogMissError } from '../../src/services/subscription-downgrade-excess.service';
 import { getKeepSelectionsForChange } from '../../src/services/subscription-downgrade.service';
 import { resolveOwnerUserId } from '../../src/services/subscription-pause.service';
 
@@ -836,6 +846,7 @@ describe('CronJobResult error contract: MAX_APPLY_ATTEMPTS exhaustion', () => {
 describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
     beforeEach(() => {
         sendNotificationMock.mockReset().mockResolvedValue(undefined);
+        sentryCaptureMessage.mockReset();
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
@@ -994,23 +1005,14 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
         expect(applyDowngradeRestrictions).not.toHaveBeenCalled();
     });
 
-    it('target plan slug not in billing catalog → skip restriction (warn, not error), restrictionFailed=false, plan change stays applied', async () => {
-        // SPEC-167 soft-skip semantics: if billing.plans.get resolves a name but that name
-        // is not a valid catalog slug, computeDowngradeExcess (called inside
-        // applyDowngradeRestrictions) throws "Target plan '...' not found in the billing
-        // catalog". The cron treats this as a WARN + skip (not a hard error) because the
-        // plan may be a test plan or a plan that predates the restriction feature — we
-        // cannot evaluate excess without catalog metadata, so we skip restriction rather
-        // than surfacing a false-positive Sentry alert via success=false.
-        //
-        // Genuine restriction failures (non-catalog-miss errors) still set
-        // restrictionFailed=true and result.success=false (SPEC-149 gate).
-        //
-        // In the unit test, applyDowngradeRestrictions is mocked, so we simulate the
-        // catalog-miss by having it throw. This pins the new soft-skip semantics:
-        // plan change stays applied, restrictionFailed=false, handler sees success=true.
+    it('catalog-miss (PlanCatalogMissError) → instanceof detection: soft-skip, restrictionFailed=false, plan change stays applied', async () => {
+        // SPEC-167 Fix 1: instanceof-based detection replaces the old string-match.
+        // applyDowngradeRestrictions throws PlanCatalogMissError (the typed error
+        // from computeDowngradeExcess). The cron treats this as a WARN + skip because
+        // a plan absent from the static catalog means no caps to evaluate — not a
+        // data-integrity failure. Plan change stays applied, no restrictionFailed flag.
         vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
-            new Error("Target plan 'non-catalog-slug' not found in the billing catalog")
+            new PlanCatalogMissError('non-catalog-slug')
         );
         const { billing, update } = makeBilling({ planSlug: 'non-catalog-slug' });
         const row = makeRow({
@@ -1028,10 +1030,80 @@ describe('SPEC-167 T-013: downgrade restriction wiring (applyOne)', () => {
         const preStamp = preStampArg.scheduledPlanChange as Record<string, unknown>;
         expect(preStamp.status).toBe('applied');
     });
+
+    it('catalog-miss → Sentry.captureMessage called with warning level + correct tags', async () => {
+        // SPEC-167 Fix 2: on catalog-miss the cron emits a Sentry warning so the
+        // revenue-leak risk is visible in alerting (an over-cap host going unrestricted
+        // due to SPEC-148 plan-disable). NO PII in extra.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
+            new PlanCatalogMissError('non-catalog-slug')
+        );
+        const { billing } = makeBilling({ planSlug: 'non-catalog-slug' });
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(sentryCaptureMessage).toHaveBeenCalledOnce();
+        expect(sentryCaptureMessage).toHaveBeenCalledWith(
+            'Scheduled plan change: restriction skipped — target plan not in catalog',
+            expect.objectContaining({
+                level: 'warning',
+                tags: expect.objectContaining({
+                    module: 'cron',
+                    job_name: 'apply-scheduled-plan-changes',
+                    event_type: 'restriction_catalog_miss'
+                }),
+                extra: expect.objectContaining({
+                    planSlug: 'non-catalog-slug'
+                })
+            })
+        );
+    });
+
+    it('non-catalog-miss error whose message contains the substring → hard fail, Sentry.captureMessage NOT called', async () => {
+        // Regression guard: a DIFFERENT error class whose message happens to contain
+        // the old substring must NOT be soft-skipped — only PlanCatalogMissError
+        // (instanceof) triggers soft-skip. This pins that the old string-matching
+        // behaviour is fully gone and cannot be fooled by error message text.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(
+            new Error("Unrelated failure: Target plan 'x' not found in the billing catalog context")
+        );
+        const { billing } = makeBilling({ planSlug: 'non-catalog-slug' });
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        const outcome = await _internals.applyOne(row, billing, makeCtx().logger);
+
+        // Hard fail: restrictionFailed must be true (outcome carries the flag).
+        expect(outcome.kind).toBe('applied'); // plan change stays applied even on hard fail
+        expect((outcome as { restrictionFailed?: boolean }).restrictionFailed).toBe(true);
+        // Sentry.captureMessage is NOT called for genuine restriction failures — those
+        // bubble up through result.success=false to SPEC-149 bootstrap Sentry capture.
+        expect(sentryCaptureMessage).not.toHaveBeenCalled();
+    });
+
+    it('genuine restriction error → Sentry.captureMessage NOT called (uses logger.error + restrictionFailed path)', async () => {
+        // Verify that for a plain Error (not PlanCatalogMissError), captureMessage is
+        // NOT invoked — the bootstrap.ts error handler (SPEC-149) is the alerting path
+        // for genuine failures via result.success=false.
+        vi.mocked(applyDowngradeRestrictions).mockRejectedValue(new Error('restriction tx failed'));
+        const { billing } = makeBilling();
+        const row = makeRow({
+            scheduledPlanChange: makeScheduled({ direction: 'downgrade' })
+        });
+
+        await _internals.applyOne(row, billing, makeCtx().logger);
+
+        expect(sentryCaptureMessage).not.toHaveBeenCalled();
+    });
 });
 
 describe('SPEC-167 T-013: downgrade restriction wiring (handler result)', () => {
     beforeEach(() => {
+        sentryCaptureMessage.mockReset();
         vi.mocked(applyDowngradeRestrictions)
             .mockReset()
             .mockResolvedValue({
