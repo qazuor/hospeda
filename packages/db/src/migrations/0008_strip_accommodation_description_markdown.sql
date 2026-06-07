@@ -1,5 +1,5 @@
 -- =============================================================================
--- 0007_strip_accommodation_description_markdown.sql
+-- 0008_strip_accommodation_description_markdown.sql
 --
 -- SPEC-187 P0 (PR-1) — strip markdown markers from accommodation.description.
 --

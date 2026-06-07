@@ -37,7 +37,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const MIGRATION_RELATIVE_PATH =
-    '../../src/migrations/0007_strip_accommodation_description_markdown.sql';
+    '../../src/migrations/0008_strip_accommodation_description_markdown.sql';
 const MIGRATION_PATH = join(__dirname, MIGRATION_RELATIVE_PATH);
 
 /**
@@ -101,7 +101,7 @@ afterAll(async () => {
 describe('SPEC-187 P0 — accommodation.description strip-markdown migration', () => {
     // ── 1. Migration file invariants ─────────────────────────────────────────
     describe('migration file shape', () => {
-        it('exists at packages/db/src/migrations/0007_strip_accommodation_description_markdown.sql', async () => {
+        it('exists at packages/db/src/migrations/0008_strip_accommodation_description_markdown.sql', async () => {
             await expect(access(MIGRATION_PATH)).resolves.toBeUndefined();
         });
 
