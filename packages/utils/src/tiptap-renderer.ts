@@ -8,6 +8,11 @@
  * All text content is HTML-escaped to prevent XSS attacks.
  *
  * @module tiptap-renderer
+ *
+ * @warning NEWSLETTER/EMAIL RENDERER ONLY — do not use for entity descriptions.
+ * Entity descriptions use Markdown as canonical format (see ADR-032).
+ * This module converts TipTap/ProseMirror JSON to HTML for the newsletter
+ * subsystem only. For entity descriptions, see `apps/web/src/lib/render-content.ts`.
  */
 
 /**
