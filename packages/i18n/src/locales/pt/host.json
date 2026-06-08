@@ -119,6 +119,11 @@
             "subtitle": "[TODO]",
             "publishAnother": "Publicar outra"
         },
+        "usage": {
+            "label": "{{current}} de {{max}} propriedades",
+            "unlimited": "Propriedades ilimitadas",
+            "upgrade": "Melhorar plano"
+        },
         "card": {
             "status": {
                 "DRAFT": "[TODO]",
