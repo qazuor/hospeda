@@ -74,6 +74,7 @@ import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
+import { adminContentModerationRoutes } from './content-moderation/admin';
 import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
@@ -381,6 +382,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Moderation aggregation — pending count across content entities (SPEC-155 T-010)
         app.route('/api/v1/admin/moderation', adminModerationRoutes);
+        app.route('/api/v1/admin/content-moderation', adminContentModerationRoutes);
 
         // System operations — health rollup for the admin dashboard (SPEC-155 card E)
         app.route('/api/v1/admin/system', adminSystemRoutes);

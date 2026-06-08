@@ -46,3 +46,8 @@ export { moderateText } from './moderate-text.js';
  * independently from service-core internals.
  */
 export const MODERATION_PENDING_THRESHOLD = 0.5 as const;
+
+/**
+ * Public reject threshold constant added by SPEC-195.
+ */
+export const MODERATION_REJECT_THRESHOLD = 0.85 as const;

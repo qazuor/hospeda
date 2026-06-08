@@ -4,7 +4,11 @@
  */
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
-import { getDb, rolePermission } from '@repo/db';
+import {
+    initializeModerationEngine,
+    registerModerationMonitoringHooks
+} from '@repo/content-moderation/engine/index';
+import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
 import { LogFormat, configureLogger } from '@repo/logger';
 import {
@@ -13,6 +17,7 @@ import {
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
+import * as Sentry from '@sentry/node';
 import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
@@ -68,6 +73,50 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        initializeModerationEngine({
+            env: {
+                provider: env.HOSPEDA_MODERATION_PROVIDER,
+                openaiApiKey: env.HOSPEDA_OPENAI_API_KEY,
+                timeoutMs: env.HOSPEDA_MODERATION_TIMEOUT_MS,
+                cacheTtlSeconds: env.HOSPEDA_MODERATION_CACHE_TTL_SECONDS
+            },
+            termLoader: async () => {
+                const rows = await new ContentModerationTermModel().findEnabledTerms();
+                return rows.map((row) => ({
+                    term: row.term,
+                    kind: row.kind as 'word' | 'domain',
+                    category: row.category as import(
+                        '@repo/content-moderation/types'
+                    ).ModerationCategory,
+                    severity: row.severity
+                }));
+            }
+        });
+        registerModerationMonitoringHooks({
+            onFallbackLocal: ({ error, context }) => {
+                Sentry.addBreadcrumb({
+                    category: 'moderation.fallback.local',
+                    level: 'warning',
+                    data: {
+                        context,
+                        error: error.message
+                    }
+                });
+            },
+            onDegraded: ({ error, context }) => {
+                Sentry.captureMessage('moderation.degraded', {
+                    level: 'warning',
+                    tags: { module: 'content-moderation' },
+                    contexts: {
+                        moderation: {
+                            context,
+                            error: error.message
+                        }
+                    }
+                });
+            }
+        });
 
         // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
         // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.

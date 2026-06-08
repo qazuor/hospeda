@@ -1,46 +1,6 @@
+import { getModerationEngine, resetModerationEngineForTests } from './engine/index.js';
 import { moderateTextInputSchema } from './types.js';
 import type { ModerateTextInput, ModerationResult } from './types.js';
-
-// ---------------------------------------------------------------------------
-// Env-var blocklist — parsed ONCE at module load, never re-read per call.
-// Same parsing semantics as MessageService.parseBlocklist.
-// ---------------------------------------------------------------------------
-
-/**
- * Parses a comma-separated env var into a frozen lowercase string array.
- * Empty strings and surrounding whitespace are filtered out.
- * A trailing comma is tolerated (produces no extra empty entry after filter).
- *
- * @param raw - Raw string value from process.env (or undefined if absent).
- * @returns Readonly frozen array of trimmed, lowercased, non-empty entries.
- */
-function parseBlocklist(raw: string | undefined): readonly string[] {
-    if (!raw) return Object.freeze([]);
-    return Object.freeze(
-        raw
-            .split(',')
-            .map((s) => s.trim().toLowerCase())
-            .filter((s) => s.length > 0)
-    );
-}
-
-/**
- * Blocked word substrings — mutable so tests can call {@link _testResetBlocklists}
- * to re-read env vars without a full module reload. In production code this value
- * is set once at module load and never touched again.
- *
- * @internal
- */
-let _blockedWords: readonly string[] = parseBlocklist(process.env.HOSPEDA_MESSAGING_BLOCKED_WORDS);
-
-/**
- * Blocked domain hostnames — same mutability contract as {@link _blockedWords}.
- *
- * @internal
- */
-let _blockedDomains: readonly string[] = parseBlocklist(
-    process.env.HOSPEDA_MESSAGING_BLOCKED_DOMAINS
-);
 
 /**
  * **Test-only escape hatch.** Re-parses the blocklist env vars from
@@ -67,15 +27,8 @@ let _blockedDomains: readonly string[] = parseBlocklist(
  * @internal Do NOT use outside of tests.
  */
 export function _testResetBlocklists(): void {
-    _blockedWords = parseBlocklist(process.env.HOSPEDA_MESSAGING_BLOCKED_WORDS);
-    _blockedDomains = parseBlocklist(process.env.HOSPEDA_MESSAGING_BLOCKED_DOMAINS);
+    resetModerationEngineForTests();
 }
-
-/**
- * URL pattern used to extract links from text for domain-level blocklist checks.
- * Matches `http://` or `https://` followed by non-whitespace characters.
- */
-const URL_PATTERN = /https?:\/\/[^\s]+/gi;
 
 /**
  * Evaluates text content against configured blocklists and returns a
@@ -131,67 +84,12 @@ const URL_PATTERN = /https?:\/\/[^\s]+/gi;
  * ```
  */
 export async function moderateText(input: ModerateTextInput): Promise<ModerationResult> {
-    // Validate input via Zod (RORO — repo validates inputs with Zod at service boundaries)
     moderateTextInputSchema.parse(input);
-
-    const { text } = input;
-    const matchedTerms: string[] = [];
-
-    // Word-level blocklist: case-insensitive substring scan
-    if (_blockedWords.length > 0) {
-        const lowerText = text.toLowerCase();
-        for (const word of _blockedWords) {
-            if (lowerText.includes(word) && !matchedTerms.includes(word)) {
-                matchedTerms.push(word);
-            }
-        }
-    }
-
-    // Domain-level blocklist: extract URLs, compare hostnames
-    if (_blockedDomains.length > 0) {
-        const urlMatches = text.match(URL_PATTERN) ?? [];
-        for (const urlMatch of urlMatches) {
-            try {
-                const hostname = new URL(urlMatch).hostname.toLowerCase();
-                for (const domain of _blockedDomains) {
-                    if (
-                        (hostname === domain || hostname.endsWith(`.${domain}`)) &&
-                        !matchedTerms.includes(domain)
-                    ) {
-                        matchedTerms.push(domain);
-                    }
-                }
-            } catch {
-                // If the matched string is not a valid URL, skip — do not block on parse errors.
-            }
-        }
-    }
-
-    if (matchedTerms.length > 0) {
-        return {
-            score: 1.0,
-            categories: Object.freeze({
-                spam: 0,
-                sexual: 0,
-                violence: 0,
-                hate: 0,
-                harassment: 0,
-                other: 1.0
-            }),
-            matchedTerms: Object.freeze(matchedTerms)
-        };
-    }
+    const result = await getModerationEngine().classify(input);
 
     return {
-        score: 0,
-        categories: Object.freeze({
-            spam: 0,
-            sexual: 0,
-            violence: 0,
-            hate: 0,
-            harassment: 0,
-            other: 0
-        }),
-        matchedTerms: Object.freeze([])
+        score: result.score,
+        categories: result.categories,
+        matchedTerms: result.matchedTerms
     };
 }
