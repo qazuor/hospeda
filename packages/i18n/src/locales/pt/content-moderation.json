@@ -1,0 +1,118 @@
+{
+    "terms": {
+        "title": "Termos de Moderação",
+        "description": "Gerenciar palavras e domínios bloqueados para moderação de conteúdo",
+        "singular": "termo",
+        "plural": "termos",
+        "create": "Criar termo",
+        "edit": "Editar termo",
+        "view": "Ver termo",
+        "fields": {
+            "term": "Termo",
+            "kind": "Tipo",
+            "category": "Categoria",
+            "severity": "Severidade",
+            "enabled": "Ativado",
+            "createdAt": "Criado",
+            "updatedAt": "Atualizado",
+            "deletedAt": "Excluído",
+            "createdById": "Criado por",
+            "updatedById": "Atualizado por"
+        },
+        "kinds": {
+            "word": "Palavra",
+            "domain": "Domínio"
+        },
+        "columns": {
+            "term": "Termo",
+            "kind": "Tipo",
+            "category": "Categoria",
+            "severity": "Severidade",
+            "enabled": "Status",
+            "createdAt": "Criado"
+        },
+        "messages": {
+            "created": "Termo criado com sucesso",
+            "updated": "Termo atualizado com sucesso",
+            "deleted": "Termo excluído com sucesso",
+            "restored": "Termo restaurado com sucesso",
+            "createError": "Falha ao criar termo",
+            "updateError": "Falha ao atualizar termo",
+            "deleteError": "Falha ao excluir termo",
+            "restoreError": "Falha ao restaurar termo",
+            "confirmDelete": "Tem certeza de que deseja excluir este termo?",
+            "confirmHardDelete": "Tem certeza de que deseja excluir permanentemente este termo?"
+        },
+        "form": {
+            "termLabel": "Termo",
+            "termPlaceholder": "ex: spam, dominio-malicioso.com",
+            "kindLabel": "Tipo",
+            "categoryLabel": "Categoria",
+            "severityLabel": "Severidade (0-1)",
+            "enabledLabel": "Ativado"
+        }
+    },
+    "thresholds": {
+        "title": "Limites de Moderação",
+        "description": "Configurar limites para decisões de moderação automática",
+        "singular": "limite",
+        "plural": "limites",
+        "fields": {
+            "context": "Contexto",
+            "pending": "Limite PENDENTE",
+            "reject": "Limite REJEITADO",
+            "createdAt": "Criado",
+            "updatedAt": "Atualizado"
+        },
+        "columns": {
+            "context": "Contexto",
+            "pending": "Pendente",
+            "reject": "Rejeitar",
+            "source": "Fonte"
+        },
+        "sources": {
+            "row": "Linha específica",
+            "default-row": "Linha padrão",
+            "code-constants": "Constantes de código"
+        },
+        "resolved": {
+            "title": "Barra efetiva por contexto",
+            "description": "Limites efetivos aplicando a cadeia: linha específica → linha padrão → constantes de código",
+            "contextLabel": "Contexto",
+            "pendingLabel": "Pendente",
+            "rejectLabel": "Rejeitar",
+            "sourceLabel": "Fonte",
+            "contexts": {
+                "message": "Mensagem",
+                "review": "Avaliação",
+                "accommodation_review": "Avaliação de hospedagem",
+                "destination_review": "Avaliação de destino"
+            }
+        },
+        "messages": {
+            "updated": "Limite atualizado com sucesso",
+            "updateError": "Falha ao atualizar limite",
+            "pendingGteReject": "O limite pendente deve ser menor que o limite de rejeição"
+        },
+        "form": {
+            "pendingLabel": "Limite PENDENTE (0-1)",
+            "rejectLabel": "Limite REJEITADO (0-1)",
+            "pendingHelp": "Pontuação acima da qual o conteúdo vai para revisão",
+            "rejectHelp": "Pontuação acima da qual o conteúdo é rejeitado automaticamente"
+        }
+    },
+    "categories": {
+        "hate": "Ódio",
+        "sexual": "Sexual",
+        "violence": "Violência",
+        "harassment": "Assédio",
+        "self_harm": "Autolesão",
+        "spam": "Spam",
+        "other": "Outro"
+    },
+    "nav": {
+        "contentModeration": "Moderação de Conteúdo",
+        "terms": "Termos",
+        "thresholds": "Limites"
+    }
+}
