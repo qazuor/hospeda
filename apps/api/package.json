@@ -27,6 +27,7 @@
         "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/feedback --filter=@repo/content-moderation"
     },
     "dependencies": {
+        "@ai-sdk/gateway": "3.0.125",
         "@hono/node-server": "^1.19.10",
         "@hono/swagger-ui": "^0.5.2",
         "@hono/zod-openapi": "^1.2.2",
@@ -52,6 +53,7 @@
         "@scalar/hono-api-reference": "^0.9.12",
         "@sentry/node": "^10.38.0",
         "@sentry/profiling-node": "^10.38.0",
+        "@vercel/oidc": "3.2.0",
         "bcryptjs": "^3.0.2",
         "better-auth": "^1.4.18",
         "bullmq": "^5.76.8",
