@@ -1,0 +1,276 @@
+/* HostDashboard.module.css — widget grid for the host dashboard */
+
+.dashboard {
+    width: 100%;
+}
+
+/* ── Widget grid ── */
+
+.widgetGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 1.875rem);
+}
+
+@media (min-width: 640px) {
+    .widgetGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* ── Widget card ── */
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-card, 24px);
+}
+
+.widgetTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+}
+
+/* ── Property stats ── */
+
+.statList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.statRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.statLabel {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.statValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--core-foreground);
+}
+
+.statValueAccent {
+    composes: statValue;
+    color: var(--brand-primary);
+}
+
+.statValueMuted {
+    composes: statValue;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Plan info ── */
+
+.planName {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+}
+
+.planBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    align-self: flex-start;
+}
+
+.planBadgeActive {
+    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    color: var(--brand-primary);
+}
+
+.planBadgeWarning {
+    background-color: oklch(0.85 0.14 80 / 0.25);
+    color: oklch(0.55 0.18 65);
+}
+
+.planEmpty {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Messages widget ── */
+
+.messageCount {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.unreadBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0 0.375rem;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, #fff);
+    font-weight: 700;
+    font-size: 0.75rem;
+}
+
+/* ── Quick actions ── */
+
+.quickActionList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.quickActionLink {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: 0.5rem 0.625rem;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    text-decoration: none;
+    transition: background-color var(--duration-fast, 0.2s) ease,
+                color var(--duration-fast, 0.2s) ease;
+}
+
+.quickActionLink:hover {
+    background-color: var(--core-foreground-a05);
+    color: var(--brand-primary);
+}
+
+.quickActionLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Widget link (bottom of each widget) ── */
+
+.widgetLink {
+    margin-top: auto;
+    align-self: flex-start;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--brand-primary);
+    text-decoration: none;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--duration-fast, 0.2s) ease;
+}
+
+.widgetLink:hover {
+    border-bottom-color: var(--brand-primary);
+}
+
+.widgetLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-button, 8px);
+}
+
+/* ── Loading skeleton ── */
+
+.skeletonGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 1.875rem);
+}
+
+@media (min-width: 640px) {
+    .skeletonGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.skeletonWidget {
+    height: 180px;
+    border-radius: var(--radius-card, 24px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a03) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── Error state ── */
+
+.errorWidget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-8, 2rem);
+    background-color: var(--core-card);
+    border: 1px solid oklch(0.82 0.08 25 / 0.3);
+    border-radius: var(--radius-card, 24px);
+    text-align: center;
+}
+
+.errorText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.5 0.18 25);
+}
+
+.retryButton {
+    padding: 0.5rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity var(--duration-fast, 0.2s) ease;
+}
+
+.retryButton:hover {
+    opacity: 0.88;
+}
+
+.retryButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

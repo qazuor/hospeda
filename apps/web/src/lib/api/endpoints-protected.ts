@@ -1136,6 +1136,53 @@ export const protectedConversationsApi = {
     }
 };
 
+// --- Host Dashboard (Protected) ---
+
+/** Plan info returned by the host dashboard endpoint */
+export interface HostDashboardPlanInfo {
+    readonly slug: string;
+    readonly name: string;
+    readonly status: 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due';
+    readonly isTrial: boolean;
+}
+
+/** Property counts returned by the host dashboard endpoint */
+export interface HostDashboardProperties {
+    readonly total: number;
+    readonly published: number;
+    readonly draft: number;
+    readonly archived: number;
+}
+
+/** Host dashboard aggregated response from the API */
+export interface HostDashboardApiResponse {
+    readonly properties: HostDashboardProperties;
+    readonly plan: HostDashboardPlanInfo | null;
+    readonly unreadConversations: number;
+}
+
+/**
+ * Protected host dashboard API endpoints.
+ * Returns aggregated dashboard data for the authenticated host user.
+ * Gated by VIEW_BASIC_STATS entitlement (SPEC-205).
+ */
+export const hostDashboardApi = {
+    /**
+     * Get the host dashboard aggregated data.
+     *
+     * @returns Property counts, plan info, and unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await hostDashboardApi.get();
+     * if (result.ok) console.log(result.data.properties.published);
+     * ```
+     */
+    get(): Promise<ApiResult<HostDashboardApiResponse>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/host/dashboard` });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */

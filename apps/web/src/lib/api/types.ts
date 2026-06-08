@@ -66,3 +66,26 @@ export interface ListParams {
     readonly order?: 'asc' | 'desc';
     readonly [key: string]: string | number | boolean | undefined;
 }
+
+/**
+ * Host dashboard data for the HostDashboard React island.
+ * Transformed from the API response by `transformHostDashboard`.
+ */
+export interface HostDashboardData {
+    readonly propertySummary: {
+        readonly total: number;
+        readonly published: number;
+        readonly draft: number;
+    };
+    readonly planInfo: {
+        readonly name: string;
+        readonly status: string;
+        readonly isTrial: boolean;
+    } | null;
+    readonly unreadCount: number;
+    readonly quickActions: ReadonlyArray<{
+        readonly label: string;
+        readonly href: string;
+        readonly icon: string;
+    }>;
+}

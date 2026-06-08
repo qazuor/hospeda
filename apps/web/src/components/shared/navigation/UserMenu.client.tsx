@@ -36,7 +36,7 @@ import {
     ChatIcon,
     ChevronDownIcon,
     CreditCardIcon,
-    FavoriteIcon,
+    DashboardIcon,
     type IconProps,
     LogoutIcon,
     NewsletterIcon,
@@ -116,6 +116,7 @@ const TEXTS = {
             properties: 'Mis alojamientos',
             messages: 'Mis consultas',
             reviews: 'Mis reseñas',
+            hostDashboard: 'Panel del anfitrión',
             subscription: 'Mi suscripción',
             preferences: 'Preferencias',
             newsletter: 'Boletín de novedades',
@@ -135,6 +136,7 @@ const TEXTS = {
             properties: 'My listings',
             messages: 'My inquiries',
             reviews: 'My reviews',
+            hostDashboard: 'Host dashboard',
             subscription: 'My subscription',
             preferences: 'Preferences',
             newsletter: 'Newsletter',
@@ -154,6 +156,7 @@ const TEXTS = {
             properties: 'Meus imóveis',
             messages: 'Minhas consultas',
             reviews: 'Minhas avaliações',
+            hostDashboard: 'Painel do anfitrião',
             subscription: 'Minha assinatura',
             preferences: 'Preferências',
             newsletter: 'Boletim de novidades',
@@ -316,6 +319,13 @@ function buildMenuItems({
             label: texts.items.reviews,
             href: buildUrl({ locale, path: 'mi-cuenta/resenas' }),
             icon: StarIcon
+        },
+        {
+            id: 'host-dashboard',
+            label: texts.items.hostDashboard,
+            href: buildUrl({ locale, path: 'mi-cuenta/host-dashboard' }),
+            icon: DashboardIcon,
+            requiredPermission: 'access.panelAdmin'
         },
         {
             id: 'subscription',

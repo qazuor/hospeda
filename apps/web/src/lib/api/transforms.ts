@@ -904,6 +904,56 @@ export function processEntityImages<T extends Record<string, unknown>>({
  * @param item - Raw event object from the API (getBySlug response)
  * @returns Typed EventDetailData for the event detail page components
  */
+/**
+ * Transforms a raw API host dashboard response into HostDashboardData
+ * for the HostDashboard React island.
+ *
+ * Drops `archived` from properties (not shown in the summary),
+ * maps `unreadConversations` → `unreadCount`, and synthesizes
+ * `quickActions` for the host's self-service shortcuts.
+ *
+ * @param item - Raw dashboard response from the API's host dashboard endpoint
+ * @returns Typed HostDashboardData for the HostDashboard component
+ *
+ * @example
+ * ```ts
+ * const apiResult = await hostDashboardApi.get();
+ * if (apiResult.ok) {
+ *   const data = transformHostDashboard({ item: apiResult.data });
+ * }
+ * ```
+ */
+export function transformHostDashboard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').HostDashboardData {
+    const properties = item.properties as Record<string, unknown> | undefined;
+    const plan = item.plan as Record<string, unknown> | null | undefined;
+
+    return {
+        propertySummary: {
+            total: Number(properties?.total ?? 0),
+            published: Number(properties?.published ?? 0),
+            draft: Number(properties?.draft ?? 0)
+        },
+        planInfo: plan
+            ? {
+                  name: String(plan.name ?? ''),
+                  status: String(plan.status ?? ''),
+                  isTrial: Boolean(plan.isTrial)
+              }
+            : null,
+        unreadCount: Number(item.unreadConversations ?? 0),
+        quickActions: [
+            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
+            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
+            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+        ]
+    };
+}
+
 export function toEventDetailProps({
     item
 }: { readonly item: Record<string, unknown> }): EventDetailData {
