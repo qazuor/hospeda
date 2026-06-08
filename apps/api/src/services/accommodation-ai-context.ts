@@ -248,6 +248,8 @@ export async function assembleAccommodationContext(
     //    but the throw-on-null behavior (base.crud.read.ts:155-160) means the cast
     //    is safe. The intermediate `unknown` hop widens the Result<T> shape to
     //    the relation-augmented view we need downstream.
+    // TYPE-WORKAROUND: getById returns Result<TEntity | null> but always throws on
+    //    null; the intermediate `unknown` hop widens to the relation-augmented view.
     const accommodation = (await accommodationService.getById(
         actor,
         accommodationId
