@@ -523,6 +523,8 @@
 | **MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/moderation/pending-count` | `moderation/admin/pending-count.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/moderation/reviews/pending-count` | `moderation/admin/reviews-pending-count.ts` | none | - | n/a | Admin moderation — OR-gated (ACCOMMODATION_REVIEW_MODERATE or DESTINATION_REVIEW_MODERATE; SPEC-166 §7) |
+| **CONTENT MODERATION — ADMIN** | | | | | |
+| `GET /api/v1/admin/content-moderation/health` | `content-moderation/admin/health.ts` | none | - | n/a | Admin ops read; PermissionEnum-gated (MODERATION_TERM_VIEW) — no billing entitlement on provider/cache telemetry |
 | **SYSTEM — ADMIN** | | | | | |
 | `GET /api/v1/admin/system/health` | `system/admin/health.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **PLATFORM-SETTINGS — ADMIN** | | | | | |

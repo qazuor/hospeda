@@ -1,6 +1,13 @@
+import { resolve } from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@repo/db': resolve(__dirname, '../db/src/index.ts'),
+            '@repo/schemas': resolve(__dirname, '../schemas/src/index.ts')
+        }
+    },
     test: {
         globals: true,
         environment: 'node',
