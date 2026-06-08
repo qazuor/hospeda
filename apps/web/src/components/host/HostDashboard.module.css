@@ -97,7 +97,7 @@
 }
 
 .planBadgeActive {
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--brand-primary-a12);
     color: var(--brand-primary);
 }
 
@@ -216,7 +216,7 @@
     background: linear-gradient(
         90deg,
         var(--core-foreground-a05) 25%,
-        var(--core-foreground-a03) 50%,
+        var(--core-foreground-a08) 50%,
         var(--core-foreground-a05) 75%
     );
     background-size: 200% 100%;

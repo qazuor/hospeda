@@ -37,6 +37,7 @@ import {
     ChevronDownIcon,
     CreditCardIcon,
     DashboardIcon,
+    FavoriteIcon,
     type IconProps,
     LogoutIcon,
     NewsletterIcon,
