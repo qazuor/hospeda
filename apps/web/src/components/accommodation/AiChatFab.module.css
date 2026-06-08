@@ -1,0 +1,33 @@
+/**
+ * @file AiChatFab.module.css
+ * @description Styles for the AI chat floating action button.
+ */
+
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary, #2563eb);
+    color: var(--primary-foreground, #ffffff);
+    cursor: pointer;
+    box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.15));
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fab:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-card-hover, 0 4px 16px rgba(0, 0, 0, 0.2));
+}
+
+.fab:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
