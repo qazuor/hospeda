@@ -17,27 +17,26 @@ import { apiLogger } from './logger';
 /**
  * Accommodation data that may contain premium features
  */
-interface AccommodationData {
+export interface AccommodationData {
     id: string;
+    ownerId?: string;
+    createdAt?: string | Date;
     description?: string;
+    richDescription?: string;
     videoUrl?: string;
     whatsappNumber?: string;
     whatsappDirectLink?: boolean;
     enableWhatsAppDirect?: boolean;
     verificationBadge?: boolean;
-    media?: Array<{
-        type?: string;
-        url?: string;
-        [key: string]: unknown;
-    }>;
+    media?: unknown; // May be array of {type, url} (test mocks) or object with featuredImage/gallery/videos (DB)
     [key: string]: unknown;
 }
 
 /**
  * Filter accommodation data based on viewer's entitlements
  *
- * Removes or modifies premium content that the viewer doesn't have access to:
- * - Strips markdown from description if viewer lacks CAN_USE_RICH_DESCRIPTION
+ * Removes or modifies premium content that the caller should not expose:
+ * - Omits `richDescription` when the OWNING HOST lacks CAN_USE_RICH_DESCRIPTION
  * - Removes video content if viewer lacks CAN_EMBED_VIDEO
  * - Hides WhatsApp number if viewer lacks CAN_CONTACT_WHATSAPP_DISPLAY
  * - Disables WhatsApp direct link if viewer lacks CAN_CONTACT_WHATSAPP_DIRECT
@@ -45,6 +44,11 @@ interface AccommodationData {
  *
  * @param c - Hono context (contains viewer entitlements)
  * @param accommodation - Accommodation data to filter
+ * @param ownerEntitlements - Optional entitlement set for the accommodation owner.
+ *   When omitted, the function behaves like an admin/internal call site and leaves
+ *   `richDescription` untouched. When provided, presence of
+ *   `CAN_USE_RICH_DESCRIPTION` is the ONLY signal that `richDescription` may be
+ *   surfaced downstream (FR-3b / FR-4).
  * @returns Filtered accommodation data
  *
  * @example
@@ -63,24 +67,31 @@ interface AccommodationData {
  */
 export function filterAccommodationByEntitlements(
     c: Context<AppBindings>,
-    accommodation: AccommodationData
+    accommodation: AccommodationData,
+    ownerEntitlements?: readonly EntitlementKey[]
 ): AccommodationData {
     // Create a copy to avoid mutating the original
     const filtered = { ...accommodation };
 
     try {
         // Check viewer entitlements
-        const canUseRichDescription = hasEntitlement(c, EntitlementKey.CAN_USE_RICH_DESCRIPTION);
         const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
         const canDisplayWhatsApp = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
         const canUseWhatsAppDirect = hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT);
         const hasVerificationBadge = hasEntitlement(c, EntitlementKey.HAS_VERIFICATION_BADGE);
 
-        // Strip markdown from description if not entitled
-        if (!canUseRichDescription && filtered.description) {
-            filtered.description = stripMarkdown(filtered.description);
+        // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
+        // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
+        // that the public payload may include richDescription. The viewer's
+        // entitlements are deliberately ignored here.
+        if (
+            ownerEntitlements &&
+            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION) &&
+            filtered.richDescription
+        ) {
+            filtered.richDescription = undefined;
             apiLogger.debug(
-                `Stripped markdown from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
+                `Omitted richDescription from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
             );
         }
 
@@ -98,7 +109,9 @@ export function filterAccommodationByEntitlements(
 
             // Remove video items from media array
             if (Array.isArray(filtered.media)) {
-                filtered.media = filtered.media.filter((item) => item.type !== 'video');
+                filtered.media = filtered.media.filter(
+                    (item: { type?: string }) => item.type !== 'video'
+                );
             }
 
             apiLogger.debug(
@@ -269,7 +282,9 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
 
     // Check for video content
     const hasVideo = Boolean(
-        accommodation.videoUrl || accommodation.media?.some((item) => item.type === 'video')
+        accommodation.videoUrl ||
+            (Array.isArray(accommodation.media) &&
+                accommodation.media.some((item: { type?: string }) => item.type === 'video'))
     );
 
     // Check for WhatsApp

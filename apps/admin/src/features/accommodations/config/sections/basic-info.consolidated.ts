@@ -84,13 +84,9 @@ export const createBasicInfoConsolidatedSection = (
                 maxLength: 2000
             }
         },
-        // T-G-007: Rich description field (premium feature, gated).
-        // SPEC-187 FR-5: declare the toolbar matrix here while the field is
-        // still TEXTAREA. Phase 2 flips the type to RICH_TEXT and the
-        // description web render uses presence-based rule (P2-T9).
         {
             id: 'richDescription',
-            type: FieldTypeEnum.TEXTAREA, // Phase 2 flips to RICH_TEXT
+            type: FieldTypeEnum.RICH_TEXT,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Descripción Enriquecida (Premium)',

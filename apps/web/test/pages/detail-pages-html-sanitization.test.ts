@@ -8,10 +8,15 @@
  * assert against the page source text. The behavioral guarantees of the
  * sanitizer itself are covered by `test/lib/sanitize-html.test.ts`; here we
  * verify that the two affected pages actually wire it up.
+ *
+ * Phase 3 (SPEC-187 FR-8): Additional XSS test suite covering 6 malicious
+ * payloads that must be stripped/neutralized and 9 allowed-subset survival
+ * cases that must render correctly through the `renderContent` pipeline.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { renderContent } from '@/lib/render-content';
 import { describe, expect, it } from 'vitest';
 
 const SRC_DIR = resolve(__dirname, '../../src/pages/[lang]');
@@ -164,5 +169,116 @@ describe('detail pages — HTML sanitization (XSS regression)', () => {
             expect(src).toContain('set:html={safeDescriptionHtml}');
             expect(src).not.toContain('set:html={String(event.contentHtml || description)}');
         });
+    });
+});
+
+// ============================================================================
+// Phase 3 (SPEC-187 FR-8): XSS sanitization test suite
+// 6 malicious cases that must be stripped/neutralized + 9 allowed-subset survival
+// ============================================================================
+
+describe('Phase 3 — XSS sanitization via renderContent (FR-8)', () => {
+    describe('malicious payloads must be stripped/neutralized', () => {
+        const maliciousCases = [
+            {
+                name: 'script tag',
+                input: '<script>alert(1)</script>',
+                expectNotContain: '<script>'
+            },
+            {
+                name: 'javascript: protocol in link',
+                input: '[evil](javascript:alert(1))',
+                expectNotContain: 'javascript:'
+            },
+            {
+                name: 'onerror handler on img',
+                input: '<img src=x onerror="alert(1)">',
+                expectNotContain: 'onerror'
+            },
+            {
+                name: 'non-YouTube iframe',
+                input: '<iframe src="https://evil.com"></iframe>',
+                expectNotContain: '<iframe'
+            },
+            {
+                name: 'onclick event handler',
+                input: '<a href="#" onclick="steal()">click</a>',
+                expectNotContain: 'onclick'
+            },
+            {
+                name: 'data: URI in link',
+                input: '[data](data:text/html,<script>alert(1)</script>)',
+                expectNotContain: 'data:text/html'
+            }
+        ] as const;
+
+        for (const tc of maliciousCases) {
+            it(`strips ${tc.name}`, () => {
+                const result = renderContent({ raw: tc.input, siteOrigin: 'https://example.com' });
+                expect(result).not.toContain(tc.expectNotContain);
+            });
+        }
+    });
+
+    describe('allowed subset must survive and render correctly', () => {
+        const allowedCases = [
+            {
+                name: 'bold markdown',
+                input: '**bold**',
+                expectContain: '<strong>bold</strong>'
+            },
+            {
+                name: 'italic markdown',
+                input: '*italic*',
+                expectContain: '<em>italic</em>'
+            },
+            {
+                name: 'underline via HTML',
+                input: '<u>underline</u>',
+                expectContain: '<u>underline</u>'
+            },
+            {
+                name: 'heading',
+                input: '## Heading',
+                expectContain: '<h2>Heading</h2>'
+            },
+            {
+                name: 'unordered list',
+                input: '- item 1\n- item 2',
+                expectContain: '<ul>'
+            },
+            {
+                name: 'ordered list',
+                input: '1. item 1\n2. item 2',
+                expectContain: '<ol>'
+            },
+            {
+                name: 'blockquote',
+                input: '> quote',
+                expectContain: '<blockquote>'
+            },
+            {
+                name: 'external link gets target=_blank rel=noopener noreferrer',
+                input: '[text](https://external.com)',
+                expectContain: 'target="_blank" rel="noopener noreferrer"'
+            },
+            {
+                name: 'internal link does NOT get target=_blank',
+                input: '[text](/internal-page)',
+                expectNotContain: 'target="_blank"'
+            }
+        ] as const;
+
+        for (const tc of allowedCases) {
+            it(`renders ${tc.name} correctly`, () => {
+                const result = renderContent({ raw: tc.input, siteOrigin: 'https://example.com' });
+                if ('expectContain' in tc) {
+                    expect(result).toContain(tc.expectContain);
+                }
+                if ('expectNotContain' in tc) {
+                    expect(result).not.toContain(tc.expectNotContain);
+                }
+            });
+        }
     });
 });
