@@ -23,6 +23,7 @@ import {
 	SettingsIcon,
 	NewsletterIcon,
 	BuildingIcon,
+	DashboardIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 
@@ -111,6 +112,22 @@ const navGroups: ReadonlyArray<NavGroup> = [
 			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/consultas', Icon: ChatIcon },
 		],
 	},
+	...(showPropertiesNav
+		? [
+				{
+					id: 'host',
+					label: t('account.nav.groupHost', 'Anfitrión'),
+					items: [
+						{
+							section: 'host-dashboard',
+							label: t('account.nav.hostDashboard', 'Panel del anfitrión'),
+							path: 'mi-cuenta/host-dashboard',
+							Icon: DashboardIcon
+						},
+					],
+				} as NavGroup,
+		  ]
+		: []),
 	{
 		id: 'config',
 		label: t('account.nav.groupConfig', 'Configuración'),

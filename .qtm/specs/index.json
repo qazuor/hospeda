@@ -768,6 +768,71 @@
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["media", "gallery", "db", "migration", "post-go-live"],
             "note": "Spun off SPEC-167 realign D-2 (owner 2026-06-06); archivedGallery JSONB is the interim. Post go-live."
+        },
+        {
+            "specId": "SPEC-205",
+            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
+            "type": "epic",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-205-host-web-foundation",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": [
+                "web",
+                "host",
+                "dashboard",
+                "navigation",
+                "onboarding",
+                "promotions",
+                "permissions"
+            ],
+            "note": "Phase 1 of host migration initiative. Host dashboard, navigation, owner promotions, funnel improvements in apps/web. Parent of SPEC-206/207/208."
+        },
+        {
+            "specId": "SPEC-206",
+            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-206-host-conversations",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": ["web", "host", "conversations", "inbox", "api", "permissions"],
+            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205."
+        },
+        {
+            "specId": "SPEC-207",
+            "title": "Host Analytics & KPIs — Business Dashboard in Web",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-207-host-analytics-kpis",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
+            "note": "Phase 3 of host migration. Analytics aggregation endpoints + KPI dashboard widgets in apps/web. Depends on SPEC-205, SPEC-206."
+        },
+        {
+            "specId": "SPEC-208",
+            "title": "Web Accommodation Editor — Full Property Management in Web",
+            "type": "epic",
+            "complexity": "critical",
+            "status": "draft",
+            "path": "SPEC-208-web-accommodation-editor",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": [
+                "web",
+                "host",
+                "accommodation",
+                "editor",
+                "media",
+                "forms",
+                "api",
+                "entitlements"
+            ],
+            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. The most expensive phase."
         }
     ]
 }
