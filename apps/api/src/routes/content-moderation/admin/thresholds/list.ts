@@ -9,8 +9,6 @@ import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
 import { createAdminListRoute } from '../../../../utils/route-factory';
 
-const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/content-moderation/thresholds
  * List moderation thresholds - Admin endpoint.
@@ -31,6 +29,7 @@ export const adminListThresholdsRoute = createAdminListRoute({
         })
     }),
     handler: async (ctx, _params, _body, query) => {
+        const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 

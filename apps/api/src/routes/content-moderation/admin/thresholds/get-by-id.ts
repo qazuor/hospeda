@@ -8,8 +8,6 @@ import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/content-moderation/thresholds/:id
  * Get moderation threshold by ID - Admin endpoint.
@@ -23,6 +21,7 @@ export const adminGetThresholdByIdRoute = createAdminRoute({
     requestParams: { id: contentModerationThresholdSchema.shape.id },
     responseSchema: contentModerationThresholdSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const result = await thresholdService.getById(actor, params.id as string);
 

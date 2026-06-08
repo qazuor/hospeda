@@ -8,8 +8,6 @@ import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const termService = new ContentModerationTermService({ logger: apiLogger });
-
 /**
  * PUT /api/v1/admin/content-moderation/terms/:id
  * Update moderation term - Admin endpoint.
@@ -28,6 +26,7 @@ export const adminUpdateTermRoute = createAdminRoute({
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
+        const termService = new ContentModerationTermService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const result = await termService.update(actor, params.id as string, body);
 

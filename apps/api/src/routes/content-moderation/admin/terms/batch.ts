@@ -9,8 +9,6 @@ import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const termService = new ContentModerationTermService({ logger: apiLogger });
-
 const BatchImportResponseSchema = z.object({
     createdCount: z.number().int().nonnegative()
 });
@@ -34,6 +32,7 @@ export const adminBatchImportTermsRoute = createAdminRoute({
         _params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
+        const termService = new ContentModerationTermService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const { rows } = body as {
             rows: Array<z.infer<typeof createContentModerationTermSchema>>;

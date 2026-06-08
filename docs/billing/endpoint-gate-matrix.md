@@ -527,6 +527,19 @@
 | `GET /api/v1/admin/moderation/reviews/pending-count` | `moderation/admin/reviews-pending-count.ts` | none | - | n/a | Admin moderation — OR-gated (ACCOMMODATION_REVIEW_MODERATE or DESTINATION_REVIEW_MODERATE; SPEC-166 §7) |
 | **CONTENT MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/content-moderation/health` | `content-moderation/admin/health.ts` | none | - | n/a | Admin ops read; PermissionEnum-gated (MODERATION_TERM_VIEW) — no billing entitlement on provider/cache telemetry |
+| `GET /api/v1/admin/content-moderation/terms` | `content-moderation/admin/terms/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_TERM_VIEW) |
+| `GET /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/get-by-id.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_TERM_VIEW) |
+| `POST /api/v1/admin/content-moderation/terms` | `content-moderation/admin/terms/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_CREATE) |
+| `PUT /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_UPDATE) |
+| `PATCH /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_UPDATE) |
+| `DELETE /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/soft-delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_DELETE) |
+| `DELETE /api/v1/admin/content-moderation/terms/{id}/hard` | `content-moderation/admin/terms/hard-delete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (MODERATION_TERM_HARD_DELETE) |
+| `POST /api/v1/admin/content-moderation/terms/{id}/restore` | `content-moderation/admin/terms/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (MODERATION_TERM_RESTORE) |
+| `POST /api/v1/admin/content-moderation/terms/batch` | `content-moderation/admin/terms/batch.ts` | none | - | n/a | Admin batch import; PermissionEnum-gated (MODERATION_TERM_CREATE) |
+| `GET /api/v1/admin/content-moderation/thresholds` | `content-moderation/admin/thresholds/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
+| `GET /api/v1/admin/content-moderation/thresholds/{id}` | `content-moderation/admin/thresholds/get-by-id.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
+| `PATCH /api/v1/admin/content-moderation/thresholds/{id}` | `content-moderation/admin/thresholds/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_THRESHOLD_UPDATE) |
+| `GET /api/v1/admin/content-moderation/thresholds/resolved` | `content-moderation/admin/thresholds/get-resolved.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
 | **SYSTEM — ADMIN** | | | | | |
 | `GET /api/v1/admin/system/health` | `system/admin/health.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **PLATFORM-SETTINGS — ADMIN** | | | | | |

@@ -11,8 +11,6 @@ import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
-
 /**
  * PATCH /api/v1/admin/content-moderation/thresholds/:id
  * Patch moderation threshold - Admin endpoint.
@@ -32,6 +30,7 @@ export const adminPatchThresholdRoute = createAdminRoute({
         params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
+        const thresholdService = new ContentModerationThresholdService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const result = await thresholdService.update(actor, params.id as string, body);
 

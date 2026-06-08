@@ -10,8 +10,6 @@ import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
 import { createAdminListRoute } from '../../../../utils/route-factory';
 
-const termService = new ContentModerationTermService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/content-moderation/terms
  * List moderation terms - Admin endpoint.
@@ -33,6 +31,7 @@ export const adminListTermsRoute = createAdminListRoute({
         })
     }),
     handler: async (ctx, _params, _body, query) => {
+        const termService = new ContentModerationTermService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 

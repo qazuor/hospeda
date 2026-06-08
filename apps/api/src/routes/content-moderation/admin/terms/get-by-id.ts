@@ -8,8 +8,6 @@ import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
-const termService = new ContentModerationTermService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/content-moderation/terms/:id
  * Get moderation term by ID - Admin endpoint.
@@ -23,6 +21,7 @@ export const adminGetTermByIdRoute = createAdminRoute({
     requestParams: { id: contentModerationTermSchema.shape.id },
     responseSchema: contentModerationTermSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const termService = new ContentModerationTermService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const result = await termService.getById(actor, params.id as string);
 
