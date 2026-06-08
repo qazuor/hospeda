@@ -1,30 +1,40 @@
 /**
- * Tests for the accommodation-AI context assembler (SPEC-200 T-002).
+ * Tests for the accommodation-AI context assembler (SPEC-200 T-002 + Delta 1).
  *
  * ## Coverage
  *
  * `buildMarkdownContext` (pure helper):
- *   1. Renders all required sections (Accommodation/Type/Location/Summary/Description/Amenities/Features/Base Pricing/Location Details/FAQs).
+ *   1. Renders all required sections (Accommodation/Type/Destino/Summary/Capacidad/Precio/Valoración/Description/Información Especial/Amenities/Features/FAQs).
  *   2. Truncates description at 800 chars with "…" suffix (AC-2.1).
  *   3. Accepts exactly 800 chars unchanged (no truncation).
  *   4. Caps FAQs at 10 entries (AC-2.2).
  *   5. Caps amenities at 20 entries (AC-2.2).
  *   6. Caps features at 20 entries (AC-2.2).
  *   7. Omits the FAQs section when the FAQ list is empty.
+ *   8. Renders capacity fields when present in extraInfo.
+ *   9. Renders pricing when price.price is non-null.
+ *  10. Omits pricing when price is null.
+ *  11. Renders ratings when reviewsCount > 0.
+ *  12. Omits ratings when reviewsCount is 0.
+ *  13. Renders IA data grouped by category.
+ *  14. Truncates IA data entries at 500 chars.
+ *  15. Caps IA data at 10 entries.
+ *  16. Omits Información Especial when iaData is empty.
+ *  17. Groups uncategorized IA data under "Otros".
  *
  * `buildChatSystemMessage` (pure helper):
- *   8. Contains the contextBlock.
- *   9. Contains the resolved prompt.
- *  10. Contains the locale interpolation ("locale is \"es\"").
- *  11. Contains the literal `---price-disclaimer---` marker (AC-2.3).
- *  12. Contains the literal "unrelated to this specific accommodation" (Q-R5/AC-2.3).
- *  13. Does NOT contain user-supplied PII markers (privacy assertion, AC-2.4).
+ *  18. Contains the contextBlock.
+ *  19. Contains the resolved prompt.
+ *  20. Contains the locale interpolation ("locale is \"es\"").
+ *  21. Contains the literal `---price-disclaimer---` marker (AC-2.3).
+ *  22. Contains the literal "unrelated to this specific accommodation" (Q-R5/AC-2.3).
+ *  23. Does NOT contain user-supplied PII markers (privacy assertion, AC-2.4).
  *
  * `assembleAccommodationContext` (async, mocked service + Drizzle):
- *  14. Happy path: returns a system message that contains the accommodation name (AC-4).
- *  15. Re-throws `ServiceError(NOT_FOUND)` when `getById` throws.
- *  16. Falls back to empty FAQs when `getFaqs` returns an error Result (graceful degradation).
- *  17. Privacy: does not embed `actor.email` or any user-supplied message substring.
+ *  24. Happy path: returns a system message that contains the accommodation name (AC-4).
+ *  25. Re-throws `ServiceError(NOT_FOUND)` when `getById` throws.
+ *  26. Falls back to empty FAQs when `getFaqs` returns an error Result (graceful degradation).
+ *  27. Privacy: does not embed `actor.email` or any user-supplied message substring.
  *
  * @module test/services/accommodation-ai-context
  */
@@ -102,14 +112,22 @@ vi.mock('@repo/db', () => ({
     rAccommodationAmenity: { accommodationId: 'accommodationId', amenityId: 'amenityId' },
     amenities: { id: 'id', name: 'name' },
     rAccommodationFeature: { accommodationId: 'accommodationId', featureId: 'featureId' },
-    features: { id: 'id', name: 'name' }
+    features: { id: 'id', name: 'name' },
+    accommodationIaData: {
+        accommodationId: 'accommodationId',
+        title: 'title',
+        content: 'content',
+        category: 'category',
+        lifecycleState: 'lifecycleState'
+    }
 }));
 
 vi.mock('drizzle-orm', async (importOriginal) => {
     const actual = await importOriginal<typeof import('drizzle-orm')>();
     return {
         ...actual,
-        eq: vi.fn((_col: unknown, _val: unknown) => ({ _eq: true }))
+        eq: vi.fn((_col: unknown, _val: unknown) => ({ _eq: true })),
+        and: vi.fn((..._conditions: unknown[]) => ({ _and: true }))
     };
 });
 
@@ -157,7 +175,18 @@ function makeAccommodation(overrides: Record<string, unknown> = {}): Record<stri
         type: 'CABIN',
         destinationId: 'dest-1',
         ownerId: 'owner-1',
+        averageRating: 4.5,
+        reviewsCount: 12,
         destination: { name: 'Concepción del Uruguay' },
+        extraInfo: {
+            capacity: 6,
+            bedrooms: 3,
+            bathrooms: 2,
+            beds: 4,
+            minNights: 2,
+            maxNights: 30
+        },
+        price: { price: 15000, currency: 'ARS' },
         faqs: [
             { question: '¿Se admiten mascotas?', answer: 'Sí, mascotas pequeñas.' },
             { question: '¿Incluye desayuno?', answer: 'Sí, desayuno buffet.' }
@@ -189,13 +218,14 @@ describe('buildMarkdownContext', () => {
         );
         expect(ctx).toContain('## Accommodation: Cabañas del Río');
         expect(ctx).toContain('**Type**: CABIN');
-        expect(ctx).toContain('**Location**: Concepción del Uruguay');
+        expect(ctx).toContain('**Destino**: Concepción del Uruguay');
         expect(ctx).toContain('**Summary**: Hospedaje tranquilo a orillas del río Uruguay.');
+        expect(ctx).toContain('### Capacidad');
+        expect(ctx).toContain('### Precio');
+        expect(ctx).toContain('### Valoración');
         expect(ctx).toContain('### Description');
         expect(ctx).toContain('### Amenities');
         expect(ctx).toContain('### Features');
-        expect(ctx).toContain('### Base Pricing');
-        expect(ctx).toContain('### Location Details');
         expect(ctx).toContain('### FAQs');
     });
 
@@ -253,7 +283,7 @@ describe('buildMarkdownContext', () => {
     it('should cap features at 20 entries', () => {
         const twentyOne = Array.from({ length: 21 }, (_, i) => ({ name: `Feature ${i + 1}` }));
         const ctx = buildMarkdownContext(makeAccommodation() as never, makeFaqs(), [], twentyOne);
-        const featuresSection = ctx.split('### Features')[1]?.split('### Base Pricing')[0] ?? '';
+        const featuresSection = ctx.split('### Features')[1]?.split('### FAQs')[0] ?? '';
         const lines = featuresSection.split('\n').filter((l) => l.startsWith('- '));
         expect(lines).toHaveLength(20);
     });
@@ -261,6 +291,107 @@ describe('buildMarkdownContext', () => {
     it('should omit the FAQs section when the FAQ list is empty', () => {
         const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], []);
         expect(ctx).not.toContain('### FAQs');
+    });
+
+    it('should render capacity fields when extraInfo is present', () => {
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], []);
+        expect(ctx).toContain('**Capacidad**: 6 huéspedes');
+        expect(ctx).toContain('**Dormitorios**: 3');
+        expect(ctx).toContain('**Baños**: 2');
+        expect(ctx).toContain('**Camas**: 4');
+        expect(ctx).toContain('**Mínimo de noches**: 2');
+        expect(ctx).toContain('**Máximo de noches**: 30');
+    });
+
+    it('should omit Capacidad section when extraInfo is null', () => {
+        const ctx = buildMarkdownContext(
+            makeAccommodation({ extraInfo: null }) as never,
+            [],
+            [],
+            []
+        );
+        expect(ctx).not.toContain('### Capacidad');
+    });
+
+    it('should render pricing when price.price is non-null', () => {
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], []);
+        expect(ctx).toContain('**Precio base**: $15000 ARS/noche');
+    });
+
+    it('should omit Precio section when price is null', () => {
+        const ctx = buildMarkdownContext(makeAccommodation({ price: null }) as never, [], [], []);
+        expect(ctx).not.toContain('### Precio');
+    });
+
+    it('should render ratings when reviewsCount > 0', () => {
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], []);
+        expect(ctx).toContain('**Rating promedio**: 4.50/5 (12 reseñas)');
+    });
+
+    it('should omit Valoración section when reviewsCount is 0', () => {
+        const ctx = buildMarkdownContext(
+            makeAccommodation({ reviewsCount: 0 }) as never,
+            [],
+            [],
+            []
+        );
+        expect(ctx).not.toContain('### Valoración');
+    });
+
+    it('should render IA data entries grouped by category', () => {
+        const iaData = [
+            { title: 'Mascotas', content: 'Se permiten mascotas pequeñas.', category: 'policies' },
+            {
+                title: 'Horario',
+                content: 'Check-in 14:00, check-out 10:00.',
+                category: 'house_rules'
+            },
+            { title: 'Barrio', content: 'Zona tranquila, cerca del río.', category: 'neighborhood' }
+        ];
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], [], iaData);
+        expect(ctx).toContain('### Información Especial');
+        expect(ctx).toContain('#### policies');
+        expect(ctx).toContain('#### house_rules');
+        expect(ctx).toContain('#### neighborhood');
+        expect(ctx).toContain('**Mascotas**: Se permiten mascotas pequeñas.');
+    });
+
+    it('should truncate IA data entries at 500 chars', () => {
+        const longContent = 'a'.repeat(600);
+        const iaData = [{ title: 'Test', content: longContent, category: 'info' }];
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], [], iaData);
+        const match = ctx.match(/\*\*Test\*\*: ([^\n]+)/);
+        expect(match).not.toBeNull();
+        const content = match?.[1] ?? '';
+        expect(content.length).toBeLessThanOrEqual(501); // 500 chars + "…"
+        expect(content.endsWith('…')).toBe(true);
+    });
+
+    it('should cap IA data at 10 entries', () => {
+        const twelve = Array.from({ length: 12 }, (_, i) => ({
+            title: `Entry ${i + 1}`,
+            content: `Content ${i + 1}`,
+            category: `cat${i + 1}`
+        }));
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], [], twelve);
+        const iaSection = ctx.split('### Información Especial')[1] ?? '';
+        const entries = (iaSection.match(/\*\*Entry/g) ?? []).length;
+        expect(entries).toBe(10);
+    });
+
+    it('should omit Información Especial when iaData is empty', () => {
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], [], []);
+        expect(ctx).not.toContain('### Información Especial');
+    });
+
+    it('should group uncategorized IA data under "Otros"', () => {
+        const iaData = [
+            { title: 'Regla', content: 'No fumar.', category: 'house_rules' },
+            { title: 'Otro', content: 'Algo sin categoría.', category: null }
+        ];
+        const ctx = buildMarkdownContext(makeAccommodation() as never, [], [], [], iaData);
+        expect(ctx).toContain('#### house_rules');
+        expect(ctx).toContain('#### Otros');
     });
 });
 
