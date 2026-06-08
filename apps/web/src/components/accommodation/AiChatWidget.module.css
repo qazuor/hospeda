@@ -1,0 +1,236 @@
+/**
+ * @file AiChatWidget.module.css
+ * @description Styles for the AI chat widget panel, messages, and composer.
+ */
+
+.panel {
+    position: fixed;
+    bottom: 96px;
+    right: 24px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    width: 380px;
+    max-width: calc(100vw - 48px);
+    height: 520px;
+    max-height: calc(100vh - 120px);
+    border: 1px solid var(--core-muted-foreground, #e5e7eb);
+    border-radius: var(--radius-card, 24px);
+    background-color: var(--core-card, #ffffff);
+    box-shadow: var(--shadow-card, 0 4px 24px rgba(0, 0, 0, 0.15));
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--core-muted-foreground, #e5e7eb);
+}
+
+.title {
+    margin: 0;
+    font-family: var(--font-heading, sans-serif);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--core-foreground, #111827);
+}
+
+.closeButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    background: transparent;
+    color: var(--core-muted-foreground, #6b7280);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: background-color 0.15s ease;
+}
+
+.closeButton:hover {
+    background-color: var(--core-muted-foreground, #e5e7eb);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.disclaimer {
+    padding: 8px 16px;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--core-muted-foreground, #6b7280);
+    background-color: var(--surface-warm, #fef7f0);
+    border-bottom: 1px solid var(--core-muted-foreground, #e5e7eb);
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bubble {
+    padding: 10px 14px;
+    border-radius: var(--radius-md, 10px);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 85%;
+    word-wrap: break-word;
+}
+
+.userBubble {
+    align-self: flex-end;
+    background-color: var(--brand-primary, #2563eb);
+    color: var(--primary-foreground, #ffffff);
+    border-bottom-right-radius: 4px;
+}
+
+.assistantBubble {
+    align-self: flex-start;
+    background-color: var(--core-muted-foreground, #f3f4f6);
+    color: var(--core-foreground, #111827);
+    border-bottom-left-radius: 4px;
+}
+
+.streaming {
+    opacity: 0.8;
+}
+
+.priceNotice {
+    padding: 8px 12px;
+    margin-top: 4px;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--brand-accent, #ea580c);
+    background-color: color-mix(in srgb, var(--brand-accent, #ea580c) 10%, transparent);
+    border-radius: var(--radius-md, 10px);
+    border-left: 3px solid var(--brand-accent, #ea580c);
+}
+
+.errorBubble {
+    padding: 10px 14px;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 13px;
+    line-height: 1.4;
+    color: #dc2626;
+    background-color: #fef2f2;
+    border-radius: var(--radius-md, 10px);
+    border-left: 3px solid #dc2626;
+}
+
+.capBanner {
+    padding: 12px 14px;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--core-muted-foreground, #6b7280);
+    text-align: center;
+    background-color: var(--surface-warm, #fef7f0);
+    border-radius: var(--radius-md, 10px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.resetButton {
+    padding: 6px 14px;
+    border: 1px solid var(--brand-primary, #2563eb);
+    border-radius: var(--radius-button, 8px);
+    background: transparent;
+    color: var(--brand-primary, #2563eb);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.resetButton:hover {
+    background-color: var(--brand-primary, #2563eb);
+    color: var(--primary-foreground, #ffffff);
+}
+
+.resetButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}
+
+.composer {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--core-muted-foreground, #e5e7eb);
+    background-color: var(--core-card, #ffffff);
+}
+
+.textarea {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--core-muted-foreground, #d1d5db);
+    border-radius: var(--radius-md, 10px);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--core-foreground, #111827);
+    background-color: var(--core-card, #ffffff);
+    resize: none;
+    transition: border-color 0.15s ease;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary, #2563eb);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #2563eb) 20%, transparent);
+}
+
+.textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.textarea::placeholder {
+    color: var(--core-muted-foreground, #9ca3af);
+}
+
+.sendButton {
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--brand-primary, #2563eb);
+    color: var(--primary-foreground, #ffffff);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+}
+
+.sendButton:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--brand-primary, #2563eb) 90%, black);
+}
+
+.sendButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sendButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
+}

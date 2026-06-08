@@ -391,5 +391,18 @@
         "viewMap": "Ver en mapa",
         "popular": "Ver más reservados",
         "allDestinations": "Explorar destinos"
+    },
+    "aiChat": {
+        "fabLabel": "Preguntarle a la IA sobre este alojamiento",
+        "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
+        "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
+        "priceDisclaimer": "Los precios y disponibilidad pueden haber cambiado. Contactá al alojamiento para confirmar.",
+        "placeholder": "Escribí tu pregunta aquí…",
+        "send": "Enviar",
+        "sending": "Enviando…",
+        "errorDefault": "No se pudo mostrar la respuesta. Por favor intentá de nuevo.",
+        "atCapMessage": "Alcanzaste el límite de esta conversación.",
+        "newConversation": "Nueva conversación",
+        "close": "Cerrar chat"
     }
 }
