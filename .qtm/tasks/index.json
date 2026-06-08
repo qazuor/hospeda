@@ -1,274 +1,305 @@
 {
-    "version": "1.0",
-    "epics": [
-        {
-            "specId": "SPEC-131",
-            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
-            "status": "draft",
-            "progress": "0/6",
-            "path": "SPEC-131-plan-purchase-button-async-state-tests"
-        },
-        {
-            "specId": "SPEC-132",
-            "title": "Migrate shared packages to Zod 4 top-level format validators",
-            "status": "draft",
-            "progress": "0/6",
-            "path": "SPEC-132-zod-4-cross-package-migration"
-        },
-        {
-            "specId": "SPEC-133",
-            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
-            "status": "draft",
-            "progress": "0/5",
-            "path": "SPEC-133-evaluate-astro-env"
-        },
-        {
-            "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
-            "status": "completed",
-            "progress": "9/21",
-            "path": "SPEC-188-vitest-test-performance",
-            "archived": true,
-            "archivedAt": "2026-06-04T00:00:00Z",
-            "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
-        },
-        {
-            "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
-            "status": "in-progress",
-            "progress": "0/14",
-            "path": "SPEC-180-sentry-observability"
-        },
-        {
-            "specId": "SPEC-183",
-            "title": "API Error i18n Standardization",
-            "status": "in-progress",
-            "progress": "0/14",
-            "path": "SPEC-183-api-error-i18n-standardization",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
-            "branch": "spec/SPEC-183-api-error-i18n-standardization",
-            "base": "staging",
-            "driver": "Linear BETA-63",
-            "createdAt": "2026-06-02T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
-            "taskCount": 14,
-            "averageComplexity": 2.1,
-            "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
-            "status": "completed",
-            "progress": "17/17",
-            "path": "SPEC-185-admin-entity-lists-v2",
-            "branch": "spec/SPEC-185-admin-entity-lists-v2",
-            "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "archiveNote": "Closeout PR #1443 merged to staging (2621fa54f). All 17 tasks done; T-016 smoke fixed 3 defects, all verified live."
-        },
-        {
-            "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
-            "status": "completed",
-            "progress": "18/18",
-            "path": "SPEC-186-web-dynamic-image-grid",
-            "branch": "spec/SPEC-186-web-dynamic-image-grid",
-            "linearIssues": ["BETA-53"],
-            "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
-            "archived": true,
-            "archivedAt": "2026-06-05"
-        },
-        {
-            "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-187-rich-text-entity-descriptions",
-            "branch": "spec/SPEC-187-rich-text-entity-descriptions",
-            "linearIssues": ["BETA-60"],
-            "note": "tasks pending atomization",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-189-optimize-seed-and-app-builds",
-            "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
-            "linearIssues": ["BETA-54"],
-            "note": "tasks pending atomization",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-190",
-            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "linearIssues": ["BETA-74"],
-            "note": "tasks pending atomization",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
-            "status": "completed",
-            "progress": "16/16",
-            "path": "SPEC-191-web-contribution-pages-and-banners",
-            "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
-            "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
-            "archived": true,
-            "note": "16/16 + smoke + follow-ups; shipped via PR #1447",
-            "archivedAt": "2026-06-04"
-        },
-        {
-            "specId": "SPEC-192",
-            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
-            "status": "completed",
-            "progress": "37/37",
-            "path": "SPEC-192-billing-catalog-to-db",
-            "parent": "SPEC-193",
-            "branch": "spec/SPEC-192-billing-catalog-to-db",
-            "linearIssues": ["BETA-58"],
-            "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
-            "archived": true,
-            "archivedAt": "2026-06-04"
-        },
-        {
-            "specId": "SPEC-127",
-            "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "note": "PR #1448 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)"
-        },
-        {
-            "specId": "SPEC-166",
-            "title": "Review Moderation State",
-            "status": "completed",
-            "progress": "27/27",
-            "path": "SPEC-166-review-moderation-state",
-            "branch": "spec/SPEC-166-review-moderation-state",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
-        },
-        {
-            "specId": "SPEC-194",
-            "title": "Billing Lifecycle Robustness & Bug Fixes",
-            "status": "completed",
-            "progress": "30/30",
-            "path": "SPEC-194-billing-lifecycle-robustness",
-            "branch": "spec/SPEC-194-billing-lifecycle-robustness",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
-        },
-        {
-            "specId": "SPEC-196",
-            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-196-shared-content-config-package",
-            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
-        },
-        {
-            "specId": "SPEC-145",
-            "title": "Billing Entitlements & Limits Enforcement",
-            "status": "completed",
-            "progress": "29/29",
-            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
-            "branch": "spec/SPEC-145-billing-entitlements-and-limits-enforcement",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1462 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; behavior changes: docs/billing/spec-145-behavior-changes.md"
-        },
-        {
-            "specId": "SPEC-149",
-            "title": "Billing provider error propagation + Sentry context + retry policy",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
-            "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1468 merged 2026-06-05; staging smoke deferred to SPEC-193 batch (entry #5); monthly preapproval 500 asymmetry documented in spec scope note"
-        },
-        {
-            "specId": "SPEC-159",
-            "title": "Cross-Entity View Tracking",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-159-cross-entity-view-tracking",
-            "branch": "spec/SPEC-159-cross-entity-view-tracking"
-        },
-        {
-            "specId": "SPEC-197",
-            "title": "Admin View-Stats Surfaces",
-            "status": "completed",
-            "progress": "21/21",
-            "path": "SPEC-197-admin-view-stats-surfaces",
-            "branch": "fix/SPEC-197-smoke-findings",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-06",
-            "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
-        },
-        {
-            "specId": "SPEC-202",
-            "title": "Destination Review Submission Flow (web) + API contract/security fix",
-            "status": "completed",
-            "progress": "21/21",
-            "path": "SPEC-202-destination-review-submission",
-            "branch": "spec/SPEC-202-destination-review-submission",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-06T18:30:00.000Z",
-            "updatedAt": "2026-06-06T18:30:00.000Z"
-        },
-        {
-            "specId": "SPEC-205",
-            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
-            "status": "in-progress",
-            "progress": "0/1",
-            "path": "SPEC-205-host-web-foundation",
-            "tags": ["host-migration", "phase-1"]
-        },
-        {
-            "specId": "SPEC-206",
-            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
-            "status": "draft",
-            "progress": "0/1",
-            "path": "SPEC-206-host-conversations",
-            "tags": ["host-migration", "phase-2"]
-        },
-        {
-            "specId": "SPEC-207",
-            "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "draft",
-            "progress": "0/1",
-            "path": "SPEC-207-host-analytics-kpis",
-            "tags": ["host-migration", "phase-3"]
-        },
-        {
-            "specId": "SPEC-208",
-            "title": "Web Accommodation Editor — Full Property Management in Web",
-            "status": "draft",
-            "progress": "0/1",
-            "path": "SPEC-208-web-accommodation-editor",
-            "tags": ["host-migration", "phase-4"]
-        }
-    ],
-    "standalone": {
-        "path": "standalone",
-        "total": 0,
-        "completed": 0
+  "version": "1.0",
+  "epics": [
+    {
+      "specId": "SPEC-131",
+      "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+      "status": "draft",
+      "progress": "0/6",
+      "path": "SPEC-131-plan-purchase-button-async-state-tests"
+    },
+    {
+      "specId": "SPEC-132",
+      "title": "Migrate shared packages to Zod 4 top-level format validators",
+      "status": "draft",
+      "progress": "0/6",
+      "path": "SPEC-132-zod-4-cross-package-migration"
+    },
+    {
+      "specId": "SPEC-133",
+      "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+      "status": "draft",
+      "progress": "0/5",
+      "path": "SPEC-133-evaluate-astro-env"
+    },
+    {
+      "specId": "SPEC-188",
+      "title": "Vitest Test-Suite Performance \u2014 Cut Per-File Overhead Without Saturating the Machine",
+      "status": "completed",
+      "progress": "9/21",
+      "path": "SPEC-188-vitest-test-performance",
+      "archived": true,
+      "archivedAt": "2026-06-04T00:00:00Z",
+      "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
+    },
+    {
+      "specId": "SPEC-180",
+      "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
+      "status": "in-progress",
+      "progress": "0/14",
+      "path": "SPEC-180-sentry-observability"
+    },
+    {
+      "specId": "SPEC-183",
+      "title": "API Error i18n Standardization",
+      "status": "in-progress",
+      "progress": "0/14",
+      "path": "SPEC-183-api-error-i18n-standardization",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
+      "branch": "spec/SPEC-183-api-error-i18n-standardization",
+      "base": "staging",
+      "driver": "Linear BETA-63",
+      "createdAt": "2026-06-02T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
+      "taskCount": 14,
+      "averageComplexity": 2.1,
+      "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-185",
+      "title": "Admin Entity Lists v2 \u2014 filters, grid cards, host portfolio & tags migration",
+      "status": "completed",
+      "progress": "17/17",
+      "path": "SPEC-185-admin-entity-lists-v2",
+      "branch": "spec/SPEC-185-admin-entity-lists-v2",
+      "linearIssues": [
+        "BETA-75",
+        "BETA-72",
+        "BETA-76"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "archiveNote": "Closeout PR #1443 merged to staging (2621fa54f). All 17 tasks done; T-016 smoke fixed 3 defects, all verified live."
+    },
+    {
+      "specId": "SPEC-186",
+      "title": "Web Dynamic Image Grid \u2014 count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+      "status": "completed",
+      "progress": "18/18",
+      "path": "SPEC-186-web-dynamic-image-grid",
+      "branch": "spec/SPEC-186-web-dynamic-image-grid",
+      "linearIssues": [
+        "BETA-53"
+      ],
+      "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
+      "archived": true,
+      "archivedAt": "2026-06-05"
+    },
+    {
+      "specId": "SPEC-187",
+      "title": "Rich Text Entity Descriptions \u2014 per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+      "status": "completed",
+      "progress": "25/25",
+      "path": "SPEC-187-rich-text-entity-descriptions",
+      "branch": "spec/SPEC-187-rich-text-entity-descriptions",
+      "linearIssues": [
+        "BETA-60"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-08T15:13:03.505606",
+      "archiveNote": "All 5 PRs merged to staging: P0 strip migration, P1 config flips+renderPlain, P2 richDescription vertical slice, P3 ADR-032+XSS+audit, P4 closeout."
+    },
+    {
+      "specId": "SPEC-189",
+      "title": "Optimize Seed & App Builds \u2014 run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-189-optimize-seed-and-app-builds",
+      "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
+      "linearIssues": [
+        "BETA-54"
+      ],
+      "note": "tasks pending atomization",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-190",
+      "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
+      "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
+      "linearIssues": [
+        "BETA-74"
+      ],
+      "note": "tasks pending atomization",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-191",
+      "title": "Web Contribution Pages & Banners \u2014 /colaborar hub, report link & recruitment banners",
+      "status": "completed",
+      "progress": "16/16",
+      "path": "SPEC-191-web-contribution-pages-and-banners",
+      "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
+      "linearIssues": [
+        "BETA-69",
+        "BETA-68",
+        "BETA-65"
+      ],
+      "archived": true,
+      "note": "16/16 + smoke + follow-ups; shipped via PR #1447",
+      "archivedAt": "2026-06-04"
+    },
+    {
+      "specId": "SPEC-192",
+      "title": "Billing Catalog to DB \u2014 complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+      "status": "completed",
+      "progress": "37/37",
+      "path": "SPEC-192-billing-catalog-to-db",
+      "parent": "SPEC-193",
+      "branch": "spec/SPEC-192-billing-catalog-to-db",
+      "linearIssues": [
+        "BETA-58"
+      ],
+      "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
+      "archived": true,
+      "archivedAt": "2026-06-04"
+    },
+    {
+      "specId": "SPEC-127",
+      "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "note": "PR #1448 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)"
+    },
+    {
+      "specId": "SPEC-166",
+      "title": "Review Moderation State",
+      "status": "completed",
+      "progress": "27/27",
+      "path": "SPEC-166-review-moderation-state",
+      "branch": "spec/SPEC-166-review-moderation-state",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
+    },
+    {
+      "specId": "SPEC-194",
+      "title": "Billing Lifecycle Robustness & Bug Fixes",
+      "status": "completed",
+      "progress": "30/30",
+      "path": "SPEC-194-billing-lifecycle-robustness",
+      "branch": "spec/SPEC-194-billing-lifecycle-robustness",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
+    },
+    {
+      "specId": "SPEC-196",
+      "title": "Shared Config-as-Code Package \u2014 centralize curated content & catalog files",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-196-shared-content-config-package",
+      "note": "Draft only \u2014 no tasks until activation; decisions D-1..D-6 pending owner workshop."
+    },
+    {
+      "specId": "SPEC-145",
+      "title": "Billing Entitlements & Limits Enforcement",
+      "status": "completed",
+      "progress": "29/29",
+      "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+      "branch": "spec/SPEC-145-billing-entitlements-and-limits-enforcement",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1462 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; behavior changes: docs/billing/spec-145-behavior-changes.md"
+    },
+    {
+      "specId": "SPEC-149",
+      "title": "Billing provider error propagation + Sentry context + retry policy",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
+      "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1468 merged 2026-06-05; staging smoke deferred to SPEC-193 batch (entry #5); monthly preapproval 500 asymmetry documented in spec scope note"
+    },
+    {
+      "specId": "SPEC-159",
+      "title": "Cross-Entity View Tracking",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-159-cross-entity-view-tracking",
+      "branch": "spec/SPEC-159-cross-entity-view-tracking"
+    },
+    {
+      "specId": "SPEC-197",
+      "title": "Admin View-Stats Surfaces",
+      "status": "completed",
+      "progress": "21/21",
+      "path": "SPEC-197-admin-view-stats-surfaces",
+      "branch": "fix/SPEC-197-smoke-findings",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-06",
+      "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
+    },
+    {
+      "specId": "SPEC-202",
+      "title": "Destination Review Submission Flow (web) + API contract/security fix",
+      "status": "completed",
+      "progress": "21/21",
+      "path": "SPEC-202-destination-review-submission",
+      "branch": "spec/SPEC-202-destination-review-submission",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-06T18:30:00.000Z",
+      "updatedAt": "2026-06-06T18:30:00.000Z"
+    },
+    {
+      "specId": "SPEC-205",
+      "title": "Host Web Foundation \u2014 Dashboard, Navigation, Promotions & Funnel",
+      "status": "in-progress",
+      "progress": "0/1",
+      "path": "SPEC-205-host-web-foundation",
+      "tags": [
+        "host-migration",
+        "phase-1"
+      ]
+    },
+    {
+      "specId": "SPEC-206",
+      "title": "Host Conversations \u2014 Inbox, Threads, Replies & Archive in Web",
+      "status": "draft",
+      "progress": "0/1",
+      "path": "SPEC-206-host-conversations",
+      "tags": [
+        "host-migration",
+        "phase-2"
+      ]
+    },
+    {
+      "specId": "SPEC-207",
+      "title": "Host Analytics & KPIs \u2014 Business Dashboard in Web",
+      "status": "draft",
+      "progress": "0/1",
+      "path": "SPEC-207-host-analytics-kpis",
+      "tags": [
+        "host-migration",
+        "phase-3"
+      ]
+    },
+    {
+      "specId": "SPEC-208",
+      "title": "Web Accommodation Editor \u2014 Full Property Management in Web",
+      "status": "draft",
+      "progress": "0/1",
+      "path": "SPEC-208-web-accommodation-editor",
+      "tags": [
+        "host-migration",
+        "phase-4"
+      ]
     }
+  ],
+  "standalone": {
+    "path": "standalone",
+    "total": 0,
+    "completed": 0
+  }
 }
