@@ -128,6 +128,9 @@
         },
         "featureIds": {
             "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
+        },
+        "richDescription": {
+            "max": "A descrição enriquecida não pode exceder {{max}} caracteres"
         }
     },
     "accommodationAmenity": {

@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     toAccommodationCardProps,
+    toAccommodationDetailPageProps,
     toArticleCardProps,
     toDestinationCardProps,
     toEventCardProps,
@@ -96,6 +97,44 @@ describe('toAccommodationCardProps', () => {
         const item = { destination: { name: 'Colón' } };
         const result = toAccommodationCardProps({ item });
         expect(result.location.city).toBe('Colón');
+    });
+});
+
+describe('toAccommodationDetailPageProps — SPEC-187 P2-T7', () => {
+    it('passes richDescription through when present on the public API payload', () => {
+        const item = {
+            id: 'acc-001',
+            slug: 'casa-premium',
+            name: 'Casa Premium',
+            summary: 'Resumen',
+            description: 'Descripción simple',
+            richDescription: '## Premium\n\n**luxury**',
+            type: 'HOTEL',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            owner: { id: 'owner-1', name: 'Owner', createdAt: '2026-01-01T00:00:00.000Z' }
+        };
+
+        const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+        expect(result.richDescription).toBe('## Premium\n\n**luxury**');
+    });
+
+    it('leaves richDescription undefined when the public payload omits it', () => {
+        const item = {
+            id: 'acc-001',
+            slug: 'casa-free',
+            name: 'Casa Free',
+            summary: 'Resumen',
+            description: 'Descripción simple',
+            type: 'HOTEL',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            owner: { id: 'owner-1', name: 'Owner', createdAt: '2026-01-01T00:00:00.000Z' }
+        };
+
+        const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+        expect(result.richDescription).toBeUndefined();
+        expect(result.description).toBe('Descripción simple');
     });
 });
 
@@ -373,8 +412,6 @@ describe('toTestimonialCardProps', () => {
 // ---------------------------------------------------------------------------
 // toAccommodationDetailPageProps
 // ---------------------------------------------------------------------------
-
-import { toAccommodationDetailPageProps } from '../../../src/lib/api/transforms';
 
 describe('toAccommodationDetailPageProps', () => {
     /** Builds a full API item with all fields populated. */

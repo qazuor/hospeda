@@ -31,6 +31,7 @@ const createAccommodationEntityFields = () => ({
     name: faker.lorem.words({ min: 3, max: 10 }).slice(0, 100),
     summary: faker.lorem.paragraph().slice(0, 300),
     description: faker.lorem.paragraphs(3).slice(0, 2000),
+    richDescription: undefined,
     isFeatured: faker.datatype.boolean()
 });
 

@@ -49,6 +49,19 @@ export const AccommodationSchema = z.object({
         .string()
         .min(30, { message: 'zodError.accommodation.description.min' })
         .max(2000, { message: 'zodError.accommodation.description.max' }),
+    /**
+     * Rich-text (markdown) variant of the description used when the owning host
+     * has the `CAN_USE_RICH_DESCRIPTION` entitlement. Presence on the public
+     * payload is the ONLY signal the web client uses to pick rich vs. plain
+     * rendering — see FR-3b and FR-4 in SPEC-187. Optional: missing means
+     * the owner is not entitled, or the field has not been filled in.
+     * Max length is 5000 chars of markdown (rendered HTML can be longer but
+     * is bounded by the admin editor and the `sanitize-html` allowlist).
+     */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.accommodation.richDescription.max' })
+        .optional(),
     isFeatured: z.boolean().default(false),
 
     // Base field groups

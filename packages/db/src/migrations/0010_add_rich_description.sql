@@ -1,0 +1,1 @@
+ALTER TABLE "accommodations" ADD COLUMN "rich_description" text;
