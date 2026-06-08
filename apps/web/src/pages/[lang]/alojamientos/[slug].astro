@@ -29,6 +29,7 @@ import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
@@ -516,6 +517,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
         accommodationId={accommodation.id}
         locale={locale}
     />
+
+    <!-- AI chat widget (SPEC-200) — only for authenticated users -->
+    {isAuthenticated && (
+        <AiChatWidget
+            client:idle
+            accommodationId={accommodation.id}
+            locale={locale}
+            apiUrl={getApiUrl()}
+        />
+    )}
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
