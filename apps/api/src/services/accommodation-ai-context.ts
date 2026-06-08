@@ -1,6 +1,13 @@
-import { amenities, features, getDb, rAccommodationAmenity, rAccommodationFeature } from '@repo/db';
+import {
+    accommodationIaData,
+    amenities,
+    features,
+    getDb,
+    rAccommodationAmenity,
+    rAccommodationFeature
+} from '@repo/db';
 import { AccommodationService, type Actor } from '@repo/service-core';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 
 // ---------------------------------------------------------------------------
@@ -28,6 +35,12 @@ export const CONTEXT_AMENITY_MAX = 20;
 /** Maximum features included in the context block (AC-2.2). */
 export const CONTEXT_FEATURE_MAX = 20;
 
+/** Maximum IA data entries included in the context block (SPEC-200 Delta 1). */
+export const CONTEXT_IADATA_MAX = 10;
+
+/** Hard cap on each IA data entry's content length in the context block. */
+export const CONTEXT_IADATA_CONTENT_MAX_CHARS = 500;
+
 /** Default fallback location suffix (the platform is Argentina-only in V1). */
 const LOCATION_SUFFIX = ', Argentina';
 
@@ -44,13 +57,31 @@ export interface AccommodationWithRelations {
     type: string;
     destinationId: string;
     ownerId: string;
-    destination?: { name: string } | null;
+    averageRating: number;
+    reviewsCount: number;
+    destination?: { name: string; destinationType?: string } | null;
+    extraInfo?: {
+        capacity?: number;
+        bedrooms?: number;
+        bathrooms?: number;
+        beds?: number;
+        minNights?: number;
+        maxNights?: number;
+    } | null;
+    price?: { price?: number; currency?: string } | null;
     faqs?: Array<{ question: string; answer: string }>;
 }
 
 /** Shape of an amenity or feature row used by the context assembler. */
 export interface NameOnlyEntity {
     name: string;
+}
+
+/** Shape of an IA data entry used by the context assembler. */
+export interface IaDataEntry {
+    title: string;
+    content: string;
+    category: string | null;
 }
 
 /** Input contract for {@link assembleAccommodationContext}. */
@@ -81,36 +112,85 @@ export interface AssembleAccommodationContextOutput {
  * PURE — no I/O, no side effects. All inputs are explicit; the function
  * does NOT reach out to the database. The async wrapper
  * ({@link assembleAccommodationContext}) is responsible for loading the
- * relations and any amenities/features not loaded by `getById`.
+ * relations and any amenities/features/iaData not loaded by `getById`.
  *
  * @param accommodation - The accommodation row + `destination` + `faqs` relations.
  * @param faqs         - The accommodation's FAQs (from `getFaqs`).
  * @param amenities    - The accommodation's amenities (Drizzle join result).
  * @param features     - The accommodation's features (Drizzle join result).
+ * @param iaData       - The accommodation's IA data entries (owner-authored content for AI).
  * @returns The Markdown block to be prepended to the system message.
  */
 export function buildMarkdownContext(
     accommodation: AccommodationWithRelations,
     faqs: ReadonlyArray<{ question: string; answer: string }>,
     amenities: ReadonlyArray<NameOnlyEntity>,
-    features: ReadonlyArray<NameOnlyEntity>
+    features: ReadonlyArray<NameOnlyEntity>,
+    iaData: ReadonlyArray<IaDataEntry> = []
 ): string {
     const destinationName = accommodation.destination?.name ?? 'Unknown';
     const truncatedDescription = truncate(accommodation.description, CONTEXT_DESCRIPTION_MAX_CHARS);
     const cappedFaqs = faqs.slice(0, CONTEXT_FAQ_MAX);
     const cappedAmenities = amenities.slice(0, CONTEXT_AMENITY_MAX);
     const cappedFeatures = features.slice(0, CONTEXT_FEATURE_MAX);
+    const cappedIaData = iaData.slice(0, CONTEXT_IADATA_MAX);
 
     const lines: string[] = [
         `## Accommodation: ${accommodation.name}`,
         `**Type**: ${accommodation.type}`,
-        `**Location**: ${destinationName}${LOCATION_SUFFIX}`,
-        `**Summary**: ${accommodation.summary}`,
-        '',
-        '### Description',
-        truncatedDescription
+        `**Destino**: ${destinationName}${LOCATION_SUFFIX}`,
+        `**Summary**: ${accommodation.summary}`
     ];
 
+    // --- Capacity & Space ---
+    const ei = accommodation.extraInfo;
+    if (ei) {
+        lines.push('', '### Capacidad');
+        if (ei.capacity != null) lines.push(`**Capacidad**: ${ei.capacity} huéspedes`);
+        if (ei.bedrooms != null) lines.push(`**Dormitorios**: ${ei.bedrooms}`);
+        if (ei.bathrooms != null) lines.push(`**Baños**: ${ei.bathrooms}`);
+        if (ei.beds != null) lines.push(`**Camas**: ${ei.beds}`);
+        if (ei.minNights != null) lines.push(`**Mínimo de noches**: ${ei.minNights}`);
+        if (ei.maxNights != null) lines.push(`**Máximo de noches**: ${ei.maxNights}`);
+    }
+
+    // --- Pricing ---
+    if (accommodation.price?.price != null) {
+        const currency = accommodation.price.currency ?? 'ARS';
+        lines.push(
+            '',
+            '### Precio',
+            `**Precio base**: $${accommodation.price.price} ${currency}/noche`
+        );
+    }
+
+    // --- Ratings ---
+    if (accommodation.reviewsCount > 0) {
+        lines.push(
+            '',
+            '### Valoración',
+            `**Rating promedio**: ${accommodation.averageRating.toFixed(2)}/5 (${accommodation.reviewsCount} reseñas)`
+        );
+    }
+
+    // --- Description ---
+    lines.push('', '### Description', truncatedDescription);
+
+    // --- IA Data (owner-authored content for AI) ---
+    if (cappedIaData.length > 0) {
+        lines.push('', '### Información Especial');
+        const grouped = groupIaDataByCategory(cappedIaData);
+        for (const [category, entries] of grouped) {
+            lines.push(`#### ${category}`);
+            for (const entry of entries) {
+                const content = truncate(entry.content, CONTEXT_IADATA_CONTENT_MAX_CHARS);
+                lines.push(`**${entry.title}**: ${content}`);
+                lines.push('');
+            }
+        }
+    }
+
+    // --- Amenities ---
     if (cappedAmenities.length > 0) {
         lines.push('', '### Amenities');
         for (const a of cappedAmenities) {
@@ -118,6 +198,7 @@ export function buildMarkdownContext(
         }
     }
 
+    // --- Features ---
     if (cappedFeatures.length > 0) {
         lines.push('', '### Features');
         for (const f of cappedFeatures) {
@@ -125,16 +206,7 @@ export function buildMarkdownContext(
         }
     }
 
-    lines.push(
-        '',
-        '### Base Pricing',
-        'Pricing information is not available in the static context — direct confirmation required.',
-        '',
-        '### Location Details',
-        'Latitude: not available in the static context',
-        'Longitude: not available in the static context'
-    );
-
+    // --- FAQs ---
     if (cappedFaqs.length > 0) {
         lines.push('', '### FAQs');
         for (const faq of cappedFaqs) {
@@ -156,6 +228,35 @@ function truncate(text: string, maxChars: number): string {
         return text;
     }
     return text.slice(0, maxChars) + TRUNCATION_SUFFIX;
+}
+
+/**
+ * Groups IA data entries by category, preserving insertion order.
+ * Entries with no category are grouped under "Otros" at the end.
+ */
+function groupIaDataByCategory(entries: ReadonlyArray<IaDataEntry>): Map<string, IaDataEntry[]> {
+    const grouped = new Map<string, IaDataEntry[]>();
+    const uncategorized: IaDataEntry[] = [];
+
+    for (const entry of entries) {
+        const cat = entry.category?.trim();
+        if (!cat) {
+            uncategorized.push(entry);
+            continue;
+        }
+        const existing = grouped.get(cat);
+        if (existing) {
+            existing.push(entry);
+        } else {
+            grouped.set(cat, [entry]);
+        }
+    }
+
+    if (uncategorized.length > 0) {
+        grouped.set('Otros', uncategorized);
+    }
+
+    return grouped;
 }
 
 // ---------------------------------------------------------------------------
@@ -258,17 +359,24 @@ export async function assembleAccommodationContext(
     // 2. Load FAQs via the dedicated method (graceful — non-fatal on error).
     const faqs = await safeLoadFaqs(accommodationService, actor, accommodationId);
 
-    // 3. Load amenities + features via direct Drizzle queries against the
-    //    join tables (graceful — non-fatal on error, empty array on failure).
+    // 3. Load amenities + features + iaData via direct Drizzle queries
+    //    (graceful — non-fatal on error, empty array on failure).
     //    The locale is forwarded so the I18nText `name` field is resolved to
     //    a single string in the user's language (fallback: 'es').
-    const [amenitiesList, featuresList] = await Promise.all([
+    const [amenitiesList, featuresList, iaDataList] = await Promise.all([
         safeLoadAmenities(accommodationId, locale),
-        safeLoadFeatures(accommodationId, locale)
+        safeLoadFeatures(accommodationId, locale),
+        safeLoadIaData(accommodationId)
     ]);
 
     // 4. Assemble.
-    const contextBlock = buildMarkdownContext(accommodation, faqs, amenitiesList, featuresList);
+    const contextBlock = buildMarkdownContext(
+        accommodation,
+        faqs,
+        amenitiesList,
+        featuresList,
+        iaDataList
+    );
     const systemMessage = buildChatSystemMessage(contextBlock, resolvedPrompt, locale);
 
     return {
@@ -360,6 +468,46 @@ async function safeLoadFeatures(
         apiLogger.warn(
             { accommodationId, error: error instanceof Error ? error.message : String(error) },
             'accommodation-ai-context: failed to load features; continuing with empty list'
+        );
+        return [];
+    }
+}
+
+/**
+ * Loads ACTIVE IA data entries for the given accommodation via Drizzle
+ * direct. Returns `[]` on any error (graceful — same rationale as
+ * {@link safeLoadAmenities}).
+ *
+ * IA data entries are owner-authored content specifically written for the
+ * AI chatbot (house rules, policies, neighborhood info, etc.). Only entries
+ * with `lifecycleState = 'ACTIVE'` are included.
+ */
+async function safeLoadIaData(accommodationId: string): Promise<IaDataEntry[]> {
+    try {
+        const db = getDb();
+        const rows = await db
+            .select({
+                title: accommodationIaData.title,
+                content: accommodationIaData.content,
+                category: accommodationIaData.category
+            })
+            .from(accommodationIaData)
+            .where(
+                and(
+                    eq(accommodationIaData.accommodationId, accommodationId),
+                    eq(accommodationIaData.lifecycleState, 'ACTIVE')
+                )
+            )
+            .limit(CONTEXT_IADATA_MAX);
+        return rows.map((r) => ({
+            title: r.title,
+            content: r.content,
+            category: r.category
+        }));
+    } catch (error) {
+        apiLogger.warn(
+            { accommodationId, error: error instanceof Error ? error.message : String(error) },
+            'accommodation-ai-context: failed to load iaData; continuing with empty list'
         );
         return [];
     }
