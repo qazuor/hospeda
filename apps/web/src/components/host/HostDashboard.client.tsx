@@ -103,6 +103,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                 });
                 return;
             }
+            // TYPE-WORKAROUND: api response shape not inferred from generic
             const data = transformHostDashboard({
                 item: result.data as unknown as Record<string, unknown>
             });
