@@ -14,7 +14,7 @@
  * @see apps/api/src/routes/host/protected/dashboard.ts
  */
 import { EntitlementKey, type LimitKey } from '@repo/billing';
-import { ServiceErrorCode } from '@repo/schemas';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -70,7 +70,7 @@ function injectHostActor(app: Hono<AppBindings>): void {
     app.use((c, next) => {
         c.set('actor', {
             id: '00000000-0000-0000-0000-000000000010',
-            role: 'host',
+            role: RoleEnum.HOST,
             permissions: []
         });
         return next();

@@ -65,10 +65,7 @@ export const hostDashboardRoute = createProtectedRoute({
     handler: async (ctx: Context, _params: Record<string, unknown>) => {
         try {
             const actor = getActorFromContext(ctx);
-            apiLogger.debug('Host dashboard requested', {
-                actorId: actor.id,
-                role: actor.role
-            });
+            apiLogger.debug({ actorId: actor.id, role: actor.role }, 'Host dashboard requested');
 
             // TODO(SPEC-205): Phase 2 — wire real AccommodationService, BillingService, ConversationService
             // For Phase 1, return safe defaults while the aggregation layer is built out.
@@ -90,9 +87,7 @@ export const hostDashboardRoute = createProtectedRoute({
 
             return response;
         } catch (error) {
-            apiLogger.error('Host dashboard handler failed', {
-                error: String(error)
-            });
+            apiLogger.error({ error: String(error) }, 'Host dashboard handler failed');
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 'Failed to load host dashboard data'
