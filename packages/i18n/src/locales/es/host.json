@@ -119,6 +119,11 @@
             "subtitle": "Gestioná tus publicaciones",
             "publishAnother": "Publicar otra"
         },
+        "usage": {
+            "label": "{{current}} de {{max}} propiedades",
+            "unlimited": "Propiedades ilimitadas",
+            "upgrade": "Mejorar plan"
+        },
         "card": {
             "status": {
                 "DRAFT": "Borrador",
