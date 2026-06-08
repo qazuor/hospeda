@@ -94,6 +94,7 @@
 | `GET /api/v1/protected/views/events` | `views/protected/events.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via EVENT_VIEW_ALL, editors are not billing customers |
 | **AI — PROTECTED (SPEC-198)** | | | | | |
 | `POST /api/v1/protected/ai/text-improve` | `ai/protected/text-improve.ts` | gate+limit | `ai_text_improve`, `max_ai_text_improve_per_month` | wired | createAiQuotaMiddleware('text_improve') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-198 T-004) |
+| `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month` | wired | createAiQuotaMiddleware('chat') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-200 T-005) |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
