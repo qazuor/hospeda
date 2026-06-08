@@ -88,6 +88,7 @@ export const moderationTermsConfig: EntityConfig<ContentModerationTerm> = {
     basePath: '/content/moderation-terms',
     detailPath: '/content/moderation-terms/[id]',
 
+    // TYPE-WORKAROUND: contentModerationTermSchema is a ZodObject but list config expects a ZodSchema<ContentModerationTerm>; narrowed at runtime
     listItemSchema: contentModerationTermSchema as unknown as z.ZodSchema<ContentModerationTerm>,
 
     searchConfig: {
