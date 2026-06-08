@@ -10,7 +10,8 @@ import { z } from '@hono/zod-openapi';
  * GET /api/v1/protected/host/dashboard
  */
 import { EntitlementKey } from '@repo/billing';
-import { ServiceError, ServiceErrorCode } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
