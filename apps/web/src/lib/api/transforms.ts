@@ -595,6 +595,7 @@ export function toAccommodationDetailPageProps({
         name: String(item.name || ''),
         summary: String(item.summary || ''),
         description: String(item.description || ''),
+        richDescription: item.richDescription == null ? undefined : String(item.richDescription),
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),

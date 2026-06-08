@@ -130,4 +130,12 @@ describe('AccommodationService - Relations Support', () => {
             );
         });
     });
+
+    /**
+     * The actual `richDescription` round-trip test (create → re-fetch → assert)
+     * lives in `test/integration/services/accommodation.richDescription.integration.test.ts`
+     * because `service.create` traverses `_beforeCreate` → `_assertDestinationIsCity`
+     * which requires a real destination row. Mock-based unit tests cannot satisfy
+     * that without an unwieldy stub tree.
+     */
 });

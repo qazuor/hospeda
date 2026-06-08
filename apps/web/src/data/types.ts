@@ -562,6 +562,7 @@ export interface AccommodationDetailData {
     readonly name: string;
     readonly summary: string;
     readonly description: string;
+    readonly richDescription?: string | null;
     readonly type: string;
     readonly isFeatured: boolean;
     readonly createdAt: string;

@@ -16,7 +16,9 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
+import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -178,21 +180,31 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
         }
 
         const accommodation = result.data;
+        const ownerEntitlements = accommodation.ownerId
+            ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
+            : [];
+        const filteredAccommodation = filterAccommodationByEntitlements(
+            ctx,
+            accommodation,
+            ownerEntitlements
+        );
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([
-            accommodation.ownerId ? fetchOwner(accommodation.ownerId) : Promise.resolve(null),
-            fetchAmenities(accommodation.id),
-            fetchFeatures(accommodation.id),
-            fetchFaqs(accommodation.id)
+            filteredAccommodation.ownerId
+                ? fetchOwner(filteredAccommodation.ownerId)
+                : Promise.resolve(null),
+            fetchAmenities(filteredAccommodation.id),
+            fetchFeatures(filteredAccommodation.id),
+            fetchFaqs(filteredAccommodation.id)
         ]);
 
         return {
-            ...accommodation,
+            ...filteredAccommodation,
             createdAt:
-                accommodation.createdAt instanceof Date
-                    ? accommodation.createdAt.toISOString()
-                    : accommodation.createdAt,
+                filteredAccommodation.createdAt instanceof Date
+                    ? filteredAccommodation.createdAt.toISOString()
+                    : filteredAccommodation.createdAt,
             owner: owner ?? undefined,
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,

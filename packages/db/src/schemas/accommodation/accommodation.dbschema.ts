@@ -42,6 +42,17 @@ export const accommodations = pgTable(
         summary: text('summary').notNull(),
         type: AccommodationTypePgEnum('type').notNull(),
         description: text('description').notNull(),
+        /**
+         * SPEC-187 P2-T2: rich-text (markdown) variant of the description.
+         * Presence on the public payload is the ONLY signal the web client
+         * uses to pick rich vs. plain rendering (FR-3b, FR-4). Absent on the
+         * row = the owning host is not entitled, or the field has not been
+         * filled in. Nullable on purpose: never backfilled (PD-3 keeps the
+         * column add as a separate, additive migration from the P0 strip).
+         * Bounded to 5000 chars at the API layer by the Zod schema in
+         * `packages/schemas/src/entities/accommodation/accommodation.schema.ts`.
+         */
+        richDescription: text('rich_description'),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
