@@ -103,7 +103,7 @@ function ModerationThresholdsForm({
             const validation = updateContentModerationThresholdSchema.safeParse(value);
             if (!validation.success) return;
             await updateMutation.mutateAsync({ id: defaultRow.id, data: validation.data });
-            fetchResolvedThresholds();
+            void fetchResolvedThresholds();
         }
     });
 
