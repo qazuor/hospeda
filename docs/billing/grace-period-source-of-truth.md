@@ -2,6 +2,50 @@
 
 ## Overview
 
+This document covers **all three distinct grace mechanisms** in the billing system. They
+are independent and non-overlapping. The word "grace" means different things in each context:
+
+| Grace type | Trigger | Status during grace | Duration | Blocking? | Implemented in |
+|---|---|---|---|---|---|
+| **Past-due dunning grace** | User's payment fails | `past_due` | 7 days | Blocks after expiry (402) | `pastDueGraceMiddleware` |
+| **Cron-lag grace** | Renewal webhook is late (infra lag, not user fault) | `active` | 6 hours (`BILLING_CRON_LAG_GRACE_HOURS`) | Never blocks | `entitlementMiddleware` (SPEC-148 Part A) |
+| **Soft-cancel grace** | User cancels (`cancelAtPeriodEnd=true`) | `active` | Until `currentPeriodEnd` | Never blocks | SPEC-147 `finalize-cancelled-subs` cron |
+
+The **past-due dunning grace** section below describes the original (pre-SPEC-148) grace window.
+The other two graces are defined here for completeness so this file remains the single source of truth.
+
+---
+
+### Cron-lag grace (SPEC-148 Part A)
+
+When an `active` subscription's `currentPeriodEnd` is in the past, this indicates that
+MercadoPago's renewal webhook has not yet been delivered — NOT that the user stopped
+paying. The entitlement middleware detects this condition statically (no DB write) and:
+
+- **Always allows access** (never blocks).
+- Within `BILLING_CRON_LAG_GRACE_HOURS` (= 6 hours): sets the `X-Cron-Lag-Grace-Hours-Remaining`
+  response header and emits a `logger.warn`.
+- Past the window: additionally fires a Sentry alert via `captureBillingError` with
+  operation `'cron_lag_grace_exceeded'` (level `warning`).
+- The check runs inside `loadEntitlements()`, which is skipped on a 5-minute entitlement
+  cache hit — so the header and alert can be delayed up to 5 minutes.
+
+The constant `BILLING_CRON_LAG_GRACE_HOURS` lives in `packages/billing/src/constants/billing.constants.ts`.
+The implementation is in `apps/api/src/middlewares/entitlement.ts` (the SPEC-148 cron-lag block).
+The operational runbook is in [`billing-runbooks.md §8`](./billing-runbooks.md).
+
+### Soft-cancel grace (SPEC-147)
+
+When a user self-cancels (or a plan disable sets `cancelAtPeriodEnd=true`), the subscription
+status stays `active` until the `finalize-cancelled-subs` cron flips it to `cancelled` after
+`currentPeriodEnd`. During this window the user retains full access — no blocking, no warning
+header. This is not a "grace period" in the traditional sense; it is the natural behavior of
+scheduled cancellation.
+
+---
+
+## Past-due dunning grace
+
 The grace period defines how many days a user retains access after a payment failure
 (`past_due` status) before the system blocks their requests.
 

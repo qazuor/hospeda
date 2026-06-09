@@ -1,9 +1,9 @@
 # Billing operational runbooks
 
 > **Audience**: oncall, ops, anyone responding to a billing incident in production.
-> **Scope**: seven recurring failure scenarios with symptoms, investigation steps, resolution, and verification. NOT a feature reference — see [`packages/billing/docs/`](../../packages/billing/docs/README.md) for that.
+> **Scope**: nine recurring failure scenarios with symptoms, investigation steps, resolution, and verification. NOT a feature reference — see [`packages/billing/docs/`](../../packages/billing/docs/README.md) for that.
 > **Companion docs**: [staging smoke](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md), [prod smoke + rollback](./../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md), [dispute handling v1](./dispute-handling-v1.md), [grace period source-of-truth](./grace-period-source-of-truth.md).
-> **Status**: SPEC-143 T-143-48, 2026-05-20.
+> **Status**: SPEC-143 T-143-48 2026-05-20; §8–§9 added SPEC-148 T-008 2026-06-09.
 
 ---
 
@@ -11,7 +11,7 @@
 
 When a billing alert fires (or a user reports a billing-related issue):
 
-1. **Identify the scenario** — match the symptoms in §1–§7 against what you're seeing. Each section opens with a SYMPTOMS block; if none match exactly, prefer the closest scenario and escalate after the first investigation step if it doesn't fit.
+1. **Identify the scenario** — match the symptoms in §1–§9 against what you're seeing. Each section opens with a SYMPTOMS block; if none match exactly, prefer the closest scenario and escalate after the first investigation step if it doesn't fit.
 2. **Follow the investigation steps in order**. They are designed to be cheap-first: read-only queries and log scans before any state mutation.
 3. **Resolve via the documented commands**. Every `hops` command shown is target-aware — `--target=prod` for production, `--target=staging` for staging. Default is `prod` — explicit is safer when you're under pressure.
 4. **Verify**. Every section closes with a verification block. Do not declare resolved until those checks pass.
@@ -207,7 +207,7 @@ hops logs api --since=2m | grep -i '<job-name>'
 **Persistent error** (code bug, schema mismatch):
 
 1. Inspect the `error_message` for a stack trace. If wrapped, look in Sentry for the unwrapped form.
-2. If the bug is known: link the Sentry issue to the relevant engram bug topic (see §8 list). Do NOT trigger the job again — it will fail the same way and pollute `cron_run_history`.
+2. If the bug is known: link the Sentry issue to the relevant engram bug topic (see §10 list). Do NOT trigger the job again — it will fail the same way and pollute `cron_run_history`.
 3. If unknown: capture the error, escalate, file a SPEC follow-up. Use `hops cron-trigger --dry-run` to confirm a fix without committing side effects:
 
    ```bash
@@ -568,7 +568,229 @@ This is a hammer — every authenticated user pays the cache-miss cost on next r
 
 ---
 
-## 8. Engram bug topics to know about
+## 8. Cron-lag grace activation
+
+This section applies when an `active` subscription's `currentPeriodEnd` has passed but the renewal webhook from MercadoPago has not yet arrived. This is NOT a user payment failure — it is an infrastructure delivery lag on our end (MP's webhook-delivery queue, our network, or the API process). Access is INTENTIONALLY not blocked.
+
+> **Grace distinction** — three graces coexist in this system. See [`grace-period-source-of-truth.md`](./grace-period-source-of-truth.md) for the canonical reference. The short version:
+>
+> 1. **Past-due dunning grace** (7 days) — user's payment actually failed. Handled by `pastDueGraceMiddleware`. Subscription status is `past_due`.
+> 2. **Cron-lag grace** (this section, 6 hours) — renewal webhook is late; subscription status is still `active`. Implemented in `apps/api/src/middlewares/entitlement.ts` (SPEC-148 Part A).
+> 3. **Soft-cancel grace** (SPEC-147) — user cancelled; access continues until `currentPeriodEnd`. `cancelAtPeriodEnd=true`, status stays `active`.
+>
+> These are distinct and non-overlapping. The cron-lag grace fires only when status=`active` AND `currentPeriodEnd` is in the past — a state that should not persist once the renewal webhook lands.
+
+### Symptoms
+
+- Sentry alert: `cron_lag_grace_exceeded` (project `hospeda-api`, tag `billing_operation:cron_lag_grace_exceeded`, level `warning`).
+- API logs contain `cron-lag-grace: grace window exceeded — Sentry alert fired, access still allowed` at the `error` log level (apiLogger.error) for the affected subscription.
+- Within the 6-hour window (before the Sentry alert fires): API responses for the affected user include the `X-Cron-Lag-Grace-Hours-Remaining` header and API logs contain `cron-lag-grace: renewal webhook late but within grace window — access allowed` at the `warn` log level.
+- **No user-visible disruption**: access is always granted regardless of whether we are inside or outside the grace window.
+
+### Alert delay caveat
+
+The entitlement middleware caches results per billing customer with a 5-minute TTL. The cron-lag check runs inside `loadEntitlements()`, which is only called on a cache miss. This means the `cron_lag_grace_exceeded` Sentry alert and the `X-Cron-Lag-Grace-Hours-Remaining` header can be delayed by up to **5 minutes** after the actual period-end time. This is acceptable: the alert is informational, not time-critical, and the pass-through behavior is unconditional regardless of the cache state.
+
+### Investigation
+
+```bash
+# 1. Identify the affected subscription from the Sentry context.
+#    The event includes subscriptionId and customerId in its billing context.
+
+# 2. Check the subscription's current state.
+hops psql --target=prod -c "
+SELECT id, status, current_period_end, cancel_at_period_end, mp_subscription_id, updated_at
+FROM billing_subscriptions
+WHERE id = '<subscription-uuid>';"
+
+# 3. Check if the renewal webhook has since arrived.
+hops psql --target=prod -c "
+SELECT id, type, action, status, created_at
+FROM billing_webhook_events
+WHERE payload->>'id' = '<mp-subscription-id>'
+ORDER BY created_at DESC LIMIT 10;"
+
+# 4. Pull recent API logs for the affected customer.
+hops logs api --since=1h | grep -i '<subscription-uuid>' | head -100
+```
+
+### What to expect
+
+- If `current_period_end` is in the past and `status` is still `active`, the renewal webhook has NOT yet been processed. This is the cron-lag state.
+- If the webhook has been delivered and processed (check `billing_webhook_events`), the subscription's `current_period_end` should have advanced to the next billing cycle. The cron-lag condition resolves automatically once the webhook lands.
+- If the webhook never arrives (e.g. MP delivery failure, dead letter), the subscription stays in this liminal state indefinitely until the webhook is replayed.
+
+### Resolution
+
+**Normal case — webhook eventually delivered (most common)**:
+
+No action required. Verify that `billing_webhook_events` shows a recent `subscription.preapproval_authorized` or `subscription.authorized` event with `status = 'processed'`. The subscription's `current_period_end` should have advanced. The Sentry alert was informational.
+
+**Webhook not delivered — trigger manual retry**:
+
+```bash
+# Find the failed webhook event for this subscription.
+hops psql --target=prod -c "
+SELECT id, type, action, status, retry_count, error_message, created_at
+FROM billing_webhook_events
+WHERE status IN ('failed', 'pending')
+  AND created_at > now() - interval '24 hours'
+ORDER BY created_at DESC LIMIT 20;"
+
+# If the event is dead-lettered (retry_count = 10, status = 'failed'),
+# replay it manually:
+hops cron-trigger --target=prod webhook-retry --event-id=<UUID>
+```
+
+**Webhook never arrived (no event row) — check MP delivery health**:
+
+1. Open the MP dashboard → Notifications → Webhooks → Delivery logs.
+2. Confirm the renewal notification was attempted. If MP shows a delivery failure (e.g. our endpoint returned a non-2xx), check the API health: `hops health api`.
+3. If the API was healthy but the event is missing, MP may not have emitted it. Contact MP support or trigger a manual subscription status sync.
+
+**Prolonged cron-lag (>24 hours, no resolution)**:
+
+If the subscription remains in this state for more than a day and no webhook has arrived, treat it as a stuck subscription. Do NOT manually flip the subscription status — wait for the webhook. If you cannot get the webhook to arrive, escalate and use §7 (Manual subscription rescue) as a last resort after confirming the customer's payment status in the MP dashboard.
+
+### Verification
+
+```bash
+# After the webhook lands, the subscription's current_period_end should
+# have advanced to the next billing cycle.
+hops psql --target=prod -c "
+SELECT id, status, current_period_end, updated_at
+FROM billing_subscriptions
+WHERE id = '<subscription-uuid>';"
+# Expected: current_period_end > now()
+
+# No new cron_lag_grace_exceeded alerts in Sentry for this subscription.
+# The X-Cron-Lag-Grace-Hours-Remaining header should disappear from responses.
+```
+
+---
+
+## 9. Plan disabled lifecycle
+
+This section covers the operational impact of an admin disabling a billing plan via the admin toggle, and how to respond to user reports and edge cases that arise.
+
+### What disabling a plan does
+
+When an admin marks a plan as inactive (`active=false`), the `disablePlanLifecycle` service (`apps/api/src/services/plan-disable-lifecycle.service.ts`) runs a fan-out synchronously before returning the admin API response:
+
+1. **Queries all live subscriptions** on that plan where `status IN (active, trialing, past_due)` AND `cancelAtPeriodEnd=false` AND not soft-deleted.
+2. **Per subscription**: sets `cancelAtPeriodEnd=true` (status stays unchanged; the `finalize-cancelled-subs` cron will flip to `cancelled` once `currentPeriodEnd` elapses), writes a `PLAN_DISABLED_MIGRATION` subscription event, clears the entitlement cache for the customer, and queues a `PLAN_BEING_RETIRED` notification email.
+3. **Writes one `PLAN_DISABLED_BY_ADMIN` audit entry** (`billing_audit_logs` table) with actor ID and `affectedSubCount`.
+
+The plan remains in the catalog (`billing_plans`) with `active=false`. Existing subscribers retain access until their `currentPeriodEnd`. New subscribers cannot sign up (HTTP 410 `PLAN_DISABLED`).
+
+### What re-enabling a plan does NOT do
+
+Re-enabling a plan (flipping `active=true`) does **NOT** auto-restore the cancelled subscriptions. Those subs were flipped to `cancelAtPeriodEnd=true` during the disable fan-out, and once the finalize cron runs, they move to `cancelled`. Re-enabling the plan opens it to new signups only. Subscribers who lost access due to the disable must manually re-subscribe.
+
+### Symptoms
+
+- New signups for a disabled plan return HTTP **410 PLAN_DISABLED** from both `start-paid` and `plan-change` routes.
+- Existing subscribers receive a `PLAN_BEING_RETIRED` notification email shortly after the admin toggles the plan off.
+- `billing_subscriptions` rows for the plan show `cancel_at_period_end = true` with status still `active`/`trialing`/`past_due`.
+- After `currentPeriodEnd` elapses and the `finalize-cancelled-subs` cron runs, those subscriptions transition to `cancelled`.
+
+### Investigation
+
+```bash
+# 1. Confirm the plan is disabled.
+hops psql --target=prod -c "
+SELECT id, slug, name, active, updated_at
+FROM billing_plans
+WHERE id = '<plan-uuid>';"
+
+# 2. View the admin audit event for the disable action.
+hops psql --target=prod -c "
+SELECT id, action, actor_id, changes, previous_values, created_at
+FROM billing_audit_logs
+WHERE changes->>'eventType' = 'PLAN_DISABLED_BY_ADMIN'
+  AND changes->>'planId' = '<plan-uuid>'
+ORDER BY created_at DESC LIMIT 5;"
+# changes->>'affectedSubCount' tells you how many subs were queued for cancellation.
+
+# 3. View per-sub migration events.
+hops psql --target=prod -c "
+SELECT s.id, s.status, s.cancel_at_period_end, s.current_period_end,
+       e.event_type, e.trigger_source, e.created_at AS event_created_at
+FROM billing_subscriptions s
+JOIN billing_subscription_events e ON e.subscription_id = s.id
+WHERE s.plan_id = '<plan-uuid>'
+  AND e.event_type = 'PLAN_DISABLED_MIGRATION'
+ORDER BY e.created_at DESC LIMIT 50;"
+
+# 4. Count subs still pending cancellation (cancelAtPeriodEnd=true, status not yet cancelled).
+hops psql --target=prod -c "
+SELECT status, count(*)
+FROM billing_subscriptions
+WHERE plan_id = '<plan-uuid>'
+  AND cancel_at_period_end = true
+  AND status != 'cancelled'
+GROUP BY 1;"
+```
+
+### Triage scenarios
+
+**A user says they can still access after the plan was disabled**: expected behavior. Existing subscribers retain access until their `currentPeriodEnd`. No action required unless `currentPeriodEnd` is in the past and the finalize cron has not yet run.
+
+**A user lost access before their period ended**: check whether the finalize-cancelled-subs cron ran prematurely. Check `billing_subscription_events` for a `SUBSCRIPTION_CANCELLED` event on their subscription and compare the timestamp against their `currentPeriodEnd`. If it ran early, this is a cron bug — escalate.
+
+**The fan-out only partially completed** (some subs not flipped): check the API logs at the time of the disable action for `plan-disable-lifecycle: per-sub tx failed`. Rerun is safe because the service is idempotent — re-calling `disablePlanLifecycle` on an already-disabled plan skips subs that already have `cancelAtPeriodEnd=true` and returns `affectedSubCount=0`. To trigger a re-run, an admin must re-disable the plan via the admin UI (the route will call `disablePlanLifecycle` again).
+
+**Admin wants to restore a subscriber after mistaken disable**: the disabled plan must first be re-enabled (`active=true`). Then the subscriber must manually re-subscribe. There is no automatic restoration path.
+
+### Manual remediation for a subscriber locked out by a mistaken plan disable
+
+```bash
+# 1. Re-enable the plan (via the admin UI toggle or directly):
+hops psql --target=prod -c "
+UPDATE billing_plans SET active = true, updated_at = now()
+WHERE id = '<plan-uuid>';"
+
+# 2. Revert the cancelAtPeriodEnd flag on the affected subscription
+#    (only if the finalize cron has NOT yet cancelled it):
+hops psql --target=prod -c "
+UPDATE billing_subscriptions
+SET cancel_at_period_end = false, updated_at = now()
+WHERE id = '<sub-uuid>'
+  AND status != 'cancelled';"
+
+# 3. Clear the entitlement cache so the user's next request gets fresh entitlements.
+hops exec --target=prod api node -e "
+require('./dist/middlewares/entitlement').clearEntitlementCache('<billing-customer-id>');"
+
+# 4. Write a note in the audit log (use billing_audit_logs or engram).
+```
+
+If the finalize cron already cancelled the sub (status = `cancelled`), manual restoration requires creating a fresh subscription row — see §7 Case A.
+
+### Verification
+
+```bash
+# Confirm the subscription is in the expected state.
+hops psql --target=prod -c "
+SELECT id, status, cancel_at_period_end, current_period_end, updated_at
+FROM billing_subscriptions
+WHERE id = '<sub-uuid>';"
+
+# Confirm the plan is in the expected state (active or inactive).
+hops psql --target=prod -c "
+SELECT id, active, updated_at FROM billing_plans WHERE id = '<plan-uuid>';"
+
+# Confirm audit trail is clean.
+hops psql --target=prod -c "
+SELECT id, action, actor_id, changes, created_at
+FROM billing_audit_logs
+WHERE changes->>'planId' = '<plan-uuid>'
+ORDER BY created_at DESC LIMIT 10;"
+```
+
+---
+
+## 10. Engram bug topics to know about
 
 These are documented production gaps. They show up in real incidents — knowing they exist saves debugging time.
 
@@ -590,7 +812,7 @@ Reference these in PR descriptions when a rescue procedure routes around a known
 
 ---
 
-## 9. Useful queries
+## 11. Useful queries
 
 Drop-in queries for the most common questions during an incident.
 
@@ -641,12 +863,12 @@ ORDER BY p.created_at DESC LIMIT 20;"
 
 ---
 
-## 10. When to update this doc
+## 12. When to update this doc
 
 After every billing incident you respond to:
 
 1. If the scenario already exists, refine the steps with what you learned. Replace vague language with the exact command you ended up running.
 2. If the scenario is NEW, draft a new section here. Keep the structure: Symptoms → Investigation → Resolution → Verification.
-3. If you discover a NEW production bug, file it as an engram entry under `bug/<short-name>` and link it from §8.
+3. If you discover a NEW production bug, file it as an engram entry under `bug/<short-name>` and link it from §10.
 
 Outdated runbooks are worse than missing ones — they waste time during incidents. Edit aggressively.
