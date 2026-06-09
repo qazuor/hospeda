@@ -11,6 +11,26 @@ import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
+/**
+ * Strips richDescription from an accommodation object before it reaches the
+ * public response payload.
+ *
+ * richDescription is a PREMIUM field gated per-owner by the entitlement system.
+ * The destination-list endpoint is a card listing that never renders it, so the
+ * field must be absent from the payload regardless of the owner's current plan.
+ * This omission is applied at the DATA level so it is fail-closed and independent
+ * of any Zod schema change. (SPEC-187 data-exposure fix.)
+ *
+ * @param item - Raw accommodation object from the service layer.
+ * @returns The accommodation object with richDescription removed.
+ */
+function stripRichDescription<T extends { richDescription?: unknown }>(
+    item: T
+): Omit<T, 'richDescription'> {
+    const { richDescription: _dropped, ...rest } = item;
+    return rest;
+}
+
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -43,7 +63,15 @@ const getByDestinationHandler = async (c: Context) => {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return result.data || [];
+    // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
+    // per-owner by the entitlement system. This card-listing endpoint never
+    // renders it, so the field is stripped here before reaching the response
+    // payload — fail-closed and independent of any schema change.
+    const data = result.data ?? { accommodations: [] };
+    const accommodations = Array.isArray(data.accommodations)
+        ? data.accommodations.map(stripRichDescription)
+        : [];
+    return { accommodations };
 };
 
 /**

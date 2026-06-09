@@ -1,6 +1,6 @@
 {
-    "id": "0680f664-5e35-48ca-8820-f91409550f02",
-    "prevId": "34c86105-5b0e-4610-bd7e-fc7cffbf86de",
+    "id": "47b42278-09c9-4372-93af-fe8849aef239",
+    "prevId": "0680f664-5e35-48ca-8820-f91409550f02",
     "version": "7",
     "dialect": "postgresql",
     "tables": {
@@ -45,6 +45,12 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true
+                },
+                "rich_description": {
+                    "name": "rich_description",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
                 },
                 "contact_info": {
                     "name": "contact_info",

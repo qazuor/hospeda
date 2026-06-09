@@ -22,7 +22,7 @@ export interface AccommodationData {
     ownerId?: string;
     createdAt?: string | Date;
     description?: string;
-    richDescription?: string;
+    richDescription?: string | null;
     videoUrl?: string;
     whatsappNumber?: string;
     whatsappDirectLink?: boolean;
@@ -195,20 +195,39 @@ export function filterAccommodationListByEntitlements(
  *
  * Removes common markdown syntax while preserving the text content.
  *
- * This function is the JS source of truth for the SPEC-187 P0 PL/pgSQL
- * `strip_markdown()` migration in `packages/db/src/migrations/`. The two
- * implementations MUST stay in lockstep — a divergence lets stale markdown
- * slip into the public web render and creates an XSS surface that the strip
- * was designed to close.
+ * This function is the JS source of truth for the SPEC-187 PL/pgSQL
+ * strip-markdown migrations in `packages/db/src/migrations/` (the original
+ * `0008_strip_accommodation_description_markdown.sql` and the follow-up
+ * `0011_restrip_accommodation_description_markdown.sql`). All three surfaces
+ * — this function, the SQL `strip_markdown()` function, and the web mirror
+ * `apps/web/src/lib/render-plain.ts#STRIP_MARKDOWN_REGEX_SET` — MUST stay in
+ * lockstep (PD-1). A divergence lets stale markdown slip into the public web
+ * render and creates an XSS surface that the strip was designed to close.
  *
- * PD-1: the spec's L240-321 approximation did not include the `1. ` ordered
- * list marker. The JS regex set in this file is the resolved source of
- * truth (per engram #3696 P0-T1 decision) and is mirrored verbatim in
- * `apps/web/src/lib/render-plain.ts#STRIP_MARKDOWN_REGEX_SET`.
+ * Canonical transformation order (identical in JS and SQL):
+ *   1. `**bold**`        -> inner text
+ *   2. `*italic*`        -> inner text
+ *   3. `__bold__`        -> inner text   (underscore emphasis, SPEC-187 follow-up)
+ *   4. `_italic_`        -> inner text   (underscore emphasis, SPEC-187 follow-up)
+ *   5. `~~strike~~`      -> inner text
+ *   6. `` `code` ``      -> inner text
+ *   7. `![alt](url)`     -> alt text     (image BEFORE link — order is load-bearing)
+ *   8. `[text](url)`     -> link text
+ *   9. `^#+ ` headings   -> removed
+ *  10. `^[-*+] ` bullets -> removed
+ *  11. `^> ` blockquotes -> removed
+ *  12. `\n{3,}`          -> `\n\n`       (collapse excess blank lines)
+ *  13. trim
+ *
+ * SPEC-187 follow-up fixes (relative to the original 0008 strip):
+ *   (a) underscore emphasis (`_x_` / `__x__`) is now stripped — 0008's gate
+ *       predicate selected rows containing `_` but never removed the marker;
+ *   (b) the image rule now runs BEFORE the link rule, so `![alt](url)` yields
+ *       `alt` instead of the orphan `!alt` the old order produced;
+ *   (c) the `\n{3,}` collapse is mirrored here so JS matches SQL output.
  *
  * Exported so a unit test (apps/api/test/utils/entitlement-filter-strip.test.ts)
- * can pin the JS-side behavior against the PL/pgSQL canonical fixture
- * (defined in the P0-T1 spec scenario at tasks.md:48).
+ * can pin the JS-side behavior against the PL/pgSQL canonical fixture.
  *
  * @param text - Text with potential markdown
  * @returns Plain text without markdown
@@ -217,13 +236,16 @@ export function stripMarkdown(text: string): string {
     return text
         .replace(/\*\*(.+?)\*\*/g, '$1') // Bold **text**
         .replace(/\*(.+?)\*/g, '$1') // Italic *text*
+        .replace(/__(.+?)__/g, '$1') // Bold __text__
+        .replace(/_(.+?)_/g, '$1') // Italic _text_
+        .replace(/~~(.+?)~~/g, '$1') // Strikethrough ~~text~~
+        .replace(/`(.+?)`/g, '$1') // Inline code `code`
+        .replace(/!\[(.+?)\]\(.+?\)/g, '$1') // Images ![alt](url) — BEFORE links
         .replace(/\[(.+?)\]\(.+?\)/g, '$1') // Links [text](url)
         .replace(/^#+\s+/gm, '') // Headers # text
         .replace(/^[-*+]\s+/gm, '') // Lists - item
-        .replace(/`(.+?)`/g, '$1') // Inline code `code`
         .replace(/^>\s+/gm, '') // Blockquotes > text
-        .replace(/~~(.+?)~~/g, '$1') // Strikethrough ~~text~~
-        .replace(/!\[(.+?)\]\(.+?\)/g, '$1') // Images ![alt](url)
+        .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines
         .trim();
 }
 

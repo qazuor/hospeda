@@ -1323,6 +1323,146 @@ export const hostDashboardApi = {
     }
 };
 
+// --- Host Analytics (Protected — SPEC-207) ---
+
+/** Analytics window type for time-range queries */
+type AnalyticsWindow = '7d' | '30d';
+
+/** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
+export const hostAnalyticsApi = {
+    /**
+     * Get accommodation views over a time window.
+     *
+     * @param params - Time window: '7d' or '30d'
+     * @returns Daily view counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getViews({ window: '7d' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getViews({
+        window: windowParam
+    }: {
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly items: readonly { readonly date: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/views`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get favorites breakdown across collections.
+     *
+     * @returns Bookmark counts per collection for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
+     * if (result.ok) console.log(result.data.collections);
+     * ```
+     */
+    getFavoritesBreakdown(): Promise<
+        ApiResult<{
+            readonly collections: readonly {
+                readonly collection: string;
+                readonly count: number;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/favorites`
+        });
+    },
+
+    /**
+     * Get response rate and average response time.
+     *
+     * @returns Response rate percentage and average response time in minutes
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getResponseRate();
+     * if (result.ok) console.log(result.data.responseRatePct);
+     * ```
+     */
+    getResponseRate(): Promise<
+        ApiResult<{
+            readonly responseRatePct: number;
+            readonly avgResponseTimeMinutes: number | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/response-rate`
+        });
+    },
+
+    /**
+     * Get monthly inquiry trend over the specified number of months.
+     *
+     * @param params - Number of months to look back (default: 6)
+     * @returns Monthly inquiry counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getInquiryTrend({ months: 6 });
+     * if (result.ok) console.log(result.data.months);
+     * ```
+     */
+    getInquiryTrend({
+        months = 6
+    }: {
+        readonly months?: number;
+    } = {}): Promise<
+        ApiResult<{
+            readonly months: readonly { readonly month: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/inquiries`,
+            params: { months }
+        });
+    },
+
+    /**
+     * Get market comparison data for the host's accommodations.
+     *
+     * @returns Market comparison items with ratings, reviews, and prices
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getMarketComparison();
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getMarketComparison(): Promise<
+        ApiResult<{
+            readonly items: readonly {
+                readonly accommodationId: string;
+                readonly accommodationName: string;
+                readonly accommodationType: string;
+                readonly destinationName: string | null;
+                readonly yourRating: number | null;
+                readonly yourReviews: number;
+                readonly destinationAvgRating: number | null;
+                readonly yourPrice: number | null;
+                readonly destinationAvgPrice: number | null;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/market-comparison`
+        });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */

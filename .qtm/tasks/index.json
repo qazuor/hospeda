@@ -267,6 +267,14 @@
             "tags": ["host-migration", "phase-4"]
         },
         {
+            "specId": "SPEC-210",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "status": "draft",
+            "progress": "0/13",
+            "path": "SPEC-210-public-response-tier-enforcement",
+            "archived": false
+        },
+        {
             "specId": "SPEC-195",
             "title": "Content Auto-Moderation Engine",
             "status": "in-progress",

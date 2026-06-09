@@ -54,22 +54,69 @@ export function renderPlain({ raw }: RenderPlainInput): string {
 }
 
 /**
- * Canonical marker set used by the P0 PL/pgSQL strip migration
- * (`packages/db/src/migrations/0008_strip_accommodation_description_markdown.sql`).
+ * Canonical marker set used by the PL/pgSQL strip migrations
+ * (`packages/db/src/migrations/0008_strip_accommodation_description_markdown.sql`
+ * and the follow-up `0011_restrip_accommodation_description_markdown.sql`).
  * This is the JS-side mirror so `entitlement-filter.ts#stripMarkdown` and
- * the SQL `strip_markdown()` function can be kept in lockstep.
+ * the SQL `strip_markdown()` function can be kept in lockstep (PD-1).
  *
- * Source of truth: `apps/api/src/utils/entitlement-filter.ts:188-199`
- * (PD-1 — spec defect resolved by reusing the JS regex set verbatim).
+ * Source of truth: the `stripMarkdown` function in
+ * `apps/api/src/utils/entitlement-filter.ts`. The ORDER and rules here MUST
+ * match that function byte-for-byte in observable output. In particular:
+ *  - underscore emphasis (`__bold__`, `_italic_`) is stripped (SPEC-187 follow-up);
+ *  - the image rule runs BEFORE the link rule (so `![alt](url)` -> `alt`);
+ *  - a trailing `\n{3,}` -> `\n\n` collapse keeps JS output equal to SQL.
+ *
+ * Replacement chars per index (applied in this order by callers / the test):
+ *  0:$1 1:$1 2:$1 3:$1 4:$1 5:$1 6:$1 7:$1 8:'' 9:'' 10:'' 11:'\n\n'
  */
 export const STRIP_MARKDOWN_REGEX_SET: readonly RegExp[] = [
     /\*\*(.+?)\*\*/g, // **bold**
     /\*(.+?)\*/g, // *italic*
+    /__(.+?)__/g, // __bold__
+    /_(.+?)_/g, // _italic_
+    /~~(.+?)~~/g, // ~~strikethrough~~
+    /`(.+?)`/g, // `code`
+    /!\[(.+?)\]\(.+?\)/g, // ![alt](url) — BEFORE links
     /\[(.+?)\]\(.+?\)/g, // [text](url)
     /^#+\s+/gm, // # heading
     /^[-*+]\s+/gm, // - list
-    /`(.+?)`/g, // `code`
     /^>\s+/gm, // > quote
-    /~~(.+?)~~/g, // ~~strikethrough~~
-    /!\[(.+?)\]\(.+?\)/g // ![alt](url)
+    /\n{3,}/g // collapse 3+ newlines -> \n\n
 ];
+
+/**
+ * Web-side mirror of `apps/api/src/utils/entitlement-filter.ts#stripMarkdown`.
+ *
+ * Applies {@link STRIP_MARKDOWN_REGEX_SET} in canonical order and MUST produce
+ * the same observable output as the JS source-of-truth function and the SQL
+ * `strip_markdown()` migrations (PD-1 lockstep). The first eight rules replace
+ * with the captured inner text (`$1`); headings / bullets / blockquotes are
+ * removed (`''`); the final rule collapses `\n{3,}` to `\n\n`. Output is
+ * trimmed.
+ *
+ * This is the strip half of the pipeline. `renderPlain` is the escape half and
+ * is what the public detail page actually calls; this helper exists so a unit
+ * test can pin the web mirror against the API source of truth without copying
+ * the regex chain.
+ *
+ * @param raw - Text with potential markdown markers.
+ * @returns Plain text with markers removed.
+ */
+export function stripMarkdownPlain(raw: string): string {
+    if (typeof raw !== 'string' || raw.length === 0) return '';
+    return raw
+        .replace(STRIP_MARKDOWN_REGEX_SET[0], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[1], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[2], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[3], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[4], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[5], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[6], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[7], '$1')
+        .replace(STRIP_MARKDOWN_REGEX_SET[8], '')
+        .replace(STRIP_MARKDOWN_REGEX_SET[9], '')
+        .replace(STRIP_MARKDOWN_REGEX_SET[10], '')
+        .replace(STRIP_MARKDOWN_REGEX_SET[11], '\n\n')
+        .trim();
+}

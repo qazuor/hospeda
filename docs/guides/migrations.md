@@ -128,6 +128,42 @@ hops db-migrate --target=prod
 The command aborts on any failure. The backup is there so a human can restore if something
 goes wrong.
 
+### Pre-migration column snapshot for lossy data migrations
+
+`hops db-migrate` already takes a full `pg_dump` before applying. That dump is the complete
+safety net, but restoring a SINGLE column from a full prod dump is slow and error-prone. When
+a pending migration performs a **lossy in-place data transform** (it overwrites a column and
+the original cannot be reconstructed from the new value), take an additional lightweight
+per-column snapshot right before promoting, so a targeted restore is a one-liner.
+
+**SPEC-187 / `0008_strip_accommodation_description_markdown.sql`** is the canonical case: it
+strips markdown from `accommodations.description` in place and the original markdown is
+unrecoverable. `0011_restrip_accommodation_description_markdown.sql` re-cleans what 0008 left
+behind (surviving `_emphasis_`, orphan `!` from images) but is also one-way. Before the first
+`staging → main` promotion that carries these migrations, snapshot the column on **prod**:
+
+```sql
+-- Run on prod BEFORE `hops db-migrate --target=prod` (i.e. before 0008 runs)
+CREATE TABLE IF NOT EXISTS accommodations_description_backup AS
+SELECT id, description, updated_at FROM accommodations;
+```
+
+If the strip corrupts any row, restore just that column (whole-column or filtered by id):
+
+```sql
+UPDATE accommodations a
+SET    description = b.description
+FROM   accommodations_description_backup b
+WHERE  a.id = b.id;
+```
+
+Keep the table for at least one release cycle. Once a human has confirmed the public
+accommodation pages render correctly (no leftover `**`/`_`/orphan `!`), drop it:
+
+```sql
+DROP TABLE accommodations_description_backup;
+```
+
 ### Reset (wipe and rebuild)
 
 The `--reset` flag drops the schema and rebuilds from scratch. **Destructive — use with care.**

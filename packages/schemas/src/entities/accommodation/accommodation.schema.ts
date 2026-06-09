@@ -61,7 +61,7 @@ export const AccommodationSchema = z.object({
     richDescription: z
         .string()
         .max(5000, { message: 'zodError.accommodation.richDescription.max' })
-        .optional(),
+        .nullish(),
     isFeatured: z.boolean().default(false),
 
     // Base field groups
