@@ -1,0 +1,156 @@
+/* ViewsWidget.module.css — bar chart widget for accommodation views */
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-card, 24px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+}
+
+.total {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--brand-primary);
+}
+
+/* ── Toggle ── */
+
+.toggle {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+    align-self: flex-start;
+}
+
+.toggleBtn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.2s) ease, color var(--duration-fast, 0.2s)
+        ease;
+}
+
+.toggleBtn:hover {
+    background-color: var(--core-foreground-a05);
+}
+
+.toggleActive {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    border-color: var(--brand-primary);
+}
+
+.toggleActive:hover {
+    background-color: var(--brand-primary);
+    opacity: 0.88;
+}
+
+/* ── Chart ── */
+
+.chartContainer {
+    width: 100%;
+    min-height: 180px;
+}
+
+/* ── Skeleton ── */
+
+.skeleton {
+    height: 220px;
+    border-radius: var(--radius-md, 10px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a08) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── Error ── */
+
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+.errorText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: oklch(0.5 0.18 25);
+}
+
+/* ── Empty ── */
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+.empty p {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+/* ── Screen reader only ── */
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}

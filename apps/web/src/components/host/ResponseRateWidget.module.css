@@ -1,0 +1,166 @@
+/* ResponseRateWidget.module.css — circular progress KPI card */
+
+.widget {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-card, 24px);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+}
+
+/* ── Content layout ── */
+
+.content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5, 1.25rem);
+}
+
+/* ── Circular progress ── */
+
+.circleWrapper {
+    position: relative;
+    width: 96px;
+    height: 96px;
+    flex-shrink: 0;
+}
+
+.circleSvg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.circleTrack {
+    fill: none;
+    stroke: var(--core-foreground-a08);
+    stroke-width: 8;
+}
+
+.circleFill {
+    fill: none;
+    stroke: var(--brand-primary);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset var(--duration-normal, 0.4s) ease;
+}
+
+.circleText {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--core-foreground);
+}
+
+/* ── Meta info ── */
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.avgLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.avgValue {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+}
+
+/* ── Skeleton ── */
+
+.skeleton {
+    height: 120px;
+    border-radius: var(--radius-md, 10px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a08) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── Error ── */
+
+.error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+.errorText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: oklch(0.5 0.18 25);
+}
+
+/* ── Empty ── */
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-6, 1.5rem);
+    text-align: center;
+}
+
+.empty p {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+    .circleFill {
+        transition: none;
+    }
+}
