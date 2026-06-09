@@ -76,26 +76,25 @@ if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
 }
 
 // Leaflet and Prosemirror call elementFromPoint() and getBoundingClientRect()
-// on DOM elements. jsdom does not implement these methods.
+// on DOM elements. jsdom does not implement these methods properly.
 if (typeof document !== 'undefined') {
     if (!document.elementFromPoint) {
-        // Return a mock element with getBoundingClientRect so prosemirror-view
-        // doesn't crash when calling target.getBoundingClientRect()
-        document.elementFromPoint = () => {
-            const el = document.createElement('div');
-            el.getBoundingClientRect = () =>
-                ({
-                    top: 0,
-                    left: 0,
-                    bottom: 0,
-                    right: 0,
-                    width: 0,
-                    height: 0,
-                    x: 0,
-                    y: 0,
-                    toJSON: () => ({})
-                }) as DOMRect;
-            return el;
-        };
+        document.elementFromPoint = () => document.createElement('div');
     }
+}
+// Mock getBoundingClientRect on Element.prototype — prosemirror-view calls it
+// on arbitrary DOM targets during selection rendering and scroll-to-selection.
+if (typeof Element !== 'undefined') {
+    Element.prototype.getBoundingClientRect = () =>
+        ({
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: () => ({})
+        }) as DOMRect;
 }
