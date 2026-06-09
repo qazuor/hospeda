@@ -30,7 +30,7 @@
             "id": "T-002",
             "title": "Cron-lag grace detection in entitlement middleware (red-first)",
             "description": "Part A. In apps/api/src/middlewares/entitlement.ts (~:391-403 where the active sub is resolved): detect now > currentPeriodEnd && status='active'. Within BILLING_CRON_LAG_GRACE_HOURS: attach X-Cron-Lag-Grace-Hours-Remaining header + logger.warn, ALLOW. Past the window: STILL ALLOW (never block — owner decision) + fire captureBillingError (apps/api/src/lib/sentry.ts, operation 'cron_lag_grace_exceeded', subscriptionId/customerId/hoursOverdue, level warning) — idempotent enough (dedup not required, the alert can repeat). Stateless/derived (no DB). ⚠️ 5-min entitlementCache caveat: ensure the detection reads currentPeriodEnd at a point not skipped by a cache hit, OR document the ≤5-min alert delay (pick one, document). Red-first unit tests: within-window → header + allow + no alert; past-window → allow + Sentry alert with the right context; not-expired active → no header/alert; non-active → untouched; past_due path (pastDueGraceMiddleware) untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-009"],
@@ -38,14 +38,14 @@
             "tags": ["api", "middleware", "grace"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:47:49.000Z"
             }
         },
         {
