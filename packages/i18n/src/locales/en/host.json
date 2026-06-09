@@ -131,12 +131,59 @@
                 "SUSPENDED": "[TODO]"
             },
             "actions": {
-                "edit": "[TODO]",
+                "edit": "Edit",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
                 "viewOnSite": "[TODO]"
             },
             "pricePerNight": "[TODO]"
+        },
+        "editor": {
+            "section": {
+                "basicInfo": "Basic information",
+                "location": "Location",
+                "capacity": "Capacity",
+                "pricing": "Pricing",
+                "amenities": "Amenities and features"
+            },
+            "field": {
+                "name": "Name",
+                "summary": "Summary",
+                "description": "Description",
+                "type": "Type",
+                "destination": "Destination",
+                "destinationPlaceholder": "Select destination...",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "maxGuests": "Max guests",
+                "bedrooms": "Bedrooms",
+                "bathrooms": "Bathrooms",
+                "price": "Price per night",
+                "currency": "Currency",
+                "amenities": "Amenities",
+                "features": "Features"
+            },
+            "action": {
+                "save": "Save",
+                "saving": "Saving...",
+                "cancel": "Cancel"
+            },
+            "validation": {
+                "nameRequired": "Name is required",
+                "nameMin": "Name must be at least 3 characters",
+                "summaryRequired": "Summary is required",
+                "summaryMin": "Summary must be at least 10 characters",
+                "pricePositive": "Price must be a positive number",
+                "currencyInvalid": "Currency must be ARS or USD"
+            },
+            "error": {
+                "saveFailed": "Failed to save",
+                "network": "Network error"
+            },
+            "toast": {
+                "saveSuccess": "Changes saved",
+                "saveError": "We couldn't save your changes. Please try again."
+            }
         },
         "empty": {
             "title": "[TODO]",

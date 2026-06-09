@@ -1534,6 +1534,85 @@ export const protectedAccommodationsApi = {
     }
 };
 
+// --- Accommodation Editor (SPEC-208) ---
+
+/**
+ * Protected accommodation edit API endpoints.
+ * Wraps the protected accommodation GET/PATCH and public amenities/destinations
+ * endpoints used by the web editor form.
+ */
+export const accommodationEditApi = {
+    /**
+     * Get a single accommodation by ID for editing.
+     * Uses the protected endpoint which enforces ownership (ownerId === actor.id).
+     *
+     * @param params - Accommodation ID and optional SSR cookie header
+     * @returns The accommodation record or null
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown> | null>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Update an accommodation via PATCH.
+     * Only sends the fields provided in `data` (partial update).
+     *
+     * @param params - Accommodation ID and partial update data
+     * @returns The update result
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}`,
+            body: data
+        });
+    },
+
+    /**
+     * Fetch all active amenities for the editor's checkbox group.
+     * Uses the public amenities endpoint (no auth required).
+     *
+     * @returns Paginated list of amenity records
+     */
+    getAmenities(): Promise<
+        ApiResult<import('./types').PaginatedResponse<Record<string, unknown>>>
+    > {
+        return apiClient.getList({
+            path: `${BASE}/amenities`,
+            params: { pageSize: 200 }
+        });
+    },
+
+    /**
+     * Fetch all destinations for the editor's destination select.
+     * Uses the public destinations endpoint (no auth required).
+     *
+     * @returns Paginated list of destination records
+     */
+    getDestinations(): Promise<
+        ApiResult<import('./types').PaginatedResponse<Record<string, unknown>>>
+    > {
+        return apiClient.getList({
+            path: `${BASE}/destinations`,
+            params: { pageSize: 200 }
+        });
+    }
+};
+
 // --- Comments (Protected — SPEC-165) ---
 
 /**

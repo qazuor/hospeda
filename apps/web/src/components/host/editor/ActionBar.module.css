@@ -1,0 +1,72 @@
+/* ActionBar.module.css — SPEC-208 PR2 */
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3, 1rem);
+    padding-top: var(--space-4, 1.5rem);
+    border-top: 1px solid var(--border);
+    margin-top: var(--space-4, 1.5rem);
+}
+
+.actionsPrimary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, #ffffff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out, background-color 150ms ease-out;
+}
+
+.actionsPrimary:hover {
+    opacity: 0.9;
+}
+
+.actionsPrimary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actionsPrimary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.actionsSecondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out, background-color 150ms ease-out;
+}
+
+.actionsSecondary:hover {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+}
+
+.actionsSecondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actionsSecondary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

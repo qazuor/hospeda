@@ -151,3 +151,61 @@ export interface MarketComparisonItem {
 export interface MarketComparisonData {
     readonly items: readonly MarketComparisonItem[];
 }
+
+// ---------------------------------------------------------------------------
+// Accommodation Editor Types (SPEC-208)
+// ---------------------------------------------------------------------------
+
+/**
+ * Editable accommodation data for the web editor form.
+ *
+ * Includes all fields the host can edit via the protected PATCH endpoint.
+ * The PATCH schema (`AccommodationUpdateHttpSchema`) is a `.partial()` of the
+ * create schema, so every field is optional in the payload.
+ *
+ * NOTE: `summary` is in the domain schema but NOT in the HTTP PATCH schema.
+ * The SSR page reads it from the GET response (full domain object); the form
+ * displays it but the PATCH cannot persist it yet. This will be resolved when
+ * the HTTP schema is extended (Phase B). For now, the field is editable in
+ * the UI but excluded from the PATCH payload.
+ */
+export interface AccommodationEditData {
+    readonly id: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    readonly type: string;
+    readonly destinationId: string;
+    readonly latitude: number | null;
+    readonly longitude: number | null;
+    readonly maxGuests: number | null;
+    readonly bedrooms: number | null;
+    readonly bathrooms: number | null;
+    readonly beds: number | null;
+    readonly basePrice: number | null;
+    readonly currency: string | null;
+    readonly isAvailable: boolean;
+    readonly isFeatured: boolean;
+    readonly amenityIds: readonly string[];
+    readonly featureIds: readonly string[];
+}
+
+/**
+ * Amenity item for the editor's multi-checkbox group.
+ * Fetched from the public amenities endpoint.
+ */
+export interface AmenityData {
+    readonly id: string;
+    readonly name: string;
+    readonly category: string | null;
+}
+
+/**
+ * Destination item for the editor's destination select.
+ * Fetched from the public destinations endpoint.
+ */
+export interface DestinationData {
+    readonly id: string;
+    readonly name: string;
+    readonly path: string;
+}
