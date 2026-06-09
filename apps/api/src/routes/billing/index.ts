@@ -186,6 +186,21 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // in past-due-grace.middleware.ts.
     router.use('*', pastDueGraceMiddleware());
 
+    // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
+    // qzpay wrapper. qzpay-hono's prebuilt routes include
+    // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
+    // our custom route must be registered first to take priority.
+    //
+    // The `billingAdminGuardMiddleware` is applied here (not via qzpayWrapper)
+    // to maintain the same security posture: `cancel` is in allowedSubPaths so
+    // non-admin users pass through. Ownership is enforced in the service layer
+    // (softCancelSubscription verifies customerId === billingCustomerId) plus
+    // the handler's own billingCustomerId gate.
+    const cancelWrapper = createRouter();
+    cancelWrapper.use('*', billingAdminGuardMiddleware());
+    cancelWrapper.route('/', subscriptionCancelRouter);
+    router.route('/subscriptions', cancelWrapper);
+
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
     // resources (customers, subscriptions, invoices, payments, entitlements).
@@ -219,13 +234,6 @@ export function createBillingRoutesHandler(): AppOpenAPI {
 
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
-
-    // Mount user self-service soft-cancel route (SPEC-147 T-006).
-    // Sits on the same `/subscriptions` prefix; the route is `/{id}/cancel`
-    // so Hono resolves it without conflict against `/start-paid` or `/change-plan`.
-    // Ownership is enforced by `billingOwnershipMiddleware` (on the qzpayWrapper
-    // above); the route handler additionally gates on HOSPEDA_USER_CANCEL_ENABLED.
-    router.route('/subscriptions', subscriptionCancelRouter);
 
     // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
     // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and

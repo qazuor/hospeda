@@ -9,12 +9,14 @@
  * `false`). Flag off returns 404 NOT_FOUND — the route behaves as though
  * it does not exist, which is the safe "feature dark" signal.
  *
- * Ownership is enforced by `billingOwnershipMiddleware` (already applied to
- * all QZPay pre-built routes in `billing/index.ts`). The ownership middleware
- * extracts the subscription ID from the `:id` segment, calls
- * `billing.subscriptions.get(id)` and verifies `customerId` matches the
- * caller's `billingCustomerId`. A 403 is returned on mismatch before this
- * handler ever runs.
+ * Ownership is enforced in the service layer: `softCancelSubscription`
+ * verifies `subscription.customerId === params.customerId` before writing
+ * any state (defence-in-depth). The handler itself gates on
+ * `billingCustomerId` being present (set by `billingCustomerMiddleware`).
+ * Note: this route is mounted BEFORE the qzpay wrapper in `billing/index.ts`
+ * to take first-match priority over qzpay-hono's prebuilt
+ * `POST /subscriptions/:id/cancel`; `billingAdminGuardMiddleware` is applied
+ * via a dedicated `cancelWrapper` at mount time.
  *
  * `billingAdminGuardMiddleware` has `cancel` in `allowedSubPaths` (SPEC-147
  * T-006), so non-admin callers reach this handler. Admins also reach it via

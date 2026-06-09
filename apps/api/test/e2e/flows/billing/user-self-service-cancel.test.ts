@@ -302,8 +302,6 @@ describe('SPEC-147 T-012 — user self-service soft-cancel e2e', () => {
             };
         };
         expect(body.success).toBe(true);
-        // Reveal body.data structure via assertion error when subscriptionId is missing
-        expect(body.data).toMatchObject({ subscriptionId });
         expect(body.data.subscriptionId).toBe(subscriptionId);
         expect(body.data.cancelAtPeriodEnd).toBe(true);
         expect(body.data.canceledAt).toBeTruthy();
