@@ -1,7 +1,7 @@
 /**
  * Admin restore moderation term endpoint
  */
-import { contentModerationTermSchema } from '@repo/schemas';
+import { PermissionEnum, contentModerationTermSchema } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -18,6 +18,7 @@ export const adminRestoreTermRoute = createAdminRoute({
     summary: 'Restore moderation term (admin)',
     description: 'Restores a soft-deleted content moderation term',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_RESTORE],
     requestParams: { id: contentModerationTermSchema.shape.id },
     responseSchema: contentModerationTermSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
