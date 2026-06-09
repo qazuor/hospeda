@@ -13,7 +13,8 @@ export {
     lt,
     lte,
     isNull,
-    isNotNull
+    isNotNull,
+    inArray
 } from 'drizzle-orm';
 
 export * from './base/base.model.ts';
