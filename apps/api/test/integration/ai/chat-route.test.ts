@@ -31,6 +31,7 @@ const {
     resolvedPromptForTest,
     nextContextResult,
     nextContextError,
+    featureConfigMaxTokensForTest,
     nextPersistPromise,
     mockPostHogCapture,
     mockApiLogger
@@ -39,6 +40,7 @@ const {
         feature: string;
         messages: Array<{ role: string; content: string }>;
         locale: string;
+        params?: { maxTokens?: number };
     }>,
     nextStreamDeltas: { current: ['Hola', ' mundo', '!'] as string[] },
     nextMeta: {
@@ -68,6 +70,7 @@ const {
         }
     },
     nextContextError: { current: null as unknown },
+    featureConfigMaxTokensForTest: { current: undefined as number | undefined },
     nextPersistPromise: {
         current: Promise.resolve({
             conversationId: '44444444-4444-4444-8444-444444444444'
@@ -101,6 +104,13 @@ vi.mock('@repo/ai-core', () => {
         resolveSystemPrompt: vi.fn(async () => ({
             content: resolvedPromptForTest.current,
             source: 'default'
+        })),
+        resolveFeatureConfig: vi.fn(async () => ({
+            enabled: true,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'stub-model',
+            params: { maxTokens: featureConfigMaxTokensForTest.current }
         }))
     };
 });
@@ -133,11 +143,13 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
                 feature: string;
                 messages: Array<{ role: string; content: string }>;
                 locale: string;
+                params?: { maxTokens?: number };
             }) => {
                 streamTextCalls.push({
                     feature: args.feature,
                     messages: args.messages,
-                    locale: args.locale
+                    locale: args.locale,
+                    params: args.params
                 });
 
                 const deltas = nextStreamDeltas.current;
@@ -197,7 +209,7 @@ vi.mock('../../../src/utils/logger', () => ({
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
@@ -221,7 +233,7 @@ function buildTestApp(): OpenAPIHono<AppBindings> {
 }
 
 function makeMockActorHeaders(
-    overrides: { actorId?: string; role?: RoleEnum } = {}
+    overrides: { actorId?: string; role?: RoleEnum; permissions?: PermissionEnum[] } = {}
 ): Record<string, string> {
     return {
         'content-type': 'application/json',
@@ -229,8 +241,17 @@ function makeMockActorHeaders(
         'user-agent': 'vitest-integration',
         'x-mock-actor-id': overrides.actorId ?? UNIQUE_USER_ID,
         'x-mock-actor-role': overrides.role ?? RoleEnum.USER,
-        'x-mock-actor-permissions': '[]'
+        'x-mock-actor-permissions': JSON.stringify(overrides.permissions ?? [])
     };
+}
+
+/** Headers representing a SUPER_ADMIN actor that holds AI_SETTINGS_MANAGE. */
+function makeAiAdminHeaders(overrides: { actorId?: string } = {}): Record<string, string> {
+    return makeMockActorHeaders({
+        actorId: overrides.actorId,
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: [PermissionEnum.AI_SETTINGS_MANAGE]
+    });
 }
 
 interface SseFrame {
@@ -299,6 +320,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             accommodationName: 'Test Cabin'
         };
         nextContextError.current = null;
+        featureConfigMaxTokensForTest.current = undefined;
         nextStreamDeltas.current = ['Hola', ' mundo', '!'];
         nextStreamError.current = null;
         nextMeta.current = Promise.resolve({
@@ -457,6 +479,108 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             finishReason: 'stop',
             conversationId: '44444444-4444-4444-8444-444444444444'
         });
+    });
+
+    it('does NOT emit any debug SSE event to a tourist caller (no system-prompt / context leak — FIX 1)', async () => {
+        // Tourist actor: RoleEnum.USER, empty permissions array — no AI_SETTINGS_MANAGE.
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders({ role: RoleEnum.USER, permissions: [] }),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+
+        const frames = await readSseFrames(res);
+        // No `debug` frame must be emitted to a non-admin caller.
+        expect(frames.filter((frame) => frame.event === 'debug')).toHaveLength(0);
+        // The system prompt and context block must never appear in any frame payload.
+        const serialized = JSON.stringify(frames);
+        expect(serialized).not.toContain('SYSTEM MESSAGE');
+        expect(serialized).not.toContain('## Accommodation: Test Cabin');
+    });
+
+    it('emits a debug SSE frame containing system prompt and context when actor holds AI_SETTINGS_MANAGE', async () => {
+        // Admin actor: holds AI_SETTINGS_MANAGE — should receive the debug frame.
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeAiAdminHeaders(),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        expect(res.headers.get('content-type') ?? '').toContain('text/event-stream');
+
+        const frames = await readSseFrames(res);
+
+        // Exactly one debug frame must be present.
+        const debugFrames = frames.filter((frame) => frame.event === 'debug');
+        expect(debugFrames).toHaveLength(1);
+
+        // The debug payload must carry the expected inspection fields.
+        const debugPayload = JSON.parse(debugFrames[0]?.data ?? '{}') as Record<string, unknown>;
+        expect(debugPayload).toMatchObject({
+            contextBlock: '## Accommodation: Test Cabin',
+            resolvedPrompt: 'Resolved prompt from admin/default.',
+            systemMessage: 'SYSTEM MESSAGE',
+            feature: 'chat',
+            accommodationId: ACCOMMODATION_ID
+        });
+
+        // The debug frame must appear BEFORE any token frames (factory contract).
+        const debugIndex = frames.findIndex((frame) => frame.event === 'debug');
+        const firstTokenIndex = frames.findIndex((frame) => frame.event === 'token');
+        expect(debugIndex).toBeLessThan(firstTokenIndex);
+
+        // Token and done frames must still be present (stream not disrupted).
+        expect(frames.filter((frame) => frame.event === 'token')).toHaveLength(3);
+        expect(frames.filter((frame) => frame.event === 'done')).toHaveLength(1);
+    });
+
+    it('applies the default output token cap when feature config has no maxTokens (FIX 3)', async () => {
+        featureConfigMaxTokensForTest.current = undefined;
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+
+        expect(streamTextCalls).toHaveLength(1);
+        // Falls back to the sane default constant (1024) when config is absent.
+        expect(streamTextCalls[0]?.params?.maxTokens).toBe(1024);
+    });
+
+    it('prefers the resolved feature-config maxTokens over the default (FIX 3)', async () => {
+        featureConfigMaxTokensForTest.current = 256;
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+
+        expect(streamTextCalls).toHaveLength(1);
+        // The admin-configured cap wins over the default.
+        expect(streamTextCalls[0]?.params?.maxTokens).toBe(256);
     });
 
     it('prepends the system message and defaults locale to es when omitted', async () => {
