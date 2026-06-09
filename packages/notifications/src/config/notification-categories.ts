@@ -59,5 +59,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
 
     // D3 access-ending reminder (SPEC-147 T-010) — REMINDER: user can opt out
-    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER,
+
+    // Plan retirement notification (SPEC-148) — TRANSACTIONAL: admin-triggered, always sent
+    [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL
 };

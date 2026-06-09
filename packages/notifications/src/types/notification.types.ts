@@ -56,7 +56,17 @@ export enum NotificationType {
      * the period_end falls inside the [now+2d, now+4d] window. A per-sub
      * `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing event prevents re-sends.
      */
-    SUBSCRIPTION_ACCESS_ENDING_SOON = 'subscription_access_ending_soon'
+    SUBSCRIPTION_ACCESS_ENDING_SOON = 'subscription_access_ending_soon',
+    /**
+     * SPEC-148 — notification sent to each active subscriber when their plan
+     * is retired by an admin (PLAN_DISABLED_BY_ADMIN admin action).
+     *
+     * Unlike SUBSCRIPTION_CANCEL_CONFIRMED (user-initiated soft-cancel), this
+     * is admin-triggered. The email informs the user the plan is being retired,
+     * confirms they keep access until `accessUntil` (current period_end), and
+     * prompts them to resubscribe to another plan.
+     */
+    PLAN_BEING_RETIRED = 'plan_being_retired'
 }
 
 /**
@@ -502,6 +512,43 @@ export interface SendNotificationOptions {
     }>;
 }
 
+/**
+ * Payload for plan-being-retired notifications (SPEC-148).
+ *
+ * Sent to each active subscriber when an admin retires a billing plan. The
+ * subscriber keeps access until `accessUntil` (their current billing period_end)
+ * and is prompted to resubscribe to another plan before that date.
+ *
+ * @example
+ * ```ts
+ * const payload: PlanBeingRetiredPayload = {
+ *   type: NotificationType.PLAN_BEING_RETIRED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   accessUntil: '2026-08-15T23:59:59.000Z',
+ *   migrationHint: 'Re-subscribe to another plan to keep premium features',
+ * };
+ * ```
+ */
+export interface PlanBeingRetiredPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PLAN_BEING_RETIRED;
+    /** Human-readable plan name shown in the email body */
+    readonly planName: string;
+    /**
+     * ISO 8601 date-time string for the billing period_end — the date until
+     * which the user retains full access despite the plan retirement.
+     */
+    readonly accessUntil: string;
+    /**
+     * Short plain-text prompt shown in the email encouraging the user to
+     * resubscribe (e.g. "Re-subscribe to another plan to keep premium features").
+     */
+    readonly migrationHint: string;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -518,4 +565,5 @@ export type NotificationPayload =
     | AddonCancellationPayload
     | AiCostThresholdAlertPayload
     | SubscriptionCancelConfirmedPayload
-    | SubscriptionAccessEndingSoonPayload;
+    | SubscriptionAccessEndingSoonPayload
+    | PlanBeingRetiredPayload;
