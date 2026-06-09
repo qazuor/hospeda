@@ -3,7 +3,7 @@ spec-id: SPEC-131
 title: PlanPurchaseButton async-state tests broken post Astro 6 bump
 type: fix
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-15T18:30:00Z
 effort_estimate_hours: 2-6
 tags: [web, tests, react-19, astro-6, vitest, follow-up, spec-111]

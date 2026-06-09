@@ -54,6 +54,14 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: ['./test/setup.ts'],
+        // SPEC-131: provide dummy API + site URLs so validateWebEnv() succeeds in jsdom
+        // tests. Without these, apiClient.request() throws before reaching fetch() —
+        // bypassing vi.stubGlobal('fetch', ...) mocks and producing incorrect error state
+        // instead of the intended loading / success state the tests assert on.
+        env: {
+            PUBLIC_API_URL: 'http://localhost:3001',
+            PUBLIC_SITE_URL: 'http://localhost:4321'
+        },
         pool: 'forks',
         poolOptions: {
             forks: {

@@ -149,7 +149,13 @@ function mockSessionPending() {
  *
  * See `.qtm/specs/SPEC-131-plan-purchase-button-async-state-tests/spec.md`.
  */
-const SPEC_131_PENDING = true;
+// SPEC-131 resolved: the root cause was apiClient.request() calling getBaseUrl() outside
+// its try/catch, causing validateWebEnv() to throw in test environments where PUBLIC_API_URL
+// is unset. The fix: (1) move URL computation inside try/catch in client.ts so env errors
+// return { ok: false } instead of throwing; (2) add PUBLIC_API_URL + PUBLIC_SITE_URL to
+// vitest.config.ts test.env so fetch mocks are reachable; (3) update the endpoint assertion
+// from the legacy /checkout path (SPEC-126 deprecated) to /subscriptions/start-paid.
+const SPEC_131_PENDING = false;
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -755,9 +761,11 @@ describe('PlanPurchaseButton', () => {
                 expect(fetchMock).toHaveBeenCalled();
             });
 
-            // Assert — endpoint path matches the component's hardcoded path
+            // Assert — endpoint path matches the component's actual checkout path.
+            // NOTE: /billing/checkout was the legacy endpoint deprecated in SPEC-126;
+            // the component now uses /billing/subscriptions/start-paid.
             const [url] = fetchMock.mock.calls[0] as [string];
-            expect(url).toContain('/api/v1/protected/billing/checkout');
+            expect(url).toContain('/api/v1/protected/billing/subscriptions/start-paid');
         });
     });
 

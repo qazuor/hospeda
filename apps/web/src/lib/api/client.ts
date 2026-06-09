@@ -88,11 +88,16 @@ async function request<T>({
      */
     headers?: Record<string, string>;
 }): Promise<ApiResult<T>> {
-    const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
+    // SPEC-131: compute the URL inside the try block so a misconfigured
+    // env (no PUBLIC_API_URL / HOSPEDA_API_URL) returns { ok: false } instead
+    // of letting the async function throw — which would violate the ApiResult<T>
+    // return type contract and bypass the `catch` in the component's click handler.
+    let url = '';
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
+        url = `${getBaseUrl()}${path}${serializeParams(params)}`;
         const headers: Record<string, string> = {
             Accept: 'application/json',
             ...extraHeaders
