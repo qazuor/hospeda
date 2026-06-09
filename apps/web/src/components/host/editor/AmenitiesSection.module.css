@@ -1,0 +1,65 @@
+/* AmenitiesSection.module.css — SPEC-208 */
+
+.section {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-5, 2rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-4, 1.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+.group {
+    margin-bottom: var(--space-4, 1.5rem);
+}
+
+.groupTitle {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3, 1rem);
+}
+
+.checkboxGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-2, 0.5rem);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    cursor: pointer;
+    transition: border-color 150ms ease-out, background-color 150ms ease-out;
+}
+
+.checkboxLabel:hover {
+    border-color: var(--brand-primary);
+    background-color: var(--surface-warm);
+}
+
+.checkboxInput {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
+.checkboxText {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}

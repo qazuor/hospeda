@@ -138,6 +138,53 @@
             },
             "pricePerNight": "por noche"
         },
+        "editor": {
+            "section": {
+                "basicInfo": "Información básica",
+                "location": "Ubicación",
+                "capacity": "Capacidad",
+                "pricing": "Precio",
+                "amenities": "Servicios y comodidades"
+            },
+            "field": {
+                "name": "Nombre",
+                "summary": "Resumen",
+                "description": "Descripción",
+                "type": "Tipo",
+                "destination": "Destino",
+                "destinationPlaceholder": "Seleccionar destino...",
+                "latitude": "Latitud",
+                "longitude": "Longitud",
+                "maxGuests": "Huéspedes máx.",
+                "bedrooms": "Dormitorios",
+                "bathrooms": "Baños",
+                "price": "Precio por noche",
+                "currency": "Moneda",
+                "amenities": "Comodidades",
+                "features": "Características"
+            },
+            "action": {
+                "save": "Guardar",
+                "saving": "Guardando...",
+                "cancel": "Cancelar"
+            },
+            "validation": {
+                "nameRequired": "El nombre es obligatorio",
+                "nameMin": "El nombre debe tener al menos 3 caracteres",
+                "summaryRequired": "El resumen es obligatorio",
+                "summaryMin": "El resumen debe tener al menos 10 caracteres",
+                "pricePositive": "El precio debe ser un número positivo",
+                "currencyInvalid": "La moneda debe ser ARS o USD"
+            },
+            "error": {
+                "saveFailed": "Error al guardar",
+                "network": "Error de conexión"
+            },
+            "toast": {
+                "saveSuccess": "Cambios guardados",
+                "saveError": "No pudimos guardar los cambios. Intentá de nuevo."
+            }
+        },
         "empty": {
             "title": "Aún no publicaste ninguna propiedad",
             "cta": "Publicar ahora"

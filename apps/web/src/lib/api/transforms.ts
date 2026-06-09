@@ -1307,3 +1307,108 @@ export function toEventDetailProps({
         eventStatus
     };
 }
+
+// --- Accommodation Editor Transforms (SPEC-208) ---
+
+import type { AccommodationEditData, AmenityData, DestinationData } from './types';
+
+/**
+ * Transforms a raw API accommodation object into AccommodationEditData
+ * for the web editor form.
+ *
+ * Handles both relation-join amenities/features (objects with nested amenity/feature)
+ * and plain ID arrays. Price is extracted from the nested `price.price` or
+ * `price.amount` shape.
+ *
+ * @param item - Raw accommodation object from the protected GET endpoint
+ * @returns Typed AccommodationEditData for the editor form
+ */
+export function transformAccommodationEdit({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationEditData {
+    const priceObj = item.price as
+        | { price?: number; amount?: number; currency?: string }
+        | undefined;
+
+    const amenitiesArr = item.amenities as
+        | readonly (Record<string, unknown> | string)[]
+        | undefined;
+    const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
+
+    return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        summary: String(item.summary ?? ''),
+        description: String(item.description ?? ''),
+        type: String(item.type ?? ''),
+        destinationId: String(item.destinationId ?? ''),
+        latitude: item.latitude != null ? Number(item.latitude) : null,
+        longitude: item.longitude != null ? Number(item.longitude) : null,
+        maxGuests: item.maxGuests != null ? Number(item.maxGuests) : null,
+        bedrooms: item.bedrooms != null ? Number(item.bedrooms) : null,
+        bathrooms: item.bathrooms != null ? Number(item.bathrooms) : null,
+        beds: item.beds != null ? Number(item.beds) : null,
+        basePrice:
+            priceObj?.price != null
+                ? Number(priceObj.price)
+                : priceObj?.amount != null
+                  ? Number(priceObj.amount)
+                  : null,
+        currency: priceObj?.currency != null ? String(priceObj.currency) : null,
+        isAvailable: item.isAvailable != null ? Boolean(item.isAvailable) : true,
+        isFeatured: item.isFeatured != null ? Boolean(item.isFeatured) : false,
+        amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
+        featureIds: extractIdList(featuresArr, 'featureId', 'feature')
+    };
+}
+
+/**
+ * Extracts a list of string IDs from either relation-join objects
+ * (with a nested key) or plain string entries.
+ */
+function extractIdList(
+    items: readonly (Record<string, unknown> | string)[] | undefined,
+    idKey: string,
+    nestedKey: string
+): readonly string[] {
+    if (!items) return [];
+    return items
+        .map((entry) => {
+            if (typeof entry === 'string') return entry;
+            const nested = entry[nestedKey] as Record<string, unknown> | undefined;
+            return String(entry[idKey] ?? nested?.id ?? '');
+        })
+        .filter((id) => id.length > 0);
+}
+
+/**
+ * Transforms a list of raw amenity objects into AmenityData[].
+ *
+ * @param items - Raw amenity objects from the public amenities endpoint
+ * @returns Typed AmenityData array for the editor's checkbox group
+ */
+export function transformAmenityList({
+    items
+}: { readonly items: readonly Record<string, unknown>[] }): readonly AmenityData[] {
+    return items.map((item) => ({
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        category: item.category != null ? String(item.category) : null
+    }));
+}
+
+/**
+ * Transforms a list of raw destination objects into DestinationData[].
+ *
+ * @param items - Raw destination objects from the public destinations endpoint
+ * @returns Typed DestinationData array for the editor's destination select
+ */
+export function transformDestinationList({
+    items
+}: { readonly items: readonly Record<string, unknown>[] }): readonly DestinationData[] {
+    return items.map((item) => ({
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        path: String(item.path ?? '')
+    }));
+}

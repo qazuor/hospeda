@@ -131,12 +131,59 @@
                 "SUSPENDED": "[TODO]"
             },
             "actions": {
-                "edit": "[TODO]",
+                "edit": "Editar",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
                 "viewOnSite": "[TODO]"
             },
             "pricePerNight": "[TODO]"
+        },
+        "editor": {
+            "section": {
+                "basicInfo": "Informações básicas",
+                "location": "Localização",
+                "capacity": "Capacidade",
+                "pricing": "Preço",
+                "amenities": "Comodidades e recursos"
+            },
+            "field": {
+                "name": "Nome",
+                "summary": "Resumo",
+                "description": "Descrição",
+                "type": "Tipo",
+                "destination": "Destino",
+                "destinationPlaceholder": "Selecionar destino...",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "maxGuests": "Máx. hóspedes",
+                "bedrooms": "Quartos",
+                "bathrooms": "Banheiros",
+                "price": "Preço por noite",
+                "currency": "Moeda",
+                "amenities": "Comodidades",
+                "features": "Recursos"
+            },
+            "action": {
+                "save": "Salvar",
+                "saving": "Salvando...",
+                "cancel": "Cancelar"
+            },
+            "validation": {
+                "nameRequired": "O nome é obrigatório",
+                "nameMin": "O nome deve ter pelo menos 3 caracteres",
+                "summaryRequired": "O resumo é obrigatório",
+                "summaryMin": "O resumo deve ter pelo menos 10 caracteres",
+                "pricePositive": "O preço deve ser um número positivo",
+                "currencyInvalid": "A moeda deve ser ARS ou USD"
+            },
+            "error": {
+                "saveFailed": "Erro ao salvar",
+                "network": "Erro de conexão"
+            },
+            "toast": {
+                "saveSuccess": "Alterações salvas",
+                "saveError": "Não pudemos salvar suas alterações. Tente novamente."
+            }
         },
         "empty": {
             "title": "[TODO]",

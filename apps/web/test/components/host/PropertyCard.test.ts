@@ -1,7 +1,8 @@
 /**
  * @file PropertyCard.test.ts
  * @description Integration tests for PropertyCard.astro — verifies admin-only
- * edit links were removed (SPEC-205 Phase 4) and that web-native actions remain.
+ * edit links were removed (SPEC-205 Phase 4) and that web-native edit link
+ * was added (SPEC-208 PR2).
  */
 
 import { readFileSync } from 'node:fs';
@@ -13,21 +14,27 @@ const propertyCardSource = readFileSync(
     'utf8'
 );
 
-describe('PropertyCard.astro — SPEC-205 Phase 4 funnel polish', () => {
+describe('PropertyCard.astro — SPEC-205 Phase 4 + SPEC-208 PR2', () => {
     it('should NOT contain an admin-only edit link', () => {
-        // The edit link pointed to admin: /accommodations/{id}/edit
-        // This was removed because there is no web editor yet (SPEC-208)
-        expect(propertyCardSource).not.toContain('editUrl');
-        expect(propertyCardSource).not.toMatch(/href=\{editUrl\}/);
+        // The old edit link pointed to admin: /accommodations/{id}/edit
+        // SPEC-208 PR2 replaced it with a web editor link using buildUrl
+        // publishUrl still uses adminBase, but editUrl must use buildUrl
+        expect(propertyCardSource).not.toMatch(/editUrl.*adminBase/);
     });
 
-    it('should NOT render an "Editar" action button', () => {
-        // The edit button text should not appear in the template actions section
-        expect(propertyCardSource).not.toMatch(/actions\.edit.*Editar/);
+    it('should contain a web editor link using buildUrl', () => {
+        // SPEC-208 PR2: edit link routes to the web editor page
+        expect(propertyCardSource).toContain('editUrl');
+        expect(propertyCardSource).toContain('mi-cuenta/propiedades/');
+        expect(propertyCardSource).toContain('/editar');
+    });
+
+    it('should render an "Editar" action button', () => {
+        // The edit button text should appear in the template actions section
+        expect(propertyCardSource).toContain('host.properties.card.actions.edit');
     });
 
     it('should still contain the publish link for DRAFT properties', () => {
-        // Publish action routes to admin for the publish flow (SPEC-205 P1)
         expect(propertyCardSource).toContain('publishUrl');
         expect(propertyCardSource).toContain('host.properties.card.actions.publish');
     });
@@ -40,12 +47,5 @@ describe('PropertyCard.astro — SPEC-205 Phase 4 funnel polish', () => {
     it('should still contain the unpublish link for ACTIVE properties', () => {
         expect(propertyCardSource).toContain('unpublishUrl');
         expect(propertyCardSource).toContain('host.properties.card.actions.unpublish');
-    });
-
-    it('should reference the admin panel only for publish, not for edit', () => {
-        // Only publishUrl should reference adminBase — edit was removed
-        // adminBase appears in: the comment, the const declaration, and publishUrl
-        // But NOT in an editUrl
-        expect(propertyCardSource).not.toContain('editUrl =');
     });
 });
