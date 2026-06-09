@@ -144,6 +144,7 @@ const safeErrorMessage = (code: string): string => {
         CEILING_HIT: 'AI cost ceiling reached. Try again later.',
         ENGINE_EXHAUSTED: 'All AI providers are temporarily unavailable.',
         NO_ENABLED_PROVIDER: 'No AI provider is currently enabled.',
+        PROVIDER_UNCONFIGURED: 'AI service is temporarily unavailable.',
         INTERNAL_ERROR: 'An unexpected error occurred.'
     };
     return messages[code] ?? 'An unexpected error occurred.';

@@ -422,6 +422,18 @@ API_RATE_LIMIT_MAX_REQUESTS=100
 
 Always use `HOSPEDA_*` names for all environment variables.
 
+### AI moderation fail-loud (SPEC-198)
+
+`HOSPEDA_AI_MODERATION_REQUIRED` (boolean, default `false`) gates a startup
+healthcheck: when `true`, the API refuses to start (`process.exit(1)`) if no
+resolvable OpenAI credential exists in the AI vault. It requires both
+`HOSPEDA_AI_VAULT_MASTER_KEY` and a stored OpenAI credential (admin credentials
+API). At runtime, a missing moderation credential now fails CLOSED (the request
+is blocked via `AiProviderUnconfiguredError` → HTTP 503 `PROVIDER_UNCONFIGURED`)
+while transient provider failures (timeout/rate-limit/5xx) still fail OPEN. Set
+`HOSPEDA_AI_MODERATION_REQUIRED=true` in production once the vault credential is
+provisioned.
+
 ## Testing
 
 ```ts

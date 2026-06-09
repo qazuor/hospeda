@@ -8,8 +8,9 @@
  * 2. `buildGetProvider` returns `OpenAiAdapter` when a key is present for 'openai'.
  * 3. `buildGetProvider` returns `AnthropicAdapter` when a key is present for 'anthropic'.
  * 4. `buildGetProvider` returns `StubProvider` for 'stub' regardless of keyMap.
- * 5. `buildGetProvider` throws for a provider with no key in the map.
- * 6. `buildGetProvider` throws for an unknown provider ID.
+ * 5. `buildGetProvider` throws `AiProviderUnconfiguredError` for a provider with
+ *    no key in the map (SPEC-198 — moderation fail-CLOSED).
+ * 6. `buildGetProvider` throws `AiProviderUnconfiguredError` for an unknown provider ID.
  * 7. The `checkCeiling` passed to `createAiService` composes `checkCostCeiling`
  *    with the alert hook (calling it invokes `checkCostCeiling` with `onThresholdAlert` set).
  * 8. `getNow` returns a `Date` instance.
@@ -49,6 +50,7 @@ const {
     mockOpenAiAdapterConstructor,
     mockAnthropicAdapterConstructor,
     mockStubProviderConstructor,
+    MockAiProviderUnconfiguredError,
     mockApiLogger,
     capturedCreateAiServiceInput
 } = vi.hoisted(() => {
@@ -90,6 +92,22 @@ const {
         Object.assign(this, { _type: 'StubProvider' });
     });
 
+    // SPEC-198: a real error class so the factory's `throw new
+    // AiProviderUnconfiguredError(...)` works through the mocked @repo/ai-core
+    // and `instanceof` assertions hold. Mirrors the production class shape
+    // (engineCode + providerId + PROVIDER_UNCONFIGURED message).
+    class MockAiProviderUnconfiguredError extends Error {
+        readonly engineCode = 'PROVIDER_UNCONFIGURED';
+        readonly providerId: string;
+        constructor(input: { providerId: string }) {
+            super(
+                `AI provider '${input.providerId}' is not configured (no resolvable credential). Store a key via the admin credentials API.`
+            );
+            this.name = 'AiProviderUnconfiguredError';
+            this.providerId = input.providerId;
+        }
+    }
+
     const mockApiLogger = {
         debug: vi.fn(),
         info: vi.fn(),
@@ -105,6 +123,7 @@ const {
         mockOpenAiAdapterConstructor,
         mockAnthropicAdapterConstructor,
         mockStubProviderConstructor,
+        MockAiProviderUnconfiguredError,
         mockApiLogger,
         capturedCreateAiServiceInput
     };
@@ -119,7 +138,8 @@ vi.mock('@repo/ai-core', () => ({
     checkCostCeiling: mockCheckCostCeiling,
     OpenAiAdapter: mockOpenAiAdapterConstructor,
     AnthropicAdapter: mockAnthropicAdapterConstructor,
-    StubProvider: mockStubProviderConstructor
+    StubProvider: mockStubProviderConstructor,
+    AiProviderUnconfiguredError: MockAiProviderUnconfiguredError
 }));
 
 vi.mock('../../src/services/ai-credential-vault.service', () => ({
@@ -331,23 +351,27 @@ describe('buildGetProvider', () => {
         expect(provider).toBeInstanceOf(mockStubProviderConstructor);
     });
 
-    it('should throw a descriptive error for a real provider with no key in the map', () => {
+    it('should throw AiProviderUnconfiguredError for a real provider with no key in the map', () => {
         // Arrange — empty map.
         const keyMap = new Map<'openai' | 'anthropic', string>();
 
-        // Act + Assert
+        // Act + Assert — SPEC-198: typed error so the moderation pass can fail-CLOSED.
+        expect(() => buildGetProvider(keyMap)('openai')).toThrow(MockAiProviderUnconfiguredError);
         expect(() => buildGetProvider(keyMap)('openai')).toThrow(
-            "No AI credential configured for provider 'openai'"
+            "AI provider 'openai' is not configured"
         );
     });
 
-    it('should throw for a provider with no key in the map', () => {
+    it('should throw AiProviderUnconfiguredError for an unknown provider with no key', () => {
         // Arrange — empty map.
         const keyMap = new Map<'openai' | 'anthropic', string>();
 
-        // Act + Assert — custom provider with no key throws descriptive error
+        // Act + Assert — custom provider with no key throws the typed error too.
         expect(() => buildGetProvider(keyMap)('unknown' as unknown as 'openai')).toThrow(
-            "No AI credential configured for provider 'unknown'"
+            MockAiProviderUnconfiguredError
+        );
+        expect(() => buildGetProvider(keyMap)('unknown' as unknown as 'openai')).toThrow(
+            "AI provider 'unknown' is not configured"
         );
     });
 

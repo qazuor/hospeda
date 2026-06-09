@@ -35,6 +35,7 @@
  */
 
 import {
+    AiProviderUnconfiguredError,
     AnthropicAdapter,
     OpenAiAdapter,
     StubProvider,
@@ -90,9 +91,7 @@ export function buildGetProvider(
         if (id === 'openai') {
             const key = keyMap.get(id);
             if (key === undefined) {
-                throw new Error(
-                    `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
-                );
+                throw new AiProviderUnconfiguredError({ providerId: id });
             }
             return new OpenAiAdapter({ apiKey: key });
         }
@@ -100,9 +99,7 @@ export function buildGetProvider(
         if (id === 'anthropic') {
             const key = keyMap.get(id);
             if (key === undefined) {
-                throw new Error(
-                    `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
-                );
+                throw new AiProviderUnconfiguredError({ providerId: id });
             }
             return new AnthropicAdapter({ apiKey: key });
         }
@@ -110,9 +107,7 @@ export function buildGetProvider(
         // Custom provider: use OpenAI-compatible adapter with baseURL from metadata.
         const key = keyMap.get(id);
         if (key === undefined) {
-            throw new Error(
-                `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
-            );
+            throw new AiProviderUnconfiguredError({ providerId: id });
         }
 
         const metadata = metadataMap?.get(id);

@@ -41,11 +41,18 @@ export class ProviderRateLimitedError extends ProviderError {
     }
 }
 
+/**
+ * Returns true only for transient provider failures that warrant a fallback.
+ *
+ * Only {@link ProviderError} and its subclasses ({@link ProviderTimeoutError},
+ * {@link ProviderRateLimitedError}) qualify. Programming bugs such as
+ * `TypeError` or JSON parse errors are intentionally excluded so they
+ * propagate to the caller rather than being silently swallowed as degraded
+ * results.
+ *
+ * `EngineConfigError` intentionally does NOT extend `ProviderError`, so a
+ * misconfiguration will also propagate correctly.
+ */
 export function isFallbackEligibleError(error: unknown): boolean {
-    return (
-        error instanceof ProviderError ||
-        error instanceof ProviderTimeoutError ||
-        error instanceof ProviderRateLimitedError ||
-        error instanceof Error
-    );
+    return error instanceof ProviderError;
 }

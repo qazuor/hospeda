@@ -13,6 +13,7 @@ import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
+import { getThresholdForContext } from '../contentModeration/get-threshold-for-context.js';
 import { NotificationScheduleService } from './notification-schedule.service.js';
 
 // ---------------------------------------------------------------------------
@@ -217,18 +218,29 @@ export class MessageService extends BaseService {
     // -------------------------------------------------------------------------
 
     /**
-     * Validates message body against length and configurable blocklist rules.
+     * Validates message body against length and configurable blocklist/score rules.
      *
      * The length check is performed inline (not delegated to
      * `@repo/content-moderation`) because it is a structural DB constraint,
-     * not a content-moderation concern. The word/domain scan is delegated to
-     * `moderateText` from `@repo/content-moderation`, which reads blocklists
-     * from `HOSPEDA_MESSAGING_BLOCKED_WORDS` and `HOSPEDA_MESSAGING_BLOCKED_DOMAINS`.
+     * not a content-moderation concern. The word/domain scan and graded score
+     * evaluation are delegated to `moderateText` from `@repo/content-moderation`.
+     *
+     * Blocking criteria (either condition triggers rejection):
+     * - `moderationResult.matchedTerms.length > 0` — local/stub provider detected a
+     *   blocked word or domain (blocklist from `HOSPEDA_MESSAGING_BLOCKED_WORDS` /
+     *   `HOSPEDA_MESSAGING_BLOCKED_DOMAINS`).
+     * - `moderationResult.score >= thresholds.reject` — graded provider (e.g. OpenAI)
+     *   returned a score at or above the DB-backed reject threshold for the `message`
+     *   context. This path is necessary because OpenAI returns a graded `score` but
+     *   an empty `matchedTerms` array.
+     *
+     * The reject threshold is fetched from `getThresholdForContext({ context: 'message' })`
+     * and is backed by the admin-editable `content_moderation_thresholds` table (60 s cache).
      *
      * @param body - Message body to validate.
      * @throws {ServiceError} VALIDATION_ERROR with reason `MESSAGE_TOO_LONG` if body exceeds 5000 chars.
      * @throws {ServiceError} VALIDATION_ERROR with reason `MESSAGE_CONTENT_BLOCKED` if body contains
-     *   a blocked word or domain.
+     *   a blocked term or its score exceeds the reject threshold.
      */
     private async _validateMessageContent(body: string): Promise<void> {
         if (body.length > MAX_BODY_LENGTH) {
@@ -240,8 +252,14 @@ export class MessageService extends BaseService {
             );
         }
 
-        const moderationResult = await moderateText({ text: body, context: 'message' });
-        if (moderationResult.matchedTerms.length > 0) {
+        const [moderationResult, thresholds] = await Promise.all([
+            moderateText({ text: body, context: 'message' }),
+            getThresholdForContext({ context: 'message' })
+        ]);
+        if (
+            moderationResult.score >= thresholds.reject ||
+            moderationResult.matchedTerms.length > 0
+        ) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
                 'Message body contains content that is not allowed',

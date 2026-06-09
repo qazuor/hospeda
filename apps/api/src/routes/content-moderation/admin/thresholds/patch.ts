@@ -2,6 +2,7 @@
  * Admin patch moderation threshold endpoint
  */
 import {
+    PermissionEnum,
     contentModerationThresholdSchema,
     updateContentModerationThresholdSchema
 } from '@repo/schemas';
@@ -22,6 +23,7 @@ export const adminPatchThresholdRoute = createAdminRoute({
     summary: 'Patch moderation threshold (admin)',
     description: 'Partially updates a content moderation threshold. pending must be < reject.',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_THRESHOLD_UPDATE],
     requestParams: { id: contentModerationThresholdSchema.shape.id },
     requestBody: updateContentModerationThresholdSchema,
     responseSchema: contentModerationThresholdSchema,

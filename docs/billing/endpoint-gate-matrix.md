@@ -79,6 +79,7 @@
 | `DELETE /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/softDelete.ts` | none | - | n/a | Deletion ungated; removing own promotion always allowed |
 | **MEDIA — PROTECTED** | | | | | |
 | `POST /api/v1/protected/media/upload` | `media/protected/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check already in handler (SPEC-143 Finding #15) |
+| `POST /api/v1/protected/media/upload-entity` | `media/protected/upload-entity.ts` | limit | `max_photos_per_accommodation` | wired | Ownership-checked entity image upload; same limit as avatar upload (SPEC-208 Phase B) |
 | **CONVERSATIONS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/conversations/initiate` | `conversations/protected/initiate.ts` | none | - | n/a | Core messaging feature; no plan restriction on sending a message |
 | `GET /api/v1/protected/conversations` | `conversations/protected/list.ts` | none | - | n/a | Read own inbox; auth-only sufficient |

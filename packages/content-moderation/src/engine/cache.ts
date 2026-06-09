@@ -22,8 +22,8 @@ class ModerationCache {
         private readonly capacity = DEFAULT_CACHE_CAPACITY
     ) {}
 
-    get(text: string): InternalModerationResult | null {
-        const key = createModerationCacheKey(text);
+    get(text: string, context?: string): InternalModerationResult | null {
+        const key = createModerationCacheKey(text, context);
         const now = Date.now();
         const entry = this.entries.get(key);
 
@@ -44,8 +44,8 @@ class ModerationCache {
         return entry.value;
     }
 
-    set(text: string, result: InternalModerationResult): void {
-        const key = createModerationCacheKey(text);
+    set(text: string, result: InternalModerationResult, context?: string): void {
+        const key = createModerationCacheKey(text, context);
         const entry: CacheEntry = {
             value: result,
             expiresAt: Date.now() + this.ttlMs,
@@ -122,8 +122,15 @@ class ModerationCache {
     }
 }
 
-export function createModerationCacheKey(text: string): string {
-    return createHash('sha256').update(text).digest('hex').slice(0, 16);
+/**
+ * Derives a cache key from `text` and an optional `context`.
+ *
+ * A null-byte (`\0`) is used as separator so that context-scoped term lists
+ * produce distinct keys and prevent cross-context cache poisoning.
+ */
+export function createModerationCacheKey(text: string, context?: string): string {
+    const raw = context !== undefined ? `${text}\0${context}` : text;
+    return createHash('sha256').update(raw).digest('hex').slice(0, 16);
 }
 
 let moderationCache: ModerationCache | null = null;
@@ -132,12 +139,19 @@ export function initializeModerationCache(ttlSeconds: number): void {
     moderationCache = new ModerationCache(ttlSeconds * 1000);
 }
 
-export function getCachedModerationResult(text: string): InternalModerationResult | null {
-    return moderationCache?.get(text) ?? null;
+export function getCachedModerationResult(
+    text: string,
+    context?: string
+): InternalModerationResult | null {
+    return moderationCache?.get(text, context) ?? null;
 }
 
-export function setCachedModerationResult(text: string, result: InternalModerationResult): void {
-    moderationCache?.set(text, result);
+export function setCachedModerationResult(
+    text: string,
+    result: InternalModerationResult,
+    context?: string
+): void {
+    moderationCache?.set(text, result, context);
 }
 
 export function invalidateModerationCache(): void {

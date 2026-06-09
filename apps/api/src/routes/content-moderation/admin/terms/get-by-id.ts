@@ -1,7 +1,7 @@
 /**
  * Admin get moderation term by ID endpoint
  */
-import { contentModerationTermSchema } from '@repo/schemas';
+import { PermissionEnum, contentModerationTermSchema } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -18,6 +18,7 @@ export const adminGetTermByIdRoute = createAdminRoute({
     summary: 'Get moderation term by ID (admin)',
     description: 'Retrieves a content moderation term by its ID',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_VIEW],
     requestParams: { id: contentModerationTermSchema.shape.id },
     responseSchema: contentModerationTermSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {

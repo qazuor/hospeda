@@ -1,19 +1,7 @@
+import { MODERATION_PENDING_THRESHOLD } from '@repo/content-moderation';
 import { ModerationStatusEnum } from '@repo/schemas';
 
-/**
- * Content-moderation score at or above this threshold forces the review into
- * PENDING state regardless of the entity's per-type default.
- *
- * With the v1 stub engine a blocked-word/domain hit returns score = 1.0,
- * clean text returns 0.0. Any threshold in (0, 1] means a match → PENDING.
- * When the real graded engine lands (SPEC-195) the same threshold begins
- * producing proportional decisions with no code changes here.
- *
- * Set to 0.5 so that the stub binary result maps cleanly:
- *   - 0.0 (clean)  → below threshold → entity default applies
- *   - 1.0 (hit)    → at/above threshold → force PENDING
- */
-export const MODERATION_PENDING_THRESHOLD = 0.5;
+export { MODERATION_PENDING_THRESHOLD };
 
 /**
  * Entity-type discriminator used by {@link resolveInitialModerationState} to
@@ -58,21 +46,33 @@ export interface ResolveInitialModerationStateInput {
      * Range: 0..1. Values >= {@link MODERATION_PENDING_THRESHOLD} force PENDING.
      */
     readonly moderationScore: number;
+
+    /**
+     * DB-backed pending threshold for the current context.
+     * When provided, overrides the package-level {@link MODERATION_PENDING_THRESHOLD}
+     * constant so that admin-edited thresholds take effect immediately.
+     * Callers fetch this via `getThresholdForContext({ context })` and pass the
+     * resolved `.pending` value here. Falls back to `MODERATION_PENDING_THRESHOLD`
+     * when omitted (backwards-compatible).
+     */
+    readonly pendingThreshold?: number;
 }
 
 /**
  * Resolves the initial `moderationState` for a new review.
  *
  * Decision tree (applied in priority order):
- * 1. `moderationScore >= PENDING_THRESHOLD` → `PENDING`
+ * 1. `moderationScore >= pendingThreshold` → `PENDING`
  *    Content-moderation hit forces human review regardless of entity type.
+ *    The effective threshold is `input.pendingThreshold ?? MODERATION_PENDING_THRESHOLD`,
+ *    allowing callers to inject a DB-backed admin-editable value.
  * 2. `verificationLevel === 'verified'` → `APPROVED`
  *    Future reservation-verified reviews are pre-approved (Airbnb model).
  * 3. Entity-type default (spec §3.1):
  *    - `accommodation` → `APPROVED`  (semi-verified, publish immediately)
  *    - `destination`   → `PENDING`   (unverified, human gate required)
  *
- * @param input - Resolution inputs (entity type, verification level, score).
+ * @param input - Resolution inputs (entity type, verification level, score, optional DB threshold).
  * @returns The computed {@link ModerationStatusEnum} for the new review.
  *
  * @example
@@ -91,28 +91,23 @@ export interface ResolveInitialModerationStateInput {
  *   moderationScore: 1.0,
  * }); // ModerationStatusEnum.PENDING
  *
- * // Blocked-word accommodation review → PENDING (content-mod overrides default)
+ * // DB-backed threshold at 0.8 → score 0.6 does not trigger PENDING
  * resolveInitialModerationState({
  *   entityType: 'accommodation',
  *   verificationLevel: 'semi',
- *   moderationScore: 1.0,
- * }); // ModerationStatusEnum.PENDING
- *
- * // Verified-by-reservation review → APPROVED regardless of entity type
- * resolveInitialModerationState({
- *   entityType: 'destination',
- *   verificationLevel: 'verified',
- *   moderationScore: 0,
+ *   moderationScore: 0.6,
+ *   pendingThreshold: 0.8,
  * }); // ModerationStatusEnum.APPROVED
  * ```
  */
 export function resolveInitialModerationState(
     input: ResolveInitialModerationStateInput
 ): ModerationStatusEnum {
-    const { entityType, verificationLevel, moderationScore } = input;
+    const { entityType, verificationLevel, moderationScore, pendingThreshold } = input;
+    const effectiveThreshold = pendingThreshold ?? MODERATION_PENDING_THRESHOLD;
 
     // Priority 1: content-moderation hit → force PENDING
-    if (moderationScore >= MODERATION_PENDING_THRESHOLD) {
+    if (moderationScore >= effectiveThreshold) {
         return ModerationStatusEnum.PENDING;
     }
 

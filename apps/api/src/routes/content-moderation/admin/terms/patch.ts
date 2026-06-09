@@ -1,7 +1,11 @@
 /**
  * Admin patch moderation term endpoint (partial update)
  */
-import { contentModerationTermSchema, updateContentModerationTermSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    contentModerationTermSchema,
+    updateContentModerationTermSchema
+} from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -18,6 +22,7 @@ export const adminPatchTermRoute = createAdminRoute({
     summary: 'Patch moderation term (admin)',
     description: 'Partially updates a content moderation term',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_UPDATE],
     requestParams: { id: contentModerationTermSchema.shape.id },
     requestBody: updateContentModerationTermSchema,
     responseSchema: contentModerationTermSchema,

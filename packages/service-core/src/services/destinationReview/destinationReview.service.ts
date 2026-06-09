@@ -45,6 +45,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
 import { DestinationService } from '../destination/destination.service';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import { computeReviewAverageRating } from './destinationReview.helpers';
@@ -173,14 +174,18 @@ export class DestinationReviewService extends BaseCrudService<
 
         // Content-moderation check — use combined text if available.
         const reviewText = [data.title, data.content].filter(Boolean).join(' ') || '';
-        const moderationResult = reviewText
-            ? await moderateText({ text: reviewText, context: 'review' })
-            : { score: 0 };
+        const [moderationResult, thresholds] = await Promise.all([
+            reviewText
+                ? moderateText({ text: reviewText, context: 'review' })
+                : Promise.resolve({ score: 0 }),
+            getThresholdForContext({ context: 'review' })
+        ]);
 
         const moderationState = resolveInitialModerationState({
             entityType: 'destination',
             verificationLevel: 'none',
-            moderationScore: moderationResult.score
+            moderationScore: moderationResult.score,
+            pendingThreshold: thresholds.pending
         });
 
         return { ...data, moderationState };

@@ -132,3 +132,58 @@ describe('AccommodationAdminSchema — archivedGallery preserved (SPEC-167)', ()
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// socialNetworks inclusion in access schemas
+// ---------------------------------------------------------------------------
+
+const entityWithSocialNetworks = {
+    ...entityPayload,
+    socialNetworks: {
+        facebook: 'https://facebook.com/test',
+        instagram: 'https://instagram.com/test'
+    }
+};
+
+describe('socialNetworks in access schemas', () => {
+    it('includes socialNetworks in AccommodationPublicSchema', () => {
+        const result = AccommodationPublicSchema.safeParse(entityWithSocialNetworks);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks).toEqual({
+                facebook: 'https://facebook.com/test',
+                instagram: 'https://instagram.com/test'
+            });
+        }
+    });
+
+    it('includes socialNetworks in AccommodationProtectedSchema', () => {
+        const result = AccommodationProtectedSchema.safeParse(entityWithSocialNetworks);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks).toEqual({
+                facebook: 'https://facebook.com/test',
+                instagram: 'https://instagram.com/test'
+            });
+        }
+    });
+
+    it('includes socialNetworks in AccommodationAdminSchema', () => {
+        const result = AccommodationAdminSchema.safeParse(entityWithSocialNetworks);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks).toEqual({
+                facebook: 'https://facebook.com/test',
+                instagram: 'https://instagram.com/test'
+            });
+        }
+    });
+
+    it('handles undefined socialNetworks gracefully in public schema', () => {
+        const result = AccommodationPublicSchema.safeParse(entityPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.socialNetworks).toBeUndefined();
+        }
+    });
+});

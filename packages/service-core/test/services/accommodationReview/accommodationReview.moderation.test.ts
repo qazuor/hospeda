@@ -20,6 +20,15 @@ vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn()
 }));
 
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn().mockResolvedValue({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    })
+}));
+
 // Intercept the AccommodationReviewModel constructor so the service uses
 // our mock instead of the real model.
 const mockModel = {
@@ -78,6 +87,7 @@ import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from
 import type { AccommodationReview } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
+import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import type { ServiceConfig } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -242,6 +252,50 @@ describe('AccommodationReviewService — _beforeCreate content-moderation wiring
         );
 
         expect(result.moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    it('uses DB-backed threshold: score 0.6 with threshold 0.8 → APPROVED (not PENDING)', async () => {
+        // score 0.6 would be PENDING with the default threshold (0.5),
+        // but APPROVED when the DB threshold is elevated to 0.8.
+        const gradedResult: contentModeration.ModerationResult = {
+            score: 0.6,
+            categories: Object.freeze({
+                spam: 0,
+                sexual: 0,
+                violence: 0,
+                hate: 0,
+                harassment: 0,
+                other: 0.6
+            }),
+            matchedTerms: Object.freeze([])
+        };
+        asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
+        asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({
+            context: 'review',
+            pending: 0.8,
+            reject: 0.95,
+            source: 'row' as const
+        });
+
+        const result = await (
+            service as unknown as {
+                _beforeCreate: (
+                    data: AccommodationReview,
+                    actor: unknown,
+                    ctx: unknown
+                ) => Promise<Partial<AccommodationReview>>;
+            }
+        )._beforeCreate(
+            {
+                ...baseCreateInput,
+                title: 'Borderline review',
+                content: 'Some moderate content.'
+            } as unknown as AccommodationReview,
+            createActor({ permissions: [PermissionEnum.ACCOMMODATION_REVIEW_CREATE] }),
+            {}
+        );
+
+        expect(result.moderationState).toBe(ModerationStatusEnum.APPROVED);
     });
 });
 

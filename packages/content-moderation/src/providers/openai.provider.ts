@@ -7,6 +7,17 @@ import {
 } from '../engine/provider.js';
 import { createModerationResult, createZeroCategories } from '../engine/shared.js';
 
+/**
+ * Maximum number of UTF-16 code units sent to the OpenAI Moderations API.
+ *
+ * Requests above this limit trigger a 400 error which is treated as a
+ * `ProviderError` and causes an unwanted fallback to local moderation —
+ * a quality downgrade that could be forced by an attacker sending oversized
+ * payloads. Truncating (rather than throwing) ensures moderation still runs
+ * on the leading content.
+ */
+const MAX_OPENAI_INPUT_CHARS = 20_000;
+
 type OpenAIProviderOptions = {
     apiKey: string;
     timeoutMs: number;
@@ -31,6 +42,7 @@ export class OpenAIProvider implements ModerationProvider {
     }
 
     async classify(input: { text: string }): Promise<InternalModerationResult> {
+        const safeText = input.text.slice(0, MAX_OPENAI_INPUT_CHARS);
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), this.options.timeoutMs);
 
@@ -41,7 +53,7 @@ export class OpenAIProvider implements ModerationProvider {
                     Authorization: `Bearer ${this.options.apiKey}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ input: input.text }),
+                body: JSON.stringify({ input: safeText }),
                 signal: controller.signal
             });
 

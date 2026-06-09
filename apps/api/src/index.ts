@@ -26,6 +26,7 @@ import { registerAppLogDbSink } from './lib/app-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
+import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
@@ -144,6 +145,27 @@ const startServer = async (): Promise<void> => {
             process.exit(1);
         }
         apiLogger.info(`Startup healthcheck OK: role_permission has ${rolePermissionCount} rows`);
+
+        // SPEC-198: fail-loud moderation-credential healthcheck.
+        // When HOSPEDA_AI_MODERATION_REQUIRED=true, AI content moderation
+        // (text-improve / chat) is treated as mandatory, so a missing OpenAI
+        // vault credential is a hard misconfiguration — refuse to start rather
+        // than run silently-unmoderated. The credential lives in the DB vault,
+        // so this MUST run after initializeDatabase(). Transient/disabled cases
+        // are out of scope here; this only checks credential presence.
+        if (env.HOSPEDA_AI_MODERATION_REQUIRED) {
+            const cred = await getDecryptedAiProviderCredential({ providerId: 'openai' });
+            if (!cred.data) {
+                apiLogger.error(
+                    'STARTUP HEALTHCHECK FAILED: HOSPEDA_AI_MODERATION_REQUIRED=true but no ' +
+                        'resolvable OpenAI credential in the AI vault. AI moderation cannot run. ' +
+                        'Store a credential via the admin credentials API (and ensure ' +
+                        'HOSPEDA_AI_VAULT_MASTER_KEY is set). Refusing to start.'
+                );
+                process.exit(1);
+            }
+            apiLogger.info('Startup healthcheck OK: OpenAI moderation credential resolved');
+        }
 
         // Validate billing configuration
         validateBillingConfigOrThrow();

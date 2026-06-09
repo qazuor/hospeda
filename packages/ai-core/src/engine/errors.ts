@@ -13,7 +13,8 @@
  *         ├── AiEngineExhaustedError   (all providers failed, AC-2)
  *         ├── AiCeilingHitError        (cost ceiling breached, AC-8, T-017)
  *         ├── AiNoEnabledProviderError (all providers kill-switched off, T-017)
- *         └── AiModerationBlockedError (content moderation flag, T-020)
+ *         ├── AiModerationBlockedError (content moderation flag, T-020)
+ *         └── AiProviderUnconfiguredError (no resolvable credential, SPEC-198)
  * ```
  *
  * `AiFeatureNotConfiguredError` (from the config resolver) is NOT re-exported
@@ -335,5 +336,46 @@ export class AiModerationBlockedError extends AiEngineError {
         this.feature = input.feature;
         this.direction = input.direction;
         this.categories = input.categories;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Provider-unconfigured error (SPEC-198 — moderation fail-loud)
+// ---------------------------------------------------------------------------
+
+/**
+ * Thrown when a provider factory (`getProvider`) is asked for a provider that
+ * has NO resolvable credential configured (the credential is missing from the
+ * vault, not merely failing transiently).
+ *
+ * This is distinct from a transient provider failure (timeout, rate-limit, 5xx):
+ * those keep the existing fail-OPEN behaviour in the moderation pass, whereas a
+ * missing credential is a hard server-misconfiguration that MUST fail CLOSED —
+ * the moderation pass re-throws this error so the request is blocked rather than
+ * passing unmoderated (SPEC-198).
+ *
+ * @example
+ * ```ts
+ * try {
+ *   await engine.generateText({ feature: 'chat', ... });
+ * } catch (err) {
+ *   if (err instanceof AiProviderUnconfiguredError) {
+ *     // 503 — moderation cannot run because no credential is configured.
+ *     return { error: `AI provider '${err.providerId}' is not configured.` };
+ *   }
+ * }
+ * ```
+ */
+export class AiProviderUnconfiguredError extends AiEngineError {
+    /** The provider id that has no resolvable credential. */
+    readonly providerId: string;
+
+    constructor(input: { readonly providerId: string }) {
+        super(
+            `AI provider '${input.providerId}' is not configured (no resolvable credential). Store a key via the admin credentials API.`,
+            'PROVIDER_UNCONFIGURED'
+        );
+        this.name = 'AiProviderUnconfiguredError';
+        this.providerId = input.providerId;
     }
 }

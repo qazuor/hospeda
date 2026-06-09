@@ -3,16 +3,15 @@
  * @file PropertyCard.astro
  * @description Reusable card displaying a host's property with status badge and actions.
  * Shows thumbnail image, name, status badge (with color coding), location, price per night,
- * and contextual action links (view on site, publish, unpublish).
+ * and contextual action links (edit, view on site, publish, unpublish).
  *
  * Status badge mapping:
  * - DRAFT    → amber background  → i18n key `host.properties.card.status.DRAFT`
  * - ACTIVE   → green background  → i18n key `host.properties.card.status.PUBLISHED` (user-facing label)
  * - ARCHIVED → red background    → i18n key `host.properties.card.status.SUSPENDED`
  *
- * NOTE (SPEC-205): The admin-only "edit" link was removed — it sent hosts to
- * the admin panel for a non-existent web editor. The web editor will be added
- * in SPEC-208. For now the card is read-only with publish/unpublish actions.
+ * SPEC-208 PR2: Edit link added — routes to the web editor page at
+ * `/{locale}/mi-cuenta/propiedades/{id}/editar/` instead of the admin panel.
  */
 
 import { getAdminUrlOrThrow } from '@/lib/env';
@@ -91,11 +90,12 @@ const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
  *
  * The publish action still routes to the admin panel — the authoritative
  * publish flow (draft → active with trial logic) lives there (SPEC-205 P1).
- * The web editor is deferred to SPEC-208.
+ * The edit action routes to the web editor (SPEC-208 PR2).
  * View-on-site and unpublish are web-native actions.
  */
 const adminBase = getAdminUrlOrThrow().replace(/\/$/, '');
 const publishUrl = `${adminBase}/accommodations/${property.id}/edit?action=publish`;
+const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
 const unpublishUrl = buildUrl({
     locale,
@@ -148,6 +148,11 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
 
         <!-- ACTIONS -->
         <div class="prop-card__actions" role="group" aria-label={property.name}>
+            <!-- Edit: always available (routes to web editor) -->
+            <a href={editUrl} class="prop-card__action prop-card__action--secondary">
+                {t('host.properties.card.actions.edit', 'Editar')}
+            </a>
+
             <!-- View on site: only when ACTIVE -->
             {isActive && (
                 <a
