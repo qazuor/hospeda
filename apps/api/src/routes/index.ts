@@ -80,7 +80,7 @@ import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { publicFeedbackRoutes } from './feedback';
-import { adminGeocodingRoutes } from './geocoding';
+import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
@@ -281,6 +281,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Protected: host accommodation stats + editor post/event stats.
         // Public capture (T-008) lives under /api/v1/public above.
         app.route('/api/v1/protected/views', protectedViewsRoutes);
+
+        // SPEC-208 — Protected geocoding proxy for the web accommodation editor
+        app.route('/api/v1/protected/geocoding', protectedGeocodingRoutes);
 
         // AI protected (SPEC-198 T-004 — text-improve stream;
         // SPEC-199 search-intent and SPEC-200 chat will be added as

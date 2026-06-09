@@ -1537,6 +1537,88 @@ export const protectedAccommodationsApi = {
 // --- Accommodation Editor (SPEC-208) ---
 
 /**
+ * Protected geocoding API endpoints (SPEC-208, Phase C PR2).
+ * Wraps the protected geocoding proxy for the web accommodation editor.
+ */
+export const geocodingApi = {
+    /**
+     * Search for address suggestions via the geocoding proxy.
+     *
+     * @param params - Query string and optional locale
+     * @returns Array of geocoding suggestions with label, lat, lng, and structured fields
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.search({ q: 'Belgrano 123' });
+     * if (result.ok) console.log(result.data.suggestions);
+     * ```
+     */
+    search({
+        q,
+        locale = 'es'
+    }: {
+        readonly q: string;
+        readonly locale?: 'es' | 'en' | 'pt';
+    }): Promise<
+        ApiResult<{
+            readonly suggestions: ReadonlyArray<{
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            }>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/autocomplete`,
+            params: { q, locale }
+        });
+    },
+
+    /**
+     * Reverse geocode coordinates to a structured address.
+     *
+     * @param params - Latitude and longitude
+     * @returns A single geocoding suggestion or null
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.reverse({ lat: -32.4825, lng: -58.2372 });
+     * if (result.ok && result.data.suggestion) console.log(result.data.suggestion.label);
+     * ```
+     */
+    reverse({
+        lat,
+        lng
+    }: {
+        readonly lat: number;
+        readonly lng: number;
+    }): Promise<
+        ApiResult<{
+            readonly suggestion: {
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            } | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/reverse`,
+            params: { lat, lng }
+        });
+    }
+};
+
+/**
  * Protected accommodation edit API endpoints.
  * Wraps the protected accommodation GET/PATCH and public amenities/destinations
  * endpoints used by the web editor form.
