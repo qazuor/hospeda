@@ -40,6 +40,16 @@ describe('stripMarkdown', () => {
             expect(stripMarkdown('**foo**')).toBe('foo');
         });
 
+        it('strips __bold__ underscore emphasis (SPEC-187 follow-up fix a)', () => {
+            expect(stripMarkdown('__bold__')).toBe('bold');
+        });
+
+        it('strips _italic_ underscore emphasis (SPEC-187 follow-up fix a)', () => {
+            expect(stripMarkdown('_italic_')).toBe('italic');
+            // __foo__ must yield `foo`, not `_foo_` (bold-underscore before italic).
+            expect(stripMarkdown('__foo__')).toBe('foo');
+        });
+
         it('strips ~~strikethrough~~ markers', () => {
             expect(stripMarkdown('~~struck~~')).toBe('struck');
         });
@@ -52,17 +62,14 @@ describe('stripMarkdown', () => {
             expect(stripMarkdown('[click](https://example.com)')).toBe('click');
         });
 
-        it('strips the [alt](url) half of an image marker (link regex runs first)', () => {
-            // The link regex `\[(.+?)\]\(.+?\)` runs BEFORE the image regex
-            // `!\[(.+?)\]\(.+?\)` in both the JS function and the SQL
-            // function. On input `![alt](url)` the link regex strips the
-            // `[alt](url)` part, leaving `!alt` — and the image regex then
-            // has no `[` to match. This is a SHARED behavior between JS and
-            // SQL (the two implementations are in lockstep), and changing it
-            // would require reordering both. The P0 acceptance test (in
-            // packages/db/test/integration/) does not include images in its
-            // canonical fixture for exactly this reason.
-            expect(stripMarkdown('![alt text](https://example.com/img.png)')).toBe('!alt text');
+        it('strips an image marker to its alt text (image regex runs BEFORE links)', () => {
+            // SPEC-187 follow-up fix (b): the image regex `!\[(.+?)\]\(.+?\)`
+            // now runs BEFORE the link regex `\[(.+?)\]\(.+?\)` in both the JS
+            // function and the SQL function. On input `![alt](url)` the image
+            // regex consumes the whole marker and yields `alt` — no orphan `!`.
+            // (The old order ran links first, leaving `!alt`.) This ordering is
+            // SHARED between JS and SQL (PD-1 lockstep).
+            expect(stripMarkdown('![alt text](https://example.com/img.png)')).toBe('alt text');
         });
 
         it('strips ^#+ heading prefixes (anchored, multiline)', () => {
@@ -75,6 +82,12 @@ describe('stripMarkdown', () => {
 
         it('strips ^> blockquote markers (anchored, multiline)', () => {
             expect(stripMarkdown('> quoted\n> still quoted')).toBe('quoted\nstill quoted');
+        });
+
+        it('collapses 3+ consecutive newlines to a double newline (SPEC-187 follow-up fix c)', () => {
+            // The SQL function collapses `\n{3,}` -> `\n\n`; the JS function now
+            // mirrors it so both implementations produce identical output.
+            expect(stripMarkdown('a\n\n\n\nb')).toBe('a\n\nb');
         });
     });
 
