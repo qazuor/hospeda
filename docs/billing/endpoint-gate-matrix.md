@@ -178,6 +178,7 @@
 | `GET /api/v1/protected/billing/addons/my` | `billing/addons.ts` | none | - | n/a | Own addon list; auth-only sufficient |
 | `POST /api/v1/protected/billing/addons/{id}/cancel` | `billing/addons.ts` | none | - | n/a | Cancel own addon; always allowed |
 | `POST /api/v1/protected/billing/subscriptions/change-plan` | `billing/plan-change.ts` | none | - | n/a | Plan change initiation; no entitlement gate |
+| `POST /api/v1/protected/billing/subscriptions/{id}/cancel` | `billing/subscription-cancel.ts` | none | - | n/a | User self-service soft-cancel (SPEC-147); behind `HOSPEDA_USER_CANCEL_ENABLED` flag, ownership enforced server-side; no entitlement gate |
 | `GET /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `POST /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `GET /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
