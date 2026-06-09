@@ -206,7 +206,7 @@
             "id": "T-010",
             "title": "D3 access-ending reminder notification + scheduling",
             "description": "Q5 (owner): new NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON (TRANSACTIONAL) + template. Schedule it ~3 days before current_period_end for soft-cancelled subs. Mirror the TRIAL_PRE_END_NOTIF_D3 pattern (find how trial-expiry schedules/dedups D3). Decide home: a scan in the finalize cron (window query period_end in [now+3d, now+3d+1tick]) with per-sub dedup, OR extend an existing daily notification scan. Fire-and-forget soft send. Tests: D3 sent once per sub in window, dedup on re-run, NOT sent for non-cancelled subs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-013"],
@@ -214,14 +214,14 @@
             "tags": ["notifications", "cron"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T05:00:00.000Z",
+                "completed": "2026-06-09T05:15:00.000Z"
             }
         },
         {
