@@ -870,6 +870,60 @@ const plataformaSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-ai' },
+        // ── Inteligencia Artificial ────────────────────────────────────────
+        {
+            type: 'link',
+            id: 'ai-settings',
+            label: {
+                es: 'Configuración IA',
+                en: 'AI Settings',
+                pt: 'Configuração IA'
+            },
+            icon: 'MetricsIcon',
+            route: '/ai/settings',
+            permissions: ['AI_SETTINGS_MANAGE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'ai-credentials',
+            label: {
+                es: 'Credenciales IA',
+                en: 'AI Credentials',
+                pt: 'Credenciais IA'
+            },
+            icon: 'ShieldIcon',
+            route: '/ai/credentials',
+            permissions: ['AI_SETTINGS_MANAGE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'ai-prompts',
+            label: {
+                es: 'Prompts IA',
+                en: 'AI Prompts',
+                pt: 'Prompts IA'
+            },
+            icon: 'FileTextIcon',
+            route: '/ai/prompts',
+            permissions: ['AI_SETTINGS_MANAGE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'ai-playground',
+            label: {
+                es: 'Playground IA',
+                en: 'AI Playground',
+                pt: 'Playground IA'
+            },
+            icon: 'PlayIcon',
+            route: '/ai/playground',
+            permissions: ['AI_SETTINGS_MANAGE'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-audit' },
         // ── Auditoría — SUPER_ADMIN only (onMissing: 'hide') ─────────────
         {

@@ -112,24 +112,26 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('AC-5 — AiProviderIdSchema values match adapter/stub registry', () => {
-    it('should contain exactly the 3 V1 provider identifiers', () => {
-        // Arrange + Act
-        const providers = AiProviderIdSchema.options;
-
-        // Assert — V1: openai, anthropic, stub
-        expect(providers).toContain('openai');
-        expect(providers).toContain('anthropic');
-        expect(providers).toContain('stub');
-        // No surprise additions
-        expect(providers).toHaveLength(3);
+    it('should accept the 3 built-in V1 provider identifiers', () => {
+        // Arrange + Act + Assert — V1: openai, anthropic, stub
+        expect(AiProviderIdSchema.safeParse('openai').success).toBe(true);
+        expect(AiProviderIdSchema.safeParse('anthropic').success).toBe(true);
+        expect(AiProviderIdSchema.safeParse('stub').success).toBe(true);
     });
 
-    it('should be possible to instantiate a provider for each schema value', () => {
-        // Arrange
-        const providers = AiProviderIdSchema.options;
+    it('should accept custom provider identifiers', () => {
+        // Custom providers are now supported via OpenAI-compatible baseURL
+        expect(AiProviderIdSchema.safeParse('ollama').success).toBe(true);
+        expect(AiProviderIdSchema.safeParse('groq').success).toBe(true);
+        expect(AiProviderIdSchema.safeParse('deepseek').success).toBe(true);
+    });
 
-        // Act + Assert — each enum value maps to a constructable adapter or stub
-        for (const providerId of providers) {
+    it('should be possible to instantiate a provider for each built-in schema value', () => {
+        // Arrange
+        const builtInProviders = ['openai', 'anthropic', 'stub'] as const;
+
+        // Act + Assert — each built-in value maps to a constructable adapter or stub
+        for (const providerId of builtInProviders) {
             let provider: AiProvider;
             switch (providerId) {
                 case 'openai':
@@ -141,12 +143,6 @@ describe('AC-5 — AiProviderIdSchema values match adapter/stub registry', () =>
                 case 'stub':
                     provider = new StubProvider();
                     break;
-                default: {
-                    // Exhaustiveness check — if a new enum member is added without a
-                    // corresponding adapter, this assertion will fail at test time.
-                    const _exhaustive: never = providerId;
-                    throw new Error(`No adapter registered for provider: ${String(_exhaustive)}`);
-                }
             }
             expect(provider.id).toBe(providerId);
         }

@@ -137,20 +137,20 @@ describe('AiFeatureConfigSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rejects an unknown provider in primaryProvider', () => {
+    it('accepts any non-empty string as provider ID', () => {
         const result = AiFeatureConfigSchema.safeParse({
             ...validFeatureConfig,
             primaryProvider: 'gemini'
         });
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
-    it('rejects an unknown provider inside fallbackChain', () => {
+    it('accepts custom providers in fallbackChain', () => {
         const result = AiFeatureConfigSchema.safeParse({
             ...validFeatureConfig,
             fallbackChain: ['openai', 'gemini']
         });
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
     it('rejects unknown keys (.strict enforcement)', () => {
@@ -406,7 +406,7 @@ describe('AiSettingsValueSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rejects an unknown provider key in a feature config', () => {
+    it('accepts custom provider IDs in feature config', () => {
         const result = AiSettingsValueSchema.safeParse({
             ...minimalSettingsValue,
             features: {
@@ -417,7 +417,7 @@ describe('AiSettingsValueSchema', () => {
                 }
             }
         });
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
     it('rejects negative cost ceiling inside the blob', () => {

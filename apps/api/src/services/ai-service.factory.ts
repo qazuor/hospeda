@@ -42,7 +42,9 @@ import {
     createAiService
 } from '@repo/ai-core';
 import type { AiService } from '@repo/ai-core';
+import { aiProviderCredentials, getDb } from '@repo/db';
 import type { AiProviderId } from '@repo/schemas';
+import { isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 import { createAiCostThresholdAlertHook } from './ai-cost-alert.service.js';
 import { getDecryptedAiProviderCredential } from './ai-credential-vault.service.js';
@@ -61,14 +63,20 @@ import { createAiObservabilityRecordEvent } from './ai-observability.service.js'
  * Decision (owner-approved 2026-06-05): `getProvider` is SYNC.  The factory
  * pre-decrypts all available keys into a `Map` during async construction; at
  * call time `getProvider` reads the map synchronously and instantiates the
- * appropriate adapter.  This matches the `CreateAiEngineInput.getProvider`
- * contract (sync factory).
+ * appropriate adapter.
+ *
+ * **Extensible provider support**: any provider ID NOT in `BUILTIN_PROVIDERS`
+ * is treated as an OpenAI-compatible endpoint. The credential's `metadata.baseURL`
+ * is forwarded to `createOpenAI({ baseURL })`. If a custom provider has no
+ * `baseURL` configured, a clear error is thrown.
  *
  * @param keyMap - Pre-populated map of provider IDs to plaintext API keys.
+ * @param metadataMap - Map of provider IDs to their metadata (containing optional `baseURL`).
  * @returns A sync provider factory matching `CreateAiEngineInput.getProvider`.
  */
 export function buildGetProvider(
-    keyMap: ReadonlyMap<AiProviderId, string>
+    keyMap: ReadonlyMap<AiProviderId, string>,
+    metadataMap?: ReadonlyMap<AiProviderId, Record<string, unknown>>
 ): (
     id: AiProviderId
 ) => InstanceType<typeof OpenAiAdapter | typeof AnthropicAdapter | typeof StubProvider> {
@@ -78,26 +86,47 @@ export function buildGetProvider(
             return new StubProvider();
         }
 
-        // Validate the provider ID before attempting a key lookup, so callers
-        // receive a clear error when an unsupported provider is requested.
-        if (id !== 'openai' && id !== 'anthropic') {
-            throw new Error(`Unknown AI provider '${id}'. Add support to buildGetProvider.`);
+        // Built-in providers: use their dedicated adapters.
+        if (id === 'openai') {
+            const key = keyMap.get(id);
+            if (key === undefined) {
+                throw new Error(
+                    `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
+                );
+            }
+            return new OpenAiAdapter({ apiKey: key });
         }
 
-        const key = keyMap.get(id);
+        if (id === 'anthropic') {
+            const key = keyMap.get(id);
+            if (key === undefined) {
+                throw new Error(
+                    `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
+                );
+            }
+            return new AnthropicAdapter({ apiKey: key });
+        }
 
+        // Custom provider: use OpenAI-compatible adapter with baseURL from metadata.
+        const key = keyMap.get(id);
         if (key === undefined) {
             throw new Error(
                 `No AI credential configured for provider '${id}'. Store a key via the admin credentials API first.`
             );
         }
 
-        if (id === 'openai') {
-            return new OpenAiAdapter({ apiKey: key });
+        const metadata = metadataMap?.get(id);
+        const baseURL = metadata?.baseURL;
+
+        if (typeof baseURL !== 'string' || baseURL.length === 0) {
+            throw new Error(
+                `Custom provider '${id}' has no baseURL configured. Set the baseURL in the credential metadata (e.g. "http://localhost:11434/v1" for Ollama).`
+            );
         }
 
-        // id === 'anthropic' — exhaustive after the check above.
-        return new AnthropicAdapter({ apiKey: key });
+        // createOpenAI from @ai-sdk/openai supports ANY OpenAI-compatible API
+        // via the baseURL option (Ollama, LM Studio, Together, Groq, DeepSeek, etc.).
+        return new OpenAiAdapter({ apiKey: key, baseURL });
     };
 }
 
@@ -135,12 +164,25 @@ export async function createConfiguredAiService(): Promise<AiService> {
     //    simply won't be available at call time.  NEVER log plaintext keys.
     // -----------------------------------------------------------------------
     const keyMap = new Map<AiProviderId, string>();
+    const metadataMap = new Map<AiProviderId, Record<string, unknown>>();
 
-    for (const providerId of ['openai', 'anthropic'] as const) {
+    // Load ALL active credentials (built-in + custom providers).
+    const db = getDb();
+    const allProviders = await db
+        .select({
+            providerId: aiProviderCredentials.providerId,
+            metadata: aiProviderCredentials.metadata
+        })
+        .from(aiProviderCredentials)
+        .where(isNull(aiProviderCredentials.deletedAt));
+
+    for (const { providerId, metadata } of allProviders) {
         const result = await getDecryptedAiProviderCredential({ providerId });
         if (result.data !== undefined) {
             keyMap.set(providerId, result.data.plaintextKey);
-            // Log only the providerId — NEVER the key value.
+            if (metadata && typeof metadata === 'object') {
+                metadataMap.set(providerId, metadata as Record<string, unknown>);
+            }
             apiLogger.debug({ providerId }, 'ai-service.factory: credential loaded for provider');
         } else {
             apiLogger.debug(
@@ -159,7 +201,7 @@ export async function createConfiguredAiService(): Promise<AiService> {
     // 3. Assemble and return the configured service.
     // -----------------------------------------------------------------------
     return createAiService({
-        getProvider: buildGetProvider(keyMap),
+        getProvider: buildGetProvider(keyMap, metadataMap),
 
         // T-035: fan-out to structured logging, Sentry breadcrumbs/captures,
         // and PostHog analytics events. The sink is fire-and-forget and never

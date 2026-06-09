@@ -8,6 +8,7 @@
  * - GET  /                      — paginated list of masked credentials
  * - POST /                      — create (encrypt + store) a new credential
  * - POST /{providerId}/rotate   — rotate an existing credential in-place
+ * - PATCH /{providerId}         — update label and metadata (no key change)
  * - DELETE /{providerId}        — soft-delete an existing credential
  *
  * SECURITY: plaintext keys, ciphertext, IV, and authTag NEVER appear in any
@@ -22,6 +23,7 @@ import {
     AiCredentialMaskedSchema,
     AiCredentialMutationResultSchema,
     AiCredentialRotateInputSchema,
+    AiCredentialUpdateInputSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -31,7 +33,8 @@ import {
     createAiProviderCredential,
     deleteAiProviderCredential,
     listAiProviderCredentials,
-    rotateAiProviderCredential
+    rotateAiProviderCredential,
+    updateCredentialMetadata
 } from '../../../services/ai-credential-vault.service.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { createRouter } from '../../../utils/create-app.js';
@@ -176,6 +179,45 @@ const rotateCredentialRoute = createAdminRoute({
 });
 
 /**
+ * PATCH /api/v1/admin/ai/credentials/{providerId}
+ * Updates non-sensitive metadata (label, models, baseURL) for an existing credential.
+ */
+const updateCredentialRoute = createAdminRoute({
+    method: 'patch',
+    path: '/{providerId}',
+    summary: 'Update AI credential metadata',
+    description:
+        'Updates label and metadata (baseURL, models) for an existing credential. ' +
+        'Does not touch the encrypted key material. ' +
+        'Requires AI_SETTINGS_MANAGE permission.',
+    tags: ['AI Credentials'],
+    requiredPermissions: [PermissionEnum.AI_SETTINGS_MANAGE],
+    requestParams: { providerId: z.string().min(1) },
+    requestBody: AiCredentialUpdateInputSchema,
+    responseSchema: AiCredentialMutationResultSchema,
+    handler: async (c, params, body) => {
+        const actor = getActorFromContext(c);
+        const ipAddress = getClientIp({ c }) ?? null;
+        const providerId = params.providerId as string;
+        const parsed = AiCredentialUpdateInputSchema.parse(body);
+
+        const result = await updateCredentialMetadata({
+            actor,
+            ipAddress,
+            providerId,
+            label: parsed.label,
+            metadata: parsed.metadata
+        });
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return { id: result.data.id, providerId: result.data.providerId };
+    }
+});
+
+/**
  * DELETE /api/v1/admin/ai/credentials/{providerId}
  * Soft-deletes the active credential for a provider.
  */
@@ -215,6 +257,7 @@ const app = createRouter();
 app.route('/', listCredentialsRoute);
 app.route('/', createCredentialRoute);
 app.route('/', rotateCredentialRoute);
+app.route('/', updateCredentialRoute);
 app.route('/', deleteCredentialRoute);
 
 export { app as adminAiCredentialsRoutes };

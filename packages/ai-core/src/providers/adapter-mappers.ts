@@ -95,15 +95,13 @@ export function resolveModel(requestModel: string | undefined, defaultModel: str
  * Returns the canonical `AiProviderId` for a given adapter.
  *
  * This function exists so the adapters can pass their `id` through without
- * directly asserting `'openai' as AiProviderId` (which would bypass the Zod
- * schema's runtime guarantees at call sites that validate the value).
+ * directly asserting the value as `AiProviderId` at call sites that validate
+ * the value. Since `AiProviderId` is now `string`, this is a pass-through
+ * kept for backwards compatibility and documentation clarity.
  *
  * @param id - The provider identifier string.
- * @returns The same value cast to `AiProviderId`.
+ * @returns The same value typed as `AiProviderId`.
  */
 export function asProviderId(id: string): AiProviderId {
-    // AiProviderId is z.enum(['openai', 'anthropic', 'stub']) — the adapters
-    // always pass a literal string that is one of those three values. This
-    // function avoids `as` casts spreading through adapter code.
-    return id as AiProviderId;
+    return id;
 }
