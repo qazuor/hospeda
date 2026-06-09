@@ -8,12 +8,13 @@
  * different user to avoid ID enumeration attacks.
  */
 
-import { AccommodationModel, UserModel } from '@repo/db';
+import { AccommodationModel, ConversationModel, UserModel } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 
 const accommodationModel = new AccommodationModel();
 const userModel = new UserModel();
+const conversationModel = new ConversationModel();
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -68,6 +69,28 @@ router.get('/:id', async (c) => {
 
         const query = parseResult.data;
         const actor = getActorFromContext(c);
+
+        // SECURITY (write-IDOR): validate ownership BEFORE getThread runs its
+        // read-receipt + notification-cancel side effects. Unlike the owner
+        // route, the guest route CANNOT pass the real actor to getThread,
+        // because the USER role does NOT hold CONVERSATION_VIEW_OWN (see
+        // rolePermissions.seed.ts) — checkCanViewConversation would reject the
+        // legitimate owner. So we gate explicitly on conversation.userId here
+        // and keep SYSTEM_ACTOR for the read. A foreign/non-existent
+        // conversationId collapses to 404 (anti-enumeration) with no side
+        // effect run.
+        const existing = await conversationModel.findById(conversationId);
+        if (!existing || existing.userId !== actor.id) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Conversation not found',
+                    reason: 'CONVERSATION_NOT_FOUND'
+                },
+                c,
+                404
+            );
+        }
 
         const conversationSvc = new ConversationService(
             { logger: apiLogger },

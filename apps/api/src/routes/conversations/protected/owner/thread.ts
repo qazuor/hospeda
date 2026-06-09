@@ -20,7 +20,6 @@ import {
     createResponse,
     handleRouteError
 } from '../../../../utils/response-helpers';
-import { SYSTEM_ACTOR } from './system-actor';
 
 const router = createRouter();
 
@@ -84,10 +83,18 @@ router.get('/:id', async (c) => {
             }
         );
 
-        // Fetch thread via service with OWNER side
+        // Fetch thread via service with OWNER side.
+        //
+        // The REAL actor is passed (not a system actor): getThread runs
+        // `checkCanViewConversation(actor, conversation, ownerAccommodationIds)`
+        // BEFORE its read-receipt + notification-cancel side effects. Passing a
+        // system actor with CONVERSATION_VIEW_ALL would bypass that check and let
+        // a foreign conversationId mutate state before the route's 404 — a
+        // write-IDOR. With the real actor, a non-owner is rejected up front and
+        // no side effect runs.
         const cursor = query.cursor ? new Date(query.cursor) : undefined;
         const result = await conversationSvc.getThread(
-            SYSTEM_ACTOR,
+            actor,
             {
                 conversationId,
                 actorSide: 'OWNER',
@@ -98,10 +105,17 @@ router.get('/:id', async (c) => {
         );
 
         if (result.error) {
-            if (result.error.code === ServiceErrorCode.NOT_FOUND) {
+            // Collapse both existence and ownership failures to 404
+            // (anti-enumeration). FORBIDDEN here can only come from
+            // checkCanViewConversation rejecting a non-owner participant — the
+            // route's permission gate already passed above.
+            if (
+                result.error.code === ServiceErrorCode.NOT_FOUND ||
+                result.error.code === ServiceErrorCode.FORBIDDEN
+            ) {
                 return createErrorResponse(
                     {
-                        code: result.error.code,
+                        code: ServiceErrorCode.NOT_FOUND,
                         message: 'Conversation not found',
                         reason: 'CONVERSATION_NOT_FOUND'
                     },

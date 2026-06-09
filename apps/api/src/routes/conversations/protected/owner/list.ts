@@ -7,7 +7,7 @@
  */
 
 import { accommodations, getDb } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ConversationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -53,6 +53,22 @@ router.get('/', async (c) => {
         );
         const status = url.searchParams.get('status') ?? undefined;
         const search = url.searchParams.get('search') ?? undefined;
+
+        // Validate the optional status filter against the enum so an unknown
+        // value fails loudly (400) instead of silently returning an empty list.
+        if (
+            status !== undefined &&
+            !(Object.values(ConversationStatusEnum) as string[]).includes(status)
+        ) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `Invalid status filter: ${status}`
+                },
+                c,
+                400
+            );
+        }
 
         // Resolve accommodation IDs for this owner (inline DB query)
         const db = getDb();
