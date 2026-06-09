@@ -13,6 +13,28 @@ import { createPublicRoute } from '../../../utils/route-factory';
 const destinationService = new DestinationService({ logger: apiLogger });
 
 /**
+ * Removes the premium `richDescription` field from an accommodation card.
+ *
+ * This is a public card listing that never renders rich text, so the
+ * premium-gated `richDescription` must not appear in the payload. Stripping it
+ * at the data level keeps the endpoint fail-closed regardless of the response
+ * schema (see SPEC-187 entitlement-by-omission).
+ *
+ * The list service returns `AccommodationListItem` whose static type does not
+ * declare `richDescription`, but the underlying `findAll` runs `SELECT *` so the
+ * column is present at runtime. The constraint is therefore `T extends object`
+ * (not `{ richDescription?: unknown }`) with an internal cast, so the strip
+ * works against the lying type while still removing the field at runtime.
+ *
+ * @param item - The accommodation object to sanitize.
+ * @returns The accommodation object with richDescription removed.
+ */
+function stripRichDescription<T extends object>(item: T): Omit<T, 'richDescription'> {
+    const { richDescription: _dropped, ...rest } = item as T & { richDescription?: unknown };
+    return rest as Omit<T, 'richDescription'>;
+}
+
+/**
  * GET /api/v1/public/destinations/:id/accommodations
  * Get destination accommodations - Public endpoint
  */
@@ -35,8 +57,9 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         // Service wraps the value as { accommodations: [...] }; the responseSchema
-        // is the bare array, so unwrap before returning.
-        return result.data?.accommodations ?? [];
+        // is the bare array, so unwrap before returning. Strip the premium
+        // richDescription field — this is a public card listing (SPEC-187).
+        return (result.data?.accommodations ?? []).map((a) => stripRichDescription(a));
     },
     options: {
         cacheTTL: 300,

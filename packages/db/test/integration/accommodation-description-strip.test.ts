@@ -40,6 +40,10 @@ const MIGRATION_RELATIVE_PATH =
     '../../src/migrations/0008_strip_accommodation_description_markdown.sql';
 const MIGRATION_PATH = join(__dirname, MIGRATION_RELATIVE_PATH);
 
+const RESTRIP_MIGRATION_RELATIVE_PATH =
+    '../../src/migrations/0011_restrip_accommodation_description_markdown.sql';
+const RESTRIP_MIGRATION_PATH = join(__dirname, RESTRIP_MIGRATION_RELATIVE_PATH);
+
 /**
  * `LIKE`-based predicate for "description contains at least one markdown
  * marker." Equivalent (for assertion purposes) to the migration's regex
@@ -69,12 +73,12 @@ function splitStatements(script: string): string[] {
  * `DROP FUNCTION` line. The drop is intentionally skipped so the function
  * remains callable within the test transaction.
  */
-async function loadMigrationWithoutDrop(): Promise<string[]> {
-    const script = await readFile(MIGRATION_PATH, 'utf-8');
+async function loadMigrationWithoutDrop(path: string = MIGRATION_PATH): Promise<string[]> {
+    const script = await readFile(path, 'utf-8');
     const dropIdx = script.toUpperCase().indexOf('DROP FUNCTION');
     if (dropIdx === -1) {
         throw new Error(
-            `Migration file does not contain a DROP FUNCTION statement — unexpected for P0 strip. Path: ${MIGRATION_PATH}`
+            `Migration file does not contain a DROP FUNCTION statement — unexpected for a strip migration. Path: ${path}`
         );
     }
     return splitStatements(script.slice(0, dropIdx));
@@ -87,8 +91,8 @@ async function loadMigrationWithoutDrop(): Promise<string[]> {
  * rolls back at the end of the test (or by the explicit DROP if the test
  * chooses to commit).
  */
-async function setupStripFunction(tx: DrizzleClient): Promise<void> {
-    const statements = await loadMigrationWithoutDrop();
+async function setupStripFunction(tx: DrizzleClient, path: string = MIGRATION_PATH): Promise<void> {
+    const statements = await loadMigrationWithoutDrop(path);
     for (const stmt of statements) {
         await tx.execute(sql.raw(stmt));
     }
@@ -285,6 +289,135 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
                     sql`SELECT description FROM accommodations WHERE slug = 'strip-clean'`
                 );
                 expect(result.rows[0]?.description).toBe(cleanInput);
+            });
+        });
+    });
+
+    // ── 4b. Follow-up re-strip (0011) — CORRECTED markdown rules ─────────────
+    //
+    // SPEC-187 follow-up: 0011 re-strips description with the corrected
+    // strip_markdown() (underscore emphasis stripped; image rule BEFORE link
+    // rule so `![alt](url)` -> `alt`; newline collapse). These tests exercise
+    // the bugs the follow-up fixes — the exact cases 0008 mishandled.
+    describe('0011 re-strip migration shape', () => {
+        it('exists and declares strip_markdown(input text) plpgsql IMMUTABLE', async () => {
+            await expect(access(RESTRIP_MIGRATION_PATH)).resolves.toBeUndefined();
+            const content = await readFile(RESTRIP_MIGRATION_PATH, 'utf-8');
+            expect(content).toMatch(
+                /CREATE OR REPLACE FUNCTION strip_markdown\s*\(\s*input\s+text\s*\)\s*RETURNS\s+text/i
+            );
+            expect(content).toMatch(/LANGUAGE\s+plpgsql\s+IMMUTABLE/i);
+            expect(content).toMatch(/DROP FUNCTION strip_markdown\s*\(\s*text\s*\)/i);
+        });
+
+        it('runs the image rule BEFORE the link rule (source-order check)', async () => {
+            const content = await readFile(RESTRIP_MIGRATION_PATH, 'utf-8');
+            const imageIdx = content.indexOf("'!\\[(.+?)\\]\\(.+?\\)'");
+            const linkIdx = content.indexOf("'\\[(.+?)\\]\\(.+?\\)'");
+            expect(imageIdx).toBeGreaterThan(-1);
+            expect(linkIdx).toBeGreaterThan(-1);
+            expect(imageIdx).toBeLessThan(linkIdx);
+        });
+    });
+
+    describe('0011 re-strip: corrected behavior on the bugs 0008 left behind', () => {
+        it('strips underscore emphasis (_em_ and __strong__) that 0008 left intact', async () => {
+            await withTestTransaction(async (tx) => {
+                await setupStripFunction(tx, RESTRIP_MIGRATION_PATH);
+
+                const owner = testData.user();
+                const dest = testData.destination();
+                await tx.insert(users).values(owner);
+                await tx.insert(destinations).values(dest);
+
+                await tx.insert(accommodations).values({
+                    slug: 'restrip-underscore',
+                    name: 'Restrip Underscore',
+                    summary: 'Restrip test summary',
+                    type: 'HOTEL',
+                    description: '_em_ and __strong__ markers',
+                    ownerId: owner.id,
+                    destinationId: dest.id
+                });
+
+                await tx.execute(
+                    sql`UPDATE accommodations SET description = strip_markdown(description) WHERE slug = 'restrip-underscore'`
+                );
+
+                const result = await tx.execute<{ description: string }>(
+                    sql`SELECT description FROM accommodations WHERE slug = 'restrip-underscore'`
+                );
+                expect(result.rows[0]?.description).toBe('em and strong markers');
+            });
+        });
+
+        it('collapses a full ![alt](url) image to its alt text (image BEFORE link)', async () => {
+            await withTestTransaction(async (tx) => {
+                await setupStripFunction(tx, RESTRIP_MIGRATION_PATH);
+
+                const owner = testData.user();
+                const dest = testData.destination();
+                await tx.insert(users).values(owner);
+                await tx.insert(destinations).values(dest);
+
+                await tx.insert(accommodations).values({
+                    slug: 'restrip-image',
+                    name: 'Restrip Image',
+                    summary: 'Restrip test summary',
+                    type: 'HOTEL',
+                    description: '![alt text](https://x.com/i.png) trailing',
+                    ownerId: owner.id,
+                    destinationId: dest.id
+                });
+
+                await tx.execute(
+                    sql`UPDATE accommodations SET description = strip_markdown(description) WHERE slug = 'restrip-image'`
+                );
+
+                const result = await tx.execute<{ description: string }>(
+                    sql`SELECT description FROM accommodations WHERE slug = 'restrip-image'`
+                );
+                // No orphan `!` — the image collapses to its alt text.
+                expect(result.rows[0]?.description).toBe('alt text trailing');
+                expect(result.rows[0]?.description).not.toMatch(/!/);
+            });
+        });
+
+        it('is value-stable: re-running the corrected strip is a no-op (idempotent)', async () => {
+            await withTestTransaction(async (tx) => {
+                await setupStripFunction(tx, RESTRIP_MIGRATION_PATH);
+
+                const owner = testData.user();
+                const dest = testData.destination();
+                await tx.insert(users).values(owner);
+                await tx.insert(destinations).values(dest);
+
+                await tx.insert(accommodations).values({
+                    slug: 'restrip-idem',
+                    name: 'Restrip Idem',
+                    summary: 'Restrip test summary',
+                    type: 'HOTEL',
+                    description: '## H\n\n\n\n_em_ __b__ ![a](u) [l](u) `c`',
+                    ownerId: owner.id,
+                    destinationId: dest.id
+                });
+
+                await tx.execute(
+                    sql`UPDATE accommodations SET description = strip_markdown(description) WHERE slug = 'restrip-idem'`
+                );
+                const first = await tx.execute<{ description: string }>(
+                    sql`SELECT description FROM accommodations WHERE slug = 'restrip-idem'`
+                );
+                const afterFirst = first.rows[0]?.description;
+
+                // Second pass over the already-stripped value.
+                await tx.execute(
+                    sql`UPDATE accommodations SET description = strip_markdown(description) WHERE slug = 'restrip-idem'`
+                );
+                const second = await tx.execute<{ description: string }>(
+                    sql`SELECT description FROM accommodations WHERE slug = 'restrip-idem'`
+                );
+                expect(second.rows[0]?.description).toBe(afterFirst);
             });
         });
     });

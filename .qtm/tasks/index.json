@@ -275,7 +275,15 @@
             "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",
             "base": "staging",
-            "note": "Blocked on qzpay PR #42 publish (B.1 cancel propagation) for T-001 bump; core code can proceed. Backend ships dark behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI."
+            "note": "Backend ships dark behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI."
+        },
+        {
+            "specId": "SPEC-210",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "status": "draft",
+            "progress": "0/13",
+            "path": "SPEC-210-public-response-tier-enforcement",
+            "archived": false
         }
     ],
     "standalone": {

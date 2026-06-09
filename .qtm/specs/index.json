@@ -840,6 +840,17 @@
             "status": "completed",
             "archived": true,
             "path": "SPEC-187-rich-text-entity-descriptions"
+        },
+        {
+            "specId": "SPEC-210",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "type": "refactor",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-210-public-response-tier-enforcement",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         }
     ]
 }

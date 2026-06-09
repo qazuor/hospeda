@@ -92,6 +92,15 @@ export interface OpenAiAdapterOptions {
      * Injected at construction time; never read from `process.env` (AC-4).
      */
     readonly apiKey: string;
+    /**
+     * Optional base URL for OpenAI-compatible APIs (Ollama, LM Studio,
+     * Together, Groq, DeepSeek, etc.). When provided, the adapter sends
+     * requests to this URL instead of the default OpenAI endpoint.
+     *
+     * @example 'http://localhost:11434/v1'  // Ollama
+     * @example 'https://api.groq.com/openai/v1'  // Groq
+     */
+    readonly baseURL?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -153,11 +162,11 @@ export class OpenAiAdapter implements AiProvider {
      * The engine constructs a fresh adapter per-request from the decrypted
      * credential row — never share instances across requests with different keys.
      *
-     * @param options - Construction options containing the API key.
+     * @param options - Construction options containing the API key and optional baseURL.
      */
-    constructor({ apiKey }: OpenAiAdapterOptions) {
+    constructor({ apiKey, baseURL }: OpenAiAdapterOptions) {
         this.apiKey = apiKey;
-        this.provider = createOpenAI({ apiKey });
+        this.provider = createOpenAI({ apiKey, ...(baseURL !== undefined ? { baseURL } : {}) });
     }
 
     // -------------------------------------------------------------------------

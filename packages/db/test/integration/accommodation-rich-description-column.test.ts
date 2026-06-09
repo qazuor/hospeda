@@ -44,27 +44,26 @@ const __dirname = dirname(__filename);
 const MIGRATIONS_DIR = join(__dirname, '../../src/migrations');
 
 /**
- * Find the highest-numbered migration file in `src/migrations/`. Phase 2
- * introduces a new file (e.g. `0009_add_rich_description.sql`); this helper
- * returns its filename so the PD-3 contract test can read it directly.
+ * Find the `add_rich_description` migration file in `src/migrations/`.
+ *
+ * The PD-3 contract is specifically about the ADD COLUMN migration: it must
+ * NOT smuggle a data strip. We therefore target that file BY NAME rather than
+ * by "highest index" — the SPEC-187 follow-up adds a later data-only migration
+ * (`0011_restrip_accommodation_description_markdown.sql`) that legitimately
+ * DOES contain an UPDATE, and "latest" would incorrectly pick it up.
  */
-async function findLatestMigrationFilename(): Promise<string> {
+async function findRichDescriptionMigrationFilename(): Promise<string> {
     const entries = await readdir(MIGRATIONS_DIR);
-    const sqlFiles = entries.filter((f) => f.endsWith('.sql'));
-    if (sqlFiles.length === 0) {
-        throw new Error(`No .sql migration files found in ${MIGRATIONS_DIR}`);
+    const match = entries.filter((f) => f.endsWith('.sql') && f.includes('add_rich_description'));
+    if (match.length === 0) {
+        throw new Error(`No add_rich_description migration file found in ${MIGRATIONS_DIR}`);
     }
-    // Sort by leading 4-digit index, descending; pick the largest.
-    sqlFiles.sort((a, b) => {
-        const aIdx = Number.parseInt(a.slice(0, 4), 10);
-        const bIdx = Number.parseInt(b.slice(0, 4), 10);
-        return bIdx - aIdx;
-    });
-    const latest = sqlFiles[0];
-    if (typeof latest !== 'string') {
-        throw new Error('Could not resolve latest migration filename');
+    if (match.length > 1) {
+        throw new Error(
+            `Expected exactly one add_rich_description migration, found ${match.length}: ${match.join(', ')}`
+        );
     }
-    return latest;
+    return match[0] as string;
 }
 
 /**
@@ -91,8 +90,8 @@ afterAll(async () => {
 });
 
 describe('accommodation.rich_description migration (SPEC-187 P2-T2 / PD-3)', () => {
-    it('latest migration file contains ONLY the ADD COLUMN and NO data-strip statements', async () => {
-        const filename = await findLatestMigrationFilename();
+    it('add_rich_description migration contains ONLY the ADD COLUMN and NO data-strip statements', async () => {
+        const filename = await findRichDescriptionMigrationFilename();
         const path = join(MIGRATIONS_DIR, filename);
         const script = await readFile(path, 'utf-8');
         const statements = splitStatementsUpper(script);

@@ -158,7 +158,16 @@ const ACTOR = {
     permissions: [],
     isAuthenticated: true
 };
-const RESOLVED_PROMPT = 'You are a helpful Hospeda tourism assistant.';
+const RESOLVED_PROMPT = `You are a helpful Hospeda tourism assistant.
+
+IMPORTANT INSTRUCTIONS:
+- Answer questions ONLY based on the accommodation information provided in the context. If the information is not in the context, say "No tengo esa información disponible."
+- You MUST respond in the user's language.
+- If asked about prices or availability, answer from the data above if present, then append the exact marker "---price-disclaimer---" on its own line at the END of your response. Never append this marker for answers unrelated to price or availability.
+- For availability/booking confirmation requests you cannot answer from the data, redirect the user to contact the accommodation through the platform's messaging feature.
+- Do NOT invent amenities, features, pricing, or availability data not present in the context. Prefer saying "no tengo esa información" over guessing.
+- Politely decline questions unrelated to this specific accommodation.
+- Never claim that information provided is real-time or guaranteed.`;
 const PII_SENTINEL_EMAIL = 'pii-sentinel-email@hospeda.test';
 const PII_SENTINEL_MSG = 'pii-sentinel-user-message-content';
 
@@ -401,7 +410,12 @@ describe('buildMarkdownContext', () => {
 
 describe('buildChatSystemMessage', () => {
     const SAMPLE_CONTEXT = '## Accommodation: Sample';
-    const SAMPLE_PROMPT = 'You are a helpful assistant.';
+    const SAMPLE_PROMPT = `You are a helpful assistant.
+
+IMPORTANT INSTRUCTIONS:
+- Answer questions ONLY based on the accommodation information provided in the context.
+- If asked about prices or availability, append "---price-disclaimer---" at the end of your response.
+- Politely decline questions unrelated to this specific accommodation.`;
 
     it('should include the contextBlock in the assembled message', () => {
         const msg = buildChatSystemMessage(SAMPLE_CONTEXT, SAMPLE_PROMPT, 'es');
@@ -459,7 +473,7 @@ describe('assembleAccommodationContext', () => {
         vi.clearAllMocks();
         // Default: getById returns a healthy accommodation, getFaqs returns FAQs,
         // Drizzle queries return empty arrays for amenities/features.
-        mockGetById.mockResolvedValue(makeAccommodation());
+        mockGetById.mockResolvedValue({ success: true, data: makeAccommodation() });
         mockGetFaqs.mockResolvedValue({ faqs: makeFaqs() });
     });
 

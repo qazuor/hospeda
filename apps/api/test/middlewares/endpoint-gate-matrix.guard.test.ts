@@ -174,7 +174,9 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'auth/handler.ts',
     // QZPay lifecycle hooks module — not a standalone route; routes registered by
     // the qzpay-hono factory and covered by the billing/admin/index.ts (qzpay) row
-    'billing/admin/qzpay-admin-hooks.ts'
+    'billing/admin/qzpay-admin-hooks.ts',
+    // Shared SYSTEM_ACTOR constant for owner conversation routes (not a route handler)
+    'conversations/protected/owner/system-actor.ts'
 ]);
 
 /**

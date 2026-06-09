@@ -83,11 +83,33 @@ export const AiCredentialRotateInputSchema = z
 export type AiCredentialRotateInput = z.infer<typeof AiCredentialRotateInputSchema>;
 
 // ---------------------------------------------------------------------------
-// Mutation result (create / rotate responses)
+// Update input
 // ---------------------------------------------------------------------------
 
 /**
- * Slim response returned by create and rotate operations.
+ * Input body for `PATCH /api/v1/admin/ai/credentials/{providerId}`.
+ *
+ * Updates non-sensitive metadata (label, models, baseURL) without touching the
+ * encrypted key material.
+ */
+export const AiCredentialUpdateInputSchema = z
+    .object({
+        /** Optional human-readable label. */
+        label: z.string().optional(),
+        /** Optional arbitrary metadata (e.g. baseURL, models). */
+        metadata: z.record(z.string(), z.unknown()).optional()
+    })
+    .strict();
+
+/** TypeScript type for the credential update input. */
+export type AiCredentialUpdateInput = z.infer<typeof AiCredentialUpdateInputSchema>;
+
+// ---------------------------------------------------------------------------
+// Mutation result (create / rotate / update responses)
+// ---------------------------------------------------------------------------
+
+/**
+ * Slim response returned by create, rotate, and update operations.
  * Confirms the operation succeeded without leaking any secret material.
  */
 export const AiCredentialMutationResultSchema = z.object({

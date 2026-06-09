@@ -17,18 +17,20 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 /**
- * Supported AI provider identifiers.
+ * AI provider identifier — any non-empty string up to 100 characters.
  *
- * - `openai`    — OpenAI via the Vercel AI SDK adapter.
- * - `anthropic` — Anthropic via the Vercel AI SDK adapter.
- * - `stub`      — Deterministic test provider (§5.14); never calls external APIs.
+ * Well-known built-in identifiers: `openai`, `anthropic`, `stub`.
+ * Custom provider IDs (e.g. `ollama`, `groq`, `deepseek`) are supported
+ * when backed by an OpenAI-compatible baseURL credential.
  *
- * Append-only — removing a member without a migration plan would leave stored
- * `ai_settings` rows with an unbound provider reference.
+ * The schema intentionally accepts arbitrary strings so that new providers
+ * can be added without schema changes. Validation of whether a provider
+ * actually has a registered adapter or credential happens at the engine
+ * layer, not here.
  */
-export const AiProviderIdSchema = z.enum(['openai', 'anthropic', 'stub']);
+export const AiProviderIdSchema = z.string().min(1).max(100);
 
-/** TypeScript type for a supported AI provider identifier. */
+/** TypeScript type for an AI provider identifier. */
 export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
 
 // ---------------------------------------------------------------------------

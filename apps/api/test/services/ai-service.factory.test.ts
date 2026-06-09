@@ -148,6 +148,27 @@ vi.mock('../../src/services/ai-observability.service', () => ({
     })
 }));
 
+vi.mock('@repo/db', () => ({
+    getDb: vi.fn(() => ({
+        select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+                where: vi.fn().mockResolvedValue([
+                    { providerId: 'openai', metadata: null },
+                    { providerId: 'anthropic', metadata: null }
+                ])
+            })
+        })
+    })),
+    aiProviderCredentials: {
+        providerId: 'provider_id',
+        metadata: 'metadata'
+    }
+}));
+
+vi.mock('drizzle-orm', () => ({
+    isNull: vi.fn(() => true)
+}));
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: mockApiLogger
 }));
@@ -320,15 +341,40 @@ describe('buildGetProvider', () => {
         );
     });
 
-    it('should throw for an unknown provider ID', () => {
-        // Arrange — map with a value but an unrecognised provider ID.
-        const keyMap = new Map([['openai', 'sk-key']] as const);
+    it('should throw for a provider with no key in the map', () => {
+        // Arrange — empty map.
+        const keyMap = new Map<'openai' | 'anthropic', string>();
 
-        // Act + Assert — use `as unknown as` to simulate an unknown ID at runtime
-        // without introducing a typed `any`.
+        // Act + Assert — custom provider with no key throws descriptive error
         expect(() => buildGetProvider(keyMap)('unknown' as unknown as 'openai')).toThrow(
-            "Unknown AI provider 'unknown'"
+            "No AI credential configured for provider 'unknown'"
         );
+    });
+
+    it('should throw for a custom provider with a key but no baseURL', () => {
+        // Arrange — custom provider has a key but no metadata/baseURL
+        const keyMap = new Map([['ollama', 'ollama-key']] as const);
+
+        // Act + Assert
+        expect(() => buildGetProvider(keyMap)('ollama' as unknown as 'openai')).toThrow(
+            "Custom provider 'ollama' has no baseURL configured"
+        );
+    });
+
+    it('should return an OpenAiAdapter with baseURL for custom providers', () => {
+        // Arrange — custom provider with key + baseURL in metadata
+        const keyMap = new Map([['groq', 'gsk-key']] as const);
+        const metadataMap = new Map([['groq', { baseURL: 'https://api.groq.com/openai/v1' }]]);
+
+        // Act
+        const provider = buildGetProvider(keyMap, metadataMap)('groq' as unknown as 'openai');
+
+        // Assert — OpenAiAdapter constructed with both apiKey and baseURL
+        expect(mockOpenAiAdapterConstructor).toHaveBeenCalledWith({
+            apiKey: 'gsk-key',
+            baseURL: 'https://api.groq.com/openai/v1'
+        });
+        expect(provider).toBeInstanceOf(mockOpenAiAdapterConstructor);
     });
 });
 

@@ -223,7 +223,10 @@ export function buildMarkdownContext(
  * Truncates `text` to `maxChars` characters, appending the truncation
  * suffix when the cut occurs. Returns the original string when it fits.
  */
-function truncate(text: string, maxChars: number): string {
+function truncate(text: string | undefined | null, maxChars: number): string {
+    if (text == null) {
+        return '';
+    }
     if (text.length <= maxChars) {
         return text;
     }
@@ -289,29 +292,9 @@ export function buildChatSystemMessage(
         '',
         resolvedPrompt,
         '',
-        IMPORTANT_INSTRUCTIONS_PREFIX,
-        '- Answer questions ONLY based on the accommodation information provided above.',
-        '  If the information is not in the context, say "No tengo esa información disponible."',
-        `- You MUST respond in the user's language: locale is "${locale}".`,
-        '- If asked about prices or availability, answer from the data above if present,',
-        '  then append the exact marker "---price-disclaimer---" on its own line at the',
-        '  END of your response. Never append this marker for answers unrelated to price',
-        '  or availability.',
-        '- For availability/booking confirmation requests you cannot answer from the data,',
-        "  redirect the user to contact the accommodation through the platform's messaging",
-        '  feature.',
-        '- Do NOT invent amenities, features, pricing, or availability data not present in',
-        '  the context above. Prefer saying "no tengo esa información" over guessing.',
-        '- Politely decline questions unrelated to this specific accommodation.',
-        '- Never claim that information provided is real-time or guaranteed.'
+        `- You MUST respond in the user's language: locale is "${locale}".`
     ].join('\n');
 }
-
-/**
- * Section header for the chat-instructions block. Exported as a constant
- * so unit tests can assert on the assembled structure if needed.
- */
-const IMPORTANT_INSTRUCTIONS_PREFIX = 'IMPORTANT INSTRUCTIONS FOR THIS CONVERSATION:';
 
 // ---------------------------------------------------------------------------
 // Async wrapper: assembleAccommodationContext
@@ -351,10 +334,8 @@ export async function assembleAccommodationContext(
     //    the relation-augmented view we need downstream.
     // TYPE-WORKAROUND: getById returns Result<TEntity | null> but always throws on
     //    null; the intermediate `unknown` hop widens to the relation-augmented view.
-    const accommodation = (await accommodationService.getById(
-        actor,
-        accommodationId
-    )) as unknown as AccommodationWithRelations;
+    const result = await accommodationService.getById(actor, accommodationId);
+    const accommodation = (result as unknown as { data: AccommodationWithRelations }).data;
 
     // 2. Load FAQs via the dedicated method (graceful — non-fatal on error).
     const faqs = await safeLoadFaqs(accommodationService, actor, accommodationId);

@@ -775,6 +775,9 @@ importers:
       react-leaflet-cluster:
         specifier: ^2.1.0
         version: 2.1.0(leaflet@1.9.4)(react-dom@19.1.1(react@19.1.1))(react-leaflet@4.2.1(leaflet@1.9.4)(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)
+      recharts:
+        specifier: ^2.15.4
+        version: 2.15.4(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       sanitize-html:
         specifier: ^2.17.0
         version: 2.17.0

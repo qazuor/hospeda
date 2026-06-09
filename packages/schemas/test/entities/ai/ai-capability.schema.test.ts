@@ -393,12 +393,12 @@ describe('GenerateTextResponseSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rejects an unknown provider', () => {
+    it('accepts any non-empty string as provider ID', () => {
         const result = GenerateTextResponseSchema.safeParse({
             ...validResponse,
             provider: 'gemini'
         });
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
     it('accepts the stub provider (test provider must always be valid)', () => {
@@ -516,12 +516,12 @@ describe('StreamTextFinalMetaSchema', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rejects an invalid provider', () => {
+    it('accepts any non-empty string as provider ID', () => {
         const result = StreamTextFinalMetaSchema.safeParse({
             ...validFinalMeta,
             provider: 'cohere'
         });
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
     it('rejects an empty model string', () => {
