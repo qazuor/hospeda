@@ -317,6 +317,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.PROVIDER_TIMEOUT:
                 statusCode = 504;
                 break;
+            case ServiceErrorCode.PLAN_DISABLED:
+                statusCode = 410;
+                break;
             default:
                 statusCode = 500;
                 break;
@@ -430,7 +433,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503,
                 [ServiceErrorCode.PROVIDER_ERROR]: 502,
                 [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
-                [ServiceErrorCode.PROVIDER_TIMEOUT]: 504
+                [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
+                [ServiceErrorCode.PLAN_DISABLED]: 410
             };
 
             const statusCode = statusCodeMap[code] ?? 500;
