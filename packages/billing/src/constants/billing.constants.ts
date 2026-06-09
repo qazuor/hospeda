@@ -69,3 +69,17 @@ export const REFERENCE_CURRENCY = 'USD';
 
 /** Default timeout for MercadoPago API requests in milliseconds */
 export const MERCADO_PAGO_DEFAULT_TIMEOUT_MS = 5000;
+
+/**
+ * Maximum lag window in hours that the cron renewal checker tolerates before
+ * raising a Sentry alert for a subscription that has not been renewed.
+ *
+ * Rationale: MercadoPago webhook delivery is eventually consistent and can lag
+ * several hours during high-traffic periods. A 6-hour window absorbs that jitter
+ * at renewal time without masking real outages. PAST this window, access is
+ * intentionally NOT blocked (billing is never a hard gate on service access), but
+ * a Sentry alert fires so the team can investigate the delay.
+ *
+ * Owner decision 2026-06-09, SPEC-148 Part A.
+ */
+export const BILLING_CRON_LAG_GRACE_HOURS = 6;
