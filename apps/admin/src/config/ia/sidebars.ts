@@ -181,7 +181,8 @@ const catalogoSidebar: SidebarInput = {
             },
             icon: 'ShieldIcon',
             defaultOpen: false,
-            permissions: ['MODERATION_TERM_VIEW'],
+            // OR-gate: user needs at least one of these to see the group
+            permissions: ['MODERATION_TERM_VIEW', 'MODERATION_THRESHOLD_VIEW'],
             items: [
                 {
                     type: 'link',

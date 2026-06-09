@@ -14,24 +14,24 @@ export function createModerationTermColumns(
         {
             id: 'term',
             accessorKey: 'term',
-            header: t('content-moderation.terms.columns.term' as TranslationKey),
+            header: t('content-moderation.terms.columns.term'),
             enableSorting: true
         },
         {
             id: 'kind',
             accessorKey: 'kind',
-            header: t('content-moderation.terms.columns.kind' as TranslationKey),
+            header: t('content-moderation.terms.columns.kind'),
             enableSorting: true,
             columnType: 'badge' as never,
             badgeOptions: [
                 {
                     value: 'word',
-                    label: t('content-moderation.terms.kinds.word' as TranslationKey),
+                    label: t('content-moderation.terms.kinds.word'),
                     color: BadgeColor.BLUE
                 },
                 {
                     value: 'domain',
-                    label: t('content-moderation.terms.kinds.domain' as TranslationKey),
+                    label: t('content-moderation.terms.kinds.domain'),
                     color: BadgeColor.PURPLE
                 }
             ]
@@ -39,43 +39,43 @@ export function createModerationTermColumns(
         {
             id: 'category',
             accessorKey: 'category',
-            header: t('content-moderation.terms.columns.category' as TranslationKey),
+            header: t('content-moderation.terms.columns.category'),
             enableSorting: true,
             columnType: 'badge' as never,
             badgeOptions: [
                 {
                     value: 'hate',
-                    label: t('content-moderation.categories.hate' as TranslationKey),
+                    label: t('content-moderation.categories.hate'),
                     color: BadgeColor.RED
                 },
                 {
                     value: 'sexual',
-                    label: t('content-moderation.categories.sexual' as TranslationKey),
+                    label: t('content-moderation.categories.sexual'),
                     color: BadgeColor.PINK
                 },
                 {
                     value: 'violence',
-                    label: t('content-moderation.categories.violence' as TranslationKey),
+                    label: t('content-moderation.categories.violence'),
                     color: BadgeColor.RED
                 },
                 {
                     value: 'harassment',
-                    label: t('content-moderation.categories.harassment' as TranslationKey),
+                    label: t('content-moderation.categories.harassment'),
                     color: BadgeColor.ORANGE
                 },
                 {
                     value: 'self_harm',
-                    label: t('content-moderation.categories.self_harm' as TranslationKey),
+                    label: t('content-moderation.categories.self_harm'),
                     color: BadgeColor.YELLOW
                 },
                 {
                     value: 'spam',
-                    label: t('content-moderation.categories.spam' as TranslationKey),
+                    label: t('content-moderation.categories.spam'),
                     color: BadgeColor.GRAY
                 },
                 {
                     value: 'other',
-                    label: t('content-moderation.categories.other' as TranslationKey),
+                    label: t('content-moderation.categories.other'),
                     color: BadgeColor.SLATE
                 }
             ]
@@ -83,13 +83,13 @@ export function createModerationTermColumns(
         {
             id: 'severity',
             accessorKey: 'severity',
-            header: t('content-moderation.terms.columns.severity' as TranslationKey),
+            header: t('content-moderation.terms.columns.severity'),
             enableSorting: true
         },
         {
             id: 'enabled',
             accessorKey: 'enabled',
-            header: t('content-moderation.terms.columns.enabled' as TranslationKey),
+            header: t('content-moderation.terms.columns.enabled'),
             enableSorting: true,
             columnType: 'badge' as never,
             badgeOptions: [
@@ -100,7 +100,7 @@ export function createModerationTermColumns(
         {
             id: 'createdAt',
             accessorKey: 'createdAt',
-            header: t('content-moderation.terms.columns.createdAt' as TranslationKey),
+            header: t('content-moderation.terms.columns.createdAt'),
             enableSorting: true
         }
     ];
