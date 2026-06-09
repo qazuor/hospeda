@@ -67,8 +67,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 211 (2026-06-09, SPEC-147 T-003): added HOSPEDA_USER_CANCEL_ENABLED
  * (opt-in feature flag for user self-service subscription cancellation,
  * billing category), bumping billing from 9 to 10.
+ *
+ * 212 (2026-06-09, SPEC-198): added HOSPEDA_AI_MODERATION_REQUIRED
+ * (fail-loud startup gate for the AI moderation credential, moderation
+ * category), bumping moderation from 4 to 5.
  */
-const EXPECTED_VAR_COUNT = 211;
+const EXPECTED_VAR_COUNT = 212;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

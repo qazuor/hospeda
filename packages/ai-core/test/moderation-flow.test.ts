@@ -31,7 +31,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { AiModerationBlockedError, createAiEngine } from '../src/engine/index.js';
 import type { AiEngine, AiEngineEvent } from '../src/engine/index.js';
-import { AiCeilingHitError } from '../src/engine/index.js';
+import { AiCeilingHitError, AiProviderUnconfiguredError } from '../src/engine/index.js';
+import { runModerationPass } from '../src/engine/moderation-pass.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
 
@@ -647,6 +648,103 @@ describe('runModerationPass — non-Error thrown by moderation provider', () => 
             feature: 'text_improve',
             direction: 'input',
             errorMessage: 'non-error string thrown'
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-198: runModerationPass fail-CLOSED vs fail-OPEN (direct unit tests)
+//
+// These call runModerationPass directly (not through the engine) to assert the
+// credential-missing vs transient-failure split precisely:
+//  - getProvider throws AiProviderUnconfiguredError → RE-THROWN (fail-CLOSED).
+//  - getProvider / moderate throws a generic Error → SWALLOWED, moderation_error
+//    recorded, resolves (fail-OPEN preserved).
+// ---------------------------------------------------------------------------
+
+describe('runModerationPass — credential-missing vs transient failure (SPEC-198)', () => {
+    it('should RE-THROW AiProviderUnconfiguredError (fail-CLOSED) and NOT swallow it', async () => {
+        // Arrange — getProvider throws the typed unconfigured error.
+        const events: AiEngineEvent[] = [];
+        const unconfiguredError = new AiProviderUnconfiguredError({ providerId: 'openai' });
+
+        // Act + Assert — the error propagates instead of being swallowed.
+        await expect(
+            runModerationPass({
+                feature: 'text_improve',
+                direction: 'input',
+                text: 'some user text',
+                moderationProviderId: 'openai',
+                getProvider: () => {
+                    throw unconfiguredError;
+                },
+                recordEvent: (event) => events.push(event)
+            })
+        ).rejects.toBe(unconfiguredError);
+
+        // No moderation_error event was emitted — this is a deliberate block,
+        // not a swallowed transient failure.
+        expect(events.filter((e) => e.type === 'moderation_error')).toHaveLength(0);
+    });
+
+    it('should fail-OPEN (resolve + record moderation_error) when getProvider throws a generic Error', async () => {
+        // Arrange — generic transient failure from getProvider.
+        const events: AiEngineEvent[] = [];
+
+        // Act — must NOT throw.
+        await expect(
+            runModerationPass({
+                feature: 'chat',
+                direction: 'input',
+                text: 'some user text',
+                moderationProviderId: 'openai',
+                getProvider: () => {
+                    throw new Error('transient provider boot failure');
+                },
+                recordEvent: (event) => events.push(event)
+            })
+        ).resolves.toBeUndefined();
+
+        // Assert — fail-open: moderation_error recorded with the transient message.
+        const errorEvents = events.filter((e) => e.type === 'moderation_error');
+        expect(errorEvents).toHaveLength(1);
+        expect(errorEvents[0]).toMatchObject({
+            type: 'moderation_error',
+            feature: 'chat',
+            direction: 'input',
+            errorMessage: 'transient provider boot failure'
+        });
+    });
+
+    it('should fail-OPEN when provider.moderate() throws a generic transient Error', async () => {
+        // Arrange — provider resolves but moderate() rejects transiently.
+        const events: AiEngineEvent[] = [];
+        const moderationProvider: AiProvider = {
+            ...new StubProvider(),
+            id: 'openai',
+            moderate: vi.fn().mockRejectedValue(new Error('rate-limited (429)'))
+        };
+
+        // Act — must NOT throw.
+        await expect(
+            runModerationPass({
+                feature: 'text_improve',
+                direction: 'output',
+                text: 'generated text',
+                moderationProviderId: 'openai',
+                getProvider: () => moderationProvider,
+                recordEvent: (event) => events.push(event)
+            })
+        ).resolves.toBeUndefined();
+
+        // Assert — fail-open preserved for transient moderate() failures.
+        const errorEvents = events.filter((e) => e.type === 'moderation_error');
+        expect(errorEvents).toHaveLength(1);
+        expect(errorEvents[0]).toMatchObject({
+            type: 'moderation_error',
+            feature: 'text_improve',
+            direction: 'output',
+            errorMessage: 'rate-limited (429)'
         });
     });
 });

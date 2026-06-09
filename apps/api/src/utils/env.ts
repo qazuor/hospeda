@@ -526,6 +526,19 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MODERATION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
     /** Timeout in ms for the OpenAI Moderation API call before falling back to local. */
     HOSPEDA_MODERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(1500),
+    /**
+     * Gates the startup moderation-credential healthcheck (SPEC-198). When `true`,
+     * the API refuses to start (process.exit(1)) if no resolvable OpenAI credential
+     * exists in the AI vault. Default `false` so envs without AI moderation boot
+     * normally. Set to `true` in production once the vault credential is provisioned.
+     *
+     * Uses the string→boolean transform (NOT z.coerce.boolean()) so the literal
+     * 'false' evaluates to false — see the footgun note on HOSPEDA_DISABLE_AUTH.
+     */
+    HOSPEDA_AI_MODERATION_REQUIRED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
 
     // Infrastructure
     HOSPEDA_REDIS_URL: z.string().optional(),
