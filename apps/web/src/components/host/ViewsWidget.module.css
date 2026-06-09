@@ -49,9 +49,8 @@
     font-size: 0.75rem;
     font-weight: 600;
     cursor: pointer;
-    transition:
-        background-color var(--duration-fast, 0.2s) ease,
-        color var(--duration-fast, 0.2s) ease;
+    transition: background-color var(--duration-fast, 0.2s) ease, color var(--duration-fast, 0.2s)
+        ease;
 }
 
 .toggleBtn:hover {

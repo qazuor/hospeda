@@ -140,35 +140,35 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             const viewsData =
                 viewsResult.status === 'fulfilled' && viewsResult.value.ok
                     ? transformAccommodationViews({
-                          item: viewsResult.value.data as unknown as Record<string, unknown>
+                          item: viewsResult.value.data as unknown as Record<string, unknown> // TYPE-WORKAROUND: transform expects Record but API returns typed interface
                       })
                     : undefined;
 
             const favoritesData =
                 favoritesResult.status === 'fulfilled' && favoritesResult.value.ok
                     ? transformFavoritesBreakdown({
-                          item: favoritesResult.value.data as unknown as Record<string, unknown>
+                          item: favoritesResult.value.data as unknown as Record<string, unknown> // TYPE-WORKAROUND: transform expects Record but API returns typed interface
                       })
                     : undefined;
 
             const responseRateData =
                 responseRateResult.status === 'fulfilled' && responseRateResult.value.ok
                     ? transformResponseRate({
-                          item: responseRateResult.value.data as unknown as Record<string, unknown>
+                          item: responseRateResult.value.data as unknown as Record<string, unknown> // TYPE-WORKAROUND: transform expects Record but API returns typed interface
                       })
                     : undefined;
 
             const inquiriesData =
                 inquiriesResult.status === 'fulfilled' && inquiriesResult.value.ok
                     ? transformInquiryTrend({
-                          item: inquiriesResult.value.data as unknown as Record<string, unknown>
+                          item: inquiriesResult.value.data as unknown as Record<string, unknown> // TYPE-WORKAROUND: transform expects Record but API returns typed interface
                       })
                     : undefined;
 
             const marketData =
                 marketResult.status === 'fulfilled' && marketResult.value.ok
                     ? transformMarketComparison({
-                          item: marketResult.value.data as unknown as Record<string, unknown>
+                          item: marketResult.value.data as unknown as Record<string, unknown> // TYPE-WORKAROUND: transform expects Record but API returns typed interface
                       })
                     : undefined;
 
