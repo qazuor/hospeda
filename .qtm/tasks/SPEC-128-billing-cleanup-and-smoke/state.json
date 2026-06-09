@@ -1,0 +1,99 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-128",
+    "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+    "created": "2026-05-15T00:00:00.000Z",
+    "realignedAt": "2026-06-09",
+    "realignNote": "Scope reconciled to SPEC-193 reality (owner-approved 2026-06-09): F1+F2+G2 executed; G1 (10 manual smokes) superseded by SPEC-193 batched smoke; G3 (SPEC-122/109 closure ceremony) superseded — legacy parent.",
+    "tasks": [
+        {
+            "id": "F1",
+            "title": "Dead-code verification + removal",
+            "description": "Deleted 3 confirmed-dead @deprecated re-export shims in apps/api/src/services (addon-status-transitions.ts, promo-code.crud.ts, promo-code.redemption.ts). The addon-status-transitions test was the sole coverage of those re-exports → migrated to packages/service-core/test/billing/addon-status-transitions.test.ts (canonical). Originally-listed candidates addon-downgrade-detection/addon.admin/reactivateFromTrial are NOT dead and were kept. qzpay vendor.types.ts is cross-repo (out of scope). Verified: api typecheck EXIT 0 after dist rebuild; promo-code (63) + addon (78) tests green. Commit 53c808431.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "phase": "F",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-05-15T00:00:00.000Z",
+                "started": "2026-06-09T23:30:00.000Z",
+                "completed": "2026-06-09T23:45:00.000Z"
+            }
+        },
+        {
+            "id": "F2",
+            "title": "Documentation + CLAUDE.md updates (hospeda)",
+            "description": "Refreshed billing architecture pointers: root CLAUDE.md (billing quick reference), apps/api/CLAUDE.md (routes/cron list), packages/db/CLAUDE.md (mp_subscription_id note), runbook backlinks in packages/billing + apps/api docs. qzpay READMEs out of scope (cross-repo). Files already accurate left untouched. Commit 41285d8bf.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "phase": "F",
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T00:00:00.000Z",
+                "started": "2026-06-09T23:45:00.000Z",
+                "completed": "2026-06-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "G1",
+            "title": "10 manual MP sandbox smokes",
+            "description": "SUPERSEDED by SPEC-193 batched-smoke model. The billing smokes are accumulated in SPEC-193 pending-staging-smoke.md and owner-executed once before the staging->main promotion. Not executable as part of this code/docs spec (manual, real MP).",
+            "status": "obsolete",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "phase": "G",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-10T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "G2",
+            "title": "Ops runbook authoring",
+            "description": "Authored docs/migration/mercadopago-sandbox-runbook.md (296 lines) as the operator entry point — MP dashboard config, sandbox test-user creation, webhook/preapproval inspection, rollback, pre-prod checklist pointer. Cross-references (does NOT duplicate) SPEC-143 staging/prod smoke checklists + mp-test-cards-reference and the SPEC-193 batched-smoke list. Commit c11ac7418.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "phase": "G",
+            "qualityGate": { "lint": "pass", "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T00:00:00.000Z",
+                "started": "2026-06-10T00:00:00.000Z",
+                "completed": "2026-06-10T00:10:00.000Z"
+            }
+        },
+        {
+            "id": "G3",
+            "title": "SPEC-109 update + SPEC-122 closure",
+            "description": "SUPERSEDED. SPEC-122 is the legacy parent; active master is SPEC-193. No SPEC-122 6-children closure ceremony performed. Production toggle / Coolify / homologation handoff remains owner-owned under SPEC-109/SPEC-193 promotion.",
+            "status": "obsolete",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "phase": "G",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-10T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 5,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 3,
+        "obsolete": 2,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}
