@@ -16,10 +16,15 @@ const propiedadesIndexSource = readFileSync(
 
 describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
     describe('plan/limit awareness badge', () => {
-        it('should fetch usage data from the billing usage endpoint', () => {
+        it('should fetch usage data from the billing usage endpoint via the SSOT limit-key constant', () => {
+            // The URL must use the imported MAX_ACCOMMODATIONS_LIMIT_KEY constant
+            // (= the lowercase enum VALUE 'max_accommodations'), NOT the uppercase
+            // enum key name, which z.nativeEnum(LimitKey) rejects with HTTP 400.
             expect(propiedadesIndexSource).toContain(
-                '/api/v1/protected/billing/usage/MAX_ACCOMMODATIONS'
+                'billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}'
             );
+            // Bug-2 regression: the old uppercase literal must NOT reappear.
+            expect(propiedadesIndexSource).not.toContain('billing/usage/MAX_ACCOMMODATIONS');
         });
 
         it('should render a usage badge when usageData is available', () => {
