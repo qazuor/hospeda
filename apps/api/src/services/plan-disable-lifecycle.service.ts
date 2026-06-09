@@ -43,6 +43,7 @@
 
 import {
     and,
+    billingCustomers,
     billingSubscriptionEvents,
     billingSubscriptions,
     eq,
@@ -115,6 +116,10 @@ interface EligibleSubRow {
     readonly id: string;
     readonly customerId: string;
     readonly currentPeriodEnd: Date;
+    /** Resolved from billingCustomers.email — null when no matching customer row. */
+    readonly customerEmail: string | null;
+    /** Resolved from billingCustomers.name — null if not set. */
+    readonly customerName: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -142,15 +147,20 @@ export async function disablePlanLifecycle(
 
     // ── Step 1: Query eligible subs ──────────────────────────────────────────
     // Eligible = live status + NOT already winding down + not soft-deleted.
+    // LEFT JOIN billingCustomers to pull the recipient email and name so the
+    // PLAN_BEING_RETIRED notification reaches an actual address (fix: #F1).
     // Drizzle operators (eq, inArray, isNull, and) are imported from @repo/db
     // (re-exported from drizzle-orm per SPEC-167 lesson).
     const eligibleSubs: EligibleSubRow[] = await db
         .select({
             id: billingSubscriptions.id,
             customerId: billingSubscriptions.customerId,
-            currentPeriodEnd: billingSubscriptions.currentPeriodEnd
+            currentPeriodEnd: billingSubscriptions.currentPeriodEnd,
+            customerEmail: billingCustomers.email,
+            customerName: billingCustomers.name
         })
         .from(billingSubscriptions)
+        .leftJoin(billingCustomers, eq(billingSubscriptions.customerId, billingCustomers.id))
         .where(
             and(
                 eq(billingSubscriptions.planId, planId),
@@ -199,29 +209,44 @@ export async function disablePlanLifecycle(
             clearEntitlementCache(sub.customerId);
 
             // 2d. Queue PLAN_BEING_RETIRED notification (fire-and-forget).
+            //     Recipient email is resolved from the LEFT JOIN in Step 1.
+            //     If the customer row is missing (null email — theoretically impossible
+            //     given FK constraints but guarded defensively), log a warn and skip
+            //     the notification; the cancelAtPeriodEnd flip above still commits.
             //     Wrapped in Promise.resolve() per SPEC-167 lesson so a sync
             //     undefined from a cleared mock does not cause a TypeError.
-            void Promise.resolve(
-                sendNotification({
-                    type: NotificationType.PLAN_BEING_RETIRED,
-                    recipientEmail: '',
-                    recipientName: '',
-                    userId: null,
-                    customerId: sub.customerId,
-                    planName,
-                    accessUntil: sub.currentPeriodEnd.toISOString(),
-                    migrationHint
-                })
-            ).catch((err: unknown) => {
-                apiLogger.warn(
-                    {
-                        subscriptionId: sub.id,
+            if (sub.customerEmail) {
+                const recipientName =
+                    typeof sub.customerName === 'string' && sub.customerName.length > 0
+                        ? sub.customerName
+                        : sub.customerEmail.split('@')[0];
+                void Promise.resolve(
+                    sendNotification({
+                        type: NotificationType.PLAN_BEING_RETIRED,
+                        recipientEmail: sub.customerEmail,
+                        recipientName: recipientName ?? sub.customerEmail,
+                        userId: null,
                         customerId: sub.customerId,
-                        error: err instanceof Error ? err.message : String(err)
-                    },
-                    'plan-disable-lifecycle: PLAN_BEING_RETIRED notification failed (non-blocking)'
+                        planName,
+                        accessUntil: sub.currentPeriodEnd.toISOString(),
+                        migrationHint
+                    })
+                ).catch((err: unknown) => {
+                    apiLogger.warn(
+                        {
+                            subscriptionId: sub.id,
+                            customerId: sub.customerId,
+                            error: err instanceof Error ? err.message : String(err)
+                        },
+                        'plan-disable-lifecycle: PLAN_BEING_RETIRED notification failed (non-blocking)'
+                    );
+                });
+            } else {
+                apiLogger.warn(
+                    { subscriptionId: sub.id, customerId: sub.customerId },
+                    'plan-disable-lifecycle: no customer email resolved — skipping PLAN_BEING_RETIRED notification'
                 );
-            });
+            }
 
             affectedSubCount++;
         } catch (err) {

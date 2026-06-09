@@ -40,9 +40,10 @@ const {
     mockDbTransactionFn,
     mockInsertPlanAuditLogFn
 } = vi.hoisted(() => {
-    // SELECT chain: select().from().where() → resolves rows array
+    // SELECT chain: select().from().leftJoin().where() → resolves rows array
     const mockFromWhere = vi.fn().mockResolvedValue([]);
-    const mockFrom = vi.fn(() => ({ where: mockFromWhere }));
+    const mockFromLeftJoin = vi.fn(() => ({ where: mockFromWhere }));
+    const mockFrom = vi.fn(() => ({ leftJoin: mockFromLeftJoin }));
     const mockDbSelectFn = vi.fn(() => ({ from: mockFrom }));
 
     // UPDATE chain: update().set().where()
@@ -98,6 +99,11 @@ vi.mock('@repo/db', () => ({
         planId: 'plan_id',
         deletedAt: 'deleted_at',
         updatedAt: 'updated_at'
+    },
+    billingCustomers: {
+        id: 'id',
+        email: 'email',
+        name: 'name'
     },
     billingSubscriptionEvents: {
         subscriptionId: 'subscription_id',
@@ -173,7 +179,15 @@ interface SubRow {
     readonly cancelAtPeriodEnd: boolean;
     readonly currentPeriodEnd: Date;
     readonly planId: string;
+    /** Resolved from billingCustomers LEFT JOIN — null simulates a missing customer. */
+    readonly customerEmail: string | null;
+    readonly customerName: string | null;
 }
+
+/** Default customer email used in fixtures — asserted in the notification tests. */
+const DEFAULT_CUSTOMER_EMAIL = 'customer-001@example.com';
+/** Default customer name used in fixtures. */
+const DEFAULT_CUSTOMER_NAME = 'Customer One';
 
 function buildSubRow(overrides: Partial<SubRow> = {}): SubRow {
     return {
@@ -183,6 +197,8 @@ function buildSubRow(overrides: Partial<SubRow> = {}): SubRow {
         cancelAtPeriodEnd: false,
         currentPeriodEnd: CURRENT_PERIOD_END,
         planId: PLAN_ID,
+        customerEmail: DEFAULT_CUSTOMER_EMAIL,
+        customerName: DEFAULT_CUSTOMER_NAME,
         ...overrides
     };
 }
@@ -190,10 +206,12 @@ function buildSubRow(overrides: Partial<SubRow> = {}): SubRow {
 /**
  * Sets up the DB select mock to return the given rows for the fan-out query
  * (the query that finds eligible subs).
+ * Chain: select().from().leftJoin().where() → rows
  */
 function setupSelectRows(rows: SubRow[]): void {
     const where = vi.fn().mockResolvedValue(rows);
-    const from = vi.fn(() => ({ where }));
+    const leftJoin = vi.fn(() => ({ where }));
+    const from = vi.fn(() => ({ leftJoin }));
     mockDbSelectFn.mockReturnValue({ from } as ReturnType<typeof mockDbSelectFn>);
 }
 
@@ -318,6 +336,59 @@ describe('disablePlanLifecycle', () => {
                     accessUntil: CURRENT_PERIOD_END.toISOString()
                 })
             );
+        });
+
+        it('resolves recipientEmail to the customer email (non-empty) in notification', async () => {
+            // This assertion would have FAILED against the old code (recipientEmail: '').
+            // It passes only after the LEFT JOIN fix that pulls the real customer email.
+            await disablePlanLifecycle({ planId: PLAN_ID, actorId: ACTOR_ID });
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    recipientEmail: DEFAULT_CUSTOMER_EMAIL
+                })
+            );
+        });
+
+        it('resolves recipientName to customer name (non-empty) in notification', async () => {
+            // This assertion would have FAILED against the old code (recipientName: '').
+            // With a named customer, name is used directly.
+            await disablePlanLifecycle({ planId: PLAN_ID, actorId: ACTOR_ID });
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    recipientName: DEFAULT_CUSTOMER_NAME
+                })
+            );
+        });
+
+        it('falls back to email local-part for recipientName when customer name is null', async () => {
+            // When name is null, derivation: email.split('@')[0].
+            setupSelectRows([buildSubRow({ customerName: null })]);
+
+            await disablePlanLifecycle({ planId: PLAN_ID, actorId: ACTOR_ID });
+
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    recipientEmail: DEFAULT_CUSTOMER_EMAIL,
+                    recipientName: DEFAULT_CUSTOMER_EMAIL.split('@')[0]
+                })
+            );
+        });
+
+        it('skips notification (logs warn) when customerEmail is null — but still flips cancelAtPeriodEnd', async () => {
+            // Defensive guard: if the LEFT JOIN returns no customer row (null email),
+            // the notification is skipped but the cancelAtPeriodEnd flag must still
+            // be set. affectedSubCount is still incremented.
+            setupSelectRows([buildSubRow({ customerEmail: null, customerName: null })]);
+
+            await disablePlanLifecycle({ planId: PLAN_ID, actorId: ACTOR_ID });
+
+            // cancelAtPeriodEnd flip should have happened
+            expect(mockDbUpdateFn).toHaveBeenCalled();
+            // notification should NOT have been called
+            expect(sendNotification).not.toHaveBeenCalled();
+            // but affectedSubCount still increments
         });
 
         it('fans out across multiple eligible subs — affectedSubCount=N', async () => {
