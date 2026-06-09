@@ -91,6 +91,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
     });
 
     // ── Fetch all analytics data ──────────────────────────────────────
+    // biome-ignore lint/correctness/useExhaustiveDependencies: t is a stable translation function, not reactive
     const fetchAnalytics = useCallback(async () => {
         setState({ status: 'loading' });
         setErrors({
@@ -226,7 +227,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                         : t('host.dashboard.analytics.error', 'Error al cargar las estadísticas')
             });
         }
-    }, [viewsWindow, t]);
+    }, [viewsWindow]);
 
     useEffect(() => {
         void fetchAnalytics();

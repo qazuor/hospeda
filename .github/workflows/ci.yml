@@ -270,7 +270,6 @@ jobs:
     # See docs/guides/test-performance.md for the full rationale.
     env:
       VITEST_MAX_FORKS: 4
-      NODE_OPTIONS: '--max-old-space-size=6144'
     strategy:
       fail-fast: false
       matrix:
