@@ -704,11 +704,13 @@ FROM billing_plans
 WHERE id = '<plan-uuid>';"
 
 # 2. View the admin audit event for the disable action.
+#    planId is stored in entity_id (top-level column), NOT inside the changes JSONB.
+#    changes JSONB holds: { active, affectedSubCount, eventType }.
 hops psql --target=prod -c "
-SELECT id, action, actor_id, changes, previous_values, created_at
+SELECT id, action, actor_id, entity_id, changes, previous_values, created_at
 FROM billing_audit_logs
-WHERE changes->>'eventType' = 'PLAN_DISABLED_BY_ADMIN'
-  AND changes->>'planId' = '<plan-uuid>'
+WHERE entity_id = '<plan-uuid>'
+  AND changes->>'eventType' = 'PLAN_DISABLED_BY_ADMIN'
 ORDER BY created_at DESC LIMIT 5;"
 # changes->>'affectedSubCount' tells you how many subs were queued for cancellation.
 
