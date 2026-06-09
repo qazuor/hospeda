@@ -294,7 +294,7 @@
             "id": "T-014",
             "title": "Verification sweep (typecheck, biome, touched + consumer tests, e2e)",
             "description": "Re-run everything touched + consumers of changed @repo/schemas/@repo/notifications/constants exports (lesson SPEC-145/149/167: 'green' files break on export changes). Per-package typecheck (api, schemas, service-core, notifications, config). biome on the diff. Every touched unit file sequentially. e2e: the 2 new files + plan-downgrade + monthly/annual checkout (only known pre-existing failures allowed). Rebuild stale dists before trusting typecheck (post-bump lesson). Confirm env:check:registry green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012", "T-013"],
             "blocks": ["T-015"],
@@ -302,14 +302,14 @@
             "tags": ["sweep", "quality"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
