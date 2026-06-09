@@ -71,7 +71,21 @@ export const BILLING_EVENT_TYPES = {
      * dispatched. The D-1 variant is independent from D-3 — a trial gets both
      * reminders, but never the same variant twice (SPEC-126 D5).
      */
-    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1'
+    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1',
+    /**
+     * Fired when a user explicitly requests cancellation of their subscription
+     * via the self-service cancellation flow (SPEC-147). Persisted immediately
+     * at cancellation request time so the intent is auditable even if the
+     * subsequent finalization step fails.
+     */
+    USER_CANCELED: 'USER_CANCELED',
+    /**
+     * Fired when a cancelled subscription's end-of-period finalization job
+     * runs and completes the transition to the cancelled state (SPEC-147).
+     * Written by the cron/job that processes subscriptions past their
+     * current_period_end while in a pending-cancellation status.
+     */
+    FINALIZE_CANCELLED_SUB: 'FINALIZE_CANCELLED_SUB'
 } as const;
 
 /**
