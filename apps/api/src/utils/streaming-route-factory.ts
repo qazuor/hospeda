@@ -66,6 +66,12 @@ export interface StreamHandlerResult {
     readonly stream: AsyncIterable<StreamTextChunk>;
     /** Resolves after the stream drains; its JSON is emitted as the `done` frame. */
     readonly meta?: Promise<unknown>;
+    /**
+     * Optional debug payload emitted as the very first SSE event (`debug`)
+     * before any `token` frames. Used by the admin playground to display
+     * the system prompt and accommodation context sent to the model.
+     */
+    readonly debug?: Record<string, unknown>;
 }
 
 /**
@@ -253,6 +259,14 @@ export const createStreamingRoute = (options: StreamingRouteOptions) => {
         // --- SSE lifecycle ---
         return streamSSE(c, async (sseStream) => {
             try {
+                // Emit debug payload as the very first event (if present).
+                if (handlerResult.debug !== undefined) {
+                    await sseStream.writeSSE({
+                        event: 'debug',
+                        data: JSON.stringify(handlerResult.debug)
+                    });
+                }
+
                 for await (const chunk of handlerResult.stream) {
                     await sseStream.writeSSE({
                         event: 'token',

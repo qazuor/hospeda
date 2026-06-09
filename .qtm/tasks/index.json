@@ -263,6 +263,21 @@
             "created": "2026-06-06",
             "tags": ["ai", "feature", "host", "text-improvement", "spec-173-child"],
             "archiveNote": "10/10 tasks. Verify: 12/12 ACs, 4/4 safety invariants, 77/77 tests. Shipped scope: AiTextImproveRequestSchema (packages/schemas), /api/v1/protected/ai/text-improve SSE route (apps/api), useAiTextImprove hook + AiTextImprovePanel (apps/admin), wired into accommodation edit form (description + summary fields). V1 owner/complex + HOST only. Follow-ups: SPEC-198.1 (server-side audit), SPEC-198.2 (V2 field scope), SPEC-198.3 (NETWORK_INTERRUPTED i18n key)."
+        },
+        {
+            "specId": "SPEC-200",
+            "title": "AI Accommodation Chat (tourist)",
+            "status": "completed",
+            "progress": "12/12",
+            "path": "SPEC-200-ai-accommodation-chat",
+            "branch": "spec/SPEC-200-ai-accommodation-chat",
+            "base": "staging",
+            "parentSpec": "SPEC-173",
+            "created": "2026-06-05",
+            "archived": true,
+            "archivedAt": "2026-06-07",
+            "archiveNote": "12/12 tasks (10 code + 2 smoke/E2E). Shipped via PRs #1492 (backend, T-001..T-006) and #1494 (frontend, T-007..T-012), both merged to staging. Verify: PASS WITH WARNINGS — 34/38 ACs verified via tests + source inspection; 4 ACs pending CI (PostHog events AC-8.1..8.5 + entitlement gates AC-10.1..10.4 — chat-route.test.ts OOM locally). T-006 (staging smoke) and T-012 (E2E + staging smoke) are manual follow-ups. No openspec delta spec (project uses QTM canonical store). Follow-ups: staging smoke sign-off, E2E Playwright tests.",
+            "tags": ["ai", "feature", "spec-173-child"]
         }
     ],
     "standalone": {

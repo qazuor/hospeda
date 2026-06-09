@@ -21,7 +21,7 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('AiProviderIdSchema', () => {
-    it('accepts each valid provider identifier', () => {
+    it('accepts each built-in provider identifier', () => {
         for (const id of ['openai', 'anthropic', 'stub'] as const) {
             // Arrange + Act
             const result = AiProviderIdSchema.safeParse(id);
@@ -30,13 +30,11 @@ describe('AiProviderIdSchema', () => {
         }
     });
 
-    it('rejects an unknown provider', () => {
-        // Arrange
-        const unknown = 'gemini';
-        // Act
-        const result = AiProviderIdSchema.safeParse(unknown);
-        // Assert
-        expect(result.success).toBe(false);
+    it('accepts custom provider identifiers', () => {
+        for (const id of ['ollama', 'groq', 'deepseek', 'lm-studio', 'together']) {
+            const result = AiProviderIdSchema.safeParse(id);
+            expect(result.success, `expected '${id}' to be valid`).toBe(true);
+        }
     });
 
     it('rejects an empty string', () => {
@@ -47,6 +45,18 @@ describe('AiProviderIdSchema', () => {
     it('rejects a non-string value', () => {
         const result = AiProviderIdSchema.safeParse(42 as unknown);
         expect(result.success).toBe(false);
+    });
+
+    it('rejects strings longer than 100 characters', () => {
+        const longId = 'a'.repeat(101);
+        const result = AiProviderIdSchema.safeParse(longId);
+        expect(result.success).toBe(false);
+    });
+
+    it('accepts strings up to 100 characters', () => {
+        const maxId = 'a'.repeat(100);
+        const result = AiProviderIdSchema.safeParse(maxId);
+        expect(result.success).toBe(true);
     });
 });
 

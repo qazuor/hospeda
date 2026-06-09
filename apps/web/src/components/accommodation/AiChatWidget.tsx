@@ -28,6 +28,7 @@ export interface AiChatWidgetProps {
  */
 export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
     const chat = useAccommodationChat({ accommodationId, locale, apiUrl });
     const { t } = createTranslations(locale);
@@ -107,18 +108,28 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     role="dialog"
                     aria-modal="true"
                     aria-label={t('accommodations.aiChat.panelLabel')}
-                    className={styles.panel}
+                    className={`${styles.panel} ${isExpanded ? styles.panelExpanded : ''}`}
                 >
                     <div className={styles.header}>
                         <h2 className={styles.title}>{t('accommodations.aiChat.panelLabel')}</h2>
-                        <button
-                            type="button"
-                            className={styles.closeButton}
-                            onClick={() => setIsOpen(false)}
-                            aria-label={t('accommodations.aiChat.close')}
-                        >
-                            ✕
-                        </button>
+                        <div className={styles.headerActions}>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                aria-label={isExpanded ? 'Reducir' : 'Expandir'}
+                            >
+                                {isExpanded ? '↘' : '↗'}
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.iconButton}
+                                onClick={() => setIsOpen(false)}
+                                aria-label={t('accommodations.aiChat.close')}
+                            >
+                                ✕
+                            </button>
+                        </div>
                     </div>
 
                     <div className={styles.disclaimer}>
@@ -181,6 +192,12 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                             placeholder={t('accommodations.aiChat.placeholder')}
                             value={draft}
                             onChange={(e) => setDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
                             disabled={
                                 chat.state.status === 'streaming' || chat.state.status === 'at_cap'
                             }
@@ -194,10 +211,9 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 chat.state.status === 'at_cap' ||
                                 !draft.trim()
                             }
+                            aria-label={t('accommodations.aiChat.send')}
                         >
-                            {chat.state.status === 'streaming'
-                                ? t('accommodations.aiChat.sending')
-                                : t('accommodations.aiChat.send')}
+                            {chat.state.status === 'streaming' ? '⏳' : '↑'}
                         </button>
                     </form>
                 </div>

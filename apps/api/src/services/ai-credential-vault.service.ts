@@ -81,6 +81,22 @@ export interface RotateAiProviderCredentialInput {
 }
 
 /**
+ * Input for updating an existing AI provider credential's metadata.
+ */
+export interface UpdateAiProviderCredentialInput {
+    /** Actor performing the action. */
+    readonly actor: Actor;
+    /** IP address of the request. */
+    readonly ipAddress: string | null;
+    /** AI provider identifier whose active credential to update. */
+    readonly providerId: string;
+    /** Optional new label. */
+    readonly label?: string;
+    /** Optional new metadata blob. */
+    readonly metadata?: Record<string, unknown>;
+}
+
+/**
  * Input for soft-deleting an AI provider credential.
  */
 export interface DeleteAiProviderCredentialInput {
@@ -445,6 +461,98 @@ export async function rotateAiProviderCredential(
         return errorOutput<CredentialMutationResult>(
             ServiceErrorCode.INTERNAL_ERROR,
             'Unexpected error while rotating credential'
+        );
+    }
+}
+
+/**
+ * Updates non-sensitive metadata (label, models, baseURL) for an active credential.
+ *
+ * Does NOT touch ciphertext, IV, or authTag — only metadata fields. An audit row
+ * (`action: 'updated'`) is inserted atomically in the same transaction.
+ *
+ * Fails with `NOT_FOUND` when no active credential exists for `providerId`.
+ *
+ * @param input - Update input including actor, providerId, and optional label/metadata.
+ * @returns `ServiceOutput` with `{ id, providerId }` on success.
+ */
+export async function updateCredentialMetadata(
+    input: UpdateAiProviderCredentialInput
+): Promise<ServiceOutput<CredentialMutationResult>> {
+    const { actor, ipAddress, providerId, label, metadata } = input;
+
+    try {
+        const db = getDb();
+
+        // 1. Find the active credential.
+        const active = await db
+            .select({ id: aiProviderCredentials.id })
+            .from(aiProviderCredentials)
+            .where(
+                and(
+                    eq(aiProviderCredentials.providerId, providerId),
+                    isNull(aiProviderCredentials.deletedAt)
+                )
+            )
+            .limit(1);
+
+        if (active.length === 0) {
+            return errorOutput<CredentialMutationResult>(
+                ServiceErrorCode.NOT_FOUND,
+                `No active credential found for provider '${providerId}'`
+            );
+        }
+
+        const credentialId = active[0]?.id;
+        if (credentialId === undefined) {
+            return errorOutput<CredentialMutationResult>(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Active credential row did not return an ID'
+            );
+        }
+
+        // 2. Build the partial update set — only provided fields.
+        const updateSet: Record<string, unknown> = { updatedAt: new Date() };
+        if (label !== undefined) {
+            updateSet.label = label;
+        }
+        if (metadata !== undefined) {
+            updateSet.metadata = metadata;
+        }
+
+        // 3. Transactional update: metadata + audit.
+        await withTransaction(async (tx) => {
+            await tx
+                .update(aiProviderCredentials)
+                .set(updateSet)
+                .where(eq(aiProviderCredentials.id, credentialId));
+
+            await tx.insert(aiCredentialAudit).values({
+                actorId: actor.id,
+                action: 'updated',
+                providerId,
+                ipAddress: ipAddress ?? null
+            });
+        });
+
+        apiLogger.info(
+            { providerId, credentialId, actorId: actor.id },
+            'ai-credential-vault: credential metadata updated'
+        );
+
+        return { data: { id: credentialId, providerId } };
+    } catch (error) {
+        apiLogger.error(
+            {
+                providerId,
+                actorId: actor.id,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'ai-credential-vault: unexpected error in updateCredentialMetadata'
+        );
+        return errorOutput<CredentialMutationResult>(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Unexpected error while updating credential metadata'
         );
     }
 }
