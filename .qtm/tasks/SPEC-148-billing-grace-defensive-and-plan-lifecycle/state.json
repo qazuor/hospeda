@@ -118,7 +118,7 @@
             "id": "T-006",
             "title": "Reject new signups on disabled plan (410 PLAN_DISABLED)",
             "description": "Part B. apps/api/src/routes/billing/start-paid.ts: after resolving the target plan, if plan.isActive===false → throw ServiceError(PLAN_DISABLED, ...) → global handler maps to 410. Place in the inner try; ⚠️ ServiceError must be re-thrown before SPEC-149's isBillingProviderError in the outer catch (~:318-347) — follow the SPEC-147 guard pattern (:248-261). Also guard change-plan if a user could change TO a disabled plan (check plan-change resolves target plan — add the same check). Tests: start-paid on disabled plan → 410 PLAN_DISABLED; active plan → unaffected; change-plan to disabled → 410; SPEC-149 provider-error regression green (re-run plan-change-provider-error + start-paid tests).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
@@ -126,14 +126,14 @@
             "tags": ["api", "routes", "guard"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T15:00:00.000Z",
+                "completed": "2026-06-09T15:10:00.000Z"
             }
         },
         {
