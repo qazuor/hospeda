@@ -141,6 +141,7 @@ const safeErrorMessage = (code: string): string => {
     const messages: Record<string, string> = {
         MODERATION_BLOCKED: 'Content policy violation — the request was blocked.',
         FEATURE_DISABLED: 'This AI feature is currently disabled.',
+        FEATURE_NOT_CONFIGURED: 'This AI feature is not configured.',
         CEILING_HIT: 'AI cost ceiling reached. Try again later.',
         ENGINE_EXHAUSTED: 'All AI providers are temporarily unavailable.',
         NO_ENABLED_PROVIDER: 'No AI provider is currently enabled.',
