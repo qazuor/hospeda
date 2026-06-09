@@ -250,7 +250,7 @@
             "id": "T-012",
             "title": "e2e: soft-cancel happy path + collision + gate",
             "description": "New e2e apps/api/test/e2e/flows/billing/. Active sub → POST /cancel → status='active' + cancelAtPeriodEnd=true + canceledAt set + USER_CANCELED event + entitlements STILL load (no immediate access loss); mp-stub records the preapproval pause call (verify payload); the paused webhook arriving keeps status ACTIVE (T-007 collision); change-plan on the soft-cancelled sub is rejected (T-008); confirmation notification queued. Use billing-factories + mp-stub (SPEC-143). Needs T-001 bump for the real pause call shape.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-006", "T-007", "T-008", "T-011"],
             "blocks": ["T-014"],
@@ -258,14 +258,14 @@
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
