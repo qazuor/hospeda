@@ -228,7 +228,7 @@
             "id": "T-011",
             "title": "GET subscription response surfaces soft-cancel state",
             "description": "user/protected/subscription.ts already reads cancelAtPeriodEnd (~:263). Ensure the GET response cleanly surfaces { cancelAtPeriodEnd, canceledAt, accessUntil } for the UI (SPEC-203) to render the cancel state + 'access ends' date. Minimal: verify the existing read returns the now-populated values; add canceledAt/accessUntil to the response schema if missing. Tests: soft-cancelled sub GET returns the flags; active sub returns false/null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-012"],
@@ -236,14 +236,14 @@
             "tags": ["api", "routes", "schemas"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
