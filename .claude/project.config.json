@@ -83,6 +83,7 @@
         "host": "localhost",
         "port": 5436,
         "templateDb": "hospeda_template",
+        "devDb": "hospeda_dev",
         "dbNamePattern": "worktree_{slug}",
         "connStringEnvVar": "HOSPEDA_DATABASE_URL",
         "connStringFile": "apps/api/.env.local",
