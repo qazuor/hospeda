@@ -57,6 +57,19 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     extraInfo: true
 }).extend({
     /**
+     * Rich-text (markdown) variant of the description for entitled hosts.
+     * Must survive serialization so the web client can switch between rich
+     * and plain rendering (FR-3b / FR-4 in SPEC-187). The entitlement-by-omission
+     * gate (strips the field server-side for non-entitled owners) runs BEFORE
+     * stripWithSchema, so schema presence is safe — omission is the protection.
+     * Accepts null (DB default for un-filled rows) and undefined (entitlement gate
+     * strips to undefined), matching the base schema's .nullish() declaration.
+     */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.accommodation.richDescription.max' })
+        .nullish(),
+    /**
      * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
      * for server-side use (restore on re-upgrade), but it must never be exposed
      * to public consumers. Override the picked field with the input-safe shape.
