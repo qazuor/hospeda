@@ -864,6 +864,68 @@ describe('Environment Configuration', () => {
     });
 
     // ---------------------------------------------------------------------------
+    // SPEC-147 — HOSPEDA_USER_CANCEL_ENABLED (opt-in feature flag, default false)
+    // ---------------------------------------------------------------------------
+
+    describe('HOSPEDA_USER_CANCEL_ENABLED (SPEC-147)', () => {
+        it('defaults to false when not set', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: undefined
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
+        });
+
+        it('enables when set to the literal string "true"', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: 'true'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(true);
+        });
+
+        it('stays false when set to "false"', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: 'false'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
+        });
+
+        it('stays false when set to an arbitrary truthy string (opt-in, not opt-out)', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: '1'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
+        });
+    });
+
+    // ---------------------------------------------------------------------------
     // SPEC-109 Phase 1 — HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
     // ---------------------------------------------------------------------------
 

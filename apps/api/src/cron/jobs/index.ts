@@ -34,6 +34,7 @@ export { conversationTokenReminderJob } from './conversation-token-reminder.job.
 export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { applyScheduledPlanChangesJob } from './apply-scheduled-plan-changes.js';
+export { finalizeCancelledSubsJob } from './finalize-cancelled-subs.js';
 export { subscriptionPollJob } from './subscription-poll.job.js';
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';

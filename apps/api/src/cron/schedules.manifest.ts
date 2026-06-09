@@ -145,6 +145,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
     },
     {
+        name: 'finalize-cancelled-subs',
+        displayName: 'Finalizar suscripciones canceladas',
+        category: 'billing',
+        schedule: '30 4 * * *',
+        description:
+            'Finalizes soft-cancelled subscriptions whose current_period_end has elapsed: flips status to cancelled, revokes addons, clears entitlement cache (SPEC-147).'
+    },
+    {
         name: 'media-orphan-cleanup',
         displayName: 'Limpieza de medios huérfanos',
         category: 'media',

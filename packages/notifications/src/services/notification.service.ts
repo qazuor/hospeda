@@ -21,12 +21,15 @@ import {
     PlanDowngradeLimitWarning,
     PurchaseConfirmation,
     RenewalReminder,
+    SubscriptionAccessEndingSoon,
+    SubscriptionCancelConfirmed,
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
     TrialEndingReminder,
     TrialExpired
 } from '../templates/index.js';
+import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
 import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js';
 import type {
@@ -42,6 +45,8 @@ import type {
     PlanDowngradeLimitWarningPayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
+    SubscriptionAccessEndingSoonPayload,
+    SubscriptionCancelConfirmedPayload,
     SubscriptionEventPayload,
     SubscriptionLifecyclePayload,
     TrialEventPayload
@@ -543,6 +548,27 @@ export class NotificationService {
                 });
             }
 
+            case 'subscription_cancel_confirmed': {
+                const p = payload as SubscriptionCancelConfirmedPayload;
+                return SubscriptionCancelConfirmed({
+                    recipientName,
+                    planName: p.planName,
+                    accessUntil: p.accessUntil,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'subscription_access_ending_soon': {
+                const p = payload as SubscriptionAccessEndingSoonPayload;
+                return SubscriptionAccessEndingSoon({
+                    recipientName,
+                    planName: p.planName,
+                    accessUntil: p.accessUntil,
+                    daysRemaining: p.daysRemaining,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -609,6 +635,19 @@ export class NotificationService {
             subjectData.thresholdPct = String(payload.thresholdPct);
             subjectData.scope =
                 payload.scope === 'global' ? 'global' : `feature:${payload.feature ?? 'unknown'}`;
+        }
+
+        // Soft-cancel confirmation specific fields (SPEC-147)
+        // Format accessUntil from raw ISO string to a locale date string
+        // (e.g. "15 de julio de 2026") so the subject does not embed a raw
+        // ISO timestamp like "2026-07-15T23:59:59.000Z".
+        if (payload.type === 'subscription_cancel_confirmed' && 'accessUntil' in payload) {
+            subjectData.accessUntil = formatDate({ dateString: payload.accessUntil });
+        }
+
+        // D3 access-ending reminder specific fields (SPEC-147 T-010)
+        if (payload.type === 'subscription_access_ending_soon' && 'daysRemaining' in payload) {
+            subjectData.daysRemaining = String(payload.daysRemaining);
         }
 
         return getSubject(payload.type, subjectData);

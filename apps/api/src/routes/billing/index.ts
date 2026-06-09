@@ -40,6 +40,7 @@ import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
+import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
@@ -185,6 +186,21 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // in past-due-grace.middleware.ts.
     router.use('*', pastDueGraceMiddleware());
 
+    // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
+    // qzpay wrapper. qzpay-hono's prebuilt routes include
+    // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
+    // our custom route must be registered first to take priority.
+    //
+    // The `billingAdminGuardMiddleware` is applied here (not via qzpayWrapper)
+    // to maintain the same security posture: `cancel` is in allowedSubPaths so
+    // non-admin users pass through. Ownership is enforced in the service layer
+    // (softCancelSubscription verifies customerId === billingCustomerId) plus
+    // the handler's own billingCustomerId gate.
+    const cancelWrapper = createRouter();
+    cancelWrapper.use('*', billingAdminGuardMiddleware());
+    cancelWrapper.route('/', subscriptionCancelRouter);
+    router.route('/subscriptions', cancelWrapper);
+
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
     // resources (customers, subscriptions, invoices, payments, entitlements).
@@ -231,7 +247,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, subscription-cancel, and usage routes'
     );
 
     return router;

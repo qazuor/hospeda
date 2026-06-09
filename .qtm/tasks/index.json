@@ -267,6 +267,17 @@
             "tags": ["host-migration", "phase-4"]
         },
         {
+            "specId": "SPEC-147",
+            "title": "User self-service subscription cancellation",
+            "status": "in-progress",
+            "progress": "15/16",
+            "path": "SPEC-147-user-self-service-subscription-cancellation",
+            "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",
+            "base": "staging",
+            "note": "Backend ships dark behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI."
+        },
+        {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "status": "draft",

@@ -234,7 +234,7 @@
             "title": "User self-service subscription cancellation",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "parent": "SPEC-193",
             "created": "2026-05-19T00:00:00Z",

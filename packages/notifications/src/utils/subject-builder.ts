@@ -37,7 +37,15 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // AI cost threshold alert (SPEC-173 T-025)
     [NotificationType.AI_COST_THRESHOLD_ALERT]:
-        '[Admin] Alerta de costo IA — {thresholdPct}% del presupuesto ({scope})'
+        '[Admin] Alerta de costo IA — {thresholdPct}% del presupuesto ({scope})',
+
+    // Soft-cancel confirmation (SPEC-147)
+    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]:
+        'Cancellation confirmed — {planName} access until {accessUntil}',
+
+    // D3 access-ending reminder (SPEC-147 T-010)
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
+        'Your {planName} access ends in {daysRemaining} days — act now to keep it'
 };
 
 /**

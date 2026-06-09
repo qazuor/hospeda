@@ -789,6 +789,28 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // User self-service subscription cancellation (SPEC-147)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_USER_CANCEL_ENABLED',
+        description:
+            'Feature flag for the user self-service subscription cancellation route (SPEC-147). Ships dark by default (false) until the SPEC-203 UI lands. Set to "true" to enable.',
+        descriptionEs:
+            'Feature flag de la ruta de auto-cancelación de suscripción por el usuario (SPEC-147). Por defecto desactivado (false) hasta que llegue la UI de SPEC-203. Poné "true" para habilitar.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Set "true" to enable the user self-service cancel endpoint. Leave unset or set "false" to keep it dark (ships disabled until SPEC-203 UI). Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
+        howToObtainEs:
+            'Poné "true" para habilitar el endpoint de auto-cancelación del usuario. Dejalo sin setear o en "false" para mantenerlo dark (se entrega desactivado hasta la UI de SPEC-203). Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
+    },
+
+    // -------------------------------------------------------------------------
     // MercadoPago subscription polling fallback (SPEC-143)
     // -------------------------------------------------------------------------
     {

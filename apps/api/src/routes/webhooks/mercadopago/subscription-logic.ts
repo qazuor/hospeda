@@ -476,10 +476,18 @@ export async function processSubscriptionUpdated({
         // The initial SELECT at Step 5 ran OUTSIDE this transaction. Between that
         // read and now another webhook replica may have written a new status. Re-read
         // the row with SELECT … FOR UPDATE to serialize concurrent writes, then
-        // re-evaluate the same-status short-circuit and the transition guard on the
-        // FRESH status. The earlier guard (Step 6b above) is a cheap fast path only.
+        // re-evaluate the same-status short-circuit, the soft-cancel grace guard
+        // (SPEC-147 T-007), and the transition guard on the FRESH status.
+        // The earlier guards (Steps 6 and 6b above) are cheap fast-path checks only.
+        //
+        // cancelAtPeriodEnd is fetched here (not just status) so the SPEC-147 T-007
+        // guard can read the authoritative value under the row lock, preventing a race
+        // where the soft-cancel tx writes the flag concurrently with this webhook.
         const [freshRow] = await tx
-            .select({ status: billingSubscriptions.status })
+            .select({
+                status: billingSubscriptions.status,
+                cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd
+            })
             .from(billingSubscriptions)
             .where(eq(billingSubscriptions.id, localSubscription.id))
             .for('update');
@@ -501,6 +509,40 @@ export async function processSubscriptionUpdated({
             apiLogger.debug(
                 { subscriptionId: localSubscription.id, freshStatus, mappedStatus, source },
                 'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        // ── SPEC-147 T-007: Soft-cancel grace-period guard ────────────────────
+        // When the soft-cancel service (T-005) pauses the MP preapproval, MP
+        // emits subscription_preapproval.updated status='paused'. That normally
+        // maps to local PAUSED — which would cut entitlements mid-grace-period.
+        // Guard: if the mapped target is PAUSED AND the fresh row already has
+        // cancelAtPeriodEnd=true (intentional soft-cancel pause), skip the PAUSED
+        // transition entirely. The subscription stays ACTIVE+cancelAtPeriodEnd=true
+        // until the finalization cron runs after current_period_end.
+        //
+        // Exemption: a real admin/provider pause where cancelAtPeriodEnd=false
+        // MUST still go PAUSED — the guard does NOT apply in that case.
+        //
+        // Ordering race note (SPEC-147 T-007): the soft-cancel service writes
+        // cancelAtPeriodEnd=true BEFORE calling the provider (see T-005 Step 3.5),
+        // so by the time MP fires the paused webhook, the flag is already committed.
+        // The FOR UPDATE lock here serializes any concurrent soft-cancel tx that
+        // hasn't committed yet — if the flag is still false under the lock, the
+        // guard does not fire and the webhook goes PAUSED (rare but safe: the
+        // finalization cron will still honour cancelAtPeriodEnd if it is set later).
+        if (mappedStatus === SubscriptionStatusEnum.PAUSED && freshRow.cancelAtPeriodEnd === true) {
+            apiLogger.info(
+                {
+                    subscriptionId: localSubscription.id,
+                    freshStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source
+                },
+                'Subscription webhook tx: skipping PAUSED transition — intentional soft-cancel grace period'
             );
             txStatusChanged = false;
             return;
