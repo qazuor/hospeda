@@ -233,6 +233,19 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
+        // SPEC-148 T-006 guard: reject plan-change onto a disabled plan.
+        // A user must not move onto a retiring or retired plan. QZPayPlan.active
+        // is the canonical active flag — reject with 410 PLAN_DISABLED so the
+        // client can surface a clear "plan no longer available" message.
+        if (targetPlan.active === false) {
+            throw new ServiceError(
+                ServiceErrorCode.PLAN_DISABLED,
+                'This plan is no longer available. Please choose an active plan.',
+                undefined,
+                'PLAN_DISABLED'
+            );
+        }
+
         // 3. Reject one_time billing interval (uses a separate payment flow)
         if (billingInterval === BillingIntervalEnum.ONE_TIME) {
             throw new HTTPException(422, {

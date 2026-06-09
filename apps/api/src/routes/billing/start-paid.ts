@@ -261,6 +261,23 @@ export const handleStartPaidSubscription = async (
             );
         }
 
+        // SPEC-148 T-006 guard: reject checkout onto a disabled plan.
+        // Resolve the plan by slug before invoking the service so that a
+        // disabled (retired) plan is rejected with 410 PLAN_DISABLED instead
+        // of falling through to PLAN_NOT_FOUND or a provider error. The check
+        // mirrors `resolvePlanBySlug` in subscription-checkout.service.ts —
+        // QZPayPlan.active is the canonical active flag.
+        const plansResult = await billing.plans.list();
+        const targetPlan = plansResult.data.find((p) => p.name === body.planSlug) ?? null;
+        if (targetPlan !== null && targetPlan.active === false) {
+            throw new ServiceError(
+                ServiceErrorCode.PLAN_DISABLED,
+                'This plan is no longer available. Please choose an active plan.',
+                undefined,
+                'PLAN_DISABLED'
+            );
+        }
+
         const result =
             body.billingInterval === 'annual'
                 ? await initiatePaidAnnualSubscription({
