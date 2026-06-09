@@ -382,6 +382,16 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
     /**
+     * Feature flag for the user self-service subscription cancellation route
+     * (SPEC-147). Ships dark (default false) until the SPEC-203 UI lands.
+     * Set to 'true' to enable. Absent or any other value keeps the route
+     * disabled (opt-in: only the literal string 'true' enables it).
+     */
+    HOSPEDA_USER_CANCEL_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
      * Feature flag for the MercadoPago subscription_preapproval polling
      * fallback (SPEC-143 Finding #17). When `true` (default), start-paid
      * schedules a polling job that queries MP `/preapproval/{id}` until
