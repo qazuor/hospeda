@@ -23,6 +23,7 @@ import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
+import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PropertyCard from '@/components/host/PropertyCard.astro';
 
@@ -73,7 +74,7 @@ try {
                 { headers }
             ),
             fetch(
-                `${apiUrl}/api/v1/protected/billing/usage/MAX_ACCOMMODATIONS`,
+                `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
                 { headers }
             )
         ]);
@@ -89,18 +90,7 @@ try {
         }
 
         if (usageResponse.ok) {
-            const usageBody = (await usageResponse.json()) as {
-                currentUsage?: number;
-                maxAllowed?: number;
-                threshold?: string;
-            };
-            if (usageBody.maxAllowed != null) {
-                usageData = {
-                    currentUsage: usageBody.currentUsage ?? 0,
-                    maxAllowed: usageBody.maxAllowed,
-                    threshold: usageBody.threshold ?? 'ok'
-                };
-            }
+            usageData = parseUsageResponse({ json: await usageResponse.json() });
         }
         // Usage fetch failure is non-critical — badge simply won't render
     }
