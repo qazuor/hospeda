@@ -1,3 +1,22 @@
+// Mock getThresholdForContext so tests are isolated from DB.
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn().mockResolvedValue({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    })
+}));
+
+// Mock @repo/content-moderation to avoid env-var parsing.
+vi.mock('@repo/content-moderation', () => ({
+    moderateText: vi.fn().mockResolvedValue({
+        score: 0,
+        categories: { spam: 0, sexual: 0, violence: 0, hate: 0, harassment: 0, other: 0 },
+        matchedTerms: []
+    })
+}));
+
 import { AccommodationReviewModel } from '@repo/db';
 import type {
     AccommodationIdType,

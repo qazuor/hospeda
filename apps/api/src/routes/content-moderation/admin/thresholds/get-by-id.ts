@@ -1,7 +1,7 @@
 /**
  * Admin get moderation threshold by ID endpoint
  */
-import { contentModerationThresholdSchema } from '@repo/schemas';
+import { PermissionEnum, contentModerationThresholdSchema } from '@repo/schemas';
 import { ContentModerationThresholdService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -18,6 +18,7 @@ export const adminGetThresholdByIdRoute = createAdminRoute({
     summary: 'Get moderation threshold by ID (admin)',
     description: 'Retrieves a content moderation threshold by its ID',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW],
     requestParams: { id: contentModerationThresholdSchema.shape.id },
     responseSchema: contentModerationThresholdSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {

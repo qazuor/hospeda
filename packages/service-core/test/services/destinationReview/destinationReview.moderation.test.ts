@@ -17,6 +17,15 @@ vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn()
 }));
 
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn().mockResolvedValue({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    })
+}));
+
 const mockModel = {
     findById: vi.fn(),
     findOne: vi.fn(),
@@ -71,6 +80,7 @@ import * as contentModeration from '@repo/content-moderation';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { DestinationReview } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
 import type { ServiceConfig } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
@@ -269,6 +279,97 @@ describe('DestinationReviewService — _beforeCreate content-moderation wiring (
                 ...baseCreateInput,
                 title: 'Contains badword',
                 content: 'Blocked content here.'
+            } as unknown as DestinationReview,
+            createActor({ permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE] }),
+            {}
+        );
+
+        expect(result.moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    it('uses DB-backed threshold: score 0.6 with threshold 0.8 → still PENDING (destination default)', async () => {
+        // Even below the elevated threshold, destinations default to PENDING.
+        // This test verifies getThresholdForContext is called and passed through.
+        const gradedResult: contentModeration.ModerationResult = {
+            score: 0.6,
+            categories: Object.freeze({
+                spam: 0,
+                sexual: 0,
+                violence: 0,
+                hate: 0,
+                harassment: 0,
+                other: 0.6
+            }),
+            matchedTerms: Object.freeze([])
+        };
+        asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
+        asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({
+            context: 'review',
+            pending: 0.8,
+            reject: 0.95,
+            source: 'row' as const
+        });
+
+        const result = await (
+            service as unknown as {
+                _beforeCreate: (
+                    data: DestinationReview,
+                    actor: unknown,
+                    ctx: unknown
+                ) => Promise<Partial<DestinationReview>>;
+            }
+        )._beforeCreate(
+            {
+                ...baseCreateInput,
+                title: 'Borderline review',
+                content: 'Moderate content.'
+            } as unknown as DestinationReview,
+            createActor({ permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE] }),
+            {}
+        );
+
+        // destination entity default is PENDING regardless (score < elevated threshold)
+        expect(result.moderationState).toBe(ModerationStatusEnum.PENDING);
+        expect(asMock(getThresholdModule.getThresholdForContext)).toHaveBeenCalledWith({
+            context: 'review'
+        });
+    });
+
+    it('uses DB-backed threshold: score >= 0.8 threshold → PENDING (content-mod path)', async () => {
+        // Verify that when score meets the elevated threshold it is still caught as a hit.
+        const gradedResult: contentModeration.ModerationResult = {
+            score: 0.9,
+            categories: Object.freeze({
+                spam: 0,
+                sexual: 0,
+                violence: 0,
+                hate: 0,
+                harassment: 0,
+                other: 0.9
+            }),
+            matchedTerms: Object.freeze([])
+        };
+        asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
+        asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({
+            context: 'review',
+            pending: 0.8,
+            reject: 0.95,
+            source: 'row' as const
+        });
+
+        const result = await (
+            service as unknown as {
+                _beforeCreate: (
+                    data: DestinationReview,
+                    actor: unknown,
+                    ctx: unknown
+                ) => Promise<Partial<DestinationReview>>;
+            }
+        )._beforeCreate(
+            {
+                ...baseCreateInput,
+                title: 'High-score review',
+                content: 'Flagged by graded engine.'
             } as unknown as DestinationReview,
             createActor({ permissions: [PermissionEnum.DESTINATION_REVIEW_CREATE] }),
             {}

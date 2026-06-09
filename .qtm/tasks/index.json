@@ -286,6 +286,13 @@
             "progress": "0/13",
             "path": "SPEC-210-public-response-tier-enforcement",
             "archived": false
+        },
+        {
+            "specId": "SPEC-195",
+            "title": "Content Auto-Moderation Engine",
+            "status": "in-progress",
+            "progress": "6/7",
+            "path": "SPEC-195-content-auto-moderation"
         }
     ],
     "standalone": {

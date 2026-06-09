@@ -2,6 +2,7 @@
  * Admin get resolved threshold for context endpoint
  */
 import { z } from '@hono/zod-openapi';
+import { PermissionEnum } from '@repo/schemas';
 import { getThresholdForContext } from '@repo/service-core';
 import { createAdminRoute } from '../../../../utils/route-factory';
 
@@ -24,6 +25,7 @@ export const adminGetResolvedThresholdRoute = createAdminRoute({
     description:
         'Returns the effective moderation threshold for a given context, applying the fallback chain: specific row → default row → code constants.',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW],
     requestQuery: { context: z.string().optional() },
     responseSchema: ResolvedThresholdSchema,
     handler: async (_ctx, _params, _body, query) => {

@@ -9,7 +9,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceConfig } from '../../types';
+import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { invalidateModerationThresholdCache } from './get-threshold-for-context';
 
@@ -122,6 +122,53 @@ export class ContentModerationThresholdService extends BaseCrudService<
     protected async _afterRestore(result: { count: number }): Promise<{ count: number }> {
         invalidateModerationThresholdCache();
         return result;
+    }
+
+    /**
+     * Updates a threshold, enforcing the `pending < reject` invariant even for
+     * partial updates where only one of the two fields is supplied.
+     *
+     * When only `pending` or only `reject` is provided the Zod schema cannot
+     * validate the cross-field constraint (it only activates when both are
+     * present). This override reads the current row directly from the model,
+     * merges the incoming partial payload, and rejects the operation with
+     * VALIDATION_ERROR before the DB write if the merged values violate
+     * `pending < reject`.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<typeof updateContentModerationThresholdSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<ContentModerationThreshold>> {
+        // Only apply the invariant check when a partial update omits one field.
+        if (data.pending !== undefined || data.reject !== undefined) {
+            const current = await this.model.findById(id, ctx?.tx);
+            if (!current) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.NOT_FOUND,
+                        message: 'contentModerationThreshold not found'
+                    }
+                };
+            }
+
+            const mergedPending = data.pending ?? current.pending;
+            const mergedReject = data.reject ?? current.reject;
+
+            if (mergedPending >= mergedReject) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        message: `Invalid threshold: pending (${mergedPending}) must be less than reject (${mergedReject})`
+                    }
+                };
+            }
+        }
+
+        return super.update(actor, id, data, ctx) as Promise<
+            ServiceOutput<ContentModerationThreshold>
+        >;
     }
 
     protected async _executeSearch(params: ContentModerationThresholdAdminSearch) {

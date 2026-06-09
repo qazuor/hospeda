@@ -1,7 +1,6 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
-import type { TranslationKey } from '@repo/i18n';
 import { type ContentModerationTerm, contentModerationTermSchema } from '@repo/schemas';
 import type { z } from 'zod';
 import { createModerationTermColumns } from './moderation-terms.columns';
@@ -12,7 +11,8 @@ import { createModerationTermColumns } from './moderation-terms.columns';
 export const moderationTermsConfig: EntityConfig<ContentModerationTerm> = {
     name: 'moderation-terms',
     entityKey: 'contentModerationTerm',
-    entityType: EntityType.ACCOMMODATION,
+    // TODO: add EntityType.MODERATION_TERM when the enum is extended; TAG is the closest lightweight analog
+    entityType: EntityType.TAG,
 
     apiEndpoint: '/api/v1/admin/content-moderation/terms',
 
@@ -20,65 +20,65 @@ export const moderationTermsConfig: EntityConfig<ContentModerationTerm> = {
         filters: [
             {
                 paramKey: 'kind',
-                labelKey: 'content-moderation.terms.fields.kind' as TranslationKey,
+                labelKey: 'content-moderation.terms.fields.kind',
                 type: 'select',
                 order: 1,
                 options: [
                     {
                         value: 'word',
-                        labelKey: 'content-moderation.terms.kinds.word' as TranslationKey
+                        labelKey: 'content-moderation.terms.kinds.word'
                     },
                     {
                         value: 'domain',
-                        labelKey: 'content-moderation.terms.kinds.domain' as TranslationKey
+                        labelKey: 'content-moderation.terms.kinds.domain'
                     }
                 ]
             },
             {
                 paramKey: 'category',
-                labelKey: 'content-moderation.terms.fields.category' as TranslationKey,
+                labelKey: 'content-moderation.terms.fields.category',
                 type: 'select',
                 order: 2,
                 options: [
                     {
                         value: 'hate',
-                        labelKey: 'content-moderation.categories.hate' as TranslationKey
+                        labelKey: 'content-moderation.categories.hate'
                     },
                     {
                         value: 'sexual',
-                        labelKey: 'content-moderation.categories.sexual' as TranslationKey
+                        labelKey: 'content-moderation.categories.sexual'
                     },
                     {
                         value: 'violence',
-                        labelKey: 'content-moderation.categories.violence' as TranslationKey
+                        labelKey: 'content-moderation.categories.violence'
                     },
                     {
                         value: 'harassment',
-                        labelKey: 'content-moderation.categories.harassment' as TranslationKey
+                        labelKey: 'content-moderation.categories.harassment'
                     },
                     {
                         value: 'self_harm',
-                        labelKey: 'content-moderation.categories.self_harm' as TranslationKey
+                        labelKey: 'content-moderation.categories.self_harm'
                     },
                     {
                         value: 'spam',
-                        labelKey: 'content-moderation.categories.spam' as TranslationKey
+                        labelKey: 'content-moderation.categories.spam'
                     },
                     {
                         value: 'other',
-                        labelKey: 'content-moderation.categories.other' as TranslationKey
+                        labelKey: 'content-moderation.categories.other'
                     }
                 ]
             },
             {
                 paramKey: 'enabled',
-                labelKey: 'content-moderation.terms.fields.enabled' as TranslationKey,
+                labelKey: 'content-moderation.terms.fields.enabled',
                 type: 'boolean',
                 order: 3
             },
             {
                 paramKey: 'includeDeleted',
-                labelKey: 'admin-filters.includeDeleted.label' as TranslationKey,
+                labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
                 order: 99
             }
@@ -124,37 +124,37 @@ export const moderationTermsConfig: EntityConfig<ContentModerationTerm> = {
     peekFields: [
         {
             accessorKey: 'id',
-            labelKey: 'admin-entities.columns.id' as TranslationKey,
+            labelKey: 'admin-entities.columns.id',
             format: 'text'
         },
         {
             accessorKey: 'term',
-            labelKey: 'content-moderation.terms.fields.term' as TranslationKey,
+            labelKey: 'content-moderation.terms.fields.term',
             format: 'text'
         },
         {
             accessorKey: 'kind',
-            labelKey: 'content-moderation.terms.fields.kind' as TranslationKey,
+            labelKey: 'content-moderation.terms.fields.kind',
             format: 'badge'
         },
         {
             accessorKey: 'category',
-            labelKey: 'content-moderation.terms.fields.category' as TranslationKey,
+            labelKey: 'content-moderation.terms.fields.category',
             format: 'badge'
         },
         {
             accessorKey: 'severity',
-            labelKey: 'content-moderation.terms.fields.severity' as TranslationKey,
+            labelKey: 'content-moderation.terms.fields.severity',
             format: 'text'
         },
         {
             accessorKey: 'enabled',
-            labelKey: 'content-moderation.terms.fields.enabled' as TranslationKey,
+            labelKey: 'content-moderation.terms.fields.enabled',
             format: 'badge'
         },
         {
             accessorKey: 'createdAt',
-            labelKey: 'admin-entities.columns.createdAt' as TranslationKey,
+            labelKey: 'admin-entities.columns.createdAt',
             format: 'date'
         }
     ],

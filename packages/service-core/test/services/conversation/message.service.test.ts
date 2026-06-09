@@ -34,6 +34,17 @@ vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn()
 }));
 
+// Mock getThresholdForContext so tests are isolated from DB and the 60s cache.
+// Default: code-constants values (reject = 0.85). Individual tests can override.
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn().mockResolvedValue({
+        context: 'message',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    })
+}));
+
 import * as contentModeration from '@repo/content-moderation';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { SelectConversation, SelectMessage } from '@repo/db';
@@ -45,6 +56,7 @@ import {
     RoleEnum
 } from '@repo/schemas';
 import { type Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
 import { MessageService } from '../../../src/services/conversation/message.service.js';
 import type { NotificationScheduleService } from '../../../src/services/conversation/notification-schedule.service.js';
 import { createActor } from '../../factories/actorFactory.js';
@@ -663,6 +675,144 @@ describe('MessageService', () => {
                 'MESSAGE_CONTENT_BLOCKED'
             );
             expect(asMock(messageModelMock.create)).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // Content moderation — score-based blocking (openai provider path, SPEC-195)
+    // -----------------------------------------------------------------------
+
+    describe('createMessage — score-based blocking (openai provider path)', () => {
+        it('should block when score >= reject threshold even with empty matchedTerms', async () => {
+            // Arrange — simulate openai graded result: score = 0.9, no matchedTerms
+            const openAiResult: contentModeration.ModerationResult = {
+                score: 0.9,
+                categories: Object.freeze({
+                    spam: 0,
+                    sexual: 0,
+                    violence: 0.9,
+                    hate: 0,
+                    harassment: 0,
+                    other: 0
+                }),
+                matchedTerms: Object.freeze([])
+            };
+            asMock(contentModeration.moderateText).mockResolvedValue(openAiResult);
+            // reject threshold = 0.85 (default mock)
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'This is violent content flagged by openai'
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect((result.error as unknown as { reason?: string })?.reason).toBe(
+                'MESSAGE_CONTENT_BLOCKED'
+            );
+            expect(asMock(messageModelMock.create)).not.toHaveBeenCalled();
+        });
+
+        it('should block when score < reject threshold but matchedTerms is non-empty (local path still works)', async () => {
+            // Arrange — local provider: score 0.6 (below 0.85 reject), but matchedTerms present
+            const localResult: contentModeration.ModerationResult = {
+                score: 0.6,
+                categories: Object.freeze({
+                    spam: 0,
+                    sexual: 0,
+                    violence: 0,
+                    hate: 0,
+                    harassment: 0,
+                    other: 0.6
+                }),
+                matchedTerms: Object.freeze(['badword'])
+            };
+            asMock(contentModeration.moderateText).mockResolvedValue(localResult);
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'This contains badword'
+            });
+
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
+            expect((result.error as unknown as { reason?: string })?.reason).toBe(
+                'MESSAGE_CONTENT_BLOCKED'
+            );
+            expect(asMock(messageModelMock.create)).not.toHaveBeenCalled();
+        });
+
+        it('should pass when score < reject threshold AND matchedTerms is empty (clean openai result)', async () => {
+            // Arrange — openai returns graded score below threshold with empty matchedTerms
+            const cleanOpenAiResult: contentModeration.ModerationResult = {
+                score: 0.1,
+                categories: Object.freeze({
+                    spam: 0,
+                    sexual: 0,
+                    violence: 0,
+                    hate: 0,
+                    harassment: 0,
+                    other: 0.1
+                }),
+                matchedTerms: Object.freeze([])
+            };
+            asMock(contentModeration.moderateText).mockResolvedValue(cleanOpenAiResult);
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(messageModelMock.create).mockResolvedValue(makeMessage());
+            asMock(conversationModelMock.update).mockResolvedValue(conversation);
+
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'Hello, is this place available?'
+            });
+
+            expectSuccess(result);
+        });
+
+        it('should use DB-backed reject threshold: score 0.9 with threshold 0.95 → passes', async () => {
+            // score 0.9 would be blocked at default threshold 0.85,
+            // but passes when the DB threshold is elevated to 0.95.
+            const gradedResult: contentModeration.ModerationResult = {
+                score: 0.9,
+                categories: Object.freeze({
+                    spam: 0,
+                    sexual: 0,
+                    violence: 0.9,
+                    hate: 0,
+                    harassment: 0,
+                    other: 0
+                }),
+                matchedTerms: Object.freeze([])
+            };
+            asMock(contentModeration.moderateText).mockResolvedValue(gradedResult);
+            asMock(getThresholdModule.getThresholdForContext).mockResolvedValue({
+                context: 'message',
+                pending: 0.5,
+                reject: 0.95,
+                source: 'row' as const
+            });
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(makeAccommodation());
+            asMock(messageModelMock.create).mockResolvedValue(makeMessage());
+            asMock(conversationModelMock.update).mockResolvedValue(conversation);
+
+            const result = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'Message with elevated threshold'
+            });
+
+            expectSuccess(result);
         });
     });
 

@@ -2,7 +2,7 @@
  * Admin batch import moderation terms endpoint
  */
 import { z } from '@hono/zod-openapi';
-import { createContentModerationTermSchema } from '@repo/schemas';
+import { PermissionEnum, createContentModerationTermSchema } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -23,6 +23,7 @@ export const adminBatchImportTermsRoute = createAdminRoute({
     summary: 'Batch import moderation terms (admin)',
     description: 'Imports multiple moderation terms in a single transaction (max 5000)',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_CREATE],
     requestBody: z.object({
         rows: z.array(createContentModerationTermSchema).min(1).max(5000)
     }),

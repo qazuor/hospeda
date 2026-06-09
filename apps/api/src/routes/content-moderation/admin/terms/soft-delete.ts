@@ -1,7 +1,7 @@
 /**
  * Admin soft delete moderation term endpoint
  */
-import { DeleteResultSchema, contentModerationTermSchema } from '@repo/schemas';
+import { DeleteResultSchema, PermissionEnum, contentModerationTermSchema } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -18,6 +18,7 @@ export const adminSoftDeleteTermRoute = createAdminRoute({
     summary: 'Soft delete moderation term (admin)',
     description: 'Soft deletes a content moderation term',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_DELETE],
     requestParams: { id: contentModerationTermSchema.shape.id },
     responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

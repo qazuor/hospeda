@@ -1,7 +1,7 @@
 /**
  * Admin list moderation thresholds endpoint
  */
-import { contentModerationThresholdSchema } from '@repo/schemas';
+import { PermissionEnum, contentModerationThresholdSchema } from '@repo/schemas';
 import { ContentModerationThresholdService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -19,6 +19,7 @@ export const adminListThresholdsRoute = createAdminListRoute({
     summary: 'List moderation thresholds (admin)',
     description: 'Returns a paginated list of content moderation thresholds',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_THRESHOLD_VIEW],
     responseSchema: z.object({
         items: z.array(contentModerationThresholdSchema),
         pagination: z.object({

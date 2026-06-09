@@ -11,68 +11,129 @@ related:
 
 # SPEC-195 — Content Auto-Moderation Engine
 
-> **Status**: DRAFT — phase-2 stub. Spun off from SPEC-166 on 2026-06-04. Requires a full spec before implementation. This spec touches the **internals** of `@repo/content-moderation` ONLY — the public API is frozen by SPEC-166, so no consumer (reviews, messaging, future posts) changes here.
+> **Status**: IN-PROGRESS. Spun off from SPEC-166 on 2026-06-04. Engine + DB-backed
+> word lists + thresholds + admin surface implemented across 3 merged PRs (#1491,
+> #1496, #1499) plus the completion follow-ups on `spec/SPEC-195-completion`. This
+> spec touches the **internals** of `@repo/content-moderation` plus the moderation
+> **decision wiring** in service-core; the package public API stays frozen by SPEC-166.
 
 ## 1. Origin
 
-SPEC-166 introduces the `@repo/content-moderation` package with its public API in **final shape** but a **stub engine** inside (a binary substring word-list match wrapped to return a fake 0/1 score). Consumers (review services, messaging) are wired against the frozen contract:
+SPEC-166 introduced the `@repo/content-moderation` package with its public API in
+**final shape** but a **stub engine** inside (a binary substring word-list match).
+Consumers (review services, messaging) are wired against the frozen contract:
 
 ```ts
 moderateText(input: { text, context? }): Promise<{ score, categories, matchedTerms }>
 ```
 
-This spec replaces the stub internals with a real engine. Because the contract does not change, the only diff is inside the package: callers stay untouched.
+This spec replaces the stub internals with a real, swappable engine and wires the
+DB-backed thresholds into the actual decision path.
 
 ## 2. Goal
 
-Make `moderateText` produce **meaningful, graded** moderation results so that the score-driven thresholds already wired in SPEC-166 begin yielding real `REJECTED` / `PENDING` / `APPROVED` decisions.
+Make `moderateText` produce **meaningful, graded** moderation results AND make those
+results drive real `REJECTED` / `PENDING` / `APPROVED` decisions, with a word list and
+thresholds that are editable from the admin panel **without a redeploy**.
 
 Two pillars:
 
-1. **Real scoring engine** — per-category scores (spam, sexual, violence, hate, harassment, other), each 0..1, plus an overall `score`. Likely backed by the **OpenAI Moderation API** (free, returns exactly this shape) with a graceful fallback to the local word-list path when the provider is unavailable.
-2. **DB-backed editable word lists** — move the blocked words/domains out of the env var (`HOSPEDA_MESSAGING_BLOCKED_WORDS` / `_BLOCKED_DOMAINS`) into a database table, editable from the admin panel, so a newly detected term needs **no redeploy**.
+1. **Real scoring engine** — per-category scores (spam, sexual, violence, hate,
+   harassment, other), each 0..1, plus an overall `score`, backed by the OpenAI
+   Moderation API with a graceful fallback to the local DB word-list when the
+   provider is unavailable.
+2. **DB-backed editable word lists + thresholds** — blocked words/domains and the
+   pending/reject thresholds live in DB tables, editable from the admin panel.
 
-## 3. Scope sketch
+## 3. Resolved decisions (the 8 open questions)
 
-A full spec must define details. Starting boundaries:
+The original sketch left 8 questions open. They are resolved as follows (owner-approved):
 
-**Scoring engine**:
+1. **Provider** → **OpenAI Moderation API as primary, with fallback to the local DB
+   word-list** on outage/timeout/rate-limit. Three providers exist and are selected by
+   `HOSPEDA_MODERATION_PROVIDER`: `openai` | `local` | `stub`. The **code default is
+   `stub`** (kill-switch: reproduces the v1 binary blocklist, needs no API key, keeps
+   dev/test green). **Production is set to `openai`** via env in Coolify.
+2. **Data residency / privacy** → sending user text to the OpenAI Moderation API is
+   **accepted** for production. Because the default is `stub`, no text leaves the
+   platform until the provider is explicitly switched to `openai`. The OpenAI provider
+   truncates input to a safe max before the request.
+3. **Threshold storage** → **DB-editable**, same admin surface as the word list.
+   Resolution chain per context: specific DB row → DB `default` row → code constants
+   (pending 0.5 / reject 0.85).
+4. **Per-context thresholds** → **yes, per context.** Reviews apply the `pending`
+   threshold (they have a PENDING moderation queue). Messaging is binary hard-reject
+   (no queue) and applies the `reject` threshold. The `getThresholdForContext({context})`
+   helper is the single resolver.
+5. **Term categories** → **category-tagged terms** (spam/sexual/violence/hate/harassment/
+   other) with a `severity`/weight, feeding the `categories` shape. Consumed by the
+   `local` provider.
+6. **Fallback semantics** → on `openai` outage the engine falls back to the `local`
+   word-list; if that also fails it returns a **degraded** result with `score 0.5`,
+   which maps to **PENDING** for reviews (fail-closed, never fail-open). Degraded
+   results are **not cached** (so a recovered provider is reachable immediately).
+   Non-provider errors (programming bugs) are **re-thrown**, not masked as degraded.
+   Degraded events are surfaced to Sentry via the engine monitoring hooks.
+7. **Admin permission naming** → `MODERATION_TERM_*` and `MODERATION_THRESHOLD_*`
+   (view/create/update/delete/restore/hardDelete), granted to `ADMIN` and `SUPER_ADMIN`.
+8. **Backfill** → **new content only.** The existing review/message corpus is NOT
+   re-moderated when the real engine ships (YAGNI). Can be revisited as a separate spec.
 
-- Provider abstraction (interface) so the engine can be OpenAI Moderation API, a future self-hosted model, or the local word-list — selected by config, swappable.
-- Map provider output → the frozen `ModerationResult` shape (`score`, `categories`, `matchedTerms`).
-- Timeout + fallback: provider error/timeout → fall back to the DB word-list path; never block content creation on a provider outage.
-- Caching/cost: dedupe identical text within a short window; respect provider rate limits.
+## 4. Architecture
 
-**DB-backed word lists**:
+- **Provider abstraction** (`engine/provider.ts`): `ModerationProvider` interface,
+  typed `ProviderError` / `ProviderTimeoutError` / `ProviderRateLimitedError`.
+  `isFallbackEligibleError` returns true only for `ProviderError` (transient provider
+  failures) — never for arbitrary `Error`, so real bugs surface.
+- **Orchestrator** (`engine/orchestrator.ts`): cache lookup (keyed by text + context)
+  → primary provider → on fallback-eligible error: local fallback (openai) or degraded.
+  Caches only non-degraded results.
+- **Providers** (`providers/{openai,local,stub}.provider.ts`): OpenAI maps
+  category_scores → the frozen shape and truncates oversized input; local reads the DB
+  term corpus; stub reads the legacy env blocklist (v1 compat).
+- **Thresholds** (`service-core/contentModeration/get-threshold-for-context.ts`):
+  async resolver with a 60s in-memory cache and the 3-level fallback chain.
+- **Decision wiring** (service-core): accommodation/destination review `_beforeCreate`
+  apply the per-context `pending` threshold; conversation `message.service` blocks on
+  `score >= reject || matchedTerms.length > 0` (so both openai-score and local-term
+  paths work).
+- **Admin surface**: `content_moderation_terms` + `content_moderation_thresholds`
+  tables, models, services (BaseCrudService), admin CRUD routes (route-level
+  `requiredPermissions`), and the admin UI (terms list/create/edit/view + thresholds
+  editor), fully i18n'd (es/en/pt).
 
-- New table (e.g. `content_moderation_terms`): `term`, `kind` (word | domain), `category`, `severity/weight`, `enabled`, audit columns. Soft-delete per project convention.
-- Model (BaseModel) + service (BaseCrudService) + admin CRUD endpoints + admin UI page.
-- Seed migration: import the current env-var values as the initial corpus.
-- Deprecate `HOSPEDA_MESSAGING_BLOCKED_WORDS` / `_BLOCKED_DOMAINS` once the DB path is live (keep a one-release fallback, then remove).
+## 5. Delivered (by phase)
 
-**Threshold configuration**:
+- **Data foundations** (PR #1491): enums, schemas, DB tables (migration 0009 + extras
+  012 check), models, seed, role grants.
+- **Engine** (PR #1496): provider abstraction, orchestrator, 3 providers, cache, admin
+  health endpoint, engine init + Sentry hooks in the API.
+- **Admin surface** (PR #1499): admin CRUD routes, admin UI, i18n.
+- **Completion** (`spec/SPEC-195-completion`):
+  - engine hardening (fallback eligibility, context-aware cache, no-cache-degraded,
+    OpenAI input truncation);
+  - decision-path wiring (DB thresholds into reviews + messaging; messaging by score;
+    SSOT threshold constant);
+  - API authz (explicit `requiredPermissions` on every route; `thresholds/resolved`
+    gap closed) + partial-threshold invariant (422 instead of 500);
+  - admin UI fixes (stale-defaultValues data-corruption, i18n types + strings,
+    permission-gated actions, validation feedback, Shadcn Select/AlertDialog);
+  - prod enablement extras migration 013 (idempotent grants + default threshold row).
 
-- `PENDING_THRESHOLD` / `REJECT_THRESHOLD` become real, configurable (likely DB or config), per-context if needed (messaging may block at a different bar than reviews).
+## 6. Production enablement
 
-**Permissions**:
+The feature ships **dark** (provider `stub` = v1 behavior). To turn it on, see
+[`docs/prod-enablement-runbook.md`](docs/prod-enablement-runbook.md).
 
-- A moderation-terms management permission for the admin word-list CRUD (verify naming against the entity-specific convention; add to ADMIN/SUPER_ADMIN).
-
-## 4. Out of scope
+## 7. Out of scope
 
 - Any change to the `@repo/content-moderation` PUBLIC API (frozen by SPEC-166).
-- Any change to review/messaging call sites (they already `await moderateText`).
-- Review moderation queue / state machine (SPEC-166 owns it).
+- Backfill / re-moderation of the existing corpus (decision #8).
 
-## 5. Open questions
+## 8. Remaining before "done"
 
-To resolve during full spec authoring:
-
-1. **Provider**: OpenAI Moderation API (free, hosted) vs a self-hosted classifier vs categorized-weighted word lists only? Cost/latency/data-residency tradeoff. Product + ops decision.
-2. **Data residency / privacy**: is sending user text to a third-party moderation API acceptable, or must moderation stay on-prem? Affects provider choice.
-3. **Threshold storage**: env/config vs DB-editable thresholds. If DB, same admin surface as the word list?
-4. **Per-context thresholds**: does messaging block at the same score as review-reject, or separate bars per `context`?
-5. **Term categories**: a flat list with weights, or category-tagged terms feeding `categories`?
-6. **Fallback semantics**: on provider outage, fall back to DB word-list (degraded) or fail-open (treat as clean)? Default proposed: degraded word-list, never fail-open for messaging.
-7. **Admin permission naming**: which entity-specific permission gates word-list CRUD?
-8. **Backfill**: re-moderate the existing review/message corpus when the real engine ships, or apply only to new content?
+- Merge `spec/SPEC-195-completion` → staging (PR).
+- Staging smoke with `HOSPEDA_MODERATION_PROVIDER=openai` + a real `HOSPEDA_OPENAI_API_KEY`:
+  verify graded scores, fallback to local on simulated outage, messaging block by score,
+  admin term/threshold edits taking effect.
+- After soak, staging → main, then run the prod enablement runbook.

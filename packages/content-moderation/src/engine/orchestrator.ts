@@ -97,11 +97,17 @@ export class ModerationOrchestrator {
     ) {}
 
     async classify(input: { text: string; context?: string }): Promise<InternalModerationResult> {
-        const cached = getCachedModerationResult(input.text);
+        const cached = getCachedModerationResult(input.text, input.context);
         if (cached) return cached;
 
         const result = await this.execute(input);
-        setCachedModerationResult(input.text, result);
+
+        // Do not cache degraded results — the provider may recover before the
+        // TTL expires and a cached degraded score would mask the recovery.
+        if (result.source !== 'degraded') {
+            setCachedModerationResult(input.text, result, input.context);
+        }
+
         return result;
     }
 

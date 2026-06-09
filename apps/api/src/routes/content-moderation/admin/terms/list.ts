@@ -2,7 +2,11 @@
  * Admin list moderation terms endpoint
  * Returns paginated terms with full admin access
  */
-import { contentModerationTermAdminSearchSchema, contentModerationTermSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    contentModerationTermAdminSearchSchema,
+    contentModerationTermSchema
+} from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -20,6 +24,7 @@ export const adminListTermsRoute = createAdminListRoute({
     summary: 'List moderation terms (admin)',
     description: 'Returns a paginated list of content moderation terms with admin details',
     tags: ['Content Moderation'],
+    requiredPermissions: [PermissionEnum.MODERATION_TERM_VIEW],
     requestQuery: contentModerationTermAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: z.object({
         items: z.array(contentModerationTermSchema),
