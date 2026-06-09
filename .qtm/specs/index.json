@@ -234,7 +234,7 @@
             "title": "User self-service subscription cancellation",
             "type": "feat",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "parent": "SPEC-193",
             "created": "2026-05-19T00:00:00Z",
@@ -248,7 +248,9 @@
                 "lifecycle",
                 "mp-preapproval",
                 "cron"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-09"
         },
         {
             "specId": "SPEC-148",

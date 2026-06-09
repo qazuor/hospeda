@@ -2,7 +2,7 @@
 specId: SPEC-147
 title: User self-service subscription cancellation
 type: feat
-status: in-progress
+status: completed
 complexity: medium
 created: 2026-05-19T00:00:00Z
 discoveredDuring: SPEC-143 T-143-27
