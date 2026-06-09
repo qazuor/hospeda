@@ -118,7 +118,7 @@
             "id": "T-006",
             "title": "Wire POST /subscriptions/:id/cancel for users (behind flag)",
             "description": "Realign finding 9: use the :id route shape so billing-ownership.middleware applies. Open 'cancel' in billing-admin-guard.middleware.ts allowedSubPaths (currently only start-paid + change-plan) so non-admin actors reach it \u2014 BUT gate behind HOSPEDA_USER_CANCEL_ENABLED (flag off \u2192 404/disabled). Wire to softCancelSubscription. Ownership verified by middleware (it does billing.subscriptions.get + customerId match for the :id shape). Response: 200 soft-cancel confirmed (status active, cancelAtPeriodEnd true, canceledAt set, accessUntil). Tests: 200 happy, 403 non-owner, flag-off disabled, admin still hard-cancels via its own hook path (unchanged).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-012"],
@@ -126,14 +126,14 @@
             "tags": ["api", "routes", "middleware"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
