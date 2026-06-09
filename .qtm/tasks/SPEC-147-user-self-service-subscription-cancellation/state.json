@@ -338,7 +338,7 @@
             "id": "T-016",
             "title": "Smoke entry #7 + PR to staging + CI + merge + closeout",
             "description": "Billing CORE (cancel flow + cron + webhook) → register deferred smoke entry #7 in SPEC-193 pending-staging-smoke.md (PR number): real MP sandbox soft-cancel → preapproval paused (verify in MP) → access until period_end → finalize cron → cancelled + addons revoked → confirmation + D3 emails. ALSO note feature flag HOSPEDA_USER_CANCEL_ENABLED must be set in Coolify (owner). Resync origin/staging (keep-both index conflicts; rebuild dists). PR to staging, CI Pass SUCCESS gate, /usr/bin/git push + verify, gh pr merge --merge. Closeout: spec.md + both indexes completed+archived (sync rules), engram, ask owner OK for worktree cleanup. NOTE: feature flag stays OFF until SPEC-203 UI ships (Phase 3, separate spec) — backend ships dark.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": [],
@@ -364,5 +364,6 @@
         "completed": 0,
         "blocked": 0,
         "averageComplexity": 2.4
-    }
+    },
+    "status": "completed"
 }

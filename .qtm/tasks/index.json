@@ -269,13 +269,15 @@
         {
             "specId": "SPEC-147",
             "title": "User self-service subscription cancellation",
-            "status": "in-progress",
-            "progress": "15/16",
+            "status": "completed",
+            "progress": "16/16",
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",
             "base": "staging",
-            "note": "Backend ships dark behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI."
+            "note": "PR #1510 merged 2026-06-09; ships DARK behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI; qzpay #42 B.1 prereq published (core 1.12.0/mp 2.2.0); staging smoke entry #7; review fixed M1+M2",
+            "archived": true,
+            "archivedAt": "2026-06-09"
         },
         {
             "specId": "SPEC-210",
