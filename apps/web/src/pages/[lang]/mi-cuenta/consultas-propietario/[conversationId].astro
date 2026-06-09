@@ -12,6 +12,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
+import { getApiUrl } from '@/lib/env';
 
 export const prerender = false;
 
@@ -59,7 +60,7 @@ const pageTitle = t('conversations.thread.title', undefined, {
 });
 
 // Owner reply URL for the ConversationReply component
-const replyUrl = `${import.meta.env.HOSPEDA_API_URL ?? 'http://localhost:3001'}/api/v1/protected/conversations/owner/${conversationId}/messages`;
+const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversationId}/messages`;
 ---
 
 <AccountLayout
