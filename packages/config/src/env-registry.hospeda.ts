@@ -1199,6 +1199,20 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'moderation'
     },
+    {
+        name: 'HOSPEDA_AI_MODERATION_REQUIRED',
+        description:
+            'Gates the startup moderation-credential healthcheck (SPEC-198). When "true", the API refuses to start if no resolvable OpenAI credential exists in the AI vault (HOSPEDA_AI_VAULT_MASTER_KEY + a stored credential). Default "false" so envs without AI moderation boot normally. Set to "true" in production once the vault credential is provisioned.',
+        descriptionEs:
+            'Controla el healthcheck de credencial de moderación al arranque (SPEC-198). Cuando es "true", la API se niega a arrancar si no hay credencial de OpenAI resoluble en el vault de IA (HOSPEDA_AI_VAULT_MASTER_KEY + una credencial almacenada). Por defecto "false" para que los entornos sin moderación por IA arranquen normalmente. Poné "true" en producción una vez aprovisionada la credencial del vault.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'moderation'
+    },
 
     // -------------------------------------------------------------------------
     // Monitoring

@@ -36,6 +36,7 @@ export interface AiErrorMapping {
  * | `CEILING_HIT`           | 503         | Monthly cost ceiling reached                |
  * | `ENGINE_EXHAUSTED`      | 502         | All providers failed — upstream gateway err |
  * | `NO_ENABLED_PROVIDER`   | 503         | Every provider disabled — service down      |
+ * | `PROVIDER_UNCONFIGURED` | 503         | No resolvable credential — server misconfig |
  * | any other AiEngineError | 500         | Unexpected engine-level failure             |
  *
  * Returns `undefined` for errors that are not `AiEngineError` instances so the
@@ -60,6 +61,13 @@ export const mapAiEngineErrorToHttpStatus = (error: unknown): AiErrorMapping | u
             return { status: 502, code: 'ENGINE_EXHAUSTED' };
         case 'NO_ENABLED_PROVIDER':
             return { status: 503, code: 'NO_ENABLED_PROVIDER' };
+        case 'PROVIDER_UNCONFIGURED':
+            // Server misconfiguration (no resolvable credential), not a client
+            // error → 503 service-unavailable, not a 4xx. The code is provider-
+            // neutral: buildGetProvider throws this for the generation provider
+            // too, not only moderation, so a moderation-specific code would be
+            // misleading. Keep code === engineCode like every other mapping.
+            return { status: 503, code: 'PROVIDER_UNCONFIGURED' };
         default:
             return { status: 500, code: error.engineCode };
     }
