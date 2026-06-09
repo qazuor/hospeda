@@ -290,13 +290,15 @@
         {
             "specId": "SPEC-148",
             "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
-            "status": "in-progress",
-            "progress": "11/12",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",
             "base": "staging",
-            "note": "Last code item of SPEC-193 batch 4. Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron."
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "note": "Last code item of SPEC-193 batch 4 (merged PR #1515). Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron. T-011 fixed critical empty-recipient bug in PLAN_BEING_RETIRED notif."
         },
         {
             "specId": "SPEC-195",
