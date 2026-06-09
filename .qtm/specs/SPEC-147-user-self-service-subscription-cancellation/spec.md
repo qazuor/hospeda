@@ -45,19 +45,19 @@ Wire up a user self-service subscription cancellation flow that:
 4. Has a finalization cron that flips soft-cancelled subscriptions to `canceled` once `current_period_end` passes.
 5. Optionally supports "uncancel" (the user reactivates the same subscription before `current_period_end` — out of scope for V1, see Open Questions).
 
-## Open Product Questions (must resolve before design)
+## Resolved Product Questions (owner-confirmed 2026-06-09)
 
-These decisions belong to product, not engineering. Engineering will block on these before drafting the design.
+All seven questions resolved at their default proposal except where noted.
 
-| # | Question | Default proposal | Why it matters |
-|---|---|---|---|
-| 1 | Default cancel behaviour for users | Soft cancel (`cancelAtPeriodEnd: true`) | Industry standard for SaaS (Netflix, Spotify). Reduces churn vs immediate cut. |
-| 2 | What happens to active addons on a soft cancel? | Stay active until `current_period_end`, then revoke together with the base sub | Addons were paid for the same period as the base sub. Revoking immediately would be unfair. |
-| 3 | Can the user "uncancel" before period_end? | OUT OF SCOPE for V1 — defer to follow-up | Common in retention flows, but introduces concurrent-state edge cases. V1 ships without it. |
-| 4 | Should we offer a hard-cancel option in the UI? | NO for V1. Default is soft. Hard cancel stays admin-only. | Hard cancel removes self-service ownership and is rarely needed by users. |
-| 5 | What notifications fire on cancel? | One immediate "cancellation confirmed" email + one "your access ends in 3 days" reminder near period_end | Reduces "I didn't know" support tickets. |
-| 6 | Should we ask "reason" in the UI? | YES — free-text (optional) + canned reasons. Stored in `metadata.cancelReason`. | Drives churn analytics. |
-| 7 | Race condition: user cancels then immediately tries to upgrade. What wins? | The cancel. UI hides "Change Plan" once cancel is requested. User must "uncancel" first (when implemented) or wait for hard-cancel to re-subscribe. | Prevents inconsistent state. |
+| # | Question | RESOLUTION |
+|---|---|---|
+| 1 | Default cancel behaviour | **Soft cancel** (`cancelAtPeriodEnd: true`). Confirmed. |
+| 2 | Addons on soft cancel | **Stay active until `current_period_end`**, revoked together with the base sub by the finalize cron. Confirmed. |
+| 3 | Uncancel before period_end | **OUT OF SCOPE V1**. The B.1 mechanism (preapproval `paused`, resumable) deliberately keeps the door open for a follow-up uncancel, but V1 ships without it. |
+| 4 | Hard-cancel option in UI | **NO** for V1. Soft is the only user path; hard cancel stays admin-only. Confirmed. |
+| 5 | Notifications | **Confirmation + D3 reminder** (owner 2026-06-09): a new `SUBSCRIPTION_CANCEL_CONFIRMED` (immediate) AND a new `SUBSCRIPTION_ACCESS_ENDING_SOON` (D3, scheduled near period_end). NOT the existing `SUBSCRIPTION_CANCELLED` (that fires on hard-cancel from the webhook). |
+| 6 | Cancel reason | **YES** — optional, stored in `metadata.cancelReason` (qzpay-core's `cancel({reason})` already writes this). Canned reasons are a UI concern (SPEC-203). |
+| 7 | Race: cancel then upgrade | **The cancel wins.** Gate `change-plan` (and `start-paid` re-subscribe) when the sub has `cancelAtPeriodEnd=true` — return a clear error; the user must wait for finalize (uncancel not in V1). The web UI hides "Change Plan" (SPEC-203). |
 
 ## Workstreams
 
@@ -76,15 +76,16 @@ These decisions belong to product, not engineering. Engineering will block on th
 
 3. **New constant** `BILLING_EVENT_TYPES.USER_CANCELED` in `packages/service-core/src/services/billing/constants.ts`.
 
-### B — Payment adapter (qzpay-core or local)
+### B — Payment adapter — B.1 CHOSEN (owner 2026-06-09)
 
-The MP preapproval pause is the trickiest part. Two paths:
+**Decision: B.1 — upstream to qzpay-core.** The provider charge-stop happens INSIDE qzpay-core's `cancel()`, not in hospeda. Hospeda just calls `billing.subscriptions.cancel(id, { cancelAtPeriodEnd: true, reason })` and the propagation is automatic.
 
-**B.1 — Upstream to qzpay-core.** Extend `qzpay-core` paymentAdapter signature with `subscriptions.pause(providerSubscriptionId)`. Call it from the new service. Requires upstream PR + release + dependency bump in hospeda. Slowest path but cleanest.
+Realign found (2026-06-09) that B.1 is smaller than it looked: qzpay-core already shipped provider-propagation for `pause()` (commit 400b829, published in core@1.11.0). The only gap is `cancel()` itself, which never called the payment adapter. The qzpay-core change (this spec's prerequisite):
 
-**B.2 — Local workaround.** Skip qzpay-core. Use the MP API directly inside the new service (`mercadopago.preapproval.update(preapprovalId, { status: 'paused' })`). Faster to ship but leaks MP-specific code into hospeda. Acceptable as a tactical first step.
+- **qzpay PR #42** (`feat/cancel-provider-propagation`): `core/billing.ts cancel()` now calls `paymentAdapter.subscriptions.cancel(providerId, cancelAtPeriodEnd)` (mirroring the `pause()` propagation pattern); the MercadoPago adapter branches `cancelAtPeriodEnd=true` → `preapproval status:'paused'` (resumable, the soft-cancel case) / `false` → `'cancelled'` (immediate). Minor bump → core@1.12.0 + mercadopago@2.2.0.
+- Hospeda then bumps to the released versions and calls `cancel({cancelAtPeriodEnd:true})`. No MP-specific code leaks into hospeda (the B.2 downside is avoided).
 
-Design decision lives here. Default proposal: **B.2 for V1**, with B.1 carried as a hardening follow-up.
+**Webhook collision (realign finding, MUST handle):** pausing the MP preapproval makes MP emit `subscription_preapproval.updated` with `status='paused'`, which the current webhook handler (`subscription-logic.ts:79`) maps to local `SubscriptionStatusEnum.PAUSED` — wrong for soft-cancel, which must stay `ACTIVE`+`cancelAtPeriodEnd=true`. The webhook handler MUST be patched to skip the PAUSED transition when the local row already has `cancelAtPeriodEnd=true` (intentional pause), leaving status `ACTIVE`.
 
 ### C — Finalization cron (apps/api)
 
@@ -150,6 +151,27 @@ Upstream the qzpay-core `subscriptions.pause` adapter method (B.1). Remove the B
 - Uncancel (reactivate before period_end). Tracked as a follow-up.
 - Refund-on-cancel logic. Subscription cancellations are usually no-refund per SaaS norms; this spec assumes that policy.
 - Cancellation surveys/UI prompts. Product concern.
+
+## Realign findings (2026-06-09, vs 2026-05-19 spec)
+
+The spec predates SPEC-194/145/149/167. Ground-truth against current code:
+
+1. **`admin/subscription-cancel.ts` is DELETED.** The admin cancel logic now lives as `onBeforeSubscriptionCancel`/`onAfterSubscriptionCancel` hooks in `apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`. The FOR UPDATE pattern the spec cited (`:365-370`) migrated to the webhook handler (`subscription-logic.ts:481-485`). Mirror the hook pattern, not the deleted file.
+2. **State-machine (SPEC-194 INV-4) helpers EXIST**: `validateSubscriptionStatusTransition` / `checkSubscriptionStatusTransition` in `packages/service-core/src/services/billing/subscription/subscription-status-transitions.ts`. Soft-cancel needs NO new edge (it's a flag on `active`); finalize uses the existing `active → cancelled` edge.
+3. **Spelling is `cancelled` (UK, 2 L)** — the transition table + DB + MP convention. The old engram `gotcha_qzpay_canceled_spelling` is wrong for the status enum. Admin hook defensively matches both. Use `cancelled`.
+4. **`cancelAtPeriodEnd` reset-to-false on reactivation already exists** (`subscription-logic.ts:463-465`) — if a soft-cancelled user pays again, the webhook clears the flag. Good behavior; reflect it in tests.
+5. **3 AM cron slot is OCCUPIED** by archive-abandoned-drafts + conversation-token-cleanup + notification-log-purge. Use a free slot (proposal: `30 4 * * *`). Register in BOTH `schedules.manifest.ts` AND the cron registry (a sync test enforces parity).
+6. **`USER_CANCELED` event type is MISSING** from `packages/service-core/src/services/billing/constants.ts` (16 types today, none for user-cancel) — add it + a `FINALIZE_CANCELLED_SUB` type. Events are written inline via `db.insert(billingSubscriptionEvents)` — no helper.
+7. **Addon revocation is split**: `revokeAddonForSubscriptionCancellation` (admin, strict) vs `handleSubscriptionCancellationAddons` (webhook, batch-tolerant, in `addon-lifecycle-cancellation.service.ts`). The finalize cron should reuse the WEBHOOK-style batch helper (matches cron semantics).
+8. **Feature flag**: no `HOSPEDA_USER_CANCEL_ENABLED` yet. Mirror `HOSPEDA_ADDON_LIFECYCLE_ENABLED` (env.ts + env-registry.hospeda.ts) but with **opt-in** default false (`z.string().optional().transform(v => v === 'true')`).
+9. **Ownership middleware** (`billing-ownership.middleware.ts`) covers `/subscriptions/:id/cancel` IF the route uses the `:id` shape. The spec's alternative flat `/subscriptions/cancel` would need handler-level ownership. **Decision: use `POST /subscriptions/:id/cancel`** (open it in the admin-guard `allowedSubPaths`) so the existing ownership middleware applies.
+10. **qzpay-core prerequisite** (see Workstream B): qzpay PR #42 adds `cancel()` provider propagation → core@1.12.0 + mercadopago@2.2.0. Hospeda bumps to these before the cancel call propagates. Until bumped, the hospeda code is identical but the MP preapproval is not paused (old behavior).
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-09 | spec-realign + owner decisions | Resolved all 7 product questions (Q5 = confirmation + D3, owner); chose B.1 (qzpay-core upstream, PR #42) over B.2; documented 10 drift findings (deleted admin file, state-machine helpers, cancelled spelling, occupied 3AM slot, missing event type, split addon revocation, feature flag pattern, webhook PAUSED collision, route shape, qzpay bump); B section rewritten for B.1 | spec ready for atomization once qzpay #42 publishes |
 
 ## References
 
