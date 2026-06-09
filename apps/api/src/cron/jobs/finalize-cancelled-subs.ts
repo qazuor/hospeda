@@ -1,9 +1,13 @@
 /**
- * Finalize Cancelled Subscriptions Cron Job (SPEC-147 T-009).
+ * Finalize Cancelled Subscriptions Cron Job (SPEC-147 T-009 + T-010).
  *
- * Runs daily at 4:30 AM (30 4 * * *). Finds all subscriptions that are
- * `status='active'` AND `cancelAtPeriodEnd=true` AND `current_period_end <=
- * now()`, then completes the cancellation lifecycle for each:
+ * Runs daily at 4:30 AM (30 4 * * *). Does two passes in sequence:
+ *
+ * ### Pass 1 — Finalize due soft-cancellations (T-009)
+ *
+ * Finds all subscriptions that are `status='active'` AND
+ * `cancelAtPeriodEnd=true` AND `current_period_end <= now()`, then completes
+ * the cancellation lifecycle for each:
  *
  *   1. Validates the `active → cancelled` transition via the state machine.
  *   2. Flips `status` to `'cancelled'` (UK spelling, 2 L's) via a direct
@@ -19,22 +23,27 @@
  *   5. Writes a `FINALIZE_CANCELLED_SUB` audit event with
  *      `triggerSource='finalize-cancelled-cron'`.
  *
+ * ### Pass 2 — D3 "access ending soon" reminders (T-010)
+ *
+ * Scans for soft-cancelled subs whose `current_period_end` falls in the
+ * [now+2d, now+4d] window. For each, fires one `SUBSCRIPTION_ACCESS_ENDING_SOON`
+ * email with per-sub dedup via a `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing
+ * event. Fire-and-forget (errors are logged, not counted in job result).
+ *
+ * The two query windows are non-overlapping:
+ *  - Pass 1: `period_end <= now` (already expired)
+ *  - Pass 2: `period_end in (now+2d, now+4d)` (3 days out)
+ *
  * ### Idempotency
  *
- * The query filter (`status='active' AND cancelAtPeriodEnd=true AND
- * current_period_end <= now()`) is the primary idempotency gate: once a row is
- * flipped to `status='cancelled'` it no longer satisfies `status='active'` and
- * is never re-processed. No separate dedup event is required for this job
- * (contrast with the TRIAL_BLOCKED pattern which uses a separate event because
- * the trial-expiry action does not change the row's visible eligibility columns
- * atomically).
+ * Pass 1: the `status='active'` filter is the primary gate — flipped rows
+ * never re-appear. Pass 2: the `SUBSCRIPTION_ACCESS_ENDING_NOTIF` event is
+ * the dedup guard (mirrors `TRIAL_PRE_END_NOTIF_D3`).
  *
  * ### Failure handling (mirrors apply-scheduled-plan-changes)
  *
- * A per-sub failure (transition guard throws, DB update throws, addon
- * revocation throws) is caught, logged, and counted as an error. The loop
- * continues for remaining subs. At the end, `result.success=false` when
- * `errors > 0`, which triggers the SPEC-149 bootstrap Sentry capture.
+ * A per-sub failure in pass 1 is caught, logged, and counted as an error.
+ * Pass 2 errors are fire-and-forget (logged only).
  *
  * ### Cron slot
  *
@@ -45,11 +54,22 @@
  * @module cron/jobs/finalize-cancelled-subs
  */
 
-import { billingSubscriptionEvents, billingSubscriptions, eq, getDb } from '@repo/db';
+import {
+    and,
+    billingSubscriptionEvents,
+    billingSubscriptions,
+    eq,
+    getDb,
+    gte,
+    isNull,
+    lte
+} from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import { BILLING_EVENT_TYPES, validateSubscriptionStatusTransition } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
+import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
 // ---------------------------------------------------------------------------
@@ -63,8 +83,21 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
  */
 const MAX_ROWS_PER_TICK = 200;
 
+/** One day in milliseconds, used to compute the D3 window. */
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * D3 window: subs whose `current_period_end` falls between now+2d and now+4d.
+ *
+ * The 2-day lower bound avoids double-sending if the cron runs slightly early
+ * on the day before. The 4-day upper bound provides a 48-hour catching window
+ * so a skipped daily run doesn't silently miss the reminder.
+ */
+const D3_WINDOW_START_DAYS = 2;
+const D3_WINDOW_END_DAYS = 4;
+
 // ---------------------------------------------------------------------------
-// Row shape
+// Row shapes
 // ---------------------------------------------------------------------------
 
 /**
@@ -74,6 +107,16 @@ interface DueSoftCancelledRow {
     readonly id: string;
     readonly customerId: string;
     readonly status: string;
+}
+
+/**
+ * Minimal columns needed by the D3 access-ending reminder scan.
+ */
+interface AccessEndingRow {
+    readonly id: string;
+    readonly customerId: string;
+    readonly planId: string;
+    readonly periodEnd: Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,6 +176,180 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
     // column and `currentPeriodEnd` is a timestamptz column; Drizzle handles
     // the operator binding automatically.
     return rows.filter((r) => r.status === 'active');
+}
+
+// ---------------------------------------------------------------------------
+// D3 access-ending reminder (SPEC-147 T-010)
+// ---------------------------------------------------------------------------
+
+/**
+ * Logger shape accepted by `sendAccessEndingReminders`.
+ *
+ * Mirrors the shape passed by the cron context so the function can be tested
+ * standalone with a fake logger.
+ */
+type ReminderLogger = {
+    info: (m: string, d?: Record<string, unknown>) => void;
+    warn: (m: string, d?: Record<string, unknown>) => void;
+    error: (m: string, d?: Record<string, unknown>) => void;
+    debug?: (m: string, d?: Record<string, unknown>) => void;
+};
+
+/**
+ * Scans for soft-cancelled subscriptions whose `current_period_end` falls
+ * in the D3 window ([now+2d, now+4d]) and sends a
+ * `SUBSCRIPTION_ACCESS_ENDING_SOON` reminder for each that has not yet
+ * received one (dedup via `SUBSCRIPTION_ACCESS_ENDING_NOTIF` event).
+ *
+ * Fire-and-forget: errors per-sub are logged but do NOT propagate to the
+ * caller. The finalize-pass result is unaffected by reminder failures.
+ *
+ * @param logger - Logger from the surrounding cron context.
+ */
+async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> {
+    const db = getDb();
+    const billing = getQZPayBilling();
+    const now = new Date();
+    const windowStart = new Date(now.getTime() + D3_WINDOW_START_DAYS * ONE_DAY_MS);
+    const windowEnd = new Date(now.getTime() + D3_WINDOW_END_DAYS * ONE_DAY_MS);
+
+    let candidateRows: AccessEndingRow[];
+    try {
+        candidateRows = await db
+            .select({
+                id: billingSubscriptions.id,
+                customerId: billingSubscriptions.customerId,
+                planId: billingSubscriptions.planId,
+                periodEnd: billingSubscriptions.currentPeriodEnd
+            })
+            .from(billingSubscriptions)
+            .where(
+                and(
+                    eq(billingSubscriptions.status, 'active'),
+                    eq(billingSubscriptions.cancelAtPeriodEnd, true),
+                    isNull(billingSubscriptions.deletedAt),
+                    gte(billingSubscriptions.currentPeriodEnd, windowStart),
+                    lte(billingSubscriptions.currentPeriodEnd, windowEnd)
+                )
+            )
+            .limit(MAX_ROWS_PER_TICK);
+    } catch (err) {
+        logger.error('finalize-cancelled-subs D3: window query failed', {
+            error: err instanceof Error ? err.message : String(err)
+        });
+        return;
+    }
+
+    if (candidateRows.length === 0) {
+        return;
+    }
+
+    logger.info('finalize-cancelled-subs D3: found candidates', {
+        count: candidateRows.length
+    });
+
+    for (const row of candidateRows) {
+        try {
+            // Dedup: skip if reminder was already sent for this sub
+            const existingEvent = await db
+                .select({ id: billingSubscriptionEvents.id })
+                .from(billingSubscriptionEvents)
+                .where(
+                    and(
+                        eq(billingSubscriptionEvents.subscriptionId, row.id),
+                        eq(
+                            billingSubscriptionEvents.eventType,
+                            BILLING_EVENT_TYPES.SUBSCRIPTION_ACCESS_ENDING_NOTIF
+                        )
+                    )
+                )
+                .limit(1);
+
+            if (existingEvent.length > 0) {
+                logger.info('finalize-cancelled-subs D3: dedup skip', {
+                    subscriptionId: row.id
+                });
+                continue;
+            }
+
+            if (!billing) {
+                logger.warn('finalize-cancelled-subs D3: billing not configured, skipping', {
+                    subscriptionId: row.id
+                });
+                continue;
+            }
+
+            const [customer, plan] = await Promise.all([
+                billing.customers.get(row.customerId),
+                billing.plans.get(row.planId)
+            ]);
+
+            if (!customer || !plan) {
+                logger.warn('finalize-cancelled-subs D3: customer or plan missing', {
+                    subscriptionId: row.id,
+                    customerId: row.customerId,
+                    planId: row.planId,
+                    customerFound: customer !== null,
+                    planFound: plan !== null
+                });
+                continue;
+            }
+
+            const recipientName =
+                typeof customer.metadata?.name === 'string'
+                    ? customer.metadata.name
+                    : customer.email.split('@')[0];
+
+            const periodEnd = new Date(row.periodEnd);
+            const daysRemaining = Math.max(
+                1,
+                Math.ceil((periodEnd.getTime() - now.getTime()) / ONE_DAY_MS)
+            );
+
+            // Fire-and-forget: send without awaiting the retry mechanism
+            void Promise.resolve(
+                sendNotification({
+                    type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
+                    recipientEmail: customer.email,
+                    recipientName: recipientName ?? customer.email,
+                    userId: null,
+                    customerId: customer.id,
+                    idempotencyKey: `sub-access-ending-d3-${row.id}`,
+                    planName: plan.name,
+                    accessUntil: periodEnd.toISOString(),
+                    daysRemaining
+                })
+            ).catch((err: unknown) => {
+                logger.error('finalize-cancelled-subs D3: send failed (fire-and-forget)', {
+                    subscriptionId: row.id,
+                    error: err instanceof Error ? err.message : String(err)
+                });
+            });
+
+            // Write dedup event synchronously so a re-run on the same day skips
+            await db.insert(billingSubscriptionEvents).values({
+                subscriptionId: row.id,
+                eventType: BILLING_EVENT_TYPES.SUBSCRIPTION_ACCESS_ENDING_NOTIF,
+                triggerSource: 'finalize-cancelled-cron',
+                metadata: {
+                    daysRemaining,
+                    periodEnd: periodEnd.toISOString(),
+                    sentAt: now.toISOString()
+                }
+            });
+
+            logger.info('finalize-cancelled-subs D3: reminder sent', {
+                subscriptionId: row.id,
+                customerId: row.customerId,
+                daysRemaining
+            });
+        } catch (err) {
+            logger.error('finalize-cancelled-subs D3: per-sub error (skipping)', {
+                subscriptionId: row.id,
+                error: err instanceof Error ? err.message : String(err)
+            });
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +558,16 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
             }
         }
 
+        // Pass 2: D3 access-ending reminders — fire-and-forget, does not affect
+        // the finalize result. Runs after the finalize pass so a sub that was just
+        // finalized (period_end <= now) never appears in the D3 window (period_end
+        // in +2d..+4d — the windows are non-overlapping).
+        void sendAccessEndingReminders(logger).catch((err: unknown) => {
+            logger.error('finalize-cancelled-subs: D3 reminder pass failed unexpectedly', {
+                error: err instanceof Error ? err.message : String(err)
+            });
+        });
+
         return {
             success: errors === 0,
             message: `Finalized ${finalized}, errors ${errors}`,
@@ -363,5 +590,6 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
 export const _internals = {
     MAX_ROWS_PER_TICK,
     findDueSoftCancelledSubs,
-    finalizeOne
+    finalizeOne,
+    sendAccessEndingReminders
 };
