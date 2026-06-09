@@ -316,7 +316,7 @@
             "id": "T-015",
             "title": "Adversarial fresh-context review + apply fixes",
             "description": "Fresh-context review (opus) of the full diff. Hunt: webhook PAUSED collision holes (a paused webhook racing the cancel before cancelAtPeriodEnd is written → wrong PAUSED), idempotency (double cancel, finalize re-run, double webhook), the change-plan/start-paid gate bypass, entitlement cache not cleared on a path, notification PII, soft-cancel + past_due collision (sub goes past_due before period_end — what wins?), reactivation reset interplay (user pays again → cancelAtPeriodEnd cleared), addon revocation correctness in finalize, feature-flag leak (flag off but route reachable), SPEC-149 provider-error catch coherence on the new cancel call. Apply confirmed fixes via fix agent; re-run affected tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
