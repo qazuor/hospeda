@@ -74,7 +74,7 @@
             "id": "T-004",
             "title": "Add plan-disable event types + PLAN_BEING_RETIRED notification",
             "description": "Part B. (a) packages/service-core billing/constants.ts: add BILLING_EVENT_TYPES.PLAN_DISABLED_MIGRATION (and PLAN_DISABLED_BY_ADMIN if the audit wants the admin action separate from the per-sub migration — decide, document). (b) packages/notifications: NotificationType.PLAN_BEING_RETIRED (TRANSACTIONAL) + template (mirror SPEC-147 SUBSCRIPTION_CANCEL_CONFIRMED end-to-end: enum, payload, category, subject, template tsx, index export, service selectTemplate switch). Props: recipientName, planName, accessUntil (currentPeriodEnd), migrationHint (re-subscribe to another plan), baseUrl. Tests: constants pinned; template renders accessUntil + migration hint.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
@@ -82,14 +82,14 @@
             "tags": ["service-core", "notifications", "constants"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:35:00.000Z"
             }
         },
         {
