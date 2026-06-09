@@ -46,10 +46,27 @@ import type { AppBindings } from '../../src/types';
 // Mock @repo/ai-core
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/ai-core', () => ({
-    getMonthlyCallCount: vi.fn(),
-    recordAiUsage: vi.fn()
-}));
+vi.mock('@repo/ai-core', () => {
+    // AiFeatureNotConfiguredError extends Error (NOT AiEngineError) — mirrors the
+    // real class in packages/ai-core/src/config/resolver.ts. Required so that
+    // the `instanceof AiFeatureNotConfiguredError` check in ai-error-mapper.ts
+    // does not evaluate against `undefined` and crash the mapper.
+    class AiFeatureNotConfiguredError extends Error {
+        readonly feature: string;
+        constructor(feature: string) {
+            super(
+                `AI feature '${feature}' is not configured in ai_settings. An admin must save a configuration for this feature before it can be used.`
+            );
+            this.name = 'AiFeatureNotConfiguredError';
+            this.feature = feature;
+        }
+    }
+    return {
+        getMonthlyCallCount: vi.fn(),
+        recordAiUsage: vi.fn(),
+        AiFeatureNotConfiguredError
+    };
+});
 
 import * as aiCore from '@repo/ai-core';
 
