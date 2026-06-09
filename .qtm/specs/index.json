@@ -717,13 +717,13 @@
             "title": "AI Accommodation Chat (tourist)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-200-ai-accommodation-chat",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat is granted to every plan, tourists included), but its monetization is provisional: the quota is charged to the tourist, not the accommodation owner, so a VIP tourist gets unlimited chat the owner never pays for. SPEC-211 reworks this (owner-governed chat + Model C). SPEC-200 can ship to prod after SPEC-211 Phase 0 cost mitigation (finite quotas + USD ceiling)."
         },
         {
             "specId": "SPEC-201",

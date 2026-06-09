@@ -145,6 +145,8 @@ export function useAccommodationChat(
                         if (event.type === 'stream_error') {
                             return {
                                 ...prev,
+                                currentAssistantContent: '',
+                                hasPartialContent: false,
                                 status: 'error',
                                 errorMessage: event.error.message
                             };

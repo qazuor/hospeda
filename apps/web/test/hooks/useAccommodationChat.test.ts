@@ -194,6 +194,34 @@ describe('useAccommodationChat', () => {
         expect(result.current.state.errorMessage).toBe('Network failure');
     });
 
+    it('stream_error after partial tokens clears partial content (FIX-1 regression guard)', async () => {
+        // Arrange: stream emits two tokens then hits a mid-stream network drop
+        mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
+            params.onEvent(createTokenEvent('Partial'));
+            params.onEvent(createTokenEvent(' content'));
+            params.onEvent({
+                type: 'stream_error',
+                error: new Error('Connection reset')
+            });
+        });
+
+        const { result } = renderHook(() => useAccommodationChat(baseParams));
+
+        // Act
+        await act(async () => {
+            result.current.send('¿Tiene wifi?');
+        });
+
+        // Assert: partial bubble must be cleared so no ghost content stays on screen
+        expect(result.current.state.currentAssistantContent).toBe('');
+        expect(result.current.state.hasPartialContent).toBe(false);
+        expect(result.current.state.status).toBe('error');
+        expect(result.current.state.errorMessage).toBe('Connection reset');
+        // No assistant message should have been appended
+        expect(result.current.state.messages).toHaveLength(1);
+        expect(result.current.state.messages[0]?.role).toBe('user');
+    });
+
     it('sets at_cap when messages.length >= 20 after done', async () => {
         mockStreamChat.mockImplementation(async (params: { onEvent: (e: SseEvent) => void }) => {
             params.onEvent(createTokenEvent('OK'));

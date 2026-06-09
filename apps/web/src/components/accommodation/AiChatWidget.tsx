@@ -35,10 +35,17 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
 
     const panelRef = useRef<HTMLDivElement>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
+    /** Tracks whether the chat panel has been opened at least once. Prevents
+     *  the focus-return effect from stealing focus on the initial render when
+     *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
+    const hasBeenOpenedRef = useRef(false);
 
     // Focus trap + ESC close
     useEffect(() => {
         if (!isOpen) return;
+        // Mark that the dialog has been opened at least once so the focus-return
+        // effect below knows a real open→close transition can occur.
+        hasBeenOpenedRef.current = true;
         const panel = panelRef.current;
         if (!panel) return;
 
@@ -80,9 +87,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
         return () => panel.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
-    // Return focus to FAB when panel closes
+    // Return focus to FAB when panel closes.
+    // Guard: only fire after a real open→close transition, never on initial mount
+    // when `isOpen` is already `false` (would steal focus on page load).
     useEffect(() => {
-        if (!isOpen) {
+        if (!isOpen && hasBeenOpenedRef.current) {
             fabRef.current?.focus();
         }
     }, [isOpen]);
@@ -97,6 +106,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
     return (
         <>
             <AiChatFab
+                ref={fabRef}
                 isOpen={isOpen}
                 onClick={() => setIsOpen(true)}
                 locale={locale}
@@ -117,7 +127,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 type="button"
                                 className={styles.iconButton}
                                 onClick={() => setIsExpanded(!isExpanded)}
-                                aria-label={isExpanded ? 'Reducir' : 'Expandir'}
+                                aria-label={
+                                    isExpanded
+                                        ? t('accommodations.aiChat.collapse')
+                                        : t('accommodations.aiChat.expand')
+                                }
                             >
                                 {isExpanded ? '↘' : '↗'}
                             </button>
@@ -211,7 +225,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 chat.state.status === 'at_cap' ||
                                 !draft.trim()
                             }
-                            aria-label={t('accommodations.aiChat.send')}
+                            aria-label={
+                                chat.state.status === 'streaming'
+                                    ? t('accommodations.aiChat.sending')
+                                    : t('accommodations.aiChat.send')
+                            }
                         >
                             {chat.state.status === 'streaming' ? '⏳' : '↑'}
                         </button>

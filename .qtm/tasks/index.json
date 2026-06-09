@@ -2,6 +2,15 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-200",
+            "title": "AI Accommodation Chat (tourist)",
+            "status": "in-progress",
+            "progress": "11/12",
+            "path": "SPEC-200-ai-accommodation-chat",
+            "archived": false,
+            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
+        },
+        {
             "specId": "SPEC-131",
             "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
             "status": "completed",

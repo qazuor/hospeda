@@ -8,7 +8,7 @@
  * @module apps/api/utils/ai-error-mapper
  */
 
-import { AiEngineError } from '@repo/ai-core';
+import { AiEngineError, AiFeatureNotConfiguredError } from '@repo/ai-core';
 
 /**
  * The result of a successful mapping: the HTTP status and a stable code string
@@ -37,15 +37,30 @@ export interface AiErrorMapping {
  * | `ENGINE_EXHAUSTED`      | 502         | All providers failed — upstream gateway err |
  * | `NO_ENABLED_PROVIDER`   | 503         | Every provider disabled — service down      |
  * | `PROVIDER_UNCONFIGURED` | 503         | No resolvable credential — server misconfig |
+ * | `FEATURE_NOT_CONFIGURED` | 503        | Feature has no `ai_settings` config entry   |
  * | any other AiEngineError | 500         | Unexpected engine-level failure             |
  *
- * Returns `undefined` for errors that are not `AiEngineError` instances so the
- * caller can fall back to the generic `handleRouteError` path.
+ * `AiFeatureNotConfiguredError` is thrown by the config resolver BEFORE the
+ * engine routes any provider, so it does NOT extend `AiEngineError` (it is an
+ * infrastructure-level error kept outside the engine hierarchy to avoid a
+ * config→engine import cycle). It is mapped here explicitly — mirroring how
+ * `AiFeatureDisabledError` maps to 503 — so the streaming route factory returns
+ * a clean 503 instead of falling through to a dirty 500.
  *
- * @param error - Any thrown value; only `AiEngineError` instances are mapped.
+ * Returns `undefined` for errors that are neither an `AiEngineError` nor an
+ * `AiFeatureNotConfiguredError` so the caller can fall back to the generic
+ * `handleRouteError` path.
+ *
+ * @param error - Any thrown value; only AI engine / config errors are mapped.
  * @returns The HTTP status + code pair, or `undefined` if not an AI error.
  */
 export const mapAiEngineErrorToHttpStatus = (error: unknown): AiErrorMapping | undefined => {
+    // Config-level "feature not configured" is thrown before the engine routes,
+    // so it is not an AiEngineError. Map it to a clean 503 (server misconfig).
+    if (error instanceof AiFeatureNotConfiguredError) {
+        return { status: 503, code: 'FEATURE_NOT_CONFIGURED' };
+    }
+
     if (!(error instanceof AiEngineError)) {
         return undefined;
     }

@@ -163,7 +163,7 @@ vi.mock('../../../../src/utils/logger', () => ({
  * `instanceof` guard, so the moderation-block path (SPEC-198) could never be
  * exercised — which is exactly the gap this test closes.
  */
-const { AiEngineError, AiModerationBlockedError } = vi.hoisted(() => {
+const { AiEngineError, AiModerationBlockedError, AiFeatureNotConfiguredError } = vi.hoisted(() => {
     class AiEngineError extends Error {
         readonly engineCode: string;
         constructor(message: string, engineCode: string) {
@@ -188,10 +188,28 @@ const { AiEngineError, AiModerationBlockedError } = vi.hoisted(() => {
             this.categories = input.categories;
         }
     }
-    return { AiEngineError, AiModerationBlockedError };
+    // AiFeatureNotConfiguredError extends Error (NOT AiEngineError) — mirrors the
+    // real class in packages/ai-core/src/config/resolver.ts. Required so that
+    // the `instanceof AiFeatureNotConfiguredError` check in ai-error-mapper.ts
+    // does not evaluate against `undefined` and crash the mapper.
+    class AiFeatureNotConfiguredError extends Error {
+        readonly feature: string;
+        constructor(feature: string) {
+            super(
+                `AI feature '${feature}' is not configured in ai_settings. An admin must save a configuration for this feature before it can be used.`
+            );
+            this.name = 'AiFeatureNotConfiguredError';
+            this.feature = feature;
+        }
+    }
+    return { AiEngineError, AiModerationBlockedError, AiFeatureNotConfiguredError };
 });
 
-vi.mock('@repo/ai-core', () => ({ AiEngineError, AiModerationBlockedError }));
+vi.mock('@repo/ai-core', () => ({
+    AiEngineError,
+    AiModerationBlockedError,
+    AiFeatureNotConfiguredError
+}));
 
 /**
  * `create-app.ts` transitively imports `middlewares/response.ts`, which

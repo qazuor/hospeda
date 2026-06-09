@@ -9,6 +9,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ChatIcon } from '@repo/icons';
+import { forwardRef } from 'react';
 import styles from './AiChatFab.module.css';
 
 export interface AiChatFabProps {
@@ -19,16 +20,23 @@ export interface AiChatFabProps {
 
 /**
  * Floating action button that opens the AI chat panel.
+ * Accepts a forwarded ref so `AiChatWidget` can return focus to this button
+ * on panel close (WCAG 2.1 AA dialog pattern).
  *
  * @param props - isOpen (hides FAB), onClick handler, locale for i18n.
+ * @param ref - Forwarded ref to the underlying `<button>` element.
  */
-export function AiChatFab({ isOpen, onClick, locale }: AiChatFabProps) {
+export const AiChatFab = forwardRef<HTMLButtonElement, AiChatFabProps>(function AiChatFab(
+    { isOpen, onClick, locale },
+    ref
+) {
     if (isOpen) return null;
 
     const { t } = createTranslations(locale);
 
     return (
         <button
+            ref={ref}
             type="button"
             className={styles.fab}
             onClick={onClick}
@@ -41,4 +49,6 @@ export function AiChatFab({ isOpen, onClick, locale }: AiChatFabProps) {
             />
         </button>
     );
-}
+});
+
+AiChatFab.displayName = 'AiChatFab';

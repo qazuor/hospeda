@@ -2,7 +2,7 @@
 id: SPEC-200
 slug: ai-accommodation-chat
 title: AI Accommodation Chat (Tourist Feature)
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-05
 parentSpec: SPEC-173

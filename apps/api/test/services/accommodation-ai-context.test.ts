@@ -32,7 +32,9 @@
  *
  * `assembleAccommodationContext` (async, mocked service + Drizzle):
  *  24. Happy path: returns a system message that contains the accommodation name (AC-4).
- *  25. Re-throws `ServiceError(NOT_FOUND)` when `getById` throws.
+ *  25. Throws `ServiceError(NOT_FOUND/FORBIDDEN)` when `getById` RESOLVES an
+ *      error Result (the real `runWithLoggingAndValidation` shape — it returns
+ *      `{ error }` rather than throwing), and when `data` is undefined.
  *  26. Falls back to empty FAQs when `getFaqs` returns an error Result (graceful degradation).
  *  27. Privacy: does not embed `actor.email` or any user-supplied message substring.
  *
@@ -140,7 +142,6 @@ vi.mock('../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
 import {
     assembleAccommodationContext,
     buildChatSystemMessage,
@@ -495,10 +496,15 @@ describe('assembleAccommodationContext', () => {
         expect(out.systemMessage).toContain(RESOLVED_PROMPT);
     });
 
-    it('should re-throw ServiceError(NOT_FOUND) when getById throws', async () => {
-        mockGetById.mockRejectedValueOnce(
-            new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found')
-        );
+    it('should throw ServiceError(NOT_FOUND) when getById RESOLVES an error Result (real prod shape)', async () => {
+        // Production shape: `runWithLoggingAndValidation` CATCHES the
+        // ServiceError and (no ctx.tx) RETURNS `{ error }` — it does NOT throw.
+        // The assembler must detect `result.error` / missing `result.data` and
+        // re-throw a ServiceError so the route maps it to 404 pre-stream, rather
+        // than letting `result.data` be undefined → downstream TypeError → 500.
+        mockGetById.mockResolvedValueOnce({
+            error: { code: 'NOT_FOUND', message: 'Accommodation not found' }
+        });
 
         await expect(
             assembleAccommodationContext({
@@ -507,7 +513,35 @@ describe('assembleAccommodationContext', () => {
                 resolvedPrompt: RESOLVED_PROMPT,
                 locale: 'es'
             })
-        ).rejects.toThrow(ServiceError);
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+    });
+
+    it('should throw ServiceError(FORBIDDEN) when getById RESOLVES a FORBIDDEN error Result', async () => {
+        mockGetById.mockResolvedValueOnce({
+            error: { code: 'FORBIDDEN', message: 'Not allowed' }
+        });
+
+        await expect(
+            assembleAccommodationContext({
+                actor: ACTOR as never,
+                accommodationId: ACCOMMODATION_ID,
+                resolvedPrompt: RESOLVED_PROMPT,
+                locale: 'es'
+            })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
+    });
+
+    it('should throw ServiceError(NOT_FOUND) when getById RESOLVES success but data is undefined', async () => {
+        mockGetById.mockResolvedValueOnce({ success: true, data: undefined });
+
+        await expect(
+            assembleAccommodationContext({
+                actor: ACTOR as never,
+                accommodationId: ACCOMMODATION_ID,
+                resolvedPrompt: RESOLVED_PROMPT,
+                locale: 'es'
+            })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });
 
     it('should fall back to empty FAQs when getFaqs returns an error Result (graceful degradation)', async () => {

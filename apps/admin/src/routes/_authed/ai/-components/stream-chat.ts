@@ -10,7 +10,7 @@ function getApiBaseUrl(): string {
     if (!url) {
         throw new Error('[admin] VITE_API_URL is not configured.');
     }
-    return url.replace(/$/, '');
+    return url.replace(/\/$/, '');
 }
 
 /** Discriminated union of SSE events emitted by the stream parser. */

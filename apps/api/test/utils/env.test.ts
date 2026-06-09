@@ -33,6 +33,7 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     HOSPEDA_SITE_URL: 'http://localhost:4321',
     HOSPEDA_LOCATION_SALT: 'test-location-salt-fixed-for-deterministic-tests-32+chars',
     HOSPEDA_VIEWS_HASH_SECRET: 'test-views-hash-secret-fixed-for-deterministic-tests-32ch',
+    HOSPEDA_AI_VAULT_MASTER_KEY: 'test-vault-master-key-0123456789abcd',
     ...overrides
 });
 
@@ -414,6 +415,56 @@ describe('Environment Configuration', () => {
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_REDIS_URL).toBeUndefined();
+        });
+
+        it('should require HOSPEDA_AI_VAULT_MASTER_KEY in production (FIX 5)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+                // Explicitly removed to prove production requires it.
+                HOSPEDA_AI_VAULT_MASTER_KEY: undefined
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_AI_VAULT_MASTER_KEY in production when provided (FIX 5)', async () => {
+            const masterKey = 'a'.repeat(32);
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+                HOSPEDA_AI_VAULT_MASTER_KEY: masterKey
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBe(masterKey);
+        });
+
+        it('should NOT require HOSPEDA_AI_VAULT_MASTER_KEY in non-production environments (FIX 5)', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test',
+                // Explicitly removed to prove non-production does not require it.
+                HOSPEDA_AI_VAULT_MASTER_KEY: undefined
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBeUndefined();
         });
     });
 

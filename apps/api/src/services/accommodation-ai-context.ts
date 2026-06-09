@@ -6,7 +6,8 @@ import {
     rAccommodationAmenity,
     rAccommodationFeature
 } from '@repo/db';
-import { AccommodationService, type Actor } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { AccommodationService, type Actor, ServiceError } from '@repo/service-core';
 import { and, eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 
@@ -305,8 +306,9 @@ export function buildChatSystemMessage(
  * full system message. The function does ALL the I/O; the helpers above
  * are pure.
  *
- * Throws `ServiceError(NOT_FOUND)` when the accommodation does not exist
- * (route catches and returns 404 pre-stream). Logs `apiLogger.warn` for
+ * Throws `ServiceError(NOT_FOUND)` (or `FORBIDDEN`) when `getById` returns an
+ * error Result for a missing/forbidden accommodation — the streaming route
+ * factory maps it to the correct 404/403 pre-stream. Logs `apiLogger.warn` for
  * non-fatal failures (FAQs/amenities/features load errors) and continues
  * with empty arrays — the chat request must not fail because of a missing
  * secondary relation.
@@ -326,16 +328,32 @@ export async function assembleAccommodationContext(
     const accommodationService = new AccommodationService({} as never);
 
     // 1. Load the accommodation + base relations (destination/owner/reviews/faqs).
-    //    `getById` THROWS `ServiceError(NOT_FOUND, ...)` when the row is missing,
-    //    so the resolved value is always a non-null entity. The return type is
-    //    declared as `ServiceOutput<TEntity | null>` to satisfy the Result contract,
-    //    but the throw-on-null behavior (base.crud.read.ts:155-160) means the cast
-    //    is safe. The intermediate `unknown` hop widens the Result<T> shape to
-    //    the relation-augmented view we need downstream.
-    // TYPE-WORKAROUND: getById returns Result<TEntity | null> but always throws on
-    //    null; the intermediate `unknown` hop widens to the relation-augmented view.
-    const result = await accommodationService.getById(actor, accommodationId);
-    const accommodation = (result as unknown as { data: AccommodationWithRelations }).data;
+    //    `getById` runs through `runWithLoggingAndValidation`, which CATCHES any
+    //    `ServiceError` and — when there is no `ctx.tx` (our case) — RETURNS
+    //    `{ error }` instead of throwing (base.service.ts:113-119). So a missing
+    //    or forbidden accommodation surfaces as `result.error` with `result.data`
+    //    undefined, NOT as a thrown error. We re-throw a `ServiceError` carrying
+    //    the original code (NOT_FOUND / FORBIDDEN) so the streaming route factory
+    //    maps it to the correct HTTP status pre-stream (404 / 403) instead of
+    //    letting an undefined `accommodation` cause a downstream TypeError → 500.
+    const result = (await accommodationService.getById(actor, accommodationId)) as {
+        data?: AccommodationWithRelations;
+        error?: { code?: string; message?: string };
+    };
+
+    if (result.error || !result.data) {
+        const rawCode = result.error?.code;
+        const code =
+            rawCode && rawCode in ServiceErrorCode
+                ? (rawCode as ServiceErrorCode)
+                : ServiceErrorCode.NOT_FOUND;
+        throw new ServiceError(
+            code,
+            result.error?.message ?? `Accommodation '${accommodationId}' not found.`
+        );
+    }
+
+    const accommodation = result.data;
 
     // 2. Load FAQs via the dedicated method (graceful — non-fatal on error).
     const faqs = await safeLoadFaqs(accommodationService, actor, accommodationId);

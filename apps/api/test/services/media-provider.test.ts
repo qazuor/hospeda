@@ -96,6 +96,11 @@ describe('getMediaProvider()', () => {
         process.env.HOSPEDA_DISABLE_AUTH = 'false';
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'false';
         process.env.HOSPEDA_DEBUG_TESTS = 'false';
+        // The production superRefine (added in SPEC-200) requires HOSPEDA_AI_VAULT_MASTER_KEY
+        // (min 32 chars) when NODE_ENV==='production'. Set a dummy value so
+        // validateApiEnv() does not call process.exit(1) before reaching the
+        // media-provider branch being tested.
+        process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-0123456789abcd';
 
         vi.resetModules();
         const envModule: EnvModule = await import('../../src/utils/env');

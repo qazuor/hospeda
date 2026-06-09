@@ -403,6 +403,8 @@
         "errorDefault": "No se pudo mostrar la respuesta. Por favor intentá de nuevo.",
         "atCapMessage": "Alcanzaste el límite de esta conversación.",
         "newConversation": "Nueva conversación",
-        "close": "Cerrar chat"
+        "close": "Cerrar chat",
+        "expand": "Expandir panel",
+        "collapse": "Reducir panel"
     }
 }

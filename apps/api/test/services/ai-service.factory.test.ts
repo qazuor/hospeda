@@ -133,14 +133,31 @@ const {
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/ai-core', () => ({
-    createAiService: mockCreateAiService,
-    checkCostCeiling: mockCheckCostCeiling,
-    OpenAiAdapter: mockOpenAiAdapterConstructor,
-    AnthropicAdapter: mockAnthropicAdapterConstructor,
-    StubProvider: mockStubProviderConstructor,
-    AiProviderUnconfiguredError: MockAiProviderUnconfiguredError
-}));
+vi.mock('@repo/ai-core', () => {
+    // AiFeatureNotConfiguredError extends Error (NOT AiEngineError) — mirrors the
+    // real class in packages/ai-core/src/config/resolver.ts. Required so that
+    // the `instanceof AiFeatureNotConfiguredError` check in ai-error-mapper.ts
+    // does not evaluate against `undefined` and crash the mapper.
+    class AiFeatureNotConfiguredError extends Error {
+        readonly feature: string;
+        constructor(feature: string) {
+            super(
+                `AI feature '${feature}' is not configured in ai_settings. An admin must save a configuration for this feature before it can be used.`
+            );
+            this.name = 'AiFeatureNotConfiguredError';
+            this.feature = feature;
+        }
+    }
+    return {
+        createAiService: mockCreateAiService,
+        checkCostCeiling: mockCheckCostCeiling,
+        OpenAiAdapter: mockOpenAiAdapterConstructor,
+        AnthropicAdapter: mockAnthropicAdapterConstructor,
+        StubProvider: mockStubProviderConstructor,
+        AiProviderUnconfiguredError: MockAiProviderUnconfiguredError,
+        AiFeatureNotConfiguredError
+    };
+});
 
 vi.mock('../../src/services/ai-credential-vault.service', () => ({
     getDecryptedAiProviderCredential: mockGetDecryptedAiProviderCredential
