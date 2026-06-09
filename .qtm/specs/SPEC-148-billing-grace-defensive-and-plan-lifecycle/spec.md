@@ -63,11 +63,11 @@ The two original scopes are real production-safety gaps and warrant a dedicated 
 - New constant `BILLING_CRON_LAG_GRACE_HOURS` in `@repo/billing` (suggested default: 6 hours, to absorb cron jitter without masking outages).
 - Sentry alert: fires when grace window is exceeded for any subscription, with customer id + subscription id + hours overdue.
 
-**Open questions for design phase**:
+**Resolved (owner 2026-06-09)**:
 
-- Should cron-lag grace block (503) or pass through after window? Tradeoff: blocking punishes user for our infra; passing through silently hides outages.
-- How does this interact with `past_due` flip? (e.g., MP webhook lands during grace window — must atomically advance period and clear grace state).
-- Should grace state be persisted, or derived per-request from `currentPeriodEnd`?
+- **Block vs pass-through → PASS-THROUGH + Sentry alert.** Within the window: pass silently (benign webhook jitter). Past the window: STILL grant access (never cut off a paying user for OUR infra failure — renewals are webhook-driven, so the lag is an MP webhook-delivery failure, realign finding 3) but fire a Sentry alert (customerId + subscriptionId + hours overdue). NEVER block with 503.
+- **Grace state → derived per-request** from `currentPeriodEnd` (mirror `pastDueGraceMiddleware`'s stateless approach — no DB column). ⚠️ Realign caveat: the entitlement middleware has a 5-min `entitlementCache` that skips `loadEntitlements()` on hits — the cron-lag detection + `X-Cron-Lag-Grace-Hours-Remaining` header + Sentry alert would be absent on cached requests (alert delayed ≤5 min). Acceptable for the alert; design the check to read `currentPeriodEnd` at a point not gated by the entitlement cache, OR accept the ≤5-min delay (document it).
+- **Interaction with `past_due` flip**: stateless → when the webhook lands and advances the period (or flips to past_due), the derived condition simply stops matching. No grace state to clear.
 
 ### Part B — Plan disable lifecycle
 
@@ -84,11 +84,29 @@ The two original scopes are real production-safety gaps and warrant a dedicated 
 - **Existing subs UI**: surface a "your plan is being retired" banner with migration target + effective date.
 - **Admin audit**: every plan-disable event captured in `billingNotificationLog` (or new `billing_plan_lifecycle_events` table) with admin actor, timestamp, affected sub count, migration policy applied.
 
-**Open questions for design phase**:
+**Resolved (owner 2026-06-09)**:
 
-- Migration policy: auto-migrate vs auto-cancel vs notify-only.
-- Grace window for new signups (e.g., 24h between disable signal and rejection, to allow in-flight checkouts to complete)?
-- Idempotency of the disable event (admin clicks twice).
+- **Migration policy → AUTO-CANCEL at period end** (reuses SPEC-147 infra). On plan disable: set `cancelAtPeriodEnd=true` on all active subs of that plan; the already-shipped `finalize-cancelled-subs` cron closes them at `currentPeriodEnd` (revokes addons, clears cache, audit event). Subs keep access until period end + receive a "plan being retired" notice. NOT auto-migrate (opinionated, surprises users, needs new plan-selection + price-delta logic) and NOT notify-only (leaves an ambiguous state if the user doesn't act).
+- **New-signup grace window → NONE** (immediate rejection). `start-paid` rejects with 410 `PLAN_DISABLED` as soon as the plan is inactive. The public `listPlans` already filters `active:true` so the plan is hidden from the catalog at the same moment; no 24h window needed.
+- **Idempotency**: the toggle is a boolean DB flip (idempotent). The fan-out to existing subs queries `subs WHERE planId=X AND status active-ish AND cancelAtPeriodEnd=false` → re-running on an already-disabled plan is a no-op (no rows match). The audit event dedups per (plan, transition).
+
+### Realign findings (2026-06-09, vs 2026-05-20 spec)
+
+1. **No renewal cron exists** — renewals are 100% MP-webhook-driven (`processSubscriptionUpdated` in `webhooks/mercadopago/subscription-logic.ts`; `subscription-poll.job.ts` is the missed-webhook fallback but only polls checkout-time jobs). Part A's "cron-lag" is really **webhook-delivery lag**. Detection hook: `entitlement.ts:391-403` (today silently passes an active sub with past `currentPeriodEnd`).
+2. **SPEC-147 reuse**: `cancelAtPeriodEnd` + `finalize-cancelled-subs` cron makes Part B auto-cancel ~incremental (set the flag + notify; the cron already does the rest incl. M2 past_due/trialing coverage). No new finalize logic.
+3. **Plan toggle EXISTS** (`admin/plans.ts` PATCH `adminTogglePlanActiveRoute` → `planService.toggleActive`, behind `BILLING_MANAGE`; admin UI `billing-plans/`) but has ZERO downstream side effects — that's the whole Part B gap.
+4. **start-paid has NO isActive check** (only the SPEC-147 soft-cancel guard at :248-261). `listPlans` public DOES filter `active:true`.
+5. **No 410 ServiceErrorCode** — `PLAN_DISABLED` must be added to `@repo/schemas` ServiceErrorCode + mapped to 410 in BOTH `middlewares/response.ts` ERROR_CODE_TO_HTTP and `utils/response-helpers.ts` (SPEC-149 dual-map lesson).
+6. **Audit**: reuse `billing_subscription_events` inline `db.insert` + new `BILLING_EVENT_TYPES` (`PLAN_DISABLED_MIGRATION` / similar) — no new table.
+7. **Sentry**: `captureBillingError` (sentry.ts) is sufficient for the grace-exceedance alert — no new SPEC-149 work.
+8. **State-machine**: `active→past_due` etc. valid; Part A is stateless (no transition); Part B fan-out sets a flag (cancelAtPeriodEnd), the finalize cron does the validated `→cancelled` transition.
+9. **`apply-scheduled-plan-changes.ts` already anticipates SPEC-148** (PlanCatalogMissError comment) — decide: a disabled plan STAYS in the static billing catalog (so restriction/excess lookups still resolve) — only `isActive=false` gates new signups + triggers the fan-out. Do NOT remove it from the catalog.
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-06-09 | spec-realign + owner decisions | Part A: pass-through + Sentry (never 503), stateless derived grace, BILLING_CRON_LAG_GRACE_HOURS; Part B: auto-cancel-at-period-end (reuse SPEC-147 finalize), immediate signup rejection (410 PLAN_DISABLED), idempotent fan-out; documented 9 drift findings (no renewal cron → webhook lag, SPEC-147 reuse, existing toggle has no side effects, 410 code needed, audit reuse, catalog-stays). | spec ready for atomization |
 
 ## Acceptance criteria
 
