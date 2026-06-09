@@ -141,7 +141,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         }
 
         const { content: resolvedPrompt } = await resolveSystemPrompt({ feature: FEATURE });
-        const { systemMessage } = await assembleAccommodationContext({
+        const { contextBlock, systemMessage } = await assembleAccommodationContext({
             actor,
             accommodationId: body.accommodationId,
             resolvedPrompt,
@@ -237,6 +237,16 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             };
         });
 
-        return { stream, meta: augmentedMeta };
+        return {
+            stream,
+            meta: augmentedMeta,
+            debug: {
+                contextBlock,
+                resolvedPrompt,
+                systemMessage,
+                feature: FEATURE,
+                accommodationId: body.accommodationId
+            }
+        };
     }
 });

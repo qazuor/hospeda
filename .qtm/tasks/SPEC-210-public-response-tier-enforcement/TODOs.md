@@ -70,5 +70,6 @@
 ## Suggested Start
 
 Two independent tracks can start immediately:
+
 - **T-001** (audit) — no deps, unblocks the schema + re-wire work.
 - **T-004** (assertConcretePublicSchema) — no deps, unblocks the factory hardening.

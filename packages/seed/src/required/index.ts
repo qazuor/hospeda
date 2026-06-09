@@ -2,6 +2,7 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { seedAiPrompts } from './aiPrompts.seed.js';
 import { seedAmenities } from './amenities.seed.js';
 import { seedAttractions } from './attractions.seed.js';
 import { seedBillingAddons } from './billingAddons.seed.js';
@@ -151,6 +152,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 17. Load revalidation config (per-entity-type ISR configuration)
         await seedRevalidationConfig(context);
+
+        // 18. Load AI prompt defaults (system prompts for all AI features)
+        await seedAiPrompts();
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output

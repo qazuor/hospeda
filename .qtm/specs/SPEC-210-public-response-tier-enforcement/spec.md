@@ -168,6 +168,7 @@ passthrough detection (inspect the Zod def `typeName` and `unknownKeys`).
 ### 5.2 Make `stripWithSchema` fail-closed
 
 `apps/api/src/utils/response-helpers.ts:90`: remove the fail-open branch.
+
 - If called with no schema → throw `ServiceError(INTERNAL_ERROR, ...)` (never
   return raw data). Satisfies AC-2.3.
 - Keep the existing fail-closed-on-parse-error behavior (already throws 500).

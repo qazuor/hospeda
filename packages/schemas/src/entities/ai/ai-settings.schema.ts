@@ -50,16 +50,14 @@ export const AiProviderConfigSchema = z
 export type AiProviderConfig = z.infer<typeof AiProviderConfigSchema>;
 
 /**
- * Map of all providers to their configuration.
- * Every `AiProviderId` member should be present; the engine treats a missing
- * entry as `{ enabled: false }` (defensive default).
+ * Map of provider IDs to their configuration.
  *
- * Uses `z.partialRecord` (Zod 4) so that the map is partial — only configured
- * providers need to be present. Adding a new provider value to
- * `AiProviderIdSchema` does not require a schema change in this file; the map
- * will simply accept the new key once it appears.
+ * Uses `z.record(z.string(), ...)` since provider IDs are now free-form
+ * strings (not a fixed enum). Only configured providers need to be present
+ * — the engine treats a missing key as `{ enabled: false }` (defensive
+ * default). Adding a new provider ID does not require a schema change.
  */
-export const AiProvidersMapSchema = z.partialRecord(AiProviderIdSchema, AiProviderConfigSchema);
+export const AiProvidersMapSchema = z.record(z.string(), AiProviderConfigSchema);
 
 /** TypeScript type for the providers map. */
 export type AiProvidersMap = z.infer<typeof AiProvidersMapSchema>;

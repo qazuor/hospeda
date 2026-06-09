@@ -680,6 +680,11 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             });
             const injectedReq = injectSystemPrompt({ req, systemContent });
 
+            // Inject the model from feature config if not already set by the caller.
+            if (!injectedReq.model && featureConfig.model) {
+                (injectedReq as Record<string, unknown>).model = featureConfig.model;
+            }
+
             const providersConfig = await getProvidersConfig();
 
             const response = await routeWithFallback(
@@ -743,6 +748,11 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 req,
                 systemContent: streamSystemContent
             });
+
+            // Inject the model from feature config if not already set by the caller.
+            if (!injectedStreamReq.model && featureConfig.model) {
+                (injectedStreamReq as Record<string, unknown>).model = featureConfig.model;
+            }
 
             const providersConfig = await getProvidersConfig();
 

@@ -19,6 +19,13 @@
     background-color: var(--core-card, #ffffff);
     box-shadow: var(--shadow-card, 0 4px 24px rgba(0, 0, 0, 0.15));
     overflow: hidden;
+    transition: width 0.2s ease, height 0.2s ease;
+}
+
+.panelExpanded {
+    width: 560px;
+    height: 700px;
+    max-height: calc(100vh - 120px);
 }
 
 .header {
@@ -52,6 +59,38 @@
     font-size: 18px;
     line-height: 1;
     transition: background-color 0.15s ease;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.iconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    background: transparent;
+    color: var(--core-muted-foreground, #6b7280);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    transition: background-color 0.15s ease;
+}
+
+.iconButton:hover {
+    background-color: var(--core-muted-foreground, #e5e7eb);
+}
+
+.iconButton:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
 }
 
 .closeButton:hover {
@@ -101,7 +140,7 @@
 
 .assistantBubble {
     align-self: flex-start;
-    background-color: var(--core-muted-foreground, #f3f4f6);
+    background-color: var(--surface-warm, #f5f0eb);
     color: var(--core-foreground, #111827);
     border-bottom-left-radius: 4px;
 }
@@ -208,17 +247,20 @@
 }
 
 .sendButton {
-    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
     border: none;
     border-radius: var(--radius-button, 8px);
     background-color: var(--brand-primary, #2563eb);
     color: var(--primary-foreground, #ffffff);
-    font-family: var(--font-sans, sans-serif);
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 18px;
     cursor: pointer;
     transition: background-color 0.15s ease;
-    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .sendButton:hover:not(:disabled) {
