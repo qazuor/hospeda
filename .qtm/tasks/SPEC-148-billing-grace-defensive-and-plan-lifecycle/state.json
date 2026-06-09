@@ -52,7 +52,7 @@
             "id": "T-003",
             "title": "Add PLAN_DISABLED ServiceErrorCode → HTTP 410",
             "description": "Part B prereq. @repo/schemas ServiceErrorCode: add PLAN_DISABLED. Map to 410 in BOTH apps/api/src/middlewares/response.ts ERROR_CODE_TO_HTTP AND apps/api/src/utils/response-helpers.ts (keep in sync — SPEC-149 dual-map lesson; 410 GONE = resource retired). Tests: the code maps to 410 in both paths; consumer sweep of ERROR_CODE_TO_HTTP exhaustiveness (lesson SPEC-149: the handler may assert exhaustive coverage).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
@@ -60,14 +60,14 @@
             "tags": ["schemas", "error-code"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:30:00.000Z"
             }
         },
         {
