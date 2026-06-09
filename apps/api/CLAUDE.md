@@ -656,6 +656,26 @@ discarded.
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
 
+## Billing: key files and operational pointers
+
+Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
+`subscription-cancel.ts`, `subscription-pause.ts`, `addons.ts`, `promo-codes.ts`,
+`trial.ts`, `settings.ts`, `usage.ts`, `metrics.ts`, `notifications.ts`.
+
+Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
+`finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
+`apply-scheduled-plan-changes.ts`, `subscription-poll.job.ts`,
+`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`.
+
+For MP sandbox setup and operator procedures:
+[`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)
+
+For incident response:
+[`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
+
+For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
+[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
+
 ## Related Documentation
 
 - [Adding API Routes](docs/development/creating-endpoints.md)
