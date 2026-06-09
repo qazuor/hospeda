@@ -62,7 +62,8 @@ import {
     getDb,
     gte,
     isNull,
-    lte
+    lte,
+    withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { BILLING_EVENT_TYPES, validateSubscriptionStatusTransition } from '@repo/service-core';
@@ -353,10 +354,20 @@ type FinalizeOutcome = { kind: 'finalized' } | { kind: 'error'; error: string };
  *
  * Steps (per SPEC-147 Workstream C):
  *   1. Validate `active → cancelled` state-machine edge.
- *   2. Flip `status = 'cancelled'` via direct DB update.
- *   3. Revoke addons (webhook-style batch helper, best-effort).
- *   4. Clear entitlement cache.
- *   5. Write `FINALIZE_CANCELLED_SUB` audit event.
+ *   2. Atomic transaction: flip `status = 'cancelled'` + revoke addons +
+ *      write `FINALIZE_CANCELLED_SUB` audit event.
+ *   3. Clear entitlement cache (outside tx — non-rollback-able cache side-effect).
+ *
+ * ### Atomicity
+ *
+ * Steps 2a (status flip), 2b (addon revocation), and 2c (audit event) run inside
+ * a single `withTransaction` boundary. If addon revocation throws, the transaction
+ * rolls back the status flip and the event insert, leaving `status='active'` so the
+ * sub re-appears on the next cron run. The addon helper filters on `status='active'`
+ * addons, making the retry safe (idempotent).
+ *
+ * `clearEntitlementCache` stays OUTSIDE the transaction — it is a cache side-effect,
+ * not a DB write, and must not run if the transaction rolled back.
  *
  * @param row - The due soft-cancelled subscription row.
  * @param logger - Logger passed from the cron context.
@@ -386,68 +397,61 @@ async function finalizeOne(
             subscriptionId
         });
 
-        // ── Step 2: Flip status to 'cancelled' ───────────────────────────────
-        // UK spelling ('cancelled', 2 L's) matches the DB column constraint and
-        // the state machine. Direct Drizzle update — billing.subscriptions.cancel()
-        // was already called at soft-cancel time and does NOT set status when
-        // cancelAtPeriodEnd=true.
-        await db
-            .update(billingSubscriptions)
-            .set({
-                status: 'cancelled',
-                updatedAt: now
-            })
-            .where(eq(billingSubscriptions.id, subscriptionId));
+        // ── Step 2: Atomic transaction — status flip + addon revoke + audit ──
+        // All three writes are wrapped in a single transaction so a failure in
+        // addon revocation rolls back the status flip (keeping status='active')
+        // and the audit event insert. The sub will re-appear on the next run.
+        await withTransaction(async (tx) => {
+            // ── Step 2a: Flip status to 'cancelled' ──────────────────────────
+            // UK spelling ('cancelled', 2 L's) matches the DB column constraint
+            // and the state machine. billing.subscriptions.cancel() was already
+            // called at soft-cancel time and does NOT set status when
+            // cancelAtPeriodEnd=true.
+            await tx
+                .update(billingSubscriptions)
+                .set({
+                    status: 'cancelled',
+                    updatedAt: now
+                })
+                .where(eq(billingSubscriptions.id, subscriptionId));
 
-        // ── Step 3: Revoke addons (best-effort) ──────────────────────────────
-        // Uses the webhook-style batch helper (realign #7). If this throws,
-        // we log the error but the status flip above is already committed.
-        // Addon revocations can be retried by re-running the cron or via the
-        // addon-lifecycle reconciliation path.
-        if (billing) {
-            try {
+            // ── Step 2b: Revoke addons ────────────────────────────────────────
+            // Uses the webhook-style batch helper (realign #7). The helper
+            // accepts the tx as its `db` param — it filters on status='active'
+            // addons, making retries safe (idempotent). If this throws, the
+            // whole transaction rolls back → status stays 'active' → sub
+            // re-appears on next run.
+            if (billing) {
                 await handleSubscriptionCancellationAddons({
                     subscriptionId,
                     customerId,
                     billing,
-                    db
+                    db: tx
                 });
-            } catch (addonErr) {
-                // Log loudly — the status is already flipped so the sub will
-                // not re-appear in the query; ops must manually revoke addons.
-                logger.error(
-                    'finalize-cancelled-subs: addon revocation failed (status already flipped; manual intervention may be required)',
-                    {
-                        subscriptionId,
-                        customerId,
-                        error: addonErr instanceof Error ? addonErr.message : String(addonErr)
-                    }
+            } else {
+                logger.warn(
+                    'finalize-cancelled-subs: billing not configured, skipping addon revocation',
+                    { subscriptionId, customerId }
                 );
-                // Re-throw so the outer catch marks this sub as errored and
-                // result.success=false fires the SPEC-149 Sentry capture.
-                throw addonErr;
             }
-        } else {
-            logger.warn(
-                'finalize-cancelled-subs: billing not configured, skipping addon revocation',
-                { subscriptionId, customerId }
-            );
-        }
 
-        // ── Step 4: Clear entitlement cache (INV-1) ──────────────────────────
+            // ── Step 2c: Write FINALIZE_CANCELLED_SUB audit event ────────────
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId,
+                eventType: BILLING_EVENT_TYPES.FINALIZE_CANCELLED_SUB,
+                previousStatus: status,
+                newStatus: 'cancelled',
+                triggerSource: 'finalize-cancelled-cron',
+                metadata: {
+                    finalizedAt: now.toISOString()
+                }
+            });
+        }, db);
+
+        // ── Step 3: Clear entitlement cache (INV-1) ──────────────────────────
+        // Runs AFTER the transaction commits. Non-rollback-able cache side-effect —
+        // must not run if the transaction above rolled back.
         clearEntitlementCache(customerId);
-
-        // ── Step 5: Write FINALIZE_CANCELLED_SUB audit event ─────────────────
-        await db.insert(billingSubscriptionEvents).values({
-            subscriptionId,
-            eventType: BILLING_EVENT_TYPES.FINALIZE_CANCELLED_SUB,
-            previousStatus: status,
-            newStatus: 'cancelled',
-            triggerSource: 'finalize-cancelled-cron',
-            metadata: {
-                finalizedAt: now.toISOString()
-            }
-        });
 
         logger.info('finalize-cancelled-subs: subscription finalized', {
             subscriptionId,

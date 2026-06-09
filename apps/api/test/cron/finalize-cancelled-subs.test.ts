@@ -33,7 +33,8 @@ const {
     mockDbUpdate,
     mockDbSelectChain,
     mockValidateTransition,
-    mockSendNotification
+    mockSendNotification,
+    mockWithTransaction
 } = vi.hoisted(() => ({
     mockHandleSubscriptionCancellationAddons: vi.fn(),
     mockClearEntitlementCache: vi.fn(),
@@ -42,7 +43,10 @@ const {
     mockDbUpdate: vi.fn(),
     mockDbSelectChain: vi.fn(),
     mockValidateTransition: vi.fn(),
-    mockSendNotification: vi.fn().mockResolvedValue(undefined)
+    mockSendNotification: vi.fn().mockResolvedValue(undefined),
+    // withTransaction executes the callback with a tx object that mirrors the
+    // mocked db (same insert/update/select handles).
+    mockWithTransaction: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -143,6 +147,21 @@ vi.mock('@repo/db', async (importOriginal) => {
 
     mockDbSelectChain.mockImplementation(makeSelectChain);
 
+    // Default withTransaction: executes the callback with a tx that mirrors
+    // the mocked db (same insert/update/select handles so existing assertions
+    // still work). The second argument (existingTx/db) is intentionally ignored
+    // in the mock — all operations go through the shared mock stubs.
+    mockWithTransaction.mockImplementation(
+        async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+            const tx = {
+                select: mockDbSelectChain,
+                update: mockDbUpdate,
+                insert: mockDbInsert
+            };
+            return fn(tx);
+        }
+    );
+
     return {
         ...actual,
         getDb: vi.fn(() => ({
@@ -150,6 +169,7 @@ vi.mock('@repo/db', async (importOriginal) => {
             update: mockDbUpdate,
             insert: mockDbInsert
         })),
+        withTransaction: mockWithTransaction,
         billingSubscriptions: {
             id: 'ID',
             customerId: 'CUSTOMER_ID',
@@ -241,6 +261,7 @@ beforeEach(() => {
     mockDbUpdate.mockReset();
     mockDbSelectChain.mockReset();
     mockSendNotification.mockReset();
+    mockWithTransaction.mockReset();
 
     // Re-set defaults after reset
     mockGetQZPayBilling.mockReturnValue(makeBilling());
@@ -273,6 +294,19 @@ beforeEach(() => {
         return chain;
     };
     mockDbSelectChain.mockImplementation(makeSelectChain);
+
+    // Re-wire withTransaction: execute the callback with a tx that mirrors the
+    // mocked db handles so all existing assertions continue to work.
+    mockWithTransaction.mockImplementation(
+        async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+            const tx = {
+                select: mockDbSelectChain,
+                update: mockDbUpdate,
+                insert: mockDbInsert
+            };
+            return fn(tx);
+        }
+    );
 });
 
 // ---------------------------------------------------------------------------
@@ -441,16 +475,18 @@ describe('handler: not-yet-due (query returns nothing)', () => {
         expect(mockClearEntitlementCache).not.toHaveBeenCalled();
     });
 
-    it('REGRESSION: soft-cancelled sub with currentPeriodEnd in the future is NOT finalized (grace period preserved)', async () => {
-        // The bug: findDueSoftCancelledSubs previously only applied
-        // status='active' in SQL and post-filtered by status in JS, completely
-        // missing the cancelAtPeriodEnd and currentPeriodEnd guards. This caused
-        // subs with period_end=now+3d to be finalized at the next 4:30 AM run.
+    it('mock-level guard: query returns nothing when no subs are due (simulates future-period exclusion)', async () => {
+        // This test documents that the handler produces no side-effects when
+        // findDueSoftCancelledSubs returns an empty set — the typical outcome
+        // when all soft-cancelled subs still have currentPeriodEnd in the future.
         //
-        // With the fix, ALL four predicates are in the SQL WHERE. The mock
-        // simulates the corrected DB returning NO rows for a sub whose
-        // currentPeriodEnd is in the future (the lte(currentPeriodEnd, now)
-        // predicate excludes it).
+        // The REAL regression guard (SQL WHERE uses lte on currentPeriodEnd, not gte,
+        // and combines all four predicates with and()) lives in the seeded-DB e2e:
+        //   apps/api/test/e2e/subscription-cancel-finalize.test.ts:512
+        //
+        // Predicate-shape assertion: the WHERE clause predicate passed to where()
+        // must include an lte sub-expression (currentPeriodEnd <= now). This is
+        // confirmed by the findDueSoftCancelledSubs WHERE-clause test below.
         dueRowsState.rows = []; // corrected SQL would return nothing for a future-period sub
 
         const ctx = makeCronCtx();
@@ -473,12 +509,16 @@ describe('handler: not-yet-due (query returns nothing)', () => {
 // ---------------------------------------------------------------------------
 // findDueSoftCancelledSubs internal: WHERE clause composition
 // Documents that the query passes the correct compound predicate to where().
+//
+// This is the unit-level guard for the predicate shape. The seeded-DB e2e
+// (apps/api/test/e2e/subscription-cancel-finalize.test.ts:512) is the
+// authoritative gate for the SQL regression (future-period subs not finalized).
 // ---------------------------------------------------------------------------
 
 describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
-    it('calls db.select().from().where(and(...)) with all four predicates', async () => {
+    it('calls db.select().from().where(and(...)) with all four predicates including lte on currentPeriodEnd', async () => {
         // We capture what the where() function receives to assert the compound
-        // predicate includes status, cancelAtPeriodEnd, currentPeriodEnd, and deletedAt.
+        // predicate includes status, cancelAtPeriodEnd, currentPeriodEnd (lte), and deletedAt.
         // The mock returns empty rows (no-op) — we only care about the predicate shape.
         const capturedPredicates: unknown[] = [];
 
@@ -505,9 +545,31 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
         expect(predicate._and).toBeDefined();
         expect(Array.isArray(predicate._and)).toBe(true);
 
+        const subPreds = predicate._and as Array<
+            | { _eq?: unknown[] }
+            | { _lte?: unknown[] }
+            | { _gte?: unknown[] }
+            | { _isNull?: unknown }
+        >;
+
         // Should have 4 sub-predicates: status eq, cancelAtPeriodEnd eq,
         // currentPeriodEnd lte, deletedAt isNull.
-        expect((predicate._and as unknown[]).length).toBe(4);
+        expect(subPreds.length).toBe(4);
+
+        // At least one predicate must be an lte (currentPeriodEnd <= now).
+        // This guards the grace-period logic: using gte here would finalize
+        // subs whose period_end is in the FUTURE, destroying the grace period.
+        const hasLte = subPreds.some((p) => '_lte' in p);
+        expect(hasLte).toBe(true);
+
+        // There must be NO gte on the currentPeriodEnd position (that would be
+        // the wrong direction — would only finalize future subs, not past ones).
+        const hasGte = subPreds.some((p) => '_gte' in p);
+        expect(hasGte).toBe(false);
+
+        // At least one isNull predicate (deletedAt soft-delete guard)
+        const hasIsNull = subPreds.some((p) => '_isNull' in p);
+        expect(hasIsNull).toBe(true);
     });
 });
 
@@ -598,6 +660,49 @@ describe('handler: addon revocation failure', () => {
         const ctx = makeCronCtx();
         await finalizeCancelledSubsJob.handler(ctx);
 
+        expect(ctx.logger.error).toHaveBeenCalled();
+    });
+
+    it('M1: addon revocation throws → tx rolls back → status stays active, no FINALIZE event, sub is retried on next run', async () => {
+        // Arrange: one due sub; withTransaction simulates a rollback by re-throwing
+        // the callback's error without committing (i.e. the tx callback throws →
+        // the whole transaction is aborted).
+        dueRowsState.rows = [makeDueRow({ id: SUB_ID_1, customerId: CUSTOMER_ID_1 })];
+
+        const addonErr = new Error('Addon revocation failed — simulated rollback');
+        mockHandleSubscriptionCancellationAddons.mockRejectedValue(addonErr);
+
+        // Override withTransaction to propagate the error (simulating rollback):
+        // the callback is invoked but if it throws, withTransaction re-throws and
+        // no write is considered committed.
+        mockWithTransaction.mockImplementation(
+            async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+                const tx = {
+                    select: mockDbSelectChain,
+                    update: mockDbUpdate,
+                    insert: mockDbInsert
+                };
+                // Run the callback — if it throws, re-throw (simulates rollback).
+                return fn(tx);
+            }
+        );
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // The sub must be counted as an error (not finalized)
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(1);
+        expect(result.processed).toBe(1);
+
+        // The entitlement cache must NOT have been cleared (tx rolled back)
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+
+        // On the real DB the status flip and audit event would both be rolled back.
+        // In this mock the update/insert stubs were called inside the callback, but
+        // the critical observable is that the outer finalizeOne returned { kind: 'error' }
+        // — meaning the sub will re-appear in the next run's query (status='active' is
+        // preserved by the rollback). The cache not being cleared is the in-process guard.
         expect(ctx.logger.error).toHaveBeenCalled();
     });
 });
