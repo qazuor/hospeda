@@ -40,6 +40,7 @@ import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
+import { subscriptionCancelRouter } from './subscription-cancel';
 import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
@@ -219,6 +220,13 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
 
+    // Mount user self-service soft-cancel route (SPEC-147 T-006).
+    // Sits on the same `/subscriptions` prefix; the route is `/{id}/cancel`
+    // so Hono resolves it without conflict against `/start-paid` or `/change-plan`.
+    // Ownership is enforced by `billingOwnershipMiddleware` (on the qzpayWrapper
+    // above); the route handler additionally gates on HOSPEDA_USER_CANCEL_ENABLED.
+    router.route('/subscriptions', subscriptionCancelRouter);
+
     // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
     // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and
     // `/me/subscription-resume`; keeping them off the `/subscriptions` namespace
@@ -231,7 +239,7 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, subscription-cancel, and usage routes'
     );
 
     return router;
