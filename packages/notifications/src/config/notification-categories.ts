@@ -56,5 +56,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN,
 
     // Soft-cancel confirmation (SPEC-147) — always sent, user-initiated
-    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
+
+    // D3 access-ending reminder (SPEC-147 T-010) — REMINDER: user can opt out
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER
 };

@@ -41,7 +41,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // Soft-cancel confirmation (SPEC-147)
     [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]:
-        'Cancellation confirmed — {planName} access until {accessUntil}'
+        'Cancellation confirmed — {planName} access until {accessUntil}',
+
+    // D3 access-ending reminder (SPEC-147 T-010)
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
+        'Your {planName} access ends in {daysRemaining} days — act now to keep it'
 };
 
 /**

@@ -21,6 +21,7 @@ import {
     PlanDowngradeLimitWarning,
     PurchaseConfirmation,
     RenewalReminder,
+    SubscriptionAccessEndingSoon,
     SubscriptionCancelConfirmed,
     SubscriptionCancelled,
     SubscriptionPaused,
@@ -43,6 +44,7 @@ import type {
     PlanDowngradeLimitWarningPayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
+    SubscriptionAccessEndingSoonPayload,
     SubscriptionCancelConfirmedPayload,
     SubscriptionEventPayload,
     SubscriptionLifecyclePayload,
@@ -555,6 +557,17 @@ export class NotificationService {
                 });
             }
 
+            case 'subscription_access_ending_soon': {
+                const p = payload as SubscriptionAccessEndingSoonPayload;
+                return SubscriptionAccessEndingSoon({
+                    recipientName,
+                    planName: p.planName,
+                    accessUntil: p.accessUntil,
+                    daysRemaining: p.daysRemaining,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -626,6 +639,11 @@ export class NotificationService {
         // Soft-cancel confirmation specific fields (SPEC-147)
         if (payload.type === 'subscription_cancel_confirmed' && 'accessUntil' in payload) {
             subjectData.accessUntil = payload.accessUntil;
+        }
+
+        // D3 access-ending reminder specific fields (SPEC-147 T-010)
+        if (payload.type === 'subscription_access_ending_soon' && 'daysRemaining' in payload) {
+            subjectData.daysRemaining = String(payload.daysRemaining);
         }
 
         return getSubject(payload.type, subjectData);
