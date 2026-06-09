@@ -38,6 +38,17 @@ vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn()
 }));
 
+// Mock getThresholdForContext so flow tests don't need a live DB.
+// Returns code-constant defaults (pending=0.5, reject=0.85).
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn().mockResolvedValue({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Accommodation review stateful model store
 // ---------------------------------------------------------------------------

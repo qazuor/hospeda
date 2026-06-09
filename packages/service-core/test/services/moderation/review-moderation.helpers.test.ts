@@ -142,4 +142,64 @@ describe('resolveInitialModerationState', () => {
         expect(MODERATION_PENDING_THRESHOLD).toBeGreaterThan(0);
         expect(MODERATION_PENDING_THRESHOLD).toBeLessThanOrEqual(1);
     });
+
+    // ---- DB-backed pendingThreshold injection (SPEC-195) -----------------------
+
+    describe('injected pendingThreshold overrides the package constant', () => {
+        it('score < injected threshold → entity default applies (accommodation APPROVED)', () => {
+            // threshold 0.8, score 0.6 → below → APPROVED for accommodation
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0.6,
+                    pendingThreshold: 0.8
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        it('score >= injected threshold → PENDING (overrides entity default)', () => {
+            // threshold 0.8, score 0.8 → at threshold → PENDING even for accommodation
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0.8,
+                    pendingThreshold: 0.8
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('score 0.6 with default threshold (0.5) → PENDING; with elevated threshold (0.8) → APPROVED', () => {
+            // Without injected threshold, 0.6 >= 0.5 → PENDING
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0.6
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+
+            // With injected threshold 0.8, 0.6 < 0.8 → APPROVED
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0.6,
+                    pendingThreshold: 0.8
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        it('injected threshold of 0 → any score >= 0 is PENDING (strict admin lockdown)', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'accommodation',
+                    verificationLevel: 'semi',
+                    moderationScore: 0,
+                    pendingThreshold: 0
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+    });
 });
