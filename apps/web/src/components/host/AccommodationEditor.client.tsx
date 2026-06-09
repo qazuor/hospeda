@@ -18,7 +18,12 @@ import { ActionBar } from './editor/ActionBar.client';
 import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
 import { CapacitySection } from './editor/CapacitySection.client';
+import { ContactInfoSection } from './editor/ContactInfoSection.client';
+import { LocationSection } from './editor/LocationSection.client';
+import { PhotoSection } from './editor/PhotoSection.client';
+import type { MediaImage, PhotoSectionData } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
+import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +37,8 @@ export interface AccommodationEditorProps {
     readonly destinations: readonly DestinationData[];
     readonly amenities: readonly AmenityData[];
     readonly features: readonly AmenityData[];
+    readonly initialFeaturedImage?: MediaImage | null;
+    readonly initialGallery?: readonly MediaImage[];
 }
 
 type FieldErrors = {
@@ -45,6 +52,17 @@ type FieldErrors = {
     bathrooms?: string;
     basePrice?: string;
     currency?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+    twitterUrl?: string;
+    linkedinUrl?: string;
+    tiktokUrl?: string;
+    youtubeUrl?: string;
+    latitude?: string;
+    longitude?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -64,7 +82,9 @@ export function AccommodationEditor({
     initialData,
     destinations,
     amenities,
-    features
+    features,
+    initialFeaturedImage = null,
+    initialGallery = []
 }: AccommodationEditorProps) {
     const { t } = createTranslations(locale);
 
@@ -73,6 +93,12 @@ export function AccommodationEditor({
     const [errors, setErrors] = useState<FieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+
+    // --- Photo state ---
+    const [photoData, setPhotoData] = useState<PhotoSectionData>({
+        featuredImage: initialFeaturedImage ?? null,
+        gallery: initialGallery ?? []
+    });
 
     // --- Field change handlers ---
 
@@ -117,6 +143,16 @@ export function AccommodationEditor({
                 ? prev.featureIds.filter((id) => id !== featureId)
                 : [...prev.featureIds, featureId]
         }));
+    }, []);
+
+    // --- Photo handlers ---
+
+    const handleFeaturedImageChange = useCallback((image: MediaImage | null) => {
+        setPhotoData((prev) => ({ ...prev, featuredImage: image }));
+    }, []);
+
+    const handleGalleryChange = useCallback((gallery: readonly MediaImage[]) => {
+        setPhotoData((prev) => ({ ...prev, gallery }));
     }, []);
 
     // --- Validation ---
@@ -235,6 +271,37 @@ export function AccommodationEditor({
                 payload.featureIds = [...current.featureIds];
             }
 
+            // Phase B: Contact info (flat HTTP fields)
+            if (current.phone !== initial.phone) {
+                payload.phone = current.phone;
+            }
+            if (current.email !== initial.email) {
+                payload.email = current.email;
+            }
+            if (current.website !== initial.website) {
+                payload.website = current.website;
+            }
+
+            // Phase B: Social networks (flat HTTP fields)
+            if (current.facebookUrl !== initial.facebookUrl) {
+                payload.facebook = current.facebookUrl;
+            }
+            if (current.instagramUrl !== initial.instagramUrl) {
+                payload.instagram = current.instagramUrl;
+            }
+            if (current.twitterUrl !== initial.twitterUrl) {
+                payload.twitter = current.twitterUrl;
+            }
+            if (current.linkedinUrl !== initial.linkedinUrl) {
+                payload.linkedin = current.linkedinUrl;
+            }
+            if (current.tiktokUrl !== initial.tiktokUrl) {
+                payload.tiktok = current.tiktokUrl;
+            }
+            if (current.youtubeUrl !== initial.youtubeUrl) {
+                payload.youtube = current.youtubeUrl;
+            }
+
             return payload;
         },
         [initialData]
@@ -322,6 +389,27 @@ export function AccommodationEditor({
                 onFieldChange={handleCurrencyFieldChange}
             />
 
+            <LocationSection
+                locale={locale}
+                data={formData}
+                errors={errors}
+                onFieldChange={handleNumberFieldChange}
+            />
+
+            <ContactInfoSection
+                locale={locale}
+                data={formData}
+                errors={errors}
+                onFieldChange={handleTextFieldChange}
+            />
+
+            <SocialNetworksSection
+                locale={locale}
+                data={formData}
+                errors={errors}
+                onFieldChange={handleTextFieldChange}
+            />
+
             <AmenitiesSection
                 locale={locale}
                 data={formData}
@@ -329,6 +417,14 @@ export function AccommodationEditor({
                 features={features}
                 onToggleAmenity={handleToggleAmenity}
                 onToggleFeature={handleToggleFeature}
+            />
+
+            <PhotoSection
+                locale={locale}
+                accommodationId={accommodationId}
+                data={photoData}
+                onFeaturedImageChange={handleFeaturedImageChange}
+                onGalleryChange={handleGalleryChange}
             />
 
             {submitError && (

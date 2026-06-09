@@ -1358,7 +1358,59 @@ export function transformAccommodationEdit({
         isAvailable: item.isAvailable != null ? Boolean(item.isAvailable) : true,
         isFeatured: item.isFeatured != null ? Boolean(item.isFeatured) : false,
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
-        featureIds: extractIdList(featuresArr, 'featureId', 'feature')
+        featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
+        // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
+        phone: String(
+            (item.phone as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.mobilePhone as string) ??
+                ''
+        ),
+        email: String(
+            (item.email as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.personalEmail as string) ??
+                ''
+        ),
+        website: String(
+            (item.website as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.website as string) ??
+                ''
+        ),
+        // Phase B: social networks (flat HTTP fields from the domain socialNetworks object)
+        facebookUrl: String(
+            (item.facebook as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.facebook as string) ??
+                ''
+        ),
+        instagramUrl: String(
+            (item.instagram as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.instagram as string) ??
+                ''
+        ),
+        twitterUrl: String(
+            (item.twitter as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.twitter as string) ??
+                ''
+        ),
+        linkedinUrl: String(
+            (item.linkedin as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.linkedIn as string) ??
+                ''
+        ),
+        tiktokUrl: String(
+            (item.tiktok as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.tiktok as string) ??
+                ''
+        ),
+        youtubeUrl: String(
+            (item.youtube as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.youtube as string) ??
+                ''
+        )
     };
 }
 

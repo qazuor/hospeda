@@ -395,6 +395,93 @@ describe('AccommodationSchema', () => {
         });
     });
 
+    describe('socialNetworks field', () => {
+        it('should accept valid social network URLs', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'https://facebook.com/myaccommodation',
+                    instagram: 'https://instagram.com/myaccommodation',
+                    twitter: 'https://twitter.com/myaccommodation',
+                    linkedIn: 'https://linkedin.com/company/myaccommodation',
+                    tiktok: 'https://tiktok.com/@myaccommodation',
+                    youtube: 'https://youtube.com/@myaccommodation'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.socialNetworks?.facebook).toBe(
+                    'https://facebook.com/myaccommodation'
+                );
+                expect(result.data.socialNetworks?.instagram).toBe(
+                    'https://instagram.com/myaccommodation'
+                );
+            }
+        });
+
+        it('should accept partial social network data', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'https://facebook.com/myaccommodation'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.socialNetworks?.facebook).toBe(
+                    'https://facebook.com/myaccommodation'
+                );
+                expect(result.data.socialNetworks?.instagram).toBeUndefined();
+            }
+        });
+
+        it('should accept undefined socialNetworks (optional)', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, socialNetworks: undefined };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept null socialNetworks', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, socialNetworks: null };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject invalid social network URLs', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'not-a-url'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find(
+                    (i) => i.path.includes('socialNetworks') && i.path.includes('facebook')
+                );
+                expect(issue).toBeDefined();
+            }
+        });
+    });
+
     describe('Type Inference', () => {
         it('should infer correct TypeScript types', () => {
             const validData = createValidAccommodation();

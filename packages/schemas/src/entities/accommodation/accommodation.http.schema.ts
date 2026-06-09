@@ -161,7 +161,23 @@ export const AccommodationCreateHttpSchema = z.object({
 
     // Relations
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // Contact information (flat fields mapped to ContactInfoSchema in converter)
+    phone: z.string().optional(),
+    email: z
+        .string()
+        .email({ message: 'zodError.common.contact.personalEmail.invalid' })
+        .optional(),
+    website: z.string().url({ message: 'zodError.common.contact.website.invalid' }).optional(),
+
+    // Social media links (flat fields mapped to SocialNetworkSchema in converter)
+    twitter: z.string().url({ message: 'zodError.common.social.twitter.invalid' }).optional(),
+    facebook: z.string().url({ message: 'zodError.common.social.facebook.invalid' }).optional(),
+    instagram: z.string().url({ message: 'zodError.common.social.instagram.invalid' }).optional(),
+    linkedin: z.string().url({ message: 'zodError.common.social.linkedIn.invalid' }).optional(),
+    tiktok: z.string().url({ message: 'zodError.common.social.tiktok.invalid' }).optional(),
+    youtube: z.string().url({ message: 'zodError.common.social.youtube.invalid' }).optional()
 });
 
 export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSchema>;
@@ -325,6 +341,38 @@ export const httpToDomainAccommodationCreate = (
         currency: httpData.currency
     },
 
+    // Contact info mapping from flat HTTP fields to nested ContactInfoSchema
+    ...(httpData.phone !== undefined ||
+    httpData.email !== undefined ||
+    httpData.website !== undefined
+        ? {
+              contactInfo: {
+                  mobilePhone: httpData.phone || '',
+                  personalEmail: httpData.email,
+                  website: httpData.website
+              }
+          }
+        : {}),
+
+    // Social networks mapping from flat HTTP fields to nested SocialNetworkSchema
+    ...(httpData.twitter !== undefined ||
+    httpData.facebook !== undefined ||
+    httpData.instagram !== undefined ||
+    httpData.linkedin !== undefined ||
+    httpData.tiktok !== undefined ||
+    httpData.youtube !== undefined
+        ? {
+              socialNetworks: {
+                  twitter: httpData.twitter,
+                  facebook: httpData.facebook,
+                  instagram: httpData.instagram,
+                  linkedIn: httpData.linkedin,
+                  tiktok: httpData.tiktok,
+                  youtube: httpData.youtube
+              }
+          }
+        : {}),
+
     // Extra info mapping from flat HTTP fields to nested domain structure
     extraInfo: {
         capacity: httpData.maxGuests,
@@ -408,6 +456,38 @@ export const httpToDomainAccommodationUpdate = (
               price: {
                   price: httpData.basePrice,
                   currency: httpData.currency
+              }
+          }
+        : {}),
+
+    // Contact info mapping (only if any contact field is provided)
+    ...(httpData.phone !== undefined ||
+    httpData.email !== undefined ||
+    httpData.website !== undefined
+        ? {
+              contactInfo: {
+                  mobilePhone: httpData.phone || '',
+                  personalEmail: httpData.email,
+                  website: httpData.website
+              }
+          }
+        : {}),
+
+    // Social networks mapping (only if any social field is provided)
+    ...(httpData.twitter !== undefined ||
+    httpData.facebook !== undefined ||
+    httpData.instagram !== undefined ||
+    httpData.linkedin !== undefined ||
+    httpData.tiktok !== undefined ||
+    httpData.youtube !== undefined
+        ? {
+              socialNetworks: {
+                  twitter: httpData.twitter,
+                  facebook: httpData.facebook,
+                  instagram: httpData.instagram,
+                  linkedIn: httpData.linkedin,
+                  tiktok: httpData.tiktok,
+                  youtube: httpData.youtube
               }
           }
         : {}),
