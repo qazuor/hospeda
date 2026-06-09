@@ -8,18 +8,22 @@
             "id": "T-001",
             "title": "Add BILLING_CRON_LAG_GRACE_HOURS constant",
             "description": "packages/billing/src/constants/billing.constants.ts: add BILLING_CRON_LAG_GRACE_HOURS = 6 (JSDoc: absorbs MP webhook-delivery jitter without masking outages; past this window access continues but a Sentry alert fires — realign Part A). Match the existing numeric-named-export + JSDoc pattern (DUNNING_GRACE_PERIOD_DAYS etc.). Unit test pins the value (it's a behavior contract).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [],
             "tags": ["billing", "constants"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T17:23:42.778Z"
             }
         },
         {
@@ -33,7 +37,11 @@
             "subtasks": [],
             "tags": ["api", "middleware", "grace"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -51,7 +59,11 @@
             "subtasks": [],
             "tags": ["schemas", "error-code"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -69,7 +81,11 @@
             "subtasks": [],
             "tags": ["service-core", "notifications", "constants"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -87,7 +103,11 @@
             "subtasks": [],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -105,7 +125,11 @@
             "subtasks": [],
             "tags": ["api", "routes", "guard"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -123,7 +147,11 @@
             "subtasks": [],
             "tags": ["api", "admin", "wiring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -141,7 +169,11 @@
             "subtasks": [],
             "tags": ["docs", "runbook"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -159,7 +191,11 @@
             "subtasks": [],
             "tags": ["e2e", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -177,7 +213,11 @@
             "subtasks": [],
             "tags": ["sweep", "quality"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -195,7 +235,11 @@
             "subtasks": [],
             "tags": ["review", "quality"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -213,7 +257,11 @@
             "subtasks": [],
             "tags": ["pr", "closeout", "smoke"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
