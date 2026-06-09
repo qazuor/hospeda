@@ -144,7 +144,11 @@
                 "location": "Localização",
                 "capacity": "Capacidade",
                 "pricing": "Preço",
-                "amenities": "Comodidades e recursos"
+                "amenities": "Comodidades e recursos",
+                "contact": "Contato",
+                "socialNetworks": "Redes sociais",
+                "photos": "Fotos",
+                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes"
             },
             "field": {
                 "name": "Nome",
@@ -155,13 +159,35 @@
                 "destinationPlaceholder": "Selecionar destino...",
                 "latitude": "Latitude",
                 "longitude": "Longitude",
+                "locationHint": "Insira as coordenadas exatas da sua propriedade.",
                 "maxGuests": "Máx. hóspedes",
                 "bedrooms": "Quartos",
                 "bathrooms": "Banheiros",
                 "price": "Preço por noite",
                 "currency": "Moeda",
                 "amenities": "Comodidades",
-                "features": "Recursos"
+                "features": "Recursos",
+                "phone": "Telefone",
+                "email": "Email",
+                "website": "Site",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Imagem principal",
+                "featuredAlt": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "galleryAlt": "Foto {{index}}",
+                "dropOrClick": "Arraste uma imagem ou clique para selecionar",
+                "formats": "JPG, PNG ou WebP — máx. 5MB",
+                "remove": "Remover",
+                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode exceder 5MB",
+                "uploadFailed": "Falha ao fazer upload da imagem"
             },
             "action": {
                 "save": "Salvar",

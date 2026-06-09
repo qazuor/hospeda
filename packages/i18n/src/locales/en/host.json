@@ -144,7 +144,11 @@
                 "location": "Location",
                 "capacity": "Capacity",
                 "pricing": "Pricing",
-                "amenities": "Amenities and features"
+                "amenities": "Amenities and features",
+                "contact": "Contact",
+                "socialNetworks": "Social networks",
+                "photos": "Photos",
+                "photosDescription": "Upload photos of your property to attract more guests"
             },
             "field": {
                 "name": "Name",
@@ -155,13 +159,35 @@
                 "destinationPlaceholder": "Select destination...",
                 "latitude": "Latitude",
                 "longitude": "Longitude",
+                "locationHint": "Enter the exact coordinates of your property.",
                 "maxGuests": "Max guests",
                 "bedrooms": "Bedrooms",
                 "bathrooms": "Bathrooms",
                 "price": "Price per night",
                 "currency": "Currency",
                 "amenities": "Amenities",
-                "features": "Features"
+                "features": "Features",
+                "phone": "Phone",
+                "email": "Email",
+                "website": "Website",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Featured image",
+                "featuredAlt": "Featured image",
+                "gallery": "Photo gallery",
+                "galleryAlt": "Photo {{index}}",
+                "dropOrClick": "Drag an image or click to select",
+                "formats": "JPG, PNG or WebP — max 5MB",
+                "remove": "Remove",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "File cannot exceed 5MB",
+                "uploadFailed": "Failed to upload image"
             },
             "action": {
                 "save": "Save",

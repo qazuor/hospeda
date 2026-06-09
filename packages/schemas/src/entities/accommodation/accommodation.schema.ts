@@ -13,6 +13,7 @@ import { AccommodationEntityMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
+import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
@@ -71,6 +72,7 @@ export const AccommodationSchema = z.object({
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,
+    ...SocialNetworkFields,
     ...AccommodationLocationFields,
     ...AccommodationEntityMediaFields,
     ...BaseAdminFields,

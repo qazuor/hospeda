@@ -144,7 +144,11 @@
                 "location": "Ubicación",
                 "capacity": "Capacidad",
                 "pricing": "Precio",
-                "amenities": "Servicios y comodidades"
+                "amenities": "Servicios y comodidades",
+                "contact": "Contacto",
+                "socialNetworks": "Redes sociales",
+                "photos": "Fotos",
+                "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes"
             },
             "field": {
                 "name": "Nombre",
@@ -155,13 +159,35 @@
                 "destinationPlaceholder": "Seleccionar destino...",
                 "latitude": "Latitud",
                 "longitude": "Longitud",
+                "locationHint": "Ingresá las coordenadas exactas de tu propiedad.",
                 "maxGuests": "Huéspedes máx.",
                 "bedrooms": "Dormitorios",
                 "bathrooms": "Baños",
                 "price": "Precio por noche",
                 "currency": "Moneda",
                 "amenities": "Comodidades",
-                "features": "Características"
+                "features": "Características",
+                "phone": "Teléfono",
+                "email": "Email",
+                "website": "Sitio web",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Imagen principal",
+                "featuredAlt": "Imagen principal",
+                "gallery": "Galería de fotos",
+                "galleryAlt": "Foto {{index}}",
+                "dropOrClick": "Arrastrá una imagen o hacé clic para seleccionar",
+                "formats": "JPG, PNG o WebP — máx. 5MB",
+                "remove": "Eliminar",
+                "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
+                "tooLarge": "El archivo no puede superar 5MB",
+                "uploadFailed": "Error al subir la imagen"
             },
             "action": {
                 "save": "Guardar",
