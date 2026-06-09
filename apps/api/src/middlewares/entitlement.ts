@@ -16,6 +16,7 @@
  */
 
 import {
+    BILLING_CRON_LAG_GRACE_HOURS,
     type EntitlementKey,
     type LimitKey,
     getDefaultEntitlements,
@@ -27,6 +28,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { RoleEnum, ServiceError } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
+import { captureBillingError } from '../lib/sentry';
 import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { isGuestActor } from '../utils/actor';
@@ -155,6 +157,32 @@ let hostDraftDefaultsCachedAt = 0;
 const HOST_DRAFT_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
+ * Cron-lag grace detection result (SPEC-148 T-002).
+ *
+ * Populated when an active subscription's `currentPeriodEnd` is in the past
+ * — the renewal webhook is late. The middleware uses this to set the
+ * `X-Cron-Lag-Grace-Hours-Remaining` response header and, past the grace
+ * window, fire a Sentry alert.
+ *
+ * Detection is stateless and derived purely from `currentPeriodEnd`; no DB
+ * column is required.
+ */
+interface CronLagGraceDetection {
+    /** Whether the subscription is overdue (currentPeriodEnd is in the past). */
+    detected: true;
+    /** Hours since currentPeriodEnd (always > 0). */
+    hoursOverdue: number;
+    /** Whether we are still inside the BILLING_CRON_LAG_GRACE_HOURS window. */
+    withinWindow: boolean;
+    /** Hours remaining in the grace window (ceil, only meaningful when withinWindow=true). */
+    hoursRemaining: number;
+    /** Subscription ID for observability context. */
+    subscriptionId: string;
+    /** Plan ID for observability context. */
+    planId: string;
+}
+
+/**
  * Result of loading entitlements for a billing customer.
  */
 interface LoadEntitlementsResult {
@@ -168,6 +196,23 @@ interface LoadEntitlementsResult {
      * Degraded results must NOT be cached so the next request retries.
      */
     shouldCache: boolean;
+    /**
+     * Cron-lag grace detection (SPEC-148 T-002).
+     *
+     * Present when the active subscription's `currentPeriodEnd` is in the past.
+     * The middleware acts on this: sets the `X-Cron-Lag-Grace-Hours-Remaining`
+     * response header and fires a Sentry alert past the window.
+     *
+     * NOTE — 5-min cache caveat: `loadEntitlements` is only called on a cache
+     * miss. On a cache hit the cron-lag check is skipped for up to 5 min. This
+     * is acceptable per SPEC-148 Part A ("Resolved" note): the Sentry alert is
+     * not time-critical; a ≤5-min delay is preferable to adding extra DB/QZPay
+     * calls on every cached request. The within-window header is also skipped on
+     * cache hits, which is consistent (the alert is the actionable signal).
+     *
+     * Undefined when no cron-lag condition was detected (normal case).
+     */
+    cronLagGrace?: CronLagGraceDetection;
 }
 
 /**
@@ -402,6 +447,49 @@ async function loadEntitlements(
             return buildDefaultEntitlementsResult();
         }
 
+        // ── SPEC-148 T-002: Cron-lag grace detection ──────────────────────────
+        // Detect when an active subscription's renewal webhook is late.
+        // Only check status='active' (trialing is a normal, expected state;
+        // past_due is handled separately by pastDueGraceMiddleware).
+        //
+        // Detection is stateless — derived purely from currentPeriodEnd. No DB
+        // column is added. Access is ALWAYS granted (never blocked); the
+        // grace window only controls whether a header or Sentry alert fires.
+        //
+        // Cache caveat: this check runs inside loadEntitlements(), which is
+        // skipped on a 5-min entitlementCache hit. The header and alert are
+        // therefore emitted only on cache misses. The ≤5-min delay is acceptable
+        // per SPEC-148 Part A Resolved note — the alert is not time-critical.
+        let cronLagGrace: CronLagGraceDetection | undefined;
+
+        if (
+            activeSubscription.status === 'active' &&
+            activeSubscription.currentPeriodEnd instanceof Date &&
+            !Number.isNaN(activeSubscription.currentPeriodEnd.getTime())
+        ) {
+            const nowMs = Date.now();
+            const periodEndMs = activeSubscription.currentPeriodEnd.getTime();
+            const overdueMs = nowMs - periodEndMs;
+
+            if (overdueMs > 0) {
+                const hoursOverdue = overdueMs / (60 * 60 * 1000);
+                const withinWindow = hoursOverdue <= BILLING_CRON_LAG_GRACE_HOURS;
+                const hoursRemaining = withinWindow
+                    ? Math.ceil(BILLING_CRON_LAG_GRACE_HOURS - hoursOverdue)
+                    : 0;
+
+                cronLagGrace = {
+                    detected: true,
+                    hoursOverdue,
+                    withinWindow,
+                    hoursRemaining,
+                    subscriptionId: activeSubscription.id,
+                    planId: activeSubscription.planId
+                };
+            }
+        }
+        // ── End cron-lag grace detection ──────────────────────────────────────
+
         // Get the plan for this subscription
         const plan = await billing.plans.get(activeSubscription.planId);
 
@@ -479,7 +567,7 @@ async function loadEntitlements(
             shouldCache = false;
         }
 
-        return { entitlements, limits, shouldCache };
+        return { entitlements, limits, shouldCache, cronLagGrace };
     } catch (error) {
         apiLogger.error(
             `Error loading entitlements for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`
@@ -645,6 +733,56 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                             `Loaded degraded entitlements (plan-only) for customer ${billingCustomerId}. Skipping cache. Entitlements: ${result.entitlements.size}, Limits: ${result.limits.size}`
                         );
                     }
+
+                    // ── SPEC-148 T-002: act on cron-lag grace detection ───────
+                    // PASS-THROUGH always (never block). Within window: set header
+                    // + logger.warn. Past window: logger.error + Sentry alert.
+                    if (result.cronLagGrace) {
+                        const grace = result.cronLagGrace;
+                        const hoursOverdueFixed = grace.hoursOverdue.toFixed(2);
+
+                        if (grace.withinWindow) {
+                            // Within the BILLING_CRON_LAG_GRACE_HOURS window
+                            c.header(
+                                'X-Cron-Lag-Grace-Hours-Remaining',
+                                String(grace.hoursRemaining)
+                            );
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: grace.subscriptionId,
+                                    customerId: billingCustomerId,
+                                    hoursOverdue: hoursOverdueFixed,
+                                    hoursRemaining: grace.hoursRemaining,
+                                    graceLimitHours: BILLING_CRON_LAG_GRACE_HOURS
+                                },
+                                'cron-lag-grace: renewal webhook late but within grace window — access allowed'
+                            );
+                        } else {
+                            // Past the grace window — still allow, but fire Sentry alert
+                            const alertError = new Error(
+                                `cron_lag_grace_exceeded: subscription ${grace.subscriptionId} renewal is ${hoursOverdueFixed}h overdue (hoursOverdue=${hoursOverdueFixed})`
+                            );
+                            captureBillingError(
+                                alertError,
+                                {
+                                    operation: 'cron_lag_grace_exceeded',
+                                    subscriptionId: grace.subscriptionId,
+                                    planId: grace.planId
+                                },
+                                'warning'
+                            );
+                            apiLogger.error(
+                                {
+                                    subscriptionId: grace.subscriptionId,
+                                    customerId: billingCustomerId,
+                                    hoursOverdue: hoursOverdueFixed,
+                                    graceLimitHours: BILLING_CRON_LAG_GRACE_HOURS
+                                },
+                                'cron-lag-grace: grace window exceeded — Sentry alert fired, access still allowed'
+                            );
+                        }
+                    }
+                    // ── End cron-lag grace action ─────────────────────────────
 
                     // Billing succeeded - mark as healthy
                     c.set('billingLoadFailed', false);

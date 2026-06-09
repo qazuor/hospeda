@@ -1,15 +1,19 @@
 /**
  * Integration tests for Admin Billing Plans Routes
  *
- * Covers T-008 (read rewrite), T-009 (create/update), T-010 (lifecycle).
+ * Covers T-008 (read rewrite), T-009 (create/update), T-010 (lifecycle),
+ * T-007 (plan-disable fan-out wiring on toggle/update active→inactive).
  *
  * Strategy: mock PlanService and the route factory — verify that:
  * - Correct service methods are invoked
  * - Correct permissions are required
  * - Service errors map to correct HTTP status codes
  * - Audit log is called for mutations
+ * - disablePlanLifecycle is invoked only on active→inactive transition
+ * - Fan-out failure is soft-failed (Sentry captured, 200 returned)
  *
  * SPEC-168 T-008 / T-009 / T-010
+ * SPEC-148 T-007
  *
  * @module test/routes/billing/admin/plans
  */
@@ -30,7 +34,9 @@ const {
     mockPlanRestore,
     mockPlanHardDelete,
     mockCreateAdminRoute,
-    mockCreateAdminListRoute
+    mockCreateAdminListRoute,
+    mockDisablePlanLifecycle,
+    mockCaptureBillingError
 } = vi.hoisted(() => ({
     mockPlanList: vi.fn(),
     mockPlanGetById: vi.fn(),
@@ -41,7 +47,9 @@ const {
     mockPlanRestore: vi.fn(),
     mockPlanHardDelete: vi.fn(),
     mockCreateAdminRoute: vi.fn(),
-    mockCreateAdminListRoute: vi.fn()
+    mockCreateAdminListRoute: vi.fn(),
+    mockDisablePlanLifecycle: vi.fn(),
+    mockCaptureBillingError: vi.fn()
 }));
 
 // Mock PlanService
@@ -100,6 +108,17 @@ vi.mock('../../../../src/middlewares/actor', () => ({
         permissions: ['billing:read_all', 'billing:manage']
     })
 }));
+
+// T-007: Mock plan-disable lifecycle fan-out service
+vi.mock('../../../../src/services/plan-disable-lifecycle.service', () => ({
+    disablePlanLifecycle: mockDisablePlanLifecycle
+}));
+
+// T-007: Mock Sentry captureBillingError for soft-fail verification
+vi.mock('../../../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../../src/lib/sentry')>();
+    return { ...actual, captureBillingError: mockCaptureBillingError };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
@@ -729,5 +748,260 @@ describe('T-010: adminHardDeletePlanRoute handler — referential guard', () => 
         expect(auditLog).toHaveBeenCalledWith(
             expect.objectContaining({ action: 'delete', resourceType: 'billing_plan' })
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-007: PATCH /{id} — plan-disable fan-out wiring (active→inactive guard)
+// ---------------------------------------------------------------------------
+
+describe('T-007: adminTogglePlanActiveRoute — disablePlanLifecycle fan-out', () => {
+    const ACTIVE_PLAN = { ...SAMPLE_PLAN, isActive: true };
+    const INACTIVE_PLAN = { ...SAMPLE_PLAN, isActive: false };
+
+    beforeEach(() => {
+        mockPlanGetById.mockReset();
+        mockPlanToggleActive.mockReset();
+        mockDisablePlanLifecycle.mockReset();
+        mockCaptureBillingError.mockReset();
+        vi.mocked(auditLog).mockClear();
+
+        // Default: fan-out succeeds
+        mockDisablePlanLifecycle.mockResolvedValue({ affectedSubCount: 2 });
+    });
+
+    it('active→inactive: triggers disablePlanLifecycle once with planId + actorId', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'patch', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        // Prior state: plan is active
+        mockPlanGetById.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+        // Toggle succeeds and returns deactivated plan
+        mockPlanToggleActive.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+
+        // Act
+        const result = await handler(
+            createMockContext(),
+            { id: SAMPLE_PLAN.id },
+            { active: false }
+        );
+
+        // Assert — plan toggled + fan-out triggered exactly once
+        expect(result).toEqual(expect.objectContaining({ isActive: false }));
+        expect(mockDisablePlanLifecycle).toHaveBeenCalledOnce();
+        expect(mockDisablePlanLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                planId: SAMPLE_PLAN.id,
+                actorId: 'actor-00000000-0000-0000-0000-000000000001'
+            })
+        );
+    });
+
+    it('inactive→inactive (no-op PATCH): does NOT trigger fan-out', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'patch', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        // Prior state: plan is already inactive
+        mockPlanGetById.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+        mockPlanToggleActive.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+
+        // Act
+        await handler(createMockContext(), { id: SAMPLE_PLAN.id }, { active: false });
+
+        // Assert — no fan-out on no-op
+        expect(mockDisablePlanLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('active→active (no-op PATCH): does NOT trigger fan-out', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'patch', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        // Prior state: plan is already active
+        mockPlanGetById.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+        mockPlanToggleActive.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+
+        // Act
+        await handler(createMockContext(), { id: SAMPLE_PLAN.id }, { active: true });
+
+        // Assert — no fan-out when enabling
+        expect(mockDisablePlanLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('inactive→active (re-enable): does NOT trigger fan-out (re-enable is manual, out-of-scope)', async () => {
+        // Arrange — re-enabling a disabled plan does NOT auto-undo the fan-out.
+        // Existing cancelAtPeriodEnd subs remain as-is; a new sub is required.
+        // This is intentional and documented in T-007.
+        const config = findRouteCall(mockCreateAdminRoute, 'patch', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanGetById.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+        mockPlanToggleActive.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+
+        // Act
+        await handler(createMockContext(), { id: SAMPLE_PLAN.id }, { active: true });
+
+        // Assert — re-enable does NOT undo the fan-out
+        expect(mockDisablePlanLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('fan-out throws: toggle still returns 200 and captureBillingError is called', async () => {
+        // Arrange — simulate fan-out failure
+        const config = findRouteCall(mockCreateAdminRoute, 'patch', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanGetById.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+        mockPlanToggleActive.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+        mockDisablePlanLifecycle.mockRejectedValue(new Error('DB timeout during fan-out'));
+
+        // Act — must NOT throw even though fan-out failed
+        const result = await handler(
+            createMockContext(),
+            { id: SAMPLE_PLAN.id },
+            { active: false }
+        );
+
+        // Assert — 200 still returned, Sentry captured
+        expect(result).toEqual(expect.objectContaining({ isActive: false }));
+        expect(mockCaptureBillingError).toHaveBeenCalledOnce();
+        expect(mockCaptureBillingError).toHaveBeenCalledWith(
+            expect.any(Error),
+            expect.objectContaining({ planId: SAMPLE_PLAN.id }),
+            'error'
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// T-007: PUT /{id} — plan-disable fan-out wiring when isActive flips false
+// ---------------------------------------------------------------------------
+
+describe('T-007: adminUpdatePlanRoute — disablePlanLifecycle fan-out on isActive=false', () => {
+    const ACTIVE_PLAN = { ...SAMPLE_PLAN, isActive: true };
+    const INACTIVE_PLAN = { ...SAMPLE_PLAN, isActive: false };
+
+    beforeEach(() => {
+        mockPlanGetById.mockReset();
+        mockPlanUpdate.mockReset();
+        mockDisablePlanLifecycle.mockReset();
+        mockCaptureBillingError.mockReset();
+        vi.mocked(auditLog).mockClear();
+
+        mockDisablePlanLifecycle.mockResolvedValue({ affectedSubCount: 1 });
+    });
+
+    it('PUT with isActive=false on active plan: triggers disablePlanLifecycle', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'put', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanGetById.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+        mockPlanUpdate.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+
+        // Act
+        const result = await handler(
+            createMockContext(),
+            { id: SAMPLE_PLAN.id },
+            { name: 'Updated', isActive: false }
+        );
+
+        // Assert
+        expect(result).toEqual(expect.objectContaining({ isActive: false }));
+        expect(mockDisablePlanLifecycle).toHaveBeenCalledOnce();
+        expect(mockDisablePlanLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({
+                planId: SAMPLE_PLAN.id,
+                actorId: 'actor-00000000-0000-0000-0000-000000000001'
+            })
+        );
+    });
+
+    it('PUT with isActive=false on already-inactive plan: does NOT trigger fan-out', async () => {
+        // Arrange — idempotency guard: no re-fan-out if already inactive
+        const config = findRouteCall(mockCreateAdminRoute, 'put', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanGetById.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+        mockPlanUpdate.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+
+        // Act
+        await handler(createMockContext(), { id: SAMPLE_PLAN.id }, { isActive: false });
+
+        // Assert
+        expect(mockDisablePlanLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('PUT without isActive field: does NOT trigger fan-out', async () => {
+        // Arrange — ordinary name/description update, no isActive in body
+        const config = findRouteCall(mockCreateAdminRoute, 'put', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanUpdate.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+
+        // Act
+        await handler(createMockContext(), { id: SAMPLE_PLAN.id }, { name: 'Just a rename' });
+
+        // Assert — no fan-out, no getById needed
+        expect(mockDisablePlanLifecycle).not.toHaveBeenCalled();
+        expect(mockPlanGetById).not.toHaveBeenCalled();
+    });
+
+    it('PUT fan-out throws: update still returns 200 and captureBillingError is called', async () => {
+        // Arrange
+        const config = findRouteCall(mockCreateAdminRoute, 'put', '/{id}');
+        const handler = config?.handler as (
+            c: unknown,
+            params: unknown,
+            body: unknown
+        ) => Promise<unknown>;
+
+        mockPlanGetById.mockResolvedValue({ success: true, data: ACTIVE_PLAN });
+        mockPlanUpdate.mockResolvedValue({ success: true, data: INACTIVE_PLAN });
+        mockDisablePlanLifecycle.mockRejectedValue(new Error('Fan-out failed'));
+
+        // Act — must NOT throw even though fan-out failed
+        const result = await handler(
+            createMockContext(),
+            { id: SAMPLE_PLAN.id },
+            { isActive: false }
+        );
+
+        // Assert — 200 still returned, Sentry captured
+        expect(result).toEqual(expect.objectContaining({ isActive: false }));
+        expect(mockCaptureBillingError).toHaveBeenCalledOnce();
     });
 });

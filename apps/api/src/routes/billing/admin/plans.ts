@@ -18,6 +18,17 @@
  * - Read: PermissionEnum.BILLING_READ_ALL
  * - Write/lifecycle: PermissionEnum.BILLING_MANAGE
  *
+ * ### Plan-disable fan-out (T-007, SPEC-148)
+ *
+ * On any active→inactive transition (PATCH toggle or PUT with isActive=false), the route
+ * calls {@link disablePlanLifecycle} AFTER the toggle/update commits.  The fan-out:
+ * - Flips all live subscriptions on the plan to cancelAtPeriodEnd=true.
+ * - Writes per-sub events + one plan-level audit entry.
+ * - Is **awaited** inside the request (admin action; N is small per plan; admin sees effect).
+ * - Is **soft-failed**: a fan-out error does NOT break the toggle response (logger.error +
+ *   captureBillingError, then the 200 is returned normally).  disablePlanLifecycle is
+ *   idempotent, so a retry is always safe.
+ *
  * @module routes/billing/admin/plans
  */
 
@@ -32,7 +43,9 @@ import {
 } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { captureBillingError } from '../../../lib/sentry';
 import { getActorFromContext } from '../../../middlewares/actor';
+import { disablePlanLifecycle } from '../../../services/plan-disable-lifecycle.service';
 import { PlanService } from '../../../services/plan.service';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { createRouter } from '../../../utils/create-app';
@@ -249,25 +262,32 @@ export const adminUpdatePlanRoute = createAdminRoute({
 
         apiLogger.info({ planId: id, actorId: actor.id }, 'Admin updating billing plan');
 
-        const result = await planService.update(
-            id,
-            body as {
-                name?: string;
-                description?: string;
-                category?: 'owner' | 'complex' | 'tourist';
-                monthlyPriceArs?: number;
-                annualPriceArs?: number | null;
-                monthlyPriceUsdRef?: number;
-                hasTrial?: boolean;
-                trialDays?: number;
-                isDefault?: boolean;
-                sortOrder?: number;
-                entitlements?: string[];
-                limits?: Record<string, number>;
-                isActive?: boolean;
-            },
-            { actorId: actor.id }
-        );
+        const typedBody = body as {
+            name?: string;
+            description?: string;
+            category?: 'owner' | 'complex' | 'tourist';
+            monthlyPriceArs?: number;
+            annualPriceArs?: number | null;
+            monthlyPriceUsdRef?: number;
+            hasTrial?: boolean;
+            trialDays?: number;
+            isDefault?: boolean;
+            sortOrder?: number;
+            entitlements?: string[];
+            limits?: Record<string, number>;
+            isActive?: boolean;
+        };
+
+        // T-007: Detect active→inactive transition before the update.
+        // Only fetch the prior state when the body explicitly sets isActive=false.
+        // An ordinary update (no isActive field) never triggers the fan-out.
+        let wasActiveBefore = false;
+        if (typedBody.isActive === false) {
+            const prior = await planService.getById(id);
+            wasActiveBefore = prior.success && (prior.data?.isActive ?? false);
+        }
+
+        const result = await planService.update(id, typedBody, { actorId: actor.id });
 
         if (!result.success || !result.data) {
             const status = mapServiceErrorToStatus(result.error?.code);
@@ -283,6 +303,41 @@ export const adminUpdatePlanRoute = createAdminRoute({
             resourceType: 'billing_plan',
             resourceId: id
         });
+
+        // T-007: Fan-out to subscriptions on active→inactive transition only.
+        // Mirrors the PATCH toggle handler soft-fail pattern.
+        if (typedBody.isActive === false && wasActiveBefore) {
+            try {
+                const planName = result.data.name ?? '';
+                const fanOutResult = await disablePlanLifecycle({
+                    planId: id,
+                    actorId: actor.id,
+                    planName
+                });
+                apiLogger.info(
+                    {
+                        planId: id,
+                        actorId: actor.id,
+                        affectedSubCount: fanOutResult.affectedSubCount
+                    },
+                    'Admin plan update (isActive=false): fan-out complete'
+                );
+            } catch (err) {
+                apiLogger.error(
+                    {
+                        planId: id,
+                        actorId: actor.id,
+                        error: err instanceof Error ? err.message : String(err)
+                    },
+                    'Admin plan update: fan-out failed (non-blocking, plan already deactivated)'
+                );
+                captureBillingError(
+                    err instanceof Error ? err : new Error(String(err)),
+                    { planId: id },
+                    'error'
+                );
+            }
+        }
 
         return result.data;
     }
@@ -324,6 +379,17 @@ export const adminTogglePlanActiveRoute = createAdminRoute({
             'Admin toggling plan active state'
         );
 
+        // T-007: Detect active→inactive transition before the toggle.
+        // We only fan-out on active→inactive; fetching the prior state is the
+        // cheapest way to detect the transition without modifying plan.service.ts.
+        // Only fetch when the desired state is `false` (deactivation) — skip on
+        // re-enable (active→active and inactive→active never trigger fan-out).
+        let wasActiveBefore = false;
+        if (!active) {
+            const prior = await planService.getById(id);
+            wasActiveBefore = prior.success && (prior.data?.isActive ?? false);
+        }
+
         const result = await planService.toggleActive(id, active, { actorId: actor.id });
 
         if (!result.success || !result.data) {
@@ -340,6 +406,43 @@ export const adminTogglePlanActiveRoute = createAdminRoute({
             resourceType: 'billing_plan',
             resourceId: id
         });
+
+        // T-007: Fan-out to subscriptions on active→inactive transition only.
+        // Awaited so the admin knows the fan-out completed; N is small per plan.
+        // Soft-failed: an error here does NOT break the toggle response.
+        // disablePlanLifecycle is idempotent — a manual re-trigger always works.
+        if (!active && wasActiveBefore) {
+            try {
+                const planName = result.data.name ?? '';
+                const fanOutResult = await disablePlanLifecycle({
+                    planId: id,
+                    actorId: actor.id,
+                    planName
+                });
+                apiLogger.info(
+                    {
+                        planId: id,
+                        actorId: actor.id,
+                        affectedSubCount: fanOutResult.affectedSubCount
+                    },
+                    'Admin plan deactivation: fan-out complete'
+                );
+            } catch (err) {
+                apiLogger.error(
+                    {
+                        planId: id,
+                        actorId: actor.id,
+                        error: err instanceof Error ? err.message : String(err)
+                    },
+                    'Admin plan deactivation: fan-out failed (non-blocking, plan already deactivated)'
+                );
+                captureBillingError(
+                    err instanceof Error ? err : new Error(String(err)),
+                    { planId: id },
+                    'error'
+                );
+            }
+        }
 
         return result.data;
     }

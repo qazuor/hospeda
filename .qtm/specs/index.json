@@ -257,7 +257,7 @@
             "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "parent": "SPEC-193",
             "created": "2026-05-20T00:00:00Z",

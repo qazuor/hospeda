@@ -1,0 +1,280 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-148",
+    "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+    "created": "2026-06-09T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add BILLING_CRON_LAG_GRACE_HOURS constant",
+            "description": "packages/billing/src/constants/billing.constants.ts: add BILLING_CRON_LAG_GRACE_HOURS = 6 (JSDoc: absorbs MP webhook-delivery jitter without masking outages; past this window access continues but a Sentry alert fires — realign Part A). Match the existing numeric-named-export + JSDoc pattern (DUNNING_GRACE_PERIOD_DAYS etc.). Unit test pins the value (it's a behavior contract).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [],
+            "tags": ["billing", "constants"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T17:23:42.778Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Cron-lag grace detection in entitlement middleware (red-first)",
+            "description": "Part A. In apps/api/src/middlewares/entitlement.ts (~:391-403 where the active sub is resolved): detect now > currentPeriodEnd && status='active'. Within BILLING_CRON_LAG_GRACE_HOURS: attach X-Cron-Lag-Grace-Hours-Remaining header + logger.warn, ALLOW. Past the window: STILL ALLOW (never block — owner decision) + fire captureBillingError (apps/api/src/lib/sentry.ts, operation 'cron_lag_grace_exceeded', subscriptionId/customerId/hoursOverdue, level warning) — idempotent enough (dedup not required, the alert can repeat). Stateless/derived (no DB). ⚠️ 5-min entitlementCache caveat: ensure the detection reads currentPeriodEnd at a point not skipped by a cache hit, OR document the ≤5-min alert delay (pick one, document). Red-first unit tests: within-window → header + allow + no alert; past-window → allow + Sentry alert with the right context; not-expired active → no header/alert; non-active → untouched; past_due path (pastDueGraceMiddleware) untouched.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["api", "middleware", "grace"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:47:49.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add PLAN_DISABLED ServiceErrorCode → HTTP 410",
+            "description": "Part B prereq. @repo/schemas ServiceErrorCode: add PLAN_DISABLED. Map to 410 in BOTH apps/api/src/middlewares/response.ts ERROR_CODE_TO_HTTP AND apps/api/src/utils/response-helpers.ts (keep in sync — SPEC-149 dual-map lesson; 410 GONE = resource retired). Tests: the code maps to 410 in both paths; consumer sweep of ERROR_CODE_TO_HTTP exhaustiveness (lesson SPEC-149: the handler may assert exhaustive coverage).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["schemas", "error-code"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add plan-disable event types + PLAN_BEING_RETIRED notification",
+            "description": "Part B. (a) packages/service-core billing/constants.ts: add BILLING_EVENT_TYPES.PLAN_DISABLED_MIGRATION (and PLAN_DISABLED_BY_ADMIN if the audit wants the admin action separate from the per-sub migration — decide, document). (b) packages/notifications: NotificationType.PLAN_BEING_RETIRED (TRANSACTIONAL) + template (mirror SPEC-147 SUBSCRIPTION_CANCEL_CONFIRMED end-to-end: enum, payload, category, subject, template tsx, index export, service selectTemplate switch). Props: recipientName, planName, accessUntil (currentPeriodEnd), migrationHint (re-subscribe to another plan), baseUrl. Tests: constants pinned; template renders accessUntil + migration hint.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["service-core", "notifications", "constants"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T14:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Plan-disable lifecycle service (fan-out, red-first)",
+            "description": "Part B core. New service (plan-disable-lifecycle.service.ts or extend PlanService): disablePlanLifecycle({ planId, actorId }) — called AFTER planService.toggleActive(id, false). Fan-out: query active/trialing/past_due subs of the plan WHERE cancelAtPeriodEnd=false → set cancelAtPeriodEnd=true on each (reuse SPEC-147's soft-cancel write semantics; the finalize-cancelled-subs cron — incl. M2 non-terminal-status coverage — then closes them at period end). Per sub: write PLAN_DISABLED_MIGRATION event (triggerSource 'plan-disable'), clearEntitlementCache, queue PLAN_BEING_RETIRED notification (fire-and-forget). Write one PLAN_DISABLED_BY_ADMIN audit event (actor, affectedSubCount). IDEMPOTENT: re-running matches 0 rows (all already cancelAtPeriodEnd=true). The disabled plan STAYS in the static catalog (realign 9 — only isActive gates signups). Wire the fan-out into the admin toggle path (toggleActive → on transition to inactive → disablePlanLifecycle). Red-first unit tests: fan-out sets flag on all eligible subs + events + notifications + cache; idempotent re-run no-op; re-enabling a plan does NOT auto-undo (document — out of scope, manual); subs already cancelAtPeriodEnd untouched.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-009"],
+            "subtasks": [],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Reject new signups on disabled plan (410 PLAN_DISABLED)",
+            "description": "Part B. apps/api/src/routes/billing/start-paid.ts: after resolving the target plan, if plan.isActive===false → throw ServiceError(PLAN_DISABLED, ...) → global handler maps to 410. Place in the inner try; ⚠️ ServiceError must be re-thrown before SPEC-149's isBillingProviderError in the outer catch (~:318-347) — follow the SPEC-147 guard pattern (:248-261). Also guard change-plan if a user could change TO a disabled plan (check plan-change resolves target plan — add the same check). Tests: start-paid on disabled plan → 410 PLAN_DISABLED; active plan → unaffected; change-plan to disabled → 410; SPEC-149 provider-error regression green (re-run plan-change-provider-error + start-paid tests).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["api", "routes", "guard"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T15:00:00.000Z",
+                "completed": "2026-06-09T15:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire fan-out into admin plan toggle + idempotency guard",
+            "description": "Part B. The admin PATCH adminTogglePlanActiveRoute (apps/api/src/routes/billing/admin/plans.ts ~:299-346) → planService.toggleActive. On the active→inactive transition ONLY, invoke disablePlanLifecycle (T-005). Soft-fail: the lifecycle fan-out must NOT break the toggle response (log + Sentry on failure; the admin sees the toggle succeeded, fan-out retriable). Detect the transition (was active, now inactive) to avoid re-fanning on a no-op PATCH. Tests (extend the admin plans route/hook test): active→inactive triggers fan-out once; inactive→inactive no-op; inactive→active does NOT undo (document); fan-out failure → toggle still 200 + Sentry.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["api", "admin", "wiring"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T18:17:37.000Z",
+                "completed": "2026-06-09T18:17:37.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Runbook updates (cron-lag grace + plan-disabled lifecycle)",
+            "description": "AC-9: docs/billing/billing-runbooks.md — add 'cron-lag grace activation' (what the Sentry cron_lag_grace_exceeded alert means = MP webhook-delivery lag; pass-through is intentional; how to check MP webhook health; access is NOT cut) and 'plan disabled lifecycle' (disabling a plan auto-cancels its subs at period end via the finalize cron; re-enabling does NOT auto-restore — manual; 410 on new signups; where to see the audit events) incident scenarios. Cross-ref grace-period-source-of-truth.md (distinguish the 3 graces: past_due dunning, cron-lag, soft-cancel).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["docs", "runbook"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T19:00:00.000Z",
+                "completed": "2026-06-09T19:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "e2e: cron-lag grace + plan-disable lifecycle",
+            "description": "AC-8. New e2e (apps/api/test/e2e/flows/billing/). Part A: seed an active sub with currentPeriodEnd in the past within the window → request → allowed + X-Cron-Lag-Grace-Hours-Remaining header, entitlements load; seed one past the window → allowed + (assert the Sentry capture via the mocked sentry surface) no header or 0. Part B: seed a plan with N active subs → admin disables it (toggle) → fan-out sets cancelAtPeriodEnd=true on all + PLAN_DISABLED_MIGRATION events + PLAN_BEING_RETIRED notifications; start-paid on the disabled plan → 410 PLAN_DISABLED; run finalize-cancelled-subs cron after period_end → subs cancelled (reuses SPEC-147 cron). Use billing-factories + mp-stub. Follow plan-downgrade-cron.test.ts harness.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-006", "T-007", "T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [],
+            "tags": ["e2e", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T19:35:00.000Z",
+                "completed": "2026-06-09T20:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Verification sweep",
+            "description": "Re-run everything touched + consumers of changed exports (ServiceErrorCode PLAN_DISABLED, new event types, new NotificationType, BILLING_CRON_LAG_GRACE_HOURS) — lesson SPEC-145/147/167/149: env/enum/snapshot guards break silently. EXPLICITLY re-run: env-registry count test (if any var added — none expected here, but check), endpoint-gate-matrix guard (no new route file, but verify), ServiceErrorCode exhaustiveness/snapshot, notification-type enumerations, billing-event-types constants. Per-package typecheck (schemas, billing, service-core, notifications, api). biome on diff. check-type-casts.sh. e2e: the new file + plan-downgrade-cron + monthly/annual checkout (only known pre-existing failures allowed). Rebuild stale dists first.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [],
+            "tags": ["sweep", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T20:05:00.000Z",
+                "completed": "2026-06-09T20:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Adversarial fresh-context review + apply fixes",
+            "description": "Fresh-context review (opus). Hunt: grace pass-through never accidentally blocks; the 5-min cache masking the alert (is the alert reliably firing?); plan-disable fan-out idempotency + race (a renewal webhook landing mid-fan-out); re-enable does not silently strip cancelAtPeriodEnd; 410 guard not bypassable + not falling through to isBillingProviderError; disabled plan staying in catalog doesn't break SPEC-167 restriction lookups; notification PII; finalize cron correctly closing the fanned-out subs (reuse, not duplicate); audit event completeness; the grace check not interfering with pastDueGraceMiddleware or soft-cancel. Apply confirmed fixes via fix agent; re-run affected tests.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["review", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T20:45:00.000Z",
+                "completed": "2026-06-09T21:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Smoke entry #8 + PR + CI + merge + closeout",
+            "description": "Billing CORE (entitlement middleware + start-paid + admin toggle + plan-disable fan-out). Register staging smoke entry #8 in SPEC-193 pending-staging-smoke.md (PR#): cron-lag grace (simulate a late renewal — sub active past period_end → access continues + Sentry cron_lag_grace_exceeded fires); plan-disable (admin disables a plan with a live sub on staging → sub gets cancelAtPeriodEnd + retirement email, new signup → 410, finalize cron closes it). Resync origin/staging (keep-both indices; rebuild dists). PR to staging, CI Pass SUCCESS gate (gh pr view --json statusCheckRollup; /usr/bin/git push + verify rev-parse; expect to fix env-count/matrix/enum guards if they trip). gh pr merge --merge. Closeout: spec.md + both indexes completed+archived (sync rules), engram, ask owner OK for worktree cleanup. NOTE: this is the LAST code item of SPEC-193 batch 4 (167+147+148) — after merge, only 131 + 128 + smokes + staging→main promotion remain.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["pr", "closeout", "smoke"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 12,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 11,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    BILLING_CRON_LAG_GRACE_HOURS,
     COMPLEX_TRIAL_DAYS,
     DEFAULT_CURRENCY,
     DUNNING_GRACE_PERIOD_DAYS,
@@ -138,6 +139,25 @@ describe('Billing Constants', () => {
         it('should have MercadoPago timeout within a reasonable range (1s-30s)', () => {
             expect(MERCADO_PAGO_DEFAULT_TIMEOUT_MS).toBeGreaterThanOrEqual(1000);
             expect(MERCADO_PAGO_DEFAULT_TIMEOUT_MS).toBeLessThanOrEqual(30000);
+        });
+    });
+
+    describe('Cron lag grace window', () => {
+        // This value is a behavior contract (SPEC-148 Part A, owner decision 2026-06-09).
+        // Changing it without updating the Sentry alert threshold in the renewal cron
+        // will cause misaligned alerting — pin the exact value here.
+        it('should be exactly 6 hours (behavior contract — do not change without updating the renewal cron alert threshold)', () => {
+            expect(BILLING_CRON_LAG_GRACE_HOURS).toBe(6);
+        });
+
+        it('should be a positive integer', () => {
+            expect(BILLING_CRON_LAG_GRACE_HOURS).toBeGreaterThan(0);
+            expect(Number.isInteger(BILLING_CRON_LAG_GRACE_HOURS)).toBe(true);
+        });
+
+        it('should absorb MP webhook jitter without masking multi-day outages (within 1-24 h range)', () => {
+            expect(BILLING_CRON_LAG_GRACE_HOURS).toBeGreaterThanOrEqual(1);
+            expect(BILLING_CRON_LAG_GRACE_HOURS).toBeLessThanOrEqual(24);
         });
     });
 });

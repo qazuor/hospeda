@@ -288,6 +288,17 @@
             "archived": false
         },
         {
+            "specId": "SPEC-148",
+            "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+            "status": "in-progress",
+            "progress": "11/12",
+            "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",
+            "base": "staging",
+            "note": "Last code item of SPEC-193 batch 4. Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron."
+        },
+        {
             "specId": "SPEC-195",
             "title": "Content Auto-Moderation Engine",
             "status": "in-progress",

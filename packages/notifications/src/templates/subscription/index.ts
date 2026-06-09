@@ -8,3 +8,5 @@ export { SubscriptionPaused } from './subscription-paused.js';
 export { SubscriptionReactivated } from './subscription-reactivated.js';
 export { PlanDowngradeLimitWarning } from './plan-downgrade-limit-warning.js';
 export { PaymentRetryWarning } from './payment-retry-warning.js';
+export { PlanBeingRetired } from './plan-being-retired.js';
+export type { PlanBeingRetiredProps } from './plan-being-retired.js';
