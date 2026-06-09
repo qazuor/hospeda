@@ -37,7 +37,8 @@ export default defineConfig({
             // re-exports from `@repo/feedback/schemas`) fails to load. Mirror
             // the api vitest.config.ts pattern.
             '@repo/feedback/schemas': resolve(rootDir, 'packages/feedback/src/schemas'),
-            '@repo/feedback': resolve(rootDir, 'packages/feedback/src')
+            '@repo/feedback': resolve(rootDir, 'packages/feedback/src'),
+            '@repo/billing': resolve(rootDir, 'packages/billing/src')
         }
     },
     optimizeDeps: {

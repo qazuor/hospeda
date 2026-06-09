@@ -43,9 +43,15 @@ const { streamTextCalls } = vi.hoisted(() => ({
 }));
 
 /** Configurable stream contents for the next stubbed streamText call. */
-const { nextStreamDeltas, nextMeta } = vi.hoisted(() => ({
+const { nextStreamDeltas, nextMeta, nextPreStreamThrow, nextPostDrainThrow } = vi.hoisted(() => ({
     nextStreamDeltas: { current: [] as string[] },
-    nextMeta: { current: undefined as unknown }
+    nextMeta: { current: undefined as unknown },
+    // When set, the stub `streamText` throws this BEFORE returning a stream
+    // (pre-stream block path → mapped to HTTP 422 JSON by the factory).
+    nextPreStreamThrow: { current: undefined as unknown },
+    // When set, the stub's async generator yields the configured deltas and
+    // THEN throws this (post-drain / mid-stream block path → SSE error frame).
+    nextPostDrainThrow: { current: undefined as unknown }
 }));
 
 // ---------------------------------------------------------------------------
@@ -108,11 +114,22 @@ vi.mock('../../../../src/services/ai-service.factory.js', () => ({
                 prompt: args.prompt,
                 locale: args.locale
             });
+            // Pre-stream block: throw BEFORE the factory begins streaming, so
+            // the error is mapped to an HTTP 422 JSON envelope.
+            if (nextPreStreamThrow.current !== undefined) {
+                throw nextPreStreamThrow.current;
+            }
             const deltas = nextStreamDeltas.current;
+            const postDrainThrow = nextPostDrainThrow.current;
             return {
                 stream: (async function* () {
                     for (const d of deltas) {
                         yield { delta: d };
+                    }
+                    // Post-drain / mid-stream block: throw AFTER yielding tokens,
+                    // so the factory's SSE try/catch emits an `error` frame.
+                    if (postDrainThrow !== undefined) {
+                        throw postDrainThrow;
                     }
                 })(),
                 meta: nextMeta.current
@@ -135,15 +152,46 @@ vi.mock('../../../../src/utils/logger', () => ({
 /**
  * `@repo/ai-core` is a workspace package that is not always installed in
  * worktree `node_modules` (it ships via Turbo build artifacts). The streaming
- * route factory only uses `mapAiEngineErrorToHttpStatus` (from the local
- * `ai-error-mapper.ts`), which only does `instanceof AiEngineError` checks.
- * Mock the package with an empty class so the import chain resolves; our
- * tests do not exercise the engine-error mapping path (T-006 integration
- * tests do).
+ * route factory uses `mapAiEngineErrorToHttpStatus` (from the local
+ * `ai-error-mapper.ts`), which does an `instanceof AiEngineError` guard before
+ * branching on `engineCode`.
+ *
+ * The mock MUST faithfully reproduce the real error hierarchy
+ * (`packages/ai-core/src/engine/errors.ts`): `AiEngineError extends Error`,
+ * and `AiModerationBlockedError extends AiEngineError` with
+ * `engineCode = 'MODERATION_BLOCKED'`. A bare `class {}` would NOT satisfy the
+ * `instanceof` guard, so the moderation-block path (SPEC-198) could never be
+ * exercised — which is exactly the gap this test closes.
  */
-vi.mock('@repo/ai-core', () => ({
-    AiEngineError: class {}
-}));
+const { AiEngineError, AiModerationBlockedError } = vi.hoisted(() => {
+    class AiEngineError extends Error {
+        readonly engineCode: string;
+        constructor(message: string, engineCode: string) {
+            super(message);
+            this.name = 'AiEngineError';
+            this.engineCode = engineCode;
+        }
+    }
+    class AiModerationBlockedError extends AiEngineError {
+        readonly feature?: string;
+        readonly direction: 'input' | 'output';
+        readonly categories?: readonly string[];
+        constructor(input: {
+            feature?: string;
+            direction: 'input' | 'output';
+            categories?: readonly string[];
+        }) {
+            super(`Content blocked by moderation (${input.direction})`, 'MODERATION_BLOCKED');
+            this.name = 'AiModerationBlockedError';
+            this.feature = input.feature;
+            this.direction = input.direction;
+            this.categories = input.categories;
+        }
+    }
+    return { AiEngineError, AiModerationBlockedError };
+});
+
+vi.mock('@repo/ai-core', () => ({ AiEngineError, AiModerationBlockedError }));
 
 /**
  * `create-app.ts` transitively imports `middlewares/response.ts`, which
@@ -267,6 +315,8 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
         streamTextCalls.length = 0;
         nextStreamDeltas.current = ['Hola', ' mundo'];
         nextMeta.current = undefined;
+        nextPreStreamThrow.current = undefined;
+        nextPostDrainThrow.current = undefined;
     });
 
     // =========================================================================
@@ -341,6 +391,77 @@ describe('protected AI text-improve route (SPEC-198 T-005)', () => {
             expect(JSON.parse(tokenFrames[0]!.data!)).toEqual({ delta: 'Hola' });
             expect(JSON.parse(tokenFrames[1]!.data!)).toEqual({ delta: ' mundo' });
             expect(JSON.parse(tokenFrames[2]!.data!)).toEqual({ delta: '!' });
+        });
+    });
+
+    // =========================================================================
+    // Moderation block (SPEC-198) — the gap this suite closes.
+    //
+    // The route maps an AiModerationBlockedError to:
+    //   - a pre-stream HTTP 422 JSON envelope when the engine blocks INPUT
+    //     before any SSE byte is written, OR
+    //   - an SSE `error` frame when the engine blocks mid/post-stream (e.g.
+    //     OUTPUT moderation after tokens have already been emitted).
+    //
+    // Both paths flow through `mapAiEngineErrorToHttpStatus`, whose
+    // `instanceof AiEngineError` guard only fires because the `@repo/ai-core`
+    // mock above faithfully extends the real error hierarchy.
+    // =========================================================================
+
+    describe('moderation block (SPEC-198)', () => {
+        it('PRE-STREAM input block → HTTP 422 with error.code MODERATION_BLOCKED', async () => {
+            // Arrange — streamText throws an input-moderation error before
+            // streaming begins.
+            nextPreStreamThrow.current = new AiModerationBlockedError({
+                feature: 'text_improve',
+                direction: 'input',
+                categories: ['hate']
+            });
+            const app = buildTestApp();
+
+            // Act
+            const res = await POST(app, VALID_DESCRIPTION_BODY);
+
+            // Assert — JSON envelope, NOT an SSE stream.
+            expect(res.status).toBe(422);
+            const body = (await res.json()) as {
+                success: boolean;
+                error: { code: string };
+            };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('MODERATION_BLOCKED');
+
+            // The handler reached streamText (block is engine-side, not validation).
+            expect(streamTextCalls).toHaveLength(1);
+        });
+
+        it('POST-DRAIN output block → SSE error frame with code MODERATION_BLOCKED after token frames', async () => {
+            // Arrange — yield two tokens, then throw an output-moderation error.
+            nextStreamDeltas.current = ['Hola', ' mundo'];
+            nextPostDrainThrow.current = new AiModerationBlockedError({
+                feature: 'text_improve',
+                direction: 'output',
+                categories: ['violence']
+            });
+            const app = buildTestApp();
+
+            // Act
+            const res = await POST(app, VALID_DESCRIPTION_BODY);
+
+            // Assert — the response is a 200 SSE stream (bytes already flushed),
+            // ending with an `error` frame carrying the moderation code.
+            expect(res.status).toBe(200);
+            const frames = await parseSseFrames(res);
+
+            const tokenFrames = frames.filter((f) => f.event === 'token');
+            expect(tokenFrames).toHaveLength(2);
+
+            const errorFrames = frames.filter((f) => f.event === 'error');
+            expect(errorFrames).toHaveLength(1);
+            expect(JSON.parse(errorFrames[0]!.data!).code).toBe('MODERATION_BLOCKED');
+
+            // No `done` frame is emitted when the stream throws.
+            expect(frames.filter((f) => f.event === 'done')).toHaveLength(0);
         });
     });
 
