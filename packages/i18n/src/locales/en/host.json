@@ -209,6 +209,25 @@
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again."
+            },
+            "entitlement": {
+                "premiumFeature": "Premium feature",
+                "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
+                "videoNudge": "Upgrade your plan to embed videos in your property.",
+                "genericNudge": "This feature is available on a higher plan.",
+                "upgradeLink": "Upgrade plan"
+            },
+            "richText": {
+                "placeholder": "Describe your property in detail...",
+                "toolbarBold": "Bold",
+                "toolbarItalic": "Italic",
+                "toolbarUnderline": "Underline",
+                "toolbarH2": "Heading 2",
+                "toolbarH3": "Heading 3",
+                "toolbarList": "List",
+                "toolbarOrderedList": "Ordered list",
+                "toolbarQuote": "Quote",
+                "toolbarLink": "Link"
             }
         },
         "empty": {

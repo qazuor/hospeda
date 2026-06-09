@@ -8,6 +8,8 @@ import type { AccommodationEditData, DestinationData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './BasicInfoSection.module.css';
+import { PlanEntitlementGate } from './PlanEntitlementGate.client';
+import { RichTextEditor } from './RichTextEditor.client';
 
 /** Props for BasicInfoSection. */
 export interface BasicInfoSectionProps {
@@ -108,15 +110,22 @@ export function BasicInfoSection({
                 >
                     {t('host.properties.editor.field.description', 'Descripción')}
                 </label>
-                <textarea
-                    id="acc-description"
-                    className={styles.fieldInput}
-                    value={data.description}
-                    onChange={(e) => onFieldChange('description', e.target.value)}
-                    maxLength={5000}
-                    rows={5}
-                    aria-describedby={errors.description ? 'acc-description-error' : undefined}
-                />
+                <PlanEntitlementGate
+                    entitlementKey="can_use_rich_description"
+                    upgradeUrl="/suscriptores/precios/"
+                    locale={locale}
+                >
+                    <RichTextEditor
+                        value={data.description}
+                        onChange={(value) => onFieldChange('description', value)}
+                        placeholder={t(
+                            'host.properties.editor.richText.placeholder',
+                            'Describí tu propiedad con detalle...'
+                        )}
+                        hasError={Boolean(errors.description)}
+                        errorMessage={errors.description}
+                    />
+                </PlanEntitlementGate>
                 {errors.description && (
                     <span
                         id="acc-description-error"

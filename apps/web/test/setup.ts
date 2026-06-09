@@ -65,3 +65,12 @@ if (typeof globalThis.ResizeObserver === 'undefined') {
     (globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
         MockResizeObserver;
 }
+
+// Prosemirror-view (used by TipTap) calls getClientRects() on DOM elements
+// during selection rendering. jsdom does not implement this method.
+if (typeof Element !== 'undefined' && !Element.prototype.getClientRects) {
+    Element.prototype.getClientRects = () => [] as DOMRectList;
+}
+if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = () => [] as DOMRectList;
+}

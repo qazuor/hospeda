@@ -209,6 +209,25 @@
             "toast": {
                 "saveSuccess": "Alterações salvas",
                 "saveError": "Não pudemos salvar suas alterações. Tente novamente."
+            },
+            "entitlement": {
+                "premiumFeature": "Recurso premium",
+                "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
+                "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
+                "genericNudge": "Este recurso está disponível em um plano superior.",
+                "upgradeLink": "Melhorar plano"
+            },
+            "richText": {
+                "placeholder": "Descreva sua propriedade em detalhes...",
+                "toolbarBold": "Negrito",
+                "toolbarItalic": "Itálico",
+                "toolbarUnderline": "Sublinhado",
+                "toolbarH2": "Título 2",
+                "toolbarH3": "Título 3",
+                "toolbarList": "Lista",
+                "toolbarOrderedList": "Lista numerada",
+                "toolbarQuote": "Citação",
+                "toolbarLink": "Link"
             }
         },
         "empty": {
