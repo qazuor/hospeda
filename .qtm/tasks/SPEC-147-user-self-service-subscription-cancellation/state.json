@@ -140,7 +140,7 @@
             "id": "T-007",
             "title": "Patch webhook PAUSED collision (keep ACTIVE when cancelAtPeriodEnd=true)",
             "description": "Realign finding (critical): pausing the MP preapproval makes MP emit subscription_preapproval.updated status='paused' \u2192 subscription-logic.ts:79 maps to local PAUSED, killing the grace period. Patch the webhook handler: when the local row already has cancelAtPeriodEnd=true (intentional soft-cancel pause), SKIP the PAUSED transition \u2014 leave status ACTIVE. Red-first regression: incoming paused webhook + local cancelAtPeriodEnd=true \u2192 stays ACTIVE; paused webhook + cancelAtPeriodEnd=false (real admin pause) \u2192 goes PAUSED (unchanged). Mind the FOR UPDATE lock already there.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-012"],
@@ -148,14 +148,14 @@
             "tags": ["api", "webhook", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
