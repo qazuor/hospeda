@@ -21,6 +21,7 @@ import {
     PlanDowngradeLimitWarning,
     PurchaseConfirmation,
     RenewalReminder,
+    SubscriptionCancelConfirmed,
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
@@ -42,6 +43,7 @@ import type {
     PlanDowngradeLimitWarningPayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
+    SubscriptionCancelConfirmedPayload,
     SubscriptionEventPayload,
     SubscriptionLifecyclePayload,
     TrialEventPayload
@@ -543,6 +545,16 @@ export class NotificationService {
                 });
             }
 
+            case 'subscription_cancel_confirmed': {
+                const p = payload as SubscriptionCancelConfirmedPayload;
+                return SubscriptionCancelConfirmed({
+                    recipientName,
+                    planName: p.planName,
+                    accessUntil: p.accessUntil,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -609,6 +621,11 @@ export class NotificationService {
             subjectData.thresholdPct = String(payload.thresholdPct);
             subjectData.scope =
                 payload.scope === 'global' ? 'global' : `feature:${payload.feature ?? 'unknown'}`;
+        }
+
+        // Soft-cancel confirmation specific fields (SPEC-147)
+        if (payload.type === 'subscription_cancel_confirmed' && 'accessUntil' in payload) {
+            subjectData.accessUntil = payload.accessUntil;
         }
 
         return getSubject(payload.type, subjectData);

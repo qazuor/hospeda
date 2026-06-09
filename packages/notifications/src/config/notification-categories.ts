@@ -53,5 +53,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER,
 
     // AI cost threshold alert (SPEC-173 T-025) — sent to SUPER_ADMIN only
-    [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN
+    [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN,
+
+    // Soft-cancel confirmation (SPEC-147) — always sent, user-initiated
+    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL
 };

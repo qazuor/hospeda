@@ -37,7 +37,17 @@ export enum NotificationType {
      * ADMIN_SYSTEM_EVENT so the alert can be de-duplicated by type in
      * `billing_notification_log` without colliding with other system events.
      */
-    AI_COST_THRESHOLD_ALERT = 'ai_cost_threshold_alert'
+    AI_COST_THRESHOLD_ALERT = 'ai_cost_threshold_alert',
+    /**
+     * SPEC-147 — confirmation sent to the user immediately after a soft-cancel
+     * is accepted (user-initiated, end-of-period cancellation).
+     *
+     * Distinct from SUBSCRIPTION_CANCELLED (hard-cancel fired by the
+     * MercadoPago webhook on subscription.authorized → cancelled).
+     * Key difference: soft-cancel preserves access until `accessUntil`
+     * (the current billing period_end), so the email explicitly shows that date.
+     */
+    SUBSCRIPTION_CANCEL_CONFIRMED = 'subscription_cancel_confirmed'
 }
 
 /**
@@ -237,6 +247,38 @@ export interface SubscriptionLifecyclePayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for soft-cancel confirmation notifications (SPEC-147).
+ *
+ * Sent immediately when a user initiates a soft-cancel (end-of-period
+ * cancellation). Unlike the hard-cancel webhook event, the subscription
+ * remains active until `accessUntil` (the current billing period_end).
+ *
+ * @example
+ * ```ts
+ * const payload: SubscriptionCancelConfirmedPayload = {
+ *   type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   accessUntil: '2026-07-15T23:59:59.000Z',
+ *   baseUrl: 'https://hospeda.com.ar',
+ * };
+ * ```
+ */
+export interface SubscriptionCancelConfirmedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED;
+    /** Human-readable plan name shown in the email body */
+    readonly planName: string;
+    /**
+     * ISO 8601 date-time string for the billing period_end — the date until
+     * which the user retains full access despite the cancellation.
+     */
+    readonly accessUntil: string;
+}
+
+/**
  * Payload for plan downgrade limit warning notifications.
  *
  * Sent when a plan downgrade causes a specific resource limit to decrease
@@ -429,4 +471,5 @@ export type NotificationPayload =
     | PlanDowngradeLimitWarningPayload
     | PaymentRetryWarningPayload
     | AddonCancellationPayload
-    | AiCostThresholdAlertPayload;
+    | AiCostThresholdAlertPayload
+    | SubscriptionCancelConfirmedPayload;
