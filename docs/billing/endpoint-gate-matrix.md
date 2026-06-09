@@ -88,6 +88,11 @@
 | `GET /api/v1/protected/conversations/unread-count` | `conversations/protected/unread-count.ts` | none | - | n/a | Read own inbox badge; auth-only sufficient |
 | `GET /api/v1/protected/conversations/me/response-rate` | `conversations/protected/response-rate.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/conversations/me/monthly-inquiries` | `conversations/protected/monthly-inquiries.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
+| **CONVERSATIONS OWNER — PROTECTED (SPEC-206)** | | | | | |
+| `GET /api/v1/protected/conversations/owner` | `conversations/protected/owner/list.ts` | none | - | n/a | Owner inbox; auth + ownership scoping via accommodation IDs |
+| `GET /api/v1/protected/conversations/owner/{id}` | `conversations/protected/owner/thread.ts` | none | - | n/a | Owner thread read; auth + ownership check in handler |
+| `POST /api/v1/protected/conversations/owner/{id}/messages` | `conversations/protected/owner/reply.ts` | none | - | n/a | Owner reply; auth + ownership check in handler |
+| `GET /api/v1/protected/conversations/owner/unread-count` | `conversations/protected/owner/unread-count.ts` | none | - | n/a | Owner unread badge; auth + ownership scoping via accommodation IDs |
 | **HOST DASHBOARD — PROTECTED (SPEC-205)** | | | | | |
 | `GET /api/v1/protected/host/dashboard` | `host/protected/dashboard.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-205) — aggregator for property counts, plan info, unread conversations |
 | **VIEWS — PROTECTED (SPEC-159)** | | | | | |
