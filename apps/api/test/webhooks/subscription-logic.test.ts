@@ -1723,4 +1723,164 @@ describe('processSubscriptionUpdated', () => {
             expect(dbMock.tx.update).not.toHaveBeenCalled();
         });
     });
+
+    // -----------------------------------------------------------------------
+    // SPEC-147 T-007: Webhook PAUSED collision guard
+    //
+    // When MP emits subscription_preapproval.updated status='paused' after a
+    // soft-cancel, the local subscription MUST remain ACTIVE+cancelAtPeriodEnd=true
+    // so the user keeps access until period_end. Without the guard, the webhook
+    // would flip the row to PAUSED, silently cutting entitlements mid-grace-period.
+    //
+    // The guard is intentionally placed inside the FOR UPDATE section so it is
+    // race-safe against a concurrent soft-cancel write.
+    // -----------------------------------------------------------------------
+    describe('SPEC-147 T-007: PAUSED collision guard for soft-cancel grace period', () => {
+        // TC-T007-A (RED → GREEN): incoming paused webhook + local cancelAtPeriodEnd=true
+        // → status MUST stay ACTIVE (guard fires, skip PAUSED transition).
+        it('should keep status ACTIVE when paused webhook arrives and cancelAtPeriodEnd=true (soft-cancel grace)', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            // Local row: status ACTIVE, cancelAtPeriodEnd=true (soft-cancel already applied)
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                cancelAtPeriodEnd: true
+            });
+            // tx-internal FOR UPDATE returns the same row (cancelAtPeriodEnd=true)
+            const txFreshRows = [
+                { status: SubscriptionStatusEnum.ACTIVE, cancelAtPeriodEnd: true }
+            ];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-a'
+            });
+
+            // Assert: guard fires → no PAUSED write, returns statusChanged:false
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(false);
+            // The transaction was opened (we got inside before the guard) but no update committed
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).not.toHaveBeenCalled();
+            expect(dbMock.tx.insert).not.toHaveBeenCalled();
+        });
+
+        // TC-T007-A-log: guard logs an info message so ops can detect the skip
+        it('should log an info message when skipping PAUSED due to soft-cancel grace period', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                cancelAtPeriodEnd: true
+            });
+            const txFreshRows = [
+                { status: SubscriptionStatusEnum.ACTIVE, cancelAtPeriodEnd: true }
+            ];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-a-log'
+            });
+
+            // Assert: info log emitted with the expected message
+            expect(vi.mocked(apiLogger.info)).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: localSub.id }),
+                expect.stringContaining('soft-cancel grace period')
+            );
+        });
+
+        // TC-T007-B (regression net): incoming paused webhook + cancelAtPeriodEnd=false
+        // (real admin/provider pause) → status MUST go to PAUSED (unchanged behaviour).
+        it('should apply PAUSED transition when paused webhook arrives and cancelAtPeriodEnd=false (real pause)', async () => {
+            // Arrange
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('paused'));
+
+            // Local row: status ACTIVE, cancelAtPeriodEnd=false (NOT a soft-cancel)
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                cancelAtPeriodEnd: false
+            });
+            // tx-internal FOR UPDATE returns the same (cancelAtPeriodEnd=false)
+            const txFreshRows = [
+                { status: SubscriptionStatusEnum.ACTIVE, cancelAtPeriodEnd: false }
+            ];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-b'
+            });
+
+            // Assert: guard does NOT fire → PAUSED write proceeds normally
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.PAUSED);
+            expect(dbMock.transaction).toHaveBeenCalled();
+            expect(dbMock.tx.update).toHaveBeenCalled();
+            expect(dbMock.tx.insert).toHaveBeenCalled();
+        });
+
+        // TC-T007-C: Other status transitions (e.g. active→cancelled) are unaffected
+        // by the guard — the guard is PAUSED-specific.
+        it('should NOT interfere with non-PAUSED transitions when cancelAtPeriodEnd=true', async () => {
+            // Arrange: soft-cancelled sub receives a 'canceled' webhook (period actually ended
+            // or operator forced cancellation) — this MUST go through normally.
+            const mpPreapprovalId = 'preapproval-mp-001';
+            mockedExtract.mockReturnValue({ subscriptionId: mpPreapprovalId });
+            mockRetrieve.mockResolvedValue(makeMpSubscription('canceled'));
+
+            const localSub = makeLocalSubscription({
+                status: SubscriptionStatusEnum.ACTIVE,
+                cancelAtPeriodEnd: true
+            });
+            const txFreshRows = [
+                { status: SubscriptionStatusEnum.ACTIVE, cancelAtPeriodEnd: true }
+            ];
+            const dbMock = makeDbMock([localSub], false, txFreshRows);
+            vi.mocked(getDb).mockReturnValue(dbMock as never);
+
+            const event = makeWebhookEvent();
+
+            // Act
+            const result = await processSubscriptionUpdated({
+                event: event as never,
+                billing: mockBilling as never,
+                paymentAdapter: mockPaymentAdapter as never,
+                providerEventId: 'evt-t007-c'
+            });
+
+            // Assert: CANCELLED transition is unaffected by the PAUSED guard
+            expect(result.success).toBe(true);
+            expect(result.statusChanged).toBe(true);
+            expect(result.newStatus).toBe(SubscriptionStatusEnum.CANCELLED);
+            expect(dbMock.tx.update).toHaveBeenCalled();
+        });
+    });
 });

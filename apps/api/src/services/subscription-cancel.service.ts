@@ -199,45 +199,19 @@ export async function softCancelSubscription(
         );
     }
 
-    // ── Step 4: Provider call — pause MP preapproval ─────────────────────────
-    // billing.subscriptions.cancel() with cancelAtPeriodEnd:true now calls
-    // paymentAdapter.subscriptions.cancel(providerSubscriptionId, true) which
-    // in the MP adapter maps to preapproval status:'paused' (qzpay PR #42).
-    // canceledAt is set by qzpay-core; cancelAtPeriodEnd is NOT (realign #3).
-    let canceledAt: Date;
-    try {
-        const cancelResult = await billing.subscriptions.cancel(subscriptionId, {
-            cancelAtPeriodEnd: true,
-            reason
-        });
-        // The result has canceledAt set by qzpay-core.
-        canceledAt = (cancelResult as { canceledAt?: Date }).canceledAt ?? new Date();
-    } catch (error) {
-        // SPEC-149 provider error handling: map QZPayProviderSyncError to typed
-        // ServiceError so the route handler returns the correct HTTP status.
-        // We do NOT swallow this — the user asked to stop being charged; if the
-        // provider pause fails that is a real, surfaceable failure.
-        if (isBillingProviderError(error)) {
-            const serviceError = mapProviderErrorToServiceError({
-                error,
-                operation: 'subscription_cancel'
-            });
-            const details = serviceError.details as
-                | { providerStatus?: number; operation?: string }
-                | undefined;
-            captureBillingError(serviceError, {
-                operation: 'soft_cancel',
-                providerStatus: details?.providerStatus
-            });
-            throw serviceError;
-        }
-        throw error;
-    }
-
-    // ── Step 5 + 6: Transactional local writes (FOR UPDATE guard inside) ─────
-    // Write cancelAtPeriodEnd=true on the local row (qzpay-core does not) and
-    // insert the USER_CANCELED audit event atomically. Status intentionally
-    // unchanged (INV-4: soft-cancel is a flag, not a state-machine transition).
+    // ── Step 3.5: Write cancelAtPeriodEnd=true BEFORE the provider call ────────
+    // SPEC-147 T-007 ordering fix: the webhook collision guard in subscription-logic.ts
+    // reads cancelAtPeriodEnd under a FOR UPDATE lock. For the guard to fire reliably,
+    // the flag must be committed BEFORE MercadoPago fires the paused webhook.
+    //
+    // Writing first eliminates the race window that existed when the DB write was
+    // after the provider call:  (old) provider pause → [race window] → flag written.
+    // With this ordering:       flag written → provider pause → webhook sees flag=true.
+    //
+    // If the provider call fails after the flag is written, the flag is rolled back
+    // by the cleanup below so billing remains consistent (the preapproval was NOT
+    // paused, so future billing cycles must still charge the user).
+    let flagWritten = false;
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
@@ -275,7 +249,66 @@ export async function softCancelSubscription(
                 preapprovalPaused: true
             }
         });
+
+        flagWritten = true;
     });
+
+    // ── Step 4: Provider call — pause MP preapproval ─────────────────────────
+    // billing.subscriptions.cancel() with cancelAtPeriodEnd:true now calls
+    // paymentAdapter.subscriptions.cancel(providerSubscriptionId, true) which
+    // in the MP adapter maps to preapproval status:'paused' (qzpay PR #42).
+    // canceledAt is set by qzpay-core; cancelAtPeriodEnd is NOT (realign #3).
+    let canceledAt: Date;
+    try {
+        const cancelResult = await billing.subscriptions.cancel(subscriptionId, {
+            cancelAtPeriodEnd: true,
+            reason
+        });
+        // The result has canceledAt set by qzpay-core.
+        canceledAt = (cancelResult as { canceledAt?: Date }).canceledAt ?? new Date();
+    } catch (error) {
+        // SPEC-149 provider error handling: map QZPayProviderSyncError to typed
+        // ServiceError so the route handler returns the correct HTTP status.
+        // We do NOT swallow this — the user asked to stop being charged; if the
+        // provider pause fails that is a real, surfaceable failure.
+        //
+        // Roll back cancelAtPeriodEnd=true so billing stays consistent.
+        // The preapproval was NOT paused, so future billing cycles must still charge.
+        if (flagWritten) {
+            await db
+                .update(billingSubscriptions)
+                .set({ cancelAtPeriodEnd: false, updatedAt: new Date() })
+                .where(eq(billingSubscriptions.id, subscriptionId))
+                .catch((rollbackErr: unknown) => {
+                    apiLogger.error(
+                        {
+                            subscriptionId,
+                            customerId,
+                            rollbackError:
+                                rollbackErr instanceof Error
+                                    ? rollbackErr.message
+                                    : String(rollbackErr)
+                        },
+                        'soft-cancel: failed to roll back cancelAtPeriodEnd flag after provider error'
+                    );
+                });
+        }
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'subscription_cancel'
+            });
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+            captureBillingError(serviceError, {
+                operation: 'soft_cancel',
+                providerStatus: details?.providerStatus
+            });
+            throw serviceError;
+        }
+        throw error;
+    }
 
     // ── Step 7: Clear entitlement cache (INV-1) ──────────────────────────────
     // Must run after DB writes commit so re-computed entitlements reflect the
