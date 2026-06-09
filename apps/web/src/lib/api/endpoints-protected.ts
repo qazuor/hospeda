@@ -1136,6 +1136,146 @@ export const protectedConversationsApi = {
     }
 };
 
+// --- Owner Conversations (Protected — SPEC-206) ---
+
+/** Conversation summary item in the owner inbox */
+export interface OwnerConversationInboxItem {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly lastMessageExcerpt: string | null;
+    readonly unreadCount: number;
+    readonly lastActivityAt: string;
+    readonly status: string;
+}
+
+/** Conversation detail for the owner thread view */
+export interface OwnerConversationDetail {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly status: string;
+    readonly lastReadAtByOwner: string | null;
+    readonly createdAt: string;
+}
+
+/** Thread response for the owner conversation detail */
+export interface OwnerConversationThreadResponse {
+    readonly conversation: OwnerConversationDetail;
+    readonly messages: readonly ConversationMessageItem[];
+    readonly nextCursor: string | null;
+}
+
+/** Protected owner conversations API endpoints (require auth + host role) */
+export const ownerConversationsApi = {
+    /**
+     * List conversations for the authenticated owner's accommodations.
+     *
+     * @param params - Optional pagination, status filter, search, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.list({ pageSize: 20 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly status?: string;
+        readonly search?: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly items: readonly OwnerConversationInboxItem[];
+            readonly pagination: {
+                readonly page: number;
+                readonly pageSize: number;
+                readonly total: number;
+                readonly totalPages: number;
+            };
+        }>
+    > {
+        const { cookieHeader, ...rest } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get a conversation thread by ID (owner side).
+     *
+     * @param params - Conversation ID, optional cursor/limit, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getById({ id: 'conv-uuid' });
+     * if (result.ok) console.log(result.data.messages);
+     * ```
+     */
+    getById(params: {
+        readonly id: string;
+        readonly cursor?: string;
+        readonly limit?: number;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<OwnerConversationThreadResponse>> {
+        const { id, cookieHeader, ...rest } = params;
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/${id}`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get the count of unread conversations for the authenticated owner.
+     *
+     * @returns Unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getUnreadCount();
+     * if (result.ok) console.log(result.data.count);
+     * ```
+     */
+    getUnreadCount(): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/unread-count`
+        });
+    },
+
+    /**
+     * Send a reply to a conversation (owner side).
+     *
+     * @param params - Conversation ID and message body
+     * @returns The created message
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.reply({
+     *   id: 'conv-uuid',
+     *   message: 'Gracias por tu consulta!'
+     * });
+     * ```
+     */
+    reply(params: {
+        readonly id: string;
+        readonly message: string;
+    }): Promise<ApiResult<ConversationMessageItem>> {
+        const { id, message } = params;
+        return apiClient.postProtected({
+            path: `${PROTECTED}/conversations/owner/${id}/messages`,
+            body: { body: message }
+        });
+    }
+};
+
 // --- Host Dashboard (Protected) ---
 
 /** Plan info returned by the host dashboard endpoint */
