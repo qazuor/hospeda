@@ -62,18 +62,18 @@
             "id": "T-004",
             "title": "Add SUBSCRIPTION_CANCEL_CONFIRMED notification type + template",
             "description": "Q5 (owner): new NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED (TRANSACTIONAL) + template in packages/notifications/src/templates/subscription/ (follow subscription-cancelled.tsx structure; English copy; i18n per package conventions). Distinct from existing SUBSCRIPTION_CANCELLED (hard-cancel, webhook). Props: recipientName, planName, accessUntil (period_end date), baseUrl. Template render test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
             "subtasks": [],
             "tags": ["notifications", "template"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
