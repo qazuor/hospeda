@@ -2,7 +2,7 @@
 specId: SPEC-148
 title: Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)
 type: feat
-status: draft
+status: in-progress
 complexity: medium
 created: 2026-05-20T00:00:00Z
 discoveredDuring: SPEC-143 T-143-63 reframe
