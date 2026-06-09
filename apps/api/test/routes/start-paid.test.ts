@@ -195,6 +195,12 @@ function createBillingMock(opts: BillingMockOptions = {}) {
             list: vi.fn().mockResolvedValue({ data: plans })
         },
         subscriptions: {
+            // SPEC-147 T-008: getByCustomerId is now called by the cancel-pending
+            // guard before any subscription creation. Default: no existing subs
+            // (guard passes through). Tests that need soft-cancel behaviour use
+            // the dedicated plan-change-cancel-pending / start-paid-cancel-pending
+            // test files.
+            getByCustomerId: vi.fn().mockResolvedValue([]),
             create
         }
     };
@@ -526,8 +532,13 @@ function createAnnualBillingMock(opts: AnnualBillingMockOptions = {}) {
         plans: { list: vi.fn().mockResolvedValue({ data: plans }) },
         customers: { get: vi.fn().mockResolvedValue(customer) },
         checkout: { create: vi.fn().mockResolvedValue(checkoutResult) },
-        // Stub for monthly fallback path — never invoked in annual tests.
-        subscriptions: { create: vi.fn() }
+        subscriptions: {
+            // SPEC-147 T-008: getByCustomerId is called by the cancel-pending guard.
+            // Default: no existing subs (guard passes through for annual tests).
+            getByCustomerId: vi.fn().mockResolvedValue([]),
+            // Stub for monthly fallback path — never invoked in annual tests.
+            create: vi.fn()
+        }
     };
 }
 

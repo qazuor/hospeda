@@ -23,10 +23,12 @@
  */
 
 import {
+    ServiceErrorCode,
     StartPaidSubscriptionRequestSchema,
     StartPaidSubscriptionResponseSchema
 } from '@repo/schemas';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -237,6 +239,28 @@ export const handleStartPaidSubscription = async (
     const locale = resolveReturnUrlLocale(c);
 
     try {
+        // SPEC-147 T-008 / Q7 guard: the cancel wins.
+        // If the customer has an existing subscription with cancelAtPeriodEnd=true,
+        // block re-subscription until the cancellation finalises. Creating a second
+        // subscription while a soft-cancel is winding down causes an ambiguous
+        // overlap (two concurrent subs for the same customer). The user must wait
+        // for the finalization cron to flip the soft-cancelled sub to 'cancelled'.
+        const existingSubscriptions =
+            await billing.subscriptions.getByCustomerId(billingCustomerId);
+        const hasSoftCancelledSub = existingSubscriptions.some(
+            (sub) =>
+                (sub.status === 'active' || sub.status === 'trialing') &&
+                sub.cancelAtPeriodEnd === true
+        );
+        if (hasSoftCancelledSub) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'An existing subscription is scheduled to cancel at period end. Cannot start a new subscription while a cancellation is pending. Please wait for the current period to end.',
+                undefined,
+                'SUBSCRIPTION_CANCEL_PENDING'
+            );
+        }
+
         const result =
             body.billingInterval === 'annual'
                 ? await initiatePaidAnnualSubscription({
@@ -287,6 +311,14 @@ export const handleStartPaidSubscription = async (
         }
 
         if (error instanceof HTTPException) {
+            throw error;
+        }
+
+        // Re-throw ServiceErrors as-is so the global error handler maps them
+        // to their correct HTTP status codes (e.g. ALREADY_EXISTS → 409).
+        // Must come BEFORE isBillingProviderError so domain-level ServiceErrors
+        // (e.g. SPEC-147 cancel-pending gate) are not misidentified as provider errors.
+        if (error instanceof ServiceError) {
             throw error;
         }
 

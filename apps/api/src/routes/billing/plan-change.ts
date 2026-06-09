@@ -16,9 +16,10 @@
  */
 
 import { NotificationType } from '@repo/notifications';
-import { BillingIntervalEnum } from '@repo/schemas';
+import { BillingIntervalEnum, ServiceErrorCode } from '@repo/schemas';
 import type { DowngradePreview } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import {
     isBillingProviderError,
@@ -206,6 +207,21 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             throw new HTTPException(404, {
                 message: 'No active subscription found'
             });
+        }
+
+        // SPEC-147 T-008 / Q7 guard: the cancel wins.
+        // If the subscription is already scheduled to cancel at period end,
+        // block plan changes until the cancellation finalises. The user must
+        // wait for the finalization cron to flip status to 'cancelled' before
+        // they can change to a new plan. This prevents a race where a
+        // soft-cancel and a plan-change collide, leaving an ambiguous state.
+        if (activeSubscription.cancelAtPeriodEnd) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Subscription is scheduled to cancel at period end. Cannot change plan while a cancellation is pending. Please wait for the current period to end.',
+                undefined,
+                'SUBSCRIPTION_CANCEL_PENDING'
+            );
         }
 
         // 2. Get target plan details
@@ -531,6 +547,15 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
     } catch (error) {
         // Re-throw HTTP exceptions as-is
         if (error instanceof HTTPException) {
+            throw error;
+        }
+
+        // Re-throw ServiceErrors as-is so the global error handler maps them
+        // to their correct HTTP status codes (e.g. ALREADY_EXISTS → 409).
+        // This must come BEFORE the isBillingProviderError check so that
+        // domain-level ServiceErrors (e.g. SPEC-147 cancel-pending gate)
+        // are not misidentified as provider errors.
+        if (error instanceof ServiceError) {
             throw error;
         }
 
