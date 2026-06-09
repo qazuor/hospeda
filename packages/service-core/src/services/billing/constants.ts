@@ -92,7 +92,22 @@ export const BILLING_EVENT_TYPES = {
      * dedup guard in the `finalize-cancelled-subs` cron so a single sub does not
      * receive the same reminder on consecutive daily runs.
      */
-    SUBSCRIPTION_ACCESS_ENDING_NOTIF: 'SUBSCRIPTION_ACCESS_ENDING_NOTIF'
+    SUBSCRIPTION_ACCESS_ENDING_NOTIF: 'SUBSCRIPTION_ACCESS_ENDING_NOTIF',
+    /**
+     * Fired once per admin disable action when a billing plan is marked as
+     * disabled by an admin (SPEC-148). Carries the acting admin user ID and
+     * the count of subscriptions affected by the disable, enabling operational
+     * audit of bulk plan-retirement events.
+     */
+    PLAN_DISABLED_BY_ADMIN: 'PLAN_DISABLED_BY_ADMIN',
+    /**
+     * Fired once per affected subscription when a plan is disabled/retired
+     * and the subscription is flagged for cancel-at-period-end (SPEC-148).
+     * Distinct from PLAN_DISABLED_BY_ADMIN (the admin action); this event
+     * tracks the per-subscription migration side-effect so individual sub
+     * histories remain auditable without inspecting admin-level event rows.
+     */
+    PLAN_DISABLED_MIGRATION: 'PLAN_DISABLED_MIGRATION'
 } as const;
 
 /**
