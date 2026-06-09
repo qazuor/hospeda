@@ -560,11 +560,12 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10),
 
     // AI / Credential Vault
-    // Decision (owner-approved 2026-06-04): optional (NOT required) so the API
-    // does not fail at boot in envs where the AI feature is not yet active.
-    // The vault crypto (T-021) will throw at runtime with a clear error when
-    // the key is accessed-but-missing. Promote to required once AI is wired
-    // everywhere and the key is set in Coolify for all environments.
+    // Decision (owner-approved 2026-06-04): base-optional so non-production envs
+    // (local dev / test / CI) where the AI feature is not yet active do not fail
+    // at boot. In PRODUCTION the key is REQUIRED — enforced by the cross-field
+    // `.superRefine` below (NODE_ENV === 'production' + missing → validation
+    // error). The vault crypto (T-021) still throws at runtime with a clear
+    // error if the key is accessed-but-missing in a non-production env.
     HOSPEDA_AI_VAULT_MASTER_KEY: z
         .string()
         .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
@@ -589,6 +590,20 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             path: ['HOSPEDA_REDIS_URL'],
             message:
                 'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
+        });
+    }
+    // AI credential vault master key is REQUIRED in production: the vault crypto
+    // cannot decrypt provider credentials without it, so a missing key would let
+    // the API boot but fail every AI call at runtime. Fail fast at startup instead.
+    if (
+        data.NODE_ENV === 'production' &&
+        (!data.HOSPEDA_AI_VAULT_MASTER_KEY || data.HOSPEDA_AI_VAULT_MASTER_KEY.trim() === '')
+    ) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_AI_VAULT_MASTER_KEY'],
+            message:
+                'HOSPEDA_AI_VAULT_MASTER_KEY is required in production (vault crypto cannot decrypt AI provider credentials without it)'
         });
     }
     // OAuth cross-validation: require secret when client ID is set

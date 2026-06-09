@@ -415,6 +415,54 @@ describe('Environment Configuration', () => {
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_REDIS_URL).toBeUndefined();
         });
+
+        it('should require HOSPEDA_AI_VAULT_MASTER_KEY in production (FIX 5)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+                // HOSPEDA_AI_VAULT_MASTER_KEY intentionally missing
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_AI_VAULT_MASTER_KEY in production when provided (FIX 5)', async () => {
+            const masterKey = 'a'.repeat(32);
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+                HOSPEDA_AI_VAULT_MASTER_KEY: masterKey
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBe(masterKey);
+        });
+
+        it('should NOT require HOSPEDA_AI_VAULT_MASTER_KEY in non-production environments (FIX 5)', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test'
+                // HOSPEDA_AI_VAULT_MASTER_KEY intentionally missing
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBeUndefined();
+        });
     });
 
     describe('String Transformations', () => {
