@@ -63,8 +63,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 210 (2026-06-07, SPEC-195 PR1): added 4 moderation env vars
  * (HOSPEDA_MODERATION_PROVIDER, HOSPEDA_OPENAI_API_KEY,
  * HOSPEDA_MODERATION_CACHE_TTL_SECONDS, HOSPEDA_MODERATION_TIMEOUT_MS).
+ *
+ * 211 (2026-06-09, SPEC-147 T-003): added HOSPEDA_USER_CANCEL_ENABLED
+ * (opt-in feature flag for user self-service subscription cancellation,
+ * billing category), bumping billing from 9 to 10.
  */
-const EXPECTED_VAR_COUNT = 210;
+const EXPECTED_VAR_COUNT = 211;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
