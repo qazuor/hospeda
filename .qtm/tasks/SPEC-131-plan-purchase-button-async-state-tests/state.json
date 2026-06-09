@@ -1,0 +1,112 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-131",
+    "title": "Fix PlanPurchaseButton async-state tests broken post Astro 6 bump",
+    "created": "2026-05-15T18:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-131-01",
+            "title": "Instrument handleClick + capture precise failure mode",
+            "description": "Document the failure. Root cause found here: apiClient.request() called getBaseUrl()/validateWebEnv() OUTSIDE its try/catch; without PUBLIC_API_URL in jsdom it threw before fetch(), bypassing the fetch mocks. React 19 batching collapsed setLoading(true)+setLoading(false) into one render so the loading state was never visible. NOT a timing/concurrent-mode regression as the spec hypothesized.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-131-05"],
+            "phase": "0",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T22:30:00.000Z",
+                "completed": "2026-06-09T22:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-131-02",
+            "title": "Try pool: threads",
+            "description": "NOT NEEDED. Root cause (T-131-01) was the env-URL bug, not the vitest pool. No pool change applied.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-131-01"],
+            "blocks": [],
+            "phase": "1",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T22:45:00.000Z",
+                "completed": "2026-06-09T22:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-131-03",
+            "title": "Try @vitejs/plugin-react-oxc swap",
+            "description": "NOT NEEDED. Root cause was env, not the react plugin. No swap applied.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-131-01"],
+            "blocks": [],
+            "phase": "1",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T22:45:00.000Z",
+                "completed": "2026-06-09T22:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-131-04",
+            "title": "Bisect React 19 patches",
+            "description": "NOT NEEDED. Root cause was env, not a React patch regression. React version unchanged.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-131-01"],
+            "blocks": [],
+            "phase": "1",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T22:45:00.000Z",
+                "completed": "2026-06-09T22:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-131-05",
+            "title": "Apply working fix + remove skipIf",
+            "description": "3-part fix: (1) move URL computation inside try/catch in apps/web/src/lib/api/client.ts so a misconfigured env returns { ok:false } instead of throwing (honors ApiResult<T>); (2) add PUBLIC_API_URL + PUBLIC_SITE_URL to apps/web/vitest.config.ts test env; (3) update stale endpoint assertion /checkout -> /subscriptions/start-paid and set SPEC_131_PENDING=false. Target file 29/29; full web suite 3725 passed, 8 skipped, 0 failed. Commit 9692042aa.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-131-01"],
+            "blocks": ["T-131-06"],
+            "phase": "2",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T22:45:00.000Z",
+                "completed": "2026-06-09T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-131-06",
+            "title": "PR to staging",
+            "description": "PR to staging, CI Pass SUCCESS gate, merge --merge, closeout (spec.md + both indexes completed+archived). Single PR (code + tracking + closeout bundled — small spec).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-131-05"],
+            "blocks": [],
+            "phase": "3",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-05-15T18:30:00.000Z",
+                "started": "2026-06-09T23:00:00.000Z",
+                "completed": "2026-06-09T23:10:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 6,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 6,
+        "blocked": 0,
+        "averageComplexity": 1.3
+    }
+}

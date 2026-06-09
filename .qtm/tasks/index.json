@@ -4,9 +4,12 @@
         {
             "specId": "SPEC-131",
             "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
-            "status": "draft",
-            "progress": "0/6",
-            "path": "SPEC-131-plan-purchase-button-async-state-tests"
+            "status": "completed",
+            "progress": "6/6",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests",
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Root cause was a latent apiClient try/catch bug (env URL thrown out of contract), not the React 19/Astro 6 timing the spec hypothesized. Single PR. Full web suite 3725 passed."
         },
         {
             "specId": "SPEC-132",
