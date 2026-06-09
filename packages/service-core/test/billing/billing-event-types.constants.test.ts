@@ -1,11 +1,12 @@
 /**
- * Contract tests for BILLING_EVENT_TYPES constants (SPEC-147 T-002).
+ * Contract tests for BILLING_EVENT_TYPES constants (SPEC-147 T-002 + T-010).
  *
  * These tests treat the string values as a stable contract: the values are
  * persisted in billing_subscription_events rows, so any rename would corrupt
  * historical data. Pin the literals here so a rename fails CI immediately.
  *
- * All 18 types are asserted (16 pre-existing + 2 added by SPEC-147).
+ * All 20 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
+ * + 1 added by SPEC-147 T-010).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -93,6 +94,12 @@ describe('BILLING_EVENT_TYPES', () => {
         it('FINALIZE_CANCELLED_SUB is exported with the exact string value "FINALIZE_CANCELLED_SUB"', () => {
             expect(BILLING_EVENT_TYPES.FINALIZE_CANCELLED_SUB).toBe('FINALIZE_CANCELLED_SUB');
         });
+
+        it('SUBSCRIPTION_ACCESS_ENDING_NOTIF is exported with the exact string value "SUBSCRIPTION_ACCESS_ENDING_NOTIF" (T-010)', () => {
+            expect(BILLING_EVENT_TYPES.SUBSCRIPTION_ACCESS_ENDING_NOTIF).toBe(
+                'SUBSCRIPTION_ACCESS_ENDING_NOTIF'
+            );
+        });
     });
 
     describe('BillingEventType union', () => {
@@ -106,8 +113,13 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('FINALIZE_CANCELLED_SUB');
         });
 
-        it('the total number of event types is 19', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(19);
+        it('SUBSCRIPTION_ACCESS_ENDING_NOTIF is assignable to BillingEventType', () => {
+            const value: BillingEventType = BILLING_EVENT_TYPES.SUBSCRIPTION_ACCESS_ENDING_NOTIF;
+            expect(value).toBe('SUBSCRIPTION_ACCESS_ENDING_NOTIF');
+        });
+
+        it('the total number of event types is 20', () => {
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(20);
         });
     });
 });

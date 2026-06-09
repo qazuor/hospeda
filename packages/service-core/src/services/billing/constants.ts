@@ -85,7 +85,14 @@ export const BILLING_EVENT_TYPES = {
      * Written by the cron/job that processes subscriptions past their
      * current_period_end while in a pending-cancellation status.
      */
-    FINALIZE_CANCELLED_SUB: 'FINALIZE_CANCELLED_SUB'
+    FINALIZE_CANCELLED_SUB: 'FINALIZE_CANCELLED_SUB',
+    /**
+     * Fired when the D3 "access ending soon" reminder email is dispatched for
+     * a soft-cancelled subscription (SPEC-147 T-010). Acts as the per-subscription
+     * dedup guard in the `finalize-cancelled-subs` cron so a single sub does not
+     * receive the same reminder on consecutive daily runs.
+     */
+    SUBSCRIPTION_ACCESS_ENDING_NOTIF: 'SUBSCRIPTION_ACCESS_ENDING_NOTIF'
 } as const;
 
 /**
