@@ -1,0 +1,249 @@
+{
+  "version": "1.0",
+  "specRef": "SPEC-210",
+  "title": "Public Response Tier Enforcement",
+  "created": "2026-06-09T00:00:00.000Z",
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Audit every public route and classify its response schema",
+      "description": "Generate the inventory of all `apps/api/src/routes/**/public/*.ts` route files (exclude index.ts) using `fd`. For each, record the wired `responseSchema` and classify: OK (real entity public-tier schema), LEAK (full base schema), PASSTHROUGH (z.record/z.any/z.unknown), or MISSING (no schema). Write the result to `.qtm/specs/SPEC-210-public-response-tier-enforcement/docs/public-route-audit.md` as a table with a status column. This drives all downstream re-wire work. No code change. Test: N/A (doc artifact); the audit list must be exhaustive (driven by the generated file list, not by hand).",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": ["T-002", "T-003", "T-007", "T-008", "T-009", "T-010"],
+      "subtasks": [
+        { "title": "fd all public route files", "completed": false },
+        { "title": "Record wired responseSchema per route", "completed": false },
+        { "title": "Classify OK/LEAK/PASSTHROUGH/MISSING", "completed": false },
+        { "title": "Write public-route-audit.md table", "completed": false }
+      ],
+      "tags": ["audit", "security"],
+      "phase": "setup",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-002",
+      "title": "Create SponsorshipLevelPublicSchema",
+      "description": "Add `SponsorshipLevelPublicSchema` in `packages/schemas/.../sponsorship-level/*.access.schema.ts` following the `.pick()` tier convention: include only public display fields (id, name, slug, and any public-facing display attributes), EXCLUDE BaseAuditFields (createdById, updatedById, deletedAt, deletedById, createdAt/updatedAt unless intentionally public). Export it. Test: schema unit test asserting a full row parsed through it RETAINS public fields and DROPS audit fields. File: packages/schemas test dir.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-001"],
+      "blocks": ["T-009"],
+      "subtasks": [
+        { "title": "Define .pick() public field set", "completed": false },
+        { "title": "Export from access.schema.ts", "completed": false },
+        { "title": "Unit test: audit fields dropped", "completed": false }
+      ],
+      "tags": ["schemas", "security"],
+      "phase": "core",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-003",
+      "title": "Create any other missing public-tier schemas flagged by the audit",
+      "description": "For each entity the T-001 audit flagged as LEAK/MISSING that has NO existing `*PublicSchema`, create one in `@repo/schemas` following the `.pick()` convention (no audit/internal fields). Reuse existing public schemas where they exist (e.g. ExchangeRatePublicSchema already exists — no new schema needed there). Test: a schema unit test per new schema. If the audit finds none beyond sponsorship-level, this task closes as N/A with a note.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-001"],
+      "blocks": ["T-010"],
+      "subtasks": [
+        { "title": "List entities needing a new public tier", "completed": false },
+        { "title": "Create each *PublicSchema (.pick)", "completed": false },
+        { "title": "Unit tests per new schema", "completed": false }
+      ],
+      "tags": ["schemas", "security"],
+      "phase": "core",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-004",
+      "title": "Add assertConcretePublicSchema startup guard helper",
+      "description": "Add a helper (e.g. in apps/api/src/utils/route-factory or response-helpers) `assertConcretePublicSchema(schema, routePath)` that inspects the Zod def and THROWS if the schema is a passthrough/permissive type: z.record, z.any, z.unknown, or a ZodObject in `passthrough` unknownKeys mode. The error message must name the offending route path. Unit test: accepts real tier schemas (AccommodationPublicSchema, etc.); throws on z.record(), z.any(), z.unknown(), and z.object({}).passthrough(). File: apps/api test dir.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": [],
+      "blocks": ["T-005"],
+      "subtasks": [
+        { "title": "Inspect Zod typeName + unknownKeys", "completed": false },
+        { "title": "Throw with route path on passthrough", "completed": false },
+        { "title": "Unit tests: accept tiers, reject passthrough", "completed": false }
+      ],
+      "tags": ["api", "route-factory", "security"],
+      "phase": "core",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-005",
+      "title": "Make responseSchema required on the public route factory + wire startup guard",
+      "description": "In the public route factory(ies) (createPublicRoute, createPublicListRoute, any public variant) under apps/api/src/utils/route-factory*: change the `responseSchema` option from optional to REQUIRED at the type level (omission becomes a TS error). At route construction/registration, call assertConcretePublicSchema(schema, path) so a passthrough/missing schema throws at startup (fail-closed before serving). Do NOT touch protected/admin factories. Test: type-level expectation documented; a registration test that a passthrough schema throws at build.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": ["T-004"],
+      "blocks": ["T-007", "T-008", "T-009", "T-010", "T-011", "T-013"],
+      "subtasks": [
+        { "title": "responseSchema required in public factory types", "completed": false },
+        { "title": "Call assertConcretePublicSchema at registration", "completed": false },
+        { "title": "Leave protected/admin factories unchanged", "completed": false }
+      ],
+      "tags": ["api", "route-factory", "security"],
+      "phase": "core",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-006",
+      "title": "Make stripWithSchema fail-closed when no schema is provided",
+      "description": "In apps/api/src/utils/response-helpers.ts:90, remove the fail-open branch: when called with no responseSchema, THROW ServiceError(INTERNAL_ERROR, ...) instead of returning raw data. Keep the existing fail-closed-on-parse-error behavior. Audit non-public callers that legitimately omit a schema (if any) and either give them a schema or route them away from strict strip — record findings. Unit test: stripWithSchema throws with no schema; still strips undeclared keys with a .pick() schema; still throws on parse mismatch.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": [],
+      "blocks": ["T-007", "T-008", "T-009", "T-010"],
+      "subtasks": [
+        { "title": "Remove fail-open no-schema branch (throw)", "completed": false },
+        { "title": "Audit non-public no-schema callers", "completed": false },
+        { "title": "Unit tests for the 3 paths", "completed": false }
+      ],
+      "tags": ["api", "security"],
+      "phase": "core",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-007",
+      "title": "Re-wire accommodation/public/similar.ts to a concrete public schema",
+      "description": "Replace `responseSchema: z.array(z.record(z.string(), z.unknown()))` (similar.ts:29) with `z.array(AccommodationPublicSchema)`. SPEC-187 already strips richDescription there at the data level; this makes the schema concrete so the factory guard accepts it and audit/internal fields are stripped. Regression test: handler returns a row with internal/audit fields → response contains only public card fields. Do not mock the serialization layer.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-005", "T-006"],
+      "blocks": ["T-012"],
+      "subtasks": [
+        { "title": "Wire z.array(AccommodationPublicSchema)", "completed": false },
+        { "title": "Regression test: internal fields absent", "completed": false }
+      ],
+      "tags": ["api", "security"],
+      "phase": "integration",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-008",
+      "title": "Re-wire exchange-rates/public/list.ts to ExchangeRatePublicSchema",
+      "description": "Before changing: grep apps/web + apps/admin for usage of the fields ExchangeRatePublicSchema would drop (source, expiresAt, audit). If a field is genuinely needed publicly, add it to the public tier deliberately (record the decision in the audit doc); otherwise replace `ExchangeRateSchema` with `ExchangeRatePublicSchema` at list.ts:49. Regression test: response omits source/expiresAt/audit fields, keeps the public rate fields.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-005", "T-006"],
+      "blocks": ["T-012"],
+      "subtasks": [
+        { "title": "Grep web/admin consumers of dropped fields", "completed": false },
+        { "title": "Wire ExchangeRatePublicSchema (or extend tier deliberately)", "completed": false },
+        { "title": "Regression test: leak fields absent", "completed": false }
+      ],
+      "tags": ["api", "security"],
+      "phase": "integration",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-009",
+      "title": "Re-wire sponsorship-level/public getById + list to the new public tier",
+      "description": "Grep apps/web + apps/admin for the audit fields SponsorshipLevelPublicSchema drops. Then wire SponsorshipLevelPublicSchema (from T-002) into sponsorship-level/public/getById.ts and list.ts (replacing SponsorshipLevelSchema). Regression tests for both routes: createdById/updatedById/deletedAt/deletedById absent, public fields present.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-002", "T-005", "T-006"],
+      "blocks": ["T-012"],
+      "subtasks": [
+        { "title": "Grep consumers of audit fields", "completed": false },
+        { "title": "Wire public tier in getById + list", "completed": false },
+        { "title": "Regression tests both routes", "completed": false }
+      ],
+      "tags": ["api", "security"],
+      "phase": "integration",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-010",
+      "title": "Fix every remaining route flagged by the audit",
+      "description": "For each LEAK/PASSTHROUGH/MISSING route from T-001 not already handled by T-007/8/9: grep web/admin consumers of fields that would be dropped, then wire the correct entity public-tier schema (reusing or creating via T-003). Add a per-route regression test asserting leak fields absent. Record each decision in the audit doc. If the list is large, keep tasks atomic per route group; flag for /replan if it exceeds a single focused unit.",
+      "status": "pending",
+      "complexity": 3,
+      "blockedBy": ["T-003", "T-005", "T-006"],
+      "blocks": ["T-012"],
+      "subtasks": [
+        { "title": "Iterate audit-flagged routes", "completed": false },
+        { "title": "Grep consumers + wire public tier each", "completed": false },
+        { "title": "Per-route regression tests", "completed": false },
+        { "title": "Resolve audit doc statuses", "completed": false }
+      ],
+      "tags": ["api", "security"],
+      "phase": "integration",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-011",
+      "title": "Add boot-the-public-router fail-closed test",
+      "description": "Add a test that registers the real public router and asserts it builds WITHOUT throwing (all public routes now have concrete tier schemas), and a negative test that a deliberately-passthrough public route throws at registration via assertConcretePublicSchema. This is the runtime backstop that makes a missed route fail loudly instead of leaking. File: apps/api test dir.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-005"],
+      "blocks": ["T-012"],
+      "subtasks": [
+        { "title": "Positive: public router registers clean", "completed": false },
+        { "title": "Negative: passthrough route throws at boot", "completed": false }
+      ],
+      "tags": ["api", "testing", "security"],
+      "phase": "testing",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-012",
+      "title": "Full regression sweep across api, web, admin",
+      "description": "Run full typecheck + lint + test for apps/api, and typecheck for apps/web and apps/admin (consumers of the tightened responses). All green. Confirm the public-route-audit.md is fully resolved (every route OK/fixed). Confirm no consumer broke from a dropped field (if one did, it was added to its public tier deliberately in T-008/9/10). Report real exit codes.",
+      "status": "pending",
+      "complexity": 2,
+      "blockedBy": ["T-007", "T-008", "T-009", "T-010", "T-011"],
+      "blocks": [],
+      "subtasks": [
+        { "title": "api typecheck+lint+test green", "completed": false },
+        { "title": "web+admin typecheck green", "completed": false },
+        { "title": "Audit doc fully resolved", "completed": false }
+      ],
+      "tags": ["testing", "verification"],
+      "phase": "testing",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    },
+    {
+      "id": "T-013",
+      "title": "Document the public-response contract rule",
+      "description": "Document in apps/api/docs/route-architecture.md (and/or the API CLAUDE.md) the enforced rule: every public route MUST declare a concrete entity public-tier responseSchema; the factory rejects missing/passthrough schemas at startup; stripWithSchema is fail-closed. Note BaseModel still does SELECT * by design and the response tier is the single enforcement boundary. Reference SPEC-210.",
+      "status": "pending",
+      "complexity": 1,
+      "blockedBy": ["T-005"],
+      "blocks": [],
+      "subtasks": [
+        { "title": "Write contract rule in route-architecture.md", "completed": false },
+        { "title": "Reference SPEC-210 + rationale", "completed": false }
+      ],
+      "tags": ["docs"],
+      "phase": "docs",
+      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    }
+  ],
+  "summary": {
+    "total": 13,
+    "pending": 13,
+    "inProgress": 0,
+    "completed": 0,
+    "blocked": 0,
+    "averageComplexity": 2.2
+  }
+}
