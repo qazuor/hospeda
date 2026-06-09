@@ -74,3 +74,15 @@ if (typeof Element !== 'undefined' && !Element.prototype.getClientRects) {
 if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
     Range.prototype.getClientRects = () => [] as DOMRectList;
 }
+
+// Leaflet and Prosemirror call elementFromPoint() and getBoundingClientRect()
+// on DOM elements. jsdom does not implement these methods.
+if (typeof document !== 'undefined') {
+    if (!document.elementFromPoint) {
+        document.elementFromPoint = () => null as unknown as Element;
+    }
+}
+if (typeof Element !== 'undefined' && !Element.prototype.getBoundingClientRect) {
+    Element.prototype.getBoundingClientRect = () =>
+        ({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 }) as DOMRect;
+}
