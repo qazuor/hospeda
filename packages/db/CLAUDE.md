@@ -697,6 +697,10 @@ These objects live in **Carril 2** (`src/migrations/extras/`). They are applied 
 | `007-messages.constraints.sql` | CHECK constraints | messages column constraints |
 | `008-bookmark.indexes.sql` | Special indexes | bookmark partial/functional indexes |
 | `009-newsletter.indexes.sql` | Special indexes | newsletter functional indexes |
+| `010-abandoned-status.data-migration.sql` | Data migration | Canonicalises `incomplete_expired` → `abandoned` in billing_subscriptions |
+| `011-entity-views.indexes.sql` | Special indexes | entity_views partial/functional indexes |
+| `012-content-moderation-thresholds.check.sql` | CHECK constraints | Cross-column CHECK `pending < reject` on content_moderation_thresholds |
+| `013-moderation-role-grants.data.sql` | Bootstrap data | MODERATION_* permission grants for `admin` + `super_admin` roles (SPEC-195) |
 
 ### Applying after migrate
 
