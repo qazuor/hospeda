@@ -41,7 +41,8 @@ export {
     AiEngineExhaustedError,
     AiFeatureDisabledError,
     AiModerationBlockedError,
-    AiNoEnabledProviderError
+    AiNoEnabledProviderError,
+    AiProviderUnconfiguredError
 } from './errors.js';
 export type { ProviderAttempt } from './errors.js';
 

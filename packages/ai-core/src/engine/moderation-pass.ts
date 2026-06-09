@@ -11,13 +11,21 @@
  *   after all chunks are yielded, the accumulated text is moderated. If flagged,
  *   the generator throws `AiModerationBlockedError` after the last token.
  *
- * ## Fail-open guarantee
+ * ## Fail-open guarantee (with one fail-CLOSED exception — SPEC-198)
  *
- * If the moderation provider call throws for ANY reason (network error, provider
- * down, `getProvider` throws because the moderation provider is unconfigured),
- * the error is caught, a `moderation_error` event is emitted via `recordEvent`,
- * and the helper returns normally — allowing the capability call to continue
- * unmoderated. Moderation unavailability MUST NOT take down AI features.
+ * If the moderation provider call throws because of a TRANSIENT failure (network
+ * error, timeout, rate-limit, 5xx, provider down), the error is caught, a
+ * `moderation_error` event is emitted via `recordEvent`, and the helper returns
+ * normally — allowing the capability call to continue unmoderated. A provider
+ * hiccup MUST NOT take down AI features.
+ *
+ * The SOLE exception is `AiProviderUnconfiguredError`: when `getProvider` throws
+ * because the moderation provider has NO resolvable credential configured, the
+ * helper RE-THROWS it (fail-CLOSED). A missing credential is a server
+ * misconfiguration, not a transient hiccup — passing such a request through
+ * unmoderated would silently disable moderation, so the request is blocked
+ * instead. `AiModerationBlockedError` is also always re-thrown (deliberate
+ * content block, never swallowed).
  *
  * ## Skip condition
  *
@@ -29,7 +37,7 @@
 import type { AiFeature, AiProviderId, StreamTextChunk } from '@repo/schemas';
 import type { AiProvider, StreamTextResult } from '../providers/ai-provider.interface.js';
 import type { AiEngineEvent } from './engine.js';
-import { AiModerationBlockedError } from './errors.js';
+import { AiModerationBlockedError, AiProviderUnconfiguredError } from './errors.js';
 
 // ---------------------------------------------------------------------------
 // runModerationPass — Input type
@@ -68,8 +76,11 @@ export interface RunModerationPassInput {
     /**
      * Provider factory injected from the engine.
      *
-     * The factory may throw if the moderation provider is unconfigured — that
-     * case is handled as a fail-open (moderation error event, call continues).
+     * The factory may throw `AiProviderUnconfiguredError` when the moderation
+     * provider has no resolvable credential — that case fails CLOSED (the error
+     * is re-thrown, the request is blocked). Any other throw is a transient
+     * failure and fails OPEN (moderation error event, call continues). See the
+     * module doc for the full fail-open/fail-closed contract (SPEC-198).
      */
     readonly getProvider: (id: AiProviderId) => AiProvider;
 
@@ -94,8 +105,10 @@ export interface RunModerationPassInput {
  * 2. Calls `getProvider(moderationProviderId).moderate({ input: text })`.
  * 3. If the result is flagged: emits a `moderation_blocked` event and throws
  *    `AiModerationBlockedError` with the flagged categories.
- * 4. If `moderate()` throws (or `getProvider()` throws): emits a `moderation_error`
- *    event and returns normally (fail-open — the AI call continues unmoderated).
+ * 4. If `moderate()` throws (or `getProvider()` throws) a TRANSIENT error: emits
+ *    a `moderation_error` event and returns normally (fail-open — the AI call
+ *    continues unmoderated). EXCEPTION: `AiProviderUnconfiguredError` (no
+ *    resolvable credential) is re-thrown (fail-CLOSED, SPEC-198).
  * 5. If the result is clean: returns normally.
  *
  * **Input text for the three capabilities**:
@@ -113,6 +126,8 @@ export interface RunModerationPassInput {
  * @param input - {@link RunModerationPassInput}
  * @returns A promise that resolves when the text is clean or skipped.
  * @throws {AiModerationBlockedError} If the moderation provider flagged the text.
+ * @throws {AiProviderUnconfiguredError} If the moderation provider has no
+ *   resolvable credential (fail-CLOSED, SPEC-198).
  */
 export async function runModerationPass(input: RunModerationPassInput): Promise<void> {
     const { feature, direction, text, moderationProviderId, getProvider, recordEvent } = input;
@@ -152,8 +167,17 @@ export async function runModerationPass(input: RunModerationPassInput): Promise<
             throw err;
         }
 
-        // 4b. Any other error (network failure, provider unconfigured, etc.) →
-        //     fail-open: emit error event and let the AI call continue.
+        // SPEC-198: re-throw AiProviderUnconfiguredError (fail-CLOSED). A missing
+        // moderation credential is a server misconfiguration — letting the request
+        // through would silently disable moderation, so we block instead. This is
+        // the ONLY non-block error that is NOT swallowed; transient failures below
+        // still fail-open.
+        if (err instanceof AiProviderUnconfiguredError) {
+            throw err;
+        }
+
+        // 4b. Any other (transient) error (network failure, timeout, rate-limit,
+        //     5xx, etc.) → fail-open: emit error event and let the AI call continue.
         const message = err instanceof Error ? err.message : String(err);
         recordEvent?.({
             type: 'moderation_error',
