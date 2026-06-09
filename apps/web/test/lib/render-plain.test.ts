@@ -18,7 +18,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { STRIP_MARKDOWN_REGEX_SET, renderPlain } from '../../src/lib/render-plain';
+import {
+    STRIP_MARKDOWN_REGEX_SET,
+    renderPlain,
+    stripMarkdownPlain
+} from '../../src/lib/render-plain';
 
 describe('renderPlain', () => {
     describe('input guards', () => {
@@ -100,18 +104,42 @@ describe('renderPlain', () => {
          * set so a regression in `entitlement-filter.ts` is caught at unit-
          * test time, not at integration-test time against a real Postgres.
          */
-        it('exposes the full marker set used by the P0 strip migration', () => {
+        it('exposes the full marker set used by the strip migrations (canonical order)', () => {
             expect(STRIP_MARKDOWN_REGEX_SET).toEqual([
                 /\*\*(.+?)\*\*/g, // **bold**
                 /\*(.+?)\*/g, // *italic*
+                /__(.+?)__/g, // __bold__
+                /_(.+?)_/g, // _italic_
+                /~~(.+?)~~/g, // ~~strike~~
+                /`(.+?)`/g, // `code`
+                /!\[(.+?)\]\(.+?\)/g, // ![alt](url) — BEFORE links
                 /\[(.+?)\]\(.+?\)/g, // [text](url)
                 /^#+\s+/gm, // # heading
                 /^[-*+]\s+/gm, // - list
-                /`(.+?)`/g, // `code`
                 /^>\s+/gm, // > quote
-                /~~(.+?)~~/g, // ~~strike~~
-                /!\[(.+?)\]\(.+?\)/g // ![alt](url)
+                /\n{3,}/g // collapse 3+ newlines
             ]);
+        });
+    });
+
+    describe('stripMarkdownPlain (web mirror of the API source of truth)', () => {
+        it('strips underscore emphasis (__bold__ and _italic_)', () => {
+            expect(stripMarkdownPlain('__bold__')).toBe('bold');
+            expect(stripMarkdownPlain('_italic_')).toBe('italic');
+        });
+
+        it('strips an image to its alt text (image rule runs BEFORE links)', () => {
+            // The fixed order: the image rule consumes `![alt](url)` and yields
+            // `alt`, NOT the orphan `!alt` the old (link-first) order produced.
+            expect(stripMarkdownPlain('![alt text](https://x.com/i.png)')).toBe('alt text');
+        });
+
+        it('collapses 3+ consecutive newlines to a double newline', () => {
+            expect(stripMarkdownPlain('a\n\n\n\nb')).toBe('a\n\nb');
+        });
+
+        it('leaves an unmatched marker untouched', () => {
+            expect(stripMarkdownPlain('*foo')).toBe('*foo');
         });
     });
 
@@ -135,19 +163,9 @@ describe('renderPlain', () => {
         it('canonical fixture: strip → renderPlain produces marker-free output', () => {
             const raw = '## Title\n\n**bold**\n[link](https://x.com)\n- item\n`code`';
 
-            // Step 1: strip. Reuse STRIP_MARKDOWN_REGEX_SET so this test
-            // stays in lockstep with the API/source-of-truth impl.
-            const stripped = raw
-                .replace(STRIP_MARKDOWN_REGEX_SET[0], '$1')
-                .replace(STRIP_MARKDOWN_REGEX_SET[1], '$1')
-                .replace(STRIP_MARKDOWN_REGEX_SET[2], '$1')
-                .replace(STRIP_MARKDOWN_REGEX_SET[3], '')
-                .replace(STRIP_MARKDOWN_REGEX_SET[4], '')
-                .replace(STRIP_MARKDOWN_REGEX_SET[5], '$1')
-                .replace(STRIP_MARKDOWN_REGEX_SET[6], '')
-                .replace(STRIP_MARKDOWN_REGEX_SET[7], '$1')
-                .replace(STRIP_MARKDOWN_REGEX_SET[8], '$1')
-                .trim();
+            // Step 1: strip via the web mirror, which stays in lockstep with
+            // the API source-of-truth `stripMarkdown`.
+            const stripped = stripMarkdownPlain(raw);
 
             expect(stripped).toBe('Title\n\nbold\nlink\nitem\ncode');
 
