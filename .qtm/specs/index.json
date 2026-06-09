@@ -710,13 +710,13 @@
             "title": "AI Accommodation Chat (tourist)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-200-ai-accommodation-chat",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes on branch fix/SPEC-200-prod-readiness. BLOCKED for prod: chat entitlement gate evaluates the tourist actor, but ai_chat lives only on host plans, so every tourist gets 403 — fix tracked in the AI-monetization spec (Frente 2)."
         },
         {
             "specId": "SPEC-201",
