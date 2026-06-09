@@ -140,7 +140,7 @@
             "id": "T-007",
             "title": "Wire fan-out into admin plan toggle + idempotency guard",
             "description": "Part B. The admin PATCH adminTogglePlanActiveRoute (apps/api/src/routes/billing/admin/plans.ts ~:299-346) → planService.toggleActive. On the active→inactive transition ONLY, invoke disablePlanLifecycle (T-005). Soft-fail: the lifecycle fan-out must NOT break the toggle response (log + Sentry on failure; the admin sees the toggle succeeded, fan-out retriable). Detect the transition (was active, now inactive) to avoid re-fanning on a no-op PATCH. Tests (extend the admin plans route/hook test): active→inactive triggers fan-out once; inactive→inactive no-op; inactive→active does NOT undo (document); fan-out failure → toggle still 200 + Sentry.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
@@ -148,14 +148,14 @@
             "tags": ["api", "admin", "wiring"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T18:17:37.000Z",
+                "completed": "2026-06-09T18:17:37.000Z"
             }
         },
         {
