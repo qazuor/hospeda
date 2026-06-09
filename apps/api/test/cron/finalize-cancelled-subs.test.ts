@@ -186,6 +186,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         gte: vi.fn((col, val) => ({ _gte: [col, val] })),
         lte: vi.fn((col, val) => ({ _lte: [col, val] })),
         isNull: vi.fn((col) => ({ _isNull: col })),
+        inArray: vi.fn((col, vals) => ({ _inArray: [col, vals] })),
         sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
             _sql: { strings, values }
         }))
@@ -404,15 +405,15 @@ describe('handler: happy path — due soft-cancelled sub', () => {
         expect(insertArgs).toBeDefined();
     });
 
-    it('validates the active→cancelled transition via state machine', async () => {
-        dueRowsState.rows = [makeDueRow()];
+    it('validates the active→cancelled transition via state machine using the REAL row status', async () => {
+        dueRowsState.rows = [makeDueRow()]; // status: 'active' by default
 
         const ctx = makeCronCtx();
         await finalizeCancelledSubsJob.handler(ctx);
 
         expect(mockValidateTransition).toHaveBeenCalledWith(
             expect.objectContaining({
-                from: 'active',
+                from: 'active', // the actual status from the row, not hardcoded
                 to: 'cancelled'
             })
         );
@@ -448,6 +449,98 @@ describe('handler: happy path — due soft-cancelled sub', () => {
         expect(result.processed).toBe(2);
         expect(result.errors).toBe(0);
         expect(mockClearEntitlementCache).toHaveBeenCalledTimes(2);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// M2 Regression: soft-cancelled subs in non-active statuses are finalized
+//
+// The original 'active'-only query caused soft-cancelled subs that went
+// past_due (payment-failure webhook) or stayed trialing to be stuck forever.
+// These tests are the regression guard for the M2 fix.
+// ---------------------------------------------------------------------------
+
+describe('handler: M2 regression — soft-cancelled past_due sub is finalized', () => {
+    it('finalizes a soft-cancelled past_due sub with past period_end', async () => {
+        dueRowsState.rows = [makeDueRow({ status: 'past_due' })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(result.errors).toBe(0);
+
+        // validateTransition called with from='past_due' (real status, not hardcoded)
+        expect(mockValidateTransition).toHaveBeenCalledWith(
+            expect.objectContaining({
+                from: 'past_due',
+                to: 'cancelled'
+            })
+        );
+
+        // Status flip must have been called
+        expect(mockDbUpdate).toHaveBeenCalled();
+
+        // Entitlement cache cleared
+        expect(mockClearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID_1);
+    });
+
+    it('finalizes a soft-cancelled trialing sub with past period_end', async () => {
+        dueRowsState.rows = [makeDueRow({ status: 'trialing' })];
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(result.errors).toBe(0);
+
+        // validateTransition called with from='trialing'
+        expect(mockValidateTransition).toHaveBeenCalledWith(
+            expect.objectContaining({
+                from: 'trialing',
+                to: 'cancelled'
+            })
+        );
+
+        expect(mockDbUpdate).toHaveBeenCalled();
+        expect(mockClearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID_1);
+    });
+
+    it('a past_due sub WITHOUT cancelAtPeriodEnd=true is NOT picked up by the query (normal dunning path)', async () => {
+        // Simulates the real DB behavior: the query requires cancelAtPeriodEnd=true.
+        // A plain past_due sub without cancelAtPeriodEnd is excluded by SQL.
+        // The mock simulates this by returning no rows.
+        dueRowsState.rows = []; // DB returned nothing for a past_due sub without cancelAtPeriodEnd
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+
+        // No finalization side effects
+        expect(mockDbUpdate).not.toHaveBeenCalled();
+        expect(mockValidateTransition).not.toHaveBeenCalled();
+        expect(mockHandleSubscriptionCancellationAddons).not.toHaveBeenCalled();
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+    });
+
+    it('terminal-status subs (cancelled, expired, abandoned) are excluded from finalization', async () => {
+        // The query uses inArray with only non-terminal statuses.
+        // Rows with terminal status would NOT be returned by the real DB query.
+        // The mock simulates this by returning no rows.
+        dueRowsState.rows = []; // DB returned nothing for terminal-status subs
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+        expect(mockDbUpdate).not.toHaveBeenCalled();
     });
 });
 
@@ -516,9 +609,10 @@ describe('handler: not-yet-due (query returns nothing)', () => {
 // ---------------------------------------------------------------------------
 
 describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
-    it('calls db.select().from().where(and(...)) with all four predicates including lte on currentPeriodEnd', async () => {
+    it('calls db.select().from().where(and(...)) with inArray(status, eligible_set) + lte(currentPeriodEnd) + cancelAtPeriodEnd + isNull(deletedAt)', async () => {
         // We capture what the where() function receives to assert the compound
-        // predicate includes status, cancelAtPeriodEnd, currentPeriodEnd (lte), and deletedAt.
+        // predicate includes inArray(status, ...) (M2 fix), cancelAtPeriodEnd,
+        // currentPeriodEnd (lte), and deletedAt isNull.
         // The mock returns empty rows (no-op) — we only care about the predicate shape.
         const capturedPredicates: unknown[] = [];
 
@@ -540,7 +634,7 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
         expect(capturedPredicates).toHaveLength(1);
         const predicate = capturedPredicates[0] as { _and?: unknown[] };
 
-        // Our mock eq/and/lte/isNull return { _eq, _and, _lte, _isNull } shapes.
+        // Our mock eq/and/lte/isNull/inArray return { _eq, _and, _lte, _isNull, _inArray } shapes.
         // Verify it is a compound AND (not a bare eq like the buggy version).
         expect(predicate._and).toBeDefined();
         expect(Array.isArray(predicate._and)).toBe(true);
@@ -550,11 +644,30 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
             | { _lte?: unknown[] }
             | { _gte?: unknown[] }
             | { _isNull?: unknown }
+            | { _inArray?: unknown[] }
         >;
 
-        // Should have 4 sub-predicates: status eq, cancelAtPeriodEnd eq,
+        // Should have 4 sub-predicates: inArray(status, ...), cancelAtPeriodEnd eq,
         // currentPeriodEnd lte, deletedAt isNull.
         expect(subPreds.length).toBe(4);
+
+        // M2 regression guard: status must use inArray (not a bare eq('active')).
+        // The prior 'active'-only eq would cause past_due/trialing soft-cancelled
+        // subs to be stuck forever and never finalized.
+        const hasInArray = subPreds.some((p) => '_inArray' in p);
+        expect(hasInArray).toBe(true);
+
+        // The inArray predicate must include 'active', 'past_due', and 'trialing'.
+        const inArrayPred = subPreds.find((p): p is { _inArray: unknown[] } => '_inArray' in p);
+        expect(inArrayPred).toBeDefined();
+        const statusValues = inArrayPred?._inArray?.[1] as string[] | undefined;
+        expect(statusValues).toContain('active');
+        expect(statusValues).toContain('past_due');
+        expect(statusValues).toContain('trialing');
+        // Terminal/unrelated statuses must NOT be included
+        expect(statusValues).not.toContain('cancelled');
+        expect(statusValues).not.toContain('expired');
+        expect(statusValues).not.toContain('abandoned');
 
         // At least one predicate must be an lte (currentPeriodEnd <= now).
         // This guards the grace-period logic: using gte here would finalize
@@ -571,6 +684,19 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
         const hasIsNull = subPreds.some((p) => '_isNull' in p);
         expect(hasIsNull).toBe(true);
     });
+
+    it('FINALIZE_ELIGIBLE_STATUSES constant includes active, past_due, and trialing', () => {
+        const statuses = _internals.FINALIZE_ELIGIBLE_STATUSES as readonly string[];
+        expect(statuses).toContain('active');
+        expect(statuses).toContain('past_due');
+        expect(statuses).toContain('trialing');
+        // Terminal statuses must not be in the set
+        expect(statuses).not.toContain('cancelled');
+        expect(statuses).not.toContain('expired');
+        expect(statuses).not.toContain('abandoned');
+        expect(statuses).not.toContain('paused');
+        expect(statuses).not.toContain('pending_provider');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -579,8 +705,9 @@ describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
 
 describe('handler: idempotency — already-cancelled sub', () => {
     it('skips a sub that is already status=cancelled (SQL WHERE excludes it)', async () => {
-        // The SQL WHERE requires status='active'. The mock simulates the DB
-        // returning no rows for a cancelled sub — the SQL filter excludes it.
+        // The SQL WHERE uses inArray(status, ['active','past_due','trialing']).
+        // 'cancelled' is not in the set, so the mock simulates the DB returning
+        // no rows for a cancelled sub — the SQL filter excludes it.
         // finalizeOne is never called.
         dueRowsState.rows = [];
 
@@ -605,7 +732,7 @@ describe('handler: idempotency — already-cancelled sub', () => {
         const first = await finalizeCancelledSubsJob.handler(ctx1);
         expect(first.processed).toBe(1);
 
-        // Second run: the sub is now 'cancelled' — SQL WHERE (status='active')
+        // Second run: the sub is now 'cancelled' — SQL WHERE (inArray status set)
         // excludes it; the mock simulates the DB returning empty.
         dueRowsState.rows = [];
         const ctx2 = makeCronCtx();
@@ -701,8 +828,9 @@ describe('handler: addon revocation failure', () => {
         // On the real DB the status flip and audit event would both be rolled back.
         // In this mock the update/insert stubs were called inside the callback, but
         // the critical observable is that the outer finalizeOne returned { kind: 'error' }
-        // — meaning the sub will re-appear in the next run's query (status='active' is
-        // preserved by the rollback). The cache not being cleared is the in-process guard.
+        // — meaning the sub will re-appear in the next run's query (its original
+        // non-terminal status is preserved by the rollback). The cache not being
+        // cleared is the in-process guard.
         expect(ctx.logger.error).toHaveBeenCalled();
     });
 });

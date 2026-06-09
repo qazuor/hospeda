@@ -5,11 +5,12 @@
  *
  * ### Pass 1 — Finalize due soft-cancellations (T-009)
  *
- * Finds all subscriptions that are `status='active'` AND
- * `cancelAtPeriodEnd=true` AND `current_period_end <= now()`, then completes
- * the cancellation lifecycle for each:
+ * Finds all subscriptions that have `cancelAtPeriodEnd=true` AND
+ * `current_period_end <= now()` AND `status IN ('active', 'past_due', 'trialing')`,
+ * then completes the cancellation lifecycle for each:
  *
- *   1. Validates the `active → cancelled` transition via the state machine.
+ *   1. Validates the `<status> → cancelled` transition via the state machine
+ *      (all three source statuses have a registered edge to 'cancelled').
  *   2. Flips `status` to `'cancelled'` (UK spelling, 2 L's) via a direct
  *      Drizzle update. `billing.subscriptions.cancel()` is intentionally NOT
  *      called here — it was already called during the soft-cancel (T-005) and
@@ -23,12 +24,36 @@
  *   5. Writes a `FINALIZE_CANCELLED_SUB` audit event with
  *      `triggerSource='finalize-cancelled-cron'`.
  *
+ * #### Why these three statuses? (M2 fix)
+ *
+ * A soft-cancelled subscription (`cancelAtPeriodEnd=true`) can legitimately be
+ * in any of these three states when the grace period expires:
+ *
+ * - `active`: the normal case — no payment events between soft-cancel and period_end.
+ * - `past_due`: a payment-failure webhook moved the sub to `past_due` while
+ *   `cancelAtPeriodEnd=true` was already set. Under the previous bug this sub
+ *   would be stuck forever: status='past_due' excluded it from the 'active'-only
+ *   query and it was never finalized.
+ * - `trialing`: the user soft-cancelled during a trial period. Same trap as
+ *   `past_due` — the trial sub never re-enters 'active' before period_end.
+ *
+ * Excluded statuses:
+ * - `cancelled`, `expired`, `abandoned`: already terminal — not in the set.
+ * - `pending_provider`: checkout not confirmed; the cancelAtPeriodEnd flag would
+ *   be surprising here and is not a normal user-self-service path.
+ * - `paused`: admin-pause is orthogonal to user soft-cancel; a paused sub has
+ *   its own lifecycle and is not expected to carry `cancelAtPeriodEnd=true` from
+ *   the user self-service flow.
+ *
  * ### Pass 2 — D3 "access ending soon" reminders (T-010)
  *
  * Scans for soft-cancelled subs whose `current_period_end` falls in the
- * [now+2d, now+4d] window. For each, fires one `SUBSCRIPTION_ACCESS_ENDING_SOON`
- * email with per-sub dedup via a `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing
- * event. Fire-and-forget (errors are logged, not counted in job result).
+ * [now+2d, now+4d] window. Uses the same `FINALIZE_ELIGIBLE_STATUSES` set as
+ * Pass 1 so `past_due` and `trialing` soft-cancelled subs also receive the
+ * "access ending" heads-up (they deserve it just as much as `active` subs).
+ * For each, fires one `SUBSCRIPTION_ACCESS_ENDING_SOON` email with per-sub
+ * dedup via a `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing event.
+ * Fire-and-forget (errors are logged, not counted in job result).
  *
  * The two query windows are non-overlapping:
  *  - Pass 1: `period_end <= now` (already expired)
@@ -36,9 +61,10 @@
  *
  * ### Idempotency
  *
- * Pass 1: the `status='active'` filter is the primary gate — flipped rows
- * never re-appear. Pass 2: the `SUBSCRIPTION_ACCESS_ENDING_NOTIF` event is
- * the dedup guard (mirrors `TRIAL_PRE_END_NOTIF_D3`).
+ * Pass 1: the `status IN ('active','past_due','trialing')` filter is the
+ * primary gate — once flipped to 'cancelled' (a terminal state not in the
+ * set), rows never re-appear. Pass 2: the `SUBSCRIPTION_ACCESS_ENDING_NOTIF`
+ * event is the dedup guard (mirrors `TRIAL_PRE_END_NOTIF_D3`).
  *
  * ### Failure handling (mirrors apply-scheduled-plan-changes)
  *
@@ -61,11 +87,14 @@ import {
     eq,
     getDb,
     gte,
+    inArray,
     isNull,
     lte,
     withTransaction
 } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import type { SubscriptionStatusFull } from '@repo/service-core';
 import { BILLING_EVENT_TYPES, validateSubscriptionStatusTransition } from '@repo/service-core';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
@@ -83,6 +112,25 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
  * runaway bulk from a data anomaly.
  */
 const MAX_ROWS_PER_TICK = 200;
+
+/**
+ * Statuses a soft-cancelled subscription (`cancelAtPeriodEnd=true`) can
+ * legitimately be in when the grace period expires and it needs finalizing.
+ *
+ * - `active`: normal case — no payment events before period_end.
+ * - `past_due`: payment-failure webhook fired after soft-cancel was set.
+ *   The previous 'active'-only query caused these to be stuck forever (M2 bug).
+ * - `trialing`: user soft-cancelled a trial; same trap as past_due.
+ *
+ * Excluded: terminal states ('cancelled', 'expired', 'abandoned') and states
+ * that are not reachable via the user self-service soft-cancel path
+ * ('pending_provider', 'paused').
+ */
+const FINALIZE_ELIGIBLE_STATUSES = [
+    SubscriptionStatusEnum.ACTIVE,
+    SubscriptionStatusEnum.PAST_DUE,
+    SubscriptionStatusEnum.TRIALING
+] as const;
 
 /** One day in milliseconds, used to compute the D3 window. */
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -125,17 +173,20 @@ interface AccessEndingRow {
 // ---------------------------------------------------------------------------
 
 /**
- * Finds all subscriptions that are:
- *   - `status = 'active'` (cancelAtPeriodEnd subs stay active until finalized)
+ * Finds all subscriptions that are due for finalization:
+ *   - `status IN ('active', 'past_due', 'trialing')` — the three non-terminal
+ *     statuses a soft-cancelled sub can legitimately be in (see
+ *     `FINALIZE_ELIGIBLE_STATUSES` for the rationale). M2 fix: the prior
+ *     'active'-only query caused soft-cancelled subs that went `past_due`
+ *     (payment-failure webhook) or stayed `trialing` to be stuck forever.
  *   - `cancel_at_period_end = true`
  *   - `current_period_end <= now()` (the grace period has elapsed)
  *   - Not soft-deleted
  *
- * All four predicates are applied in the SQL WHERE clause via Drizzle's
- * `and()` operator — there is NO JS post-filter. This ensures a sub with
- * `currentPeriodEnd` in the future is never finalized early, preserving the
- * entire grace period. Mirrors the full-compound-WHERE pattern used by the
- * D3 pass (`sendAccessEndingReminders`).
+ * All predicates are applied in the SQL WHERE clause via Drizzle's `and()`
+ * operator — there is NO JS post-filter. This ensures a sub with
+ * `currentPeriodEnd` in the future is never finalized early. Mirrors the
+ * full-compound-WHERE pattern used by the D3 pass (`sendAccessEndingReminders`).
  *
  * @returns Array of due soft-cancelled subscription rows.
  */
@@ -151,13 +202,16 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
         })
         .from(billingSubscriptions)
         .where(
-            // All four predicates enforced in SQL — direct Drizzle operators,
+            // All predicates enforced in SQL — direct Drizzle operators,
             // NOT plain-object where clauses (lesson from SPEC-167).
+            // inArray replaces the prior eq(status, 'active') to catch
+            // soft-cancelled subs that are in past_due or trialing at
+            // period_end (M2 regression fix).
             // cancelAtPeriodEnd is a boolean column: eq(col, true).
             // lte(currentPeriodEnd, now) enforces the grace-period gate.
             // isNull(deletedAt) guards soft-delete.
             and(
-                eq(billingSubscriptions.status, 'active'),
+                inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                 eq(billingSubscriptions.cancelAtPeriodEnd, true),
                 lte(billingSubscriptions.currentPeriodEnd, now),
                 isNull(billingSubscriptions.deletedAt)
@@ -213,7 +267,9 @@ async function sendAccessEndingReminders(logger: ReminderLogger): Promise<void> 
             .from(billingSubscriptions)
             .where(
                 and(
-                    eq(billingSubscriptions.status, 'active'),
+                    // M2 fix: same status set as Pass 1 — past_due and trialing
+                    // soft-cancelled subs also deserve the D3 heads-up.
+                    inArray(billingSubscriptions.status, [...FINALIZE_ELIGIBLE_STATUSES]),
                     eq(billingSubscriptions.cancelAtPeriodEnd, true),
                     isNull(billingSubscriptions.deletedAt),
                     gte(billingSubscriptions.currentPeriodEnd, windowStart),
@@ -388,11 +444,15 @@ async function finalizeOne(
 
     try {
         // ── Step 1: State-machine guard ──────────────────────────────────────
-        // Throws `InvalidSubscriptionTransitionError` when the edge is not
-        // registered. A row with status='cancelled' would fail here (idempotency
-        // safety net: the query filter is the primary guard, this is secondary).
+        // Validates the <actual-status> → 'cancelled' edge using the REAL
+        // current status from the DB row (not a hardcoded 'active'). This is
+        // necessary post-M2: the query now returns rows with status ∈
+        // {active, past_due, trialing}, all of which have a registered edge
+        // to 'cancelled' in VALID_TRANSITIONS.
+        // Throws `InvalidSubscriptionTransitionError` if the edge is missing
+        // (secondary idempotency safety net — the query filter is the primary).
         validateSubscriptionStatusTransition({
-            from: status as 'active',
+            from: status as SubscriptionStatusFull,
             to: 'cancelled',
             subscriptionId
         });
@@ -580,6 +640,7 @@ export const finalizeCancelledSubsJob: CronJobDefinition = {
  */
 export const _internals = {
     MAX_ROWS_PER_TICK,
+    FINALIZE_ELIGIBLE_STATUSES,
     findDueSoftCancelledSubs,
     finalizeOne,
     sendAccessEndingReminders

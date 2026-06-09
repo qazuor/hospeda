@@ -788,4 +788,90 @@ describe('SPEC-147 T-013 — finalize-cancelled-subs cron e2e', () => {
             );
         expect(postEvents).toHaveLength(0);
     });
+
+    // =========================================================================
+    // SCENARIO 5: M2 REGRESSION — soft-cancelled past_due sub is finalized
+    //
+    // A soft-cancelled sub (cancelAtPeriodEnd=true) that went past_due due to
+    // a payment failure before period_end was STUCK under the prior 'active'-only
+    // query — it was never finalized. This scenario tests the M2 fix: the cron
+    // now uses inArray(status, ['active','past_due','trialing']) so a past_due
+    // soft-cancelled sub is finalized when its period_end elapses.
+    // =========================================================================
+
+    it('M2 REGRESSION — soft-cancelled past_due sub with past period_end is finalized to cancelled', async () => {
+        // ARRANGE: seed a sub in 'past_due' with cancelAtPeriodEnd=true and
+        // currentPeriodEnd 60 seconds in the past.
+        const now = Date.now();
+        const periodEnd = new Date(now - 60 * 1000); // 60 seconds ago
+
+        const sub = await createTestSubscription({
+            customerId,
+            planId: cheapPlanId,
+            status: 'past_due',
+            billingInterval: 'month',
+            intervalCount: 1,
+            currentPeriodStart: new Date(now - 31 * ONE_DAY_MS),
+            currentPeriodEnd: periodEnd,
+            metadata: { source: 'spec147-m2-past-due-test' }
+        });
+        subscriptionId = sub.subscriptionId;
+
+        // Mark as soft-cancelled (cancelAtPeriodEnd=true).
+        await testDb
+            .getDb()
+            .update(billingSubscriptions)
+            .set({
+                cancelAtPeriodEnd: true,
+                canceledAt: new Date(now - ONE_DAY_MS),
+                updatedAt: new Date()
+            })
+            .where(eq(billingSubscriptions.id, subscriptionId));
+
+        // ASSERT PRE-STATE: sub is past_due, cancelAtPeriodEnd=true.
+        const preRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId));
+        expect(preRows[0]?.status).toBe('past_due');
+        expect(preRows[0]?.cancelAtPeriodEnd).toBe(true);
+
+        // ACT: run the cron handler.
+        const { ctx, logs } = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // ASSERT: the past_due soft-cancelled sub was finalized.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(1);
+        expect(result.errors).toBe(0);
+        expect(result.details).toMatchObject({ finalized: 1, errors: 0, due: 1 });
+
+        // ASSERT: DB — status flipped to 'cancelled'.
+        const postRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId));
+        expect(postRows[0]?.status).toBe('cancelled');
+
+        // ASSERT: FINALIZE_CANCELLED_SUB event written with previousStatus='past_due'.
+        const events = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptionEvents)
+            .where(eq(billingSubscriptionEvents.subscriptionId, subscriptionId));
+        const finalizeEvent = events.find((e) => e.eventType === 'FINALIZE_CANCELLED_SUB');
+        expect(finalizeEvent).toBeDefined();
+        expect(finalizeEvent?.previousStatus).toBe('past_due');
+        expect(finalizeEvent?.newStatus).toBe('cancelled');
+        expect(finalizeEvent?.triggerSource).toBe('finalize-cancelled-cron');
+
+        // ASSERT: cron logged the finalized message.
+        const finalizeLog = logs.info.find(
+            (l) => l.message === 'finalize-cancelled-subs: subscription finalized'
+        );
+        expect(finalizeLog).toBeDefined();
+        expect(finalizeLog?.data).toMatchObject({ subscriptionId, customerId });
+    });
 });
