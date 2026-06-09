@@ -6,11 +6,15 @@
  * the anti-enumeration pattern (404 instead of 403).
  *
  * Routes registered here:
- *   GET   /unread-count              — inbox badge count
+ *   GET   /unread-count              — inbox badge count (guest)
  *   GET   /                          — paginated guest inbox
- *   GET   /:id                       — conversation thread
  *   POST  /initiate                  — initiate or resume a conversation
- *   POST  /:id/messages              — reply to an existing conversation
+ *   GET   /owner                     — paginated owner inbox
+ *   GET   /owner/unread-count        — owner inbox badge count
+ *   GET   /owner/:id                 — owner conversation thread
+ *   POST  /owner/:id/messages        — reply as owner
+ *   GET   /:id                       — conversation thread (guest)
+ *   POST  /:id/messages              — reply to an existing conversation (guest)
  *   PATCH /:id/archive               — toggle archived state
  */
 
@@ -19,6 +23,7 @@ import { archiveProtectedConversationRoute } from './archive';
 import { initiateProtectedConversationRoute } from './initiate';
 import { listProtectedConversationsRoute } from './list';
 import { hostConversationMonthlyInquiriesRoute } from './monthly-inquiries';
+import { ownerConversationRoutes } from './owner/index';
 import { replyProtectedConversationRoute } from './reply';
 import { hostConversationResponseRateRoute } from './response-rate';
 import { threadProtectedConversationRoute } from './thread';
@@ -37,6 +42,10 @@ app.route('/', listProtectedConversationsRoute);
 // prefix the route would sit on `POST /` and the web client (which posts to
 // `.../conversations/initiate` in both tiers) would get a 404.
 app.route('/initiate', initiateProtectedConversationRoute);
+
+// Owner sub-router: MUST be mounted BEFORE /:id routes to avoid path conflicts.
+// Hono matches routes in registration order — /owner would match /:id if mounted after.
+app.route('/owner', ownerConversationRoutes);
 
 // Conversation thread (GET /:id)
 app.route('/', threadProtectedConversationRoute);

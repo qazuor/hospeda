@@ -1,0 +1,292 @@
+---
+/**
+ * @file mi-cuenta/consultas-propietario/[conversationId].astro
+ * @description Authenticated owner conversation thread page.
+ * @route /{lang}/mi-cuenta/consultas-propietario/{conversationId}/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { ConversationReply } from '@/components/account/ConversationReply.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { conversationId } = Astro.params;
+if (!conversationId) return new Response(null, { status: 404 });
+
+// Cursor from URL for older message pagination
+const cursor = Astro.url.searchParams.get('cursor') ?? undefined;
+// Forward the session cookie so the protected endpoint can resolve the actor
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await ownerConversationsApi.getById({
+    id: conversationId,
+    cursor,
+    limit: 50,
+    cookieHeader
+});
+
+if (!result.ok) {
+    return new Response(null, { status: 404 });
+}
+
+const { conversation, messages, nextCursor } = result.data;
+
+// Determine if reply is allowed
+const closedStatuses = ['CLOSED', 'BLOCKED'];
+const canReply = !closedStatuses.includes(conversation.status.toUpperCase());
+
+function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleString(
+        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
+        { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+    );
+}
+
+const pageTitle = t('conversations.thread.title', undefined, {
+    senderName: conversation.guestName
+});
+
+// Owner reply URL for the ConversationReply component
+const replyUrl = `${import.meta.env.HOSPEDA_API_URL ?? 'http://localhost:3001'}/api/v1/protected/conversations/owner/${conversationId}/messages`;
+---
+
+<AccountLayout
+    locale={locale}
+    title={pageTitle}
+    description={pageTitle}
+    activeSection="owner-messages"
+>
+    <div class="conv-thread">
+        <div class="conv-thread__header">
+            <a href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })} class="conv-thread__back">
+                &larr;
+            </a>
+            <h1 class="conv-thread__title">{pageTitle}</h1>
+            <span class="conv-thread__accommodation">{conversation.accommodationName}</span>
+        </div>
+
+        {nextCursor && (
+            <div class="conv-thread__load-older">
+                <a
+                    href={buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conversationId}` }) +
+                        `?cursor=${encodeURIComponent(nextCursor)}`}
+                    class="conv-thread__older-link"
+                >
+                    {t('conversations.thread.older')}
+                </a>
+            </div>
+        )}
+
+        <ol class="conv-thread__messages" aria-label={pageTitle}>
+            {messages.map((msg) => (
+                <li
+                    class:list={[
+                        'conv-thread__message',
+                        `conv-thread__message--${msg.senderType}`
+                    ]}
+                >
+                    <div class="conv-thread__bubble">
+                        <span class="conv-thread__sender-label">
+                            {msg.senderType === 'owner'
+                                ? t('conversations.senderLabels.owner')
+                                : msg.senderType === 'guest'
+                                  ? t('conversations.senderLabels.guest')
+                                  : t('conversations.thread.systemMessage')}
+                        </span>
+                        <p class="conv-thread__body">{msg.body}</p>
+                        <time
+                            datetime={msg.createdAt}
+                            class="conv-thread__timestamp"
+                        >
+                            {formatDate(msg.createdAt)}
+                        </time>
+                    </div>
+                </li>
+            ))}
+        </ol>
+
+        {canReply ? (
+            <ConversationReply
+                client:load
+                mode="auth"
+                conversationId={conversationId}
+                locale={locale}
+                replyUrl={replyUrl}
+            />
+        ) : (
+            <p class="conv-thread__closed-notice">
+                {conversation.status === 'BLOCKED'
+                    ? t('conversations.errors.conversationBlocked')
+                    : t('conversations.status.closed')}
+            </p>
+        )}
+    </div>
+</AccountLayout>
+
+<style>
+    .conv-thread {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .conv-thread__header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+    }
+
+    .conv-thread__back {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        align-self: flex-start;
+        margin-bottom: var(--space-2, 8px);
+    }
+
+    .conv-thread__title {
+        font-family: var(--font-heading);
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .conv-thread__accommodation {
+        font-family: var(--font-sans);
+        font-size: 0.83rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .conv-thread__load-older {
+        text-align: center;
+    }
+
+    .conv-thread__older-link {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--brand-primary);
+        text-decoration: underline;
+    }
+
+    .conv-thread__messages {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+    }
+
+    .conv-thread__message {
+        display: flex;
+    }
+
+    .conv-thread__message--guest {
+        justify-content: flex-end;
+    }
+
+    .conv-thread__message--owner,
+    .conv-thread__message--system {
+        justify-content: flex-start;
+    }
+
+    .conv-thread__bubble {
+        max-width: 75%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+    }
+
+    .conv-thread__message--owner .conv-thread__bubble {
+        background-color: var(--brand-primary);
+        color: white;
+        border-radius: var(--radius-card);
+        border-bottom-left-radius: var(--radius-button);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .conv-thread__message--guest .conv-thread__bubble {
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        border-bottom-right-radius: var(--radius-button);
+        padding: var(--space-3, 12px) var(--space-4, 16px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .conv-thread__message--system .conv-thread__bubble {
+        background-color: var(--muted);
+        border-radius: var(--radius-md);
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+    }
+
+    .conv-thread__sender-label {
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .conv-thread__message--owner .conv-thread__sender-label {
+        color: var(--white-a75);
+    }
+
+    .conv-thread__message--guest .conv-thread__sender-label {
+        color: var(--core-muted-foreground);
+    }
+
+    .conv-thread__body {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+
+    .conv-thread__message--owner .conv-thread__body {
+        color: white;
+    }
+
+    .conv-thread__message--guest .conv-thread__body,
+    .conv-thread__message--system .conv-thread__body {
+        color: var(--core-foreground);
+    }
+
+    .conv-thread__timestamp {
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        color: var(--core-muted-foreground);
+        align-self: flex-end;
+    }
+
+    .conv-thread__message--owner .conv-thread__timestamp {
+        color: var(--white-a75);
+    }
+
+    .conv-thread__closed-notice {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-3, 12px);
+        margin: 0;
+    }
+</style>
