@@ -100,7 +100,7 @@
             "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-128-billing-cleanup-and-smoke",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-193",
@@ -108,7 +108,10 @@
             "phase": "F+G",
             "dependsOn": ["SPEC-126", "SPEC-127"],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Realigned to SPEC-193 reality: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
         },
         {
             "specId": "SPEC-131",

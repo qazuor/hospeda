@@ -6,7 +6,9 @@
 
 | Document | Description |
 |----------|-------------|
-| [Billing Runbooks](billing-runbooks.md) | 7 incident-response procedures for oncall: failed-webhook triage, MP signature failure, cron recovery, dunning stuck, refund, dispute, manual subscription rescue |
+| [Billing Runbooks](billing-runbooks.md) | Incident-response procedures for oncall: failed-webhook triage, MP signature failure, cron recovery, dunning stuck, refund, dispute, manual subscription rescue |
+| [MP Sandbox Ops Runbook](../migration/mercadopago-sandbox-runbook.md) | Operator entry point for MP sandbox testing: dashboard config, test-user creation, webhook inspection, sandbox rollback (SPEC-128 G2). Supersedes the standalone-10-smokes framing from SPEC-128/SPEC-122. |
+| [SPEC-193 Deferred Smoke Batch](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md) | Accumulated MP-dependent smoke sections deferred for the pre-promotion batch run |
 | [Staging Smoke Checklist](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) | Pre-merge manual smoke for billing-touching PRs (SPEC-143) |
 | [Prod Smoke + Rollback](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) | Post-deploy production smoke and rollback procedures for billing-CORE changes |
 | [MP Test Cards Reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) | MercadoPago sandbox card numbers and outcome codes |

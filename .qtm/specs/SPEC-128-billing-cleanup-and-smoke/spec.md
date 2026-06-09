@@ -3,7 +3,7 @@ spec-id: SPEC-128
 title: Billing cleanup + E2E smoke + ops runbook (Phase F+G)
 type: chore
 complexity: medium
-status: draft
+status: completed
 created: 2026-05-15T00:00:00Z
 effort_estimate_hours: 6-10
 tags: [hospeda, qzpay, cleanup, smoke, e2e, runbook, ops]
@@ -17,6 +17,16 @@ first_allocated_via_engram_protocol: true
 ---
 
 # SPEC-128: Billing cleanup + E2E smoke + ops runbook (Phase F+G)
+
+## Realignment (2026-06-09) — scope reconciled to SPEC-193 reality
+
+This spec was authored for the legacy SPEC-122 / SPEC-109 world. At execution time the current billing master is **SPEC-193**, which changed how several SPEC-128 items are handled. The spec was completed with this reconciled scope (owner-approved 2026-06-09):
+
+- **F1 dead-code (DONE)**: deleted the 3 confirmed-dead `@deprecated` re-export shims in `apps/api/src/services/` (`addon-status-transitions.ts`, `promo-code.crud.ts`, `promo-code.redemption.ts`). The `addon-status-transitions` test was the only coverage for those re-exports, so it was migrated to `packages/service-core/test/billing/addon-status-transitions.test.ts` (canonical source) rather than dropped. The originally-listed candidates (`addon-downgrade-detection`, `addon.admin`, `reactivateFromTrial`) are NOT dead and were kept (see "Dead-code list correction" below). qzpay `vendor.types.ts` is cross-repo and out of scope here.
+- **F2 docs (DONE)**: refreshed hospeda billing architecture pointers — root `CLAUDE.md`, `apps/api/CLAUDE.md`, `packages/db/CLAUDE.md` (`mp_subscription_id` note), plus runbook backlinks. qzpay READMEs are cross-repo, out of scope.
+- **G2 runbook (DONE)**: authored `docs/migration/mercadopago-sandbox-runbook.md` as the operator entry point, cross-referencing (NOT duplicating) the SPEC-143 staging/prod smoke checklists + mp-test-cards-reference and the SPEC-193 batched-smoke list.
+- **G1 — 10 manual MP sandbox smokes (SUPERSEDED)**: the standalone "10 smokes" model is replaced by SPEC-193's batched-smoke approach. The billing smokes are accumulated in `.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md` and executed once by the owner before the staging → main promotion. Not executable as part of this code/docs spec.
+- **G3 — SPEC-122 / SPEC-109 closure ceremony (SUPERSEDED)**: SPEC-122 is the legacy parent; the active master is SPEC-193. No SPEC-122 "6-children closure" is performed here. The production toggle / Coolify / homologation handoff remains owner-owned under SPEC-109/SPEC-193 promotion.
 
 ## Dead-code list correction (SPEC-193 audit 2026-06-03)
 
@@ -160,13 +170,14 @@ After all smokes pass:
 
 ## Acceptance criteria
 
-- [ ] All dead code candidates verified + handled (deleted or documented as kept)
-- [ ] All docs updated to reflect post-SPEC-122 architecture
-- [ ] Ops runbook at `docs/migration/mercadopago-sandbox-runbook.md` complete
-- [ ] 10/10 smokes executed against MP sandbox, results documented in engram
-- [ ] SPEC-109 updated with current status (ready for Phases 3-7)
-- [ ] SPEC-122 + all 6 children marked `completed` in `.qtm/specs/index.json` + engram
-- [ ] Final engram observation `spec/spec-122/closure-summary` saved with the full story
+(Reconciled to SPEC-193 reality — see "Realignment (2026-06-09)" above.)
+
+- [x] All dead code candidates verified + handled (3 shims deleted, the 3 non-dead candidates kept + documented, coverage migrated to service-core)
+- [x] Hospeda docs updated to reflect current (SPEC-193-era) architecture (qzpay READMEs out of scope — cross-repo)
+- [x] Ops runbook at `docs/migration/mercadopago-sandbox-runbook.md` complete (entry point cross-referencing SPEC-143 + SPEC-193 smoke docs)
+- [~] 10 manual MP sandbox smokes — SUPERSEDED: now batched in SPEC-193 `pending-staging-smoke.md`, owner-executed before staging → main promotion (not part of this code/docs spec)
+- [~] SPEC-109 / SPEC-122 closure ceremony — SUPERSEDED: legacy parent; active master is SPEC-193. Production toggle handoff stays owner-owned under SPEC-109/SPEC-193 promotion
+- [x] Realignment documented in this spec + the closeout commit
 
 ## Engram references
 

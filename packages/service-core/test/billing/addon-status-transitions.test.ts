@@ -6,6 +6,9 @@
  * - All invalid transitions throw InvalidStateTransitionError
  * - Error message content and properties
  * - Terminal states have no outgoing transitions
+ *
+ * Migrated from apps/api/test/services/addon-status-transitions.test.ts
+ * (SPEC-128 F1: dead shim removal — test relocated to canonical service-core location).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -14,7 +17,7 @@ import {
     type AddonPurchaseStatus,
     InvalidStateTransitionError,
     validateAddonStatusTransition
-} from '../../src/services/addon-status-transitions';
+} from '../../src/services/billing/addon/addon-status-transitions.js';
 
 describe('ADDON_PURCHASE_STATUSES', () => {
     it('should export the correct status constants', () => {

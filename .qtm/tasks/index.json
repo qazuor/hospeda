@@ -12,6 +12,16 @@
             "archiveNote": "Root cause was a latent apiClient try/catch bug (env URL thrown out of contract), not the React 19/Astro 6 timing the spec hypothesized. Single PR. Full web suite 3725 passed."
         },
         {
+            "specId": "SPEC-128",
+            "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+            "status": "completed",
+            "progress": "3/3 (+2 superseded)",
+            "path": "SPEC-128-billing-cleanup-and-smoke",
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Realigned to SPEC-193: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
+        },
+        {
             "specId": "SPEC-132",
             "title": "Migrate shared packages to Zod 4 top-level format validators",
             "status": "draft",
