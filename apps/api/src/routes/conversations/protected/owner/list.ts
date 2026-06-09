@@ -64,7 +64,11 @@ router.get('/', async (c) => {
 
         // Empty accommodations → return empty result immediately
         if (accommodationIds.length === 0) {
-            return createPaginatedResponse([], { page, pageSize, total: 0, totalPages: 0 }, c);
+            return createPaginatedResponse(
+                [],
+                calculatePagination({ page, pageSize, total: 0 }),
+                c
+            );
         }
 
         const conversationSvc = new ConversationService(
