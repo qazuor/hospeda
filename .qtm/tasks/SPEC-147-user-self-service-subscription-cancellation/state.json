@@ -162,7 +162,7 @@
             "id": "T-008",
             "title": "Gate change-plan + start-paid when soft-cancel pending (Q7)",
             "description": "Q7 (owner): the cancel wins. When the sub has cancelAtPeriodEnd=true, reject change-plan and re-subscribe (start-paid) with a clear error (e.g. SUBSCRIPTION_CANCEL_PENDING) \u2014 the user must wait for finalize (uncancel not in V1). Find the plan-change route + start-paid route entry; add the guard early. Tests: change-plan on soft-cancelled sub \u2192 rejected with the code; normal sub \u2192 unaffected; provider-error mapping (SPEC-149) still intact on those routes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-012"],
@@ -170,14 +170,14 @@
             "tags": ["api", "routes", "guard"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
