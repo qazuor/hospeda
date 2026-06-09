@@ -46,10 +46,10 @@ router.get('/', async (c) => {
 
         // Parse pagination query params
         const url = new URL(c.req.url);
-        const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
+        const page = Math.max(1, Number(url.searchParams.get('page') ?? '1') || 1);
         const pageSize = Math.min(
             100,
-            Math.max(1, Number(url.searchParams.get('pageSize') ?? '20'))
+            Math.max(1, Number(url.searchParams.get('pageSize') ?? '20') || 20)
         );
         const status = url.searchParams.get('status') ?? undefined;
         const search = url.searchParams.get('search') ?? undefined;

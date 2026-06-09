@@ -25,7 +25,8 @@ if (!user) {
 
 // Pagination from URL search params
 const pageParam = Astro.url.searchParams.get('page');
-const page = Math.max(1, parseInt(pageParam ?? '1', 10));
+const parsed = parseInt(pageParam ?? '1', 10);
+const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 const pageSize = 20;
 
 // Forward the session cookie so the protected endpoint can resolve the
@@ -36,6 +37,7 @@ const result = await ownerConversationsApi.list({ page, pageSize, cookieHeader }
 
 const conversations = result.ok ? result.data.items : [];
 const pagination = result.ok ? result.data.pagination : null;
+const fetchError = !result.ok;
 
 function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString(
@@ -54,7 +56,12 @@ function formatDate(dateStr: string): string {
     <div class="owner-inbox">
         <h1 class="owner-inbox__title">{t('conversations.inbox.ownerInboxTitle')}</h1>
 
-        {conversations.length === 0 ? (
+        {fetchError ? (
+            <div class="owner-inbox__error" role="alert">
+                <p>{t('conversations.errors.loadFailed', 'No se pudieron cargar las conversaciones. Intentá recargar la página.')}</p>
+                <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
+            </div>
+        ) : conversations.length === 0 ? (
             <p class="owner-inbox__empty">{t('conversations.empty.ownerInbox')}</p>
         ) : (
             <ul class="owner-inbox__list" role="list">
@@ -149,6 +156,28 @@ function formatDate(dateStr: string): string {
         color: var(--core-muted-foreground);
         padding: var(--space-6, 24px) 0;
         text-align: center;
+    }
+
+    .owner-inbox__error {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        padding: var(--space-6, 24px);
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        background-color: var(--core-card);
+    }
+
+    .owner-inbox__error p {
+        margin: 0 0 var(--space-3, 12px);
+    }
+
+    .owner-inbox__retry {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        text-decoration: underline;
     }
 
     .owner-inbox__list {
