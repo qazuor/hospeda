@@ -272,7 +272,7 @@
             "id": "T-013",
             "title": "e2e: finalize cron + idempotency + D3",
             "description": "Advance period_end → run finalize-cancelled-subs handler → status='cancelled' + addons revoked + entitlements gone + FINALIZE_CANCELLED_SUB event; second run is a no-op (idempotent); D3 reminder fires for a sub whose period_end is in the 3-day window. Mirror plan-downgrade-cron.test.ts harness (direct handler.handler(ctx) + makeCronCtx). Needs T-001 bump.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-009", "T-010"],
             "blocks": ["T-014"],
@@ -280,14 +280,14 @@
             "tags": ["e2e", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
+                "lint": "pass",
                 "typecheck": null,
-                "tests": null
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
