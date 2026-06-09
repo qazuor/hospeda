@@ -270,7 +270,7 @@
             "specId": "SPEC-147",
             "title": "User self-service subscription cancellation",
             "status": "in-progress",
-            "progress": "0/16",
+            "progress": "1/16",
             "path": "SPEC-147-user-self-service-subscription-cancellation",
             "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",

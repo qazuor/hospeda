@@ -8,18 +8,18 @@
             "id": "T-001",
             "title": "Bump qzpay-core@1.12.0 + qzpay-mercadopago@2.2.0 (qzpay PR #42)",
             "description": "BLOCKED until qzpay PR #42 publishes to npm (owner handles merge+publish). Bump @qazuor/qzpay-core to ^1.12.0 and @qazuor/qzpay-mercadopago to ^2.2.0 in apps/api/package.json + packages/billing/package.json; pnpm install; verify the new cancel() provider-propagation is present (billing.subscriptions.cancel({cancelAtPeriodEnd}) now pauses/cancels the MP preapproval). Until this lands, the rest of the spec's code is identical but cancel does NOT pause MP (old behavior). Run a targeted build/typecheck to confirm the bump resolves.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-012", "T-013"],
             "subtasks": [],
             "tags": ["deps", "qzpay", "blocked"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": null, "typecheck": "pass", "tests": null },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
             }
         },
         {
