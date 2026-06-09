@@ -291,7 +291,7 @@
             "specId": "SPEC-148",
             "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
             "status": "in-progress",
-            "progress": "4/12",
+            "progress": "5/12",
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",

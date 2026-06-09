@@ -96,7 +96,7 @@
             "id": "T-005",
             "title": "Plan-disable lifecycle service (fan-out, red-first)",
             "description": "Part B core. New service (plan-disable-lifecycle.service.ts or extend PlanService): disablePlanLifecycle({ planId, actorId }) — called AFTER planService.toggleActive(id, false). Fan-out: query active/trialing/past_due subs of the plan WHERE cancelAtPeriodEnd=false → set cancelAtPeriodEnd=true on each (reuse SPEC-147's soft-cancel write semantics; the finalize-cancelled-subs cron — incl. M2 non-terminal-status coverage — then closes them at period end). Per sub: write PLAN_DISABLED_MIGRATION event (triggerSource 'plan-disable'), clearEntitlementCache, queue PLAN_BEING_RETIRED notification (fire-and-forget). Write one PLAN_DISABLED_BY_ADMIN audit event (actor, affectedSubCount). IDEMPOTENT: re-running matches 0 rows (all already cancelAtPeriodEnd=true). The disabled plan STAYS in the static catalog (realign 9 — only isActive gates signups). Wire the fan-out into the admin toggle path (toggleActive → on transition to inactive → disablePlanLifecycle). Red-first unit tests: fan-out sets flag on all eligible subs + events + notifications + cache; idempotent re-run no-op; re-enabling a plan does NOT auto-undo (document — out of scope, manual); subs already cancelAtPeriodEnd untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-006", "T-009"],
@@ -104,14 +104,14 @@
             "tags": ["service", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T15:00:00.000Z"
             }
         },
         {
