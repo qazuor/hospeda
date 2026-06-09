@@ -169,5 +169,50 @@
             "MOTEL": "Motel",
             "RESORT": "Resort"
         }
+    },
+    "dashboard": {
+        "analytics": {
+            "views": {
+                "title": "Visualizações",
+                "empty": "Sem dados de visualizações ainda",
+                "window": {
+                    "7d": "7d",
+                    "30d": "30d"
+                }
+            },
+            "favorites": {
+                "title": "Favoritos",
+                "empty": "Sem favoritos ainda"
+            },
+            "responseRate": {
+                "title": "Tempo de resposta",
+                "empty": "Sem dados de resposta ainda",
+                "avgTime": "Média",
+                "minutes": "min",
+                "notAvailable": "N/D"
+            },
+            "inquiries": {
+                "title": "Consultas",
+                "empty": "Sem dados de consultas ainda"
+            },
+            "marketComparison": {
+                "title": "Comparação de mercado",
+                "empty": "Sem dados de comparação ainda",
+                "headers": {
+                    "accommodation": "Acomodação",
+                    "yourRating": "Sua avaliação",
+                    "avgRating": "Méd. destino",
+                    "yourPrice": "Seu preço",
+                    "avgPrice": "Méd. preço"
+                }
+            },
+            "sectionTitle": "Estatísticas",
+            "locked": {
+                "title": "Estatísticas disponíveis no seu próximo plano",
+                "description": "Faça upgrade na sua assinatura para ver estatísticas detalhadas das suas propriedades."
+            },
+            "loading": "Carregando estatísticas...",
+            "error": "Erro ao carregar estatísticas"
+        }
     }
 }

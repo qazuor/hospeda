@@ -19,6 +19,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
 import { type JSX, useCallback, useEffect, useState } from 'react';
+import { AnalyticsSection } from './AnalyticsSection.client';
 import styles from './HostDashboard.module.css';
 
 // ---------------------------------------------------------------------------
@@ -300,6 +301,9 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                     </ul>
                 </div>
             </div>
+
+            {/* ── Analytics section ── */}
+            <AnalyticsSection locale={locale} />
         </div>
     );
 }

@@ -89,3 +89,65 @@ export interface HostDashboardData {
         readonly icon: string;
     }>;
 }
+
+// ---------------------------------------------------------------------------
+// Host Analytics Types (SPEC-207)
+// ---------------------------------------------------------------------------
+
+/** Single data point for accommodation views over time */
+export interface AccommodationViewsItem {
+    readonly date: string;
+    readonly count: number;
+}
+
+/** Accommodation views data returned by the analytics API */
+export interface AccommodationViewsData {
+    readonly window: '7d' | '30d';
+    readonly items: readonly AccommodationViewsItem[];
+}
+
+/** A single collection's bookmark count */
+export interface FavoritesBreakdownItem {
+    readonly collection: string;
+    readonly count: number;
+}
+
+/** Favorites breakdown across all collections */
+export interface FavoritesBreakdownData {
+    readonly collections: readonly FavoritesBreakdownItem[];
+}
+
+/** Response rate KPI data */
+export interface ResponseRateData {
+    readonly responseRatePct: number;
+    readonly avgResponseTimeMinutes: number | null;
+}
+
+/** Single month's inquiry count */
+export interface InquiryTrendMonth {
+    readonly month: string;
+    readonly count: number;
+}
+
+/** Monthly inquiry trend data for the InquiryTrendWidget */
+export interface InquiryTrendData {
+    readonly months: readonly InquiryTrendMonth[];
+}
+
+/** Market comparison item per accommodation */
+export interface MarketComparisonItem {
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly accommodationType: string;
+    readonly destinationName: string | null;
+    readonly yourRating: number | null;
+    readonly yourReviews: number;
+    readonly destinationAvgRating: number | null;
+    readonly yourPrice: number | null;
+    readonly destinationAvgPrice: number | null;
+}
+
+/** Market comparison data for the MarketComparisonWidget */
+export interface MarketComparisonData {
+    readonly items: readonly MarketComparisonItem[];
+}
