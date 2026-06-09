@@ -200,7 +200,7 @@
     border-color: var(--brand-primary);
 }
 
-.fieldInput[aria-invalid='true'] {
+.fieldInput[aria-invalid="true"] {
     border-color: oklch(0.55 0.22 25);
 }
 
