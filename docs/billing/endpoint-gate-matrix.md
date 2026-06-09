@@ -88,6 +88,13 @@
 | `GET /api/v1/protected/conversations/unread-count` | `conversations/protected/unread-count.ts` | none | - | n/a | Read own inbox badge; auth-only sufficient |
 | `GET /api/v1/protected/conversations/me/response-rate` | `conversations/protected/response-rate.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/conversations/me/monthly-inquiries` | `conversations/protected/monthly-inquiries.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-145 T-006) |
+| **CONVERSATIONS OWNER — PROTECTED (SPEC-206)** | | | | | |
+| `GET /api/v1/protected/conversations/owner` | `conversations/protected/owner/list.ts` | none | - | n/a | Owner inbox; auth + ownership scoping via accommodation IDs |
+| `GET /api/v1/protected/conversations/owner/{id}` | `conversations/protected/owner/thread.ts` | none | - | n/a | Owner thread read; auth + ownership check in handler |
+| `POST /api/v1/protected/conversations/owner/{id}/messages` | `conversations/protected/owner/reply.ts` | none | - | n/a | Owner reply; auth + ownership check in handler |
+| `GET /api/v1/protected/conversations/owner/unread-count` | `conversations/protected/owner/unread-count.ts` | none | - | n/a | Owner unread badge; auth + ownership scoping via accommodation IDs |
+| **HOST DASHBOARD — PROTECTED (SPEC-205)** | | | | | |
+| `GET /api/v1/protected/host/dashboard` | `host/protected/dashboard.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-205) — aggregator for property counts, plan info, unread conversations |
 | **VIEWS — PROTECTED (SPEC-159)** | | | | | |
 | `GET /api/v1/protected/views/accommodations/me` | `views/protected/accommodations-me.ts` | gate | `view_basic_stats` | wired | View stats feed HOST Card G alongside ratings/response-rate, all VIEW_BASIC_STATS-gated — views must match (SPEC-159) |
 | `GET /api/v1/protected/views/posts` | `views/protected/posts.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via POST_VIEW_ALL, editors are not billing customers |
@@ -525,6 +532,19 @@
 | `GET /api/v1/admin/moderation/reviews/pending-count` | `moderation/admin/reviews-pending-count.ts` | none | - | n/a | Admin moderation — OR-gated (ACCOMMODATION_REVIEW_MODERATE or DESTINATION_REVIEW_MODERATE; SPEC-166 §7) |
 | **CONTENT MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/content-moderation/health` | `content-moderation/admin/health.ts` | none | - | n/a | Admin ops read; PermissionEnum-gated (MODERATION_TERM_VIEW) — no billing entitlement on provider/cache telemetry |
+| `GET /api/v1/admin/content-moderation/terms` | `content-moderation/admin/terms/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_TERM_VIEW) |
+| `GET /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/get-by-id.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_TERM_VIEW) |
+| `POST /api/v1/admin/content-moderation/terms` | `content-moderation/admin/terms/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_CREATE) |
+| `PUT /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_UPDATE) |
+| `PATCH /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_UPDATE) |
+| `DELETE /api/v1/admin/content-moderation/terms/{id}` | `content-moderation/admin/terms/soft-delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_TERM_DELETE) |
+| `DELETE /api/v1/admin/content-moderation/terms/{id}/hard` | `content-moderation/admin/terms/hard-delete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (MODERATION_TERM_HARD_DELETE) |
+| `POST /api/v1/admin/content-moderation/terms/{id}/restore` | `content-moderation/admin/terms/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (MODERATION_TERM_RESTORE) |
+| `POST /api/v1/admin/content-moderation/terms/batch` | `content-moderation/admin/terms/batch.ts` | none | - | n/a | Admin batch import; PermissionEnum-gated (MODERATION_TERM_CREATE) |
+| `GET /api/v1/admin/content-moderation/thresholds` | `content-moderation/admin/thresholds/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
+| `GET /api/v1/admin/content-moderation/thresholds/{id}` | `content-moderation/admin/thresholds/get-by-id.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
+| `PATCH /api/v1/admin/content-moderation/thresholds/{id}` | `content-moderation/admin/thresholds/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (MODERATION_THRESHOLD_UPDATE) |
+| `GET /api/v1/admin/content-moderation/thresholds/resolved` | `content-moderation/admin/thresholds/get-resolved.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_THRESHOLD_VIEW) |
 | **SYSTEM — ADMIN** | | | | | |
 | `GET /api/v1/admin/system/health` | `system/admin/health.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | **PLATFORM-SETTINGS — ADMIN** | | | | | |

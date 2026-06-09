@@ -25,6 +25,12 @@ interface GuestReplyProps {
 type ConversationReplyProps = (AuthReplyProps | GuestReplyProps) & {
     readonly locale: SupportedLocale;
     readonly onMessageSent?: () => void;
+    /**
+     * Optional override for the reply endpoint URL.
+     * When provided, this URL is used instead of the default constructed URL.
+     * Useful for owner-side replies that need a different endpoint path.
+     */
+    readonly replyUrl?: string;
 };
 
 const MAX_MESSAGE_LENGTH = 5000;
@@ -57,10 +63,11 @@ export function ConversationReply(props: ConversationReplyProps) {
             // dev, so the request must hit the API base — relative URLs
             // would hit the Astro server instead and return 404.
             const apiBase = getApiUrl().replace(/\/$/, '');
-            const url =
-                props.mode === 'auth'
-                    ? `${apiBase}/api/v1/protected/conversations/${props.conversationId}/messages`
-                    : `${apiBase}/api/v1/public/conversations/guest/${props.token}/messages`;
+            const url = props.replyUrl
+                ? props.replyUrl
+                : props.mode === 'auth'
+                  ? `${apiBase}/api/v1/protected/conversations/${props.conversationId}/messages`
+                  : `${apiBase}/api/v1/public/conversations/guest/${props.token}/messages`;
 
             const res = await fetch(url, {
                 method: 'POST',

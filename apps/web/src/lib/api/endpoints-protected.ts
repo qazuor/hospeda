@@ -1136,6 +1136,333 @@ export const protectedConversationsApi = {
     }
 };
 
+// --- Owner Conversations (Protected — SPEC-206) ---
+
+/** Conversation summary item in the owner inbox */
+export interface OwnerConversationInboxItem {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly lastMessageExcerpt: string | null;
+    readonly unreadCount: number;
+    readonly lastActivityAt: string;
+    readonly status: string;
+}
+
+/** Conversation detail for the owner thread view */
+export interface OwnerConversationDetail {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly status: string;
+    readonly lastReadAtByOwner: string | null;
+    readonly createdAt: string;
+}
+
+/** Thread response for the owner conversation detail */
+export interface OwnerConversationThreadResponse {
+    readonly conversation: OwnerConversationDetail;
+    readonly messages: readonly ConversationMessageItem[];
+    readonly nextCursor: string | null;
+}
+
+/** Protected owner conversations API endpoints (require auth + host role) */
+export const ownerConversationsApi = {
+    /**
+     * List conversations for the authenticated owner's accommodations.
+     *
+     * @param params - Optional pagination, status filter, search, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.list({ pageSize: 20 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly status?: string;
+        readonly search?: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly items: readonly OwnerConversationInboxItem[];
+            readonly pagination: {
+                readonly page: number;
+                readonly pageSize: number;
+                readonly total: number;
+                readonly totalPages: number;
+            };
+        }>
+    > {
+        const { cookieHeader, ...rest } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get a conversation thread by ID (owner side).
+     *
+     * @param params - Conversation ID, optional cursor/limit, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getById({ id: 'conv-uuid' });
+     * if (result.ok) console.log(result.data.messages);
+     * ```
+     */
+    getById(params: {
+        readonly id: string;
+        readonly cursor?: string;
+        readonly limit?: number;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<OwnerConversationThreadResponse>> {
+        const { id, cookieHeader, ...rest } = params;
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/${id}`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get the count of unread conversations for the authenticated owner.
+     *
+     * @returns Unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getUnreadCount();
+     * if (result.ok) console.log(result.data.count);
+     * ```
+     */
+    getUnreadCount(): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/unread-count`
+        });
+    },
+
+    /**
+     * Send a reply to a conversation (owner side).
+     *
+     * @param params - Conversation ID and message body
+     * @returns The created message
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.reply({
+     *   id: 'conv-uuid',
+     *   message: 'Gracias por tu consulta!'
+     * });
+     * ```
+     */
+    reply(params: {
+        readonly id: string;
+        readonly message: string;
+    }): Promise<ApiResult<ConversationMessageItem>> {
+        const { id, message } = params;
+        return apiClient.postProtected({
+            path: `${PROTECTED}/conversations/owner/${id}/messages`,
+            body: { body: message }
+        });
+    }
+};
+
+// --- Host Dashboard (Protected) ---
+
+/** Plan info returned by the host dashboard endpoint */
+export interface HostDashboardPlanInfo {
+    readonly slug: string;
+    readonly name: string;
+    readonly status: 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due';
+    readonly isTrial: boolean;
+}
+
+/** Property counts returned by the host dashboard endpoint */
+export interface HostDashboardProperties {
+    readonly total: number;
+    readonly published: number;
+    readonly draft: number;
+    readonly archived: number;
+}
+
+/** Host dashboard aggregated response from the API */
+export interface HostDashboardApiResponse {
+    readonly properties: HostDashboardProperties;
+    readonly plan: HostDashboardPlanInfo | null;
+    readonly unreadConversations: number;
+}
+
+/**
+ * Protected host dashboard API endpoints.
+ * Returns aggregated dashboard data for the authenticated host user.
+ * Gated by VIEW_BASIC_STATS entitlement (SPEC-205).
+ */
+export const hostDashboardApi = {
+    /**
+     * Get the host dashboard aggregated data.
+     *
+     * @returns Property counts, plan info, and unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await hostDashboardApi.get();
+     * if (result.ok) console.log(result.data.properties.published);
+     * ```
+     */
+    get(): Promise<ApiResult<HostDashboardApiResponse>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/host/dashboard` });
+    }
+};
+
+// --- Host Analytics (Protected — SPEC-207) ---
+
+/** Analytics window type for time-range queries */
+type AnalyticsWindow = '7d' | '30d';
+
+/** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
+export const hostAnalyticsApi = {
+    /**
+     * Get accommodation views over a time window.
+     *
+     * @param params - Time window: '7d' or '30d'
+     * @returns Daily view counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getViews({ window: '7d' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getViews({
+        window: windowParam
+    }: {
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly items: readonly { readonly date: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/views`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get favorites breakdown across collections.
+     *
+     * @returns Bookmark counts per collection for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
+     * if (result.ok) console.log(result.data.collections);
+     * ```
+     */
+    getFavoritesBreakdown(): Promise<
+        ApiResult<{
+            readonly collections: readonly {
+                readonly collection: string;
+                readonly count: number;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/favorites`
+        });
+    },
+
+    /**
+     * Get response rate and average response time.
+     *
+     * @returns Response rate percentage and average response time in minutes
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getResponseRate();
+     * if (result.ok) console.log(result.data.responseRatePct);
+     * ```
+     */
+    getResponseRate(): Promise<
+        ApiResult<{
+            readonly responseRatePct: number;
+            readonly avgResponseTimeMinutes: number | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/response-rate`
+        });
+    },
+
+    /**
+     * Get monthly inquiry trend over the specified number of months.
+     *
+     * @param params - Number of months to look back (default: 6)
+     * @returns Monthly inquiry counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getInquiryTrend({ months: 6 });
+     * if (result.ok) console.log(result.data.months);
+     * ```
+     */
+    getInquiryTrend({
+        months = 6
+    }: {
+        readonly months?: number;
+    } = {}): Promise<
+        ApiResult<{
+            readonly months: readonly { readonly month: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/inquiries`,
+            params: { months }
+        });
+    },
+
+    /**
+     * Get market comparison data for the host's accommodations.
+     *
+     * @returns Market comparison items with ratings, reviews, and prices
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getMarketComparison();
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getMarketComparison(): Promise<
+        ApiResult<{
+            readonly items: readonly {
+                readonly accommodationId: string;
+                readonly accommodationName: string;
+                readonly accommodationType: string;
+                readonly destinationName: string | null;
+                readonly yourRating: number | null;
+                readonly yourReviews: number;
+                readonly destinationAvgRating: number | null;
+                readonly yourPrice: number | null;
+                readonly destinationAvgPrice: number | null;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/market-comparison`
+        });
+    }
+};
+
 // --- Accommodation Contact (Protected) ---
 
 /** Contact info returned by the protected endpoint. */

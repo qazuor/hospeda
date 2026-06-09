@@ -83,13 +83,14 @@
         {
             "specId": "SPEC-187",
             "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "25/25",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
             "linearIssues": ["BETA-60"],
-            "note": "tasks pending atomization",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-08T15:13:03.505606",
+            "archiveNote": "All 5 PRs merged to staging: P0 strip migration, P1 config flips+renderPlain, P2 richDescription vertical slice, P3 ADR-032+XSS+audit, P4 closeout."
         },
         {
             "specId": "SPEC-189",
@@ -231,53 +232,47 @@
             "base": "staging",
             "archived": true,
             "archivedAt": "2026-06-06T18:30:00.000Z",
-            "archiveNote": "Shipped via PR #1474 (21/21, two Chrome smokes GO). Includes user-requested UI delta (collapsible categories, inline CTA) + approved-only stats and reviewer identity fixes. Worktree cleaned up post-merge.",
             "updatedAt": "2026-06-06T18:30:00.000Z"
         },
         {
-            "specId": "SPEC-167",
-            "title": "Downgrade Over-Limit Remediation (grandfather + restrict)",
-            "status": "completed",
-            "progress": "26/26",
-            "path": "SPEC-167-downgrade-preflight-remediation",
-            "branch": "spec/SPEC-167-downgrade-preflight-remediation",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-167-downgrade-preflight-remediation",
-            "base": "staging",
-            "updatedAt": "2026-06-07T21:42:00.000Z",
-            "archived": true,
-            "archivedAt": "2026-06-07",
-            "note": "PR #1484 merged 2026-06-07; staging smoke deferred to SPEC-193 batch (entry #6); adversarial review fixed 1 blocker + 3 majors; spun off SPEC-203/204"
+            "specId": "SPEC-205",
+            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
+            "status": "in-progress",
+            "progress": "0/1",
+            "path": "SPEC-205-host-web-foundation",
+            "tags": ["host-migration", "phase-1"]
         },
         {
-            "specId": "SPEC-198",
-            "title": "AI Text Improvement (HOST)",
-            "status": "completed",
-            "progress": "10/10",
-            "path": "SPEC-198-ai-text-improvement",
-            "branch": "spec/SPEC-198-ai-text-improvement",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-198-ai-text-improvement",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-06",
-            "parentSpec": "SPEC-173",
-            "created": "2026-06-06",
-            "tags": ["ai", "feature", "host", "text-improvement", "spec-173-child"],
-            "archiveNote": "10/10 tasks. Verify: 12/12 ACs, 4/4 safety invariants, 77/77 tests. Shipped scope: AiTextImproveRequestSchema (packages/schemas), /api/v1/protected/ai/text-improve SSE route (apps/api), useAiTextImprove hook + AiTextImprovePanel (apps/admin), wired into accommodation edit form (description + summary fields). V1 owner/complex + HOST only. Follow-ups: SPEC-198.1 (server-side audit), SPEC-198.2 (V2 field scope), SPEC-198.3 (NETWORK_INTERRUPTED i18n key)."
+            "specId": "SPEC-206",
+            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
+            "status": "draft",
+            "progress": "0/1",
+            "path": "SPEC-206-host-conversations",
+            "tags": ["host-migration", "phase-2"]
         },
         {
-            "specId": "SPEC-200",
-            "title": "AI Accommodation Chat (tourist)",
-            "status": "completed",
-            "progress": "12/12",
-            "path": "SPEC-200-ai-accommodation-chat",
-            "branch": "spec/SPEC-200-ai-accommodation-chat",
-            "base": "staging",
-            "parentSpec": "SPEC-173",
-            "created": "2026-06-05",
-            "archived": true,
-            "archivedAt": "2026-06-07",
-            "archiveNote": "12/12 tasks (10 code + 2 smoke/E2E). Shipped via PRs #1492 (backend, T-001..T-006) and #1494 (frontend, T-007..T-012), both merged to staging. Verify: PASS WITH WARNINGS — 34/38 ACs verified via tests + source inspection; 4 ACs pending CI (PostHog events AC-8.1..8.5 + entitlement gates AC-10.1..10.4 — chat-route.test.ts OOM locally). T-006 (staging smoke) and T-012 (E2E + staging smoke) are manual follow-ups. No openspec delta spec (project uses QTM canonical store). Follow-ups: staging smoke sign-off, E2E Playwright tests.",
-            "tags": ["ai", "feature", "spec-173-child"]
+            "specId": "SPEC-207",
+            "title": "Host Analytics & KPIs — Business Dashboard in Web",
+            "status": "draft",
+            "progress": "0/1",
+            "path": "SPEC-207-host-analytics-kpis",
+            "tags": ["host-migration", "phase-3"]
+        },
+        {
+            "specId": "SPEC-208",
+            "title": "Web Accommodation Editor — Full Property Management in Web",
+            "status": "draft",
+            "progress": "0/1",
+            "path": "SPEC-208-web-accommodation-editor",
+            "tags": ["host-migration", "phase-4"]
+        },
+        {
+            "specId": "SPEC-210",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "status": "draft",
+            "progress": "0/13",
+            "path": "SPEC-210-public-response-tier-enforcement",
+            "archived": false
         }
     ],
     "standalone": {

@@ -119,6 +119,11 @@
             "subtitle": "[TODO]",
             "publishAnother": "Publish another"
         },
+        "usage": {
+            "label": "{{current}} of {{max}} properties",
+            "unlimited": "Unlimited properties",
+            "upgrade": "Upgrade plan"
+        },
         "card": {
             "status": {
                 "DRAFT": "[TODO]",
@@ -163,6 +168,51 @@
             "ROOM": "Room",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        }
+    },
+    "dashboard": {
+        "analytics": {
+            "views": {
+                "title": "Views",
+                "empty": "No view data yet",
+                "window": {
+                    "7d": "7d",
+                    "30d": "30d"
+                }
+            },
+            "favorites": {
+                "title": "Favorites",
+                "empty": "No favorites yet"
+            },
+            "responseRate": {
+                "title": "Response time",
+                "empty": "No response data yet",
+                "avgTime": "Average",
+                "minutes": "min",
+                "notAvailable": "N/A"
+            },
+            "inquiries": {
+                "title": "Inquiries",
+                "empty": "No inquiry data yet"
+            },
+            "marketComparison": {
+                "title": "Market comparison",
+                "empty": "No comparison data yet",
+                "headers": {
+                    "accommodation": "Accommodation",
+                    "yourRating": "Your rating",
+                    "avgRating": "Dest. avg",
+                    "yourPrice": "Your price",
+                    "avgPrice": "Avg. price"
+                }
+            },
+            "sectionTitle": "Statistics",
+            "locked": {
+                "title": "Statistics available on your next plan",
+                "description": "Upgrade your subscription to view detailed statistics for your properties."
+            },
+            "loading": "Loading statistics...",
+            "error": "Error loading statistics"
         }
     }
 }

@@ -595,6 +595,7 @@ export function toAccommodationDetailPageProps({
         name: String(item.name || ''),
         summary: String(item.summary || ''),
         description: String(item.description || ''),
+        richDescription: item.richDescription == null ? undefined : String(item.richDescription),
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
@@ -904,6 +905,170 @@ export function processEntityImages<T extends Record<string, unknown>>({
  * @param item - Raw event object from the API (getBySlug response)
  * @returns Typed EventDetailData for the event detail page components
  */
+/**
+ * Transforms a raw API host dashboard response into HostDashboardData
+ * for the HostDashboard React island.
+ *
+ * Drops `archived` from properties (not shown in the summary),
+ * maps `unreadConversations` → `unreadCount`, and synthesizes
+ * `quickActions` for the host's self-service shortcuts.
+ *
+ * @param item - Raw dashboard response from the API's host dashboard endpoint
+ * @returns Typed HostDashboardData for the HostDashboard component
+ *
+ * @example
+ * ```ts
+ * const apiResult = await hostDashboardApi.get();
+ * if (apiResult.ok) {
+ *   const data = transformHostDashboard({ item: apiResult.data });
+ * }
+ * ```
+ */
+export function transformHostDashboard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').HostDashboardData {
+    const properties = item.properties as Record<string, unknown> | undefined;
+    const plan = item.plan as Record<string, unknown> | null | undefined;
+
+    return {
+        propertySummary: {
+            total: Number(properties?.total ?? 0),
+            published: Number(properties?.published ?? 0),
+            draft: Number(properties?.draft ?? 0)
+        },
+        planInfo: plan
+            ? {
+                  name: String(plan.name ?? ''),
+                  status: String(plan.status ?? ''),
+                  isTrial: Boolean(plan.isTrial)
+              }
+            : null,
+        unreadCount: Number(item.unreadConversations ?? 0),
+        quickActions: [
+            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
+            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
+            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+        ]
+    };
+}
+
+// --- Host Analytics Transforms (SPEC-207) ---
+
+/**
+ * Transforms raw API response into accommodation views data for the ViewsWidget.
+ *
+ * @param item - Raw API response from the host analytics views endpoint
+ * @returns Typed AccommodationViewsData for the ViewsWidget component
+ */
+export function transformAccommodationViews({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').AccommodationViewsData {
+    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        window: (item.window === '30d' ? '30d' : '7d') as '7d' | '30d',
+        items: (rawItems ?? []).map((entry) => ({
+            date: String(entry.date ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into favorites breakdown data for the FavoritesWidget.
+ *
+ * @param item - Raw API response from the host analytics favorites endpoint
+ * @returns Typed FavoritesBreakdownData for the FavoritesWidget component
+ */
+export function transformFavoritesBreakdown({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').FavoritesBreakdownData {
+    const rawCollections = item.collections as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        collections: (rawCollections ?? []).map((entry) => ({
+            collection: String(entry.collection ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into response rate data for the ResponseRateWidget.
+ *
+ * @param item - Raw API response from the host analytics response-rate endpoint
+ * @returns Typed ResponseRateData for the ResponseRateWidget component
+ */
+export function transformResponseRate({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').ResponseRateData {
+    return {
+        responseRatePct: Number(item.responseRatePct ?? 0),
+        avgResponseTimeMinutes:
+            item.avgResponseTimeMinutes != null ? Number(item.avgResponseTimeMinutes) : null
+    };
+}
+
+/**
+ * Transforms raw API response into monthly inquiry trend data for the InquiryTrendWidget.
+ *
+ * @param item - Raw API response from the host analytics inquiries endpoint
+ * @returns Typed InquiryTrendData for the InquiryTrendWidget component
+ */
+export function transformInquiryTrend({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').InquiryTrendData {
+    const rawMonths = item.months as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        months: (rawMonths ?? []).map((entry) => ({
+            month: String(entry.month ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into market comparison data for the MarketComparisonWidget.
+ *
+ * @param item - Raw API response from the host analytics market-comparison endpoint
+ * @returns Typed MarketComparisonData for the MarketComparisonWidget component
+ */
+export function transformMarketComparison({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').MarketComparisonData {
+    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        items: (rawItems ?? []).map((entry) => ({
+            accommodationId: String(entry.accommodationId ?? ''),
+            accommodationName: String(entry.accommodationName ?? ''),
+            accommodationType: String(entry.accommodationType ?? ''),
+            destinationName: entry.destinationName != null ? String(entry.destinationName) : null,
+            yourRating: entry.yourRating != null ? Number(entry.yourRating) : null,
+            yourReviews: Number(entry.yourReviews ?? 0),
+            destinationAvgRating:
+                entry.destinationAvgRating != null ? Number(entry.destinationAvgRating) : null,
+            yourPrice: entry.yourPrice != null ? Number(entry.yourPrice) : null,
+            destinationAvgPrice:
+                entry.destinationAvgPrice != null ? Number(entry.destinationAvgPrice) : null
+        }))
+    };
+}
+
 export function toEventDetailProps({
     item
 }: { readonly item: Record<string, unknown> }): EventDetailData {

@@ -168,6 +168,38 @@ const catalogoSidebar: SidebarInput = {
                     permissions: ['ATTRACTION_VIEW']
                 }
             ]
+        },
+        { type: 'separator', id: 'sep-content-moderation' },
+        // ── Content Moderation (SPEC-195) ─────────────────────────────────
+        {
+            type: 'group',
+            id: 'content-moderation',
+            label: {
+                es: 'Moderación de Contenido',
+                en: 'Content Moderation',
+                pt: 'Moderação de Conteúdo'
+            },
+            icon: 'ShieldIcon',
+            defaultOpen: false,
+            permissions: ['MODERATION_TERM_VIEW'],
+            items: [
+                {
+                    type: 'link',
+                    id: 'mod-terms',
+                    label: { es: 'Términos', en: 'Terms', pt: 'Termos' },
+                    icon: 'ListIcon',
+                    route: '/content/moderation-terms',
+                    permissions: ['MODERATION_TERM_VIEW']
+                },
+                {
+                    type: 'link',
+                    id: 'mod-thresholds',
+                    label: { es: 'Umbrales', en: 'Thresholds', pt: 'Limites' },
+                    icon: 'SettingsIcon',
+                    route: '/content/moderation-thresholds',
+                    permissions: ['MODERATION_THRESHOLD_VIEW']
+                }
+            ]
         }
     ]
 };

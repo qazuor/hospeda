@@ -1,3 +1,4 @@
+import { EntitlementKey } from '@repo/billing';
 import { describe, expect, it, vi } from 'vitest';
 import {
     FieldTypeEnum,
@@ -221,6 +222,23 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(features).toContain(RichTextFeatureEnum.QUOTE);
             // Critical assertion — LINK is the only feature that varies by entity
             expect(features).not.toContain(RichTextFeatureEnum.LINK);
+        });
+    });
+
+    describe('SPEC-187 P2-T8 — accommodation.richDescription flips to RICH_TEXT', () => {
+        it('declares richDescription as RICH_TEXT with premium gate and maxLength=5000', () => {
+            const config = createAccommodationConsolidatedConfig(
+                mockT,
+                mockAccommodationTypeOptions
+            );
+            const basicInfo = config.sections.find((s) => s.id === 'basic-info');
+            const richDescription = basicInfo?.fields.find((f) => f.id === 'richDescription');
+
+            expect(richDescription?.type).toBe(FieldTypeEnum.RICH_TEXT);
+            expect(richDescription?.required).toBe(false);
+            expect(richDescription?.entitlementKey).toBe(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            const typeConfig = richDescription?.typeConfig as { maxLength?: number } | undefined;
+            expect(typeConfig?.maxLength).toBe(5000);
         });
     });
 });

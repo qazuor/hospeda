@@ -708,14 +708,13 @@
             "title": "AI Accommodation Chat (tourist)",
             "type": "feat",
             "complexity": "high",
-            "status": "completed",
+            "status": "draft",
             "path": "SPEC-200-ai-accommodation-chat",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
-            "archived": true,
-            "archivedAt": "2026-06-07",
+            "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Shipped via PRs #1492 (backend) and #1494 (frontend), both merged to staging. 12/12 tasks (10 code + 2 smoke/E2E). Verify: PASS WITH WARNINGS (34/38 ACs verified; 4 pending CI — PostHog + entitlement gates)."
+            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
         },
         {
             "specId": "SPEC-201",
@@ -769,6 +768,89 @@
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["media", "gallery", "db", "migration", "post-go-live"],
             "note": "Spun off SPEC-167 realign D-2 (owner 2026-06-06); archivedGallery JSONB is the interim. Post go-live."
+        },
+        {
+            "specId": "SPEC-205",
+            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
+            "type": "epic",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-205-host-web-foundation",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": [
+                "web",
+                "host",
+                "dashboard",
+                "navigation",
+                "onboarding",
+                "promotions",
+                "permissions"
+            ],
+            "note": "Phase 1 of host migration initiative. Host dashboard, navigation, owner promotions, funnel improvements in apps/web. Parent of SPEC-206/207/208."
+        },
+        {
+            "specId": "SPEC-206",
+            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-206-host-conversations",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": ["web", "host", "conversations", "inbox", "api", "permissions"],
+            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205."
+        },
+        {
+            "specId": "SPEC-207",
+            "title": "Host Analytics & KPIs — Business Dashboard in Web",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-207-host-analytics-kpis",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
+            "note": "Phase 3 of host migration. Analytics aggregation endpoints + KPI dashboard widgets in apps/web. Depends on SPEC-205, SPEC-206."
+        },
+        {
+            "specId": "SPEC-208",
+            "title": "Web Accommodation Editor — Full Property Management in Web",
+            "type": "epic",
+            "complexity": "critical",
+            "status": "draft",
+            "path": "SPEC-208-web-accommodation-editor",
+            "created": "2026-06-07T00:00:00.000Z",
+            "archived": false,
+            "tags": [
+                "web",
+                "host",
+                "accommodation",
+                "editor",
+                "media",
+                "forms",
+                "api",
+                "entitlements"
+            ],
+            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. The most expensive phase."
+        },
+        {
+            "id": "SPEC-187",
+            "title": "Rich Text Entity Descriptions",
+            "status": "completed",
+            "archived": true,
+            "path": "SPEC-187-rich-text-entity-descriptions"
+        },
+        {
+            "specId": "SPEC-210",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "type": "refactor",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-210-public-response-tier-enforcement",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         }
     ]
 }

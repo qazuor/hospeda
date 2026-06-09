@@ -39,6 +39,26 @@ import { extractPaginationParams, getPaginationResponse } from '../../../utils/p
 import { createPublicListRoute } from '../../../utils/route-factory';
 import { resolveQuickAmenityFlags } from './quick-amenity-resolver';
 
+/**
+ * Strips richDescription from an accommodation object before it reaches the
+ * public list response payload.
+ *
+ * richDescription is a PREMIUM field gated per-owner by the entitlement system.
+ * The public list endpoint is a card listing that never renders rich text, so
+ * the field must be absent from the payload regardless of the owner's plan.
+ * This omission is applied at the DATA level so it is fail-closed and
+ * independent of any Zod schema change. (SPEC-187 data-exposure fix.)
+ *
+ * @param item - Raw accommodation object from the service layer.
+ * @returns The accommodation object with richDescription removed.
+ */
+function stripRichDescription<T extends { richDescription?: unknown }>(
+    item: T
+): Omit<T, 'richDescription'> {
+    const { richDescription: _dropped, ...rest } = item;
+    return rest;
+}
+
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
@@ -159,8 +179,15 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
+        // per-owner by the entitlement system. This card-listing endpoint never
+        // renders it, so the field is stripped here before reaching the response
+        // payload — fail-closed and independent of any schema change.
+        const rawItems = result.data?.items || [];
+        const items = rawItems.map(stripRichDescription);
+
         return {
-            items: result.data?.items || [],
+            items,
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };
     },

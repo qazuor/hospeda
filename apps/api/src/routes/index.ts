@@ -39,6 +39,7 @@ import {
     publicEventOrganizerRoutes
 } from './event-organizer';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import {
@@ -256,6 +257,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
             protectedUserBookmarkCollectionRoutes
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+        app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);

@@ -71,6 +71,20 @@
             "when": 1780808037703,
             "tag": "0009_tricky_kat_farrell",
             "breakpoints": true
+        },
+        {
+            "idx": 10,
+            "version": "7",
+            "when": 1781000000000,
+            "tag": "0010_add_rich_description",
+            "breakpoints": true
+        },
+        {
+            "idx": 11,
+            "version": "7",
+            "when": 1781100000000,
+            "tag": "0011_restrip_accommodation_description_markdown",
+            "breakpoints": true
         }
     ]
 }

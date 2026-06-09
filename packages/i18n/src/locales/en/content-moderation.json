@@ -1,0 +1,118 @@
+{
+    "terms": {
+        "title": "Moderation Terms",
+        "description": "Manage blocked words and domains for content moderation",
+        "singular": "term",
+        "plural": "terms",
+        "create": "Create term",
+        "edit": "Edit term",
+        "view": "View term",
+        "fields": {
+            "term": "Term",
+            "kind": "Kind",
+            "category": "Category",
+            "severity": "Severity",
+            "enabled": "Enabled",
+            "createdAt": "Created",
+            "updatedAt": "Updated",
+            "deletedAt": "Deleted",
+            "createdById": "Created by",
+            "updatedById": "Updated by"
+        },
+        "kinds": {
+            "word": "Word",
+            "domain": "Domain"
+        },
+        "columns": {
+            "term": "Term",
+            "kind": "Kind",
+            "category": "Category",
+            "severity": "Severity",
+            "enabled": "Status",
+            "createdAt": "Created"
+        },
+        "messages": {
+            "created": "Term created successfully",
+            "updated": "Term updated successfully",
+            "deleted": "Term deleted successfully",
+            "restored": "Term restored successfully",
+            "createError": "Failed to create term",
+            "updateError": "Failed to update term",
+            "deleteError": "Failed to delete term",
+            "restoreError": "Failed to restore term",
+            "confirmDelete": "Are you sure you want to delete this term?",
+            "confirmHardDelete": "Are you sure you want to permanently delete this term?"
+        },
+        "form": {
+            "termLabel": "Term",
+            "termPlaceholder": "e.g., spam, malicious-domain.com",
+            "kindLabel": "Kind",
+            "categoryLabel": "Category",
+            "severityLabel": "Severity (0-1)",
+            "enabledLabel": "Enabled"
+        }
+    },
+    "thresholds": {
+        "title": "Moderation Thresholds",
+        "description": "Configure thresholds for automatic moderation decisions",
+        "singular": "threshold",
+        "plural": "thresholds",
+        "fields": {
+            "context": "Context",
+            "pending": "PENDING threshold",
+            "reject": "REJECT threshold",
+            "createdAt": "Created",
+            "updatedAt": "Updated"
+        },
+        "columns": {
+            "context": "Context",
+            "pending": "Pending",
+            "reject": "Reject",
+            "source": "Source"
+        },
+        "sources": {
+            "row": "Specific row",
+            "default-row": "Default row",
+            "code-constants": "Code constants"
+        },
+        "resolved": {
+            "title": "Effective bar per context",
+            "description": "Effective thresholds applying the chain: specific row → default row → code constants",
+            "contextLabel": "Context",
+            "pendingLabel": "Pending",
+            "rejectLabel": "Reject",
+            "sourceLabel": "Source",
+            "contexts": {
+                "message": "Message",
+                "review": "Review",
+                "accommodation_review": "Accommodation review",
+                "destination_review": "Destination review"
+            }
+        },
+        "messages": {
+            "updated": "Threshold updated successfully",
+            "updateError": "Failed to update threshold",
+            "pendingGteReject": "Pending threshold must be less than reject threshold"
+        },
+        "form": {
+            "pendingLabel": "PENDING threshold (0-1)",
+            "rejectLabel": "REJECT threshold (0-1)",
+            "pendingHelp": "Score above which content goes to review",
+            "rejectHelp": "Score above which content is automatically rejected"
+        }
+    },
+    "categories": {
+        "hate": "Hate",
+        "sexual": "Sexual",
+        "violence": "Violence",
+        "harassment": "Harassment",
+        "self_harm": "Self-harm",
+        "spam": "Spam",
+        "other": "Other"
+    },
+    "nav": {
+        "contentModeration": "Content Moderation",
+        "terms": "Terms",
+        "thresholds": "Thresholds"
+    }
+}
