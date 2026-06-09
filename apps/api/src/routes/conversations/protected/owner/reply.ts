@@ -7,18 +7,17 @@
  * accommodations (anti-enumeration pattern).
  */
 
-import { accommodations, getDb } from '@repo/db';
+import { accommodations, conversations, getDb } from '@repo/db';
 import {
     CreateMessageSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { ConversationService, MessageService } from '@repo/service-core';
-import { eq } from 'drizzle-orm';
+import { MessageService } from '@repo/service-core';
+import { and, eq, inArray } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createRouter } from '../../../../utils/create-app';
-import { env } from '../../../../utils/env';
 import { apiLogger } from '../../../../utils/logger';
 import {
     createErrorResponse,
@@ -80,22 +79,10 @@ router.post('/:id/messages', async (c) => {
             .where(eq(accommodations.ownerId, actor.id));
         const ownerAccommodationIds = accRows.map((r) => r.id);
 
-        // Verify ownership via getThread (anti-enumeration: 404 for non-owned)
-        const conversationSvc = new ConversationService(
-            { logger: apiLogger },
-            {
-                authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
-                siteUrl: env.HOSPEDA_SITE_URL
-            }
-        );
-
-        const ownCheck = await conversationSvc.getThread(
-            SYSTEM_ACTOR,
-            { conversationId, actorSide: 'OWNER', limit: 1 },
-            ownerAccommodationIds
-        );
-
-        if (ownCheck.error) {
+        // Lightweight ownership check: verify conversation exists and belongs to
+        // one of the owner's accommodations WITHOUT triggering getThread side effects
+        // (lastReadAtByOwner update, notification cancellation).
+        if (ownerAccommodationIds.length === 0) {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.NOT_FOUND,
@@ -107,10 +94,18 @@ router.post('/:id/messages', async (c) => {
             );
         }
 
-        // Additional ownership check: conversation must be in owner's accommodations
-        const convAccommodationId = (ownCheck.data.conversation as { accommodationId: string })
-            .accommodationId;
-        if (!ownerAccommodationIds.includes(convAccommodationId)) {
+        const convRows = await db
+            .select({ id: conversations.id })
+            .from(conversations)
+            .where(
+                and(
+                    eq(conversations.id, conversationId),
+                    inArray(conversations.accommodationId, ownerAccommodationIds)
+                )
+            )
+            .limit(1);
+
+        if (convRows.length === 0) {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.NOT_FOUND,
