@@ -55,8 +55,22 @@ const SubscriptionResponseSchema = z.object({
             planName: z.string(),
             status: z.enum(SUBSCRIPTION_STATUSES),
             currentPeriodStart: z.string().nullable(),
+            /**
+             * The end of the current billing period. For a soft-cancelled
+             * subscription (`cancelAtPeriodEnd = true`) this is also the
+             * "access until" date — the user retains full entitlements until
+             * this timestamp. The UI (SPEC-203) should use this field to render
+             * "your access ends on <currentPeriodEnd>" without needing a
+             * separate `accessUntil` field.
+             */
             currentPeriodEnd: z.string().nullable(),
             cancelAtPeriodEnd: z.boolean(),
+            /**
+             * When the soft-cancel was recorded. Null for subscriptions that
+             * have not been soft-cancelled. Set by qzpay-core when the user
+             * calls the cancel endpoint (SPEC-147).
+             */
+            canceledAt: z.string().nullable(),
             trialEndsAt: z.string().nullable(),
             monthlyPriceArs: z.number(),
             paymentMethod: z
@@ -261,6 +275,7 @@ export const userSubscriptionRoute = createProtectedRoute({
                 currentPeriodStart: toIsoString(activeSubscription.currentPeriodStart),
                 currentPeriodEnd: toIsoString(activeSubscription.currentPeriodEnd),
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
+                canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
                 monthlyPriceArs,
                 paymentMethod: null,
