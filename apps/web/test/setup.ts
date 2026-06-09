@@ -79,10 +79,23 @@ if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
 // on DOM elements. jsdom does not implement these methods.
 if (typeof document !== 'undefined') {
     if (!document.elementFromPoint) {
-        document.elementFromPoint = () => null as unknown as Element;
+        // Return a mock element with getBoundingClientRect so prosemirror-view
+        // doesn't crash when calling target.getBoundingClientRect()
+        document.elementFromPoint = () => {
+            const el = document.createElement('div');
+            el.getBoundingClientRect = () =>
+                ({
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    right: 0,
+                    width: 0,
+                    height: 0,
+                    x: 0,
+                    y: 0,
+                    toJSON: () => ({})
+                }) as DOMRect;
+            return el;
+        };
     }
-}
-if (typeof Element !== 'undefined' && !Element.prototype.getBoundingClientRect) {
-    Element.prototype.getBoundingClientRect = () =>
-        ({ top: 0, left: 0, bottom: 0, right: 0, width: 0, height: 0 }) as DOMRect;
 }
