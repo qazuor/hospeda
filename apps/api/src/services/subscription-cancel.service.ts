@@ -79,8 +79,6 @@ export interface SoftCancelSubscriptionInput {
     readonly userId?: string | null | undefined;
     /** Human-readable plan name for the notification body. */
     readonly planName?: string | undefined;
-    /** Base URL used in notification links. */
-    readonly baseUrl?: string | undefined;
 }
 
 /**
@@ -141,7 +139,7 @@ export async function softCancelSubscription(
 
     // ── Step 1: Initial read — fast-path guards ──────────────────────────────
     // Read outside the transaction so we can abort cheaply before acquiring a
-    // row lock. The authoritative TOCTOU guard runs inside the tx (Step 3).
+    // row lock. The authoritative TOCTOU guard runs inside the tx (Step 4).
     const [existingRow] = await db
         .select({
             id: billingSubscriptions.id,
@@ -199,7 +197,7 @@ export async function softCancelSubscription(
         );
     }
 
-    // ── Step 3.5: Write cancelAtPeriodEnd=true BEFORE the provider call ────────
+    // ── Step 4: Write cancelAtPeriodEnd=true BEFORE the provider call ──────────
     // SPEC-147 T-007 ordering fix: the webhook collision guard in subscription-logic.ts
     // reads cancelAtPeriodEnd under a FOR UPDATE lock. For the guard to fire reliably,
     // the flag must be committed BEFORE MercadoPago fires the paused webhook.
@@ -253,7 +251,7 @@ export async function softCancelSubscription(
         flagWritten = true;
     });
 
-    // ── Step 4: Provider call — pause MP preapproval ─────────────────────────
+    // ── Step 5: Provider call — pause MP preapproval ─────────────────────────
     // billing.subscriptions.cancel() with cancelAtPeriodEnd:true now calls
     // paymentAdapter.subscriptions.cancel(providerSubscriptionId, true) which
     // in the MP adapter maps to preapproval status:'paused' (qzpay PR #42).
@@ -310,7 +308,7 @@ export async function softCancelSubscription(
         throw error;
     }
 
-    // ── Step 7: Clear entitlement cache (INV-1) ──────────────────────────────
+    // ── Step 6: Clear entitlement cache (INV-1) ──────────────────────────────
     // Must run after DB writes commit so re-computed entitlements reflect the
     // new cancelAtPeriodEnd flag. Runs outside the transaction (non-rollback-able).
     clearEntitlementCache(customerId);
@@ -320,7 +318,7 @@ export async function softCancelSubscription(
         'soft-cancel: completed successfully'
     );
 
-    // ── Step 8: Queue confirmation notification (fire-and-forget) ────────────
+    // ── Step 7: Queue confirmation notification (fire-and-forget) ────────────
     // SPEC-167 lesson: wrap in Promise.resolve() so a synchronous undefined
     // return from the cleared-mock does not cause a sync TypeError. The catch
     // is intentionally swallowed — notification failure must not fail the cancel.
@@ -347,7 +345,7 @@ export async function softCancelSubscription(
         });
     }
 
-    // ── Step 9: Return result ─────────────────────────────────────────────────
+    // ── Step 8: Return result ─────────────────────────────────────────────────
     return {
         subscriptionId,
         cancelAtPeriodEnd: true,

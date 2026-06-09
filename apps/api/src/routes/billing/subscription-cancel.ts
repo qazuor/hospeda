@@ -182,8 +182,7 @@ export const handleUserCancelSubscription = async (
             recipientEmail,
             recipientName: recipientName ?? undefined,
             userId: actor.id,
-            planName,
-            baseUrl: env.HOSPEDA_SITE_URL
+            planName
         });
 
         apiLogger.info(

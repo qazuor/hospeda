@@ -393,8 +393,7 @@ describe('softCancelSubscription', () => {
                 recipientEmail: 'owner@example.com',
                 recipientName: 'Test Owner',
                 planName: 'Plan Standard',
-                userId: 'user-001',
-                baseUrl: 'https://hospeda.com.ar'
+                userId: 'user-001'
             });
 
             expect(sendNotification).toHaveBeenCalledWith(
@@ -636,8 +635,7 @@ describe('softCancelSubscription', () => {
                 recipientEmail: 'owner@example.com',
                 recipientName: 'Test Owner',
                 planName: 'Plan Standard',
-                userId: 'user-001',
-                baseUrl: 'https://hospeda.com.ar'
+                userId: 'user-001'
             });
 
             expect(result.cancelAtPeriodEnd).toBe(true);
@@ -653,8 +651,7 @@ describe('softCancelSubscription', () => {
                 recipientEmail: 'owner@example.com',
                 recipientName: 'Test Owner',
                 planName: 'Plan Standard',
-                userId: 'user-001',
-                baseUrl: 'https://hospeda.com.ar'
+                userId: 'user-001'
             });
 
             expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
