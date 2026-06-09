@@ -271,13 +271,13 @@ importers:
         version: 1.131.26(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.28.0)(jiti@2.6.1)(terser@5.43.1)(tsx@4.22.3)(yaml@2.8.4))
       '@tiptap/extension-image':
         specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        version: 2.27.2
       '@tiptap/extension-link':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/extension-text-align':
         specifier: ^2
-        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+        version: 2.27.2
       '@tiptap/extension-underline':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
@@ -730,6 +730,18 @@ importers:
       '@sentry/astro':
         specifier: ^10.53.1
         version: 10.53.1(astro@6.3.3(@netlify/blobs@9.1.2)(@types/node@25.3.3)(@vercel/functions@2.2.13)(db0@0.3.4(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.15.6)(kysely@0.29.0)(pg@8.16.3)(postgres@3.4.8)))(ioredis@5.10.1)(jiti@2.6.1)(rollup@4.59.0)(terser@5.43.1)(tsx@4.22.3)(yaml@2.8.4))(rollup@4.59.0)
+      '@tiptap/extension-link':
+        specifier: ^2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
+      '@tiptap/extension-underline':
+        specifier: ^2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+      '@tiptap/react':
+        specifier: ^2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
+      '@tiptap/starter-kit':
+        specifier: ^2
+        version: 2.27.2
       '@vercel/og':
         specifier: ^0.11.1
         version: 0.11.1
@@ -784,6 +796,9 @@ importers:
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
+      tiptap-markdown:
+        specifier: ^0.9.0
+        version: 0.9.0(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
     devDependencies:
       '@playwright/test':
         specifier: ^1.58.2
@@ -15477,9 +15492,7 @@ snapshots:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
       '@tiptap/pm': 2.27.2
 
-  '@tiptap/extension-image@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
-    dependencies:
-      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
+  '@tiptap/extension-image@2.27.2': {}
 
   '@tiptap/extension-italic@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:
@@ -15507,9 +15520,7 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
-  '@tiptap/extension-text-align@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
-    dependencies:
-      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
+  '@tiptap/extension-text-align@2.27.2': {}
 
   '@tiptap/extension-text-style@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:

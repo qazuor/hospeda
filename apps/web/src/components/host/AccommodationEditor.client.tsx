@@ -19,7 +19,7 @@ import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
 import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
-import { LocationSection } from './editor/LocationSection.client';
+import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import type { MediaImage, PhotoSectionData } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
@@ -389,11 +389,22 @@ export function AccommodationEditor({
                 onFieldChange={handleCurrencyFieldChange}
             />
 
-            <LocationSection
+            <LocationPicker
                 locale={locale}
-                data={formData}
+                value={{ latitude: formData.latitude, longitude: formData.longitude }}
+                onChange={(coords) => {
+                    setFormData((prev) => ({
+                        ...prev,
+                        latitude: coords.latitude,
+                        longitude: coords.longitude
+                    }));
+                    setErrors((prev) => ({
+                        ...prev,
+                        latitude: undefined,
+                        longitude: undefined
+                    }));
+                }}
                 errors={errors}
-                onFieldChange={handleNumberFieldChange}
             />
 
             <ContactInfoSection
