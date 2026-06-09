@@ -6,6 +6,8 @@ import {
 } from '../../src/engine/provider.js';
 import { OpenAIProvider } from '../../src/providers/openai.provider.js';
 
+const MAX_OPENAI_INPUT_CHARS = 20_000;
+
 describe('OpenAIProvider', () => {
     it('maps OpenAI category scores into the frozen moderation categories', async () => {
         const fetchImpl = vi.fn().mockResolvedValue({
@@ -72,5 +74,31 @@ describe('OpenAIProvider', () => {
         });
 
         await expect(provider.classify({ text: 'test' })).rejects.toBeInstanceOf(ProviderError);
+    });
+
+    it('truncates oversized input to MAX_OPENAI_INPUT_CHARS before sending to the API', async () => {
+        // Arrange — text that exceeds the cap by 5 chars.
+        const oversizedText = 'a'.repeat(MAX_OPENAI_INPUT_CHARS + 5);
+
+        let capturedBody: string | undefined;
+        const fetchImpl = vi.fn(async (_url: string, init?: RequestInit) => {
+            capturedBody = init?.body as string;
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    results: [{ category_scores: {} }]
+                })
+            };
+        });
+
+        const provider = new OpenAIProvider({ apiKey: 'key', timeoutMs: 1500, fetchImpl });
+
+        await provider.classify({ text: oversizedText });
+
+        // Assert — the body sent must contain the truncated text (not the full one).
+        expect(capturedBody).toBeDefined();
+        const parsed = JSON.parse(capturedBody ?? '{}') as { input?: string };
+        expect(parsed.input?.length).toBe(MAX_OPENAI_INPUT_CHARS);
     });
 });
