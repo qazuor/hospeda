@@ -16,21 +16,19 @@
  *   run handler → SUBSCRIPTION_ACCESS_ENDING_NOTIF dedup event written; run
  *   again → NOT re-sent (second run sees the dedup event and skips).
  *
- *   NOT-DUE: active+cancelAtPeriodEnd=false sub (not a soft-cancel at all) →
- *   finalize query picks it up (only filters status='active') but the state-
- *   machine transition active→cancelled still succeeds so it gets finalized
- *   (documents the current cron behaviour). A separate scenario using
- *   cancelAtPeriodEnd=false but with status confirmed post-run documents
- *   that non-soft-cancel active subs are NOT immune from the cron — see
- *   NOT-DUE-safe variant which seeds a sub already 'cancelled' and confirms
- *   it is never re-touched.
+ *   GRACE PERIOD (regression test): soft-cancelled sub with period_end=now+3d
+ *   MUST NOT be finalized — the lte(currentPeriodEnd, now) SQL predicate
+ *   (added in the SPEC-147 bug fix) excludes it. Only the D3 reminder is sent.
+ *   This scenario was previously misdocumented as "Pass 1 finalizes it" — that
+ *   was the bug, not the correct behaviour.
  *
- * NOTE on `findDueSoftCancelledSubs`: the current implementation only filters
- * `status='active'` in SQL; it does NOT add the `cancelAtPeriodEnd=true` or
- * `currentPeriodEnd<=now` predicates to the WHERE clause (those are described
- * in comments but the code post-filters only by `status`). The D3 pass DOES
- * use the full compound WHERE. Tests reflect the actual production behaviour
- * to avoid false positives.
+ *   NOT-DUE: already-cancelled sub is never re-touched by Pass 1 (status='active'
+ *   predicate excludes it). Seeded as 'cancelled'; processed=0.
+ *
+ * NOTE on `findDueSoftCancelledSubs`: the fixed implementation applies ALL four
+ * predicates in the SQL WHERE: status='active' AND cancelAtPeriodEnd=true AND
+ * currentPeriodEnd<=now AND deletedAt IS NULL. This mirrors the compound WHERE
+ * already used by the D3 pass. There is no JS post-filter.
  *
  * How D3 send is asserted: `sendNotification` is fire-and-forget and depends
  * on Redis/BREVO which are unavailable in the test environment. The dedup guard
@@ -494,20 +492,25 @@ describe('SPEC-147 T-013 — finalize-cancelled-subs cron e2e', () => {
     });
 
     // =========================================================================
-    // SCENARIO 3: D3 REMINDER
-    // Soft-cancelled sub with period_end ~3 days out → cron D3 pass writes the
-    // SUBSCRIPTION_ACCESS_ENDING_NOTIF dedup event (the canonical "reminder sent"
-    // signal). Second run → dedup guard fires, event NOT re-written.
+    // SCENARIO 3: GRACE PERIOD PRESERVED — sub with future period_end stays ACTIVE
     //
-    // How D3 send is asserted: sendNotification is mocked at the top of this file.
-    // The production code writes the SUBSCRIPTION_ACCESS_ENDING_NOTIF event
-    // synchronously BEFORE the fire-and-forget sendNotification call. Asserting
-    // the event presence is the canonical signal. We also assert the spy call
-    // count to document the send-attempt contract.
+    // REGRESSION test for the finalize-cancelled-subs bug (SPEC-147):
+    // The original findDueSoftCancelledSubs only filtered status='active' in SQL
+    // with no cancelAtPeriodEnd or currentPeriodEnd guards. Any active soft-
+    // cancelled sub was finalized at the next 4:30 AM run, destroying the grace
+    // period regardless of how much time remained.
+    //
+    // With the fix, ALL four predicates are in the SQL WHERE:
+    //   status='active' AND cancelAtPeriodEnd=true AND currentPeriodEnd<=now AND deletedAt IS NULL
+    //
+    // This test proves: a sub with period_end=now+3d MUST NOT be finalized by
+    // Pass 1 (the lte(currentPeriodEnd, now) predicate excludes it). Pass 1
+    // returns processed=0 for it. Pass 2 (D3 window) WILL pick it up and write
+    // the SUBSCRIPTION_ACCESS_ENDING_NOTIF event.
     // =========================================================================
 
-    it('D3 — sub with period_end ~3 days out: SUBSCRIPTION_ACCESS_ENDING_NOTIF event written; second run is deduped', async () => {
-        // ARRANGE: sub with period_end 3 days from now, inside the [+2d, +4d] D3 window.
+    it('GRACE PERIOD — soft-cancelled sub with period_end=now+3d is NOT finalized (stays active, only D3 reminder sent)', async () => {
+        // ARRANGE: sub with period_end 3 days in the future — grace period active.
         const now = Date.now();
         const periodEnd = new Date(now + 3 * ONE_DAY_MS);
 
@@ -519,12 +522,11 @@ describe('SPEC-147 T-013 — finalize-cancelled-subs cron e2e', () => {
             intervalCount: 1,
             currentPeriodStart: new Date(now - 27 * ONE_DAY_MS),
             currentPeriodEnd: periodEnd,
-            metadata: { source: 'spec147-d3-test' }
+            metadata: { source: 'spec147-grace-period-test' }
         });
         subscriptionId = sub.subscriptionId;
 
-        // Mark as soft-cancelled so the D3 query (cancelAtPeriodEnd=true filter)
-        // picks it up.
+        // Mark as soft-cancelled (cancelAtPeriodEnd=true).
         await testDb
             .getDb()
             .update(billingSubscriptions)
@@ -535,65 +537,66 @@ describe('SPEC-147 T-013 — finalize-cancelled-subs cron e2e', () => {
             })
             .where(eq(billingSubscriptions.id, subscriptionId));
 
-        // Also set the customer email/name so billing.customers.get returns a
-        // resolvable customer for the reminder send path. The mp-stub is already
-        // wired at file level. The cron calls billing.customers.get(customerId)
-        // which hits the real DB via qzpay-core's storage adapter.
+        // ASSERT PRE-STATE: sub is active with a future period_end.
+        const preRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId));
+        expect(preRows[0]?.status).toBe('active');
+        expect(preRows[0]?.cancelAtPeriodEnd).toBe(true);
+        expect(preRows[0]?.currentPeriodEnd?.getTime()).toBeGreaterThan(now);
 
-        // ACT: first handler run.
-        const { ctx: firstCtx } = makeCronCtx();
-        const firstResult = await finalizeCancelledSubsJob.handler(firstCtx);
+        // ACT: run the cron handler.
+        const { ctx } = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
 
-        // ASSERT: finalize pass skips this sub (period_end is in the future —
-        // BUT NOTE: the current findDueSoftCancelledSubs query only filters
-        // status='active' with no period_end check, so this active sub IS
-        // picked up by the finalize pass and gets finalized). The D3 pass runs
-        // AFTER the finalize pass for any remaining un-finalized subs.
-        //
-        // Practical consequence: a sub with period_end in the future that is
-        // active gets finalized immediately by the current cron (the period_end
-        // filter is not yet applied in the query). This is the documented
-        // production behaviour — the D3 window query in Pass 2 IS correct and
-        // only fires for subs that are STILL active at the time Pass 2 runs
-        // (after Pass 1 has already flipped anything due).
-        //
-        // For the D3 test: because Pass 1 flips our test sub to 'cancelled'
-        // (it was 'active'), Pass 2's query (status='active' + cancelAtPeriodEnd=true
-        // + period_end in [+2d, +4d]) returns 0 rows — so no D3 event is written
-        // in this scenario.
-        //
-        // To test D3 correctly we need a sub that:
-        //   a) Has status != 'active' so Pass 1 skips it (not in the finalize query)
-        //   b) Has status='active' + cancelAtPeriodEnd=true + period_end in D3 window
-        //      for Pass 2 to pick it up.
-        //
-        // These two requirements are contradictory with the current Pass 1 query
-        // (which picks up all status='active' subs). The ONLY way to have Pass 2
-        // fire WITHOUT Pass 1 also firing is to run the handler when no 'active'
-        // subs are in the DB (Pass 1 no-ops) but then re-seed before Pass 2.
-        //
-        // Instead, we test D3 via the `_internals.sendAccessEndingReminders`
-        // helper directly — it is exported for exactly this purpose. The handler
-        // integration (that it calls sendAccessEndingReminders) is covered by
-        // checking the result.message from the first run plus confirming the
-        // SUBSCRIPTION_ACCESS_ENDING_NOTIF event via a SEPARATE dedicated test
-        // below that calls the internal directly.
+        // ASSERT Pass 1: the sub was NOT finalized. The lte(currentPeriodEnd, now)
+        // predicate excludes it because period_end=now+3d is in the future.
+        // processed=0 means Pass 1 found nothing to finalize.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+        expect(result.details).toMatchObject({ finalized: 0, errors: 0, due: 0 });
 
-        // For this integration test: assert the finalize pass ran and the sub
-        // was finalized (period_end in future does NOT protect from Pass 1).
-        expect(firstResult.success).toBe(true);
-        // The sub was 'active' so Pass 1 picks it up and finalizes it.
-        expect(firstResult.processed).toBe(1);
-        expect(firstResult.details).toMatchObject({ finalized: 1, errors: 0, due: 1 });
+        // ASSERT DB: sub status is still 'active' — grace period was NOT destroyed.
+        const postRows = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, subscriptionId));
+        expect(postRows[0]?.status).toBe('active');
 
-        const finalizedRow = (
-            await testDb
-                .getDb()
-                .select()
-                .from(billingSubscriptions)
-                .where(eq(billingSubscriptions.id, subscriptionId))
-        )[0];
-        expect(finalizedRow?.status).toBe('cancelled');
+        // ASSERT: no FINALIZE_CANCELLED_SUB event was written.
+        const finalizeEvents = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptionEvents)
+            .where(
+                and(
+                    eq(billingSubscriptionEvents.subscriptionId, subscriptionId),
+                    eq(billingSubscriptionEvents.eventType, 'FINALIZE_CANCELLED_SUB')
+                )
+            );
+        expect(finalizeEvents).toHaveLength(0);
+
+        // ASSERT Pass 2 (D3): the sub IS in the [+2d, +4d] window, so Pass 2
+        // writes the SUBSCRIPTION_ACCESS_ENDING_NOTIF dedup event.
+        // We wait a tick so the fire-and-forget promise chain settles.
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        const d3Events = await testDb
+            .getDb()
+            .select()
+            .from(billingSubscriptionEvents)
+            .where(
+                and(
+                    eq(billingSubscriptionEvents.subscriptionId, subscriptionId),
+                    eq(billingSubscriptionEvents.eventType, 'SUBSCRIPTION_ACCESS_ENDING_NOTIF')
+                )
+            );
+        expect(d3Events).toHaveLength(1);
+        expect(d3Events[0]?.triggerSource).toBe('finalize-cancelled-cron');
     });
 
     // =========================================================================

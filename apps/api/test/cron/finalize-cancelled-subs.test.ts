@@ -419,11 +419,17 @@ describe('handler: happy path — due soft-cancelled sub', () => {
 
 // ---------------------------------------------------------------------------
 // Not-yet-due: query correctly excludes future-period subs
+// REGRESSION GUARD (bug fixed in SPEC-147): the original findDueSoftCancelledSubs
+// only filtered status='active' in SQL and relied on a JS post-filter that
+// did NOT check cancelAtPeriodEnd or currentPeriodEnd. This caused any active
+// soft-cancelled sub to be finalized immediately on the next cron run,
+// destroying the grace period. The fix moves all four predicates into the SQL
+// WHERE clause. These tests document and guard that behaviour.
 // ---------------------------------------------------------------------------
 
 describe('handler: not-yet-due (query returns nothing)', () => {
     it('returns success=true, processed=0 when no subs are due', async () => {
-        dueRowsState.rows = []; // query returned nothing
+        dueRowsState.rows = []; // query returned nothing — no eligible sub
 
         const ctx = makeCronCtx();
         const result = await finalizeCancelledSubsJob.handler(ctx);
@@ -434,6 +440,75 @@ describe('handler: not-yet-due (query returns nothing)', () => {
         expect(mockHandleSubscriptionCancellationAddons).not.toHaveBeenCalled();
         expect(mockClearEntitlementCache).not.toHaveBeenCalled();
     });
+
+    it('REGRESSION: soft-cancelled sub with currentPeriodEnd in the future is NOT finalized (grace period preserved)', async () => {
+        // The bug: findDueSoftCancelledSubs previously only applied
+        // status='active' in SQL and post-filtered by status in JS, completely
+        // missing the cancelAtPeriodEnd and currentPeriodEnd guards. This caused
+        // subs with period_end=now+3d to be finalized at the next 4:30 AM run.
+        //
+        // With the fix, ALL four predicates are in the SQL WHERE. The mock
+        // simulates the corrected DB returning NO rows for a sub whose
+        // currentPeriodEnd is in the future (the lte(currentPeriodEnd, now)
+        // predicate excludes it).
+        dueRowsState.rows = []; // corrected SQL would return nothing for a future-period sub
+
+        const ctx = makeCronCtx();
+        const result = await finalizeCancelledSubsJob.handler(ctx);
+
+        // The sub must NOT be finalized: zero processed, zero errors, success.
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.errors).toBe(0);
+
+        // Status flip must NOT have been called
+        expect(mockDbUpdate).not.toHaveBeenCalled();
+        // Addon revocation must NOT have been called
+        expect(mockHandleSubscriptionCancellationAddons).not.toHaveBeenCalled();
+        // Entitlement cache must NOT have been cleared
+        expect(mockClearEntitlementCache).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// findDueSoftCancelledSubs internal: WHERE clause composition
+// Documents that the query passes the correct compound predicate to where().
+// ---------------------------------------------------------------------------
+
+describe('_internals.findDueSoftCancelledSubs — WHERE clause', () => {
+    it('calls db.select().from().where(and(...)) with all four predicates', async () => {
+        // We capture what the where() function receives to assert the compound
+        // predicate includes status, cancelAtPeriodEnd, currentPeriodEnd, and deletedAt.
+        // The mock returns empty rows (no-op) — we only care about the predicate shape.
+        const capturedPredicates: unknown[] = [];
+
+        mockDbSelectChain.mockImplementation(() => {
+            const chain = {
+                from: () => chain,
+                where: (predicate: unknown) => {
+                    capturedPredicates.push(predicate);
+                    return chain;
+                },
+                limit: async () => []
+            };
+            return chain;
+        });
+
+        await _internals.findDueSoftCancelledSubs();
+
+        // The where() should have been called once with an and(...) composite.
+        expect(capturedPredicates).toHaveLength(1);
+        const predicate = capturedPredicates[0] as { _and?: unknown[] };
+
+        // Our mock eq/and/lte/isNull return { _eq, _and, _lte, _isNull } shapes.
+        // Verify it is a compound AND (not a bare eq like the buggy version).
+        expect(predicate._and).toBeDefined();
+        expect(Array.isArray(predicate._and)).toBe(true);
+
+        // Should have 4 sub-predicates: status eq, cancelAtPeriodEnd eq,
+        // currentPeriodEnd lte, deletedAt isNull.
+        expect((predicate._and as unknown[]).length).toBe(4);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -441,35 +516,36 @@ describe('handler: not-yet-due (query returns nothing)', () => {
 // ---------------------------------------------------------------------------
 
 describe('handler: idempotency — already-cancelled sub', () => {
-    it('skips a sub that is already status=cancelled (query filter excludes it)', async () => {
-        // The query filters status='active'. A row with status='cancelled' is
-        // excluded by the in-process `.filter()` before finalizeOne is ever called.
-        // The sub is NOT in the processed count (it never enters the loop body).
-        dueRowsState.rows = [makeDueRow({ status: 'cancelled' })];
+    it('skips a sub that is already status=cancelled (SQL WHERE excludes it)', async () => {
+        // The SQL WHERE requires status='active'. The mock simulates the DB
+        // returning no rows for a cancelled sub — the SQL filter excludes it.
+        // finalizeOne is never called.
+        dueRowsState.rows = [];
 
         const ctx = makeCronCtx();
         const result = await finalizeCancelledSubsJob.handler(ctx);
 
-        // Filtered out: zero processed, zero errors, success true
+        // Not returned by query: zero processed, zero errors, success true
         expect(result.success).toBe(true);
         expect(result.processed).toBe(0);
         expect(result.errors).toBe(0);
 
-        // Transition guard never called (sub was filtered before reaching finalizeOne)
+        // Transition guard never called (sub was excluded by the SQL WHERE)
         expect(mockValidateTransition).not.toHaveBeenCalled();
         // Addon revocation was never called
         expect(mockHandleSubscriptionCancellationAddons).not.toHaveBeenCalled();
     });
 
-    it('handles a re-run after finalization: already-cancelled sub filtered out', async () => {
+    it('handles a re-run after finalization: already-cancelled sub excluded by SQL WHERE', async () => {
         // First run: finalize one sub
         dueRowsState.rows = [makeDueRow()];
         const ctx1 = makeCronCtx();
         const first = await finalizeCancelledSubsJob.handler(ctx1);
         expect(first.processed).toBe(1);
 
-        // Second run: same sub now has status='cancelled' and is excluded by the filter
-        dueRowsState.rows = [makeDueRow({ status: 'cancelled' })];
+        // Second run: the sub is now 'cancelled' — SQL WHERE (status='active')
+        // excludes it; the mock simulates the DB returning empty.
+        dueRowsState.rows = [];
         const ctx2 = makeCronCtx();
         const second = await finalizeCancelledSubsJob.handler(ctx2);
 

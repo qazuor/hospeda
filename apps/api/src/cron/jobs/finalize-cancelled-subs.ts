@@ -130,12 +130,19 @@ interface AccessEndingRow {
  *   - `current_period_end <= now()` (the grace period has elapsed)
  *   - Not soft-deleted
  *
+ * All four predicates are applied in the SQL WHERE clause via Drizzle's
+ * `and()` operator — there is NO JS post-filter. This ensures a sub with
+ * `currentPeriodEnd` in the future is never finalized early, preserving the
+ * entire grace period. Mirrors the full-compound-WHERE pattern used by the
+ * D3 pass (`sendAccessEndingReminders`).
+ *
  * @returns Array of due soft-cancelled subscription rows.
  */
 async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
     const db = getDb();
+    const now = new Date();
 
-    const rows = await db
+    return db
         .select({
             id: billingSubscriptions.id,
             customerId: billingSubscriptions.customerId,
@@ -143,39 +150,19 @@ async function findDueSoftCancelledSubs(): Promise<DueSoftCancelledRow[]> {
         })
         .from(billingSubscriptions)
         .where(
-            // Direct drizzle operators — NOT plain-object where clauses
-            // (lesson from SPEC-167: buildWhereClause rejects {in:...}).
-            // cancelAtPeriodEnd is a boolean column so eq(col, true) is correct.
-            // lte(currentPeriodEnd, now) filters the time window.
+            // All four predicates enforced in SQL — direct Drizzle operators,
+            // NOT plain-object where clauses (lesson from SPEC-167).
+            // cancelAtPeriodEnd is a boolean column: eq(col, true).
+            // lte(currentPeriodEnd, now) enforces the grace-period gate.
             // isNull(deletedAt) guards soft-delete.
-            //
-            // NOTE: Drizzle's `and()` and `lte()` are imported directly from
-            // @repo/db which re-exports them from drizzle-orm.
-            eq(billingSubscriptions.status, 'active')
+            and(
+                eq(billingSubscriptions.status, 'active'),
+                eq(billingSubscriptions.cancelAtPeriodEnd, true),
+                lte(billingSubscriptions.currentPeriodEnd, now),
+                isNull(billingSubscriptions.deletedAt)
+            )
         )
         .limit(MAX_ROWS_PER_TICK);
-
-    // Post-filter to cancelAtPeriodEnd=true AND currentPeriodEnd<=now AND not deleted.
-    // Doing the full filter in Drizzle DSL is preferred; however, the `and()`
-    // wrapper is included here to be explicit about the multi-predicate intent
-    // even though Drizzle's where() accepts a single expression. The DB index
-    // `idx_subscriptions_lifecycle_cancel` covers (cancel_at_period_end,
-    // current_period_end) which the query above partially uses via the status
-    // equality. The lte / isNull predicates are applied in the where clause
-    // below but the query engine uses the composite index for the selectivity.
-    //
-    // Re-query approach: we do two filters here because Drizzle's imported
-    // `and` from @repo/db composes correctly; the raw `where` above just uses
-    // the status filter. For correctness we need the full compound predicate
-    // — see the full implementation notes below.
-    //
-    // IMPLEMENTATION NOTE (for reviewers): the full compound WHERE is done via
-    // a sql`` template in `findDueSoftCancelledSubsFull` but for unit-test
-    // mockability we use the simple column-reference approach. The integration
-    // tests (E2E) use the real DB. The field `cancelAtPeriodEnd` is a boolean
-    // column and `currentPeriodEnd` is a timestamptz column; Drizzle handles
-    // the operator binding automatically.
-    return rows.filter((r) => r.status === 'active');
 }
 
 // ---------------------------------------------------------------------------
