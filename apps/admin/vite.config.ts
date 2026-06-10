@@ -295,9 +295,22 @@ export default defineConfig({
                         }
                     }
 
-                    // Component chunks
-                    if (id.includes('/components/entity-')) {
-                        return 'components-entity';
+                    // Component chunks — split entity trees so lazy-loaded
+                    // fields (entity-form/fields/) land in their own async chunks.
+                    if (id.includes('/components/entity-list/')) {
+                        return 'components-entity-list';
+                    }
+                    if (id.includes('/components/entity-form/fields/')) {
+                        // Heavy fields (tiptap, leaflet, upload) are lazy-loaded
+                        // via React.lazy — let Rollup create async chunks for them
+                        // by returning undefined (no manual chunk assignment).
+                        return undefined;
+                    }
+                    if (id.includes('/components/entity-form/')) {
+                        return 'components-entity-form';
+                    }
+                    if (id.includes('/components/entity-pages/')) {
+                        return 'components-entity-pages';
                     }
                     if (id.includes('/components/table/')) {
                         return 'components-table';

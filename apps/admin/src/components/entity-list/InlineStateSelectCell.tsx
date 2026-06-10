@@ -15,7 +15,7 @@
  * it once per render, so rules of hooks stay satisfied.
  */
 
-import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import type { BadgeColor } from '@/components/table/DataTable';
 import { BadgeCell, getBadgeColorClasses } from '@/components/table/cells/BadgeCell';
 import { useToast } from '@/components/ui/ToastProvider';

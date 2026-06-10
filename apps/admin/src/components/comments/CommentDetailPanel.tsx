@@ -13,7 +13,7 @@
  * mutation's onSuccess invalidates the list query cache.
  */
 
-import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';

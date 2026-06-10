@@ -3,7 +3,6 @@ import {
     AccommodationSelectField,
     AmenitySelectField,
     CheckboxField,
-    CoordinatesField,
     CurrencyField,
     // Specific entity select fields
     DestinationSelectField,
@@ -12,11 +11,8 @@ import {
     EventOrganizerSelectField,
     EventSelectField,
     FeatureSelectField,
-    GalleryField,
     I18nTextField,
-    ImageField,
     PostSponsorshipSelectField,
-    RichTextField,
     SelectField,
     SwitchField,
     TextField,
@@ -27,13 +23,29 @@ import type { CoordinatesValue } from '@/components/entity-form/fields/Coordinat
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
 import type { ImageValue } from '@/components/entity-form/fields/ImageField';
-import {
-    type VideoEntry,
-    VideoGalleryField
-} from '@/components/entity-form/fields/VideoGalleryField';
+import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
 import type { I18nText } from '@repo/schemas';
+
+// Heavy field components — lazy-loaded so tiptap/leaflet/upload don't sit in
+// the components-entity chunk. Each becomes its own async chunk loaded only
+// when a form actually renders that field type.
+const LazyRichTextField = React.lazy(() =>
+    import('./fields/RichTextField').then((m) => ({ default: m.RichTextField }))
+);
+const LazyCoordinatesField = React.lazy(() =>
+    import('./fields/CoordinatesField').then((m) => ({ default: m.CoordinatesField }))
+);
+const LazyImageField = React.lazy(() =>
+    import('./fields/ImageField').then((m) => ({ default: m.ImageField }))
+);
+const LazyGalleryField = React.lazy(() =>
+    import('./fields/GalleryField').then((m) => ({ default: m.GalleryField }))
+);
+const LazyVideoGalleryField = React.lazy(() =>
+    import('./fields/VideoGalleryField').then((m) => ({ default: m.VideoGalleryField }))
+);
 
 /**
  * Per-field upload/delete handlers for media fields (e.g., GalleryField).
@@ -345,46 +357,66 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
                     case FieldTypeEnum.RICH_TEXT:
                         return (
-                            <RichTextField
-                                {...fieldProps}
-                                value={fieldValue as string}
-                            />
+                            <React.Suspense
+                                fallback={<div className="h-10 animate-pulse rounded bg-muted" />}
+                            >
+                                <LazyRichTextField
+                                    {...fieldProps}
+                                    value={fieldValue as string}
+                                />
+                            </React.Suspense>
                         );
 
                     case FieldTypeEnum.COORDINATES:
                         return (
-                            <CoordinatesField
-                                {...fieldProps}
-                                value={fieldValue as CoordinatesValue | undefined}
-                            />
+                            <React.Suspense
+                                fallback={<div className="h-64 animate-pulse rounded bg-muted" />}
+                            >
+                                <LazyCoordinatesField
+                                    {...fieldProps}
+                                    value={fieldValue as CoordinatesValue | undefined}
+                                />
+                            </React.Suspense>
                         );
 
                     case FieldTypeEnum.IMAGE:
                         return (
-                            <ImageField
-                                {...fieldProps}
-                                value={fieldValue as ImageValue}
-                            />
+                            <React.Suspense
+                                fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
+                            >
+                                <LazyImageField
+                                    {...fieldProps}
+                                    value={fieldValue as ImageValue}
+                                />
+                            </React.Suspense>
                         );
 
                     case FieldTypeEnum.GALLERY: {
                         const galleryHandlers = fieldHandlers?.[field.id];
                         return (
-                            <GalleryField
-                                {...fieldProps}
-                                value={fieldValue as GalleryImage[]}
-                                onUpload={galleryHandlers?.onUpload}
-                                onDelete={galleryHandlers?.onDelete}
-                            />
+                            <React.Suspense
+                                fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
+                            >
+                                <LazyGalleryField
+                                    {...fieldProps}
+                                    value={fieldValue as GalleryImage[]}
+                                    onUpload={galleryHandlers?.onUpload}
+                                    onDelete={galleryHandlers?.onDelete}
+                                />
+                            </React.Suspense>
                         );
                     }
 
                     case FieldTypeEnum.VIDEO_GALLERY:
                         return (
-                            <VideoGalleryField
-                                {...fieldProps}
-                                value={fieldValue as VideoEntry[]}
-                            />
+                            <React.Suspense
+                                fallback={<div className="h-40 animate-pulse rounded bg-muted" />}
+                            >
+                                <LazyVideoGalleryField
+                                    {...fieldProps}
+                                    value={fieldValue as VideoEntry[]}
+                                />
+                            </React.Suspense>
                         );
 
                     case FieldTypeEnum.CHECKBOX:
