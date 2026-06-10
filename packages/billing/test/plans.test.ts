@@ -150,16 +150,17 @@ describe('Plan Configuration', () => {
             expect(found?.value).toBe(10);
         });
 
-        it('tourist-vip AI limits should all be -1 (unlimited)', () => {
-            // ai_support ungranted (SPEC-200 pending) — only chat + search are unlimited
-            const aiLimitKeys = [
-                LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH
+        it('tourist-vip AI limits should be finite (SPEC-211 Phase 0: chat 1000, search 1000)', () => {
+            // SPEC-211 cost guardrail: no -1 on AI limits. chat/search are removed
+            // from tourist plans entirely in later phases (T-003/T-004); finite here.
+            const expected: ReadonlyArray<readonly [LimitKey, number]> = [
+                [LimitKey.MAX_AI_CHAT_PER_MONTH, 1000],
+                [LimitKey.MAX_AI_SEARCH_PER_MONTH, 1000]
             ] as const;
-            for (const key of aiLimitKeys) {
+            for (const [key, value] of expected) {
                 const found = TOURIST_VIP_PLAN.limits.find((l) => l.key === key);
                 expect(found).toBeDefined();
-                expect(found?.value).toBe(-1);
+                expect(found?.value).toBe(value);
             }
         });
 
@@ -171,17 +172,17 @@ describe('Plan Configuration', () => {
             expect(found?.value).toBe(100);
         });
 
-        it('complex-premium AI limits (text/chat/search) should be -1 (unlimited)', () => {
-            // ai_support ungranted (SPEC-200 pending) — 3 keys not 4
-            const aiLimitKeys = [
-                LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-                LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH
+        it('complex-premium AI limits should be finite (SPEC-211 Phase 0: text 2000, chat 5000, search 2000)', () => {
+            // SPEC-211 cost guardrail: no -1 on AI limits.
+            const expected: ReadonlyArray<readonly [LimitKey, number]> = [
+                [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000],
+                [LimitKey.MAX_AI_CHAT_PER_MONTH, 5000],
+                [LimitKey.MAX_AI_SEARCH_PER_MONTH, 2000]
             ] as const;
-            for (const key of aiLimitKeys) {
+            for (const [key, value] of expected) {
                 const found = COMPLEX_PREMIUM_PLAN.limits.find((l) => l.key === key);
                 expect(found).toBeDefined();
-                expect(found?.value).toBe(-1);
+                expect(found?.value).toBe(value);
             }
         });
 
@@ -211,6 +212,28 @@ describe('Plan Configuration', () => {
                 expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_SUPPORT_PER_MONTH)).toBe(
                     false
                 );
+            }
+        });
+
+        it('NO plan should carry a -1 (unlimited) AI limit — cost guardrail (SPEC-211 Phase 0, AC-0.1)', () => {
+            // The cost guardrail forbids unlimited AI on any client plan: a present
+            // AI limit must be finite and positive. Absent keys are fine (the plan
+            // simply does not grant that AI feature). Staff get unlimited via
+            // getUnlimitedEntitlements(), which is intentionally out of scope here.
+            const aiLimitKeys = [
+                LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+                LimitKey.MAX_AI_CHAT_PER_MONTH,
+                LimitKey.MAX_AI_SEARCH_PER_MONTH,
+                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+            ] as const;
+            for (const plan of ALL_PLANS) {
+                for (const key of aiLimitKeys) {
+                    const found = plan.limits.find((l) => l.key === key);
+                    if (found) {
+                        expect(found.value).not.toBe(-1);
+                        expect(found.value).toBeGreaterThan(0);
+                    }
+                }
             }
         });
     });

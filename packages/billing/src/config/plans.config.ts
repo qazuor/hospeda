@@ -136,9 +136,10 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACCOMMODATIONS, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
-        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
+        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 2000)
     ]
 };
 
@@ -278,9 +279,10 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, -1), // unlimited
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
-        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
-        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
+        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 2000)
     ]
 };
 
@@ -393,8 +395,9 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_FAVORITES, -1), // unlimited
         limit(LimitKey.MAX_ACTIVE_ALERTS, -1), // unlimited
         limit(LimitKey.MAX_COMPARE_ITEMS, -1), // unlimited
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
-        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
+        // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 1000),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 1000)
     ]
 };
 
