@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 0/17 tasks (0%)
+## Progress: 1/17 tasks (6%)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -10,7 +10,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 1) - Replace -1 AI quotas with finite values in plans.config.ts
+- [x] **T-001** (complexity: 1) - Replace -1 AI quotas with finite values in plans.config.ts
   - Replace every `-1` AI limit in `packages/billing/src/config/plans.config.ts` with §6.1 finite values
   - Blocked by: none
   - Blocks: T-003, T-008, T-011

@@ -1,341 +1,541 @@
 {
-  "version": "1.0",
-  "specRef": "SPEC-211",
-  "title": "AI Monetization Model",
-  "created": "2026-06-09T00:00:00.000Z",
-  "tasks": [
-    {
-      "id": "T-001",
-      "title": "Replace -1 AI quotas with finite values in plans.config.ts",
-      "description": "In `packages/billing/src/config/plans.config.ts`, replace every `-1` AI limit value with the finite values from §6.1: owner-premium → MAX_AI_TEXT_IMPROVE=1000, MAX_AI_CHAT=2000, MAX_AI_SEARCH=2000; complex-premium → MAX_AI_TEXT_IMPROVE=2000, MAX_AI_CHAT=5000, MAX_AI_SEARCH=2000; tourist-vip → MAX_AI_CHAT=1000, MAX_AI_SEARCH=1000. All other plan limits stay unchanged. Test: `packages/billing/test/plans.config.test.ts` — iterate ALL_PLANS and assert no plan has `-1` for any AI limit key (AC-0.1).",
-      "status": "pending",
-      "complexity": 1,
-      "blockedBy": [],
-      "blocks": ["T-003", "T-008", "T-011"],
-      "subtasks": [
-        { "title": "Replace -1 on owner-premium (3 AI limit keys)", "completed": false },
-        { "title": "Replace -1 on complex-premium (3 AI limit keys)", "completed": false },
-        { "title": "Replace -1 on tourist-vip (2 AI limit keys — will be removed later)", "completed": false },
-        { "title": "Write no-minus-one config test (AC-0.1)", "completed": false }
-      ],
-      "tags": ["billing", "config", "phase-0", "cost-control"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-002",
-      "title": "Set concrete USD cost ceilings in ai_settings config",
-      "description": "In `packages/schemas/src/entities/ai/ai-settings.schema.ts` (or the ai_settings default/config location used by the API), set the concrete ceiling values from §6.3: `globalMonthlyMicroUsd = 100_000_000`; `perFeatureMonthlyMicroUsd = { chat: 45_000_000, search: 30_000_000, text_improve: 15_000_000, support: 10_000_000 }`. Verify the existing `AiCostCeilingsSchema` accepts these exact integer values. Test: unit test in `packages/schemas/test/` asserting exact ceiling values parse without error and the integers are in µUSD units (AC-0.2).",
-      "status": "pending",
-      "complexity": 2,
-      "blockedBy": [],
-      "blocks": ["T-012"],
-      "subtasks": [
-        { "title": "Locate where ai_settings defaults / initial config live in the codebase", "completed": false },
-        { "title": "Set globalMonthlyMicroUsd = 100_000_000", "completed": false },
-        { "title": "Set all four perFeatureMonthlyMicroUsd entries", "completed": false },
-        { "title": "Write config smoke test asserting exact ceiling values (AC-0.2)", "completed": false }
-      ],
-      "tags": ["billing", "config", "phase-0", "cost-control", "ai-settings"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-003",
-      "title": "Remove ai_chat and MAX_AI_CHAT_PER_MONTH from tourist plans in config",
-      "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_CHAT` from the `entitlements` array and remove `MAX_AI_CHAT_PER_MONTH` from the `limits` map for the three tourist plans: `tourist-free`, `tourist-plus`, and `tourist-vip`. The finite value set in T-001 for tourist-vip is now also removed. Test: extend `packages/billing/test/plans.config.test.ts` asserting no tourist plan entry has `AI_CHAT` in entitlements or `MAX_AI_CHAT_PER_MONTH` in limits (part of AC-1.4 config side).",
-      "status": "pending",
-      "complexity": 1,
-      "blockedBy": ["T-001"],
-      "blocks": ["T-008", "T-011"],
-      "subtasks": [
-        { "title": "Remove AI_CHAT entitlement from tourist-free, tourist-plus, tourist-vip", "completed": false },
-        { "title": "Remove MAX_AI_CHAT_PER_MONTH limit key from all three tourist plans", "completed": false },
-        { "title": "Assert no tourist plan has AI_CHAT or MAX_AI_CHAT_PER_MONTH in config test", "completed": false }
-      ],
-      "tags": ["billing", "config", "phase-1", "ai-chat"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-004",
-      "title": "Remove ai_search and MAX_AI_SEARCH_PER_MONTH from all plans in config",
-      "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_SEARCH` from the `entitlements` array and remove `MAX_AI_SEARCH_PER_MONTH` from the `limits` map for ALL 9 plans (owner-basico/pro/premium, complex-basico/pro/premium, tourist-free/plus/vip). Do NOT delete the enum keys themselves from `EntitlementKey`/`LimitKey` (additive-only policy). Test: `packages/billing/test/plans.config.test.ts` — assert no plan grants `AI_SEARCH` or carries `MAX_AI_SEARCH_PER_MONTH` in limits (AC-3.1 config side).",
-      "status": "pending",
-      "complexity": 1,
-      "blockedBy": [],
-      "blocks": ["T-008", "T-011"],
-      "subtasks": [
-        { "title": "Remove AI_SEARCH entitlement from all 9 plans", "completed": false },
-        { "title": "Remove MAX_AI_SEARCH_PER_MONTH limit key from all 9 plans", "completed": false },
-        { "title": "Assert config test: no plan has AI_SEARCH or MAX_AI_SEARCH_PER_MONTH", "completed": false }
-      ],
-      "tags": ["billing", "config", "phase-3", "ai-search"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-005",
-      "title": "Add ai_support recurring addon definition to addons.config.ts",
-      "description": "In `packages/billing/src/config/addons.config.ts`, add `AI_SUPPORT_ADDON: AddonDefinition` per §7.8: `slug: 'ai-support-monthly'`, `billingType: 'recurring'`, `priceArs: 800_000` (TBD-owner-confirm at implementation), `durationDays: null`, `affectsLimitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH`, `limitIncrease: 100` (TBD-owner-confirm), `grantsEntitlement: EntitlementKey.AI_SUPPORT`, `targetCategories: ['owner', 'complex']`, `isActive: true`, `sortOrder: 6`. `limitIncrease` must be a finite positive number (no -1). Export from `ALL_ADDONS`. Test: `packages/billing/test/addons.config.test.ts` — assert addon exists in ALL_ADDONS with correct shape and finite limitIncrease (AC-4.1 config side).",
-      "status": "pending",
-      "complexity": 2,
-      "blockedBy": [],
-      "blocks": ["T-014", "T-015"],
-      "subtasks": [
-        { "title": "Add AI_SUPPORT_ADDON constant with all required fields", "completed": false },
-        { "title": "Add to ALL_ADDONS export", "completed": false },
-        { "title": "Confirm limitIncrease is a finite positive number (no -1)", "completed": false },
-        { "title": "Write addon shape + finiteness test (AC-4.1 config side)", "completed": false }
-      ],
-      "tags": ["billing", "addons", "config", "phase-4", "ai-support"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-006",
-      "title": "Add i18n keys for ai_chat unavailable copy in es/en/pt",
-      "description": "Add the OQ-8 copy to the locale files in `@repo/i18n`: es: 'El chat de IA no está disponible para este alojamiento', en: 'AI chat is not available for this accommodation', pt: 'O chat de IA não está disponível para esta acomodação'. Determine the key path at implementation (e.g. `ai.chat.ownerUnavailable` or `errors.aiChatUnavailable`). Add to all three locale files (`packages/i18n/src/locales/es.json`, `en.json`, `pt.json`). Test: verify i18n key exists in all three locales via the existing i18n test suite or add a key-presence test.",
-      "status": "pending",
-      "complexity": 1,
-      "blockedBy": [],
-      "blocks": ["T-007"],
-      "subtasks": [
-        { "title": "Choose key path (coordinate with chat route error response key)", "completed": false },
-        { "title": "Add key to es.json", "completed": false },
-        { "title": "Add key to en.json", "completed": false },
-        { "title": "Add key to pt.json", "completed": false }
-      ],
-      "tags": ["i18n", "phase-1", "ai-chat"],
-      "phase": "setup",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-007",
-      "title": "Implement resolveOwnerLimitsForOwnerId in owner-entitlement.ts",
-      "description": "In `apps/api/src/middlewares/owner-entitlement.ts`, add the function `resolveOwnerLimitsForOwnerId(ownerId: string): Promise<Map<LimitKey, number>>` per §7.2. Mirror `resolveOwnerEntitlementsForOwnerId`: resolve ownerId → billing customer → active subscription → plan limits JSONB + customer-level limit overrides via `billing.subscriptions.getByCustomerId`, `billing.plans.get`, `billing.limits.getByCustomerId`. Falls back to owner-basico DB row limits when no active sub. Cache consistent with 5-min entitlement cache. Test file: `apps/api/test/unit/middlewares/owner-entitlement.test.ts` — assert: (1) owner with active sub → correct limits map; (2) owner with no sub → owner-basico fallback limits returned; (3) customer-level override merges correctly (AC-1.1).",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-006"],
-      "blocks": ["T-009"],
-      "subtasks": [
-        { "title": "Implement ownerId → billing customer → plan limits resolution chain", "completed": false },
-        { "title": "Implement owner-basico fallback when no active subscription", "completed": false },
-        { "title": "Apply customer-level limit overrides", "completed": false },
-        { "title": "Write unit tests: active sub, no-sub fallback, override merge (AC-1.1)", "completed": false }
-      ],
-      "tags": ["api", "middleware", "phase-1", "ai-chat", "billing"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-008",
-      "title": "Define Model C field-split table as exhaustive TypeScript constant",
-      "description": "In `packages/billing/src/config/model-c-field-split.ts` (new file), define a typed exhaustive record classifying every seed-controlled `billing_plans` column as `'capability'` or `'commercial'` per §8.2. Entries: `entitlements` → capability; `limits` presence → capability; `limits` values → commercial; `metadata.monthlyPriceArs` / `annualPriceArs` → commercial; `active` → commercial; `description` → commercial; `metadata.displayName` → commercial; `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields → capability. Export from `@repo/billing`. Test: `packages/billing/test/model-c-field-split.test.ts` — assert every column listed in §8.2 is classified and no unclassified column exists (AC-2.3).",
-      "status": "pending",
-      "complexity": 2,
-      "blockedBy": ["T-001", "T-003", "T-004"],
-      "blocks": ["T-010", "T-011"],
-      "subtasks": [
-        { "title": "Create model-c-field-split.ts with typed field-split record", "completed": false },
-        { "title": "Classify all §8.2 columns", "completed": false },
-        { "title": "Export from @repo/billing barrel", "completed": false },
-        { "title": "Write guard test: all classified, no unclassified (AC-2.3)", "completed": false }
-      ],
-      "tags": ["billing", "config", "phase-2", "model-c"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-009",
-      "title": "Inline owner-scoped gate, quota check, and metering in chat route handler",
-      "description": "In `apps/api/src/routes/ai/protected/chat.ts`, replace the tourist-keyed `createAiQuotaMiddleware('chat')` gate with inline owner-scoped logic per §7.3: (1) resolve `ownerId` from `accommodation.ownerId` (already fetched as 404 guard); (2) call `resolveOwnerEntitlementsForOwnerId` + `resolveOwnerLimitsForOwnerId`; (3) gate: owner lacks `AI_CHAT` → 403 `ENTITLEMENT_REQUIRED` (use the i18n key from T-006); (4) quota: `getMonthlyCallCount({ userId: ownerId, feature: 'chat', now })` >= ownerLimit → 403 `LIMIT_REACHED`; (5) `recordAiUsage({ userId: ownerId, ... })`. Keep `createAiRateLimitMiddlewares('chat')` untouched. Test: `apps/api/test/integration/ai/chat-owner-metered.test.ts` — AC-1.2 (success, recordAiUsage called with ownerId) + AC-1.3 (owner-at-quota → 403 LIMIT_REACHED) + AC-1.5 (rate-limit preserved).",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-007"],
-      "blocks": ["T-013"],
-      "subtasks": [
-        { "title": "Remove createAiQuotaMiddleware('chat') from chat route", "completed": false },
-        { "title": "Add owner entitlement + limit resolution inline", "completed": false },
-        { "title": "Add owner quota check (getMonthlyCallCount keyed by ownerId)", "completed": false },
-        { "title": "Wire recordAiUsage keyed by ownerId (not tourist userId)", "completed": false },
-        { "title": "Write integration tests AC-1.2, AC-1.3, AC-1.5", "completed": false }
-      ],
-      "tags": ["api", "routes", "phase-1", "ai-chat", "billing"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-010",
-      "title": "Update billingPlans.seed.ts capability-layer sync policy",
-      "description": "In `packages/seed/src/required/billingPlans.seed.ts`, replace the current warn-only-on-divergence behaviour with the Model C per-field policy per §7.5: capability-layer divergence → sync DB to config (overwrite); commercial-layer divergence → leave DB as-is (log for visibility only). Reference the field-split table from T-008. Add a guard: every seed-controlled column must be classified in the field-split table before the seed runs (fail-fast on unclassified column). Test: `packages/seed/test/billing-plans-seed.test.ts` — assert capability sync updates DB, commercial mismatch leaves DB unchanged (AC-2.2 seed side, AC-2.3 guard).",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-008"],
-      "blocks": ["T-011"],
-      "subtasks": [
-        { "title": "Import field-split table from @repo/billing", "completed": false },
-        { "title": "Capability divergence: overwrite DB column from config", "completed": false },
-        { "title": "Commercial divergence: log and skip (do not overwrite)", "completed": false },
-        { "title": "Guard: fail-fast if a seed-controlled column is unclassified", "completed": false },
-        { "title": "Write seed tests for capability-sync and commercial-no-clobber", "completed": false }
-      ],
-      "tags": ["seed", "billing", "phase-2", "model-c"],
-      "phase": "core",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-011",
-      "title": "Write idempotent Model C extras migration (finite limits + capability removals)",
-      "description": "Create `packages/db/src/migrations/extras/014-model-c-capability-sync.sql` (or the next available extras number). The migration must: (1) update four AI limit keys on plans that had -1 to config values from §6.1; (2) remove AI_CHAT + MAX_AI_CHAT_PER_MONTH from tourist plan rows; (3) remove AI_SEARCH + MAX_AI_SEARCH_PER_MONTH from all plan rows; (4) run the general capability sync governed by §8.2 field-split; (5) support a dry-run mode (param or env); (6) call clearEntitlementCache for touched customers or document the 5-min window acceptance. Must be idempotent: second run reports zero changes. Test: real-DB integration test in `packages/db/test/extras/014-model-c-sync.test.ts` covering AC-0.3, AC-0.4, AC-1.4, AC-2.1, AC-2.2, AC-3.1.",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-001", "T-003", "T-004", "T-008", "T-010"],
-      "blocks": ["T-012", "T-013", "T-014"],
-      "subtasks": [
-        { "title": "Write SQL for finite-limit propagation (4 AI limit keys, -1 rows)", "completed": false },
-        { "title": "Write SQL for AI_CHAT removal from tourist rows", "completed": false },
-        { "title": "Write SQL for AI_SEARCH removal from all rows", "completed": false },
-        { "title": "Write SQL for general capability sync (entitlements array + limit key presence)", "completed": false },
-        { "title": "Add dry-run mode and idempotency guard", "completed": false }
-      ],
-      "tags": ["db", "migration", "phase-2", "model-c", "extras"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-012",
-      "title": "Write real-DB integration tests for Model C extras migration",
-      "description": "Create `packages/db/test/extras/014-model-c-sync.test.ts` using `testDb.setup/clean`. Scenarios (against a db:fresh-dev snapshot): (1) AC-0.3 — seed -1 limits manually, run migration, assert finite values + AI_CHAT removed from tourist rows + AI_SEARCH removed from all rows + commercial fields byte-identical; (2) AC-0.4 — run migration twice, assert second run reports zero changes (idempotent); (3) AC-2.1 — add a new EntitlementKey to a plan in config, run migration, assert DB row gains it; (4) AC-2.2 — operator-edit a limits value, run migration, assert value NOT overwritten. Uses the 13 SPEC-143 test users seeded via db:fresh-dev.",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-002", "T-011"],
-      "blocks": ["T-016"],
-      "subtasks": [
-        { "title": "Set up testDb fixture using db:fresh-dev snapshot", "completed": false },
-        { "title": "Write AC-0.3 test: finite limits + removals + commercial byte-identical", "completed": false },
-        { "title": "Write AC-0.4 test: idempotency (second run = zero changes)", "completed": false },
-        { "title": "Write AC-2.1 test: new capability addition propagated", "completed": false },
-        { "title": "Write AC-2.2 test: commercial-layer value not clobbered", "completed": false }
-      ],
-      "tags": ["testing", "db", "integration", "phase-2", "model-c"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-013",
-      "title": "Write chat route owner-metered integration tests",
-      "description": "In `apps/api/test/integration/ai/chat-owner-metered.test.ts`, write integration tests using StubProvider + mock-actor headers + seeded billing: AC-1.2 — tourist sends chat on a listing whose owner has AI_CHAT + quota; assert 200 success and spy on `recordAiUsage` confirming `userId === ownerId` (not tourist's id); AC-1.3 — tourist sends chat where owner is at `MAX_AI_CHAT_PER_MONTH`; assert 403 LIMIT_REACHED regardless of tourist's own (now absent) entitlement; AC-1.4 DB side — after running extras migration, assert no tourist subscriber row has AI_CHAT; AC-1.5 — per-tourist rate-limit still applies (burst guard).",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-009", "T-011"],
-      "blocks": ["T-016"],
-      "subtasks": [
-        { "title": "Set up test fixture with StubProvider and seeded billing rows", "completed": false },
-        { "title": "Write AC-1.2: success + recordAiUsage keyed by ownerId", "completed": false },
-        { "title": "Write AC-1.3: owner-at-quota → 403 LIMIT_REACHED", "completed": false },
-        { "title": "Write AC-1.4 DB: post-migration tourist rows lack AI_CHAT", "completed": false }
-      ],
-      "tags": ["testing", "api", "integration", "phase-1", "ai-chat"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-014",
-      "title": "Refactor search route to drop quota gate and require auth",
-      "description": "In `apps/api/src/routes/ai/...search...` (locate the search route file), remove `createAiQuotaMiddleware('search')` entirely. Add auth-required guard: unauthenticated requests get a login-prompt response (not a 403 AI gate). Keep: per-user/IP rate-limit via `createAiRateLimitMiddlewares('search')`, the `ai_settings` per-feature USD ceiling (`perFeatureMonthlyMicroUsd.search`) enforced by the engine ceiling checker, and metering via `recordAiUsage` for cost visibility. The AI_SEARCH EntitlementKey and MAX_AI_SEARCH_PER_MONTH LimitKey entries are NOT removed from enums. Test: `apps/api/test/integration/ai/search-platform.test.ts` — AC-3.2 (authenticated user with no AI entitlements → 200), AC-3.3 (ceiling-hit → 503 CEILING_HIT). Anonymous → login-prompt response.",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-005", "T-011"],
-      "blocks": ["T-015", "T-016"],
-      "subtasks": [
-        { "title": "Remove createAiQuotaMiddleware('search') from search route", "completed": false },
-        { "title": "Add unauthenticated → login-prompt response (not 403 AI gate)", "completed": false },
-        { "title": "Confirm rate-limit and USD ceiling remain active", "completed": false },
-        { "title": "Write AC-3.2 test: authenticated no-entitlement user → 200", "completed": false },
-        { "title": "Write AC-3.3 test: ceiling-hit → 503 CEILING_HIT", "completed": false }
-      ],
-      "tags": ["api", "routes", "phase-3", "ai-search"],
-      "phase": "integration",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-015",
-      "title": "Write ai_support addon entitlement and metering integration tests",
-      "description": "In `apps/api/test/integration/ai/support-addon.test.ts`, write tests: AC-4.1 — seeded host purchases AI_SUPPORT addon; assert `billing.entitlements.getByCustomerId` returns `AI_SUPPORT` via customer-level overrides; AC-4.2 — `ai_support` metering is keyed by the host's userId (the addon purchaser), NOT an accommodation's ownerId; AC-4.3 — the final grant matrix from §6.2 is asserted as a config snapshot test (all 9 plans × 4 AI entitlements). Test file: `packages/billing/test/grant-matrix.snapshot.test.ts` for AC-4.3.",
-      "status": "pending",
-      "complexity": 3,
-      "blockedBy": ["T-005", "T-014"],
-      "blocks": ["T-016"],
-      "subtasks": [
-        { "title": "Write AC-4.1: addon purchase surfaces AI_SUPPORT via overrides", "completed": false },
-        { "title": "Write AC-4.2: support metering keyed by host userId not ownerId", "completed": false },
-        { "title": "Write AC-4.3: §6.2 grant matrix snapshot test across all plans", "completed": false }
-      ],
-      "tags": ["testing", "api", "integration", "phase-4", "ai-support", "billing"],
-      "phase": "testing",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-016",
-      "title": "Add staging billing smoke checklist entries for SPEC-211",
-      "description": "In `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`, add SPEC-211 staging smoke entries per the root CLAUDE.md mandatory billing smoke rule: (1) owner-at-quota chat → 403 LIMIT_REACHED (with sign-off template); (2) tourist chat on a healthy owner → success; (3) free search (authenticated, no AI entitlement) → success; (4) search ceiling-hit → 503 CEILING_HIT. Add prod smoke entries in the prod-smoke-checklist for the billing core changes (chat route and extras migration). Include the manual backup step reference from the SPEC-187 runbook.",
-      "status": "pending",
-      "complexity": 2,
-      "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
-      "blocks": ["T-017"],
-      "subtasks": [
-        { "title": "Add owner-at-quota chat → 403 staging smoke entry", "completed": false },
-        { "title": "Add tourist chat on healthy owner → success staging smoke entry", "completed": false },
-        { "title": "Add free search → success staging smoke entry", "completed": false },
-        { "title": "Add search ceiling-hit → 503 staging smoke entry", "completed": false },
-        { "title": "Add prod smoke entries for billing core changes", "completed": false }
-      ],
-      "tags": ["docs", "testing", "billing-smoke", "phase-2"],
-      "phase": "docs",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
-    },
-    {
-      "id": "T-017",
-      "title": "Update packages/billing/CLAUDE.md with Model C two-layer model",
-      "description": "In `packages/billing/CLAUDE.md`, add a 'Model C — Two-Layer Config/DB Split' section documenting: (1) the capability layer (config wins, auto-propagated on deploy via db:apply-extras); (2) the commercial layer (DB wins, operator-editable via SPEC-168 admin UI); (3) the §8.2 field-split table; (4) how to add a new entitlement (update plans.config.ts + re-run extras migration). Cross-reference the `adding-an-entitlement.md` doc. Also update `docs/billing/adding-an-entitlement.md` with the same Model C context and a note that config-only changes require running the extras migration to propagate (R-6 mitigation).",
-      "status": "pending",
-      "complexity": 2,
-      "blockedBy": ["T-016"],
-      "blocks": [],
-      "subtasks": [
-        { "title": "Add Model C section to packages/billing/CLAUDE.md", "completed": false },
-        { "title": "Update docs/billing/adding-an-entitlement.md with Model C workflow", "completed": false },
-        { "title": "Cross-reference field-split table in both docs", "completed": false }
-      ],
-      "tags": ["docs", "billing", "model-c", "phase-2"],
-      "phase": "docs",
-      "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-      "timestamps": { "created": "2026-06-09T00:00:00.000Z", "started": null, "completed": null }
+    "version": "1.0",
+    "specRef": "SPEC-211",
+    "title": "AI Monetization Model",
+    "created": "2026-06-09T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Replace -1 AI quotas with finite values in plans.config.ts",
+            "description": "In `packages/billing/src/config/plans.config.ts`, replace every `-1` AI limit value with the finite values from §6.1: owner-premium → MAX_AI_TEXT_IMPROVE=1000, MAX_AI_CHAT=2000, MAX_AI_SEARCH=2000; complex-premium → MAX_AI_TEXT_IMPROVE=2000, MAX_AI_CHAT=5000, MAX_AI_SEARCH=2000; tourist-vip → MAX_AI_CHAT=1000, MAX_AI_SEARCH=1000. All other plan limits stay unchanged. Test: `packages/billing/test/plans.config.test.ts` — iterate ALL_PLANS and assert no plan has `-1` for any AI limit key (AC-0.1).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-008", "T-011"],
+            "subtasks": [
+                { "title": "Replace -1 on owner-premium (3 AI limit keys)", "completed": true },
+                { "title": "Replace -1 on complex-premium (3 AI limit keys)", "completed": true },
+                {
+                    "title": "Replace -1 on tourist-vip (2 AI limit keys — will be removed later)",
+                    "completed": true
+                },
+                { "title": "Write no-minus-one config test (AC-0.1)", "completed": true }
+            ],
+            "tags": ["billing", "config", "phase-0", "cost-control"],
+            "phase": "setup",
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-10T01:34:32.000Z",
+                "completed": "2026-06-10T01:36:30.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Set concrete USD cost ceilings in ai_settings config",
+            "description": "In `packages/schemas/src/entities/ai/ai-settings.schema.ts` (or the ai_settings default/config location used by the API), set the concrete ceiling values from §6.3: `globalMonthlyMicroUsd = 100_000_000`; `perFeatureMonthlyMicroUsd = { chat: 45_000_000, search: 30_000_000, text_improve: 15_000_000, support: 10_000_000 }`. Verify the existing `AiCostCeilingsSchema` accepts these exact integer values. Test: unit test in `packages/schemas/test/` asserting exact ceiling values parse without error and the integers are in µUSD units (AC-0.2).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Locate where ai_settings defaults / initial config live in the codebase",
+                    "completed": false
+                },
+                { "title": "Set globalMonthlyMicroUsd = 100_000_000", "completed": false },
+                { "title": "Set all four perFeatureMonthlyMicroUsd entries", "completed": false },
+                {
+                    "title": "Write config smoke test asserting exact ceiling values (AC-0.2)",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "config", "phase-0", "cost-control", "ai-settings"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Remove ai_chat and MAX_AI_CHAT_PER_MONTH from tourist plans in config",
+            "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_CHAT` from the `entitlements` array and remove `MAX_AI_CHAT_PER_MONTH` from the `limits` map for the three tourist plans: `tourist-free`, `tourist-plus`, and `tourist-vip`. The finite value set in T-001 for tourist-vip is now also removed. Test: extend `packages/billing/test/plans.config.test.ts` asserting no tourist plan entry has `AI_CHAT` in entitlements or `MAX_AI_CHAT_PER_MONTH` in limits (part of AC-1.4 config side).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Remove AI_CHAT entitlement from tourist-free, tourist-plus, tourist-vip",
+                    "completed": false
+                },
+                {
+                    "title": "Remove MAX_AI_CHAT_PER_MONTH limit key from all three tourist plans",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no tourist plan has AI_CHAT or MAX_AI_CHAT_PER_MONTH in config test",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "config", "phase-1", "ai-chat"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Remove ai_search and MAX_AI_SEARCH_PER_MONTH from all plans in config",
+            "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_SEARCH` from the `entitlements` array and remove `MAX_AI_SEARCH_PER_MONTH` from the `limits` map for ALL 9 plans (owner-basico/pro/premium, complex-basico/pro/premium, tourist-free/plus/vip). Do NOT delete the enum keys themselves from `EntitlementKey`/`LimitKey` (additive-only policy). Test: `packages/billing/test/plans.config.test.ts` — assert no plan grants `AI_SEARCH` or carries `MAX_AI_SEARCH_PER_MONTH` in limits (AC-3.1 config side).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-011"],
+            "subtasks": [
+                { "title": "Remove AI_SEARCH entitlement from all 9 plans", "completed": false },
+                {
+                    "title": "Remove MAX_AI_SEARCH_PER_MONTH limit key from all 9 plans",
+                    "completed": false
+                },
+                {
+                    "title": "Assert config test: no plan has AI_SEARCH or MAX_AI_SEARCH_PER_MONTH",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "config", "phase-3", "ai-search"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add ai_support recurring addon definition to addons.config.ts",
+            "description": "In `packages/billing/src/config/addons.config.ts`, add `AI_SUPPORT_ADDON: AddonDefinition` per §7.8: `slug: 'ai-support-monthly'`, `billingType: 'recurring'`, `priceArs: 800_000` (TBD-owner-confirm at implementation), `durationDays: null`, `affectsLimitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH`, `limitIncrease: 100` (TBD-owner-confirm), `grantsEntitlement: EntitlementKey.AI_SUPPORT`, `targetCategories: ['owner', 'complex']`, `isActive: true`, `sortOrder: 6`. `limitIncrease` must be a finite positive number (no -1). Export from `ALL_ADDONS`. Test: `packages/billing/test/addons.config.test.ts` — assert addon exists in ALL_ADDONS with correct shape and finite limitIncrease (AC-4.1 config side).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Add AI_SUPPORT_ADDON constant with all required fields",
+                    "completed": false
+                },
+                { "title": "Add to ALL_ADDONS export", "completed": false },
+                {
+                    "title": "Confirm limitIncrease is a finite positive number (no -1)",
+                    "completed": false
+                },
+                {
+                    "title": "Write addon shape + finiteness test (AC-4.1 config side)",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "addons", "config", "phase-4", "ai-support"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add i18n keys for ai_chat unavailable copy in es/en/pt",
+            "description": "Add the OQ-8 copy to the locale files in `@repo/i18n`: es: 'El chat de IA no está disponible para este alojamiento', en: 'AI chat is not available for this accommodation', pt: 'O chat de IA não está disponível para esta acomodação'. Determine the key path at implementation (e.g. `ai.chat.ownerUnavailable` or `errors.aiChatUnavailable`). Add to all three locale files (`packages/i18n/src/locales/es.json`, `en.json`, `pt.json`). Test: verify i18n key exists in all three locales via the existing i18n test suite or add a key-presence test.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Choose key path (coordinate with chat route error response key)",
+                    "completed": false
+                },
+                { "title": "Add key to es.json", "completed": false },
+                { "title": "Add key to en.json", "completed": false },
+                { "title": "Add key to pt.json", "completed": false }
+            ],
+            "tags": ["i18n", "phase-1", "ai-chat"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement resolveOwnerLimitsForOwnerId in owner-entitlement.ts",
+            "description": "In `apps/api/src/middlewares/owner-entitlement.ts`, add the function `resolveOwnerLimitsForOwnerId(ownerId: string): Promise<Map<LimitKey, number>>` per §7.2. Mirror `resolveOwnerEntitlementsForOwnerId`: resolve ownerId → billing customer → active subscription → plan limits JSONB + customer-level limit overrides via `billing.subscriptions.getByCustomerId`, `billing.plans.get`, `billing.limits.getByCustomerId`. Falls back to owner-basico DB row limits when no active sub. Cache consistent with 5-min entitlement cache. Test file: `apps/api/test/unit/middlewares/owner-entitlement.test.ts` — assert: (1) owner with active sub → correct limits map; (2) owner with no sub → owner-basico fallback limits returned; (3) customer-level override merges correctly (AC-1.1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Implement ownerId → billing customer → plan limits resolution chain",
+                    "completed": false
+                },
+                {
+                    "title": "Implement owner-basico fallback when no active subscription",
+                    "completed": false
+                },
+                { "title": "Apply customer-level limit overrides", "completed": false },
+                {
+                    "title": "Write unit tests: active sub, no-sub fallback, override merge (AC-1.1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "middleware", "phase-1", "ai-chat", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Define Model C field-split table as exhaustive TypeScript constant",
+            "description": "In `packages/billing/src/config/model-c-field-split.ts` (new file), define a typed exhaustive record classifying every seed-controlled `billing_plans` column as `'capability'` or `'commercial'` per §8.2. Entries: `entitlements` → capability; `limits` presence → capability; `limits` values → commercial; `metadata.monthlyPriceArs` / `annualPriceArs` → commercial; `active` → commercial; `description` → commercial; `metadata.displayName` → commercial; `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields → capability. Export from `@repo/billing`. Test: `packages/billing/test/model-c-field-split.test.ts` — assert every column listed in §8.2 is classified and no unclassified column exists (AC-2.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003", "T-004"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Create model-c-field-split.ts with typed field-split record",
+                    "completed": false
+                },
+                { "title": "Classify all §8.2 columns", "completed": false },
+                { "title": "Export from @repo/billing barrel", "completed": false },
+                {
+                    "title": "Write guard test: all classified, no unclassified (AC-2.3)",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "config", "phase-2", "model-c"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Inline owner-scoped gate, quota check, and metering in chat route handler",
+            "description": "In `apps/api/src/routes/ai/protected/chat.ts`, replace the tourist-keyed `createAiQuotaMiddleware('chat')` gate with inline owner-scoped logic per §7.3: (1) resolve `ownerId` from `accommodation.ownerId` (already fetched as 404 guard); (2) call `resolveOwnerEntitlementsForOwnerId` + `resolveOwnerLimitsForOwnerId`; (3) gate: owner lacks `AI_CHAT` → 403 `ENTITLEMENT_REQUIRED` (use the i18n key from T-006); (4) quota: `getMonthlyCallCount({ userId: ownerId, feature: 'chat', now })` >= ownerLimit → 403 `LIMIT_REACHED`; (5) `recordAiUsage({ userId: ownerId, ... })`. Keep `createAiRateLimitMiddlewares('chat')` untouched. Test: `apps/api/test/integration/ai/chat-owner-metered.test.ts` — AC-1.2 (success, recordAiUsage called with ownerId) + AC-1.3 (owner-at-quota → 403 LIMIT_REACHED) + AC-1.5 (rate-limit preserved).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Remove createAiQuotaMiddleware('chat') from chat route",
+                    "completed": false
+                },
+                { "title": "Add owner entitlement + limit resolution inline", "completed": false },
+                {
+                    "title": "Add owner quota check (getMonthlyCallCount keyed by ownerId)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire recordAiUsage keyed by ownerId (not tourist userId)",
+                    "completed": false
+                },
+                { "title": "Write integration tests AC-1.2, AC-1.3, AC-1.5", "completed": false }
+            ],
+            "tags": ["api", "routes", "phase-1", "ai-chat", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update billingPlans.seed.ts capability-layer sync policy",
+            "description": "In `packages/seed/src/required/billingPlans.seed.ts`, replace the current warn-only-on-divergence behaviour with the Model C per-field policy per §7.5: capability-layer divergence → sync DB to config (overwrite); commercial-layer divergence → leave DB as-is (log for visibility only). Reference the field-split table from T-008. Add a guard: every seed-controlled column must be classified in the field-split table before the seed runs (fail-fast on unclassified column). Test: `packages/seed/test/billing-plans-seed.test.ts` — assert capability sync updates DB, commercial mismatch leaves DB unchanged (AC-2.2 seed side, AC-2.3 guard).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Import field-split table from @repo/billing", "completed": false },
+                {
+                    "title": "Capability divergence: overwrite DB column from config",
+                    "completed": false
+                },
+                {
+                    "title": "Commercial divergence: log and skip (do not overwrite)",
+                    "completed": false
+                },
+                {
+                    "title": "Guard: fail-fast if a seed-controlled column is unclassified",
+                    "completed": false
+                },
+                {
+                    "title": "Write seed tests for capability-sync and commercial-no-clobber",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "billing", "phase-2", "model-c"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write idempotent Model C extras migration (finite limits + capability removals)",
+            "description": "Create `packages/db/src/migrations/extras/014-model-c-capability-sync.sql` (or the next available extras number). The migration must: (1) update four AI limit keys on plans that had -1 to config values from §6.1; (2) remove AI_CHAT + MAX_AI_CHAT_PER_MONTH from tourist plan rows; (3) remove AI_SEARCH + MAX_AI_SEARCH_PER_MONTH from all plan rows; (4) run the general capability sync governed by §8.2 field-split; (5) support a dry-run mode (param or env); (6) call clearEntitlementCache for touched customers or document the 5-min window acceptance. Must be idempotent: second run reports zero changes. Test: real-DB integration test in `packages/db/test/extras/014-model-c-sync.test.ts` covering AC-0.3, AC-0.4, AC-1.4, AC-2.1, AC-2.2, AC-3.1.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-008", "T-010"],
+            "blocks": ["T-012", "T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Write SQL for finite-limit propagation (4 AI limit keys, -1 rows)",
+                    "completed": false
+                },
+                { "title": "Write SQL for AI_CHAT removal from tourist rows", "completed": false },
+                { "title": "Write SQL for AI_SEARCH removal from all rows", "completed": false },
+                {
+                    "title": "Write SQL for general capability sync (entitlements array + limit key presence)",
+                    "completed": false
+                },
+                { "title": "Add dry-run mode and idempotency guard", "completed": false }
+            ],
+            "tags": ["db", "migration", "phase-2", "model-c", "extras"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write real-DB integration tests for Model C extras migration",
+            "description": "Create `packages/db/test/extras/014-model-c-sync.test.ts` using `testDb.setup/clean`. Scenarios (against a db:fresh-dev snapshot): (1) AC-0.3 — seed -1 limits manually, run migration, assert finite values + AI_CHAT removed from tourist rows + AI_SEARCH removed from all rows + commercial fields byte-identical; (2) AC-0.4 — run migration twice, assert second run reports zero changes (idempotent); (3) AC-2.1 — add a new EntitlementKey to a plan in config, run migration, assert DB row gains it; (4) AC-2.2 — operator-edit a limits value, run migration, assert value NOT overwritten. Uses the 13 SPEC-143 test users seeded via db:fresh-dev.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-011"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Set up testDb fixture using db:fresh-dev snapshot",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-0.3 test: finite limits + removals + commercial byte-identical",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-0.4 test: idempotency (second run = zero changes)",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-2.1 test: new capability addition propagated",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-2.2 test: commercial-layer value not clobbered",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "db", "integration", "phase-2", "model-c"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write chat route owner-metered integration tests",
+            "description": "In `apps/api/test/integration/ai/chat-owner-metered.test.ts`, write integration tests using StubProvider + mock-actor headers + seeded billing: AC-1.2 — tourist sends chat on a listing whose owner has AI_CHAT + quota; assert 200 success and spy on `recordAiUsage` confirming `userId === ownerId` (not tourist's id); AC-1.3 — tourist sends chat where owner is at `MAX_AI_CHAT_PER_MONTH`; assert 403 LIMIT_REACHED regardless of tourist's own (now absent) entitlement; AC-1.4 DB side — after running extras migration, assert no tourist subscriber row has AI_CHAT; AC-1.5 — per-tourist rate-limit still applies (burst guard).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Set up test fixture with StubProvider and seeded billing rows",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-1.2: success + recordAiUsage keyed by ownerId",
+                    "completed": false
+                },
+                { "title": "Write AC-1.3: owner-at-quota → 403 LIMIT_REACHED", "completed": false },
+                {
+                    "title": "Write AC-1.4 DB: post-migration tourist rows lack AI_CHAT",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "api", "integration", "phase-1", "ai-chat"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Refactor search route to drop quota gate and require auth",
+            "description": "In `apps/api/src/routes/ai/...search...` (locate the search route file), remove `createAiQuotaMiddleware('search')` entirely. Add auth-required guard: unauthenticated requests get a login-prompt response (not a 403 AI gate). Keep: per-user/IP rate-limit via `createAiRateLimitMiddlewares('search')`, the `ai_settings` per-feature USD ceiling (`perFeatureMonthlyMicroUsd.search`) enforced by the engine ceiling checker, and metering via `recordAiUsage` for cost visibility. The AI_SEARCH EntitlementKey and MAX_AI_SEARCH_PER_MONTH LimitKey entries are NOT removed from enums. Test: `apps/api/test/integration/ai/search-platform.test.ts` — AC-3.2 (authenticated user with no AI entitlements → 200), AC-3.3 (ceiling-hit → 503 CEILING_HIT). Anonymous → login-prompt response.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-011"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Remove createAiQuotaMiddleware('search') from search route",
+                    "completed": false
+                },
+                {
+                    "title": "Add unauthenticated → login-prompt response (not 403 AI gate)",
+                    "completed": false
+                },
+                { "title": "Confirm rate-limit and USD ceiling remain active", "completed": false },
+                {
+                    "title": "Write AC-3.2 test: authenticated no-entitlement user → 200",
+                    "completed": false
+                },
+                { "title": "Write AC-3.3 test: ceiling-hit → 503 CEILING_HIT", "completed": false }
+            ],
+            "tags": ["api", "routes", "phase-3", "ai-search"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write ai_support addon entitlement and metering integration tests",
+            "description": "In `apps/api/test/integration/ai/support-addon.test.ts`, write tests: AC-4.1 — seeded host purchases AI_SUPPORT addon; assert `billing.entitlements.getByCustomerId` returns `AI_SUPPORT` via customer-level overrides; AC-4.2 — `ai_support` metering is keyed by the host's userId (the addon purchaser), NOT an accommodation's ownerId; AC-4.3 — the final grant matrix from §6.2 is asserted as a config snapshot test (all 9 plans × 4 AI entitlements). Test file: `packages/billing/test/grant-matrix.snapshot.test.ts` for AC-4.3.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Write AC-4.1: addon purchase surfaces AI_SUPPORT via overrides",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-4.2: support metering keyed by host userId not ownerId",
+                    "completed": false
+                },
+                {
+                    "title": "Write AC-4.3: §6.2 grant matrix snapshot test across all plans",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "api", "integration", "phase-4", "ai-support", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add staging billing smoke checklist entries for SPEC-211",
+            "description": "In `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`, add SPEC-211 staging smoke entries per the root CLAUDE.md mandatory billing smoke rule: (1) owner-at-quota chat → 403 LIMIT_REACHED (with sign-off template); (2) tourist chat on a healthy owner → success; (3) free search (authenticated, no AI entitlement) → success; (4) search ceiling-hit → 503 CEILING_HIT. Add prod smoke entries in the prod-smoke-checklist for the billing core changes (chat route and extras migration). Include the manual backup step reference from the SPEC-187 runbook.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Add owner-at-quota chat → 403 staging smoke entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add tourist chat on healthy owner → success staging smoke entry",
+                    "completed": false
+                },
+                { "title": "Add free search → success staging smoke entry", "completed": false },
+                { "title": "Add search ceiling-hit → 503 staging smoke entry", "completed": false },
+                { "title": "Add prod smoke entries for billing core changes", "completed": false }
+            ],
+            "tags": ["docs", "testing", "billing-smoke", "phase-2"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Update packages/billing/CLAUDE.md with Model C two-layer model",
+            "description": "In `packages/billing/CLAUDE.md`, add a 'Model C — Two-Layer Config/DB Split' section documenting: (1) the capability layer (config wins, auto-propagated on deploy via db:apply-extras); (2) the commercial layer (DB wins, operator-editable via SPEC-168 admin UI); (3) the §8.2 field-split table; (4) how to add a new entitlement (update plans.config.ts + re-run extras migration). Cross-reference the `adding-an-entitlement.md` doc. Also update `docs/billing/adding-an-entitlement.md` with the same Model C context and a note that config-only changes require running the extras migration to propagate (R-6 mitigation).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add Model C section to packages/billing/CLAUDE.md",
+                    "completed": false
+                },
+                {
+                    "title": "Update docs/billing/adding-an-entitlement.md with Model C workflow",
+                    "completed": false
+                },
+                { "title": "Cross-reference field-split table in both docs", "completed": false }
+            ],
+            "tags": ["docs", "billing", "model-c", "phase-2"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 17,
+        "pending": 16,
+        "inProgress": 0,
+        "completed": 1,
+        "blocked": 0,
+        "averageComplexity": 2.2
     }
-  ],
-  "summary": {
-    "total": 17,
-    "pending": 17,
-    "inProgress": 0,
-    "completed": 0,
-    "blocked": 0,
-    "averageComplexity": 2.2
-  }
 }
