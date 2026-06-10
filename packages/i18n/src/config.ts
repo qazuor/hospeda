@@ -72,7 +72,9 @@ export const namespaces = [
     // Contribution hub /colaborar (web only, SPEC-191)
     'contributions',
     // Content moderation (SPEC-195)
-    'content-moderation'
+    'content-moderation',
+    // AI Natural-Language Search (SPEC-199)
+    'aiSearch'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -133,6 +135,7 @@ import adminPagesEs from './locales/es/admin-pages.json';
 import adminTablesEs from './locales/es/admin-tables.json';
 import adminTabsEs from './locales/es/admin-tabs.json';
 import adminWhatsNewEs from './locales/es/admin-whats-new.json';
+import aiSearchEs from './locales/es/aiSearch.json';
 import apiEs from './locales/es/api.json';
 import authUiEs from './locales/es/auth-ui.json';
 import benefitsEs from './locales/es/benefits.json';
@@ -185,6 +188,7 @@ import adminPagesEn from './locales/en/admin-pages.json';
 import adminTablesEn from './locales/en/admin-tables.json';
 import adminTabsEn from './locales/en/admin-tabs.json';
 import adminWhatsNewEn from './locales/en/admin-whats-new.json';
+import aiSearchEn from './locales/en/aiSearch.json';
 import apiEn from './locales/en/api.json';
 import authUiEn from './locales/en/auth-ui.json';
 import benefitsEn from './locales/en/benefits.json';
@@ -237,6 +241,7 @@ import adminPagesPt from './locales/pt/admin-pages.json';
 import adminTablesPt from './locales/pt/admin-tables.json';
 import adminTabsPt from './locales/pt/admin-tabs.json';
 import adminWhatsNewPt from './locales/pt/admin-whats-new.json';
+import aiSearchPt from './locales/pt/aiSearch.json';
 import apiPt from './locales/pt/api.json';
 import authUiPt from './locales/pt/auth-ui.json';
 import benefitsPt from './locales/pt/benefits.json';
@@ -280,6 +285,7 @@ const rawTranslations = {
     es: {
         about: aboutEs,
         account: accountEs,
+        aiSearch: aiSearchEs,
         accommodations: accommodationsEs,
         api: apiEs,
         'auth-ui': authUiEs,
@@ -332,6 +338,7 @@ const rawTranslations = {
     en: {
         about: aboutEn,
         account: accountEn,
+        aiSearch: aiSearchEn,
         accommodations: accommodationsEn,
         api: apiEn,
         'auth-ui': authUiEn,
@@ -384,6 +391,7 @@ const rawTranslations = {
     pt: {
         about: aboutPt,
         account: accountPt,
+        aiSearch: aiSearchPt,
         accommodations: accommodationsPt,
         api: apiPt,
         'auth-ui': authUiPt,
