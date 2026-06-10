@@ -100,8 +100,12 @@ const SENSITIVE_KEYS = new Set([
  * @internal
  */
 const SENSITIVE_PATTERNS = [
-    // JWT tokens (xxxxx.xxxxx.xxxxx)
-    /eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g,
+    // JWT tokens (header.payload.signature — base64url segments).
+    // Bounded quantifiers {1,8192} prevent polynomial backtracking on inputs
+    // containing many consecutive 'eyJ' prefixes (CodeQL js/polynomial-redos).
+    // 8192 base64url chars per segment exceeds any real JWT segment by orders
+    // of magnitude, so all valid tokens still match.
+    /eyJ[a-zA-Z0-9_-]{1,8192}\.eyJ[a-zA-Z0-9_-]{1,8192}\.[a-zA-Z0-9_-]{1,8192}/g,
     // Bearer tokens
     /Bearer\s+[a-zA-Z0-9_-]+/gi,
     // Credit card numbers (basic pattern - 13-19 digits with optional separators)
