@@ -156,7 +156,7 @@
             "id": "T-005",
             "title": "Write integration test for /healthz response contract",
             "description": "Write an integration-level test that calls the /healthz endpoint and asserts the full response contract (AC-1.1, AC-1.2):\n\n- File: apps/admin/test/lib/healthz.test.ts (this file is already created in T-002 for unit tests; extend it here with integration-style assertions, or split into a separate file apps/admin/test/integration/healthz.test.ts)\n- Test cases:\n  1. 'returns HTTP 200 for GET /healthz'\n  2. 'response body is {status: \"ok\"} (valid JSON)'\n  3. 'response Content-Type includes application/json'\n  4. 'no QZPayBilling instance is constructed on probe' — mock/spy createQZPayBilling from @qazuor/qzpay-core and assert it was not called when the healthz handler runs\n  5. 'response time < 50ms' (optional, as a sanity guard — use performance.now() before/after calling the handler in-process)\n- Use the vitest environment (jsdom or node — use node environment for this test file since it tests a server handler, not DOM)\n- If the handler can be called directly (exported function), call it directly. If it requires a running Nitro server, use msw or undici MockAgent to intercept.\n\nFiles affected:\n- apps/admin/test/lib/healthz.test.ts (extend) or apps/admin/test/integration/healthz.test.ts (new)\n\nNote: these tests must pass before T-011 (regression tests) can validate the fixed behavior.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-011"],
@@ -183,15 +183,15 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:12:22.000Z",
+                "completed": "2026-06-10T03:23:16.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Write regression test reproducing SSR billing construction bug",
             "description": "Write a test that reproduces the original bug (QZPayBilling constructed on every SSR render) BEFORE the fix is applied, then confirm it passes after the fix. This is the pre-fix regression test that must fail on the unmodified __root.tsx:\n\n- File: apps/admin/test/regression/ssr-billing-construction.test.tsx (new)\n- Test setup:\n  - Mock createQZPayBilling from @qazuor/qzpay-core with vi.mock (spy to count calls)\n  - Mock useSession from @/lib/auth-client (return { data: null })\n  - Render RootDocument (extract and export if not already exported from __root.tsx) in a Node/jsdom environment simulating N=5 server-side renders (renderToString or @testing-library/react render in server mode)\n  - Each render MUST produce a fresh component instance (unmount between renders to simulate SSR per-request)\n- Assertions (this test should FAIL on unmodified __root.tsx, PASS after T-009 fix):\n  1. 'createQZPayBilling is called at most once across N SSR renders' — i.e., not called on every render\n  2. 'QZPayBilling initialized log is not emitted on each SSR render' (spy on logger/console.log for the 'QZPayBilling initialized' message)\n- Mark the test with a comment: 'Regression test for SPEC-209 AC-2.2 — must fail before fix, pass after fix (T-009)'\n\nFiles affected:\n- apps/admin/test/regression/ssr-billing-construction.test.tsx (new)\n- apps/admin/src/routes/__root.tsx may need to export RootDocument for testability\n\nNote: this task depends on T-004 (procedure) to understand what to measure, but the test itself is independent code. It also blocks T-009 (the fix) because you write the test first.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-009"],
@@ -222,8 +222,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:12:22.000Z",
+                "completed": "2026-06-10T03:23:16.000Z"
             }
         },
         {
@@ -265,7 +265,7 @@
             "id": "T-008",
             "title": "Write static-analysis guard test for web root SSR-unsafe construction",
             "description": "Extend the SSR guard to cover apps/web to prevent the pattern from being introduced there (AC-3.1 second half):\n\n- File: apps/admin/test/guard/ssr-root-guard.test.ts (extend the file from T-007, or create apps/web/test/guard/ssr-root-guard.test.ts if web has its own test runner)\n- Determine the web root file: the web app uses Astro, so there is no __root.tsx. The relevant entry is apps/web/src/layouts/ (main layout) and apps/web/src/pages/[lang]/ root pages. Read those files and assert:\n  1. No occurrence of 'createQZPayBilling(' in any Astro layout/page file that is server-rendered\n  2. No occurrence of 'new QueryClient(' outside of a client:* directive context\n- If the web root is clean today (as per spec — 'apps/web does NOT build a QueryClient/billing in its root'), the test acts as a pinning assertion that WOULD fail if someone adds it later.\n- Add a comment: 'Pin test — web root is currently clean. Fails if createQZPayBilling / new QueryClient introduced outside client:* context.'\n\nFiles affected:\n- apps/admin/test/guard/ssr-root-guard.test.ts (extend) OR apps/web/test/guard/ (new)\n- Must determine which vitest config covers web — if web uses a separate vitest.config.ts, place the test there\n\nTest requirements: this IS the test. Part of CI suite.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
@@ -292,8 +292,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:12:22.000Z",
+                "completed": "2026-06-10T03:23:16.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 8,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.1
     }

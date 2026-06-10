@@ -305,7 +305,7 @@
             "specId": "SPEC-209",
             "title": "Admin SSR memory leak + cheap healthcheck",
             "status": "in-progress",
-            "progress": "5/13",
+            "progress": "8/13",
             "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
             "branch": "spec/SPEC-209-admin-ssr-memory-leak-healthcheck",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-209-admin-ssr-memory-leak-healthcheck",
