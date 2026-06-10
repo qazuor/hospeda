@@ -194,3 +194,50 @@ describe('GalleryField', () => {
         );
     });
 });
+
+describe('GalleryField — items loaded from the API without id/order', () => {
+    // media.gallery items only carry url/caption/description/moderationState.
+    // The frontend-only id/order are absent until GalleryField backfills them.
+    const buildApiImage = (slug: string): GalleryImage =>
+        ({
+            url: `https://example.com/${slug}.jpg`,
+            moderationState: ModerationStatusEnum.APPROVED
+        }) as unknown as GalleryImage;
+
+    it('renders one item per image when id/order are missing', () => {
+        // Regression: without the id backfill these items shared `key={undefined}`,
+        // triggering React's duplicate-key warning and collapsing the list.
+        render(
+            <GalleryField
+                config={buildConfig()}
+                value={[buildApiImage('first'), buildApiImage('second')]}
+                onChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByTestId('gallery-item-0')).toBeInTheDocument();
+        expect(screen.getByTestId('gallery-item-1')).toBeInTheDocument();
+    });
+
+    it('removes exactly the targeted image when id is derived from url', async () => {
+        // Regression: remove keyed off `img.id`, which was undefined for every
+        // API-loaded item, so the filter matched none (or all) instead of one.
+        const user = userEvent.setup();
+        const onChange = vi.fn();
+
+        render(
+            <GalleryField
+                config={buildConfig()}
+                value={[buildApiImage('first'), buildApiImage('second')]}
+                onChange={onChange}
+            />
+        );
+
+        await user.click(screen.getByLabelText('admin-entities.fields.gallery.deleteLabel 1'));
+
+        expect(onChange).toHaveBeenCalledTimes(1);
+        const next = onChange.mock.calls[0]?.[0] as GalleryImage[];
+        expect(next).toHaveLength(1);
+        expect(next[0]?.url).toBe('https://example.com/second.jpg');
+    });
+});
