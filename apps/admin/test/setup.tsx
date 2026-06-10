@@ -379,6 +379,27 @@ vi.mock('@repo/icons', () => {
     };
 });
 
+// Mock @repo/icons/resolver — used by the lazily-loaded IconNameCell
+vi.mock('@repo/icons/resolver', () => ({
+    resolveIcon: ({ iconName }: { iconName: string }) => {
+        const stub =
+            (name: string) =>
+            (props: Record<string, unknown>): React.ReactElement => (
+                <span
+                    data-testid={`icon-${name}`}
+                    aria-hidden="true"
+                    {...props}
+                />
+            );
+        // Return a stub component for known icon names, undefined for unknown
+        if (typeof iconName === 'string' && iconName.endsWith('Icon')) {
+            return stub(iconName);
+        }
+        return undefined;
+    },
+    ICON_MAP: {}
+}));
+
 // Mock useTranslations — returns translation keys as-is for test assertions
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
