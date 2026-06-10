@@ -627,6 +627,9 @@ importers:
       '@repo/seed':
         specifier: workspace:*
         version: link:../../packages/seed
+      '@repo/service-core':
+        specifier: workspace:*
+        version: link:../../packages/service-core
       '@repo/utils':
         specifier: workspace:*
         version: link:../../packages/utils

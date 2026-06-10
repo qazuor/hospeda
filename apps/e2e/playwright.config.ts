@@ -22,6 +22,12 @@ const ADMIN_BASE_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:30
 
 export default defineConfig({
     testDir: './tests',
+    // Load specs through tsconfig.playwright.json, which clears the inherited
+    // `@repo/* -> packages/*/src` path mappings (tsconfig `paths` replace, not
+    // merge). Without this, Playwright honors those mappings and loads
+    // `@repo/service-core` SOURCE, tripping its babel transform on TS `declare`
+    // fields. With paths empty, `@repo/*` resolves to built dist (plain JS).
+    tsconfig: './tsconfig.playwright.json',
     fullyParallel: true,
     forbidOnly: isCI,
     workers: isPR ? 4 : isNightly ? 2 : 1,
