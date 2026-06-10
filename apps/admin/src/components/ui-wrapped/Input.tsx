@@ -114,8 +114,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                             rightIcon && 'pr-10',
                             // State styles
                             hasError && 'border-destructive focus-visible:ring-destructive',
-                            success &&
-                                'border-green-500 focus-visible:ring-green-500 dark:border-green-400',
+                            success && 'border-success focus-visible:ring-success',
                             !hasError && !success && 'border-input',
                             loading && 'opacity-60',
                             className

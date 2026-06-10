@@ -15,6 +15,7 @@ import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
+import { translateApiError } from '@/lib/api-errors';
 import { signIn, signUp } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -143,7 +144,11 @@ export function SignUp({ locale, redirectTo, oauthRedirectTo, showOAuth = true }
 
             if (result.error) {
                 setError(
-                    result.error.message ?? t('auth.signUp.error', 'Error al crear la cuenta')
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t('auth.signUp.error', 'Error al crear la cuenta')
+                    })
                 );
             } else {
                 // Mirror the OAuth host-strip+re-attach below. The

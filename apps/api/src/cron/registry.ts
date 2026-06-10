@@ -7,6 +7,7 @@
 import {
     abandonedPendingSubsJob,
     addonExpiryJob,
+    appLogPurgeJob,
     applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
@@ -14,14 +15,18 @@ import {
     conversationNotificationJob,
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
+    cronRunPurgeJob,
     dunningJob,
+    entityViewsPurgeJob,
     exchangeRateFetchJob,
+    finalizeCancelledSubsJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
     searchIndexRefreshJob,
+    subscriptionPollJob,
     trialExpiryJob,
     trialPreEndNotifJob,
     webhookRetryJob
@@ -52,7 +57,12 @@ export const cronJobs: CronJobDefinition[] = [
     newsletterCloseCampaignsJob,
     trialPreEndNotifJob,
     abandonedPendingSubsJob,
-    applyScheduledPlanChangesJob
+    applyScheduledPlanChangesJob,
+    finalizeCancelledSubsJob,
+    subscriptionPollJob,
+    cronRunPurgeJob,
+    appLogPurgeJob,
+    entityViewsPurgeJob
 ];
 
 /**

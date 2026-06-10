@@ -176,6 +176,7 @@ const DRAFT_CAMPAIGN: NewsletterCampaign = {
     bodyJson: { type: 'doc', content: [] },
     status: NewsletterCampaignStatusEnum.DRAFT,
     localeFilter: NewsletterCampaignLocaleFilterEnum.ALL,
+    contentType: null,
     totalRecipients: null,
     totalSoftcapped: 0,
     sentAt: null,
@@ -274,10 +275,18 @@ describe('CampaignEditor', () => {
             });
         });
 
-        it('renders locale dropdown', () => {
+        it('renders locale and content-type dropdowns', () => {
             renderWithProviders(<CampaignEditor mode="create" />);
 
-            expect(screen.getByRole('combobox')).toBeInTheDocument();
+            // Two Radix Select fields are rendered as comboboxes: localeFilter
+            // and contentType (Phase 6 segmentation).
+            expect(screen.getAllByRole('combobox')).toHaveLength(2);
+        });
+
+        it('renders the content-type segmentation dropdown', () => {
+            renderWithProviders(<CampaignEditor mode="create" />);
+
+            expect(screen.getByTestId('campaign-content-type-select')).toBeInTheDocument();
         });
     });
 

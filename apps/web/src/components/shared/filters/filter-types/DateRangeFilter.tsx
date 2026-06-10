@@ -1,9 +1,15 @@
 /**
  * @file DateRangeFilter.tsx
- * @description Date-range filter for the FilterSidebar. Renders as a compact
- * trigger button (label-like) that opens a floating popover via React portal —
- * the calendar never expands the sidebar's width. Backed by react-day-picker
- * in `mode="range"`. Stores ISO `YYYY-MM-DD` strings (local-day, no TZ shift).
+ * @description Date-range filter for the FilterSidebar. Two layout modes:
+ *
+ * - `mode='range'` (default): one trigger button that opens a single popover
+ *   with react-day-picker in range mode. Best for cohesive ranges like
+ *   check-in/check-out.
+ * - `mode='bounds'`: two side-by-side triggers, each with its own single-mode
+ *   popover. Lets the user fill only "desde", only "hasta", both, or none —
+ *   used by listings where partial bounds are meaningful (e.g. events).
+ *
+ * Stores ISO `YYYY-MM-DD` strings (local-day, no TZ shift).
  */
 
 import { cn } from '@/lib/cn';
@@ -27,6 +33,37 @@ export interface DateRangeFilterConfig {
     readonly checkInPlaceholder?: string;
     /** Placeholder shown when no check-out is selected. */
     readonly checkOutPlaceholder?: string;
+    /**
+     * URL param name for the start of the range. Defaults to `'checkIn'`
+     * (used by accommodations). Set to e.g. `'startDateAfter'` for events.
+     */
+    readonly fromParam?: string;
+    /**
+     * URL param name for the end of the range. Defaults to `'checkOut'`
+     * (used by accommodations). Set to e.g. `'startDateBefore'` for events.
+     */
+    readonly toParam?: string;
+    /**
+     * Picker layout.
+     *
+     * - `'range'` (default): single popover with DayPicker in range mode. Best
+     *   for cohesive ranges (e.g. check-in/check-out).
+     * - `'bounds'`: two side-by-side triggers, each with its own single-mode
+     *   DayPicker. Lets users pick only "desde", only "hasta", both, or none.
+     */
+    readonly mode?: 'range' | 'bounds';
+    /**
+     * Whether to allow selecting past dates. Defaults to `false` (only today
+     * and future). Set to `true` for listings where past dates are meaningful
+     * (e.g. event history).
+     */
+    readonly allowPastDates?: boolean;
+    /**
+     * Optional helper text rendered below the trigger(s). Use it to flag
+     * limitations the user should know about (e.g. "no availability data yet,
+     * dates here don't filter the result set").
+     */
+    readonly description?: string;
 }
 
 interface DateRangeFilterProps {
@@ -62,49 +99,57 @@ function fmtShort(date: Date): string {
 const CALENDAR_LOCALE_MAP = { es: esLocale, en: enLocale, pt: ptLocale } as const;
 
 /**
- * Date-range picker presented as a thin trigger that opens a floating popover.
- * The popover is rendered to `document.body` via portal so the surrounding
- * sidebar's `overflow` never clips it, and uses fixed positioning anchored to
- * the trigger's bounding rect.
+ * Anchored popover positioning shared between range and bounds modes.
+ * Re-anchors on scroll / window resize so the popover follows the trigger.
  */
-export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFilterProps) {
-    const { t } = createTranslations(locale);
-    const [isOpen, setIsOpen] = useState(false);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const popoverRef = useRef<HTMLDivElement>(null);
-    const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; width: number }>({
+function usePopoverPosition(
+    isOpen: boolean,
+    triggerRef: React.RefObject<HTMLButtonElement | null>
+) {
+    const [pos, setPos] = useState<{ top: number; left: number; width: number }>({
         top: 0,
         left: 0,
         width: 320
     });
-
-    const fromDate = value.from ? fromIsoDay(value.from) : undefined;
-    const toDate = value.to ? fromIsoDay(value.to) : undefined;
-    const range: DateRange | undefined =
-        fromDate || toDate ? { from: fromDate, to: toDate } : undefined;
-
-    // Anchor the popover under the trigger; clamp horizontally inside viewport.
     useEffect(() => {
         if (!isOpen || !triggerRef.current) return;
-        const rect = triggerRef.current.getBoundingClientRect();
-        const POPOVER_WIDTH = 320;
-        const margin = 8;
-        let left = rect.left;
-        const viewportWidth = window.innerWidth;
-        if (left + POPOVER_WIDTH + margin > viewportWidth) {
-            left = Math.max(margin, viewportWidth - POPOVER_WIDTH - margin);
-        }
-        setPopoverPos({
-            top: rect.bottom + 6,
-            left,
-            width: POPOVER_WIDTH
-        });
-    }, [isOpen]);
 
-    // Close on outside click or ESC.
+        const update = () => {
+            const trigger = triggerRef.current;
+            if (!trigger) return;
+            const rect = trigger.getBoundingClientRect();
+            const POPOVER_WIDTH = 320;
+            const margin = 8;
+            let left = rect.left;
+            const viewportWidth = window.innerWidth;
+            if (left + POPOVER_WIDTH + margin > viewportWidth) {
+                left = Math.max(margin, viewportWidth - POPOVER_WIDTH - margin);
+            }
+            setPos({ top: rect.bottom + 6, left, width: POPOVER_WIDTH });
+        };
+
+        update();
+        // Use capture phase so we catch scroll on ANY ancestor scroll container
+        // (the sidebar body, the page <html>, etc), not just the document.
+        window.addEventListener('scroll', update, { capture: true, passive: true });
+        window.addEventListener('resize', update, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', update, { capture: true } as EventListenerOptions);
+            window.removeEventListener('resize', update);
+        };
+    }, [isOpen, triggerRef]);
+    return pos;
+}
+
+/** Closes the popover on outside click or ESC. */
+function useDismiss(
+    isOpen: boolean,
+    onClose: () => void,
+    triggerRef: React.RefObject<HTMLButtonElement | null>,
+    popoverRef: React.RefObject<HTMLDivElement | null>
+) {
     useEffect(() => {
         if (!isOpen) return;
-
         const handleMouseDown = (e: MouseEvent) => {
             if (
                 triggerRef.current?.contains(e.target as Node) ||
@@ -112,19 +157,234 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
             ) {
                 return;
             }
-            setIsOpen(false);
+            onClose();
         };
         const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setIsOpen(false);
+            if (e.key === 'Escape') onClose();
         };
-
         document.addEventListener('mousedown', handleMouseDown);
         document.addEventListener('keydown', handleKeyDown);
         return () => {
             document.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [isOpen]);
+    }, [isOpen, onClose, triggerRef, popoverRef]);
+}
+
+/** Calendar classNames shared by both render modes. */
+function useCalendarClassNames() {
+    const defaults = getDefaultClassNames();
+    return {
+        root: `${defaults.root} ${styles.calendarRoot}`,
+        month_caption: `${defaults.month_caption} ${styles.calendarCaption}`,
+        weekday: `${defaults.weekday} ${styles.calendarWeekday}`,
+        nav: `${defaults.nav} ${styles.calendarNav}`,
+        day_button: `${defaults.day_button} ${styles.calendarDayButton}`,
+        today: `${defaults.today} ${styles.calendarToday}`,
+        disabled: `${defaults.disabled} ${styles.calendarDisabled}`
+    };
+}
+
+interface SingleBoundProps {
+    readonly label: string;
+    readonly placeholder: string;
+    readonly selected?: Date;
+    readonly onSelect: (date: Date | undefined) => void;
+    readonly locale: SupportedLocale;
+    readonly disabledMatcher?: import('react-day-picker').Matcher;
+    readonly defaultMonth?: Date;
+    /** Label shown on the "clear" button inside the popover. */
+    readonly clearLabel: string;
+}
+
+/**
+ * Single-date trigger button + popover. Used inside `mode='bounds'` to render
+ * two independent date pickers (Desde + Hasta) side by side.
+ */
+function SingleBoundPicker({
+    label,
+    placeholder,
+    selected,
+    onSelect,
+    locale,
+    disabledMatcher,
+    defaultMonth,
+    clearLabel
+}: SingleBoundProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const pos = usePopoverPosition(isOpen, triggerRef);
+    useDismiss(isOpen, () => setIsOpen(false), triggerRef, popoverRef);
+
+    const calendarLocale = CALENDAR_LOCALE_MAP[locale] ?? esLocale;
+    const classNames = useCalendarClassNames();
+
+    const triggerLabel = selected ? fmtShort(selected) : placeholder;
+    const hasValue = !!selected;
+
+    const handlePick = useCallback(
+        (date: Date | undefined) => {
+            onSelect(date);
+            // Close immediately when a date is picked (or cleared).
+            setIsOpen(false);
+        },
+        [onSelect]
+    );
+
+    return (
+        <div className={styles.boundCol}>
+            <button
+                type="button"
+                ref={triggerRef}
+                className={cn(
+                    styles.trigger,
+                    styles.triggerBound,
+                    hasValue && styles.triggerActive
+                )}
+                onClick={() => setIsOpen((prev) => !prev)}
+                aria-expanded={isOpen}
+                aria-haspopup="dialog"
+                aria-label={label}
+            >
+                <span
+                    className={styles.triggerIcon}
+                    aria-hidden="true"
+                >
+                    <CalendarDotsIcon
+                        size={16}
+                        weight="regular"
+                    />
+                </span>
+                <span className={styles.triggerText}>{triggerLabel}</span>
+            </button>
+            {isOpen &&
+                createPortal(
+                    <div
+                        ref={popoverRef}
+                        className={styles.popover}
+                        // biome-ignore lint/a11y/useSemanticElements: native <dialog> requires open/close lifecycle management incompatible with conditional render
+                        role="dialog"
+                        aria-label={label}
+                        style={{
+                            top: `${pos.top}px`,
+                            left: `${pos.left}px`,
+                            width: `${pos.width}px`
+                        }}
+                    >
+                        <DayPicker
+                            mode="single"
+                            locale={calendarLocale}
+                            selected={selected}
+                            onSelect={handlePick}
+                            numberOfMonths={1}
+                            disabled={disabledMatcher}
+                            defaultMonth={defaultMonth ?? selected ?? new Date()}
+                            classNames={classNames}
+                        />
+                        {hasValue && (
+                            <div className={styles.popoverFooter}>
+                                <button
+                                    type="button"
+                                    className={styles.popoverClearBtn}
+                                    onClick={() => handlePick(undefined)}
+                                >
+                                    {clearLabel}
+                                </button>
+                            </div>
+                        )}
+                    </div>,
+                    document.body
+                )}
+        </div>
+    );
+}
+
+/**
+ * Date-range / date-bounds picker. Branches on `config.mode`.
+ */
+export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFilterProps) {
+    const { t } = createTranslations(locale);
+    const mode = config.mode ?? 'range';
+
+    const fromDate = value.from ? fromIsoDay(value.from) : undefined;
+    const toDate = value.to ? fromIsoDay(value.to) : undefined;
+
+    const today = new Date();
+    const beforeToday = config.allowPastDates ? undefined : { before: today };
+
+    // ----- Bounds mode: two independent triggers + popovers ---------------
+    if (mode === 'bounds') {
+        const fromPickerDisabled = (() => {
+            // "Desde" cannot be after "Hasta" if both are set.
+            if (toDate) {
+                return { after: toDate };
+            }
+            return beforeToday;
+        })();
+        const toPickerDisabled = (() => {
+            // "Hasta" cannot be before "Desde" if both are set.
+            if (fromDate) {
+                return { before: fromDate };
+            }
+            return beforeToday;
+        })();
+
+        const fromPlaceholder = config.checkInPlaceholder ?? t('ui.filter.dateRange.from', 'Desde');
+        const toPlaceholder = config.checkOutPlaceholder ?? t('ui.filter.dateRange.to', 'Hasta');
+        return (
+            <>
+                <div className={styles.boundsRoot}>
+                    <SingleBoundPicker
+                        label={`${config.label} desde`}
+                        placeholder={fromPlaceholder}
+                        selected={fromDate}
+                        onSelect={(date) =>
+                            onChange({
+                                from: date ? toIsoDay(date) : '',
+                                to: value.to
+                            })
+                        }
+                        locale={locale}
+                        disabledMatcher={fromPickerDisabled}
+                        defaultMonth={fromDate ?? toDate ?? today}
+                        clearLabel={t(
+                            'ui.filter.dateRange.clearFrom',
+                            `Limpiar "${fromPlaceholder}"`
+                        )}
+                    />
+                    <SingleBoundPicker
+                        label={`${config.label} hasta`}
+                        placeholder={toPlaceholder}
+                        selected={toDate}
+                        onSelect={(date) =>
+                            onChange({
+                                from: value.from,
+                                to: date ? toIsoDay(date) : ''
+                            })
+                        }
+                        locale={locale}
+                        disabledMatcher={toPickerDisabled}
+                        defaultMonth={toDate ?? fromDate ?? today}
+                        clearLabel={t('ui.filter.dateRange.clearTo', `Limpiar "${toPlaceholder}"`)}
+                    />
+                </div>
+                {config.description && <p className={styles.description}>{config.description}</p>}
+            </>
+        );
+    }
+
+    // ----- Range mode (default): single trigger with DayPicker range -----
+    const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const popoverRef = useRef<HTMLDivElement>(null);
+    const pos = usePopoverPosition(isOpen, triggerRef);
+    useDismiss(isOpen, () => setIsOpen(false), triggerRef, popoverRef);
+    const classNames = useCalendarClassNames();
+    const calendarLocale = CALENDAR_LOCALE_MAP[locale] ?? esLocale;
+
+    const range: DateRange | undefined =
+        fromDate || toDate ? { from: fromDate, to: toDate } : undefined;
 
     const handleSelect = useCallback(
         (next: DateRange | undefined) => {
@@ -140,13 +400,10 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
         onChange({ from: '', to: '' });
     }, [onChange]);
 
-    const calendarLocale = CALENDAR_LOCALE_MAP[locale] ?? esLocale;
-    const defaultClassNames = getDefaultClassNames();
-    const today = new Date();
-
     const triggerLabel = (() => {
         if (fromDate && toDate) return `${fmtShort(fromDate)} – ${fmtShort(toDate)}`;
         if (fromDate) return `${fmtShort(fromDate)} – ${t('ui.filter.dateRange.choose', 'elegir')}`;
+        if (toDate) return `${t('ui.filter.dateRange.choose', 'elegir')} – ${fmtShort(toDate)}`;
         return (
             config.checkInPlaceholder ?? t('ui.filter.dateRange.placeholder', 'Elegí tus fechas')
         );
@@ -197,9 +454,9 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                         role="dialog"
                         aria-label={config.label}
                         style={{
-                            top: `${popoverPos.top}px`,
-                            left: `${popoverPos.left}px`,
-                            width: `${popoverPos.width}px`
+                            top: `${pos.top}px`,
+                            left: `${pos.left}px`,
+                            width: `${pos.width}px`
                         }}
                     >
                         <DayPicker
@@ -208,21 +465,14 @@ export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFi
                             selected={range}
                             onSelect={handleSelect}
                             numberOfMonths={1}
-                            disabled={{ before: today }}
+                            disabled={beforeToday}
                             defaultMonth={fromDate ?? today}
-                            classNames={{
-                                root: `${defaultClassNames.root} ${styles.calendarRoot}`,
-                                month_caption: `${defaultClassNames.month_caption} ${styles.calendarCaption}`,
-                                weekday: `${defaultClassNames.weekday} ${styles.calendarWeekday}`,
-                                nav: `${defaultClassNames.nav} ${styles.calendarNav}`,
-                                day_button: `${defaultClassNames.day_button} ${styles.calendarDayButton}`,
-                                today: `${defaultClassNames.today} ${styles.calendarToday}`,
-                                disabled: `${defaultClassNames.disabled} ${styles.calendarDisabled}`
-                            }}
+                            classNames={classNames}
                         />
                     </div>,
                     document.body
                 )}
+            {config.description && <p className={styles.description}>{config.description}</p>}
         </div>
     );
 }

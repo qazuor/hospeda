@@ -313,16 +313,18 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(subs).toHaveLength(1);
     });
 
-    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
-        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
-        // (the qzpay default, mirrored by hospeda's middlewares/billing.ts).
-        // When the adapter throws, qzpay logs a warning and returns the
-        // un-enriched local subscription (no providerInitPoint). The hospeda
-        // handler then surfaces MISSING_INIT_POINT as 500.
+    it('returns 500 when the adapter throws a 429 (subscriptions.create re-throws raw, not QZPayProviderSyncError)', async () => {
+        // qzpay-core is constructed with `providerSyncErrorStrategy: 'throw'`
+        // (SPEC-149 T-002). However, the subscriptions.create path re-throws
+        // the raw adapter error — NOT wrapped in QZPayProviderSyncError —
+        // so isBillingProviderError() returns false. The error falls through
+        // to the generic 500 handler. This is distinct from the annual flow
+        // (checkout.create), which DOES wrap in QZPayProviderSyncError and
+        // maps 429 → 503 (PROVIDER_RATE_LIMITED).
         //
-        // This validates the qzpay log-strategy branch end-to-end, distinct
-        // from the previous test which exercised the success-with-missing-url
-        // path. Both reach the same 500 but via different qzpay internals.
+        // This validates the monthly subscriptions.create throw path
+        // end-to-end, distinct from the previous test which exercised the
+        // success-with-missing-url path.
         mpStub.config.setError(
             'subscriptions.create',
             429,
@@ -335,6 +337,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             billingInterval: 'monthly'
         });
 
+        // Monthly flow: subscriptions.create re-throws raw error.
+        // isBillingProviderError() → false → generic 500.
         expect(response.status).toBe(500);
 
         // Adapter was called and threw — outcome recorded as 'error'.
@@ -342,10 +346,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(calls).toHaveLength(1);
         expect(calls[0]?.outcome).toBe('error');
 
-        // Local subscription row persists despite the provider failure (the
-        // abandoned-pending-subs cron reaper handles it later). qzpay-core's
-        // `log` strategy explicitly keeps the local record so the user can
-        // retry by hitting the endpoint again without an orphaned state.
+        // Local subscription row persists (qzpay-core subscription throw
+        // path keeps the local record for the cron reaper to collect later).
         const subs = await testDb.getDb().select().from(billingSubscriptions);
         expect(subs).toHaveLength(1);
     });
@@ -483,7 +485,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
 
         // ACT: POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ mpSubscriptionId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -540,7 +542,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         const { body, headers } = buildSignedWebhookRequest({
             mpSubscriptionId: mismatchedMpId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -587,9 +589,17 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         // ARRANGE: pending monthly sub
         const { localSubscriptionId, mpSubscriptionId } = await createPendingMonthlySubscription();
 
-        // ACT: build a body but use wrong-hmac headers — Hospeda's
-        // webhookSignatureMiddleware (HMAC over the body with the test
-        // secret) rejects BEFORE qzpay-hono and the handler run.
+        // ARRANGE: configure the stub so qzpay-hono's verifySignature call
+        // returns false (= signature rejected). The custom hospeda signature
+        // middleware was removed (PR #1221); qzpay-hono's own middleware is
+        // now the sole verification layer. When verifySignature returns false,
+        // qzpay-hono short-circuits with 401 before constructEvent / any
+        // handler runs.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        // ACT: build a body but use wrong-hmac headers — qzpay-hono's
+        // verifySignature (via the stub returning false) rejects BEFORE the
+        // handler runs.
         const body = JSON.stringify({
             id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
             type: 'subscription_preapproval',
@@ -600,7 +610,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         });
         const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
 
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -613,7 +623,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(response.status).toBe(401);
 
         // ASSERT: subscription untouched. Same `'incomplete'` invariant as
-        // the mismatched-id test above — the signature middleware rejects
+        // the mismatched-id test above — the signature verifier rejects
         // BEFORE the handler runs, so the row never sees the update path.
         const subs = await testDb
             .getDb()
@@ -623,8 +633,10 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
         expect(subs).toHaveLength(1);
         expect(subs[0]?.status).toBe('incomplete');
 
-        // ASSERT: stub never reached (hospeda's middleware short-circuited).
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // ASSERT: verifySignature was called once (qzpay-hono runs it before
+        // constructEvent or any handler). constructEvent and subscriptions.retrieve
+        // must NOT be called — they are downstream of the signature gate.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('subscriptions.retrieve')).toHaveLength(0);
     });
@@ -698,8 +710,8 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
 
         // ACT 1: probe BEFORE webhook activation. The sub is in `incomplete`
         // (qzpay-core 1.6.4 post-fix initial status for mode 'paid'), so
-        // loadEntitlements finds no active sub and returns an empty set
-        // with shouldCache=true; the empty set lands in the cache.
+        // loadEntitlements finds no active sub and returns the tourist-free
+        // fallback (SPEC-143 T-143-58). The fallback set lands in the cache.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
         const preBody = (await preRes.json()) as {
@@ -707,8 +719,26 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toEqual([]);
-        expect(preBody.limits).toEqual({});
+        // Tourist-free entitlements: SAVE_FAVORITES, WRITE_REVIEWS,
+        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS, AI_CHAT, AI_SEARCH (6 keys).
+        // The exact shape comes from TOURIST_FREE_PLAN in packages/billing/src/config/plans.config.ts.
+        // AI_CHAT and AI_SEARCH were added by SPEC-173 (ai core, merged ~2026-06-05),
+        // causing this assertion to drift from the original 4-item set.
+        expect(new Set(preBody.entitlements)).toEqual(
+            new Set([
+                'save_favorites',
+                'write_reviews',
+                'read_reviews',
+                'can_view_recommendations',
+                'ai_chat',
+                'ai_search'
+            ])
+        );
+        expect(preBody.limits).toEqual({
+            max_favorites: 3,
+            max_ai_chat_per_month: 10,
+            max_ai_search_per_month: 30
+        });
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot the cache size so we can prove exactly one entry was
@@ -738,7 +768,7 @@ describe('SPEC-143 T-143-10 — monthly checkout', () => {
             })
         );
         const { body, headers } = buildSignedWebhookRequest({ mpSubscriptionId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

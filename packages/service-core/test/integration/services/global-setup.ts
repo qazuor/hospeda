@@ -68,22 +68,19 @@ export async function setup(): Promise<void> {
     await testPool.query('CREATE EXTENSION IF NOT EXISTS "unaccent"');
     await testPool.end();
 
-    // Push the Drizzle schema using @repo/db's own drizzle-kit script.
+    // Apply the versioned Drizzle migrations (NOT push — SPEC-178: CI uses the
+    // same versioned carril as the VPS) using @repo/db's own drizzle-kit script.
     const dbPkgDir = resolve(__dirname, '../../../../db');
     try {
-        execFileSync(
-            'pnpm',
-            ['run', 'drizzle-kit', 'push', '--force', '--config', 'drizzle.config.ts'],
-            {
-                cwd: dbPkgDir,
-                env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
-                stdio: 'pipe',
-                timeout: 120_000
-            }
-        );
+        execFileSync('pnpm', ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'], {
+            cwd: dbPkgDir,
+            env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
+            stdio: 'pipe',
+            timeout: 120_000
+        });
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        throw new Error(`[service-integration-setup] drizzle-kit push failed.\n  Error: ${msg}`);
+        throw new Error(`[service-integration-setup] drizzle-kit migrate failed.\n  Error: ${msg}`);
     }
 
     // Apply triggers/views/CHECK constraints. Non-fatal for service-core

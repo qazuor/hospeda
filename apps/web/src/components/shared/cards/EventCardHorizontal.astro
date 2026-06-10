@@ -96,16 +96,16 @@ const locationLabel = data.location
 const dateBlockStyle = `background-color: ${categoryColors.text}; color: var(--primary-foreground);`;
 
 /** Inline style for the image placeholder gradient. */
-const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, oklch(from var(--core-card) calc(l - 0.03) c h) 100%);`;
+const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, var(--core-card-lm03) 100%);`;
 ---
 
 <article class="event-card-h">
     <!-- Featured badge: top-left overlay, only when isFeatured=true.
          Sits outside the <a> link for consistent z-index handling. -->
     {data.isFeatured && (
-        <span class="event-card-h__featured" aria-label="Evento destacado">
+        <span class="event-card-h__featured featured-badge" aria-label="Evento destacado">
             <StarIcon size={12} weight="fill" aria-hidden="true" />
-            <span class="event-card-h__featured-label">Destacado</span>
+            <span>Destacado</span>
         </span>
     )}
     <!-- FavoriteButton island: top-right over photo area, OUTSIDE the <a> link (HTML semantics) -->
@@ -147,7 +147,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
                 showImage && (
                     <img
                         src={data.featuredImage.url}
-                        alt=""
+                        alt={data.name}
                         loading="lazy"
                         class="event-card-h__photo"
                         width="150"
@@ -225,7 +225,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         position: relative;
         background-color: var(--core-card);
         border-radius: var(--radius-card);
-        border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+        border: 1px solid var(--brand-primary-a15);
         box-shadow: var(--shadow-card);
         overflow: hidden;
         transition:
@@ -251,29 +251,15 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     /* Featured badge: top-left overlay, only rendered when isFeatured=true.
        Sits above the photo + date-block. In vertical mode (container query)
        the date-block becomes a pill at top-left of the photo — see the
-       container query rule below for the conflict-avoidance offset. */
+       container query rule below for the conflict-avoidance offset. Look
+       (color/font/padding/icon gap) comes from the shared `.featured-badge`
+       rule in components.css; this block only owns position + elevation. */
     .event-card-h__featured {
         position: absolute;
         top: 8px;
         left: 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.2rem 0.5rem;
-        border-radius: var(--radius-pill);
-        background-color: oklch(0.78 0.16 85);
-        color: oklch(0.2 0.05 85);
-        font-family: var(--font-sans);
-        font-size: 0.6875rem;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
         box-shadow: 0 2px 6px oklch(0 0 0 / 0.18);
         z-index: 3;
-    }
-
-    .event-card-h__featured-label {
-        line-height: 1;
     }
 
     .event-card-h:hover {
@@ -355,7 +341,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-size: 1.875rem;
         line-height: 1;
         letter-spacing: 0.05em;
-        color: oklch(from var(--primary-foreground) l c h / 0.3);
+        color: var(--primary-foreground-a30);
         user-select: none;
         flex-shrink: 0;
         margin-left: -0.125rem;
@@ -379,7 +365,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     .event-card-h__time {
         font-family: var(--font-sans);
         font-size: var(--text-caption);
-        color: oklch(from var(--primary-foreground) l c h / 0.8);
+        color: var(--primary-foreground-a80);
         line-height: 1;
     }
 
@@ -453,7 +439,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         color: var(--brand-primary);
-        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        background-color: var(--brand-primary-a10);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.6rem;
         width: fit-content;
@@ -469,7 +455,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         font-family: var(--font-sans);
         font-size: var(--text-caption);
         color: var(--core-muted-foreground);
-        background-color: oklch(from var(--core-foreground) l c h / 0.06);
+        background-color: var(--core-foreground-a05);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.6rem;
         width: fit-content;
@@ -505,7 +491,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     }
 
     .event-card-h:hover .event-card-h__cta {
-        background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+        background-color: var(--brand-primary-lm05);
         transform: rotate(-45deg);
     }
 
@@ -565,11 +551,12 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         }
 
         /* In vertical mode the date-block sits at top-left of the photo.
-           Push the featured badge down so the two do not stack on top of
-           each other. */
+           Stack the featured badge just below it (still inside the photo
+           area). Using `bottom` here would anchor to the card, not the
+           photo, and collide with the location pill in the content area. */
         .event-card-h__featured {
-            top: auto;
-            bottom: 0.625rem;
+            top: 3rem;
+            bottom: auto;
             left: 0.625rem;
         }
 

@@ -269,5 +269,92 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Notificación de Hospeda');
             });
         });
+
+        // Soft-cancel confirmation subjects (SPEC-147)
+        describe('SPEC-147 subscription cancel subjects', () => {
+            it('SUBSCRIPTION_CANCEL_CONFIRMED: should replace planName and accessUntil', () => {
+                // The caller (notification.service.ts generateSubject) is responsible for
+                // pre-formatting accessUntil to a locale string before passing to getSubject.
+                // Here we verify the pattern substitution works correctly with a formatted date.
+                const data = { planName: 'Pro Host', accessUntil: '15 de julio de 2026' };
+
+                const result = getSubject(NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED, data);
+
+                expect(result).toBe(
+                    'Cancellation confirmed — Pro Host access until 15 de julio de 2026'
+                );
+                // Must not contain a raw ISO timestamp
+                expect(result).not.toMatch(/\d{4}-\d{2}-\d{2}T\d{2}:/);
+            });
+
+            it('SUBSCRIPTION_CANCEL_CONFIRMED: preserves placeholder when accessUntil is missing', () => {
+                const data = { planName: 'Starter' };
+
+                const result = getSubject(NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED, data);
+
+                expect(result).toContain('{accessUntil}');
+                expect(result).toContain('Starter');
+            });
+
+            it('SUBSCRIPTION_ACCESS_ENDING_SOON: should replace planName and daysRemaining (no accessUntil in subject)', () => {
+                const data = { planName: 'Pro Host', daysRemaining: '3' };
+
+                const result = getSubject(NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON, data);
+
+                expect(result).toBe('Your Pro Host access ends in 3 days — act now to keep it');
+                // accessUntil is NOT in this subject pattern (it's used in the email body only)
+                expect(result).not.toContain('{accessUntil}');
+            });
+        });
+
+        // AI cost threshold alert subjects (SPEC-173 T-025)
+        describe('AI cost threshold alert subjects', () => {
+            it('should return subject with thresholdPct and scope for global 50% alert', () => {
+                // Arrange
+                const data = { thresholdPct: '50', scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe('[Admin] Alerta de costo IA — 50% del presupuesto (global)');
+            });
+
+            it('should return subject with thresholdPct and scope for feature 80% alert', () => {
+                // Arrange
+                const data = { thresholdPct: '80', scope: 'feature:chat' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe(
+                    '[Admin] Alerta de costo IA — 80% del presupuesto (feature:chat)'
+                );
+            });
+
+            it('should return subject with thresholdPct=100 for 100% threshold', () => {
+                // Arrange
+                const data = { thresholdPct: '100', scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert
+                expect(result).toBe('[Admin] Alerta de costo IA — 100% del presupuesto (global)');
+            });
+
+            it('should preserve placeholder text when thresholdPct is missing', () => {
+                // Arrange
+                const data = { scope: 'global' };
+
+                // Act
+                const result = getSubject(NotificationType.AI_COST_THRESHOLD_ALERT, data);
+
+                // Assert — placeholder preserved when variable missing
+                expect(result).toContain('{thresholdPct}');
+                expect(result).toContain('global');
+            });
+        });
     });
 });

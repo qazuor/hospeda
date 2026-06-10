@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/astro';
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
+import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     BETA_PREFIX,
@@ -205,9 +206,14 @@ export function isStaticAssetRoute({ path }: { path: string }): boolean {
         }
     }
 
-    /** Common static asset extensions served from /public/. */
+    /**
+     * Common static asset extensions served from /public/, plus file-extension
+     * endpoints (e.g. `*.json.ts`). These must skip middleware so the
+     * trailing-slash enforcement below does not 301-redirect them to a
+     * `/path/` form that Astro never resolves for file-extension routes.
+     */
     const staticExtensions =
-        /\.(ico|png|jpg|jpeg|webp|svg|gif|css|js|woff2?|ttf|eot|xml|txt|pdf)$/i;
+        /\.(ico|png|jpg|jpeg|webp|svg|gif|css|js|woff2?|ttf|eot|xml|txt|pdf|json)$/i;
     if (staticExtensions.test(path)) {
         return true;
     }
@@ -304,6 +310,20 @@ export interface SessionUser {
     readonly id: string;
     readonly name: string;
     readonly email: string;
+    /**
+     * User role from the Better Auth session (USER, HOST, ADMIN, etc.).
+     * Populated from the `role` additional field configured in
+     * `apps/api/src/lib/auth.ts`. `null` only when unexpectedly missing;
+     * consumers should treat that as the lowest-privilege case.
+     */
+    readonly role: string | null;
+    /**
+     * Avatar URL from the Better Auth session (`users.image`). `null` when the
+     * user has no avatar. Without this, server-rendered surfaces (header,
+     * account dashboard) cannot show the avatar and fall back to initials
+     * forever (BETA-32).
+     */
+    readonly image: string | null;
 }
 
 /**
@@ -385,7 +405,21 @@ export async function parseSessionUser({
                 }
 
                 const data = (await response.json()) as {
-                    user?: { id?: string; name?: string; email?: string };
+                    user?: {
+                        id?: string;
+                        name?: string;
+                        email?: string;
+                        // `role` is an additional field configured in
+                        // apps/api/src/lib/auth.ts (Better Auth
+                        // `user.additionalFields`). It is returned by
+                        // `/api/auth/get-session` whenever the session has a
+                        // user. Used by AccountLayout to gate the sidebar
+                        // "Mis propiedades" link (SPEC-143 Finding #12).
+                        role?: string;
+                        // Avatar URL (`users.image`), forwarded so SSR surfaces
+                        // can render the avatar instead of initials (BETA-32).
+                        image?: string;
+                    };
                 };
 
                 if (!data?.user?.id || !data?.user?.email) {
@@ -395,7 +429,9 @@ export async function parseSessionUser({
                 return {
                     id: data.user.id,
                     name: data.user.name || '',
-                    email: data.user.email
+                    email: data.user.email,
+                    role: data.user.role ?? null,
+                    image: typeof data.user.image === 'string' ? data.user.image : null
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });
@@ -434,27 +470,82 @@ export function generateCspNonce(): string {
 export function buildCspHeader({
     nonce,
     apiUrl,
-    sentryReportUri
+    sentryReportUri,
+    sentryTunnelEnabled = false
 }: {
     readonly nonce: string;
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
+    readonly sentryTunnelEnabled?: boolean;
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
 
-    // SPEC-140: PostHog Cloud (US region) needs explicit allowlist entries so
-    // the SDK can load its sub-bundles (us-assets.i.posthog.com), POST events
-    // (us.i.posthog.com), and render its 1x1 fallback pixel. `script-src` keeps
-    // 'strict-dynamic' which makes host allowlists a no-op for scripts loaded
-    // via the nonce-tagged bootstrapper — the hosts here are documentation +
-    // safety net if 'strict-dynamic' is ever removed.
+    // Remote image hosts mirror `ALLOWED_REMOTE_HOSTS` (single source of truth
+    // shared with `astro.config.mjs` `image.remotePatterns` and the SSRF guard
+    // `isAllowedRemoteHost()`). Adding a new host there auto-flows into CSP.
+    // `localhost` is dropped since CSP host-source matching does not apply to
+    // it; non-HTTPS hosts only matter in dev where img-src isn't enforced.
+    const remoteImgHosts = ALLOWED_REMOTE_HOSTS.filter((h) => h !== 'localhost')
+        .map((h) => `https://${h}`)
+        .join(' ');
+
+    // OAuth avatar hosts. Better Auth stores the provider-returned picture URL
+    // on `user.image`, and `@repo/auth-ui` renders it via plain `<img>`. These
+    // are NOT image-content hosts that flow through Astro <Image>, so they do
+    // not belong in `ALLOWED_REMOTE_HOSTS` (which doubles as the SSRF guard for
+    // server-side image fetches). Keep them as a separate explicit list:
+    //   - lh3.googleusercontent.com  → Google OAuth picture
+    //   - platform-lookaside.fbsbx.com → Facebook OAuth picture (Graph CDN)
+    const oauthAvatarHosts =
+        'https://lh3.googleusercontent.com https://platform-lookaside.fbsbx.com';
+
+    // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
+    // Cloudflare Worker forwards to PostHog Cloud US — see
+    // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
+    // `'self'` already covers script/connect/img for PostHog — no external
+    // `us.i.posthog.com` / `us-assets.i.posthog.com` allowlist entries are needed
+    // (SPEC-140 added them when the SDK talked to PostHog directly; removed here).
+    // COUPLING: the Worker must be live and `PUBLIC_POSTHOG_HOST` set to the proxy
+    // origin BEFORE this CSP is enforced, or PostHog breaks silently (deploy order
+    // in the Worker README). `script-src` keeps 'strict-dynamic' (the nonce-tagged
+    // bootstrapper loads the SDK).
+    //
+    // SPEC-181 follow-up: Sentry has its OWN first-party tunnel under `/api/event`
+    // (a separate Cloudflare Worker — infra/cloudflare/sentry-tunnel/). When the
+    // tunnel is enabled (`PUBLIC_SENTRY_TUNNEL` set), the browser SDK POSTs
+    // envelopes to that same-origin path, so the external `https://*.sentry.io`
+    // `connect-src` entry is dropped ('self' covers it). When the tunnel is NOT
+    // enabled, `https://*.sentry.io` stays so the SDK can report to Sentry
+    // directly. The two proxy paths bind to DIFFERENT Workers (do not merge).
+    // NOTE: the `report-uri` directive still points at *.sentry.io directly — CSP
+    // violation reports are browser-emitted (not SDK envelopes) and are not
+    // tunneled; that directive is independent of `connect-src`.
+    const sentryConnectSrc = sentryTunnelEnabled ? '' : ' https://*.sentry.io';
     const directives = [
         "default-src 'self'",
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://us.i.posthog.com https://us-assets.i.posthog.com`,
-        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        // The Astro client runtime injects an inline <style> at hydration time
+        // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
+        // Because the injection happens via JS AFTER the middleware response
+        // rewrite, `injectNonce` (which only walks the initial SSR HTML) can't
+        // stamp a nonce on it, and the browser blocks/reports it. The CSS
+        // content is hardcoded in Astro's runtime so its SHA-256 is stable —
+        // hash-allow it explicitly to keep `style-src` strict otherwise.
+        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}' 'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='`,
+        // `style-src` (above) defaults to gating BOTH `<style>` elements and
+        // inline `style="..."` attributes. Nonces cannot be applied to style
+        // attributes by spec, so a strict nonce-based `style-src` blocks every
+        // inline color/transition style we set on cards, badges, and the
+        // `data-reveal` stagger pattern (see apps/web/src/lib/colors.ts and
+        // STYLE_GUIDE.md). Override only the `-attr` variant with
+        // `'unsafe-inline'` so:
+        //   - `<style>` blocks still require the nonce (the high-XSS-impact path)
+        //   - `style="..."` attributes are allowed (low-XSS-impact patterns
+        //     used for tokenized inline colors and per-card transition delays)
+        "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
-        `img-src 'self' data: blob: https://res.cloudinary.com https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org https://us.i.posthog.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.tile.openstreetmap.org https://cloudflareinsights.com https://us.i.posthog.com https://us-assets.i.posthog.com`,
+        `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",
@@ -474,6 +565,13 @@ export function buildCspHeader({
 
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';
+
+// SPEC-182: the admin→web cross-origin signin redirect helper is colocated with
+// the callbackUrl validator in `auth-callback.ts` (both manage the same param),
+// but is re-exported here so consumers can import it alongside the other
+// redirect builders (and so the admin guard's reference point — see T-005 —
+// resolves from the documented `middleware-helpers` location).
+export { buildAdminLoginRedirect } from './auth-callback';
 
 // ---------------------------------------------------------------------------
 // SPEC-113: Profile completion guard helpers

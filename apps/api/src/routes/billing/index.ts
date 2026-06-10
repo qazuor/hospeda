@@ -29,15 +29,19 @@ import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling, requireBilling } from '../../middlewares/billing';
 import { billingAdminGuardMiddleware } from '../../middlewares/billing-admin-guard.middleware';
 import { billingOwnershipMiddleware } from '../../middlewares/billing-ownership.middleware';
+import { billingPermMiddleware } from '../../middlewares/billing-perm.middleware';
 import { pastDueGraceMiddleware } from '../../middlewares/past-due-grace.middleware';
 import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
+import { isGuestActor } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
 import { planChangeRouter } from './plan-change';
-import { promoCodesRouter } from './promo-codes';
+import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
+import { subscriptionCancelRouter } from './subscription-cancel';
+import { subscriptionPauseRouter } from './subscription-pause';
 import { subscriptionStatusRouter } from './subscription-status';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
@@ -56,7 +60,12 @@ const billingAuthMiddleware: MiddlewareHandler = async (c, next) => {
     const user = c.get('user');
     const actor = c.get('actor');
 
-    if (!user?.id && !actor?.id) {
+    // A real session sets `user`; the actor abstraction sets `actor`. A GUEST
+    // actor still carries a (sentinel) id, so checking `actor?.id` alone lets
+    // unauthenticated requests through — guard against the guest explicitly.
+    const authenticated = Boolean(user?.id) || (Boolean(actor?.id) && !isGuestActor(actor));
+
+    if (!authenticated) {
         throw new HTTPException(401, {
             message: 'Authentication required for billing operations'
         });
@@ -162,6 +171,13 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Apply billing requirement middleware
     router.use('*', requireBilling);
 
+    // SPEC-156 T-007: defense-in-depth self-permission gate. Requires the
+    // authenticated actor to carry BILLING_VIEW_OWN. The existing ownership
+    // middleware (mounted below on the QZPay wrapper) still enforces
+    // per-resource ownership. This new gate lets us revoke self-billing
+    // access at the user/role level without removing the user from HOST.
+    router.use('*', billingPermMiddleware());
+
     // Apply Sentry billing context middleware
     router.use('*', sentryBillingMiddleware());
 
@@ -169,6 +185,21 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Recovery paths (reactivation, checkout) are exempt - see GRACE_EXEMPT_PATH_SUFFIXES
     // in past-due-grace.middleware.ts.
     router.use('*', pastDueGraceMiddleware());
+
+    // Mount user self-service soft-cancel route (SPEC-147 T-006) BEFORE the
+    // qzpay wrapper. qzpay-hono's prebuilt routes include
+    // `POST /subscriptions/:id/cancel`; since Hono uses first-match routing,
+    // our custom route must be registered first to take priority.
+    //
+    // The `billingAdminGuardMiddleware` is applied here (not via qzpayWrapper)
+    // to maintain the same security posture: `cancel` is in allowedSubPaths so
+    // non-admin users pass through. Ownership is enforced in the service layer
+    // (softCancelSubscription verifies customerId === billingCustomerId) plus
+    // the handler's own billingCustomerId gate.
+    const cancelWrapper = createRouter();
+    cancelWrapper.use('*', billingAdminGuardMiddleware());
+    cancelWrapper.route('/', subscriptionCancelRouter);
+    router.route('/subscriptions', cancelWrapper);
 
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
@@ -182,8 +213,9 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     qzpayWrapper.route('/', qzpayRoutes);
     router.route('/', qzpayWrapper);
 
-    // Mount custom promo code routes
-    router.route('/promo-codes', promoCodesRouter);
+    // Mount user-facing promo code routes (validate + apply).
+    // Admin promo code CRUD is mounted separately under /admin/billing/promo-codes.
+    router.route('/promo-codes', userPromoCodesRouter);
 
     // Mount custom add-on routes
     router.route('/addons', addonsRouter);
@@ -203,11 +235,19 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom start-paid subscription route (SPEC-126 D1).
     router.route('/subscriptions', startPaidRouter);
 
+    // Mount self-serve pause/resume routes (SPEC-143 #29) at the billing root,
+    // NOT under `/subscriptions`. The routes are `/me/subscription-pause` and
+    // `/me/subscription-resume`; keeping them off the `/subscriptions` namespace
+    // avoids colliding with qzpay's built-in `POST /subscriptions/:id/pause`
+    // (which would match `:id='me'`) and the `/subscriptions`-scoped admin-guard
+    // + ownership middlewares.
+    router.route('/', subscriptionPauseRouter);
+
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
 
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, and usage routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, subscription status, start-paid, subscription-cancel, and usage routes'
     );
 
     return router;

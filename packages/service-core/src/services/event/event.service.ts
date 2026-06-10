@@ -1,5 +1,6 @@
 import {
     EventModel,
+    buildSearchCondition,
     eventLocations as eventLocationsTable,
     events as eventTable,
     getDb
@@ -8,6 +9,7 @@ import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    EntityOptionsItem,
     Event,
     EventByAuthorInput,
     EventByCategoryInput,
@@ -40,6 +42,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type {
@@ -50,7 +53,12 @@ import type {
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
-import { buildEventDateConditions, generateEventSlug } from './event.helpers';
+import { checkCanFindOptions } from '../../utils';
+import {
+    buildEventDateConditions,
+    buildEventPriceConditions,
+    generateEventSlug
+} from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
 import {
     checkCanAdminList,
@@ -120,6 +128,63 @@ export class EventService extends BaseCrudService<
         this.model = ctx.model ?? new EventModel();
         this.adminSearchSchema = EventAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * WITHOUT requiring a broad `EVENT_VIEW_ALL`-style grant. Gating is admin-panel access
+     * only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows,
+     * never publication state) so relations can target unpublished events.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of event options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const searchCondition =
+                    trimmedQ && trimmedQ.length > 0
+                        ? buildSearchCondition(trimmedQ, ['name'], this.model.getTable())
+                        : undefined;
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    searchCondition ? [searchCondition] : undefined,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     /**
@@ -523,12 +588,21 @@ export class EventService extends BaseCrudService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            q: _q,
+            q,
             destinationId,
             startDateAfter,
             startDateBefore,
             endDateAfter,
             endDateBefore,
+            isFree,
+            minPrice,
+            maxPrice,
+            price,
+            currency,
+            // Default to TRUE: unpriced events are included unless the caller
+            // explicitly opts out with `includeUnpriced=false`. This matches the
+            // UI default (toggle ON by default in the composite price filter).
+            includeUnpriced = true,
             ...filterParams
         } = params;
 
@@ -539,16 +613,46 @@ export class EventService extends BaseCrudService<
             return { items: [], total: 0 };
         }
 
+        // Default behavior: hide events that have already started when the
+        // caller provided NO date filter at all. If even one bound is set
+        // (e.g. only `startDateBefore` — used by the "Pasados" chip), the
+        // caller takes full control and the default does NOT apply.
+        const effectiveStartDateAfter =
+            !startDateAfter && !startDateBefore && !endDateAfter && !endDateBefore
+                ? new Date()
+                : startDateAfter;
+
         const additionalConditions: SQL[] = [
             ...buildEventDateConditions({
-                startDateAfter,
+                startDateAfter: effectiveStartDateAfter,
                 startDateBefore,
                 endDateAfter,
                 endDateBefore
+            }),
+            ...buildEventPriceConditions({
+                isFree,
+                minPrice,
+                maxPrice,
+                price,
+                currency,
+                includeUnpriced
             })
         ];
         if (locationIds !== null && locationIds.length > 0) {
             additionalConditions.push(inArray(eventTable.locationId, locationIds));
+        }
+
+        // Full-text search across the columns declared in getSearchableColumns().
+        // BaseCrudRead applies this automatically for `list()` callers but the
+        // `search()` path used by the public list route routes the `q` param
+        // through `_executeSearch` instead — so we apply it here too.
+        if (q && q.trim().length > 0) {
+            const searchCondition = buildSearchCondition(
+                q,
+                this.getSearchableColumns(),
+                this.model.getTable()
+            );
+            if (searchCondition) additionalConditions.push(searchCondition);
         }
 
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
@@ -595,12 +699,18 @@ export class EventService extends BaseCrudService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            q: _q,
+            q,
             destinationId,
             startDateAfter,
             startDateBefore,
             endDateAfter,
             endDateBefore,
+            isFree,
+            minPrice,
+            maxPrice,
+            price,
+            currency,
+            includeUnpriced = true,
             ...filterParams
         } = params;
 
@@ -611,16 +721,46 @@ export class EventService extends BaseCrudService<
             return { count: 0 };
         }
 
+        // Default behavior: hide events that have already started when the
+        // caller provided NO date filter at all. If even one bound is set
+        // (e.g. only `startDateBefore` — used by the "Pasados" chip), the
+        // caller takes full control and the default does NOT apply.
+        const effectiveStartDateAfter =
+            !startDateAfter && !startDateBefore && !endDateAfter && !endDateBefore
+                ? new Date()
+                : startDateAfter;
+
         const additionalConditions: SQL[] = [
             ...buildEventDateConditions({
-                startDateAfter,
+                startDateAfter: effectiveStartDateAfter,
                 startDateBefore,
                 endDateAfter,
                 endDateBefore
+            }),
+            ...buildEventPriceConditions({
+                isFree,
+                minPrice,
+                maxPrice,
+                price,
+                currency,
+                includeUnpriced
             })
         ];
         if (locationIds !== null && locationIds.length > 0) {
             additionalConditions.push(inArray(eventTable.locationId, locationIds));
+        }
+
+        // Full-text search across the columns declared in getSearchableColumns().
+        // BaseCrudRead applies this automatically for `list()` callers but the
+        // `search()` path used by the public list route routes the `q` param
+        // through `_executeSearch` instead — so we apply it here too.
+        if (q && q.trim().length > 0) {
+            const searchCondition = buildSearchCondition(
+                q,
+                this.getSearchableColumns(),
+                this.model.getTable()
+            );
+            if (searchCondition) additionalConditions.push(searchCondition);
         }
 
         const count = await this.model.count(

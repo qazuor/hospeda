@@ -100,7 +100,9 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
         <div class="grid-cards accommodations__grid">
           {items.map((accommodation, i) => (
             <div data-reveal="up" class="accommodations__card-wrapper" {...revealStagger({ index: i })}>
-              <AccommodationCard data={accommodation} locale={locale} />
+              {/* First row on desktop (4 cols at ≥1280px) gets eager loading
+                  so the browser prioritises the LCP images above the fold. */}
+              <AccommodationCard data={accommodation} locale={locale} eager={i < 4} />
             </div>
           ))}
         </div>

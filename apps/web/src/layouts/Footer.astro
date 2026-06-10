@@ -28,6 +28,12 @@ import { getApiUrl } from "@/lib/env";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import {
+    AmericanExpressIcon,
+    MasterCardIcon,
+    MercadoPagoIcon,
+    VisaIcon,
+} from "@repo/icons";
 import logoSrc from "@/assets/images/logo.webp";
 
 interface Props {
@@ -108,6 +114,7 @@ const forYouLinks = [
 const companyLinks = [
     { label: t("footer.aboutUs"), href: buildUrl({ locale, path: "/nosotros/" }) },
     { label: t("footer.faq", "Preguntas frecuentes"), href: buildUrl({ locale, path: "/preguntas-frecuentes/" }) },
+    { label: t("footer.collaborate", "Colaborá"), href: buildUrl({ locale, path: "/colaborar/" }) },
     { label: t("footer.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
 ] as const;
 
@@ -123,14 +130,14 @@ const trustLabel = t("footer.trustSignals.label", "Por qué elegirnos");
 const paymentsLabel = t("footer.payments.label", "Métodos de pago");
 const accommodationsCountLabel = t("footer.trustSignals.accommodationsCount", "+{{count}} alojamientos").replace("{{count}}", formattedCount);
 
-/** Payment method logos served from the simpleicons CDN. Single-color
- *  brand marks are returned as SVG and tinted via the `?color=` query.
- *  Naranja X is intentionally omitted (no slug available upstream). */
+/** Payment method logos rendered as inline SVG from `@repo/icons` (single-
+ *  color brand marks). Naranja X is intentionally omitted — no mark
+ *  available yet. */
 const paymentMethods = [
-    { slug: "mercadopago", label: "Mercado Pago" },
-    { slug: "visa", label: "Visa" },
-    { slug: "mastercard", label: "Mastercard" },
-    { slug: "americanexpress", label: "American Express" },
+    { Icon: MercadoPagoIcon, label: "Mercado Pago" },
+    { Icon: VisaIcon, label: "Visa" },
+    { Icon: MasterCardIcon, label: "Mastercard" },
+    { Icon: AmericanExpressIcon, label: "American Express" },
 ] as const;
 const averageRatingLabel = t("footer.trustSignals.averageRating", "{{rating}} de promedio").replace("{{rating}}", formattedRating);
 const localSupportLabel = t("footer.trustSignals.localSupport", "Soporte local en español");
@@ -299,15 +306,12 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
 
             <ul class="footer__payments-list" aria-label={paymentsLabel}>
                 {
-                    paymentMethods.map(({ slug, label }) => (
+                    paymentMethods.map(({ Icon, label }) => (
                         <li>
-                            <img
+                            <Icon
                                 class="footer__payment"
-                                src={`https://cdn.simpleicons.org/${slug}/ffffff`}
-                                alt={label}
-                                loading="lazy"
-                                width="48"
-                                height="24"
+                                size={32}
+                                aria-label={label}
                             />
                         </li>
                     ))
@@ -534,7 +538,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     .footer__newsletter-input {
         flex: 1;
         min-width: 0;
-        background-color: oklch(from var(--footer-fg) l c h / 0.08);
+        background-color: var(--footer-fg-a08);
         border: 1px solid var(--footer-border);
         border-radius: var(--radius-button);
         padding: 0.625rem 0.875rem;
@@ -551,8 +555,8 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
     }
 
     .footer__newsletter-input:focus {
-        border-color: oklch(from var(--footer-fg) l c h / 0.5);
-        background-color: oklch(from var(--footer-fg) l c h / 0.12);
+        border-color: var(--footer-fg-a50);
+        background-color: var(--footer-fg-a12);
     }
 
     .footer__newsletter-btn {
@@ -708,25 +712,32 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         color: var(--footer-fg-muted);
     }
 
-    /* Payments row — logo-only, served from cdn.simpleicons.org */
+    /* Payments row — square brand marks from @repo/icons (each is a 24x24
+     * single-color SVG, sized via the `size` prop on the component). The
+     * right-side spacer keeps the last mark from sliding under the
+     * fixed feedback FAB on desktop. */
     .footer__payments-list {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         justify-content: center;
-        gap: 1.25rem;
+        gap: 0.875rem;
         list-style: none;
-        padding: 0;
+        padding: 0 4.5rem 0 0;
         margin: 0;
         flex-shrink: 0;
     }
 
+    @media (max-width: 767px) {
+        .footer__payments-list {
+            padding-right: 0;
+        }
+    }
+
     .footer__payment {
-        height: 1.5rem;
-        width: auto;
         display: block;
         flex-shrink: 0;
-        opacity: 0.7;
+        opacity: 0.75;
         transition: opacity var(--duration-normal) ease;
     }
 

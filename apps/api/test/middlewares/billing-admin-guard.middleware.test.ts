@@ -248,6 +248,90 @@ describe('billingAdminGuardMiddleware', () => {
 
             expect(next).not.toHaveBeenCalled();
         });
+
+        it('should allow POST /subscriptions/start-paid for regular users', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/start-paid'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should allow POST /subscriptions/change-plan for regular users', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/change-plan'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        // SPEC-147 T-006: user self-service soft-cancel at /subscriptions/:id/cancel
+        it('should allow POST /subscriptions/:id/cancel for regular users (soft-cancel SPEC-147)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/subscriptions/sub_abc123/cancel'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should still block DELETE /subscriptions/:id for regular users (hard-cancel remains admin-only)', async () => {
+            const ctx = createMockContext({
+                method: 'DELETE',
+                path: '/api/v1/protected/billing/subscriptions/sub_abc123'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).not.toHaveBeenCalled();
+            expect(ctx.json).toHaveBeenCalledWith(
+                expect.objectContaining({ error: 'FORBIDDEN' }),
+                403
+            );
+        });
+
+        // SPEC-143 #29: self-serve pause/resume live OUTSIDE /subscriptions
+        // (at /me/subscription-pause), so this rule never matches them.
+        it('should allow POST /me/subscription-pause for regular users (self-serve)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/me/subscription-pause'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
+
+        it('should allow POST /me/subscription-resume for regular users (self-serve)', async () => {
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/me/subscription-resume'
+            });
+            const middleware = billingAdminGuardMiddleware();
+
+            await middleware(ctx as never, next);
+
+            expect(next).toHaveBeenCalledOnce();
+            expect(ctx.json).not.toHaveBeenCalled();
+        });
     });
 
     // -----------------------------------------------------------------------

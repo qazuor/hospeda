@@ -44,6 +44,7 @@ out
 # Testing / Coverage
 # =========================
 coverage
+test-results/
 
 # =========================
 # Logs y debug
@@ -99,12 +100,12 @@ docs/dev
 **/routeTree.gen.ts
 
 # =========================
-# Drizzle ORM
-# - Mantener SÍ o SÍ: drizzle/migrations/*.sql en el repo
-# - Ignorar: meta/snapshots y journals (estado local)
+# Drizzle ORM (SPEC-178: versioned migrations = single source of truth)
+# - Track EVERYTHING under migrations/: generated *.sql AND the meta/
+#   journal + snapshots. The journal is what makes drizzle-kit
+#   generate/migrate deterministic across dev/CI/staging/prod, so it must
+#   live in git — it is NOT "local state" to ignore.
 # =========================
-**/drizzle/meta/
-**/migrations/meta/
 
 .claude/.log/notifications.log
 
@@ -133,6 +134,11 @@ node_modules
 .playwright-mcp
 .claude/design-clones
 .claude/worktrees/
+# worktree skill: per-worktree local state (ephemeral, never committed)
+.claude/worktree-state.local.json
+.claude/wt-logs/
+# task-master index lock (specs/tasks now live under .qtm/)
+.qtm/tasks/.index.lock
 apps/web-test
 apps/web-old
 

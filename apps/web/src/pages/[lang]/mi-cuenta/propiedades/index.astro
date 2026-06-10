@@ -20,8 +20,10 @@ import type { Accommodation } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
+import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PropertyCard from '@/components/host/PropertyCard.astro';
 
@@ -40,7 +42,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
 // ---------------------------------------------------------------------------
@@ -52,32 +54,45 @@ if (!user) {
 let properties: readonly Accommodation[] = [];
 let fetchError = false;
 
+// ── Usage/limit data for plan-awareness badge ──
+let usageData: { currentUsage: number; maxAllowed: number; threshold: string } | null = null;
+
 try {
     const apiUrl = getApiUrl();
     const cookieHeader = Astro.request.headers.get('cookie');
 
     if (cookieHeader) {
-        const response = await fetch(
-            `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
-            {
-                headers: {
-                    cookie: cookieHeader,
-                    Accept: 'application/json'
-                }
-            }
-        );
+        const headers = {
+            cookie: cookieHeader,
+            Accept: 'application/json'
+        };
 
-        if (response.ok) {
-            const body = (await response.json()) as {
-                data?: {
-                    items?: readonly Accommodation[];
-                };
+        // Parallel fetch: accommodations + usage limit
+        const [accomResponse, usageResponse] = await Promise.all([
+            fetch(
+                `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
+                { headers }
+            ),
+            fetch(
+                `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
+                { headers }
+            )
+        ]);
+
+        if (accomResponse.ok) {
+            const body = (await accomResponse.json()) as {
+                data?: { items?: readonly Accommodation[] };
             };
             properties = body.data?.items ?? [];
         } else {
             fetchError = true;
-            logger.error('[propiedades] API responded with status', response.status);
+            logger.error('[propiedades] API responded with status', accomResponse.status);
         }
+
+        if (usageResponse.ok) {
+            usageData = parseUsageResponse({ json: await usageResponse.json() });
+        }
+        // Usage fetch failure is non-critical — badge simply won't render
     }
 } catch (err) {
     fetchError = true;
@@ -101,16 +116,37 @@ const isEmpty = properties.length === 0;
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
-    <!-- Page header -->
+    <!-- Page header. The header CTA is hidden in the empty state to avoid
+         showing two stacked "Publicar ahora" buttons — the empty-state
+         illustration already owns the primary call to action. -->
     <div class="props-page__header">
         <div class="props-page__heading">
             <h2 class="props-page__title">{title}</h2>
             <p class="props-page__subtitle">{subtitle}</p>
         </div>
-        <a href={publishNewUrl} class="props-page__cta-btn">
-            {emptyCta}
-        </a>
+        {!isEmpty && !fetchError && (
+            <a href={publishNewUrl} class="props-page__cta-btn">
+                {t('host.properties.list.publishAnother', 'Publicar otra')}
+            </a>
+        )}
     </div>
+
+    {/* ── Plan/limit awareness badge ── */}
+    {usageData && usageData.maxAllowed > 0 && (
+        <div class={`props-page__usage props-page__usage--${usageData.threshold}`} role="status">
+            <span class="props-page__usage-label">
+                {t('host.properties.usage.label', '{{current}} de {{max}} propiedades', {
+                    current: String(usageData.currentUsage),
+                    max: String(usageData.maxAllowed)
+                })}
+            </span>
+            {usageData.threshold !== 'ok' && (
+                <a href={buildUrl({ locale, path: 'suscriptores/precios' })} class="props-page__usage-upgrade">
+                    {t('host.properties.usage.upgrade', 'Mejorar plan')}
+                </a>
+            )}
+        </div>
+    )}
 
     {fetchError ? (
         <!-- Error state (e.g. API down or permission denied). Showing this
@@ -183,6 +219,64 @@ const isEmpty = properties.length === 0;
 </AccountLayout>
 
 <style>
+    /* ── Usage/limit awareness badge ── */
+    .props-page__usage {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        padding: 0.5rem 1rem;
+        margin-bottom: var(--space-6, 1.5rem);
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: var(--surface-warm, oklch(0.96 0.02 60));
+        color: var(--core-foreground);
+        border: 1px solid var(--border);
+    }
+
+    .props-page__usage--ok {
+        background-color: oklch(0.95 0.04 145);
+        color: oklch(0.35 0.12 145);
+        border-color: oklch(0.85 0.08 145);
+    }
+
+    .props-page__usage--warning {
+        background-color: oklch(0.95 0.05 65);
+        color: oklch(0.40 0.12 65);
+        border-color: oklch(0.85 0.10 65);
+    }
+
+    .props-page__usage--critical,
+    .props-page__usage--exceeded {
+        background-color: oklch(0.95 0.04 25);
+        color: oklch(0.45 0.15 25);
+        border-color: oklch(0.85 0.10 25);
+    }
+
+    .props-page__usage-label {
+        white-space: nowrap;
+    }
+
+    .props-page__usage-upgrade {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .props-page__usage-upgrade:hover {
+        opacity: 0.88;
+    }
+
     /* ── Page header ── */
     .props-page__header {
         display: flex;

@@ -58,8 +58,8 @@ export interface AccommodationPublishDeps {
 /**
  * Outcome of `AccommodationService.createForOnboarding`.
  *
- * - `created`: a fresh DRAFT was inserted for the actor. The actor's role is still
- *   `USER`; promotion to `HOST` happens later, when the draft transitions to ACTIVE.
+ * - `created`: a fresh DRAFT was inserted for the actor and the onboarding flow
+ *   promotes them from `USER` to `HOST` so they can access host surfaces.
  * - `resumed`: the actor already had an active DRAFT — that one is returned and the
  *   caller should resume the onboarding flow on it instead of creating a new one.
  * - `already_host`: the actor is already `HOST` (or higher). No draft is created;
@@ -87,4 +87,27 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * and trigger side effects such as HOST role auto-assignment.
      */
     previousLifecycleState?: string;
+    /**
+     * Amenity UUIDs extracted from create/update input (SPEC-172 write-only sync).
+     * Stored here by `_beforeCreate`/`_beforeUpdate` so `_afterCreate`/`_afterUpdate`
+     * can perform the transactional junction sync without re-reading the original input.
+     * `undefined` → field was absent in the input (no-op contract).
+     * `[]` → clear all relations.
+     * `[…]` → sync to exact set.
+     */
+    pendingAmenityIds?: readonly string[];
+    /**
+     * Feature UUIDs extracted from create/update input (SPEC-172 write-only sync).
+     * Same three-way contract as `pendingAmenityIds`.
+     */
+    pendingFeatureIds?: readonly string[];
+    /**
+     * AI-assisted field type values extracted from the update input
+     * (SPEC-198.1). Stored here by `_beforeUpdate` so `_afterUpdate` can
+     * persist them into the accommodation's `extraInfo` JSONB column for
+     * audit / analytics.
+     * `undefined` → field was absent in the input (no-op).
+     * `[…]` → list of AiTextImproveFieldType values.
+     */
+    pendingAiAssistedFields?: readonly string[];
 }

@@ -9,6 +9,9 @@ import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
+import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
+import { useActiveOwnerPromotionCount } from '@/features/billing/use-limit-counts';
 import {
     useDeleteOwnerPromotionMutation,
     useOwnerPromotionsQuery,
@@ -16,7 +19,8 @@ import {
 } from '@/features/owner-promotions/hooks';
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
+import { requireBillingAccess } from '@/lib/billing-access';
+import { EntitlementKey, LimitKey } from '@repo/billing';
 import { AddIcon } from '@repo/icons';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -26,6 +30,7 @@ import { PromotionDetailDialog } from '@/features/owner-promotions/components/Pr
 import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingOwnerPromotionsPage
 });
 
@@ -41,6 +46,7 @@ function BillingOwnerPromotionsPage() {
     const [createDialogOpen, setCreateDialogOpen] = useState(false);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+    const { count: activePromotionCount } = useActiveOwnerPromotionCount();
 
     const { data, isLoading, error } = useOwnerPromotionsQuery({
         page,
@@ -244,9 +250,7 @@ function BillingOwnerPromotionsPage() {
                             <p className="text-muted-foreground">
                                 {t('admin-billing.ownerPromotions.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm dark:text-red-400">
-                                {error.message}
-                            </p>
+                            <p className="mt-2 text-destructive text-sm">{error.message}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -331,24 +335,25 @@ function BillingOwnerPromotionsPage() {
                         </select>
                     </div>
 
-                    <EntitlementGate
-                        entitlementKey="create-promotions"
+                    <PlanEntitlementGate
+                        entitlementKey={EntitlementKey.CREATE_PROMOTIONS}
                         fallback={
-                            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-                                <p className="font-medium text-amber-900">
+                            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                                <p className="font-medium text-foreground">
                                     {t('admin-billing.ownerPromotions.entitlementGate')}
                                 </p>
                             </div>
                         }
                     >
-                        <LimitGate
-                            limitKey="max_active_promotions"
+                        <PlanLimitGate
+                            limitKey={LimitKey.MAX_ACTIVE_PROMOTIONS}
+                            currentCount={activePromotionCount}
                             fallback={
-                                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-                                    <p className="font-medium text-amber-900">
+                                <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
+                                    <p className="font-medium text-foreground">
                                         {t('admin-billing.ownerPromotions.limitGateTitle')}
                                     </p>
-                                    <p className="mt-1 text-amber-800 text-xs">
+                                    <p className="mt-1 text-muted-foreground text-xs">
                                         {t('admin-billing.ownerPromotions.limitGateDescription')}
                                     </p>
                                 </div>
@@ -358,8 +363,8 @@ function BillingOwnerPromotionsPage() {
                                 <AddIcon className="mr-2 h-4 w-4" />
                                 {t('admin-billing.ownerPromotions.createButton')}
                             </Button>
-                        </LimitGate>
-                    </EntitlementGate>
+                        </PlanLimitGate>
+                    </PlanEntitlementGate>
                 </div>
 
                 {/* Table */}

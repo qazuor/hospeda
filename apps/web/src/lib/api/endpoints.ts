@@ -6,6 +6,7 @@ import type {
     AccommodationPublic,
     AccommodationSummary,
     AmenityPublic,
+    AnnouncementItem,
     DestinationPublic,
     EventPublic,
     EventSummary,
@@ -80,6 +81,21 @@ export const testimonialsApi = {
     }
 };
 
+// --- Global announcements (SPEC-156) ---
+
+/**
+ * Public global announcements API. Reads the currently-active items from
+ * the public, cacheable endpoint shipped in SPEC-156 PR-1 (T-010). The API
+ * filters by [startsAt, endsAt] server-side so this method returns a flat
+ * array — no pagination envelope.
+ */
+export const announcementsApi = {
+    /** List currently active global announcements (server-side date filtered). */
+    list(): Promise<ApiResult<ReadonlyArray<AnnouncementItem>>> {
+        return apiClient.get({ path: `${BASE}/announcements` });
+    }
+};
+
 // --- Accommodations ---
 
 /** Public accommodation API endpoints */
@@ -127,6 +143,12 @@ export const accommodationsApi = {
         bboxEast?: number;
         /** SPEC-097 — viewport bbox (left edge longitude). */
         bboxWest?: number;
+        /** Geo radius — latitude of the search center (decimal degrees). */
+        latitude?: number;
+        /** Geo radius — longitude of the search center (decimal degrees). */
+        longitude?: number;
+        /** Geo radius — radius in kilometers around (latitude, longitude). */
+        radius?: number;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
     },
@@ -380,6 +402,12 @@ export const destinationsApi = {
         page?: number;
         pageSize?: number;
         q?: string;
+        /**
+         * Restricts the columns the `q` text search runs against. 'name'
+         * matches only the destination name; 'all' (default) matches name +
+         * description. The city autocomplete picker uses 'name'.
+         */
+        searchScope?: 'all' | 'name';
         isFeatured?: boolean;
         country?: string;
         state?: string;
@@ -561,6 +589,11 @@ export const eventsApi = {
         maxPrice?: number;
         /** When true, only return free events (price === 0 or isFree flag). */
         isFree?: boolean;
+        /**
+         * When true and any price filter is active, also include events whose
+         * `pricing` is NULL (events without an established price).
+         */
+        includeUnpriced?: boolean;
     }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
         return apiClient.getList({ path: `${BASE}/events`, params });
     },
@@ -617,8 +650,14 @@ export const postsApi = {
         category?: string;
         /** Filter posts by author UUID */
         authorId?: string;
-        /** Filter posts by destination UUID (used by detail pages for "related posts"). */
+        /** Filter posts by destination UUID (mapped server-side to `relatedDestinationId`). */
         destinationId?: string;
+        /** Filter to featured posts only. */
+        isFeatured?: boolean;
+        /** Lower bound on `publishedAt` (ISO datetime). */
+        publishedAfter?: string;
+        /** Upper bound on `publishedAt` (ISO datetime). */
+        publishedBefore?: string;
         /**
          * Filter posts by PostTag UUID(s).
          * Pass a single UUID or a comma-separated list.
@@ -941,6 +980,73 @@ export const searchApi = {
         return apiClient.get({
             path: `${BASE}/search`,
             params: limit != null ? { q, limit } : { q }
+        });
+    }
+};
+
+// --- Comments (Public — SPEC-165) ---
+
+/**
+ * A single approved comment returned by the public comment thread endpoint.
+ * `createdAt` is a Date (parsed by the API client) — convert to ISO string
+ * before passing to React islands via props.
+ */
+export interface CommentPublicItem {
+    readonly id: string;
+    /** Display name of the comment author. '[Usuario eliminado]' when account was deleted. */
+    readonly authorName: string;
+    readonly content: string;
+    /** ISO 8601 date string as returned by the server. */
+    readonly createdAt: string;
+}
+
+/**
+ * Public comment API endpoints (no authentication required).
+ * Supports both POST and EVENT entity types to enable re-use in T-015.
+ */
+export const commentsApi = {
+    /**
+     * List APPROVED comments for a post or event, oldest-first.
+     *
+     * Maps to:
+     *   GET /api/v1/public/posts/:postId/comments   (entityType === 'POST')
+     *   GET /api/v1/public/events/:eventId/comments (entityType === 'EVENT')
+     *
+     * Returns a paginated list; pass `page` / `pageSize` for subsequent pages.
+     * The initial SSR load uses the defaults (page 1, pageSize 20).
+     *
+     * @param params - entity type, entity ID, pagination, and optional SSR cookie
+     * @returns Paginated list of approved comments
+     *
+     * @example
+     * ```ts
+     * const result = await commentsApi.listByEntity({
+     *   entityType: 'POST',
+     *   entityId: post.id
+     * });
+     * if (result.ok) {
+     *   const comments = result.data.items;
+     * }
+     * ```
+     */
+    listByEntity({
+        entityType,
+        entityId,
+        page,
+        pageSize
+    }: {
+        readonly entityType: 'POST' | 'EVENT';
+        readonly entityId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<CommentPublicItem>>> {
+        const segment = entityType === 'EVENT' ? 'events' : 'posts';
+        const params: Record<string, unknown> = {};
+        if (page !== undefined) params.page = page;
+        if (pageSize !== undefined) params.pageSize = pageSize;
+        return apiClient.getList({
+            path: `${BASE}/${segment}/${entityId}/comments`,
+            params: Object.keys(params).length > 0 ? params : undefined
         });
     }
 };

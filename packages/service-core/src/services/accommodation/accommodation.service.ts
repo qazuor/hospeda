@@ -2,11 +2,17 @@ import {
     AccommodationFaqModel,
     AccommodationIaDataModel,
     AccommodationModel,
+    AmenityModel,
     DestinationModel,
+    FeatureModel,
+    RAccommodationAmenityModel,
+    RAccommodationFeatureModel,
     UserModel,
     accommodations,
-    sql
+    sql,
+    withTransaction
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import {
@@ -26,6 +32,8 @@ import {
     type AccommodationFaqListOutput,
     type AccommodationFaqRemoveInput,
     AccommodationFaqRemoveInputSchema,
+    type AccommodationFaqReorderInput,
+    AccommodationFaqReorderInputSchema,
     type AccommodationFaqSingleOutput,
     type AccommodationFaqUpdateInput,
     AccommodationFaqUpdateInputSchema,
@@ -41,6 +49,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
     type AccommodationSearchResult,
@@ -87,7 +96,12 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
-import { flattenAccommodationJoinRelations, generateSlug } from './accommodation.helpers';
+import {
+    flattenAccommodationJoinRelations,
+    flattenAccommodationJoinRelationsList,
+    generateSlug
+} from './accommodation.helpers';
+import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -97,7 +111,9 @@ import {
 } from './accommodation.normalizers';
 import {
     checkCanAdminList,
+    checkCanAdminView,
     checkCanCreate,
+    checkCanFindOptions,
     checkCanHardDelete,
     checkCanList,
     checkCanRestore,
@@ -202,12 +218,12 @@ export class AccommodationService extends BaseCrudService<
         // entityId+entityType, no direct FK). Pending dedicated SPEC for a polymorphic
         // helper; load tags separately when needed.
         // NOTE: `amenities` and `features` are intentionally NOT loaded here (SPEC-117 A-6).
-        // They go through r_accommodation_{amenity,feature} join tables. Drizzle's `with`
-        // clause cannot resolve the nested entity (`{ with: { amenity: true } }` triggers
-        // a `referencedTable undefined` error in the relational query builder). The detail
-        // page in the admin loads them via dedicated tab endpoints
-        // (`/accommodations/{id}/amenities`, `/accommodations/{id}/features`), so they are
-        // not required in the base detail response.
+        // They go through r_accommodation_{amenity,feature} join tables and can be loaded
+        // via Drizzle RQB with `{ amenities: { with: { amenity: true } } }` — see
+        // `accommodation.model.findTopRated` and the `includeAmenities` / `includeFeatures`
+        // branches in `searchWithRelations`. The detail page in the admin still loads them
+        // via dedicated tab endpoints (`/accommodations/{id}/amenities`,
+        // `/accommodations/{id}/features`) to keep the base detail response light.
         return {
             destination: true,
             owner: true,
@@ -263,6 +279,30 @@ export class AccommodationService extends BaseCrudService<
     private readonly _publishDeps: AccommodationPublishDeps | null;
 
     /**
+     * Junction model for `r_accommodation_amenity`. Used by the SPEC-172 transactional
+     * sync helpers to insert/delete amenity associations alongside create/update.
+     */
+    private readonly _rAmenityModel: RAccommodationAmenityModel;
+
+    /**
+     * Junction model for `r_accommodation_feature`. Used by the SPEC-172 transactional
+     * sync helpers to insert/delete feature associations alongside create/update.
+     */
+    private readonly _rFeatureModel: RAccommodationFeatureModel;
+
+    /**
+     * Catalog model for `amenities`. Used to validate that all supplied amenity IDs
+     * exist before any junction rows are written.
+     */
+    private readonly _amenityModel: AmenityModel;
+
+    /**
+     * Catalog model for `features`. Used to validate that all supplied feature IDs
+     * exist before any junction rows are written.
+     */
+    private readonly _featureCatalogModel: FeatureModel;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
@@ -270,13 +310,21 @@ export class AccommodationService extends BaseCrudService<
      * @param userModel - Optional UserModel instance (for testing/mocking).
      * @param publishDeps - Optional billing dependencies required by `publish()`.
      *   Required only when calling `publish()`; other methods do not need them.
+     * @param rAmenityModel - Optional junction model for `r_accommodation_amenity` (for testing/mocking).
+     * @param rFeatureModel - Optional junction model for `r_accommodation_feature` (for testing/mocking).
+     * @param amenityModel - Optional catalog model for `amenities` (for testing/mocking).
+     * @param featureCatalogModel - Optional catalog model for `features` (for testing/mocking).
      */
     constructor(
         ctx: ServiceConfig,
         model?: AccommodationModel,
         mediaProvider?: ImageProvider | null,
         userModel?: UserModel,
-        publishDeps?: AccommodationPublishDeps | null
+        publishDeps?: AccommodationPublishDeps | null,
+        rAmenityModel?: RAccommodationAmenityModel,
+        rFeatureModel?: RAccommodationFeatureModel,
+        amenityModel?: AmenityModel,
+        featureCatalogModel?: FeatureModel
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -292,6 +340,10 @@ export class AccommodationService extends BaseCrudService<
         this.mediaProvider = mediaProvider ?? null;
         this._userModel = userModel ?? new UserModel();
         this._publishDeps = publishDeps ?? null;
+        this._rAmenityModel = rAmenityModel ?? new RAccommodationAmenityModel();
+        this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
+        this._amenityModel = amenityModel ?? new AmenityModel();
+        this._featureCatalogModel = featureCatalogModel ?? new FeatureModel();
     }
 
     /**
@@ -329,6 +381,12 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Applies SPEC-095 + SPEC-097 projections to every item in a list result.
+     *
+     * Flattens `amenities`/`features` junction rows when the model populated them
+     * via `includeAmenities`/`includeFeatures` — the public response schema picks
+     * a merged shape (`amenityId` + entity fields) that the raw Drizzle output
+     * does not satisfy. The flatten is a no-op when those relations weren't
+     * requested.
      */
     protected override async _afterList(
         result: PaginatedListOutput<Accommodation>,
@@ -336,7 +394,8 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
-        const withCity = projectAccommodationCityDestinationList(result.items);
+        const flattened = flattenAccommodationJoinRelationsList(result.items);
+        const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
         if (!salt) return { ...result, items: withOwnerAvatar };
@@ -348,6 +407,12 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Applies SPEC-095 + SPEC-097 projections to every item in a search result.
+     *
+     * Flattens `amenities`/`features` junction rows when the model populated them
+     * via `includeAmenities`/`includeFeatures` — the public response schema picks
+     * a merged shape (`amenityId` + entity fields) that the raw Drizzle output
+     * does not satisfy. The flatten is a no-op when those relations weren't
+     * requested.
      */
     protected override async _afterSearch(
         result: PaginatedListOutput<Accommodation>,
@@ -355,7 +420,8 @@ export class AccommodationService extends BaseCrudService<
         _ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
-        const withCity = projectAccommodationCityDestinationList(result.items);
+        const flattened = flattenAccommodationJoinRelationsList(result.items);
+        const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
         if (!salt) return { ...result, items: withOwnerAvatar };
@@ -463,7 +529,22 @@ export class AccommodationService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<AccommodationEntityFilters>
     ): Promise<PaginatedListOutput<Accommodation>> {
-        const { entityFilters, ...rest } = params;
+        // SPEC-169 §5.2: forced owner-scoping. An actor holding ONLY
+        // ACCOMMODATION_VIEW_OWN (not VIEW_ALL) is physically unable to widen the query —
+        // the server OVERWRITES any client-supplied ownerId with the actor's own id, closing
+        // the "drop the filter and get everything" bypass. Staff (VIEW_ALL) list unscoped.
+        // The owner column is 'ownerId' per the shared ownership descriptor (§5.6).
+        const ownerScoped =
+            !hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) &&
+            hasPermission(params.actor, PermissionEnum.ACCOMMODATION_VIEW_OWN);
+        const scopedParams: AdminSearchExecuteParams<AccommodationEntityFilters> = ownerScoped
+            ? {
+                  ...params,
+                  entityFilters: { ...params.entityFilters, ownerId: params.actor.id }
+              }
+            : params;
+
+        const { entityFilters, ...rest } = scopedParams;
         const { minPrice, maxPrice, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
@@ -489,18 +570,151 @@ export class AccommodationService extends BaseCrudService<
         };
     }
 
+    /**
+     * Retrieves an accommodation by id for the ADMIN detail endpoint (SPEC-169 §2.1/§5.2).
+     *
+     * Unlike the generic {@link getById} (which applies `_canView`/`checkCanView` and therefore
+     * grants access to ANY `PUBLIC` record), this uses {@link checkCanAdminView}: an actor with
+     * `ACCOMMODATION_VIEW_ALL` sees any record; an actor with only `ACCOMMODATION_VIEW_OWN` sees
+     * ONLY their own (others — including PUBLIC — resolve to `NOT_FOUND`, decision D2). The same
+     * relation loading and read projections as `getById` are applied via `_afterGetByField`.
+     *
+     * @param actor - The actor performing the action.
+     * @param id - The accommodation id.
+     * @param ctx - Optional service context (transaction, hook state).
+     * @returns A `ServiceOutput` with the accommodation, or a `ServiceError`.
+     */
+    public async adminGetById(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation | null>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: `adminGetById(id=${id})`,
+            input: { actor, id },
+            schema: z.object({ id: z.string() }),
+            ctx: resolvedCtx,
+            execute: async ({ id: validatedId }, validatedActor, execCtx) => {
+                const relations = this.getDefaultGetByIdRelations();
+                const where = { id: validatedId } as Record<string, unknown>;
+                const entity = relations
+                    ? await this.model.findOneWithRelations(where, relations, execCtx?.tx)
+                    : await this.model.findOne(where, execCtx?.tx);
+
+                if (!entity) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+
+                checkCanAdminView(validatedActor, entity as Accommodation);
+
+                return this._afterGetByField(entity as Accommodation, validatedActor, execCtx);
+            }
+        });
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug, type, destination }` items for populating admin
+     * relation selectors WITHOUT requiring a broad `ACCOMMODATION_VIEW_ALL` grant. Gating is
+     * admin-panel access only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate. This deliberately bypasses the heavy
+     * `checkCanAdminList` (VIEW_ALL/VIEW_OWN) used by {@link adminList}.
+     *
+     * Results are DRAFT-inclusive (the model's `searchWithRelations` only excludes soft-deleted
+     * rows, never publication state) so relations can target unpublished accommodations.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of accommodation options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: AccommodationOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const { items } = await this.model.searchWithRelations(
+                    {
+                        q: validatedInput.q,
+                        page: 1,
+                        pageSize: validatedInput.limit
+                    } as AccommodationSearchInput,
+                    execCtx?.tx
+                );
+
+                const options: AccommodationOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug,
+                    type: item.type,
+                    destination: item.destination
+                        ? {
+                              id: item.destination.id,
+                              name: item.destination.name,
+                              slug: item.destination.slug
+                          }
+                        : null
+                }));
+
+                return { items: options };
+            }
+        });
+    }
+
     // --- Lifecycle Hooks ---
     /**
      * @inheritdoc
      * Generates a unique slug for the accommodation before it is created.
      * This hook ensures that every accommodation has a URL-friendly and unique identifier.
+     *
+     * SPEC-172: also strips `amenityIds`/`featureIds` from the payload (they are
+     * write-only junction sync inputs, not columns in the `accommodations` table)
+     * and stores them in `ctx.hookState` so `_afterCreate` can execute the
+     * transactional sync after the accommodation row is inserted.
      */
     protected async _beforeCreate(
         data: AccommodationCreateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // SPEC-143 #29: a service-suspended owner is "not selling", so they
+        // cannot create new accommodations while the subscription is paused.
+        // No exemption — this guards the owner target itself, not the caller.
+        if (data.ownerId) {
+            const owner = await this._userModel.findById(data.ownerId, ctx?.tx);
+            if (owner?.serviceSuspended) {
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Cannot create an accommodation while the owner subscription is paused'
+                );
+            }
+        }
+
         await this._assertDestinationIsCity(data.destinationId);
+
+        // SPEC-172: capture junction sync inputs in hookState.
+        // amenityIds / featureIds are write-only — they do not map to any column in
+        // the `accommodations` table. Drizzle ignores unknown fields on insert,
+        // so no DB error occurs, but the _afterCreate hook needs them from hookState.
+        if (ctx.hookState) {
+            // Store as-is so `_afterCreate` can distinguish undefined (no-op) from [] (clear all).
+            ctx.hookState.pendingAmenityIds = data.amenityIds;
+            ctx.hookState.pendingFeatureIds = data.featureIds;
+        }
 
         // Only generate a slug if one is not already provided
         if (!data.slug) {
@@ -555,8 +769,42 @@ export class AccommodationService extends BaseCrudService<
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
-        ctx: ServiceContext
+        ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
+        // SPEC-172: sync amenity/feature junctions transactionally.
+        // pendingAmenityIds/pendingFeatureIds were captured by _beforeCreate.
+        // undefined → skip (no-op contract); defined → sync inside the same ctx.tx.
+        if (ctx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncAmenityJunction({
+                accommodationId: entity.id,
+                amenityIds: ctx.hookState.pendingAmenityIds,
+                junctionModel: this._rAmenityModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+        if (ctx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncFeatureJunction({
+                accommodationId: entity.id,
+                featureIds: ctx.hookState.pendingFeatureIds,
+                junctionModel: this._rFeatureModel,
+                featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx);
         }
@@ -593,10 +841,14 @@ export class AccommodationService extends BaseCrudService<
      * The `_afterUpdate` hook is idempotent: it only assigns HOST role if the user does not
      * already hold a privileged role, so repeated ACTIVE-state updates are safe no-ops.
      *
+     * SPEC-172: also strips `amenityIds`/`featureIds` from the returned payload (they are
+     * write-only junction sync inputs, not columns in the `accommodations` table) and stores
+     * them in `ctx.hookState` for `_afterUpdate` to execute the transactional sync.
+     *
      * @param data - The normalized update payload.
      * @param _actor - The actor performing the update.
      * @param ctx - Service execution context carrying transaction and hookState.
-     * @returns The update data unchanged (this hook only writes to hookState as a side effect).
+     * @returns The update data with junction sync fields removed (this hook also writes to hookState as a side effect).
      */
     protected async _beforeUpdate(
         data: AccommodationUpdateInput,
@@ -615,7 +867,32 @@ export class AccommodationService extends BaseCrudService<
             ctx.hookState.previousLifecycleState =
                 typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
         }
-        return data as Partial<Accommodation>;
+
+        // SPEC-172: capture junction sync inputs in hookState.
+        // amenityIds / featureIds are write-only — they do not map to any column in
+        // the `accommodations` table. Drizzle ignores unknown fields on update,
+        // so no DB error occurs, but the _afterUpdate hook needs them from hookState.
+        if (ctx.hookState) {
+            // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
+            ctx.hookState.pendingAmenityIds = data.amenityIds;
+            ctx.hookState.pendingFeatureIds = data.featureIds;
+        }
+
+        // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
+        // The _afterUpdate hook persists them into extraInfo JSONB for audit/analytics.
+        const cleanData = { ...data } as Record<string, unknown>;
+        const aiAssistedFields = cleanData.aiAssistedFields as readonly string[] | undefined;
+        cleanData.aiAssistedFields = undefined;
+
+        if (aiAssistedFields !== undefined && ctx.hookState) {
+            ctx.hookState.pendingAiAssistedFields = aiAssistedFields;
+            this.logger.info(
+                { aiAssistedFields },
+                '[accommodation] AI-assisted fields detected in update payload'
+            );
+        }
+
+        return cleanData as Partial<Accommodation>;
     }
 
     /**
@@ -631,6 +908,9 @@ export class AccommodationService extends BaseCrudService<
      * because this is a system-level side effect that should not depend on the actor's
      * permissions.
      *
+     * SPEC-172: also syncs amenity/feature junctions when `pendingAmenityIds` or
+     * `pendingFeatureIds` are present in `ctx.hookState` (set by `_beforeUpdate`).
+     *
      * @param entity - The updated accommodation entity.
      * @param _actor - The actor performing the update.
      * @param ctx - Service execution context carrying transaction and hookState.
@@ -641,6 +921,40 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
+        // SPEC-172: sync amenity/feature junctions transactionally.
+        // pendingAmenityIds/pendingFeatureIds were captured by _beforeUpdate.
+        // undefined → skip (no-op contract); defined → sync inside the same ctx.tx.
+        if (ctx.hookState?.pendingAmenityIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call update() from within withServiceTransaction'
+                );
+            }
+            await syncAmenityJunction({
+                accommodationId: entity.id,
+                amenityIds: ctx.hookState.pendingAmenityIds,
+                junctionModel: this._rAmenityModel,
+                amenityModel: this._amenityModel,
+                tx: ctx.tx
+            });
+        }
+        if (ctx.hookState?.pendingFeatureIds !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Junction sync requires an active transaction; call update() from within withServiceTransaction'
+                );
+            }
+            await syncFeatureJunction({
+                accommodationId: entity.id,
+                featureIds: ctx.hookState.pendingFeatureIds,
+                junctionModel: this._rFeatureModel,
+                featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
             : undefined;
@@ -662,6 +976,34 @@ export class AccommodationService extends BaseCrudService<
         // Uses an idempotency guard so this is safe on any ACTIVE-state update.
         if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && entity.ownerId) {
             await this._assignHostRoleIfNeeded(entity.ownerId, ctx);
+        }
+
+        // SPEC-198.1: persist AI-assisted fields into extraInfo JSONB for audit / analytics.
+        // This runs as an additional targeted update because aiAssistedFields is a write-only
+        // input field, not a column on the accommodations table. We merge into extraInfo
+        // so existing keys (capacity, bedrooms, etc.) are preserved.
+        const pendingAi = ctx.hookState?.pendingAiAssistedFields;
+        if (pendingAi !== undefined && pendingAi.length > 0) {
+            // TYPE-WORKAROUND: extraInfo DB column is jsonb $type<Record<string, unknown>>,
+            // but the Zod schema types it as a specific shape. We merge at the DB level
+            // via a raw cast since the schema's strict shape does not include aiAssistedFields.
+            const currentExtra = (entity.extraInfo ?? {}) as Record<string, unknown>;
+            const mergedExtra: Record<string, unknown> = {
+                ...currentExtra,
+                aiAssistedFields: [...pendingAi]
+            };
+            try {
+                await this.model.update(
+                    { id: entity.id },
+                    { extraInfo: mergedExtra } as unknown as Partial<Accommodation>, // TYPE-WORKAROUND: extraInfo DB column is jsonb — merge result is Record<string,unknown> which doesn't match the Zod strict shape
+                    ctx?.tx
+                );
+            } catch (error) {
+                this.logger.warn(
+                    { error, accommodationId: entity.id, aiAssistedFields: pendingAi },
+                    '[accommodation] Failed to persist AI-assisted fields to extraInfo (non-blocking)'
+                );
+            }
         }
 
         return entity;
@@ -812,9 +1154,65 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Creates a new accommodation, wrapping the operation in a database transaction
+     * when `amenityIds` or `featureIds` are present in the input (SPEC-172).
+     *
+     * When junction sync fields are absent, delegates directly to `super.create()`
+     * which behaves exactly as before — this override is a transparent pass-through
+     * for callers that do not supply junction data.
+     *
+     * When junction sync fields ARE present, a `withServiceTransaction` boundary is
+     * opened so that:
+     * - The accommodation row insert
+     * - The amenity junction inserts (via `_afterCreate` → `syncAmenityJunction`)
+     * - The feature junction inserts (via `_afterCreate` → `syncFeatureJunction`)
+     *
+     * all commit or roll back atomically. An unknown catalog ID in either list causes
+     * the whole transaction to roll back with `VALIDATION_ERROR`.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - Create input, optionally including `amenityIds` and `featureIds`.
+     * @param ctx - Optional service context. When provided with a transaction, the
+     *   operation participates in the existing transaction instead of opening a new one.
+     */
+    public override async create(
+        actor: Actor,
+        data: AccommodationCreateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        const { amenityIds, featureIds } = data as {
+            amenityIds?: readonly string[];
+            featureIds?: readonly string[];
+        };
+        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+
+        if (!needsJunctionSync) {
+            return super.create(actor, data, ctx);
+        }
+
+        // Junction sync requested — ensure everything runs in a single transaction.
+        // If the caller already provides ctx.tx, use it (no new boundary needed).
+        if (ctx?.tx) {
+            return super.create(actor, data, ctx);
+        }
+
+        return withServiceTransaction(
+            async (txCtx) => {
+                return super.create(actor, data, txCtx);
+            },
+            ctx,
+            { timeoutMs: 10_000 }
+        );
+    }
+
+    /**
      * Intercepts updates that transition the accommodation to `ACTIVE` and routes
      * them through `publish()` so the trial-subscription orchestration runs
      * atomically with the lifecycleState flip and the owner role promotion.
+     *
+     * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
+     * wraps the full update + junction sync in a `withServiceTransaction` boundary so
+     * the accommodation update and the junction mutations are fully atomic.
      *
      * Behaviour matrix:
      * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
@@ -852,7 +1250,67 @@ export class AccommodationService extends BaseCrudService<
                 return this.publish(actor, id, ctx);
             }
         }
-        return super.update(actor, id, data, ctx);
+
+        // INV-5 / B-1: preserve server-managed archivedGallery on any media update.
+        //
+        // `archivedGallery` is written exclusively by the downgrade-restriction cron
+        // (plan-photo-restriction.service) and MUST NOT be cleared by a host edit.
+        // The client input schema (`BaseMediaFields.media`) does not expose this field,
+        // so Zod strips it before the payload reaches here. We carry it forward from
+        // the current DB row whenever `data.media` is present.
+        //
+        // B-2: preserve server-managed `videos` on any host media edit that omits
+        // the `videos` key. The web editor only sends featuredImage+gallery; clients
+        // that don't manage videos must not wipe the existing videos array. An
+        // explicit `videos` key in the payload (including `[]` to clear) is respected.
+        //
+        // Fetch only when needed: if `data.media` is undefined the DB write won't
+        // touch the media column at all, so no action is required.
+        let normalizedData = data;
+        if (data.media !== undefined) {
+            const existing = await this.model.findById(id, ctx?.tx);
+            const existingArchivedGallery = existing?.media?.archivedGallery;
+            const existingVideos = existing?.media?.videos;
+            // Carry forward archivedGallery when the existing row has it.
+            const shouldCarryArchivedGallery = existingArchivedGallery !== undefined;
+            // Carry forward videos only when the payload does NOT include a `videos` key
+            // (undefined = client omitted it, meaning "no change").
+            const shouldCarryVideos =
+                existingVideos !== undefined &&
+                !('videos' in ((data.media as Record<string, unknown>) ?? {}));
+            if (shouldCarryArchivedGallery || shouldCarryVideos) {
+                normalizedData = {
+                    ...data,
+                    media: {
+                        ...data.media,
+                        ...(shouldCarryArchivedGallery
+                            ? { archivedGallery: existingArchivedGallery }
+                            : {}),
+                        ...(shouldCarryVideos ? { videos: existingVideos } : {})
+                    }
+                } as AccommodationUpdateInput;
+            }
+        }
+
+        // SPEC-172: if junction sync fields are present and no external tx exists,
+        // open a transaction so accommodation update + junction sync are atomic.
+        const { amenityIds, featureIds } = normalizedData as {
+            amenityIds?: readonly string[];
+            featureIds?: readonly string[];
+        };
+        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+
+        if (needsJunctionSync && !ctx?.tx) {
+            return withServiceTransaction(
+                async (txCtx) => {
+                    return super.update(actor, id, normalizedData, txCtx);
+                },
+                ctx,
+                { timeoutMs: 10_000 }
+            );
+        }
+
+        return super.update(actor, id, normalizedData, ctx);
     }
 
     /**
@@ -1303,13 +1761,24 @@ export class AccommodationService extends BaseCrudService<
         // before reaching this hook (SPEC-088) and re-publishes them via
         // ctx.pagination. Forward them explicitly so the model uses the
         // caller-provided pageSize instead of falling back to its default of 10.
+        // An owner listing their OWN accommodations (ownerId === self) still
+        // sees their service-suspended listings; for everyone else (non-VIP)
+        // suspended listings are hidden. Admins / VIP see all. (SPEC-143 #29)
+        //
+        // SPEC-167 T-004: plan-restricted accommodations follow the same owner
+        // visibility rule — owner always sees their own restricted items (so they
+        // can choose/restore); everyone else (non-VIP) has them hidden.
+        const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
+
         return this.model.searchWithRelations({
             ...params,
             page: ctx.pagination?.page ?? 1,
             pageSize: ctx.pagination?.pageSize ?? 10,
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
-            excludeRestricted: !hasVipAccess
+            excludeRestricted: !hasVipAccess,
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1329,9 +1798,16 @@ export class AccommodationService extends BaseCrudService<
             actor.entitlements?.has('vip_promotions_access') ||
             hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
+        // Mirror _executeSearch so count and search agree on what is visible.
+        // SPEC-167 T-004: plan-restricted items are excluded from public counts
+        // but owners always see their own (isOwnScope mirrors ownerSuspended rule).
+        const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
+
         return this.model.countByFilters({
             ...params,
-            excludeRestricted: !hasVipAccess
+            excludeRestricted: !hasVipAccess,
+            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+            excludePlanRestricted: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1378,31 +1854,24 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.entitlements?.has('vip_promotions_access') ||
                     hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
-                // Convert AccommodationSearchInput to model parameters format
+                // Forward every validated field to the model via spread so the
+                // search path stays in lockstep with `_executeSearch`. The
+                // previous manual literal silently dropped fields added later
+                // (anyAmenityGroups, capacity/bedroom/bathroom ranges, minRating,
+                // sorts) — spreading processedParams guarantees new optional
+                // filters added to the schema reach the model automatically.
+                const isOwnScope =
+                    !!processedParams.ownerId && processedParams.ownerId === validatedActor.id;
+
+                // SPEC-167 T-004: plan-restricted accommodations are excluded from
+                // public reads, but owners always see their own restricted items.
                 const modelParams = {
+                    ...processedParams,
                     page,
                     pageSize,
-                    sortBy: processedParams.sortBy,
-                    sortOrder: processedParams.sortOrder,
-                    sorts: processedParams.sorts,
-                    featuredFirst: processedParams.featuredFirst,
-                    q: processedParams.q,
-                    type: processedParams.type,
-                    types: processedParams.types,
-                    minPrice: processedParams.minPrice,
-                    maxPrice: processedParams.maxPrice,
-                    destinationId: processedParams.destinationId,
-                    destinationIds: processedParams.destinationIds,
-                    amenities: processedParams.amenities,
-                    features: processedParams.features,
-                    isFeatured: processedParams.isFeatured,
-                    isAvailable: processedParams.isAvailable,
                     excludeRestricted: !hasVipAccess,
-                    // SPEC-097 — viewport bbox filter for listing maps
-                    bboxNorth: processedParams.bboxNorth,
-                    bboxSouth: processedParams.bboxSouth,
-                    bboxEast: processedParams.bboxEast,
-                    bboxWest: processedParams.bboxWest
+                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
+                    excludePlanRestricted: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1460,7 +1929,11 @@ export class AccommodationService extends BaseCrudService<
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: top-rated list is always a public view (no
+                    // own-scope), so plan-restricted mirrors ownerSuspended exactly.
+                    excludePlanRestricted: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -1576,6 +2049,17 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Gets accommodations by destination.
+     *
+     * Uses `searchWithRelations` (not the raw `findAll`) so the public visibility
+     * predicate is enforced at the DB query level:
+     * - `ownerSuspended=true` accommodations are hidden from public actors.
+     * - `planRestricted=true` accommodations are hidden from public actors.
+     *
+     * SPEC-167 T-026: this is a public-only path — there is no `ownerId` in the
+     * params, so there is no own-scope exemption. The only bypass is VIP access
+     * (`vip_promotions_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
+     * which mirrors the predicate applied by `getTopRatedByDestination`.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
      * @param ctx - Optional service context for transaction propagation
@@ -1590,23 +2074,30 @@ export class AccommodationService extends BaseCrudService<
             methodName: 'getByDestination',
             input: { ...data, actor },
             schema: AccommodationByDestinationParamsSchema,
-            execute: async (validated, actor) => {
-                await this._canList(actor);
-                const result = await this.model.findAll(
+            execute: async (validated, validatedActor) => {
+                await this._canList(validatedActor);
+
+                const hasVipAccess =
+                    validatedActor.entitlements?.has('vip_promotions_access') ||
+                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
+
+                const result = await this.model.searchWithRelations(
                     {
-                        destinationId: validated.destinationId
+                        destinationId: validated.destinationId,
+                        page: validated.page ?? 1,
+                        pageSize: validated.pageSize ?? 10,
+                        // SPEC-167 T-026: destination list is always a public view (no
+                        // own-scope), so both visibility flags mirror each other exactly.
+                        excludeOwnerSuspended: !hasVipAccess,
+                        excludePlanRestricted: !hasVipAccess
                     },
-                    {
-                        page: validated.page,
-                        pageSize: validated.pageSize
-                    },
-                    undefined,
                     ctx?.tx
                 );
 
                 const accommodations = Array.isArray(result.items)
                     ? result.items.map(
-                          (item) => normalizeAccommodationOutput(item, actor) as Accommodation
+                          (item) =>
+                              normalizeAccommodationOutput(item, validatedActor) as Accommodation
                       )
                     : [];
 
@@ -1650,7 +2141,10 @@ export class AccommodationService extends BaseCrudService<
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess
+                    excludeRestricted: !hasVipAccess,
+                    excludeOwnerSuspended: !hasVipAccess,
+                    // SPEC-167 T-004: destination top-rated is always a public view.
+                    excludePlanRestricted: !hasVipAccess
                 });
 
                 const accommodations =
@@ -1666,6 +2160,10 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Adds a FAQ to an accommodation.
+     *
+     * Assigns `displayOrder = max(current displayOrder) + 1` so new FAQs always
+     * appear at the end of the ordered list. When no FAQs exist yet, starts at 0.
+     *
      * @param actor - The actor performing the action
      * @param data - The input object containing accommodationId and faq
      * @param ctx - Optional service context for transaction propagation
@@ -1687,9 +2185,19 @@ export class AccommodationService extends BaseCrudService<
                 }
                 await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
+                // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
+                const existing = await faqModel.findAll(
+                    { accommodationId: validated.accommodationId, deletedAt: null },
+                    { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.displayOrder ?? -1;
+                const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
                 const faqToCreate = {
                     ...validated.faq,
-                    accommodationId: validated.accommodationId as AccommodationIdType
+                    accommodationId: validated.accommodationId as AccommodationIdType,
+                    displayOrder: nextOrder
                 };
                 const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
                 return { faq: createdFaq };
@@ -1727,7 +2235,7 @@ export class AccommodationService extends BaseCrudService<
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.hardDelete({ id: validated.faqId }, ctx?.tx);
+                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
                 return { success: true };
             }
         });
@@ -1811,6 +2319,120 @@ export class AccommodationService extends BaseCrudService<
                 // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
                 const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as AccommodationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Retrieves an accommodation's FAQs for the ADMIN sub-tab (SPEC-169 §2.1).
+     *
+     * Same data as {@link getFaqs} but gated with {@link checkCanAdminView} instead of the
+     * generic `_canView`: a `VIEW_OWN`-only HOST sees the FAQs of THEIR OWN accommodation, and
+     * an accommodation owned by someone else (even PUBLIC) resolves to `NOT_FOUND` (decision D2).
+     * `getFaqs` is kept unchanged for the protected/public-facing path, which legitimately
+     * exposes FAQs of any viewable accommodation.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - The FAQ list input (accommodationId).
+     * @param ctx - Optional service context.
+     * @returns A `ServiceOutput` with the FAQ list, or a `ServiceError`.
+     */
+    public async adminGetFaqs(
+        actor: Actor,
+        data: AccommodationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetFaqs',
+            input: { ...data, actor },
+            schema: AccommodationFaqListInputSchema,
+            execute: async (validated, validatedActor) => {
+                const accommodation = await this.model.findWithRelations(
+                    { id: validated.accommodationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                checkCanAdminView(validatedActor, accommodation as Accommodation);
+                // TYPE-WORKAROUND: Drizzle relation result widens entity type to include the joined `faqs` array which is not part of the base Accommodation type.
+                const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as AccommodationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Reorders FAQs on an accommodation (SPEC-177 T-010).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as addFaq/updateFaq).
+     * 2. Load all active FAQs for the accommodation.
+     * 3. Validate that every `faqId` in `order` belongs to this accommodation
+     *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
+     * 4. Apply each `displayOrder` in a single transaction.
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing accommodationId and the ordered array of { faqId, displayOrder }
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async reorderFaqs(
+        actor: Actor,
+        data: AccommodationFaqReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderFaqs',
+            input: { ...data, actor },
+            schema: AccommodationFaqReorderInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const faqModel = new AccommodationFaqModel();
+                // Load all active FAQs for this accommodation to validate ownership.
+                const { items: existingFaqs } = await faqModel.findAll(
+                    { accommodationId: validated.accommodationId, deletedAt: null },
+                    { pageSize: 200 },
+                    undefined,
+                    ctx?.tx
+                );
+                const existingIds = new Set(existingFaqs.map((f) => f.id));
+
+                // Reject any faqId that doesn't belong to this accommodation.
+                const unknownIds = validated.order
+                    .map((item) => item.faqId)
+                    .filter((id) => !existingIds.has(id));
+                if (unknownIds.length > 0) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Unknown or foreign faqId(s) for this accommodation: ${unknownIds.join(', ')}`
+                    );
+                }
+
+                // Apply all displayOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (const item of validated.order) {
+                        await faqModel.update(
+                            { id: item.faqId },
+                            { displayOrder: item.displayOrder },
+                            tx
+                        );
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                return { success: true };
             }
         });
     }
@@ -2026,5 +2648,58 @@ export class AccommodationService extends BaseCrudService<
             },
             ctx?.tx
         );
+    }
+
+    /**
+     * Per-accommodation market comparison for the HOST card J redesign.
+     *
+     * Delegates to {@link AccommodationModel.getMarketComparisonByOwnerId} —
+     * the SQL builds the destination averages on the fly so the dashboard
+     * does not need a materialised aggregate table.
+     *
+     * Permission gating: requires `ACCOMMODATION_VIEW_OWN` (the same right
+     * the host's own accommodation list uses). `ownerId` is always derived
+     * from `actor.id` so the host cannot peek at another host's market data.
+     */
+    public async getHostMarketComparison(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<
+        ServiceOutput<
+            ReadonlyArray<{
+                readonly accommodationId: string;
+                readonly accommodationName: string;
+                readonly accommodationType: string;
+                readonly destinationId: string;
+                readonly destinationName: string | null;
+                readonly yourRating: number | null;
+                readonly yourReviews: number;
+                readonly destinationAvgRating: number | null;
+                readonly destinationReviewsTotal: number;
+                readonly yourPrice: number | null;
+                readonly destinationAvgPrice: number | null;
+            }>
+        >
+    > {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getHostMarketComparison',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                // ACCOMMODATION_VIEW_ALL is the permission HOSTs hold on
+                // their own listing surface (see seed/role-permissions for
+                // HOST). The endpoint scopes results to ownerId = actor.id
+                // so this gate is about being able to read accommodation
+                // data at all, not about seeing other hosts' listings.
+                if (!validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ACCOMMODATION_VIEW_ALL required for market comparison'
+                    );
+                }
+                return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);
+            }
+        });
     }
 }

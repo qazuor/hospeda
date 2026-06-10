@@ -126,7 +126,7 @@ export function InvoiceDetailDialog({
 
                 <div className="grid gap-6">
                     {/* Header Section */}
-                    <div className="grid gap-4 rounded-md border p-4 md:grid-cols-2">
+                    <div className="grid gap-4 rounded-md border bg-card p-4 md:grid-cols-2">
                         <div>
                             <p className="mb-2 font-semibold text-sm">
                                 {t('admin-billing.invoices.dialog.client')}
@@ -158,7 +158,7 @@ export function InvoiceDetailDialog({
                         <h3 className="mb-3 font-semibold text-sm">
                             {t('admin-billing.invoices.dialog.lineItemsTitle')}
                         </h3>
-                        <div className="overflow-x-auto rounded-md border">
+                        <div className="overflow-x-auto rounded-md border bg-card">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted">
                                     <tr>
@@ -229,16 +229,16 @@ export function InvoiceDetailDialog({
 
                     {/* Payment Information */}
                     {invoice.status === 'paid' && invoice.paymentMethod && (
-                        <div className="rounded-md border bg-green-50 p-4 dark:bg-green-950">
-                            <p className="mb-1 font-semibold text-green-900 text-sm dark:text-green-100">
+                        <div className="rounded-md border border-success/30 bg-success/10 p-4">
+                            <p className="mb-1 font-semibold text-foreground text-sm">
                                 {t('admin-billing.invoices.dialog.paymentInfo')}
                             </p>
-                            <p className="text-green-800 text-sm dark:text-green-200">
+                            <p className="text-foreground text-sm">
                                 {t('admin-billing.invoices.dialog.paymentMethod')}:{' '}
                                 {invoice.paymentMethod}
                             </p>
                             {invoice.paidDate && (
-                                <p className="text-green-800 text-sm dark:text-green-200">
+                                <p className="text-foreground text-sm">
                                     {t('admin-billing.invoices.dialog.paymentDate')}:{' '}
                                     {formatShortDate({ date: invoice.paidDate, locale })}
                                 </p>

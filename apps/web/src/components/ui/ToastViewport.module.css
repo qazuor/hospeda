@@ -1,63 +1,215 @@
 .viewport {
     position: fixed;
-    z-index: var(--z-toast, 100);
+    z-index: var(--z-toast);
     display: flex;
     flex-direction: column;
     gap: var(--space-3, 0.75rem);
     pointer-events: none;
 
+    /* Mobile: full-width slab at the bottom, comfortable thumb reach. */
     inset-inline: var(--space-4, 1rem);
     inset-block-end: var(--space-4, 1rem);
 }
 
 @media (min-width: 768px) {
     .viewport {
+        /* Desktop: bottom-right column, unified edge with mobile. */
         inset-inline: auto;
-        inset-block-end: auto;
+        inset-block-start: auto;
         inset-inline-end: var(--space-6, 1.5rem);
-        inset-block-start: calc(var(--navbar-height, 64px) + var(--space-4, 1rem));
-        max-width: 380px;
+        inset-block-end: var(--space-6, 1.5rem);
+        max-width: 420px;
         width: 100%;
     }
 }
 
-.toast {
-    pointer-events: auto;
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    grid-template-areas:
-        "icon message close"
-        "icon actions actions";
-    align-items: start;
-    gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
-    border-radius: var(--radius-card, 12px);
-    background-color: var(--core-card, #fff);
-    border: 1px solid var(--border, #dee5eb);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08);
-    color: var(--core-foreground);
-    animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+.viewportEmpty {
+    /* Stay mounted so the aria-live region is preserved between toasts. */
+    pointer-events: none;
 }
 
-@media (min-width: 768px) {
-    .toast {
-        grid-template-areas:
-            "icon message close"
-            "icon actions close";
-    }
+.toast {
+    /* Default auto-dismiss duration; ToastViewport.client.tsx overrides this
+       per-toast via an inline `--toast-duration` style from `toast.duration`. */
+    --toast-duration: 5000ms;
+    pointer-events: auto;
+    position: relative;
+    overflow: hidden;
+    /* Single row: [type-icon | body | close]. */
+    display: flex;
+    align-items: stretch;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-4, 1rem);
+    min-height: 88px;
+    border-radius: var(--radius-card, 16px);
+    background-color: var(--toast-bg, var(--core-card, #fff));
+    border: 1px solid transparent;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.04);
+    color: var(--core-foreground);
+    animation: toast-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    touch-action: pan-y;
+    user-select: none;
+    will-change: transform, opacity;
+}
+
+/* Body fills the middle column and centers content vertically so short
+   messages float in the middle while icon/close stay anchored on top. */
+.body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-2, 0.5rem);
+    text-align: left;
 }
 
 .icon {
-    grid-area: icon;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
+    width: 36px;
+    height: 36px;
     flex-shrink: 0;
-    color: var(--core-muted-foreground);
+    /* Center by default (text-only toasts). When the toast has actions
+       (taller body), the icon shifts to the top so it aligns with the
+       close button. Driven by `:has()` on the parent — see below. */
+    align-self: center;
+    /* Vivid feedback color, no opacity reduction. */
+    color: var(--toast-accent, var(--core-muted-foreground));
 }
 
+/* Toast WITH action buttons → icon top-aligned with close.
+   Toast WITHOUT actions (just message) → icon stays centered. */
+.toast:has(.actions) .icon {
+    align-self: flex-start;
+}
+
+.iconSpinning {
+    animation: toast-spin 1s linear infinite;
+}
+
+.message {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    flex-wrap: wrap;
+}
+
+.action {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.45rem 0.95rem;
+    border-radius: var(--radius-pill, 9999px);
+    display: inline-flex;
+    align-items: center;
+    transition: filter 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+
+.actionPrimary {
+    background-color: var(--toast-accent, var(--brand-primary));
+    color: var(--toast-accent-foreground, #fff);
+}
+
+.actionPrimary:hover,
+.actionPrimary:focus-visible {
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+}
+
+.actionSecondary {
+    background-color: var(--core-foreground-a05);
+    color: var(--core-foreground);
+    border: 1px solid var(--core-foreground-a15);
+    padding: calc(0.45rem - 1px) calc(0.75rem - 1px);
+    font-weight: 500;
+}
+
+.actionSecondary:hover,
+.actionSecondary:focus-visible {
+    background-color: var(--core-foreground-a10);
+    border-color: var(--core-foreground-a25);
+}
+
+/* Close button wrapped so the circular countdown ring can sit behind it. */
+.closeWrap {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--toast-accent, var(--core-muted-foreground));
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+.countdown {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    transform: rotate(-90deg);
+}
+
+.countdownTrack {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    opacity: 0.22;
+}
+
+.countdownIndicator {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+    animation: toast-countdown var(--toast-duration, 5000ms) linear forwards;
+}
+
+.toast:hover .countdownIndicator,
+.toast:focus-within .countdownIndicator {
+    animation-play-state: paused;
+}
+
+.close {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--core-foreground);
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease;
+}
+
+.close:hover,
+.close:focus-visible {
+    background-color: var(--core-foreground-a10);
+}
+
+/* ---------- Animations ---------- */
 @keyframes toast-in {
     from {
         opacity: 0;
@@ -69,104 +221,101 @@
     }
 }
 
-.message {
-    grid-area: message;
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    line-height: 1.4;
+.exiting {
+    animation: toast-out 0.2s cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events: none;
 }
 
-.actions {
-    grid-area: actions;
-    display: flex;
-    align-items: center;
-    gap: var(--space-3, 0.75rem);
-    flex-wrap: wrap;
+@keyframes toast-out {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        max-height: 200px;
+        margin-block-end: 0;
+    }
+    to {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+        max-height: 0;
+        margin-block-end: calc(-1 * var(--space-3, 0.75rem));
+        padding-block: 0;
+    }
 }
 
-.action {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    padding: 0;
+@keyframes toast-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-.actionPrimary {
-    color: var(--brand-primary);
+@keyframes toast-countdown {
+    to {
+        stroke-dashoffset: 100;
+    }
 }
 
-.actionPrimary:hover,
-.actionPrimary:focus-visible {
-    text-decoration: underline;
+/* ---------- Variants ----------
+   Driven by the `data-toast-type` attribute on the root element so the
+   selectors aren't subject to CSS-module class hashing. Each variant sets
+   --toast-accent (icon + ring + primary action) and --toast-bg (pastel
+   background mixed with the solid card so it stays opaque on any page
+   surface). Uses the dedicated --success/--warning/--info/--destructive
+   feedback tokens which are vivid in both light and dark modes. */
+.toast[data-toast-type="success"] {
+    --toast-accent: var(--success, #16a34a);
+    --toast-accent-foreground: var(--success-foreground, #fff);
+    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--success, #16a34a) 13%);
 }
 
-.actionSecondary {
-    color: var(--core-muted-foreground);
-    font-weight: 500;
+.toast[data-toast-type="error"] {
+    --toast-accent: var(--destructive, #dc2626);
+    --toast-accent-foreground: var(--destructive-foreground, #fff);
+    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--destructive, #dc2626) 13%);
 }
 
-.actionSecondary:hover,
-.actionSecondary:focus-visible {
-    color: var(--core-foreground);
-    text-decoration: underline;
+.toast[data-toast-type="warning"] {
+    --toast-accent: var(--warning, #ea580c);
+    --toast-accent-foreground: var(--warning-foreground, #1a1a1a);
+    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--warning, #ea580c) 13%);
 }
 
-.close {
-    grid-area: close;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    color: var(--core-muted-foreground);
-    border-radius: var(--radius-button, 8px);
-    cursor: pointer;
-    transition: background-color 0.15s ease, color 0.15s ease;
+.toast[data-toast-type="info"] {
+    --toast-accent: var(--info, #2563eb);
+    --toast-accent-foreground: var(--info-foreground, #fff);
+    --toast-bg: color-mix(in oklab, var(--core-card, #fff) 87%, var(--info, #2563eb) 13%);
 }
 
-.close:hover,
-.close:focus-visible {
-    background-color: oklch(from var(--core-foreground) l c h / 0.06);
-    color: var(--core-foreground);
+.toast[data-toast-type="loading"] {
+    --toast-accent: var(--info, #2563eb);
+    --toast-accent-foreground: var(--info-foreground, #fff);
+    --toast-bg: var(--core-card, #fff);
+    border-color: var(--info-a20);
 }
 
-/* Variant accents — thicker left border + tinted icon + soft background tint. */
-.toast--success {
-    border-inline-start: 4px solid var(--brand-tertiary, #16a34a);
-    background-color: oklch(from var(--brand-tertiary, #16a34a) l c h / 0.06);
-}
-.toast--success .icon {
-    color: var(--brand-tertiary, #16a34a);
-}
-
-.toast--error {
-    border-inline-start: 4px solid var(--destructive, #dc2626);
-    background-color: oklch(from var(--destructive, #dc2626) l c h / 0.06);
-}
-.toast--error .icon {
-    color: var(--destructive, #dc2626);
+/* Dark mode: tone the pastel down so it doesn't blow out contrast with
+   the dark page background. */
+[data-theme="dark"] .toast[data-toast-type="success"],
+[data-theme="dark"] .toast[data-toast-type="error"],
+[data-theme="dark"] .toast[data-toast-type="warning"],
+[data-theme="dark"] .toast[data-toast-type="info"] {
+    --toast-bg: color-mix(in oklab, var(--core-card, #1a1a1a) 86%, var(--toast-accent) 14%);
 }
 
-.toast--warning {
-    border-inline-start: 4px solid var(--brand-accent, #ea580c);
-    background-color: oklch(from var(--brand-accent, #ea580c) l c h / 0.06);
-}
-.toast--warning .icon {
-    color: var(--brand-accent, #ea580c);
-}
-
-.toast--info {
-    border-inline-start: 4px solid var(--brand-primary, #2563eb);
-    background-color: oklch(from var(--brand-primary, #2563eb) l c h / 0.06);
-}
-.toast--info .icon {
-    color: var(--brand-primary, #2563eb);
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
+    }
+    .iconSpinning {
+        animation-duration: 2s;
+    }
+    .exiting {
+        animation-duration: 0.01ms;
+    }
+    .countdownIndicator {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
 }

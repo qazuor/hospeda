@@ -41,7 +41,7 @@ It is intentionally separate from the admin panel (`apps/admin`) and the REST AP
 - **Framework**: Astro 5 with SSR (`output: 'server'`)
 - **UI islands**: React 19 (only when interactivity is required)
 - **Styling**: vanilla CSS + CSS Modules with design tokens (no Tailwind here. Tailwind is admin-only)
-- **Forms**: native HTML + small custom hooks (no React Hook Form here. RHF is admin-only)
+- **Forms**: native HTML + small custom hooks (no TanStack Form here. TanStack Form is admin-only)
 - **i18n**: `@repo/i18n` with locales `es` (primary), `en`, `pt`
 - **Auth**: Better Auth via `@repo/auth-ui` for the `/mi-cuenta/*` flow
 - **Adapter**: `@astrojs/vercel` with ISR and image optimisation

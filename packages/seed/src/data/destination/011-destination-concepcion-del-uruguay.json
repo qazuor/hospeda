@@ -4,7 +4,7 @@
     "slug": "concepcion-del-uruguay",
     "name": "Concepción del Uruguay",
     "summary": "Primera capital histórica de Entre Ríos, ciudad universitaria a orillas del río Uruguay con patrimonio jesuítico, playas en Banco Pelay e Isla del Puerto y cercanía al Palacio San José.",
-    "description": "Concepción del Uruguay, cabecera del Departamento Uruguay, es una de las ciudades más emblemáticas de Entre Ríos: fue la primera capital histórica de la provincia y cuna del Colegio del Uruguay 'Justo José de Urquiza', fundado en 1849 como el primer colegio laico y gratuito del país. Su casco histórico se organiza en torno a la Plaza Ramírez y a la imponente Basílica de la Inmaculada Concepción, donde descansan los restos del general Urquiza. A pocos kilómetros, el Palacio San José conserva la residencia del primer presidente constitucional argentino, hoy Monumento Histórico Nacional. La ciudad combina cultura y río: la zona portuaria, la costanera y la Isla del Puerto ofrecen paseos, gastronomía y playas de arena blanca como Banco Pelay, Itapé y Paso Vera. Completan la oferta el complejo Termas de la Esmeralda, museos, festivales y un movido carnaval, en un entorno ideal para combinar historia, naturaleza fluvial y descanso.",
+    "description": "## Concepción del Uruguay, \"La Histórica\"\n\nFundada en 1783 a orillas del río Uruguay, **Concepción del Uruguay** es una de las ciudades más antiguas del Litoral argentino y fue la primera capital histórica de Entre Ríos. Cabecera del Departamento Uruguay, conserva un valioso patrimonio ligado a la figura del general **Justo José de Urquiza**, primer presidente constitucional del país. En 2014 fue declarada Capital Histórica de la provincia, un reconocimiento que sintetiza su rol central en la formación institucional argentina.\n\n## Patrimonio histórico\n\nEl corazón cívico de la ciudad late en torno a la **Plaza Ramírez** y a la **Basílica de la Inmaculada Concepción**, templo de estilo neorrenacentista con planta en cruz latina, tres naves y cúpula sobre el crucero. Desde 1871 alberga, en un mausoleo, los restos de Urquiza junto a los de su esposa Dolores Costa. A pocos kilómetros se alza el **Palacio San José**, residencia de Urquiza edificada entre 1848 y 1857, hoy Monumento Histórico Nacional y museo con mobiliario original. El **Colegio del Uruguay**, fundado por Urquiza en 1849, fue el primer colegio laico y gratuito del país y formó a buena parte de la dirigencia nacional.\n\n## Río, playas y naturaleza\n\nLa identidad fluvial es inseparable de la ciudad. La **costanera**, la **Isla del Puerto** y balnearios como **Banco Pelay**, **Paseo Vera** e **Isla Cambacuá** ofrecen arena, sombra y deportes náuticos durante la temporada estival. El complejo **Termas Concepción** suma piscinas de aguas termales de entre 37° y 41°C, rodeadas de naturaleza, áreas verdes y propuestas gastronómicas para disfrutar durante todo el año.\n\n## Cultura y carnaval\n\nConcepción del Uruguay vibra con uno de los **carnavales más tradicionales del país**: cada verano, decenas de miles de personas se acercan al corsódromo del Predio Multieventos para ver el paso de comparsas como Aimara, Urugua I y Unidos do Bahía, con música, danza y plumas. Museos, festivales y una intensa cartelera cultural completan una propuesta que combina historia, río y descanso a poco más de 230 km de Buenos Aires.",
     "isFeatured": true,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -383,6 +383,38 @@
         "031-attraction-costanera",
         "069-attraction-playa_fluvial",
         "028-attraction-complejo_termal_principal"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Concepción del Uruguay desde Buenos Aires?",
+            "answer": "Concepción del Uruguay está a unos 236 km de Buenos Aires, un viaje de entre 3:50 y 4:30 horas. Hay numerosos servicios diarios de micro desde las terminales porteñas (Retiro, entre otras), operados por empresas como Flechabus, Vía Bariloche, Nuevo Expreso y Rápido Tata. En auto se accede principalmente por la Ruta Nacional 14 y sus conexiones provinciales.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué lugares históricos hay para visitar en la ciudad?",
+            "answer": "Los imperdibles son el Palacio San José (residencia y museo del general Urquiza, Monumento Histórico Nacional, a pocos kilómetros del centro), la Basílica de la Inmaculada Concepción —que alberga el mausoleo de Urquiza—, el histórico Colegio del Uruguay fundado en 1849 y la Plaza Ramírez, núcleo del casco histórico.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Se puede ir a la playa en Concepción del Uruguay?",
+            "answer": "Sí. La ciudad tiene varios balnearios sobre el río Uruguay: Banco Pelay, Paseo Vera, la costanera de la Isla del Puerto e Isla Cambacuá, con arena, sombra y posibilidad de deportes náuticos. La temporada de playa se concentra en el verano.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar la ciudad?",
+            "answer": "El verano (diciembre a marzo) es ideal para playas y río, y concentra el famoso carnaval, que en su edición se desarrolla en distintas noches de febrero en el corsódromo del Predio Multieventos. La primavera y el otoño ofrecen un clima más templado, perfecto para recorrer el patrimonio histórico y disfrutar de las termas, que funcionan todo el año.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece Concepción del Uruguay?",
+            "answer": "Al ser una ciudad de buen tamaño y cabecera departamental, cuenta con amplia oferta de alojamientos, gastronomía, comercios, bancos, estaciones de servicio, transporte y atención médica. Suma además el complejo Termas Concepción con piscinas termales, alojamiento y propuestas gastronómicas.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Cuándo es el carnaval de Concepción del Uruguay?",
+            "answer": "El carnaval, uno de los más tradicionales del país, se celebra en distintas noches de febrero en el corsódromo del Predio Multieventos. Cada año convoca a decenas de miles de personas para ver el desfile de comparsas como Aimara, Urugua I y Unidos do Bahía. Conviene reservar alojamiento con anticipación.",
+            "category": "Eventos"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

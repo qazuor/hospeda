@@ -21,7 +21,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-017](ADR-017-postgres-specific-features.md) | PostgreSQL-Specific Features via Manual Migrations | Accepted |
 | [ADR-018](ADR-018-transaction-propagation-pattern.md) | Transaction Propagation Pattern | Accepted |
 | [ADR-019](ADR-019-billing-transaction-isolation.md) | Billing Transaction Isolation | Accepted |
-| [ADR-020](ADR-020-billing-plans-source-of-truth.md) | Billing Plans Source of Truth | Accepted |
+| [ADR-020](ADR-020-billing-plans-source-of-truth.md) | Billing Plans Source of Truth | Superseded by SPEC-168 |
 | [ADR-021](ADR-021-type-cast-policy.md) | `as unknown as X` Double-Cast Policy | Accepted |
 | [ADR-022](ADR-022-service-return-type-safety-with-relations.md) | Service Return Type Safety with Relations | Accepted |
 | [ADR-023](ADR-023-soft-deleted-related-entities.md) | Soft-Deleted Related Entities Behavior Policy | Accepted |
@@ -29,6 +29,11 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-025](ADR-025-factory-level-strict-response-strip.md) | Factory-Level Strict Response Strip | Accepted |
 | [ADR-026](ADR-026-collections-limit-strategy.md) | Collections Limit Strategy | Accepted |
 | [ADR-027](ADR-027-newsletter-dispatch-architecture.md) | Newsletter Dispatch Architecture | Accepted |
+| [ADR-028](ADR-028-role-permission-own-scoping.md) | Role Permission Audit + Owner-Scoped Data Access | Accepted |
+| [ADR-029](ADR-029-versioned-migration-strategy.md) | Versioned Migration Strategy (generate + migrate + two carriles) | Accepted |
+| [ADR-030](ADR-030-billing-catalog-vs-structural-definitions.md) | Billing Catalog vs. Structural Definitions | Accepted |
+| [ADR-031](ADR-031-ai-core-foundation-architecture.md) | AI Foundation Architecture (`@repo/ai-core`) | Accepted |
+| [ADR-032](ADR-032-markdown-canonical-rich-text.md) | Markdown as Canonical Storage Format for Entity Rich Text | Accepted |
 
 ## Format
 

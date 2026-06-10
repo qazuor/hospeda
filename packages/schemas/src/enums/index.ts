@@ -58,6 +58,9 @@ export * from './message-sender-type.schema.js';
 export * from './message-status.enum.js';
 export * from './message-status.schema.js';
 
+export * from './moderation-category.enum.js';
+export * from './moderation-category.schema.js';
+
 export * from './moderation-status.enum.js';
 export * from './moderation-status.schema.js';
 
@@ -69,6 +72,9 @@ export * from './newsletter-campaign-status.schema.js';
 
 export * from './newsletter-channel.enum.js';
 export * from './newsletter-channel.schema.js';
+
+export * from './newsletter-content-type.enum.js';
+export * from './newsletter-content-type.schema.js';
 
 export * from './newsletter-delivery-status.enum.js';
 export * from './newsletter-delivery-status.schema.js';
@@ -87,6 +93,8 @@ export * from './owner-promotion-discount-type.schema.js';
 
 export * from './payment-status.enum.js';
 export * from './payment-status.schema.js';
+
+export * from './permission-effect.enum.js';
 
 export * from './permission.enum.js';
 export * from './permission.schema.js';

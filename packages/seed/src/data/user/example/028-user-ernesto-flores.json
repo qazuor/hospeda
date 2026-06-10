@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Villa Paranacito",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "2829",
-        "street": "Entre Ríos",
-        "number": "147",
-        "coordinates": {
-            "lat": "-33.7167",
-            "long": "-58.6500"
-        }
+        "region": "Entre Ríos",
+        "city": "Villa Paranacito",
+        "addressLine1": "Entre Ríos 147",
+        "postalCode": "2829"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Villa Paranacito, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

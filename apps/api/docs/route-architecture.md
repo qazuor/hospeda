@@ -236,6 +236,7 @@ The following entities use the three-tier structure:
 | `event-organizer` | yes | yes | yes |
 | `post-sponsor` | no | no | yes (admin-only) |
 | `owner-promotion` | yes (legacy router) | no | yes |
+| `views` | yes (capture only) | yes (read own/all) | no |
 
 ---
 
@@ -487,6 +488,34 @@ app.route('/api/v1/public/<entity>s',     publicEntityRoutes);
 app.route('/api/v1/protected/<entity>s',  protectedEntityRoutes);
 app.route('/api/v1/admin/<entity>s',      adminEntityRoutes);
 ```
+
+---
+
+## View Tracking Routes (SPEC-159)
+
+View tracking uses a non-standard layout: one public write endpoint and three protected
+read endpoints, all under the `views` path. There is no admin tier.
+
+### Public capture
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `POST` | `/api/v1/public/views` | None (`skipAuth: true`) | Fire-and-forget; always returns **202 Accepted**. Bot UA matches get a fake-202 (no signal to crawlers). Rate limited to **30 requests/min per IP**. |
+
+Request body: `{ entityType: 'ACCOMMODATION' | 'POST' | 'EVENT', entityId: uuid }`.
+`visitorHash` is computed **server-side** (daily-salted SHA-256 of truncated IP + UA); raw IPs
+are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`.
+
+### Protected reads
+
+| Method | Path | Permission | Response |
+|--------|------|-----------|---------|
+| `GET` | `/api/v1/protected/views/accommodations/me?window=7d\|30d` | `ACCOMMODATION_VIEW_OWN` | `[{ entityId, unique, total }]` scoped to the actor's own accommodations only |
+| `GET` | `/api/v1/protected/views/posts?window=7d\|30d` | `POST_VIEW_ALL` | `[{ entityId, unique, total }]` for requested post ids |
+| `GET` | `/api/v1/protected/views/events?window=7d\|30d` | `EVENT_VIEW_ALL` | `[{ entityId, unique, total }]` for requested event ids |
+
+All three read routes use `cacheTTL: 60`. Unique-visitor counts are **approximate** (cookieless
+dedup — see privacy note). The `window` query param is required (`7d` or `30d`).
 
 ---
 

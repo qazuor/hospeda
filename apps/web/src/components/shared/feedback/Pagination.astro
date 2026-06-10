@@ -164,7 +164,6 @@ const hasNext     = currentPage < totalPages;
                     <a
                         href={buildPageUrl(currentPage - 1)}
                         class="pagination__link pagination__link--prev"
-                        rel="prev"
                         aria-label={labels.previous}
                     >
                         <span class="pagination__label-full">{labels.previous}</span>
@@ -230,7 +229,6 @@ const hasNext     = currentPage < totalPages;
                     <a
                         href={buildPageUrl(currentPage + 1)}
                         class="pagination__link pagination__link--next"
-                        rel="next"
                         aria-label={labels.next}
                     >
                         <span class="pagination__label-full">{labels.next}</span>
@@ -326,7 +324,7 @@ const hasNext     = currentPage < totalPages;
 
     /* Disabled prev / next */
     .pagination__link--disabled {
-        color: oklch(from var(--core-muted-foreground) l c h / 0.5);
+        color: var(--core-muted-foreground-a50);
         opacity: 0.5;
         cursor: not-allowed;
         border: 1px solid var(--border);

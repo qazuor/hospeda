@@ -11,6 +11,7 @@
  * - Dry run mode behavior
  * - Billing not configured scenario
  * - Batch processing behavior
+ * - Notification sender wired into TrialService constructor (INV-2)
  *
  * @module test/cron/trial-expiry
  */
@@ -18,6 +19,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { trialExpiryJob } from '../../src/cron/jobs/trial-expiry';
 import type { CronJobContext } from '../../src/cron/types';
+
+// Hoisted mock for sendNotification so it can be referenced in the vi.mock factory
+const { mockSendNotification } = vi.hoisted(() => ({
+    mockSendNotification: vi.fn().mockResolvedValue(undefined)
+}));
 
 // Mock billing middleware
 vi.mock('../../src/middlewares/billing', () => ({
@@ -27,6 +33,11 @@ vi.mock('../../src/middlewares/billing', () => ({
 // Mock TrialService
 vi.mock('../../src/services/trial.service', () => ({
     TrialService: vi.fn()
+}));
+
+// Mock notification-helper so we can assert the sender is injected
+vi.mock('../../src/utils/notification-helper', () => ({
+    sendNotification: mockSendNotification
 }));
 
 // Import mocked modules after mocking
@@ -362,6 +373,72 @@ describe('Trial Expiry Cron Job', () => {
                 blockedCount: 2,
                 durationMs: expect.any(Number)
             });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // INV-2: notification sender must be wired into TrialService constructor
+    // -------------------------------------------------------------------------
+
+    describe('Notification sender wiring (INV-2)', () => {
+        it('should construct TrialService with the sendNotification helper as second arg', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: [] })
+                }
+            };
+            const mockTrialService = {
+                blockExpiredTrials: vi.fn().mockResolvedValue(0)
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act
+            await trialExpiryJob.handler(ctx);
+
+            // Assert — TrialService must receive sendNotification as the 2nd constructor arg
+            expect(TrialService).toHaveBeenCalledOnce();
+            const [_billingArg, senderArg] = vi.mocked(TrialService).mock.calls[0]!;
+            expect(typeof senderArg).toBe('function');
+        });
+
+        it('should pass a sender that calls sendNotification when invoked', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: [] })
+                }
+            };
+            const mockTrialService = {
+                blockExpiredTrials: vi.fn().mockResolvedValue(0)
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act
+            await trialExpiryJob.handler(ctx);
+
+            // Invoke the wired sender with a sample payload to verify it delegates
+            // to the imported sendNotification helper
+            const [_billingArg, senderArg] = vi.mocked(TrialService).mock.calls[0]!;
+            const samplePayload = {
+                type: 'trial_expired' as const,
+                recipientEmail: 'host@example.com',
+                recipientName: 'Host User',
+                userId: 'user_1',
+                customerId: 'cust_1',
+                planName: 'owner-basico',
+                trialEndDate: new Date().toISOString(),
+                upgradeUrl: 'https://hospeda.com.ar/mi-cuenta/suscripcion'
+            };
+            (senderArg as (p: typeof samplePayload) => void)(samplePayload);
+
+            expect(mockSendNotification).toHaveBeenCalledWith(samplePayload);
         });
     });
 });

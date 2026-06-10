@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-196",
+    "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+    "type": "refactor",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-05T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["architecture", "config-as-code", "content", "monorepo", "dx"]
+}

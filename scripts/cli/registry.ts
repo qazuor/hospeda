@@ -1,6 +1,6 @@
 import type { CliCommand } from './types.js';
 
-/** All 46 curated commands for the Hospeda CLI */
+/** All 50 curated commands for the Hospeda CLI */
 const CURATED_COMMANDS: readonly CliCommand[] = [
     // ── Development (5) ──────────────────────────────────────
     {
@@ -388,6 +388,59 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         source: 'root',
         mode: 'one-shot',
         curated: true
+    },
+
+    // ── Worktree (4) ────────────────────────────────────────
+    {
+        id: 'wt:up',
+        description: 'Start DB + servers for this worktree (idempotent)',
+        category: 'worktree',
+        execution: {
+            type: 'shell',
+            command: 'bash ~/.claude/skills/worktree/scripts/wt-up.sh'
+        },
+        source: 'root',
+        mode: 'long-running',
+        curated: true
+    },
+    {
+        id: 'wt:down',
+        description: 'Stop servers only (DB + worktree preserved)',
+        category: 'worktree',
+        execution: {
+            type: 'shell',
+            command: 'bash ~/.claude/skills/worktree/scripts/wt-down.sh'
+        },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
+    {
+        id: 'wt:remove',
+        description: 'Tear down everything: servers + DB + worktree + branch',
+        category: 'worktree',
+        execution: {
+            type: 'shell',
+            command: 'bash ~/.claude/skills/worktree/scripts/wt-remove.sh'
+        },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
+    {
+        id: 'wt:create',
+        description: 'Create worktree — usage: wt-create.sh <type> <slug>',
+        category: 'worktree',
+        execution: {
+            type: 'shell',
+            command:
+                'echo "Usage: bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>  (run directly with args — this CLI cannot pass interactive args)"'
+        },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true,
+        argHint:
+            '<type> <slug> — run the script directly: bash ~/.claude/skills/worktree/scripts/wt-create.sh feat my-feature'
     },
 
     // ── Package Tools (5) ────────────────────────────────────

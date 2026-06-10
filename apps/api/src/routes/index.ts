@@ -21,6 +21,7 @@ import {
     protectedAttractionRoutes,
     publicAttractionRoutes
 } from './attraction';
+import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -38,6 +39,7 @@ import {
     publicEventOrganizerRoutes
 } from './event-organizer';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import {
@@ -57,6 +59,14 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
+import {
+    adminAiCredentialsRoutes,
+    adminAiPromptsRoutes,
+    adminAiSettingsRoutes,
+    adminAiUsageRoutes
+} from './ai/index.js';
+import { protectedAiRoutes } from './ai/protected/index.js';
+import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
@@ -64,23 +74,27 @@ import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
+import { adminContentModerationRoutes } from './content-moderation/admin';
 import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { publicFeedbackRoutes } from './feedback';
-import { adminGeocodingRoutes } from './geocoding';
+import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
+import { adminModerationRoutes } from './moderation/admin';
 import {
     newsletterAdminRoutes,
     newsletterProtectedRoutes,
     newsletterPublicRoutes,
     newsletterRoutes
 } from './newsletter';
+import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
+import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
@@ -88,16 +102,19 @@ import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorshi
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
+import { adminSystemRoutes } from './system/admin';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import {
     brevoWebhookRoutes,
     createMercadoPagoWebhookRoutes,
     webhookHealthRoutes
 } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
+import { protectedWhatsNewRoutes } from './whats-new';
 
 import { ApiInfoSchema } from '@repo/schemas';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
@@ -188,6 +205,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
+        // Global platform announcements (SPEC-156 T-010): cross-device cache
+        // for the web layout banner. Reads from platform_settings.announcements.global.
+        app.route('/api/v1/public/announcements', publicPlatformSettingsRoutes);
+
         // Conversations (guest-owner messaging — SPEC-085)
         // Public:    /api/v1/public/conversations/*
         // Protected: /api/v1/protected/conversations/*
@@ -206,6 +227,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // User bookmarks (public count by entity — no auth required)
         app.route('/api/v1/public/user-bookmarks', publicUserBookmarkRoutes);
+
+        // Cross-entity view tracking capture (SPEC-159 T-008)
+        // Fire-and-forget; always 202. No auth required.
+        app.route('/api/v1/public', viewsRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
@@ -232,10 +257,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
             protectedUserBookmarkCollectionRoutes
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+        app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
         app.route('/api/v1/protected/posts', protectedPostRoutes);
+        app.route('/api/v1/protected/comments', protectedCommentRoutes);
         app.route('/api/v1/protected/amenities', protectedAmenityRoutes);
         app.route('/api/v1/protected/features', protectedFeatureRoutes);
         app.route('/api/v1/protected/attractions', protectedAttractionRoutes);
@@ -246,6 +273,22 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Media (avatar uploads for authenticated users)
         app.route('/api/v1/protected/media', protectedMediaRoutes);
+
+        // What's New (SPEC-175 — role-filtered release-notes with seen state)
+        app.route('/api/v1/protected/whats-new', protectedWhatsNewRoutes);
+
+        // Cross-entity view stats (SPEC-159 T-009/T-010)
+        // Protected: host accommodation stats + editor post/event stats.
+        // Public capture (T-008) lives under /api/v1/public above.
+        app.route('/api/v1/protected/views', protectedViewsRoutes);
+
+        // SPEC-208 — Protected geocoding proxy for the web accommodation editor
+        app.route('/api/v1/protected/geocoding', protectedGeocodingRoutes);
+
+        // AI protected (SPEC-198 T-004 — text-improve stream;
+        // SPEC-199 search-intent and SPEC-200 chat will be added as
+        // sibling spec handlers land; see ai/protected/index.ts for slots).
+        app.route('/api/v1/protected/ai', protectedAiRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at
@@ -289,6 +332,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Registered after /posts/tags to avoid conflict but fine — assignment paths have /:postId/ prefix
         app.route('/api/v1/admin/posts', adminPostTagAssignmentRoutes);
 
+        // Cross-entity comments (POST + EVENT) — SPEC-165
+        app.route('/api/v1/admin/comments', adminCommentRoutes);
+
         // Supporting entities
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
         app.route('/api/v1/admin/features', adminFeatureRoutes);
@@ -320,6 +366,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
 
+        // Admin app log viewer (SPEC-184)
+        app.route('/api/v1/admin/logs', adminAppLogRoutes);
+
+        // Admin view stats (SPEC-197 T-008–T-011)
+        app.route('/api/v1/admin/views', adminViewsRoutes);
+
         // Conversations admin (SPEC-085 T-011)
         app.route('/api/v1/admin/conversations', adminConversationsRouter);
 
@@ -331,8 +383,24 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/webhooks', adminWebhookRouter);
         app.route('/api/v1/admin/auth', adminAuthRoutes);
 
+        // Moderation aggregation — pending count across content entities (SPEC-155 T-010)
+        app.route('/api/v1/admin/moderation', adminModerationRoutes);
+        app.route('/api/v1/admin/content-moderation', adminContentModerationRoutes);
+
+        // System operations — health rollup for the admin dashboard (SPEC-155 card E)
+        app.route('/api/v1/admin/system', adminSystemRoutes);
+
         // ISR revalidation management (admin only)
         app.route('/api/v1/admin/revalidation', revalidationRouter);
+
+        // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
+        app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+
+        // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
+        app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
+        app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
+        app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
+        app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

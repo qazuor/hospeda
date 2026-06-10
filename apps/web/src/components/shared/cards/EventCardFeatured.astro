@@ -138,7 +138,7 @@ const hasRealImage =
       {hasRealImage && (
         <img
           src={data.featuredImage.url}
-          alt=""
+          alt={data.name}
           width="600"
           height="260"
           loading="lazy"
@@ -448,7 +448,7 @@ const hasRealImage =
     font-family: var(--font-sans);
     font-size: 0.8rem;
     color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     border-radius: var(--radius-pill);
     padding: 0.2rem 0.65rem;
     width: fit-content;

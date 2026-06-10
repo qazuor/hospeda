@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-149",
+    "title": "Billing provider error propagation + Sentry context + retry policy",
+    "type": "refactor",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-05-20T00:00:00Z",
+    "discoveredDuring": "SPEC-143 T-143-59 reframe — qzpay-core providerSyncErrorStrategy='log' default swallows MP API errors before they reach the route layer. Error mode differentiation, Sentry capture with billing context, and retry policy all require integration-level refactor, not just hospeda-side wiring.",
+    "tags": ["billing", "errors", "sentry", "observability", "qzpay", "refactor", "user-facing"],
+    "effortEstimateHours": "16-32",
+    "firstAllocatedViaEngramProtocol": true,
+    "parent": "SPEC-193"
+}

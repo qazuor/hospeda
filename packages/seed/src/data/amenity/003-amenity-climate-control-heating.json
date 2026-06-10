@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "003-amenity-climate-control-heating",
-    "name": "heating",
+    "name": {
+        "es": "heating",
+        "en": "heating",
+        "pt": "heating"
+    },
     "slug": "heating",
-    "description": "Calefacción",
+    "description": {
+        "es": "Calefacción",
+        "en": "Calefacción",
+        "pt": "Calefacción"
+    },
     "type": "CLIMATE_CONTROL",
     "icon": "HeatingIcon",
     "isBuiltin": false,

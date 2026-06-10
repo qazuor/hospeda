@@ -59,7 +59,7 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                             className={cn(
                                 'text-xs',
                                 value
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    ? 'bg-success/15 text-success'
                                     : 'bg-muted text-muted-foreground'
                             )}
                         >
@@ -73,16 +73,14 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                     return (
                         <div className="flex items-center gap-2">
                             {value ? (
-                                <CheckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                <CheckIcon className="h-4 w-4 text-success" />
                             ) : (
                                 <CloseIcon className="h-4 w-4 text-muted-foreground" />
                             )}
                             <span
                                 className={cn(
                                     'text-sm',
-                                    value
-                                        ? 'text-green-700 dark:text-green-300'
-                                        : 'text-muted-foreground'
+                                    value ? 'text-success' : 'text-muted-foreground'
                                 )}
                             >
                                 {value
@@ -97,9 +95,7 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                         <span
                             className={cn(
                                 'text-sm',
-                                value
-                                    ? 'text-green-700 dark:text-green-300'
-                                    : 'text-muted-foreground'
+                                value ? 'text-success' : 'text-muted-foreground'
                             )}
                         >
                             {value

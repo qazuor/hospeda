@@ -14,6 +14,10 @@ const NOT_FOUND_UUID = '87654321-4321-4321-8765-876543218765';
  * Mock DestinationService - returns predictable happy-path data.
  */
 export class DestinationService {
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         return {
             data: {

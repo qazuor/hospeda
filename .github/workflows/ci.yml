@@ -1,5 +1,16 @@
 name: CI
 
+# Runner strategy: every job runs on GitHub-hosted ubuntu-latest.
+#
+# The repo is public, so GitHub-hosted Actions minutes are free AND unlimited,
+# and jobs run on ~20 parallel hosted runners. The previous SPEC-179 dynamic
+# strategy routed PR/staging CI to a single self-hosted runner (leo-laptop) to
+# save private-repo minutes, but that serialized all jobs onto one machine and
+# created long queues under load. Going public makes the self-hosted routing
+# both unnecessary (hosted is free) and harmful (it was the bottleneck), so it
+# was reverted here. The semgrep-CLI migration and turbo remote cache are kept
+# (they help on hosted too). The self-hosted runner can now be decommissioned.
+
 on:
   push:
     branches:
@@ -9,6 +20,11 @@ on:
     branches:
       - main
       - staging
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   workflow_call:
 
 # Cancel in-progress runs for the same PR when a new push arrives.
@@ -16,6 +32,9 @@ on:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 # Shared env values used by every job. Secrets are injected per job (jobs
 # that don't need them simply ignore the missing values).
@@ -71,29 +90,48 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Biome lint
         run: pnpm lint
+      - name: Validate admin sidebar routes (SPEC-154)
+        # Asserts every config-driven sidebar link resolves to a real
+        # TanStack route (AC-22 regression gate). Type-only imports + a
+        # routes-dir scan — no build required.
+        run: pnpm --filter admin run validate:sidebar-routes
 
   # ------------------------------------------------------------------
-  # Security checks: dependency audit + SAST. ~3 min.
+  # Security checks: dependency audit + SAST. ~3-4 min.
   # ------------------------------------------------------------------
   security:
     name: Security
+    # Uses the semgrep CLI (via uv) instead of the archived
+    # `semgrep/semgrep-action@v1` Docker action. Rule packs are identical:
+    # p/typescript, p/nodejs, p/owasp-top-ten, p/secrets. `--error` makes
+    # semgrep exit non-zero on any finding, preserving the old action's gate.
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
+      - name: Install uv (provides Python + semgrep CLI)
+        # uv fetches a pinned, semgrep-compatible Python (3.12) without relying
+        # on the GitHub tool-cache (which actions/setup-python lacks for some
+        # OSes). The official installer is used directly: astral-sh/setup-uv@v8
+        # was observed hanging ~9min in CI and tripping the job timeout.
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Semgrep SAST scan
-        uses: semgrep/semgrep-action@v1
-        with:
-          config: >-
-            p/typescript
-            p/nodejs
-            p/owasp-top-ten
-            p/secrets
-        env:
-          SEMGREP_RULES: p/typescript p/nodejs p/owasp-top-ten p/secrets
+        # uvx runs semgrep 1.164.0 (pinned for a deterministic gate) on an
+        # isolated Python 3.12 env. Same rule packs + --error gate as the old
+        # semgrep-action. semgrep is pinned so the same commit can't pass one
+        # day and fail the next on changed rules.
+        run: >-
+          uvx --python 3.12 --from semgrep==1.164.0 semgrep scan
+          --config p/typescript
+          --config p/nodejs
+          --config p/owasp-top-ten
+          --config p/secrets
+          --error
 
   # ------------------------------------------------------------------
   # Repository-wide guard scripts + i18n/docs parity checks (SPEC-103
@@ -138,6 +176,17 @@ jobs:
         run: npx tsx scripts/extract-zod-keys.ts --verify
       - name: Verify i18n locale parity (SPEC-096 T-065)
         run: pnpm --filter @repo/i18n check-locales
+      - name: Check schema drift (SPEC-178)
+        run: bash scripts/check-schema-drift.sh
+      - name: Web must not call admin API tier (BETA-73)
+        run: |
+          if grep -rn "/api/v1/admin" apps/web/src; then
+            echo "::error::apps/web must only use /public/ and /protected/ API tiers, never /admin/"
+            exit 1
+          fi
+          echo "OK: no admin-tier API calls in apps/web/src"
+      - name: Env registry parity (SPEC-035)
+        run: pnpm env:check:registry
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
@@ -203,16 +252,24 @@ jobs:
     name: Unit Tests (shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
     # SPEC-103 T-032 landed: shards now download build-outputs artifact
-    # instead of rebuilding. Observed shard runtime on PR #1060 was
-    # 13-15 min (vitest startup + jsdom init per file still dominates,
-    # the build was never the only cost). Bumping the cap from 15 to
-    # 20 min absorbs the 1-2 min margin shards 1 and 2 needed without
-    # ceding the win T-032 delivered (the band-aid was 30 min). If a
-    # shard hits 20 min, look at uneven shard distribution first — the
-    # other shards landing in 13 min suggests test file slicing, not a
-    # systemic regression.
-    timeout-minutes: 20
+    # instead of rebuilding. Originally calibrated at 13-15 min/shard (PR
+    # #1060), capped at 20. The suite has since grown substantially
+    # (SPEC-165 comments, SPEC-170 permission panel, SPEC-177 FAQ, plus the
+    # baseline-recovery additions), pushing every shard to ~18-20 min — so
+    # shards 1 and 3 began hitting the 20 min cap and getting cancelled on
+    # ubuntu-latest. Raised to 30 to absorb the growth (and the slower
+    # self-hosted leo-laptop used on PRs). vitest --shard slices by file
+    # hash, not by duration, so shards are inherently uneven; if this keeps
+    # creeping, rebalance the heaviest files (admin component + userEvent
+    # suites) rather than just raising the cap again.
+    timeout-minutes: 30
     needs: build
+    # Raise fork count on CI: each shard runs in an isolated VM so the
+    # machine-safety ceiling that applies locally (maxForks=3) does not
+    # constrain here. VITEST_MAX_FORKS=4 gives a small throughput boost.
+    # See docs/guides/test-performance.md for the full rationale.
+    env:
+      VITEST_MAX_FORKS: 4
     strategy:
       fail-fast: false
       matrix:
@@ -338,7 +395,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
       - name: Download coverage artifacts (all shards)
         uses: actions/download-artifact@v4
         with:

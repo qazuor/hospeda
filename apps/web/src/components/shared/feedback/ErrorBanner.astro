@@ -68,7 +68,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 				stroke="var(--destructive, #ef4444)"
 				stroke-width="2"
 				stroke-linejoin="round"
-				fill="oklch(from var(--destructive, #ef4444) l c h / 0.08)"
+				fill="var(--destructive-a08)"
 			/>
 			<line x1="40" y1="32" x2="40" y2="41" stroke="var(--destructive, #ef4444)" stroke-width="2" stroke-linecap="round" />
 			<circle cx="40" cy="45" r="1.5" fill="var(--destructive, #ef4444)" />
@@ -310,14 +310,14 @@ const detailsJson = showDevDetails && error?.details !== undefined
 	}
 
 	.error-banner__details-summary:hover {
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.06);
+		background-color: var(--destructive-a05);
 	}
 
 	.error-banner__details-content {
 		margin-top: var(--space-2);
 		padding: var(--space-3) var(--space-4);
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.05);
-		border: 1px solid oklch(from var(--destructive, #ef4444) l c h / 0.12);
+		background-color: var(--destructive-a05);
+		border: 1px solid var(--destructive-a12);
 		border-radius: var(--radius-button);
 		font-family: var(--font-mono, monospace);
 		font-size: var(--text-body-xs, 0.75rem);
@@ -336,7 +336,7 @@ const detailsJson = showDevDetails && error?.details !== undefined
 	.error-banner__detail-pre {
 		margin: var(--space-2) 0 0;
 		padding: var(--space-2);
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.04);
+		background-color: var(--destructive-a04);
 		border-radius: var(--radius-button);
 		white-space: pre-wrap;
 		word-break: break-all;

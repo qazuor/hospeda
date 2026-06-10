@@ -211,6 +211,38 @@ describe('promo-code.crud — ctx threading (first 3 functions)', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should map the extended fields to their DB columns', async () => {
+            // Arrange
+            const dbRow = makeDbRow();
+            const chain = makeChain([dbRow]);
+            const mockTx = { insert: vi.fn().mockReturnValue(chain) };
+            const ctx = { tx: mockTx as unknown as import('@repo/db').DrizzleClient };
+            const validFrom = new Date('2026-05-28T00:00:00.000Z');
+
+            // Act
+            await createPromoCode(
+                {
+                    ...baseInput,
+                    maxUsesPerUser: 2,
+                    validFrom,
+                    isStackable: true,
+                    planRestrictions: ['plan-1'],
+                    firstPurchaseOnly: true
+                },
+                {},
+                ctx
+            );
+
+            // Assert — the first INSERT is the promo code row; verify the new
+            // fields are mapped onto the correct qzpay columns.
+            const inserted = chain.values.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(inserted.maxUsesPerUser).toBe(2);
+            expect(inserted.startsAt).toEqual(validFrom);
+            expect(inserted.combinable).toBe(true);
+            expect(inserted.validPlans).toEqual(['plan-1']);
+            expect(inserted.newCustomersOnly).toBe(true);
+        });
+
         it('should use getDb() when ctx is not provided (backward compat)', async () => {
             // Arrange
             const dbRow = makeDbRow();

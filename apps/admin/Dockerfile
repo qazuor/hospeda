@@ -36,39 +36,43 @@ ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_POSTHOG_KEY
 ARG VITE_POSTHOG_HOST
 # HOSPEDA_GIT_SHA + VITE_SENTRY_RELEASE drive the Sentry release tag baked
-# into the admin client bundle. The build-time resolution chain is:
-#   1. Explicit --build-arg from Coolify (manual override, if set).
-#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
-#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
-#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
-#      specifically so this file reaches the builder.
-#   3. Last resort: empty string. The downstream `|| 'development'` chain
-#      in apps/admin/src/lib/sentry/sentry.config.ts absorbs that case.
-# Resolution happens in the same RUN that triggers `pnpm turbo run build`
-# so the env vars are visible to Vite (which reads import.meta.env at
-# build time). Exporting in a prior RUN would not persist across layers.
-ARG HOSPEDA_GIT_SHA
-ARG VITE_SENTRY_RELEASE
+# into the admin client bundle. The default-value chain points back to
+# SOURCE_COMMIT, which Coolify auto-injects as a build-arg ONLY when the
+# application has "Include Source Commit in Build" enabled in its General
+# settings. With that toggle on, every deploy gets a unique Sentry release;
+# with it off, all of these resolve to empty and the downstream
+# `|| 'development'` chain in apps/admin/src/lib/sentry/sentry.config.ts
+# takes over.
+# See https://coolify.io/docs/applications/build-packs/dockerfile
+# (SOURCE_COMMIT section) for the rationale on why the toggle is off by
+# default (Docker build cache invalidation on every commit).
+ARG SOURCE_COMMIT
+ARG HOSPEDA_GIT_SHA=${SOURCE_COMMIT}
+ARG VITE_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     VITE_API_URL=$VITE_API_URL \
     VITE_SITE_URL=$VITE_SITE_URL \
     VITE_BETTER_AUTH_URL=$VITE_BETTER_AUTH_URL \
     VITE_SENTRY_DSN=$VITE_SENTRY_DSN \
+    VITE_SENTRY_RELEASE=$VITE_SENTRY_RELEASE \
     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT \
     VITE_POSTHOG_KEY=$VITE_POSTHOG_KEY \
     VITE_POSTHOG_HOST=$VITE_POSTHOG_HOST \
+    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA \
     NITRO_PRESET=node-server
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json .npmrc ./
 COPY patches ./patches
 COPY apps apps
 COPY packages packages
-COPY .git/HEAD /tmp/git-head
 RUN pnpm install --frozen-lockfile
-RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
-    VITE_SENTRY_RELEASE="${VITE_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
-    export HOSPEDA_GIT_SHA VITE_SENTRY_RELEASE && \
-    echo "[build] Sentry release: ${VITE_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
-    pnpm turbo run build --filter=admin
+# --concurrency=1 builds workspace packages sequentially. The Coolify VPS has
+# 3.8 GB of RAM shared with the running prod/staging containers; parallel tsup
+# DTS builds (4 at a time, each loading the full type graph) caused enough
+# memory pressure on 2026-06-06 to kill the deploy's control channel (exit 255
+# mid-build with no compiler error, right at @repo/schemas DTS). Sequential
+# builds are slower but keep the peak well under the box's headroom.
+RUN echo "[build] Sentry release: ${VITE_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=admin --concurrency=1
 
 # ----- runner stage ----------------------------------------------------------
 # Nitro's node-server preset bundles its own runtime deps inside .output/,
@@ -80,6 +84,18 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=build /repo/apps/admin/.output ./.output
+COPY --chown=node:node --from=build /repo/apps/admin/.output ./.output
+USER node
 EXPOSE 3000
+# Probe the cheap /healthz server-entry route (SPEC-209), NOT `GET /`. Probing `/`
+# server-renders the whole React root on every 30s probe, constructing a fresh
+# QZPayBilling instance per request — the memory leak this spec fixes. /healthz
+# returns a tiny JSON body without touching React SSR or billing.
+#
+# OPERATOR NOTE: Coolify may ALSO define a healthcheck in the admin resource UI
+# (Health Checks tab). That override takes precedence over this instruction at
+# runtime — it MUST be repointed to /healthz too, or the container silently keeps
+# probing `GET /` and the leak persists. See SPEC-209 T-003 / risk table.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://localhost:3000/healthz || exit 1
 CMD ["node", ".output/server/index.mjs"]

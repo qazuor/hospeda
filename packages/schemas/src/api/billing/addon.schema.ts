@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 // ─── Enums ──────────────────────────────────────────────────────────────────
 
@@ -134,10 +135,7 @@ export const ListAddonsQuerySchema = z.object({
     /** Filter by target category */
     targetCategory: AddonTargetCategorySchema.optional(),
     /** Filter by active status */
-    active: z
-        .string()
-        .optional()
-        .transform((val) => val === 'true')
+    active: queryBooleanParam()
 });
 
 /** Cancel add-on request schema */
@@ -162,6 +160,233 @@ export const PurchaseAddonRequestSchema = PurchaseAddonSchema;
  * Kept for backward compatibility with existing @repo/schemas consumers.
  */
 export const CancelAddonRequestSchema = CancelAddonSchema;
+
+// ─── Admin CRUD Schemas ──────────────────────────────────────────────────────
+
+/**
+ * Schema for creating a new add-on (admin operation).
+ *
+ * SINGLE SOURCE OF TRUTH for the create-addon request contract. All fields
+ * correspond directly to the `billing_addons` DB columns defined in SPEC-192.
+ *
+ * `slug` is WRITE-ONCE: accepted here on creation but absent from
+ * {@link UpdateAddonSchema} because subscription records reference addons by
+ * their slug and renaming would break historical references.
+ *
+ * `priceArs` is stored as integer centavos (e.g. 100000 = $1000 ARS) — never
+ * use floats for money.
+ */
+export const CreateAddonSchema = z
+    .object({
+        /**
+         * Unique add-on slug — stored as `billing_addons.slug`. Immutable after
+         * creation.
+         */
+        slug: z
+            .string({ message: 'validation.billing.addon.create.slug.invalidType' })
+            .min(2, { message: 'validation.billing.addon.create.slug.min' })
+            .max(60, { message: 'validation.billing.addon.create.slug.max' })
+            .regex(/^[a-z0-9-]+$/, { message: 'validation.billing.addon.create.slug.format' }),
+        /** Human-readable display name */
+        name: z
+            .string({ message: 'validation.billing.addon.create.name.invalidType' })
+            .min(1, { message: 'validation.billing.addon.create.name.min' })
+            .max(120, { message: 'validation.billing.addon.create.name.max' }),
+        /** Add-on description */
+        description: z
+            .string({ message: 'validation.billing.addon.create.description.invalidType' })
+            .max(1000, { message: 'validation.billing.addon.create.description.max' }),
+        /** Whether this is a one-time purchase or a recurring subscription */
+        billingType: AddonBillingTypeSchema,
+        /** Price in ARS cents — must be a positive integer (never use floats for money) */
+        priceArs: z
+            .number({ message: 'validation.billing.addon.create.priceArs.invalidType' })
+            .int({ message: 'validation.billing.addon.create.priceArs.int' })
+            .positive({ message: 'validation.billing.addon.create.priceArs.positive' }),
+        /**
+         * Duration in days for one-time addons. `null` for recurring addons
+         * (they remain active until canceled/expired).
+         */
+        durationDays: z
+            .number({ message: 'validation.billing.addon.create.durationDays.invalidType' })
+            .int({ message: 'validation.billing.addon.create.durationDays.int' })
+            .positive({ message: 'validation.billing.addon.create.durationDays.positive' })
+            .nullable(),
+        /**
+         * The limit key this addon affects (e.g. `"maxListings"`). `null` when
+         * the addon does not modify any quota.
+         */
+        affectsLimitKey: z
+            .string({ message: 'validation.billing.addon.create.affectsLimitKey.invalidType' })
+            .min(1, { message: 'validation.billing.addon.create.affectsLimitKey.min' })
+            .nullable(),
+        /**
+         * How much to increase the limit identified by `affectsLimitKey`. `null`
+         * when `affectsLimitKey` is null.
+         */
+        limitIncrease: z
+            .number({ message: 'validation.billing.addon.create.limitIncrease.invalidType' })
+            .int({ message: 'validation.billing.addon.create.limitIncrease.int' })
+            .positive({ message: 'validation.billing.addon.create.limitIncrease.positive' })
+            .nullable(),
+        /**
+         * Entitlement key unlocked by this addon (e.g. `"featured_listing"`).
+         * `null` when the addon does not grant an entitlement.
+         */
+        grantsEntitlement: z
+            .string({ message: 'validation.billing.addon.create.grantsEntitlement.invalidType' })
+            .min(1, { message: 'validation.billing.addon.create.grantsEntitlement.min' })
+            .nullable(),
+        /** Plan categories that may purchase this addon (`owner`, `complex`) */
+        targetCategories: z
+            .array(AddonTargetCategorySchema, {
+                message: 'validation.billing.addon.create.targetCategories.invalidType'
+            })
+            .min(1, { message: 'validation.billing.addon.create.targetCategories.min' }),
+        /** Whether the addon is currently available for purchase */
+        isActive: z.boolean({ message: 'validation.billing.addon.create.isActive.invalidType' }),
+        /** Display sort order (non-negative integer) */
+        sortOrder: z
+            .number({ message: 'validation.billing.addon.create.sortOrder.invalidType' })
+            .int({ message: 'validation.billing.addon.create.sortOrder.int' })
+            .min(0, { message: 'validation.billing.addon.create.sortOrder.min' })
+    })
+    .strict();
+
+/** TypeScript type inferred from {@link CreateAddonSchema} */
+export type CreateAddon = z.infer<typeof CreateAddonSchema>;
+
+/**
+ * Schema for updating an existing add-on (admin operation, PATCH semantics).
+ *
+ * Every field is optional. `slug` is intentionally absent — it is immutable
+ * after creation. `.strict()` rejects any attempt to pass `slug`.
+ */
+export const UpdateAddonSchema = z
+    .object({
+        /** Human-readable display name */
+        name: z
+            .string({ message: 'validation.billing.addon.update.name.invalidType' })
+            .min(1, { message: 'validation.billing.addon.update.name.min' })
+            .max(120, { message: 'validation.billing.addon.update.name.max' })
+            .optional(),
+        /** Add-on description */
+        description: z
+            .string({ message: 'validation.billing.addon.update.description.invalidType' })
+            .max(1000, { message: 'validation.billing.addon.update.description.max' })
+            .optional(),
+        /** Whether this is a one-time purchase or a recurring subscription */
+        billingType: AddonBillingTypeSchema.optional(),
+        /** Price in ARS cents (positive integer) */
+        priceArs: z
+            .number({ message: 'validation.billing.addon.update.priceArs.invalidType' })
+            .int({ message: 'validation.billing.addon.update.priceArs.int' })
+            .positive({ message: 'validation.billing.addon.update.priceArs.positive' })
+            .optional(),
+        /** Duration in days for one-time addons (null for recurring) */
+        durationDays: z
+            .number({ message: 'validation.billing.addon.update.durationDays.invalidType' })
+            .int({ message: 'validation.billing.addon.update.durationDays.int' })
+            .positive({ message: 'validation.billing.addon.update.durationDays.positive' })
+            .nullable()
+            .optional(),
+        /** The limit key this addon affects (null when not applicable) */
+        affectsLimitKey: z
+            .string({ message: 'validation.billing.addon.update.affectsLimitKey.invalidType' })
+            .min(1, { message: 'validation.billing.addon.update.affectsLimitKey.min' })
+            .nullable()
+            .optional(),
+        /** How much to increase the limit (null when not applicable) */
+        limitIncrease: z
+            .number({ message: 'validation.billing.addon.update.limitIncrease.invalidType' })
+            .int({ message: 'validation.billing.addon.update.limitIncrease.int' })
+            .positive({ message: 'validation.billing.addon.update.limitIncrease.positive' })
+            .nullable()
+            .optional(),
+        /** Entitlement key unlocked by this addon (null when not applicable) */
+        grantsEntitlement: z
+            .string({ message: 'validation.billing.addon.update.grantsEntitlement.invalidType' })
+            .min(1, { message: 'validation.billing.addon.update.grantsEntitlement.min' })
+            .nullable()
+            .optional(),
+        /** Plan categories that may purchase this addon */
+        targetCategories: z
+            .array(AddonTargetCategorySchema, {
+                message: 'validation.billing.addon.update.targetCategories.invalidType'
+            })
+            .min(1, { message: 'validation.billing.addon.update.targetCategories.min' })
+            .optional(),
+        /** Whether the addon is currently available for purchase */
+        isActive: z
+            .boolean({ message: 'validation.billing.addon.update.isActive.invalidType' })
+            .optional(),
+        /** Display sort order */
+        sortOrder: z
+            .number({ message: 'validation.billing.addon.update.sortOrder.invalidType' })
+            .int({ message: 'validation.billing.addon.update.sortOrder.int' })
+            .min(0, { message: 'validation.billing.addon.update.sortOrder.min' })
+            .optional()
+    })
+    .strict();
+
+/** TypeScript type inferred from {@link UpdateAddonSchema} */
+export type UpdateAddon = z.infer<typeof UpdateAddonSchema>;
+
+/**
+ * Query schema for listing/searching add-ons (admin operation).
+ *
+ * Uses `page` + `pageSize` pagination — NOT `limit` — consistent with all
+ * other admin list routes in this project (see `BillingPlanSearchSchema`).
+ */
+export const AdminAddonListQuerySchema = z.object({
+    /** Filter by billing type */
+    billingType: AddonBillingTypeSchema.optional(),
+    /** Filter by a single target category */
+    targetCategory: AddonTargetCategorySchema.optional(),
+    /** Filter by active flag (coerced from query-string `"true"` / `"false"`) */
+    isActive: queryBooleanParam(),
+    /**
+     * When true, soft-deleted addons (`deletedAt IS NOT NULL`) are included in
+     * the result. Defaults to excluding them. Admin-only.
+     */
+    includeDeleted: queryBooleanParam(),
+    /** Free-text search over slug/name */
+    search: z.string().optional(),
+    /** Page number (1-based) */
+    page: z.coerce.number().int().positive().default(1),
+    /** Number of records per page (max 100) */
+    pageSize: z.coerce.number().int().positive().max(100).default(20)
+});
+
+/** TypeScript type inferred from {@link AdminAddonListQuerySchema} */
+export type AdminAddonListQuery = z.infer<typeof AdminAddonListQuerySchema>;
+
+/**
+ * Admin-facing response schema for a single add-on row.
+ *
+ * Extends {@link AddonResponseSchema} (the public catalog shape) with the DB
+ * primary key (`id` UUID) and full timestamps including `deletedAt`. The
+ * public schema omits `id` and `deletedAt`; this DTO surfaces them so the
+ * admin UI can perform mutations by UUID and show soft-delete state.
+ *
+ * Mirrors the convention in {@link AdminBillingPlanResponseSchema} (billing-plan.schema.ts).
+ */
+export const AdminAddonResponseSchema = AddonResponseSchema.extend({
+    /** DB primary key (UUID) — the mutation identifier for admin operations */
+    id: z.string().uuid(),
+    /** ISO 8601 creation timestamp */
+    createdAt: z.string().datetime(),
+    /** ISO 8601 last-update timestamp */
+    updatedAt: z.string().datetime(),
+    /**
+     * ISO 8601 soft-delete timestamp. `null` when the addon is not deleted.
+     * Exposed only in admin responses — never leaked to the public endpoint.
+     */
+    deletedAt: z.string().datetime().nullable()
+});
+
+/** TypeScript type inferred from {@link AdminAddonResponseSchema} */
+export type AdminAddonResponse = z.infer<typeof AdminAddonResponseSchema>;
 
 // ─── Type Exports ───────────────────────────────────────────────────────────
 

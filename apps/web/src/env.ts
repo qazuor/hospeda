@@ -34,6 +34,27 @@ export const serverEnvBaseSchema = z.object({
      * regardless of which deployment they came from.
      */
     PUBLIC_SENTRY_ENVIRONMENT: z.string().optional(),
+    /**
+     * First-party tunnel path for the Sentry browser SDK (SPEC-181 follow-up).
+     * When set (e.g. `/api/event`), the SDK POSTs all envelopes to this
+     * same-origin path instead of directly to *.sentry.io, defeating ad-blockers
+     * (uBlock `||sentry.io^$3p`). A Cloudflare Worker bound to that path
+     * (infra/cloudflare/sentry-tunnel/) parses the DSN and forwards to Sentry.
+     * Setting this ALSO drops `https://*.sentry.io` from the web CSP connect-src
+     * (the tunnel is same-origin). The Worker MUST be live BEFORE this is set —
+     * see infra/cloudflare/sentry-tunnel/README.md for the deploy order. Leave
+     * unset to report directly to Sentry (default).
+     *
+     * Validated as an absolute path (or empty = disabled) so a malformed value
+     * fails fast at startup instead of silently dropping all browser error
+     * reports: a non-path truthy value (e.g. `'true'`, `' '`) would make the SDK
+     * POST envelopes to a 404 path AND drop `*.sentry.io` from the CSP, leaving
+     * no fallback. Must start with `/` (relative, same-origin tunnel).
+     */
+    PUBLIC_SENTRY_TUNNEL: z
+        .string()
+        .regex(/^(\/[\w/-]+)?$/, 'PUBLIC_SENTRY_TUNNEL must be an absolute path like /api/event')
+        .optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.

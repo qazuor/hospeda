@@ -1,0 +1,288 @@
+---
+/**
+ * @file mi-cuenta/consultas-propietario/index.astro
+ * @description Authenticated owner inbox — lists conversations for the owner's accommodations.
+ * @route /{lang}/mi-cuenta/consultas-propietario/
+ * @rendering SSR (on-demand, auth-protected)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// Auth gate: middleware protects /mi-cuenta/* so user is always set here
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+// Pagination from URL search params
+const pageParam = Astro.url.searchParams.get('page');
+const parsed = parseInt(pageParam ?? '1', 10);
+const page = Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+const pageSize = 20;
+
+// Forward the session cookie so the protected endpoint can resolve the
+// authenticated actor; without this the SSR fetch arrives anonymous and the
+// page silently renders the empty inbox.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await ownerConversationsApi.list({ page, pageSize, cookieHeader });
+
+const conversations = result.ok ? result.data.items : [];
+const pagination = result.ok ? result.data.pagination : null;
+const fetchError = !result.ok;
+
+function formatDate(dateStr: string): string {
+    return new Date(dateStr).toLocaleDateString(
+        locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR',
+        { day: '2-digit', month: 'short', year: 'numeric' }
+    );
+}
+---
+
+<AccountLayout
+    locale={locale}
+    title={t('conversations.inbox.ownerInboxTitle')}
+    description={t('conversations.empty.ownerInbox')}
+    activeSection="owner-messages"
+>
+    <div class="owner-inbox">
+        <h1 class="owner-inbox__title">{t('conversations.inbox.ownerInboxTitle')}</h1>
+
+        {fetchError ? (
+            <div class="owner-inbox__error" role="alert">
+                <p>{t('conversations.errors.loadFailed', 'No se pudieron cargar las conversaciones. Intentá recargar la página.')}</p>
+                <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
+            </div>
+        ) : conversations.length === 0 ? (
+            <p class="owner-inbox__empty">{t('conversations.empty.ownerInbox')}</p>
+        ) : (
+            <ul class="owner-inbox__list" role="list">
+                {conversations.map((conv) => {
+                    const threadUrl = buildUrl({ locale, path: `mi-cuenta/consultas-propietario/${conv.id}` });
+                    const excerpt = conv.lastMessageExcerpt
+                        ? conv.lastMessageExcerpt.slice(0, 200)
+                        : '';
+                    return (
+                        <li class="owner-inbox__item">
+                            <a href={threadUrl} class="owner-inbox__link">
+                                <div class="owner-inbox__row">
+                                    <span class="owner-inbox__accommodation">
+                                        {conv.accommodationName}
+                                    </span>
+                                    <span class="owner-inbox__guest">
+                                        {conv.guestName}
+                                    </span>
+                                    {conv.unreadCount > 0 && (
+                                        <span
+                                            class="owner-inbox__badge"
+                                            aria-label={t(
+                                                'conversations.inbox.unreadCount',
+                                                undefined,
+                                                { count: conv.unreadCount }
+                                            )}
+                                        >
+                                            {conv.unreadCount}
+                                        </span>
+                                    )}
+                                    <time
+                                        datetime={conv.lastActivityAt}
+                                        class="owner-inbox__time"
+                                    >
+                                        {formatDate(conv.lastActivityAt)}
+                                    </time>
+                                </div>
+                                {excerpt && (
+                                    <p class="owner-inbox__excerpt">{excerpt}</p>
+                                )}
+                            </a>
+                        </li>
+                    );
+                })}
+            </ul>
+        )}
+
+        {pagination && pagination.totalPages > 1 && (
+            <nav class="owner-inbox__pagination" aria-label="Pagination">
+                {page > 1 && (
+                    <a
+                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page - 1}`}
+                        class="owner-inbox__page-link"
+                    >
+                        &larr;
+                    </a>
+                )}
+                <span class="owner-inbox__page-info">
+                    {page} / {pagination.totalPages}
+                </span>
+                {page < pagination.totalPages && (
+                    <a
+                        href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' }) + `?page=${page + 1}`}
+                        class="owner-inbox__page-link"
+                    >
+                        &rarr;
+                    </a>
+                )}
+            </nav>
+        )}
+    </div>
+</AccountLayout>
+
+<style>
+    .owner-inbox {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .owner-inbox__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .owner-inbox__empty {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        padding: var(--space-6, 24px) 0;
+        text-align: center;
+    }
+
+    .owner-inbox__error {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        padding: var(--space-6, 24px);
+        text-align: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        background-color: var(--core-card);
+    }
+
+    .owner-inbox__error p {
+        margin: 0 0 var(--space-3, 12px);
+    }
+
+    .owner-inbox__retry {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        text-decoration: underline;
+    }
+
+    .owner-inbox__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    .owner-inbox__item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        overflow: hidden;
+        transition: box-shadow var(--duration-fast, 0.2s) ease;
+    }
+
+    .owner-inbox__item:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .owner-inbox__link {
+        display: block;
+        padding: var(--space-4, 16px);
+        text-decoration: none;
+        background-color: var(--core-card);
+    }
+
+    .owner-inbox__row {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+        margin-bottom: var(--space-1, 4px);
+    }
+
+    .owner-inbox__accommodation {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--core-foreground);
+        flex: 1;
+    }
+
+    .owner-inbox__guest {
+        font-family: var(--font-sans);
+        font-size: 0.83rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .owner-inbox__badge {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: white;
+        background-color: var(--brand-accent);
+        border-radius: var(--radius-pill, 9999px);
+        padding: 2px 8px;
+        line-height: 1.4;
+    }
+
+    .owner-inbox__time {
+        font-family: var(--font-sans);
+        font-size: 0.78rem;
+        color: var(--core-muted-foreground);
+        white-space: nowrap;
+    }
+
+    .owner-inbox__excerpt {
+        font-family: var(--font-sans);
+        font-size: 0.83rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .owner-inbox__pagination {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-3, 12px);
+        margin-top: var(--space-4, 16px);
+    }
+
+    .owner-inbox__page-link {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        padding: var(--space-2, 8px) var(--space-3, 12px);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button, 8px);
+        transition: background-color var(--duration-fast, 0.2s) ease;
+    }
+
+    .owner-inbox__page-link:hover {
+        background-color: var(--muted);
+    }
+
+    .owner-inbox__page-info {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+</style>

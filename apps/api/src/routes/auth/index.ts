@@ -10,6 +10,7 @@ import { changePasswordRoute } from './change-password';
 import { authMeRoute } from './me';
 import { resetPasswordCheckRoute } from './reset-password-check';
 import { authSignOutRoute } from './signout';
+import { signupAsHostRoute } from './signup-as-host';
 import { authStatusRoute } from './status';
 
 const app = createRouter();
@@ -26,7 +27,11 @@ const protectedApp = createRouter();
 protectedApp.route('/', changePasswordRoute);
 export const protectedAuthRoutes = protectedApp;
 
-// Admin-only cache monitoring (separate router to mount under /admin/)
+// Admin-only auth routes (mounted under /api/v1/admin/auth). These require a
+// valid admin session + permission, enforced by the admin route factory.
 const adminApp = createRouter();
 adminApp.route('/', cacheStatsRoute);
+// SPEC-182 T-011: staff host provisioning, gated by USER_CREATE (was a public
+// Origin-checked route under /api/v1/public/auth before this spec).
+adminApp.route('/', signupAsHostRoute);
 export const adminAuthRoutes = adminApp;

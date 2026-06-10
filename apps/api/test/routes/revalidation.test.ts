@@ -48,139 +48,17 @@ const mockRevalidateService = {
     revalidateByEntityType: vi.fn().mockResolvedValue([])
 };
 
-vi.mock('@repo/service-core', async () => {
-    const { PostService, TagService, PostTagService, PostSponsorService, ServiceError } =
-        await import('../helpers/mocks/content-services');
-    const { AccommodationService, AmenityService, AccommodationReviewService } = await import(
-        '../helpers/mocks/accommodation-services'
-    );
-    const { DestinationService, DestinationReviewService, AttractionService, FeatureService } =
-        await import('../helpers/mocks/destination-services');
-    const { EventService, EventLocationService, EventOrganizerService } = await import(
-        '../helpers/mocks/event-services'
-    );
-    const { UserService, UserBookmarkService, UserBookmarkCollectionService } = await import(
-        '../helpers/mocks/user-services'
-    );
-    const {
-        ExchangeRateService,
-        ExchangeRateConfigService,
-        ExchangeRateFetcher,
-        DolarApiClient,
-        ExchangeRateApiClient
-    } = await import('../helpers/mocks/exchange-rate-services');
-    const {
-        ClientService,
-        ClientAccessRightService,
-        ProductService,
-        PricingPlanService,
-        PricingTierService,
-        SubscriptionService,
-        PurchaseService,
-        SubscriptionItemService,
-        PaymentService,
-        PaymentMethodService,
-        InvoiceService,
-        InvoiceLineService,
-        RefundService,
-        CreditNoteService
-    } = await import('../helpers/mocks/billing-services');
-    const {
-        AdSlotService,
-        AdSlotReservationService,
-        AdPricingCatalogService,
-        AdMediaAssetService,
-        CampaignService,
-        SponsorshipService,
-        SponsorshipLevelService,
-        SponsorshipPackageService,
-        OwnerPromotionService
-    } = await import('../helpers/mocks/advertising-services');
-    const {
-        ProfessionalServiceService,
-        ProfessionalServiceOrderService,
-        ServiceListingService,
-        AccommodationListingService,
-        AccommodationListingPlanService,
-        ServiceListingPlanService,
-        BenefitPartnerService,
-        BenefitListingPlanService,
-        BenefitListingService,
-        TouristServiceService,
-        FeaturedAccommodationService,
-        NotificationService,
-        PromotionService,
-        DiscountCodeService,
-        DiscountCodeUsageService
-    } = await import('../helpers/mocks/marketplace-services');
-
+vi.mock('@repo/service-core', async (importOriginal) => {
+    // SPEC-169 harness fix: this test only needs to control getRevalidationService. It used to
+    // rebuild the entire @repo/service-core service list by hand, which drifted out of date —
+    // StatsService, then ModerationAggregationService, then PlatformSettingsService were each
+    // added to @repo/service-core and (since they are imported eagerly at route registration)
+    // broke route-test collection one missing service at a time. Spreading the real module keeps
+    // every service present automatically; only getRevalidationService is overridden. The real
+    // services resolve their DB access through the globally-mocked @repo/db (see test/setup.ts).
+    const actual = await importOriginal<Record<string, unknown>>();
     return {
-        ServiceError,
-        PostService,
-        TagService,
-        PostTagService,
-        PostSponsorService,
-        AccommodationService,
-        AmenityService,
-        AccommodationReviewService,
-        DestinationService,
-        DestinationReviewService,
-        AttractionService,
-        FeatureService,
-        EventService,
-        EventLocationService,
-        EventOrganizerService,
-        UserService,
-        UserBookmarkService,
-        UserBookmarkCollectionService,
-        ExchangeRateService,
-        ExchangeRateConfigService,
-        ExchangeRateFetcher,
-        DolarApiClient,
-        ExchangeRateApiClient,
-        ClientService,
-        ClientAccessRightService,
-        ProductService,
-        PricingPlanService,
-        PricingTierService,
-        SubscriptionService,
-        PurchaseService,
-        SubscriptionItemService,
-        PaymentService,
-        PaymentMethodService,
-        InvoiceService,
-        InvoiceLineService,
-        RefundService,
-        CreditNoteService,
-        AdSlotService,
-        AdSlotReservationService,
-        AdPricingCatalogService,
-        AdMediaAssetService,
-        CampaignService,
-        SponsorshipService,
-        SponsorshipLevelService,
-        SponsorshipPackageService,
-        OwnerPromotionService,
-        ProfessionalServiceService,
-        ProfessionalServiceOrderService,
-        ServiceListingService,
-        AccommodationListingService,
-        AccommodationListingPlanService,
-        ServiceListingPlanService,
-        BenefitPartnerService,
-        BenefitListingPlanService,
-        BenefitListingService,
-        TouristServiceService,
-        FeaturedAccommodationService,
-        NotificationService,
-        PromotionService,
-        DiscountCodeService,
-        DiscountCodeUsageService,
-        // StatsService was added to @repo/service-core after this mock
-        // was last expanded; route registration imports it eagerly, so
-        // the mock must expose it (a class shape is enough — no method
-        // is invoked from this test path).
-        StatsService: class StatsService {},
+        ...actual,
         getRevalidationService: vi.fn(() => mockRevalidateService)
     };
 });

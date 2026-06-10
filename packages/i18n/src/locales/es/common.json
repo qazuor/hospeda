@@ -1,6 +1,11 @@
 {
     "accommodations": "Alojamientos",
     "apply": "Aplicar",
+    "window": {
+        "7d": "7 días",
+        "30d": "30 días",
+        "ariaLabel": "Período de tiempo"
+    },
     "backHome": "Volver al inicio",
     "backToHome": "Volver al inicio",
     "clear": "Limpiar",
@@ -44,6 +49,22 @@
     "error": {
         "404": "Página no encontrada.",
         "general": "Lo sentimos, algo salió mal."
+    },
+    "apiError": {
+        "GENERIC": "Algo salió mal. Intentá de nuevo en un momento.",
+        "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá unos segundos y volvé a intentar.",
+        "VALIDATION_ERROR": "Los datos enviados no son válidos. Revisá los campos marcados.",
+        "UNAUTHORIZED": "Necesitás iniciar sesión para realizar esta acción.",
+        "FORBIDDEN": "No tenés permiso para realizar esta acción.",
+        "NOT_FOUND": "No encontramos lo que buscabas.",
+        "ALREADY_EXISTS": "Ese recurso ya existe.",
+        "INTERNAL_ERROR": "Algo salió mal del lado nuestro. Intentá de nuevo en un momento.",
+        "NETWORK_ERROR": "No pudimos conectar con el servidor. Probá de nuevo.",
+        "LIMIT_REACHED": "Alcanzaste el límite de tu plan. Actualizalo para continuar.",
+        "BAD_REQUEST": "La solicitud no es válida.",
+        "CONFLICT": "El recurso está en conflicto con el estado actual.",
+        "SERVICE_UNAVAILABLE": "Este servicio no está disponible temporalmente. Probá de nuevo en unos minutos.",
+        "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo."
     },
     "filters": "Filtros",
     "goHome": "Volver al inicio",

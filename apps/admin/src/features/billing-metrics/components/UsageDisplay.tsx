@@ -12,31 +12,29 @@ interface UsageDisplayProps {
  * Get color based on usage percentage
  */
 function getUsageColor(percentage: number): string {
-    if (percentage >= 90) return 'text-red-600 dark:text-red-400';
-    if (percentage >= 75) return 'text-orange-600 dark:text-orange-400';
-    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-green-600 dark:text-green-400';
+    if (percentage >= 90) return 'text-gauge-critical';
+    if (percentage >= 75) return 'text-gauge-high';
+    if (percentage >= 50) return 'text-gauge-medium';
+    return 'text-gauge-low';
 }
 
 /**
  * Get progress bar color based on usage percentage
  */
 function getProgressColor(percentage: number): string {
-    if (percentage >= 90) return 'bg-red-600 dark:bg-red-500';
-    if (percentage >= 75) return 'bg-orange-600 dark:bg-orange-500';
-    if (percentage >= 50) return 'bg-yellow-600 dark:bg-yellow-500';
-    return 'bg-green-600 dark:bg-green-500';
+    if (percentage >= 90) return 'bg-gauge-critical';
+    if (percentage >= 75) return 'bg-gauge-high';
+    if (percentage >= 50) return 'bg-gauge-medium';
+    return 'bg-gauge-low';
 }
 
 /**
  * Get icon based on usage percentage
  */
 function getUsageIcon(percentage: number) {
-    if (percentage >= 90)
-        return <AlertCircleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />;
-    if (percentage >= 75)
-        return <InfoIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />;
-    return <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-400" />;
+    if (percentage >= 90) return <AlertCircleIcon className="h-4 w-4 text-gauge-critical" />;
+    if (percentage >= 75) return <InfoIcon className="h-4 w-4 text-gauge-high" />;
+    return <CheckCircleIcon className="h-4 w-4 text-gauge-low" />;
 }
 
 export function UsageDisplay({ usage }: UsageDisplayProps) {
@@ -95,7 +93,7 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
                     <CardDescription>
                         {totalLimits} {t('admin-billing.metrics.usageDisplay.totalLimits')}
                         {limitsAtCapacity > 0 && (
-                            <span className="ml-2 text-red-600 dark:text-red-400">
+                            <span className="ml-2 text-destructive">
                                 • {limitsAtCapacity}{' '}
                                 {t('admin-billing.metrics.usageDisplay.atCapacity')}
                             </span>
@@ -161,7 +159,7 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
 
                                     {/* Warning message for high usage */}
                                     {limit.percentage >= 90 && (
-                                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-red-800 text-xs dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+                                        <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-2 text-foreground text-xs">
                                             <AlertCircleIcon className="h-3 w-3" />
                                             <span>
                                                 {t(

@@ -2,7 +2,7 @@
     display: inline-flex;
     align-items: center;
     border-radius: var(--radius-pill);
-    background-color: oklch(from var(--core-foreground) l c h / 0.06);
+    background-color: var(--core-foreground-a05);
     padding: 2px;
 }
 

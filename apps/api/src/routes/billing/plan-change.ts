@@ -15,15 +15,28 @@
  * @module routes/billing/plan-change
  */
 
-import { BillingIntervalEnum } from '@repo/schemas';
+import { NotificationType } from '@repo/notifications';
+import { BillingIntervalEnum, ServiceErrorCode } from '@repo/schemas';
+import type { DowngradePreview } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
+import {
+    isBillingProviderError,
+    mapProviderErrorToServiceError
+} from '../../lib/billing-provider-error';
+import { captureBillingError } from '../../lib/sentry';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
     SubscriptionCheckoutError,
     initiatePaidPlanUpgrade
 } from '../../services/subscription-checkout.service';
+import {
+    computeDowngradeExcess,
+    defaultExcessDeps
+} from '../../services/subscription-downgrade-excess.service';
 import {
     SubscriptionDowngradeError,
     scheduleSubscriptionDowngrade
@@ -32,6 +45,7 @@ import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
+import { sendNotification } from '../../utils/notification-helper';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
 
 /**
@@ -169,7 +183,10 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         });
     }
 
-    const { newPlanId, billingInterval } = parseResult.data;
+    // keepSelections is intentionally extracted here but is ONLY forwarded to
+    // the downgrade path below. For upgrades it is silently ignored per spec
+    // §4 decision 3 (see PlanChangeRequestSchema JSDoc).
+    const { newPlanId, billingInterval, keepSelections } = parseResult.data;
 
     const billing = getQZPayBilling();
 
@@ -192,6 +209,21 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
+        // SPEC-147 T-008 / Q7 guard: the cancel wins.
+        // If the subscription is already scheduled to cancel at period end,
+        // block plan changes until the cancellation finalises. The user must
+        // wait for the finalization cron to flip status to 'cancelled' before
+        // they can change to a new plan. This prevents a race where a
+        // soft-cancel and a plan-change collide, leaving an ambiguous state.
+        if (activeSubscription.cancelAtPeriodEnd) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Subscription is scheduled to cancel at period end. Cannot change plan while a cancellation is pending. Please wait for the current period to end.',
+                undefined,
+                'SUBSCRIPTION_CANCEL_PENDING'
+            );
+        }
+
         // 2. Get target plan details
         const targetPlan = await billing.plans.get(newPlanId);
 
@@ -199,6 +231,19 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             throw new HTTPException(404, {
                 message: `Target plan '${newPlanId}' not found`
             });
+        }
+
+        // SPEC-148 T-006 guard: reject plan-change onto a disabled plan.
+        // A user must not move onto a retiring or retired plan. QZPayPlan.active
+        // is the canonical active flag — reject with 410 PLAN_DISABLED so the
+        // client can surface a clear "plan no longer available" message.
+        if (targetPlan.active === false) {
+            throw new ServiceError(
+                ServiceErrorCode.PLAN_DISABLED,
+                'This plan is no longer available. Please choose an active plan.',
+                undefined,
+                'PLAN_DISABLED'
+            );
         }
 
         // 3. Reject one_time billing interval (uses a separate payment flow)
@@ -209,10 +254,26 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 4. Check if user is trying to change to the same plan
-        if (activeSubscription.planId === newPlanId) {
+        // 4. Map the requested billing interval to QZPay's format so we
+        // can compare it against the user's current subscription interval.
+        // The "same plan AND same interval" check at step 4b below is the
+        // only true no-op — a same-plan + different-interval request is a
+        // legitimate cycle change flow (SPEC-143 T-143-61).
+        const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
+            mapBillingIntervalToQZPay(billingInterval);
+
+        // 4b. Reject ONLY when both the plan AND the interval+count
+        // match. Same-plan-same-interval would result in no observable
+        // change, so we surface it as a 400 with a clear message.
+        const currentIntervalAtSub = activeSubscription.interval;
+        const currentIntervalCountAtSub = activeSubscription.intervalCount ?? 1;
+        if (
+            activeSubscription.planId === newPlanId &&
+            currentIntervalAtSub === qzpayInterval &&
+            currentIntervalCountAtSub === qzpayIntervalCount
+        ) {
             throw new HTTPException(400, {
-                message: 'Cannot change to the same plan'
+                message: 'Cannot change to the same plan with the same billing interval'
             });
         }
 
@@ -226,10 +287,6 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         }
 
         // 6. Find the price matching the requested billing interval
-        // Map our enum to QZPay's interval format (includes intervalCount for quarterly/semi_annual)
-        const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
-            mapBillingIntervalToQZPay(billingInterval);
-
         const targetPrice = targetPlan.prices.find(
             (p) =>
                 p.billingInterval === qzpayInterval && (p.intervalCount ?? 1) === qzpayIntervalCount
@@ -286,8 +343,15 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                     intervalCount: qzpayIntervalCount,
                     billing,
                     urls: {
-                        successUrl: `${env.HOSPEDA_SITE_URL}/billing/return`,
-                        cancelUrl: `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`,
+                        // Point at existing locale-prefixed checkout pages so
+                        // Astro's locale middleware does not rewrite `/billing/return`
+                        // into a 404 surface (Finding #8 from staging smoke
+                        // 2026-05-21). Hardcoded `es` matches the default
+                        // locale used by `buildPaymentMethodReturnUrl` in
+                        // `start-paid.ts`; both should pull the user's
+                        // preferred locale when that propagation lands.
+                        successUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/success/`,
+                        cancelUrl: `${env.HOSPEDA_SITE_URL}/es/suscriptores/checkout/failure/`,
                         notificationUrl: `${env.HOSPEDA_API_URL}/api/v1/webhooks/mercadopago`
                     },
                     statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
@@ -338,7 +402,12 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 billingInterval: qzpayInterval as 'month' | 'year',
                 intervalCount: qzpayIntervalCount,
                 billing,
-                requestedBy: actor.id
+                requestedBy: actor.id,
+                // keepSelections: forwarded as-is from the request body;
+                // validated inside scheduleSubscriptionDowngrade and stored
+                // in scheduledPlanChange.metadata. For upgrades this code
+                // path is never reached (the isUpgrade branch returns early).
+                keepSelections
             });
 
             apiLogger.info(
@@ -365,12 +434,122 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
                 resourceId: scheduleResult.subscriptionId
             });
 
+            // SPEC-167 T-016: compute the request-time restriction preview
+            // (SPEC-203 UI contract). Runs AFTER scheduling (schedule-first
+            // order: the preview reflects the scheduled state and scheduling
+            // is more important than the informational preview).
+            //
+            // Soft-fail: preview failure must NOT fail the scheduling — the
+            // downgrade is already committed at this point. Log a warn and
+            // return the response without the preview field. SPEC-203 UI
+            // treats absent `restrictionPreview` as "preview unavailable —
+            // defaults will apply at period end".
+            //
+            // targetPlan.name == the billing catalog slug (mirrors how
+            // apply-scheduled-plan-changes.ts resolves it: plan?.name).
+            let restrictionPreview: DowngradePreview | undefined;
+            try {
+                restrictionPreview = await computeDowngradeExcess(
+                    { userId: actor.id, targetPlanSlug: targetPlan.name as string },
+                    defaultExcessDeps
+                );
+            } catch (previewErr) {
+                apiLogger.warn(
+                    {
+                        customerId: billingCustomerId,
+                        subscriptionId: scheduleResult.subscriptionId,
+                        newPlanId: scheduleResult.newPlanId,
+                        error: previewErr instanceof Error ? previewErr.message : String(previewErr)
+                    },
+                    'Downgrade restriction preview unavailable (soft-fail) — schedule succeeded'
+                );
+            }
+
+            // SPEC-167 T-017: send PLAN_DOWNGRADE_LIMIT_WARNING notifications when
+            // the preview shows excess resources. One notification per excess dimension.
+            //
+            // Rules:
+            //   - Only sent when restrictionPreview exists AND hasExcess === true.
+            //   - NOT sent when preview soft-failed (restrictionPreview is undefined):
+            //     cannot summarise what we don't know — document the absence.
+            //   - Sends are SOFT (fire-and-forget): failure → warn log, never blocks
+            //     the 200 response the host is waiting for.
+            if (restrictionPreview?.hasExcess) {
+                // ActorSchema carries optional email/name since SPEC-113 — no cast needed.
+                const actorEmail = actor.email;
+                const actorName = actor.name;
+                if (actorEmail) {
+                    const dimensions: Array<{
+                        limitKey: string;
+                        cap: number;
+                        activeCount: number;
+                    }> = [];
+                    if (restrictionPreview.accommodations.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'accommodations',
+                            cap: restrictionPreview.accommodations.cap,
+                            activeCount: restrictionPreview.accommodations.activeCount
+                        });
+                    }
+                    if (restrictionPreview.promotions.excessCount > 0) {
+                        dimensions.push({
+                            limitKey: 'promotions',
+                            cap: restrictionPreview.promotions.cap,
+                            activeCount: restrictionPreview.promotions.activeCount
+                        });
+                    }
+                    for (const dim of dimensions) {
+                        void Promise.resolve(
+                            sendNotification({
+                                type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
+                                recipientEmail: actorEmail,
+                                recipientName: actorName ?? actorEmail,
+                                userId: actor.id,
+                                customerId: billingCustomerId,
+                                limitKey: dim.limitKey,
+                                // oldLimit: exact current-plan cap is not in the preview shape.
+                                // Use activeCount as "old plan allowed at least this many" —
+                                // template shows it as "Límite anterior"; this is the safest
+                                // approximation without an extra billing.plans.get call here.
+                                oldLimit: dim.activeCount,
+                                newLimit: dim.cap,
+                                currentUsage: dim.activeCount,
+                                planName: targetPlan.name as string
+                            })
+                        ).catch((notifErr: unknown) => {
+                            // SOFT: notification failure must never block the schedule response.
+                            apiLogger.warn(
+                                {
+                                    customerId: billingCustomerId,
+                                    subscriptionId: scheduleResult.subscriptionId,
+                                    limitKey: dim.limitKey,
+                                    error:
+                                        notifErr instanceof Error
+                                            ? notifErr.message
+                                            : String(notifErr)
+                                },
+                                'PLAN_DOWNGRADE_LIMIT_WARNING send failed (soft-fail) — schedule succeeded'
+                            );
+                        });
+                    }
+                } else {
+                    apiLogger.debug(
+                        {
+                            customerId: billingCustomerId,
+                            subscriptionId: scheduleResult.subscriptionId
+                        },
+                        'PLAN_DOWNGRADE_LIMIT_WARNING skipped — actor has no email in context'
+                    );
+                }
+            }
+
             return {
                 status: 'scheduled' as const,
                 subscriptionId: scheduleResult.subscriptionId,
                 previousPlanId: scheduleResult.previousPlanId,
                 newPlanId: scheduleResult.newPlanId,
-                effectiveAt: scheduleResult.applyAt
+                effectiveAt: scheduleResult.applyAt,
+                ...(restrictionPreview !== undefined && { restrictionPreview })
             };
         } catch (downgradeError) {
             if (downgradeError instanceof SubscriptionDowngradeError) {
@@ -382,6 +561,37 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         // Re-throw HTTP exceptions as-is
         if (error instanceof HTTPException) {
             throw error;
+        }
+
+        // Re-throw ServiceErrors as-is so the global error handler maps them
+        // to their correct HTTP status codes (e.g. ALREADY_EXISTS → 409).
+        // This must come BEFORE the isBillingProviderError check so that
+        // domain-level ServiceErrors (e.g. SPEC-147 cancel-pending gate)
+        // are not misidentified as provider errors.
+        if (error instanceof ServiceError) {
+            throw error;
+        }
+
+        // SPEC-149 T-006: detect QZPayProviderSyncError, map to typed ServiceError
+        // (so the global handler returns 502/503/504/400 instead of generic 500),
+        // and capture to Sentry with billing operation tags (no PII).
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'plan_change'
+            });
+
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+
+            captureBillingError(serviceError, {
+                operation: 'plan_change',
+                planId: newPlanId,
+                providerStatus: details?.providerStatus
+            });
+
+            throw serviceError;
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -426,6 +636,16 @@ export const changePlanRoute = createSimpleRoute({
  * Plan change routes router
  */
 const planChangeRouter = createRouter();
+
+// Enforce X-Idempotency-Key on the mutating POST /change-plan endpoint
+// (SPEC-143 T-143-60 / SPEC-194 T-018). Mount BEFORE the route handler so
+// the middleware short-circuits missing-key requests with a 400 before the
+// handler touches QZPay or MP. Mirrors the wiring in start-paid.ts and
+// addons.ts.
+planChangeRouter.use(
+    '/change-plan',
+    idempotencyKeyMiddleware({ operation: 'hospeda.change_plan' })
+);
 
 planChangeRouter.route('/', changePlanRoute);
 

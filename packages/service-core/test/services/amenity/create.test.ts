@@ -20,10 +20,14 @@ describe('AmenityService.create', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const input = {
-        name: 'Test Amenity',
+        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         icon: '🛏️',
-        description: 'A test amenity',
+        description: {
+            es: 'A test amenity desc',
+            en: 'A test amenity desc',
+            pt: 'A test amenity desc'
+        },
         isFeatured: false,
         lifecycleState: 'ACTIVE' as any,
         isBuiltin: false,
@@ -56,10 +60,10 @@ describe('AmenityService.create', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // name empty
+        // name with empty es locale violates min:2
         const result = await service.create(actor, {
             ...input,
-            name: ''
+            name: { es: '', en: '', pt: '' }
         });
         expectValidationError(result);
     });
@@ -80,11 +84,11 @@ describe('AmenityService.create', () => {
             ...createdAmenity,
             slug: 'test-amenity-2'
         });
-        // First creation
+        // First creation — slug is derived from name.es
         const result1 = await service.create(actor, input);
         expectSuccess(result1);
         expect(result1.data?.slug).toBe('test-amenity');
-        // Second creation with same name
+        // Second creation with same name — slug gets a suffix
         const result2 = await service.create(actor, input);
         expectSuccess(result2);
         expect(result2.data?.slug).toMatch(/^test-amenity(-\d+)?$/);
@@ -99,7 +103,7 @@ describe('AmenityService.create', () => {
             description: undefined
         });
         const minimalInput = {
-            name: 'Minimal Amenity',
+            name: { es: 'Minimal Amenity', en: 'Minimal Amenity', pt: 'Minimal Amenity' },
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
             isFeatured: false,
             lifecycleState: 'ACTIVE' as any,
@@ -113,7 +117,7 @@ describe('AmenityService.create', () => {
     });
 
     it('should reject null for required fields', async () => {
-        // name is required
+        // name is required — passing null triggers validation error
         // @ts-expect-error
         const result = await service.create(actor, { ...input, name: null });
         expectValidationError(result);

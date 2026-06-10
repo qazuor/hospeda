@@ -1,15 +1,20 @@
 /**
  * Billing Customer Middleware
  *
- * Ensures authenticated users have a billing customer record.
- * Runs after actor resolution to check/create billing customer.
+ * Resolves the authenticated user's billing customer id for downstream use.
+ * Runs after actor resolution.
  *
  * This middleware:
  * - Runs AFTER actor middleware (requires authenticated user)
- * - Checks if user has a billing customer (via cache)
- * - Creates billing customer if not exists
- * - Sets billingCustomerId in context for downstream use
- * - Silently skips if billing is not enabled
+ * - LOOKS UP the billing customer by externalId (the user id), using cache
+ * - Sets billingCustomerId in context (null when none exists yet)
+ * - Silently skips (null) for guests / when billing is not enabled
+ *
+ * NOTE: this middleware does NOT create the customer. Creation happens
+ * eagerly in the Better Auth signup databaseHook (see apps/api/src/lib/auth.ts)
+ * and is non-blocking. Consumers MUST tolerate a null customer id — e.g. the
+ * entitlement middleware falls back to role-appropriate default entitlements
+ * when there is no customer yet (SPEC-143 smoke F-B1).
  */
 
 import type { MiddlewareHandler } from 'hono';

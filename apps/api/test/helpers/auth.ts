@@ -134,6 +134,10 @@ export const createMockUserActor = (overrides?: Partial<Actor>): Actor => ({
     permissions: [
         PermissionEnum.ACCESS_API_PUBLIC,
         PermissionEnum.ACCESS_API_PRIVATE,
+        // SPEC-156 T-007: USER role has self-billing perms (tourist tiers,
+        // checkout-to-upgrade flow). Matches the seed assignment.
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         ...(overrides?.permissions || [])
     ],
     ...overrides
@@ -164,6 +168,9 @@ export const createMockClientManagerActor = (overrides?: Partial<Actor>): Actor 
         PermissionEnum.ACCESS_API_PRIVATE,
         PermissionEnum.MANAGE_CLIENTS,
         PermissionEnum.ANALYTICS_VIEW,
+        // SPEC-156 T-007: CLIENT_MANAGER has self-billing perms (complex tiers).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         ...(overrides?.permissions || [])
     ],
     ...overrides

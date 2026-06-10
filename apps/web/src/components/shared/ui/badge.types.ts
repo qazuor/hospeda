@@ -34,11 +34,11 @@ export type BadgeVariant = 'default' | 'filled-dark' | 'outline' | 'dot';
  * All values must be valid CSS property values (tokens preferred).
  */
 export interface BadgeColorScheme {
-    /** CSS background-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.15)'). */
+    /** CSS background-color value (e.g. 'var(--brand-accent-a15)'). */
     readonly bg: string;
     /** CSS color value (e.g. 'var(--brand-accent)'). */
     readonly text: string;
-    /** CSS border-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.30)'). */
+    /** CSS border-color value (e.g. 'var(--brand-accent-a30)'). */
     readonly border: string;
 }
 

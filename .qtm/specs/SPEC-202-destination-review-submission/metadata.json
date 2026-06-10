@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-202",
+    "title": "Destination Review Submission Flow (web) + API contract/security fix",
+    "type": "feature",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-06-06T08:45:00Z",
+    "approved": "2026-06-06T08:45:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "web",
+        "api",
+        "reviews",
+        "destinations",
+        "security",
+        "migration",
+        "i18n",
+        "react-island",
+        "entitlements"
+    ]
+}

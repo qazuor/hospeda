@@ -10,6 +10,7 @@ import type {
     UserMenuProps,
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
+import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
 vi.mock('../../../../src/lib/auth-client', () => ({
@@ -131,14 +132,15 @@ describe('UserMenu — authenticated render', () => {
         expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     });
 
-    it('shows always-on items (dashboard, favorites, messages, reviews, subscription, preferences)', () => {
+    it('shows always-on items (dashboard, favorites, messages, reviews, subscription, newsletter, preferences)', () => {
         renderMenu();
         open();
         expect(screen.getByRole('menuitem', { name: /mi cuenta/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /mis favoritos/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /mis mensajes/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /mis consultas/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /mis reseñas/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /mi suscripción/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /boletín de novedades/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /preferencias/i })).toBeInTheDocument();
     });
 });
@@ -169,7 +171,7 @@ describe('UserMenu — permission-gated items', () => {
 
     it('shows "Mis alojamientos" for users with accommodation.create permission', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
@@ -184,13 +186,35 @@ describe('UserMenu — permission-gated items', () => {
         });
     });
 
-    it('shows "Panel de administración" for users with access.panelAdmin', async () => {
+    it('shows "Modo anfitrión" for HOST users (access.panelAdmin without access.apiAdmin)', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: { id: 'user-1', name: 'Host', email: 'h@e.com' },
+                permissions: ['access.panelAdmin'],
+                cachedAt: Date.now()
+            })
+        );
+        renderMenu();
+        await waitFor(() => {
+            open();
+            const adminLink = screen.getByRole('menuitem', {
+                name: /modo anfitrión/i
+            });
+            expect(adminLink).toBeInTheDocument();
+            expect(adminLink).toHaveAttribute('href', 'https://admin.test');
+            expect(adminLink).toHaveAttribute('target', '_blank');
+        });
+    });
+
+    it('shows "Panel de administración" for platform staff (access.apiAdmin present)', async () => {
+        sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Admin', email: 'a@e.com' },
-                permissions: ['access.panelAdmin'],
+                permissions: ['access.panelAdmin', 'access.apiAdmin'],
                 cachedAt: Date.now()
             })
         );
@@ -202,13 +226,16 @@ describe('UserMenu — permission-gated items', () => {
             });
             expect(adminLink).toBeInTheDocument();
             expect(adminLink).toHaveAttribute('href', 'https://admin.test');
-            expect(adminLink).toHaveAttribute('target', '_blank');
+            // The host-mode label MUST NOT show for staff.
+            expect(
+                screen.queryByRole('menuitem', { name: /modo anfitrión/i })
+            ).not.toBeInTheDocument();
         });
     });
 
-    it('does NOT show admin panel link for users without the permission', async () => {
+    it('does NOT show admin panel link for users without access.panelAdmin', async () => {
         sessionStorage.setItem(
-            'authMeSnapshot',
+            AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'User', email: 'u@e.com' },
@@ -221,6 +248,9 @@ describe('UserMenu — permission-gated items', () => {
             open();
             expect(
                 screen.queryByRole('menuitem', { name: /panel de administración/i })
+            ).not.toBeInTheDocument();
+            expect(
+                screen.queryByRole('menuitem', { name: /modo anfitrión/i })
             ).not.toBeInTheDocument();
         });
     });

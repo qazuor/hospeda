@@ -8,10 +8,9 @@
  * @module test/middlewares/limit-enforcement-photo
  */
 import { LimitKey } from '@repo/billing';
-import { RoleEnum } from '@repo/schemas';
-import { AccommodationService, type Actor } from '@repo/service-core';
+import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationService, type Actor, ServiceError } from '@repo/service-core';
 import type { Context, Next } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { enforcePhotoLimit } from '../../src/middlewares/limit-enforcement';
 import type { AppBindings } from '../../src/types';
@@ -21,11 +20,17 @@ vi.mock('../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
 }));
 
-vi.mock('@repo/service-core', () => ({
-    AccommodationService: vi.fn(),
-    OwnerPromotionService: vi.fn(),
-    UserBookmarkService: vi.fn()
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AccommodationService: vi.fn(),
+        OwnerPromotionService: vi.fn(),
+        UserBookmarkService: vi.fn()
+        // ServiceError is the real class from `actual` so `instanceof` checks in
+        // the production middleware behave correctly.
+    };
+});
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
@@ -133,7 +138,7 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             const middleware = enforcePhotoLimit();
 
             // Act & Assert: count=1 equals limit=1, should block
-            await expect(middleware(c, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(c, mockNext)).rejects.toThrow(ServiceError);
             expect(mockNext).not.toHaveBeenCalled();
         });
 
@@ -189,7 +194,7 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             const middleware = enforcePhotoLimit();
 
             // Act & Assert: count=2 equals limit=2, should block
-            await expect(middleware(c, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(c, mockNext)).rejects.toThrow(ServiceError);
         });
 
         it('should count 0 when gallery is an empty array', async () => {
@@ -242,7 +247,55 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             const middleware = enforcePhotoLimit();
 
             // Act & Assert: 3 photos hit the limit, block
-            await expect(middleware(c, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(c, mockNext)).rejects.toThrow(ServiceError);
+        });
+
+        it('should NOT count archivedGallery items when enforcing photo limit (SPEC-167 D-2 invariant)', async () => {
+            // Arrange:
+            // - gallery: 2 photos (counted)
+            // - featuredImage: 1 photo (counted)
+            // - archivedGallery: 10 photos (NOT counted — these are over-cap photos
+            //   moved here by the downgrade restriction service; they are hidden from
+            //   the public read path and MUST NOT inflate the active photo count used
+            //   to gate new uploads)
+            //
+            // Expected: currentPhotoCount = 3 (gallery + featured only).
+            // Limit = 3 → exactly at the limit → should block.
+            // If archivedGallery were accidentally counted, currentPhotoCount would be
+            // 13 and the test outcome would be the same (still blocked), but a count
+            // mismatch would surface in the error details. Use a scenario where the
+            // limit is ABOVE the active count but BELOW active+archived to confirm
+            // archivedGallery items are excluded.
+            mockGetById.mockResolvedValue({
+                data: {
+                    id: 'acc-1',
+                    media: {
+                        featuredImage: {
+                            url: 'https://example.com/featured.jpg',
+                            moderationState: 'APPROVED'
+                        },
+                        gallery: [
+                            { url: 'https://example.com/1.jpg', moderationState: 'APPROVED' }
+                        ],
+                        archivedGallery: Array.from({ length: 10 }, (_, i) => ({
+                            url: `https://example.com/archived-${i}.jpg`,
+                            moderationState: 'APPROVED'
+                        }))
+                    }
+                }
+            });
+
+            // Limit = 5: active count = 2 (1 gallery + 1 featured) → BELOW limit → allowed.
+            // If archivedGallery were counted: active + archived = 12 → above limit → would block.
+            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5);
+            const c = createMockContext({ id: 'acc-1' }, mockLimitsMap);
+            const middleware = enforcePhotoLimit();
+
+            // Act
+            await middleware(c, mockNext);
+
+            // Assert: allowed (count=2 is below limit=5)
+            expect(mockNext).toHaveBeenCalledOnce();
         });
     });
 
@@ -270,7 +323,7 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             const middleware = enforcePhotoLimit();
 
             // Act & Assert
-            await expect(middleware(c, mockNext)).rejects.toThrow(HTTPException);
+            await expect(middleware(c, mockNext)).rejects.toThrow(ServiceError);
             expect(mockNext).not.toHaveBeenCalled();
         });
 
@@ -295,18 +348,19 @@ describe('enforcePhotoLimit - media JSONB counting', () => {
             // Act
             try {
                 await middleware(c, mockNext);
-                expect.fail('Should have thrown HTTPException');
+                expect.fail('Should have thrown ServiceError');
             } catch (error) {
                 // Assert
-                expect(error).toBeInstanceOf(HTTPException);
-                const httpError = error as HTTPException;
-                expect(httpError.status).toBe(403);
+                expect(error).toBeInstanceOf(ServiceError);
+                const serviceError = error as ServiceError;
+                expect(serviceError.code).toBe(ServiceErrorCode.LIMIT_REACHED);
 
-                const parsed = JSON.parse(httpError.message);
-                expect(parsed.error.code).toBe('LIMIT_REACHED');
-                expect(parsed.error.details.limitKey).toBe(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION);
-                expect(parsed.error.details.currentCount).toBe(5);
-                expect(parsed.error.details.maxAllowed).toBe(5);
+                expect(serviceError.details).toMatchObject({
+                    limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
+                    currentCount: 5,
+                    maxAllowed: 5,
+                    upgradeAudience: 'host'
+                });
             }
         });
 

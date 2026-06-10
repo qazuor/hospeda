@@ -22,6 +22,8 @@ import {
 	CreditCardIcon,
 	SettingsIcon,
 	NewsletterIcon,
+	BuildingIcon,
+	DashboardIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 
@@ -60,6 +62,31 @@ interface NavGroup {
 }
 
 /**
+ * Role-based predicate for the "Mis propiedades" sidebar entry. Mirrors the
+ * UserMenu (top-right dropdown) predicate `permissions.includes('accommodation.create')`
+ * by approximating it as "role has admin-panel access". Five roles get this
+ * permission today via the role-permission seed in `apps/api/src/lib/...`:
+ *
+ *   - HOST: regular property owner managing their own listings.
+ *   - ADMIN / SUPER_ADMIN: platform staff.
+ *   - CLIENT_MANAGER: agency/business account.
+ *   - EDITOR: content moderator with editorial rights.
+ *
+ * A plain USER (e.g., a tourist who only browses + saves favorites) does NOT
+ * see this link, matching the UserMenu behavior. See SPEC-143 Finding #12.
+ */
+const ROLES_WITH_ACCOMMODATIONS_NAV = new Set([
+	'HOST',
+	'ADMIN',
+	'SUPER_ADMIN',
+	'CLIENT_MANAGER',
+	'EDITOR',
+]);
+
+const userRole = Astro.locals.user?.role ?? null;
+const showPropertiesNav = userRole !== null && ROLES_WITH_ACCOMMODATIONS_NAV.has(userRole);
+
+/**
  * Sidebar nav is grouped so users can scan it as two short lists instead
  * of one long one. The grouping is visual only — selection logic still
  * matches by `section` against the `activeSection` prop.
@@ -77,18 +104,43 @@ const navGroups: ReadonlyArray<NavGroup> = [
 		id: 'activity',
 		label: t('account.nav.groupActivity', 'Actividad'),
 		items: [
+			...(showPropertiesNav
+				? [{ section: 'propiedades', label: t('account.nav.properties', 'Mis propiedades'), path: 'mi-cuenta/propiedades', Icon: BuildingIcon }]
+				: []),
 			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
 			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
-			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/messages', Icon: ChatIcon },
+			{ section: 'messages', label: t('conversations.inbox.guestInboxTitle', 'Mis consultas'), path: 'mi-cuenta/consultas', Icon: ChatIcon },
 		],
 	},
+	...(showPropertiesNav
+		? [
+				{
+					id: 'host',
+					label: t('account.nav.groupHost', 'Anfitrión'),
+					items: [
+						{
+							section: 'host-dashboard',
+							label: t('account.nav.hostDashboard', 'Panel del anfitrión'),
+							path: 'mi-cuenta/host-dashboard',
+							Icon: DashboardIcon
+						},
+						{
+							section: 'owner-messages',
+							label: t('conversations.inbox.ownerInboxTitle', 'Mensajes de huéspedes'),
+							path: 'mi-cuenta/consultas-propietario',
+							Icon: ChatIcon
+						},
+					],
+				} as NavGroup,
+		  ]
+		: []),
 	{
 		id: 'config',
 		label: t('account.nav.groupConfig', 'Configuración'),
 		items: [
 			{ section: 'suscripcion', label: t('account.nav.subscription', 'Suscripción'), path: 'mi-cuenta/suscripcion', Icon: CreditCardIcon },
 			{ section: 'preferencias', label: t('account.nav.preferences', 'Preferencias'), path: 'mi-cuenta/preferencias', Icon: SettingsIcon },
-			{ section: 'newsletter', label: t('account.nav.newsletter', 'Newsletter'), path: 'mi-cuenta/newsletter', Icon: NewsletterIcon },
+			{ section: 'newsletter', label: t('account.nav.newsletter', 'Boletín de novedades'), path: 'mi-cuenta/newsletter', Icon: NewsletterIcon },
 		],
 	},
 ];
@@ -217,10 +269,10 @@ const navGroups: ReadonlyArray<NavGroup> = [
 		position: sticky;
 		top: 110px;
 		background-color: var(--core-card);
-		border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+		border: 1px solid var(--core-foreground-a08);
 		border-radius: var(--radius-card);
 		padding: var(--space-3);
-		box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+		box-shadow: 0 1px 2px var(--core-foreground-a05);
 	}
 
 	.account-nav {
@@ -237,7 +289,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
 	.account-nav__group:not(:first-child) {
 		margin-top: var(--space-3);
 		padding-top: var(--space-3);
-		border-top: 1px solid oklch(from var(--core-foreground) l c h / 0.06);
+		border-top: 1px solid var(--core-foreground-a05);
 	}
 
 	.account-nav__group-label {
@@ -292,7 +344,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
 	}
 
 	.account-nav__link:hover {
-		background-color: oklch(from var(--brand-primary) l c h / 0.06);
+		background-color: var(--brand-primary-a05);
 	}
 
 	.account-nav__link:hover .account-nav__icon {
@@ -305,7 +357,7 @@ const navGroups: ReadonlyArray<NavGroup> = [
 	}
 
 	.account-nav__link--active {
-		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
 

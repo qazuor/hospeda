@@ -4,18 +4,25 @@
  * @description Accommodation summary + full description section.
  * Summary is highlighted with a warm background.
  *
- * SECURITY: `descriptionHtml` MUST be sanitized HTML produced by
- * `renderContent` (see `apps/web/src/lib/render-content.ts`). Never pass raw
- * API content here — the parent page is responsible for the conversion.
+ * SECURITY (SPEC-187 FR-2 / PD-2 / PD-6):
+ * `descriptionText` is a plain-text body field that has already been
+ * HTML-escaped by `renderPlain` (see `apps/web/src/lib/render-plain.ts`).
+ * The text is emitted as a text child, NEVER via `set:html` —
+ * re-parsing the escaped entities as HTML would silently re-introduce
+ * the XSS surface that the P0 strip migration was designed to close.
+ * The previous version of this component piped sanitized HTML through
+ * `set:html`; that contract changed when `accommodation.description`
+ * was reverted from RICH_TEXT to TEXTAREA in the admin config.
  */
 
 interface Props {
     readonly summary: string;
-    /** Sanitized HTML produced by `renderContent({ raw: accommodation.description, siteOrigin })`. */
-    readonly descriptionHtml: string;
+    /** Plain text body field, already HTML-escaped by `renderPlain`
+     *  in the parent page. Emitted as a text child below. */
+    readonly descriptionText: string;
 }
 
-const { summary, descriptionHtml } = Astro.props;
+const { summary, descriptionText } = Astro.props;
 ---
 
 {summary && (
@@ -24,8 +31,10 @@ const { summary, descriptionHtml } = Astro.props;
   </div>
 )}
 
-{descriptionHtml && (
-  <div class="description__body" set:html={descriptionHtml} />
+{descriptionText && (
+  <div class="description__body">
+    <p>{descriptionText}</p>
+  </div>
 )}
 
 <style>
@@ -49,19 +58,10 @@ const { summary, descriptionHtml } = Astro.props;
     line-height: 1.7;
     color: var(--core-foreground);
   }
-  .description__body :global(h2),
-  .description__body :global(h3) {
-    font-family: var(--font-heading);
-    margin-top: var(--space-5, 20px);
-  }
-  .description__body :global(p) {
+  .description__body p {
     margin-bottom: var(--space-3, 12px);
   }
-  .description__body :global(ul),
-  .description__body :global(ol) {
-    padding-left: var(--space-5, 20px);
-    margin-bottom: var(--space-3, 12px);
+  .description__body p:last-child {
+    margin-bottom: 0;
   }
-  .description__body :global(strong) { font-weight: 700; }
-  .description__body :global(em) { font-style: italic; }
 </style>

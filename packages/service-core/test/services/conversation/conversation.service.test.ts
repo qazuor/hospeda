@@ -1093,4 +1093,63 @@ describe('ConversationService', () => {
             expect(accessTokenServiceMock.generateToken).not.toHaveBeenCalled();
         });
     });
+
+    // =========================================================================
+    // getThread — ownership invariant (SPEC-206 write-IDOR regression)
+    // =========================================================================
+
+    describe('getThread', () => {
+        it('should reject a non-owner BEFORE running any read-receipt side effect', async () => {
+            // Arrange — conversation belongs to ACCOMMODATION_ID, but the owner
+            // actor owns NO accommodations, so it is neither a guest nor an
+            // owner participant.
+            const foreignConversation = makeConversation({
+                id: CONVERSATION_ID,
+                accommodationId: ACCOMMODATION_ID,
+                userId: null
+            });
+            asMock(conversationModelMock.findById).mockResolvedValue(foreignConversation);
+
+            // Act — empty ownerAccommodationIds: this conversation is not the
+            // actor's to read.
+            const result = await service.getThread(
+                OWNER_ACTOR,
+                { conversationId: CONVERSATION_ID, actorSide: 'OWNER' },
+                []
+            );
+
+            // Assert — rejected, and NONE of the side effects ran. This is the
+            // core regression guard: a foreign conversationId must not mutate
+            // lastReadAtByOwner nor cancel the legitimate owner's notifications.
+            expectForbiddenError(result);
+            expect(messageModelMock.findByConversationId).not.toHaveBeenCalled();
+            expect(withServiceTransaction).not.toHaveBeenCalled();
+            expect(notificationScheduleMock.cancelForRecipient).not.toHaveBeenCalled();
+        });
+
+        it('should return the thread and run side effects for the legitimate owner', async () => {
+            // Arrange — owner owns ACCOMMODATION_ID, which the conversation
+            // belongs to.
+            const ownedConversation = makeConversation({
+                id: CONVERSATION_ID,
+                accommodationId: ACCOMMODATION_ID,
+                userId: null
+            });
+            asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
+            asMock(messageModelMock.findByConversationId).mockResolvedValue([]);
+
+            // Act
+            const result = await service.getThread(
+                OWNER_ACTOR,
+                { conversationId: CONVERSATION_ID, actorSide: 'OWNER' },
+                [ACCOMMODATION_ID]
+            );
+
+            // Assert — success and side effects executed exactly once.
+            expectSuccess(result);
+            expect(messageModelMock.findByConversationId).toHaveBeenCalledOnce();
+            expect(withServiceTransaction).toHaveBeenCalledOnce();
+            expect(notificationScheduleMock.cancelForRecipient).toHaveBeenCalledOnce();
+        });
+    });
 });

@@ -13,6 +13,7 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { FILTER_ALL_VALUE } from './filter-types';
 import type { SelectFilterConfig } from './filter-types';
@@ -66,27 +67,22 @@ export function FilterSelect({ config, value, onChange }: FilterSelectProps) {
             onValueChange={handleChange}
         >
             <SelectTrigger
-                className={
-                    isActive
-                        ? 'h-8 border-primary border-solid text-sm'
-                        : 'h-8 border-dashed text-sm'
-                }
+                className={cn(
+                    'h-8 w-auto min-w-[8rem] max-w-[14rem] gap-1 text-sm focus:ring-1 focus:ring-primary/30 focus:ring-offset-0',
+                    isActive ? 'border-primary border-solid' : 'border-dashed'
+                )}
                 aria-label={
                     isActive
                         ? `${t(config.labelKey as TranslationKey)}: ${config.options.find((o) => o.value === value)?.labelKey ? t(config.options.find((o) => o.value === value)?.labelKey as TranslationKey) : value}`
                         : t(config.labelKey as TranslationKey)
                 }
             >
-                {isActive ? (
-                    <span>
-                        <span className="text-muted-foreground">
-                            {t(config.labelKey as TranslationKey)}:
-                        </span>{' '}
-                        <SelectValue placeholder={t(allLabelKey)} />
-                    </span>
-                ) : (
+                <span className="truncate">
+                    <span className="text-muted-foreground">
+                        {t(config.labelKey as TranslationKey)}:
+                    </span>{' '}
                     <SelectValue placeholder={t(allLabelKey)} />
-                )}
+                </span>
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value={FILTER_ALL_VALUE}>{t(allLabelKey)}</SelectItem>

@@ -4,8 +4,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
 
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
+import { EntitlementKey } from '@repo/billing';
+import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 import { useAccommodationQuery, useUpdateAccommodationMutation } from './useAccommodationQuery';
 
 // ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
@@ -29,11 +32,16 @@ export const useAccommodationPage = (entityId: string) => {
     const updateMutation = useUpdateAccommodationMutation(entityId);
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
 
+    // SPEC-198: AI text-improve entitlement gate
+    const { has: hasEntitlement } = useMyEntitlements();
+    const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
+
     // ✅ CONFIGURACIÓN CONSOLIDADA
     const entityConfig = useMemo(() => {
         const consolidatedConfig = createAccommodationConsolidatedConfig(
             t,
-            accommodationTypeOptions
+            accommodationTypeOptions,
+            entityId
         );
 
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
@@ -44,7 +52,7 @@ export const useAccommodationPage = (entityId: string) => {
             editSections,
             metadata: consolidatedConfig.metadata
         };
-    }, [accommodationTypeOptions, t]);
+    }, [accommodationTypeOptions, t, entityId]);
 
     // Permissions configuration - static
     const permissions = useMemo(
@@ -83,6 +91,36 @@ export const useAccommodationPage = (entityId: string) => {
         return mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
     };
 
+    // ----------------------------------------------------------------
+    // SPEC-172 PR3: Pre-populate amenityIds / featureIds from relation arrays.
+    //
+    // The read API response exposes `amenities[{ id, ... }]` and
+    // `features[{ id, ... }]` (relation arrays), but the AMENITY_SELECT /
+    // FEATURE_SELECT form fields are keyed `amenityIds` / `featureIds`
+    // (write-path flat arrays of UUIDs). prepareFormValues reads
+    // `entity[field.id]` so it looks for `entity.amenityIds`, which is absent
+    // from the read response. We augment the entity here so the chip fields
+    // are pre-populated when the form opens.
+    // ----------------------------------------------------------------
+    const enrichedEntity = useMemo((): AccommodationCore | undefined => {
+        if (!query.data) return undefined;
+        const raw = query.data as AccommodationCore & {
+            amenities?: Array<{ id: string }>;
+            features?: Array<{ id: string }>;
+            amenityIds?: string[];
+            featureIds?: string[];
+        };
+
+        // Only derive when the write-path keys are absent (don't override
+        // values already present, e.g. after a failed save retry).
+        const amenityIds =
+            raw.amenityIds ?? (Array.isArray(raw.amenities) ? raw.amenities.map((a) => a.id) : []);
+        const featureIds =
+            raw.featureIds ?? (Array.isArray(raw.features) ? raw.features.map((f) => f.id) : []);
+
+        return { ...raw, amenityIds, featureIds } as AccommodationCore;
+    }, [query.data]);
+
     const hookReturn = {
         // State
         mode,
@@ -93,7 +131,7 @@ export const useAccommodationPage = (entityId: string) => {
         setActiveSection,
 
         // Data
-        entity: query.data,
+        entity: enrichedEntity,
         isLoading: query.isLoading,
         error: query.error,
 
@@ -105,6 +143,9 @@ export const useAccommodationPage = (entityId: string) => {
         userPermissions,
         canView,
         canEdit,
+
+        // SPEC-198: AI text-improve entitlement
+        canUseAiTextImprove,
 
         // Mutations
         updateMutation: {

@@ -30,11 +30,19 @@ import {
     withTransaction
 } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
+import * as Sentry from '@sentry/node';
+import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
+import {
+    findLocalSubscriptionByPreapprovalId,
+    paymentAlreadyRecorded
+} from '../../routes/webhooks/mercadopago/subscription-payment-handler.js';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
+import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
@@ -107,7 +115,7 @@ async function retrySubscriptionUpdated(
 
     let paymentAdapter: ReturnType<typeof createMercadoPagoAdapter>;
     try {
-        paymentAdapter = createMercadoPagoAdapter();
+        paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
     } catch (error) {
         apiLogger.error({ error }, 'Failed to create MercadoPago adapter for subscription retry');
         return false;
@@ -138,6 +146,164 @@ async function retrySubscriptionUpdated(
     });
 
     return result.success;
+}
+
+/**
+ * Retry a `subscription_authorized_payment.{created,updated}` event from the
+ * dead letter queue.
+ *
+ * Fetches the authorized-payment details from MercadoPago, resolves the linked
+ * local subscription, and records the payment in `billing_payments` via the
+ * billing facade — mirroring the live handler in subscription-payment-handler.ts.
+ *
+ * Idempotency: if the payment is already recorded for the same MP payment ID
+ * the function returns true (idempotent no-op) so the dead-letter row is resolved
+ * without creating a duplicate.
+ *
+ * Not-found / transient errors: a `not-found` result from MP is treated as a
+ * permanent condition (returns true — no point retrying) while `error` results
+ * return false so the retry cron increments attempts and tries again later.
+ *
+ * @param payload - Stored event payload from the dead letter queue
+ * @returns Promise resolving to true if processing succeeded or is permanently
+ *          not retryable, false on transient errors that warrant a retry
+ */
+async function retrySubscriptionAuthorizedPayment(payload: unknown): Promise<boolean> {
+    const billing = getQZPayBilling();
+
+    if (!billing) {
+        apiLogger.warn('Billing not configured, skipping subscription_authorized_payment retry');
+        return true;
+    }
+
+    const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+        apiLogger.error(
+            'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN not configured — cannot retry subscription_authorized_payment'
+        );
+        return true;
+    }
+
+    // Extract authorized-payment ID from the stored payload (MP wraps it in data.id)
+    const payloadObj =
+        payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null;
+    const dataBlock = payloadObj?.data;
+    const authorizedPaymentId =
+        dataBlock && typeof dataBlock === 'object'
+            ? (((dataBlock as Record<string, unknown>).id as string | undefined) ?? null)
+            : null;
+
+    if (!authorizedPaymentId) {
+        apiLogger.warn(
+            { payload },
+            'subscription_authorized_payment dead-letter entry has no authorized-payment ID — skipping retry'
+        );
+        return true;
+    }
+
+    const fetchResult = await fetchAuthorizedPaymentDetails({ authorizedPaymentId, accessToken });
+
+    if (fetchResult.kind === 'not-found') {
+        // MP no longer has this authorized payment — nothing to record; resolve permanently
+        apiLogger.warn(
+            { authorizedPaymentId },
+            'MercadoPago authorized payment not found during dead-letter retry — resolving permanently'
+        );
+        return true;
+    }
+
+    if (fetchResult.kind === 'unauthorized') {
+        // Access token issue — transient config problem; do not retry infinitely
+        apiLogger.error(
+            { authorizedPaymentId },
+            'Unauthorized fetching authorized payment during dead-letter retry — resolving to avoid queue rot'
+        );
+        return true;
+    }
+
+    if (fetchResult.kind === 'error') {
+        // Transient upstream error — leave the dead-letter row pending for next cron run
+        apiLogger.warn(
+            { authorizedPaymentId, message: fetchResult.message },
+            'Transient error fetching authorized payment during dead-letter retry — will retry'
+        );
+        return false;
+    }
+
+    const details = fetchResult.details;
+
+    // No settled payment yet (status='scheduled') — nothing to record; resolve so we
+    // do not loop on an event that will never carry a paymentId
+    if (!details.paymentId) {
+        apiLogger.info(
+            { authorizedPaymentId, status: details.status },
+            'Authorized payment has no settled payment ID during dead-letter retry — resolving'
+        );
+        return true;
+    }
+
+    // Resolve the local subscription from MP's preapproval ID — mirrors the live handler.
+    // If we cannot resolve the subscription we cannot record the payment against a customer;
+    // treat this as a permanent skip (same as the live handler's no-local-subscription path).
+    const sub = details.preapprovalId
+        ? await findLocalSubscriptionByPreapprovalId(details.preapprovalId)
+        : null;
+
+    if (!sub) {
+        apiLogger.warn(
+            { authorizedPaymentId, preapprovalId: details.preapprovalId ?? null },
+            'Subscription authorized payment dead-letter retry: no local subscription found for preapproval ID — resolving permanently'
+        );
+        return true;
+    }
+
+    // Idempotency: do not record a duplicate if the payment was already captured
+    // by a previous cron run or by the live webhook handler.
+    if (await paymentAlreadyRecorded(details.paymentId)) {
+        apiLogger.info(
+            { authorizedPaymentId, mpPaymentId: details.paymentId, localSubscriptionId: sub.id },
+            'Subscription authorized payment already recorded — idempotent skip during dead-letter retry'
+        );
+        return true;
+    }
+
+    try {
+        // Record the payment via the billing facade, mirroring the live handler exactly:
+        // real customerId and subscriptionId from the resolved local subscription row.
+        await billing.payments.record({
+            id: crypto.randomUUID(),
+            customerId: sub.customerId,
+            subscriptionId: sub.id,
+            amount: Math.round(details.transactionAmount * 100),
+            currency: (details.currencyId as 'ARS') || 'ARS',
+            status: 'succeeded',
+            provider: 'mercadopago',
+            providerPaymentId: details.paymentId,
+            metadata: {
+                mpAuthorizedPaymentId: details.authorizedPaymentId,
+                mpDebitDate: details.debitDate ?? null
+            }
+        });
+
+        apiLogger.info(
+            {
+                authorizedPaymentId,
+                mpPaymentId: details.paymentId,
+                localSubscriptionId: sub.id,
+                customerId: sub.customerId
+            },
+            'Subscription authorized payment recorded during dead-letter retry'
+        );
+
+        return true;
+    } catch (error) {
+        const errMessage = error instanceof Error ? error.message : String(error);
+        apiLogger.error(
+            { authorizedPaymentId, error: errMessage },
+            'Failed to record subscription authorized payment during dead-letter retry'
+        );
+        return false;
+    }
 }
 
 /**
@@ -233,14 +399,45 @@ async function retryWebhookEvent(event: {
                 return true;
             }
 
+            // Both .created and .updated share the same processSubscriptionUpdated logic
+            // (subscription-handler.ts uses one handler for both event subtypes).
+            case 'subscription_preapproval.created':
             case 'subscription_preapproval.updated': {
                 return await retrySubscriptionUpdated(event.payload, event.providerEventId);
             }
 
+            // Both .created and .updated share the same authorized-payment fetch/record logic
+            // (subscription-payment-handler.ts uses one handler for both event subtypes).
+            case 'subscription_authorized_payment.created':
+            case 'subscription_authorized_payment.updated': {
+                return await retrySubscriptionAuthorizedPayment(event.payload);
+            }
+
             default: {
+                // Decision (realign 2026-06-05): resolve-with-loud-log to avoid dead-letter queue rot.
+                // A genuinely-unknown event type that enters the queue would loop forever without
+                // ever succeeding (no handler exists). Resolving it with an explicit loud log is
+                // preferable to letting it fill the queue across every cron run. If a new event type
+                // is added to the live webhook router in the future, it must ALSO be added here.
                 apiLogger.warn(
                     { eventId: event.id, type: event.type, provider: event.provider },
-                    'Unrecognized MercadoPago event type in dead letter queue - resolving'
+                    'DEAD-LETTER: unrecognized MercadoPago event type — resolving to prevent queue rot. Add a case here when the live webhook router gains this type.'
+                );
+                // Emit to Sentry so an unknown event type is visible in the alert
+                // pipeline and not just stdout. Level=warning because the queue is
+                // auto-resolved (no data loss), but the gap in handler coverage must
+                // be noticed by an engineer. Pattern mirrors bootstrap.ts Sentry usage.
+                Sentry.captureMessage(
+                    `DEAD-LETTER: unrecognized webhook event type '${event.type}' permanently resolved`,
+                    {
+                        level: 'warning',
+                        tags: {
+                            module: 'cron',
+                            job_name: 'webhook-retry',
+                            event_type: event.type,
+                            provider: event.provider
+                        }
+                    }
                 );
                 return true;
             }

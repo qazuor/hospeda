@@ -89,6 +89,49 @@ export const publicGetSimilarRoute = createPublicRoute({
 
         const rows = await db.query.accommodations.findMany({
             where,
+            // SPEC-187 data-level omission: richDescription is a PREMIUM field
+            // gated per-owner by the entitlement system. Similar-card listings do
+            // NOT render it, so we exclude it at the query layer (fail-closed —
+            // independent of any schema-level change). Also exclude internal admin
+            // and audit columns that are never part of a public card payload.
+            columns: {
+                id: true,
+                slug: true,
+                name: true,
+                summary: true,
+                description: true,
+                type: true,
+                isFeatured: true,
+                averageRating: true,
+                reviewsCount: true,
+                media: true,
+                price: true,
+                location: true,
+                seo: true,
+                extraInfo: true,
+                destinationId: true,
+                ownerId: true,
+                visibility: true,
+                lifecycleState: true,
+                createdAt: true,
+                updatedAt: true,
+                ownerSuspended: true,
+                planRestricted: true,
+                contactInfo: true,
+                socialNetworks: true,
+                // richDescription intentionally excluded — PREMIUM field, not used in cards
+                richDescription: false,
+                // Internal admin/audit columns excluded from public card payload
+                adminInfo: false,
+                deletedAt: false,
+                deletedById: false,
+                createdById: false,
+                updatedById: false,
+                lastWarnedAt: false,
+                moderationState: false,
+                schedule: false,
+                rating: false
+            },
             with: {
                 destination: {
                     columns: {
@@ -111,9 +154,20 @@ export const publicGetSimilarRoute = createPublicRoute({
         // match the public API response shape used by listByOwner / list.
         // The Web transform's `deriveCityFields()` reads `cityDestination`
         // (preferred) before falling back to legacy `destination`.
+        //
+        // SPEC-187 data-level omission: richDescription is a PREMIUM field gated
+        // per-owner by the entitlement system. Similar-card listings never render
+        // it. We strip it explicitly here as a second layer of defense (the DB
+        // projection above is the first layer — this ensures the field is absent
+        // even if the query layer changes or is mocked in tests).
         return rows.map((row) => {
-            const { destination, ...rest } = row as Record<string, unknown> & {
+            const {
+                destination,
+                richDescription: _droppedRich,
+                ...rest
+            } = row as Record<string, unknown> & {
                 destination?: unknown;
+                richDescription?: unknown;
             };
             return destination ? { ...rest, cityDestination: destination } : rest;
         });

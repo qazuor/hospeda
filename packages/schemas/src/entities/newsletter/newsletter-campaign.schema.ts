@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { NewsletterCampaignLocaleFilterEnum } from '../../enums/newsletter-campaign-locale-filter.enum.js';
 import { NewsletterCampaignStatusEnum } from '../../enums/newsletter-campaign-status.enum.js';
+import { NewsletterContentTypeEnum } from '../../enums/newsletter-content-type.enum.js';
 
 // ============================================================================
 // TiptapDocumentSchema
@@ -81,6 +82,22 @@ export const NewsletterCampaignSchema = z.object({
 
     /** Audience locale filter applied at dispatch time. */
     localeFilter: z.nativeEnum(NewsletterCampaignLocaleFilterEnum),
+
+    /**
+     * Audience content-type filter applied at dispatch time.
+     *
+     * - `null` → no segmentation, send to every active subscriber matching the
+     *   locale filter (legacy behavior, kept as the default for backward compat).
+     * - `NewsletterContentTypeEnum.OFFERS | EVENTS | GUIDES | PRODUCT_NEWS` →
+     *   only include subscribers whose `preferences[contentType]` is `true`
+     *   (or absent — defensive default; the column default in
+     *   `newsletter_subscribers.preferences` is all-true).
+     *
+     * KEEP IN SYNC with the `content_type` column on `newsletter_campaigns`
+     * (migration 0028) and the `contentType` filter consumed by
+     * `NewsletterSubscriberService.getEligibleForCampaign`.
+     */
+    contentType: z.nativeEnum(NewsletterContentTypeEnum).nullable(),
 
     /**
      * Number of subscribers enqueued for delivery.

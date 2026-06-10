@@ -17,6 +17,8 @@
             "communication": "Comunicación",
             "location": "Ubicación"
         },
+        "subheading": "Compartí tu experiencia en {{name}} para ayudar a otros viajeros.",
+        "ratingHelp": "Tocá las estrellas para puntuar cada aspecto",
         "titleLabel": "Título",
         "titlePlaceholder": "Resumen de tu experiencia",
         "contentLabel": "Comentario",
@@ -33,7 +35,32 @@
             "contentMinLength": "El comentario debe tener al menos 10 caracteres",
             "submitFailed": "Error al enviar la reseña. Por favor, intenta de nuevo.",
             "alreadyReviewed": "Ya has enviado una reseña para este alojamiento."
+        },
+        "destination": {
+            "pendingNotice": "Tu reseña está pendiente de aprobación y será visible cuando sea revisada.",
+            "alreadyReviewed": "Ya enviaste una reseña para este destino.",
+            "categoryHint": "Calificá cada categoría, o desplegala para afinar cada aspecto."
         }
+    },
+    "locked": {
+        "title": "Primero escribile al anfitrión",
+        "description": "Para mantener las reseñas honestas, solo pueden dejarlas las personas que ya contactaron al anfitrión. Mandale una consulta desde el botón de contacto y volvé acá cuando quieras opinar."
+    },
+    "sidebar": {
+        "title": "Tu opinión",
+        "canLeaveReview": "Contaste con el anfitrión. Compartí tu experiencia para ayudar a otros viajeros.",
+        "cta": "Dejar reseña",
+        "locked": "Para dejar reseña, primero escribile al anfitrión desde el botón de contacto."
+    },
+    "destinationSidebar": {
+        "title": "Tu opinión",
+        "canLeaveReview": "Compartí tu experiencia en este destino para ayudar a otros viajeros.",
+        "cta": "Dejar reseña",
+        "signInCta": "Iniciá sesión para opinar",
+        "signInCtaHint": "Necesitás una cuenta para dejar tu reseña."
+    },
+    "dialog": {
+        "close": "Cerrar"
     },
     "list": {
         "title": "Reseñas",

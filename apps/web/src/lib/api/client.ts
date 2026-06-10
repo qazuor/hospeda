@@ -65,24 +65,48 @@ async function request<T>({
     path,
     params,
     body,
-    withCredentials
+    withCredentials,
+    cookieHeader,
+    headers: extraHeaders
 }: {
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     path: string;
     params?: Record<string, unknown>;
     body?: unknown;
     withCredentials?: boolean;
+    /**
+     * Raw `Cookie` header to forward on the outgoing request. Required for SSR
+     * callers because `credentials: 'include'` only forwards cookies in browser
+     * context — server-to-server fetch has no cookie jar to draw from.
+     */
+    cookieHeader?: string;
+    /**
+     * Additional request headers to merge in alongside the defaults (Accept,
+     * Content-Type, cookie). Used by callers that hit endpoints requiring
+     * extra headers like `X-Idempotency-Key` (the billing mutating endpoints
+     * enforce this via `idempotencyKeyMiddleware` — see SPEC-143 T-143-60).
+     */
+    headers?: Record<string, string>;
 }): Promise<ApiResult<T>> {
-    const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
+    // SPEC-131: compute the URL inside the try block so a misconfigured
+    // env (no PUBLIC_API_URL / HOSPEDA_API_URL) returns { ok: false } instead
+    // of letting the async function throw — which would violate the ApiResult<T>
+    // return type contract and bypass the `catch` in the component's click handler.
+    let url = '';
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     try {
+        url = `${getBaseUrl()}${path}${serializeParams(params)}`;
         const headers: Record<string, string> = {
-            Accept: 'application/json'
+            Accept: 'application/json',
+            ...extraHeaders
         };
         if (body) {
             headers['Content-Type'] = 'application/json';
+        }
+        if (cookieHeader) {
+            headers.cookie = cookieHeader;
         }
 
         const response = await fetch(url, {
@@ -167,17 +191,57 @@ export const apiClient = {
         return request<T>({ method: 'DELETE', path, withCredentials: true });
     },
 
-    /** GET request with authentication credentials */
+    /**
+     * GET request with authentication credentials.
+     * Pass `cookieHeader` from SSR callers (e.g. Astro pages) — browser callers
+     * can rely on `credentials: 'include'` and should omit it.
+     */
     getProtected<T>({
         path,
-        params
-    }: { path: string; params?: Record<string, unknown> }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'GET', path, params, withCredentials: true });
+        params,
+        cookieHeader
+    }: {
+        path: string;
+        params?: Record<string, unknown>;
+        cookieHeader?: string;
+    }): Promise<ApiResult<T>> {
+        return request<T>({
+            method: 'GET',
+            path,
+            params,
+            withCredentials: true,
+            cookieHeader
+        });
     },
 
-    /** POST request with authentication credentials */
-    postProtected<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
-        return request<T>({ method: 'POST', path, body, withCredentials: true });
+    /**
+     * POST request with authentication credentials.
+     *
+     * @param headers - Optional extra request headers. Required when hitting
+     *   endpoints wrapped by `idempotencyKeyMiddleware`
+     *   (`/billing/subscriptions/start-paid`, `/billing/addons/:slug/purchase`,
+     *   `/billing/addons/:id/cancel`) which enforce `X-Idempotency-Key`. Send
+     *   a fresh UUID v4 per logical user action (`crypto.randomUUID()`).
+     */
+    postProtected<T>({
+        path,
+        body,
+        cookieHeader,
+        headers
+    }: {
+        path: string;
+        body?: unknown;
+        cookieHeader?: string;
+        headers?: Record<string, string>;
+    }): Promise<ApiResult<T>> {
+        return request<T>({
+            method: 'POST',
+            path,
+            body,
+            withCredentials: true,
+            cookieHeader,
+            headers
+        });
     }
 };
 

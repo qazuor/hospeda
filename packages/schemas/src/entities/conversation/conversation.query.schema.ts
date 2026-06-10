@@ -81,8 +81,64 @@ export const GuestInboxQuerySchema = z.object({
      *
      * Coerced from string (`"true"` / `"false"`) for URL query param support.
      */
-    archivedByGuest: z.coerce.boolean().optional()
+    archivedByGuest: z.coerce.boolean().optional(),
+
+    /**
+     * When set, return only conversations attached to this accommodation.
+     * Used by the accommodation detail page to decide whether the visitor
+     * has already contacted the host (and is therefore eligible to leave
+     * a review). Omitted = no filter.
+     */
+    accommodationId: z.string().uuid().optional()
 });
 
 /** TypeScript type inferred from {@link GuestInboxQuerySchema}. */
 export type GuestInboxQuery = z.infer<typeof GuestInboxQuerySchema>;
+
+// ============================================================================
+// HostConversationResponseRateSchema (SPEC-155 T-006)
+// ============================================================================
+
+/**
+ * Response schema for the host conversation response-rate endpoint.
+ *
+ * `GET /api/v1/protected/conversations/me/response-rate`
+ *
+ * Aggregated KPIs scoped to the authenticated host's own conversations:
+ * - `responseRatePct`:       percentage of conversations that received at least
+ *                            one owner reply (ownerMessageCount > 0), rounded
+ *                            to one decimal place. Returns 0 when there are no
+ *                            conversations.
+ * - `avgResponseTimeMinutes`: average time (in minutes) between the first guest
+ *                             message and the first owner reply, across all
+ *                             conversations that have both timestamps. Returns
+ *                             null when no conversations have been replied to.
+ *
+ * @example
+ * ```ts
+ * // Valid response
+ * const result = HostConversationResponseRateSchema.parse({
+ *   responseRatePct: 83.3,
+ *   avgResponseTimeMinutes: 47
+ * });
+ * ```
+ */
+export const HostConversationResponseRateSchema = z.object({
+    /**
+     * Percentage of the host's conversations that received at least one
+     * owner reply (i.e. ownerMessageCount > 0).  Value is in the range
+     * [0, 100], rounded to one decimal place.  Returns 0 when no
+     * conversations exist.
+     */
+    responseRatePct: z.number().min(0).max(100),
+
+    /**
+     * Average time in minutes between the first guest message and the first
+     * owner reply, across all replied conversations.  Null when no
+     * conversations have been replied to yet.
+     */
+    avgResponseTimeMinutes: z.number().min(0).nullable()
+});
+
+/** TypeScript type inferred from {@link HostConversationResponseRateSchema}. */
+export type HostConversationResponseRate = z.infer<typeof HostConversationResponseRateSchema>;

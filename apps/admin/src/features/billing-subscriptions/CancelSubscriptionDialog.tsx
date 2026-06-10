@@ -25,8 +25,10 @@ export interface CancelSubscriptionDialogProps {
 
 /**
  * Cancel confirmation dialog component.
- * Allows admins to cancel a subscription at period end or immediately,
- * with an optional cancellation reason.
+ *
+ * Lets the admin choose between end-of-period cancellation (default) and
+ * immediate cancellation. Both paths are honored by the qzpay-hono v1.3
+ * admin endpoint `POST /admin/billing/subscriptions/:id/cancel`.
  */
 export function CancelSubscriptionDialog({
     subscription,

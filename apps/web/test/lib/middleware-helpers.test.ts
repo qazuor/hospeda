@@ -4,7 +4,9 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { ALLOWED_REMOTE_HOSTS } from '../../src/lib/media';
 import {
+    buildAdminLoginRedirect,
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
@@ -93,6 +95,14 @@ describe('isStaticAssetRoute', () => {
         expect(isStaticAssetRoute({ path: '/favicon.ico' })).toBe(true);
     });
 
+    it('should treat file-extension endpoints as static so trailing-slash enforcement skips them', () => {
+        // Regression: /beta/search-index.json was 301-redirected to
+        // /beta/search-index.json/ (which Astro never resolves), so the beta
+        // docs search index returned 404 and the UI hung on "Cargando índice…".
+        expect(isStaticAssetRoute({ path: '/beta/search-index.json' })).toBe(true);
+        expect(isStaticAssetRoute({ path: '/sitemap-dynamic.xml' })).toBe(true);
+    });
+
     it('should detect error pages', () => {
         expect(isStaticAssetRoute({ path: '/404' })).toBe(true);
         expect(isStaticAssetRoute({ path: '/500' })).toBe(true);
@@ -120,10 +130,126 @@ describe('buildLoginRedirect', () => {
     });
 });
 
+describe('buildAdminLoginRedirect', () => {
+    it('builds an absolute web signin URL with the admin URL as encoded callbackUrl', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar',
+            locale: 'es',
+            adminUrl: 'https://admin.hospeda.com.ar/dashboard'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/es/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar%2Fdashboard'
+        );
+    });
+
+    it('respects the requested locale', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar',
+            locale: 'en',
+            adminUrl: 'https://admin.hospeda.com.ar'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/en/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar'
+        );
+    });
+
+    it('strips a trailing slash on siteUrl so the path is not doubled', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'https://hospeda.com.ar/',
+            locale: 'es',
+            adminUrl: 'https://admin.hospeda.com.ar'
+        });
+        expect(result).toBe(
+            'https://hospeda.com.ar/es/auth/signin/?callbackUrl=https%3A%2F%2Fadmin.hospeda.com.ar'
+        );
+    });
+
+    it('works with a localhost dev siteUrl + admin URL', () => {
+        const result = buildAdminLoginRedirect({
+            siteUrl: 'http://localhost:4321',
+            locale: 'es',
+            adminUrl: 'http://localhost:3000/dashboard'
+        });
+        expect(result).toBe(
+            'http://localhost:4321/es/auth/signin/?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard'
+        );
+    });
+});
+
 describe('buildLocaleRedirect', () => {
     it('should prefix with default locale', () => {
         const result = buildLocaleRedirect({ restOfPath: '/alojamientos/' });
         expect(result).toBe('/es/alojamientos/');
+    });
+
+    it('should prefix root path with default locale', () => {
+        const result = buildLocaleRedirect({ restOfPath: '/' });
+        expect(result).toBe('/es/');
+    });
+
+    it('should prefix nested path with default locale', () => {
+        const result = buildLocaleRedirect({ restOfPath: '/destinos/concepcion/' });
+        expect(result).toBe('/es/destinos/concepcion/');
+    });
+
+    it('should normalise a missing leading slash in restOfPath', () => {
+        const result = buildLocaleRedirect({ restOfPath: 'alojamientos/' });
+        expect(result).toBe('/es/alojamientos/');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// REQ-19: Locale-prefix redirect MUST return 301 (permanent), not 302.
+//
+// The locale redirect (unprefixed path → /{locale}/... ) is a stable routing
+// decision locked by URL strategy.  Google passes full link equity through
+// 301s but not 302s.
+//
+// The middleware call site is `middleware.ts` around the `locale === null`
+// branch (Step 4).  These tests document the contract so a reviewer can
+// verify the status code from the middleware diff and these assertions guard
+// the helper-level URL output that feeds the 301.
+//
+// Regression guard: `buildLoginRedirect` (used for the 302 auth redirect) is
+// tested separately to confirm it still produces a different URL shape — that
+// redirect must remain temporary (it redirects to the login page and includes
+// a `returnUrl` param, semantically ephemeral).
+// ---------------------------------------------------------------------------
+describe('REQ-19: buildLocaleRedirect produces the URL fed to the 301 redirect', () => {
+    it('returns a /{defaultLocale}/... path for an unprefixed slug path', () => {
+        // This URL is passed to context.redirect(..., 301) in middleware.ts
+        // (Step 4 — locale === null branch). Assert the URL shape is correct.
+        const url = buildLocaleRedirect({ restOfPath: '/alojamientos/' });
+        expect(url).toBe('/es/alojamientos/');
+        // Must start with the default locale prefix (the permanent destination)
+        expect(url.startsWith('/es/')).toBe(true);
+    });
+
+    it('returns /es/ for root path (the root → default locale redirect)', () => {
+        // extractLocaleFromPath({ path: '/' }) returns { locale: null, restOfPath: '/' }
+        // so buildLocaleRedirect({ restOfPath: '/' }) is the target of the 301.
+        const url = buildLocaleRedirect({ restOfPath: '/' });
+        expect(url).toBe('/es/');
+    });
+
+    it('never includes a returnUrl param (that would make it an auth redirect, not a locale redirect)', () => {
+        // Regression guard: locale redirects MUST NOT carry returnUrl.
+        // If this changes the caller is mixing up the two redirect types.
+        const url = buildLocaleRedirect({ restOfPath: '/alojamientos/' });
+        expect(url).not.toContain('returnUrl');
+    });
+});
+
+describe('REQ-19 regression guard: buildLoginRedirect (auth redirect) must remain distinct from locale redirect', () => {
+    it('auth redirect URL includes /auth/signin/ and a returnUrl param (keeps its 302 semantics)', () => {
+        // The login redirect is a different call site in middleware.ts and MUST
+        // remain a 302 (the user is redirected to log in and then back — ephemeral).
+        // We verify it produces a structurally different URL so the two are never confused.
+        const loginUrl = buildLoginRedirect({ locale: 'es', currentUrl: '/es/mi-cuenta/perfil/' });
+        expect(loginUrl).toContain('/auth/signin/');
+        expect(loginUrl).toContain('returnUrl=');
+        // It must NOT look like a locale redirect (no plain /es/... without auth path)
+        expect(loginUrl.startsWith('/es/auth/')).toBe(true);
     });
 });
 
@@ -174,13 +300,32 @@ describe('buildCspHeader', () => {
         expect(header).toContain('report-uri https://sentry.io/report');
     });
 
+    it('keeps https://*.sentry.io in connect-src when the tunnel is OFF (default)', () => {
+        // SPEC-181 follow-up: with no first-party Sentry tunnel, the browser SDK
+        // reports directly to *.sentry.io, so the CSP must still allow it.
+        const header = buildCspHeader({ nonce: 'x' });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
+        expect(connectSrc).toContain('https://*.sentry.io');
+    });
+
+    it('drops https://*.sentry.io from connect-src when the tunnel is ON', () => {
+        // SPEC-181 follow-up: when PUBLIC_SENTRY_TUNNEL is set, envelopes go
+        // through the same-origin /api/event path (covered by 'self'); the
+        // external host must NOT appear or ad-blockers regain a host to block.
+        const header = buildCspHeader({ nonce: 'x', sentryTunnelEnabled: true });
+        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
+        expect(connectSrc).not.toContain('sentry.io');
+        // 'self' still covers the same-origin tunnel path.
+        expect(connectSrc).toContain("'self'");
+    });
+
     it('should allow OpenStreetMap tile hosts in img-src and connect-src (SPEC-097)', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).toContain('https://*.tile.openstreetmap.org');
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
-    it('should allow PostHog Cloud (US) hosts in script-src, connect-src, and img-src (SPEC-140)', () => {
+    it('should NOT include external PostHog hosts — analytics is proxied first-party via /api/relay (SPEC-181)', () => {
         // Arrange
         const header = buildCspHeader({ nonce: 'x' });
 
@@ -190,15 +335,18 @@ describe('buildCspHeader', () => {
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
 
-        // script-src and connect-src need BOTH the ingestion host and the
-        // assets host (PostHog loads sub-bundles from us-assets).
-        expect(scriptSrc).toContain('https://us.i.posthog.com');
-        expect(scriptSrc).toContain('https://us-assets.i.posthog.com');
-        expect(connectSrc).toContain('https://us.i.posthog.com');
-        expect(connectSrc).toContain('https://us-assets.i.posthog.com');
+        // SPEC-181: PostHog ingestion + assets go through the same-origin /api/relay
+        // proxy (covered by 'self'). The external hosts must NOT appear in any
+        // directive, or ad-blockers regain a host to block. Replaces the SPEC-140
+        // allowlist; guards against accidental re-introduction.
+        expect(scriptSrc).not.toContain('us.i.posthog.com');
+        expect(scriptSrc).not.toContain('us-assets.i.posthog.com');
+        expect(connectSrc).not.toContain('us.i.posthog.com');
+        expect(connectSrc).not.toContain('us-assets.i.posthog.com');
+        expect(imgSrc).not.toContain('us.i.posthog.com');
 
-        // img-src only needs the ingestion host (1x1 pixel fallback origin).
-        expect(imgSrc).toContain('https://us.i.posthog.com');
+        // script-src stays on strict-dynamic with the request nonce.
+        expect(scriptSrc).toContain("'nonce-x' 'strict-dynamic'");
     });
 
     it('should not include report-uri when not provided', () => {
@@ -222,6 +370,30 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('https://res.cloudinary.com');
     });
 
+    it('should allowlist every entry of ALLOWED_REMOTE_HOSTS in img-src', () => {
+        // Prevents drift: ALLOWED_REMOTE_HOSTS is the single source of truth
+        // shared with astro.config.mjs image.remotePatterns and the SSRF guard.
+        // Any host added there must also be reachable from CSP img-src,
+        // otherwise the browser blocks the image and Sentry receives a report.
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        for (const host of ALLOWED_REMOTE_HOSTS) {
+            if (host === 'localhost') continue;
+            expect(imgSrc).toContain(`https://${host}`);
+        }
+    });
+
+    it('should allowlist Google and Facebook OAuth avatar hosts in img-src', () => {
+        // Better Auth stores the OAuth-returned picture URL on user.image and
+        // @repo/auth-ui renders it via plain <img>. Without these hosts the
+        // navbar avatar gets blocked for signed-in users (or generates CSP
+        // reports while the policy is Report-Only).
+        const header = buildCspHeader({ nonce: 'x' });
+        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        expect(imgSrc).toContain('https://lh3.googleusercontent.com');
+        expect(imgSrc).toContain('https://platform-lookaside.fbsbx.com');
+    });
+
     it('should use exact cloudinary hostname, not a wildcard', () => {
         const header = buildCspHeader({ nonce: 'x' });
         expect(header).not.toContain('https://*.cloudinary.com');
@@ -234,9 +406,37 @@ describe('buildCspHeader', () => {
         expect(imgSrc).toContain('blob:');
     });
 
-    it('should not include unsafe-inline', () => {
+    it('should allow Astro client runtime inline style via SHA-256 hash', () => {
+        // The Astro client runtime injects an inline <style> at hydration with
+        // the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
+        // Hash-allowed in style-src because the injection happens via JS after
+        // the middleware nonce rewrite. The hash is stable (CSS is hardcoded
+        // in Astro's runtime), so a regression here would indicate Astro
+        // upstream changed the inlined CSS — bump the hash and update the
+        // comment in buildCspHeader.
         const header = buildCspHeader({ nonce: 'x' });
-        expect(header).not.toContain('unsafe-inline');
+        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
+        expect(styleSrc).toContain("'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='");
+    });
+
+    it('should allow inline style attributes via style-src-attr', () => {
+        // Inline style="..." attributes (used for tokenized colors on cards
+        // and per-card transition-delay in the stagger pattern) cannot use a
+        // nonce by CSP spec. We override only -attr with 'unsafe-inline' so
+        // <style> blocks remain nonce-gated.
+        const header = buildCspHeader({ nonce: 'x' });
+        const attrDirective = header.split('; ').find((d) => d.startsWith('style-src-attr ')) ?? '';
+        expect(attrDirective).toContain("'unsafe-inline'");
+    });
+
+    it('should not leak unsafe-inline into directives other than style-src-attr', () => {
+        // The lax override on -attr must NOT bleed into script-src, the main
+        // style-src (which gates <style> blocks), or any other directive.
+        const header = buildCspHeader({ nonce: 'x' });
+        const directives = header.split('; ').filter((d) => !d.startsWith('style-src-attr '));
+        for (const d of directives) {
+            expect(d).not.toContain("'unsafe-inline'");
+        }
     });
 
     // SPEC-047 (rewritten in SPEC-140): lock the script-src security

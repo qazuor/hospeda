@@ -61,7 +61,7 @@ export function getPurchasedAddonColumns({
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <div>
-                    <div className="font-medium">{row.addonName}</div>
+                    {row.addonName && <div className="font-medium">{row.addonName}</div>}
                     <div className="font-mono text-muted-foreground text-xs">{row.addonSlug}</div>
                 </div>
             )
@@ -122,7 +122,7 @@ export function getPurchasedAddonColumns({
             enableSorting: true,
             cell: ({ row }) => (
                 <span className="font-medium">
-                    {formatCentsToArs({ cents: row.priceArs, locale })}
+                    {row.priceArs != null ? formatCentsToArs({ cents: row.priceArs, locale }) : '—'}
                 </span>
             )
         },
@@ -170,7 +170,7 @@ export function getPurchasedAddonColumns({
                         {row.status === 'active' && (
                             <DropdownMenuItem
                                 onClick={() => actions.onForceExpire(row)}
-                                className="text-orange-600 focus:text-orange-600 dark:text-orange-400"
+                                className="text-warning focus:text-warning"
                             >
                                 <PowerOffIcon className="mr-2 h-4 w-4" />
                                 {t('admin-billing.addons.purchasedColumns.forceExpire')}
@@ -179,7 +179,7 @@ export function getPurchasedAddonColumns({
                         {(row.status === 'expired' || row.status === 'canceled') && (
                             <DropdownMenuItem
                                 onClick={() => actions.onForceActivate(row)}
-                                className="text-green-600 focus:text-green-600 dark:text-green-400"
+                                className="text-success focus:text-success"
                             >
                                 <PowerIcon className="mr-2 h-4 w-4" />
                                 {t('admin-billing.addons.purchasedColumns.forceActivate')}

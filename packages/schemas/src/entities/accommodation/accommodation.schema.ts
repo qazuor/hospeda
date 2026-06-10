@@ -9,10 +9,11 @@ import {
     UserIdSchema
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { BaseMediaFields } from '../../common/media.schema.js';
+import { AccommodationEntityMediaFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
+import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
@@ -49,6 +50,19 @@ export const AccommodationSchema = z.object({
         .string()
         .min(30, { message: 'zodError.accommodation.description.min' })
         .max(2000, { message: 'zodError.accommodation.description.max' }),
+    /**
+     * Rich-text (markdown) variant of the description used when the owning host
+     * has the `CAN_USE_RICH_DESCRIPTION` entitlement. Presence on the public
+     * payload is the ONLY signal the web client uses to pick rich vs. plain
+     * rendering — see FR-3b and FR-4 in SPEC-187. Optional: missing means
+     * the owner is not entitled, or the field has not been filled in.
+     * Max length is 5000 chars of markdown (rendered HTML can be longer but
+     * is bounded by the admin editor and the `sanitize-html` allowlist).
+     */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.accommodation.richDescription.max' })
+        .nullish(),
     isFeatured: z.boolean().default(false),
 
     // Base field groups
@@ -58,14 +72,43 @@ export const AccommodationSchema = z.object({
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,
+    ...SocialNetworkFields,
     ...AccommodationLocationFields,
-    ...BaseMediaFields,
+    ...AccommodationEntityMediaFields,
     ...BaseAdminFields,
 
     // Accommodation-specific core fields
     type: AccommodationTypeEnumSchema,
     destinationId: DestinationIdSchema,
     ownerId: UserIdSchema,
+
+    /**
+     * Service-suspension flag (SPEC-143 #29). Denormalized from
+     * `users.service_suspended` (the canonical source) for the public-read hot
+     * path and the accommodation edit-lock. Flipped in bulk across an owner's
+     * accommodations when their subscription is paused with service suspension
+     * (host self-pause or admin "full" pause), and cleared on resume.
+     * Server-managed: never set through create/update input (it is omitted from
+     * those schemas); only the pause/resume flow mutates it.
+     */
+    ownerSuspended: z.boolean().default(false),
+
+    /**
+     * Downgrade-restriction flag (SPEC-167 §3, D-3). Set to `true` by the
+     * apply-scheduled-plan-changes cron (and the admin `onAfterSubscriptionChangePlan`
+     * hook) when a host downgrades and the accommodation exceeds the target plan's
+     * `MAX_ACCOMMODATIONS` cap. Cleared automatically on re-upgrade once the host is
+     * back within cap.
+     *
+     * This flag is intentionally separate from `ownerSuspended` — `ownerSuspended`
+     * is a bulk pause/resume toggle for ALL of an owner's accommodations; this flag
+     * is a selective, per-accommodation downgrade restriction. The two states MUST
+     * NOT collide (design decision D-3).
+     *
+     * Server-managed: never set through create/update input (it is omitted from those
+     * schemas); only the downgrade-restriction flow mutates it.
+     */
+    planRestricted: z.boolean().default(false),
 
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),

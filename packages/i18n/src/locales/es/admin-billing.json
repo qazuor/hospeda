@@ -73,6 +73,7 @@
             "statusActive": "Activo",
             "statusDisabled": "Deshabilitado",
             "scheduleLabel": "Programación:",
+            "scheduleRawLabel": "Expr. cron:",
             "dryRunLabel": "Modo de prueba (Dry Run)",
             "dryRunHint": "Ejecutar sin hacer cambios reales",
             "runButton": "Ejecutar ahora",
@@ -85,7 +86,14 @@
             "modeLabel": "Modo:",
             "modeDryRun": "Prueba",
             "modeReal": "Real",
-            "runErrorTitle": "Error al ejecutar"
+            "runErrorTitle": "Error al ejecutar",
+            "lastRunLabel": "Última ejecución:",
+            "nextRunLabel": "Próxima ejecución:",
+            "neverRun": "Sin corridas",
+            "noNextRun": "—",
+            "lastRunSuccess": "OK",
+            "lastRunFailed": "Falló",
+            "lastRunTimeout": "Timeout"
         },
         "schedules": {
             "daily": "Diariamente a medianoche",
@@ -109,6 +117,7 @@
         "searchError": "Error al buscar clientes",
         "noCustomers": "No se encontraron clientes",
         "searchHint": "Ingresa al menos 2 caracteres para buscar",
+        "searchDisabled": "La búsqueda de clientes y el detalle de uso individual están deshabilitados temporalmente: los endpoints del backend están pendientes. Hasta entonces, usá las tarjetas de uso del sistema y la tabla de clientes acercándose al límite que aparecen arriba.",
         "loadingUsage": "Cargando analíticas de uso...",
         "errorUsage": "Error al cargar analíticas",
         "emptyTitle": "Busca un cliente para ver sus analíticas de uso",
@@ -147,15 +156,15 @@
     },
     "plans": {
         "title": "Planes de Suscripción",
-        "description": "Vista de los planes de suscripción disponibles. Los planes se gestionan desde el código fuente.",
-        "apiRequired": "Los planes se gestionan desde el código fuente (packages/billing/src/config/plans.config.ts). Para crear, editar o eliminar planes, modificá ese archivo y deployá.",
+        "description": "Gestioná los planes de suscripción: precios, funcionalidades y límites. Todos los cambios quedan registrados en el log de auditoría.",
+        "apiRequired": "Todos los cambios a los planes quedan registrados en el log de auditoría para trazabilidad y reversión si es necesario.",
         "confirmActivate": "¿Estás seguro de activar este plan?",
         "confirmDeactivate": "¿Estás seguro de desactivar este plan?",
         "confirmDelete": "¿Estás seguro de eliminar este plan? Esta acción no se puede deshacer y afectará a los usuarios con este plan.",
         "apiLoadError": "No se pudieron cargar los planes desde la API.",
-        "staticFallback": "Mostrando los planes definidos en el código fuente.",
-        "noteLabel": "Fuente única de verdad:",
-        "apiUnavailable": "Los planes son de solo lectura desde este panel. La fuente única de verdad es packages/billing/src/config/plans.config.ts. Para cambiar precios, entitlements o límites, editá ese archivo y deployá. Próximo: SPEC para habilitar edición desde el panel.",
+        "staticFallback": "No hay planes disponibles en este momento.",
+        "noteLabel": "Registro de cambios:",
+        "apiUnavailable": "Los cambios a los planes quedan registrados en el log de auditoría. Para revisar el historial de cambios, consultá la sección de auditoría.",
         "allCategories": "Todas las categorías",
         "categoryOwner": "Propietario",
         "categoryComplex": "Complejo",
@@ -197,6 +206,20 @@
         "actionDeactivate": "Desactivar",
         "actionEdit": "Editar",
         "actionDelete": "Eliminar",
+        "actionRestore": "Restaurar",
+        "actionHardDelete": "Eliminar permanentemente",
+        "showDeleted": "Mostrar eliminados",
+        "confirmSoftDeleteWithCount": "Este plan tiene {count} suscripción(es) activa(s). Al eliminarlo dejará de estar disponible para nuevas suscripciones. Esta acción se puede revertir restaurándolo. ¿Querés continuar?",
+        "confirmHardDelete": "Esta acción elimina el plan de forma permanente y no se puede deshacer. Solo es posible si ningún suscriptor lo referencia. ¿Querés continuar?",
+        "hardDeleteBlocked": "No se puede eliminar permanentemente: el plan todavía está referenciado por suscripciones.",
+        "toastDeletedTitle": "Plan eliminado",
+        "toastDeletedMessage": "El plan se eliminó correctamente y puede restaurarse.",
+        "toastRestoredTitle": "Plan restaurado",
+        "toastRestoredMessage": "El plan se restauró correctamente.",
+        "toastHardDeletedTitle": "Plan eliminado permanentemente",
+        "toastHardDeletedMessage": "El plan se eliminó de forma permanente.",
+        "toastErrorTitle": "Error",
+        "toastErrorMessage": "No se pudo completar la operación.",
         "dialog": {
             "createTitle": "Crear Plan",
             "editTitle": "Editar Plan",
@@ -295,7 +318,9 @@
             "status": "Estado",
             "actions": "Acciones",
             "perMonth": "/mes",
-            "daysUnit": "días"
+            "daysUnit": "días",
+            "slug": "Slug",
+            "deleted": "Eliminado"
         },
         "billingTypeLabels": {
             "oneTime": "Único",
@@ -395,7 +420,13 @@
             "expiresAtLabel": "Fecha de expiración:",
             "paymentIdLabel": "ID de Pago:",
             "recordIdLabel": "ID del registro:"
-        }
+        },
+        "actionRestore": "Restaurar add-on",
+        "actionHardDelete": "Eliminar permanentemente",
+        "confirmSoftDeleteDesc": "El add-on dejará de estar disponible para nuevas compras. Vas a eliminar:",
+        "confirmHardDeleteDesc": "Esta acción no se puede deshacer y será bloqueada si el add-on tiene compras o suscripciones asociadas. Vas a eliminar permanentemente:",
+        "statusInactive": "Inactivo",
+        "statusDeleted": "Eliminado"
     },
     "settings": {
         "title": "Configuración de Facturación",
@@ -417,7 +448,11 @@
             "durationLabel": "Duración de Prueba (días)",
             "durationHint": "Para planes de Propietario y Complejo",
             "autoBlockLabel": "Bloqueo Automático",
-            "autoBlockHint": "Bloquear funciones al vencer el período"
+            "autoBlockHint": "Bloquear funciones al vencer el período",
+            "ownerDurationLabel": "Duración de prueba — Propietario (días)",
+            "ownerDurationHint": "Días de prueba para planes de propietario",
+            "complexDurationLabel": "Duración de prueba — Complejo (días)",
+            "complexDurationHint": "Días de prueba para planes de complejo"
         },
         "payment": {
             "title": "Configuración de Pagos",
@@ -429,7 +464,9 @@
             "intervalLabel": "Intervalo de Reintentos (horas)",
             "intervalHint": "Tiempo entre reintentos de pago",
             "currencyLabel": "Moneda Predeterminada",
-            "currencyHint": "Código de moneda ISO (3 letras)"
+            "currencyHint": "Código de moneda ISO (3 letras)",
+            "taxRateLabel": "Tasa de impuesto (%)",
+            "taxRateHint": "Porcentaje de impuesto aplicado (0-100)"
         },
         "webhook": {
             "title": "Configuración de Webhooks",
@@ -449,7 +486,15 @@
             "daysLabel": "Días de Anticipación",
             "daysHint": "Enviar recordatorio X días antes del vencimiento",
             "receiptLabel": "Recibo de Pago",
-            "receiptHint": "Enviar recibo automáticamente al procesar pago"
+            "receiptHint": "Enviar recibo automáticamente al procesar pago",
+            "trialReminderLabel": "Recordatorio de fin de prueba",
+            "trialReminderHint": "Avisar antes de que venza el período de prueba",
+            "trialReminderDaysLabel": "Días de anticipación del recordatorio",
+            "trialReminderDaysHint": "Enviar el recordatorio X días antes del vencimiento",
+            "paymentFailedLabel": "Notificar pago fallido",
+            "paymentFailedHint": "Avisar al cliente cuando un pago falla",
+            "subscriptionCancelledLabel": "Notificar cancelación de suscripción",
+            "subscriptionCancelledHint": "Avisar al cliente cuando se cancela la suscripción"
         }
     },
     "sponsorships": {
@@ -994,7 +1039,9 @@
             "entitlementsMore": "más...",
             "changePlanButton": "Cambiar plan",
             "extendTrialButton": "Extender prueba",
-            "cancelSubscriptionButton": "Cancelar suscripción"
+            "cancelSubscriptionButton": "Cancelar suscripción",
+            "pauseButton": "Pausar",
+            "resumeButton": "Reanudar"
         },
         "paymentHistory": {
             "title": "Historial de pagos",
@@ -1053,6 +1100,22 @@
             "newEnd": "Nuevo fin:",
             "confirmButton": "Extender prueba"
         },
+        "pauseDialog": {
+            "title": "Pausar suscripción",
+            "description": "Confirma la pausa de la suscripción de",
+            "scopeLabel": "Alcance de la pausa",
+            "scopeFull": "Pausa completa (facturación + ocultar publicaciones)",
+            "scopeBillingOnly": "Solo facturación (las publicaciones siguen visibles)",
+            "fullWarning": "La pausa completa oculta las publicaciones del propietario del sitio público y bloquea su edición hasta reanudar.",
+            "backButton": "Volver",
+            "confirmButton": "Confirmar pausa"
+        },
+        "resumeDialog": {
+            "title": "Reanudar suscripción",
+            "description": "Confirma la reanudación de la suscripción de",
+            "backButton": "Volver",
+            "confirmButton": "Confirmar reanudación"
+        },
         "toasts": {
             "cancelledImmediate": "Suscripción cancelada inmediatamente",
             "cancelledScheduled": "Suscripción programada para cancelación",
@@ -1061,7 +1124,11 @@
             "planChangeError": "Error al cambiar plan:",
             "trialExtended": "Periodo de prueba extendido por",
             "trialExtendedDays": "dia(s)",
-            "trialExtendError": "Error al extender prueba:"
+            "trialExtendError": "Error al extender prueba:",
+            "paused": "Suscripción pausada",
+            "resumed": "Suscripción reanudada",
+            "pauseError": "Error al pausar suscripción:",
+            "resumeError": "Error al reanudar suscripción:"
         }
     },
     "exchangeRates": {

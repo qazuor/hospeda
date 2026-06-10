@@ -74,6 +74,25 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
+// Partial mock for mercadopago/utils — preserve real implementations of
+// pure helpers (extractPaymentInfo, extractAddonMetadata, …) but allow
+// per-test override of getWebhookDependencies and markEventProcessedByProviderId
+// which require live billing wiring + DB writes respectively. Post-T-143-09
+// the payment-handler dispatches through getWebhookDependencies() instead of
+// the legacy getQZPayBilling() call site, so the dependency must be stubbed
+// here for handlePaymentUpdated to enter the notification dispatch branch.
+const mockGetWebhookDependencies = vi.hoisted(() => vi.fn());
+const mockMarkEventProcessedByProviderId = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+vi.mock('../../src/routes/webhooks/mercadopago/utils', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../src/routes/webhooks/mercadopago/utils')>();
+    return {
+        ...actual,
+        getWebhookDependencies: mockGetWebhookDependencies,
+        markEventProcessedByProviderId: mockMarkEventProcessedByProviderId
+    };
+});
+
 // Service layer mock: AddonService
 vi.mock('../../src/services/addon.service', () => ({
     AddonService: vi.fn().mockImplementation(() => ({
@@ -477,9 +496,15 @@ describe('MercadoPago Webhook Handler', () => {
         });
 
         it('should skip already-processed duplicate events', async () => {
-            const mockReturning = vi
-                .fn()
-                .mockRejectedValue(new Error('duplicate key value violates unique constraint'));
+            // event-handler.ts detects duplicates via pg SQLSTATE '23505'
+            // (unique_violation), NOT via string-match on the message. The
+            // mock error must carry `code: '23505'` (or `cause.code`) so the
+            // handler takes the duplicate branch instead of rethrowing.
+            const duplicateError = Object.assign(
+                new Error('duplicate key value violates unique constraint'),
+                { code: '23505' }
+            );
+            const mockReturning = vi.fn().mockRejectedValue(duplicateError);
             const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
             const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
@@ -508,7 +533,8 @@ describe('MercadoPago Webhook Handler', () => {
         });
 
         it('should skip currently-pending duplicate events', async () => {
-            const mockReturning = vi.fn().mockRejectedValue(new Error('duplicate key'));
+            const duplicateError = Object.assign(new Error('duplicate key'), { code: '23505' });
+            const mockReturning = vi.fn().mockRejectedValue(duplicateError);
             const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
             const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
@@ -535,7 +561,8 @@ describe('MercadoPago Webhook Handler', () => {
         });
 
         it('should allow reprocessing of failed events', async () => {
-            const mockReturning = vi.fn().mockRejectedValue(new Error('duplicate'));
+            const duplicateError = Object.assign(new Error('duplicate'), { code: '23505' });
+            const mockReturning = vi.fn().mockRejectedValue(duplicateError);
             const mockValues = vi.fn().mockReturnValue({ returning: mockReturning });
             const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
 
@@ -611,22 +638,31 @@ describe('MercadoPago Webhook Handler', () => {
                 }
             };
 
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
+            // Post-T-143-09 the handler dispatches through getWebhookDependencies
+            // and pulls the full payment via paymentAdapter.payments.retrieve.
+            // The event payload only needs `data.id` — the retrieve mock
+            // supplies the rest in QZPayProviderPayment shape.
+            mockGetWebhookDependencies.mockReturnValue({
+                billing: mockBilling,
+                paymentAdapter: {
+                    payments: {
+                        retrieve: vi.fn().mockResolvedValue({
+                            id: '987',
+                            amount: 99.99,
+                            currency: 'ARS',
+                            status: 'approved',
+                            metadata: { customerId: 'cust_123' }
+                        })
+                    }
+                }
+            });
             vi.mocked(sendNotification).mockResolvedValue({ success: true, data: {} } as never);
 
             const context = createMockContext({ requestId: 'req_approved' });
             const event = createMockEvent({
                 id: 'evt_123',
                 type: 'payment.updated',
-                data: {
-                    transaction_amount: 99.99,
-                    currency_id: 'ARS',
-                    status: 'approved',
-                    payment_method_id: 'credit_card',
-                    metadata: { customerId: 'cust_123' }
-                }
+                data: { id: '987' }
             });
 
             await handlePaymentUpdated(context, event);
@@ -663,22 +699,28 @@ describe('MercadoPago Webhook Handler', () => {
                 }
             };
 
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
+            mockGetWebhookDependencies.mockReturnValue({
+                billing: mockBilling,
+                paymentAdapter: {
+                    payments: {
+                        retrieve: vi.fn().mockResolvedValue({
+                            id: '987',
+                            amount: 99.99,
+                            currency: 'ARS',
+                            status: 'rejected',
+                            statusDetail: 'cc_rejected_insufficient_amount',
+                            metadata: { customerId: 'cust_123' }
+                        })
+                    }
+                }
+            });
             vi.mocked(sendNotification).mockResolvedValue({ success: true, data: {} } as never);
 
             const context = createMockContext({ requestId: 'req_rejected' });
             const event = createMockEvent({
                 id: 'evt_123',
                 type: 'payment.updated',
-                data: {
-                    transaction_amount: 99.99,
-                    currency_id: 'ARS',
-                    status: 'rejected',
-                    status_detail: 'cc_rejected_insufficient_amount',
-                    metadata: { customerId: 'cust_123' }
-                }
+                data: { id: '987' }
             });
 
             mockEnv.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@example.com';
@@ -720,9 +762,23 @@ describe('MercadoPago Webhook Handler', () => {
                 .fn()
                 .mockResolvedValue({ success: true, data: undefined });
 
-            vi.mocked(getQZPayBilling).mockReturnValue(
-                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
-            );
+            mockGetWebhookDependencies.mockReturnValue({
+                billing: mockBilling,
+                paymentAdapter: {
+                    payments: {
+                        retrieve: vi.fn().mockResolvedValue({
+                            id: '987',
+                            amount: 0,
+                            currency: 'ARS',
+                            status: 'approved',
+                            metadata: {
+                                addonSlug: 'premium-photos',
+                                customerId: 'cust_123'
+                            }
+                        })
+                    }
+                }
+            });
             vi.mocked(AddonService).mockImplementation(
                 () =>
                     ({
@@ -734,12 +790,7 @@ describe('MercadoPago Webhook Handler', () => {
             const event = createMockEvent({
                 id: 'evt_123',
                 type: 'payment.updated',
-                data: {
-                    metadata: {
-                        addonSlug: 'premium-photos',
-                        customerId: 'cust_123'
-                    }
-                }
+                data: { id: '987' }
             });
 
             await handlePaymentUpdated(context, event);

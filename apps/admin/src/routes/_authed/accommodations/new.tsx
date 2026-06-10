@@ -1,18 +1,20 @@
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { EntityCreateContent } from '@/components/entity-pages';
+import { EntityCreatePageBase } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent } from '@/components/ui-wrapped/Card';
-import { createAccommodationConsolidatedConfig } from '@/features/accommodations/config';
+import { createAccommodationMinimalCreateConfig } from '@/features/accommodations/config/accommodation-minimal-create.config';
 import { useCreateAccommodationMutation } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
+import { useAccommodationCount } from '@/features/billing/use-limit-counts';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
-import { LimitGate } from '@qazuor/qzpay-react';
+import { LimitKey } from '@repo/billing';
 import {
-    AccommodationCreateInputSchema,
+    AccommodationCreateDraftHttpSchema,
     AccommodationTypeEnum,
     PermissionEnum,
     RoleEnum
@@ -24,6 +26,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
  * bypass the per-actor plan-limit gate (SPEC-117 M-1). Plan limits apply
  * to the actual accommodation owners, not to admins creating entities for
  * them.
+ *
+ * Per spec §4.10, these same roles ALSO see the Propietario field on the
+ * minimal create form so they can assign the draft to the right host.
+ * Hosts creating their own draft skip the field — the backend resolves
+ * `ownerId` from the session.
  */
 const PLAN_LIMIT_BYPASS_ROLES: readonly RoleEnum[] = [
     RoleEnum.SUPER_ADMIN,
@@ -43,11 +50,14 @@ function AccommodationCreatePage() {
     const { user } = useAuthContext();
     const createMutation = useCreateAccommodationMutation();
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
+    const { count: accommodationCount } = useAccommodationCount();
 
     const entityName = t('admin-entities.entities.accommodation.singular');
     const entityNamePlural = t('admin-entities.entities.accommodation.plural');
 
     const bypassesPlanLimit = PLAN_LIMIT_BYPASS_ROLES.includes(user?.role as RoleEnum);
+    // Owner picker is staff-only — hosts implicitly create their own drafts.
+    const includeOwnerField = bypassesPlanLimit;
 
     const createConfig: EntityCreateConfig = {
         entityType: 'accommodation',
@@ -62,43 +72,49 @@ function AccommodationCreatePage() {
         successToastTitle: 'Alojamiento creado',
         successToastMessage: 'El alojamiento se creó exitosamente',
         errorToastTitle: 'Error al crear el alojamiento',
-        errorMessage: 'No pudimos crear el alojamiento. Probá de nuevo.'
+        errorMessage: 'No pudimos crear el alojamiento. Probá de nuevo.',
+        // Spec §4.10: create mínimo → edit. The accordion + quality score
+        // on /edit guide the host through completing the listing.
+        afterCreateRedirectMode: 'edit'
     };
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
-            <EntityCreateContent
+            <EntityCreatePageBase
                 config={createConfig}
-                zodSchema={AccommodationCreateInputSchema}
+                zodSchema={AccommodationCreateDraftHttpSchema}
                 createConsolidatedConfig={() =>
-                    createAccommodationConsolidatedConfig(t, accommodationTypeOptions)
+                    createAccommodationMinimalCreateConfig(t, accommodationTypeOptions, {
+                        includeOwner: includeOwnerField
+                    })
                 }
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
-                configDeps={[t, accommodationTypeOptions]}
+                configDeps={[t, accommodationTypeOptions, includeOwnerField]}
                 formWrapper={(children) =>
                     bypassesPlanLimit ? (
                         <>{children}</>
                     ) : (
-                        <LimitGate
-                            limitKey="max_accommodations"
+                        <PlanLimitGate
+                            limitKey={LimitKey.MAX_ACCOMMODATIONS}
+                            currentCount={accommodationCount}
                             fallback={
                                 <Card>
                                     <CardContent className="py-8">
                                         <div className="mx-auto max-w-md space-y-4 text-center">
-                                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+                                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
                                                 <Icon
                                                     name="alertTriangle"
-                                                    className="h-8 w-8 text-amber-600 dark:text-amber-400"
+                                                    className="h-8 w-8 text-warning"
                                                 />
                                             </div>
                                             <div>
-                                                <h3 className="font-semibold text-amber-900 text-lg dark:text-amber-100">
+                                                <h3 className="font-semibold text-foreground text-lg">
                                                     {t(
                                                         'admin-entities.limits.accommodationLimitReached'
                                                     )}
                                                 </h3>
-                                                <p className="mt-2 text-amber-800 text-sm dark:text-amber-200">
+                                                <p className="mt-2 text-muted-foreground text-sm">
                                                     {t(
                                                         'admin-entities.limits.accommodationLimitDesc'
                                                     )}
@@ -127,7 +143,7 @@ function AccommodationCreatePage() {
                             }
                         >
                             {children}
-                        </LimitGate>
+                        </PlanLimitGate>
                     )
                 }
             />

@@ -1,52 +1,59 @@
 /**
  * Header Component
  *
- * Main header navigation bar with horizontal section navigation (Level 1).
- * Contains:
- * - Logo/branding
- * - Section navigation (Dashboard, Content, Administration, Analytics)
- * - Search, notifications, and user menu
- * - Mobile hamburger menu
+ * Main header navigation bar (Level 1). Migrated to the NEW config-driven IA
+ * system (SPEC-154, T-027).
+ *
+ * Changes from OLD system:
+ * - Desktop nav replaced with `<MainMenu />` (config-driven, permission-aware).
+ * - "+" create button replaced with `<QuickCreate />`.
+ * - `showSearch` from `useCurrentRoleConfig().topbar` toggles CommandPalette.
+ * - OLD `getHeaderNavItems` / `useCurrentSectionId` removed.
+ * - Mobile hamburger still triggers sidebar drawer (managed by SidebarContext).
+ *   Mobile main-menu navigation is handled by `BottomNav` on mobile devices.
  */
 
 import { CommandPalette } from '@/components/search/CommandPalette';
-import { getHeaderNavItems } from '@/config/sections';
+import { WhatsNewBadge } from '@/components/whats-new/WhatsNewBadge';
 import { useSidebarContext } from '@/contexts/sidebar-context';
+import { useCurrentRoleConfig } from '@/hooks/use-current-role-config';
 import { useTranslations } from '@/hooks/use-translations';
 import { HeaderUser as AuthHeader } from '@/integrations/clerk/header-user';
-import { useCurrentSectionId } from '@/lib/sections';
+import { cn } from '@/lib/utils';
+import type { TranslationKey } from '@repo/i18n';
 import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
 import { Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { HeaderNavItem } from './HeaderNavItem';
-import { MobileMenu } from './MobileMenu';
-
-interface HeaderProps {
-    /** User permissions for filtering visible header sections */
-    readonly userPermissions?: string[];
-}
+import { useEffect, useRef, useState } from 'react';
+import { MainMenu } from '../main-menu/MainMenu';
+import { QuickCreate } from '../quick-create/QuickCreate';
 
 /**
- * Header renders the main navigation bar.
- * Filters visible sections based on user permissions.
+ * Header renders the main navigation bar for the admin shell.
+ *
+ * All visibility decisions (which sections to show, whether to show quick-create
+ * or search) are driven by the config-driven IA system, never by role checks in
+ * this component directly.
  */
-export function Header({ userPermissions }: HeaderProps) {
+export function Header() {
     const { t } = useTranslations();
     const router = useRouter();
     const { openMobile, closeMobile, isMobileOpen } = useSidebarContext();
-    const currentSectionId = useCurrentSectionId();
+    const roleConfig = useCurrentRoleConfig();
 
-    // Notifications dropdown state
+    // Topbar config from the IA role config.
+    const showSearch = roleConfig?.topbar?.showSearch ?? true;
+
+    // Notifications dropdown state.
     const [showNotifications, setShowNotifications] = useState(false);
     const notifRef = useRef<HTMLDivElement | null>(null);
 
-    // Close notifications on navigation
+    // Close notifications on navigation.
     useEffect(() => {
         const unsub = router.subscribe('onResolved', () => setShowNotifications(false));
         return () => unsub();
     }, [router]);
 
-    // Close notifications on outside click
+    // Close notifications on outside click.
     useEffect(() => {
         if (!showNotifications) return;
         const onPointerDown = (e: PointerEvent) => {
@@ -58,58 +65,59 @@ export function Header({ userPermissions }: HeaderProps) {
         return () => window.removeEventListener('pointerdown', onPointerDown, true);
     }, [showNotifications]);
 
-    // Filter header nav items by user permissions
-    const filteredNavItems = useMemo(
-        () => getHeaderNavItems({ userPermissions }),
-        [userPermissions]
-    );
-
-    // Prepare mobile menu items with active state
-    const mobileItems = filteredNavItems.map((item) => ({
-        ...item,
-        isActive: currentSectionId === item.id
-    }));
-
     return (
-        <>
-            <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <header>
+            <div className="bg-[var(--palette-river-100)]">
                 <div className="flex h-14 items-center gap-3 px-3 md:px-4">
-                    {/* Mobile menu button */}
+                    {/* Mobile menu button — opens sidebar drawer */}
                     <button
                         type="button"
-                        aria-label={t('admin-common.aria.toggleMenu')}
-                        className="inline-flex items-center justify-center rounded-md p-2 hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+                        aria-label={t('admin-common.aria.toggleMenu' as TranslationKey)}
+                        className="inline-flex items-center justify-center rounded-md p-2 hover:bg-white/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
                         onClick={isMobileOpen ? closeMobile : openMobile}
                     >
-                        <MenuIcon className="h-5 w-5" />
+                        <MenuIcon className="icon-river-header h-5 w-5" />
                     </button>
 
                     {/* Logo/Brand */}
                     <Link
                         to="/dashboard"
+                        aria-label="Hospeda Admin"
                         className="flex items-center gap-2 font-semibold text-sm"
                     >
-                        <span className="hidden sm:inline">{t('admin-nav.topbar.admin')}</span>
+                        <img
+                            src="/logo.webp"
+                            alt=""
+                            aria-hidden="true"
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 shrink-0"
+                        />
+                        <span className="hidden font-heading text-base sm:inline">
+                            {t('admin-nav.topbar.admin' as TranslationKey)}
+                        </span>
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <nav
-                        className="ml-6 hidden items-center gap-1 md:flex"
-                        aria-label="Main navigation"
-                    >
-                        {filteredNavItems.map((item) => (
-                            <HeaderNavItem
-                                key={item.id}
-                                {...item}
-                                isActive={currentSectionId === item.id}
-                            />
-                        ))}
-                    </nav>
+                    {/* Brand / nav divider — desktop only (mobile nav lives in BottomNav) */}
+                    <div
+                        aria-hidden="true"
+                        className="hidden h-6 w-px bg-primary/20 md:block"
+                    />
+
+                    {/* Desktop Navigation — config-driven via MainMenu */}
+                    <MainMenu />
 
                     {/* Right side actions */}
-                    <div className="ml-auto flex items-center gap-2">
-                        {/* Search command palette */}
-                        <CommandPalette />
+                    <div className={cn('ml-auto flex items-center gap-2')}>
+                        {/* Quick-create "+" button — config-driven via QuickCreate */}
+                        <QuickCreate />
+
+                        {/* Command Palette search — shown when topbar.showSearch is true */}
+                        {showSearch && (
+                            <span data-tour="command-palette">
+                                <CommandPalette />
+                            </span>
+                        )}
 
                         {/* Notifications */}
                         <div
@@ -127,21 +135,24 @@ export function Header({ userPermissions }: HeaderProps) {
                         >
                             <button
                                 type="button"
-                                aria-label={t('admin-common.aria.notifications')}
-                                title={t('admin-nav.topbar.notifications')}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground"
+                                aria-label={t('admin-common.aria.notifications' as TranslationKey)}
+                                title={t('admin-nav.topbar.notifications' as TranslationKey)}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary"
                                 onClick={() => setShowNotifications((v) => !v)}
+                                data-tour="notifications"
                             >
-                                <NotificationIcon className="h-5 w-5" />
+                                <NotificationIcon className="icon-river-header h-5 w-5" />
                             </button>
                             {showNotifications && (
                                 <div className="absolute right-0 mt-2 w-80 rounded-md border bg-popover p-2 text-sm shadow">
                                     <div className="mb-2 font-semibold">
-                                        {t('admin-nav.topbar.notifications')}
+                                        {t('admin-nav.topbar.notifications' as TranslationKey)}
                                     </div>
                                     <ul className="space-y-1">
                                         <li className="rounded-md px-2 py-1 hover:bg-accent/50">
-                                            {t('admin-common.notifications.noNew')}
+                                            {t(
+                                                'admin-common.notifications.noNew' as TranslationKey
+                                            )}
                                         </li>
                                     </ul>
                                     <div className="mt-2 border-t pt-2 text-right">
@@ -150,45 +161,60 @@ export function Header({ userPermissions }: HeaderProps) {
                                             className="underline"
                                             onClick={() => setShowNotifications(false)}
                                         >
-                                            {t('admin-common.actions.seeAll')}
+                                            {t('admin-common.actions.seeAll' as TranslationKey)}
                                         </Link>
                                     </div>
                                 </div>
                             )}
                         </div>
 
+                        {/* What's New badge — between Notifications and Profile (SPEC-175) */}
+                        <WhatsNewBadge />
+
                         {/* Profile */}
                         <Link
-                            to="/me/profile"
-                            aria-label={t('admin-common.aria.profile')}
-                            title={t('admin-nav.topbar.profile')}
-                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
+                            to="/account/profile"
+                            aria-label={t('admin-common.aria.profile' as TranslationKey)}
+                            title={t('admin-nav.topbar.profile' as TranslationKey)}
+                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"
                         >
-                            <UserIcon className="h-5 w-5" />
+                            <UserIcon className="icon-river-header h-5 w-5" />
                         </Link>
 
                         {/* Settings */}
                         <Link
-                            to="/me/settings"
-                            aria-label={t('admin-common.aria.settings')}
-                            title={t('admin-nav.topbar.settings')}
-                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground sm:inline-flex"
+                            to="/account/preferences"
+                            aria-label={t('admin-common.aria.settings' as TranslationKey)}
+                            title={t('admin-nav.topbar.settings' as TranslationKey)}
+                            className="hidden h-9 w-9 items-center justify-center rounded-md hover:bg-white/60 hover:text-primary sm:inline-flex"
                         >
-                            <SettingsIcon className="h-5 w-5" />
+                            <SettingsIcon className="icon-river-header h-5 w-5" />
                         </Link>
 
                         {/* Auth user menu */}
                         <AuthHeader />
                     </div>
                 </div>
-            </header>
+            </div>
 
-            {/* Mobile Menu */}
-            <MobileMenu
-                isOpen={isMobileOpen}
-                onClose={closeMobile}
-                items={mobileItems}
-            />
-        </>
+            {/* River wave bottom edge — the header band ends in a filled wavy
+                edge (same river fill as the band), mirroring apps/web's footer wave. */}
+            <div
+                aria-hidden="true"
+                className="-mt-px pointer-events-none text-[var(--palette-river-100)]"
+            >
+                <svg
+                    viewBox="0 0 1440 40"
+                    preserveAspectRatio="none"
+                    className="block h-3 w-full"
+                    role="presentation"
+                >
+                    <path
+                        d="M0,0 L1440,0 L1440,18 C1200,34 960,2 720,18 C480,34 240,2 0,18 Z"
+                        fill="currentColor"
+                    />
+                </svg>
+            </div>
+        </header>
     );
 }

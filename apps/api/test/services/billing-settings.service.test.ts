@@ -93,6 +93,10 @@ describe('BillingSettingsService', () => {
         sendSubscriptionCancelledNotification: true
     };
 
+    // Global settings have no real entity; the service writes a sentinel UUID as
+    // entityId (billing_audit_logs.entity_id is NOT NULL uuid) since 72c51f2a2.
+    const SETTINGS_AUDIT_ENTITY_ID = '00000000-0000-0000-0000-000000000000';
+
     beforeEach(() => {
         vi.clearAllMocks();
         insertCalls = [];
@@ -276,7 +280,7 @@ describe('BillingSettingsService', () => {
                 expect.objectContaining({
                     action: 'billing_settings_update',
                     entityType: 'settings',
-                    entityId: 'global',
+                    entityId: SETTINGS_AUDIT_ENTITY_ID,
                     actorId: null,
                     actorType: 'system',
                     previousValues: DEFAULT_SETTINGS,
@@ -508,7 +512,7 @@ describe('BillingSettingsService', () => {
                 expect.objectContaining({
                     action: 'billing_settings_reset',
                     entityType: 'settings',
-                    entityId: 'global',
+                    entityId: SETTINGS_AUDIT_ENTITY_ID,
                     actorId: null,
                     actorType: 'system',
                     changes: DEFAULT_SETTINGS,

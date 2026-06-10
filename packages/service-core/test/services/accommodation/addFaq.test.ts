@@ -70,6 +70,8 @@ describe('AccommodationService.addFaq', () => {
         vi.spyOn(db, 'AccommodationFaqModel').mockImplementation(
             () => faqModelMock as unknown as db.AccommodationFaqModel
         );
+        // addFaq now reads the current max displayOrder (SPEC-177) — default to empty.
+        faqModelMock.findAll.mockResolvedValue({ items: [] });
     });
 
     it('should add a FAQ successfully', async () => {

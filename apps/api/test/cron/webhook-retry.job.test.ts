@@ -18,14 +18,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // withTransaction mock: calls the callback with the same db object returned by getDb.
 // This mirrors the actual behavior where tx is the Drizzle transaction client.
 // Must be defined before vi.mock so it is accessible via vi.hoisted pattern.
-const { mockGetDb, mockWithTransactionWebhook } = vi.hoisted(() => {
+const {
+    mockGetDb,
+    mockWithTransactionWebhook,
+    mockCaptureMessage,
+    mockFindLocalSubscriptionByPreapprovalId,
+    mockPaymentAlreadyRecorded
+} = vi.hoisted(() => {
     const getDbFn = vi.fn();
     // withTransaction passes the db returned by getDb as the tx to the callback.
     // This allows tests that configure getDb to also drive the tx queries.
     const withTx = vi.fn(async <T>(callback: (tx: ReturnType<typeof getDbFn>) => Promise<T>) =>
         callback(getDbFn())
     );
-    return { mockGetDb: getDbFn, mockWithTransactionWebhook: withTx };
+    return {
+        mockGetDb: getDbFn,
+        mockWithTransactionWebhook: withTx,
+        mockCaptureMessage: vi.fn(),
+        mockFindLocalSubscriptionByPreapprovalId: vi.fn(),
+        mockPaymentAlreadyRecorded: vi.fn()
+    };
 });
 
 vi.mock('@repo/db', () => ({
@@ -43,6 +55,10 @@ vi.mock('@repo/db', () => ({
         strings,
         values
     }))
+}));
+
+vi.mock('@sentry/node', () => ({
+    captureMessage: mockCaptureMessage
 }));
 
 vi.mock('@repo/billing', () => ({
@@ -94,12 +110,28 @@ vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic', () => ({
     processSubscriptionUpdated: vi.fn()
 }));
 
+vi.mock('../../src/routes/webhooks/mercadopago/subscription-payment-handler', () => ({
+    findLocalSubscriptionByPreapprovalId: mockFindLocalSubscriptionByPreapprovalId,
+    paymentAlreadyRecorded: mockPaymentAlreadyRecorded
+}));
+
+vi.mock('../../src/utils/mp-authorized-payment', () => ({
+    fetchAuthorizedPaymentDetails: vi.fn()
+}));
+
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token'
+    }
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
 
 import { createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
+import * as Sentry from '@sentry/node';
 import { webhookRetryJob } from '../../src/cron/jobs/webhook-retry.job';
 import type { CronJobContext } from '../../src/cron/types';
 import { getQZPayBilling } from '../../src/middlewares/billing';
@@ -109,11 +141,16 @@ import {
 } from '../../src/routes/webhooks/mercadopago/notifications';
 import { processSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-logic';
 import {
+    findLocalSubscriptionByPreapprovalId,
+    paymentAlreadyRecorded
+} from '../../src/routes/webhooks/mercadopago/subscription-payment-handler';
+import {
     extractAddonFromReference,
     extractAddonMetadata,
     extractPaymentInfo
 } from '../../src/routes/webhooks/mercadopago/utils';
 import { AddonService } from '../../src/services/addon.service';
+import { fetchAuthorizedPaymentDetails } from '../../src/utils/mp-authorized-payment';
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -187,6 +224,10 @@ function makeBillingMock(customerData: unknown = null) {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // Default: no local subscription found (safe fallback — tests that need it override this)
+    vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue(null);
+    // Default: payment not yet recorded (safe fallback)
+    vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
 });
 
 afterEach(() => {
@@ -488,7 +529,343 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Test 6: Unknown MercadoPago event type — resolves with a warning
+    // Test 5c: subscription_preapproval.created — must delegate to processSubscriptionUpdated
+    // (RED: currently falls to default and resolves permanently without retry)
+    // -------------------------------------------------------------------------
+    it('should run processSubscriptionUpdated for subscription_preapproval.created events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_preapproval.created',
+            providerEventId: 'mp-sub-created-1',
+            payload: {
+                data: { id: 'preapproval-created-123' },
+                date_created: '2024-03-01T00:00:00Z'
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        const billing = makeBillingMock({ id: 'cust-created-1' });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const mockAdapter = { subscriptions: { retrieve: vi.fn() } };
+        vi.mocked(createMercadoPagoAdapter).mockReturnValue(
+            mockAdapter as unknown as ReturnType<typeof createMercadoPagoAdapter>
+        );
+
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: true,
+            statusChanged: true,
+            newStatus: 'active'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — subscription created event triggers the real handler, not the silent default
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        expect(processSubscriptionUpdated).toHaveBeenCalledWith(
+            expect.objectContaining({
+                providerEventId: 'mp-sub-created-1',
+                source: 'dead-letter-retry'
+            })
+        );
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5d: subscription_authorized_payment.created — must run the retry handler
+    // (RED: currently falls to default and resolves permanently without retry —
+    // fetchAuthorizedPaymentDetails is never called in the default branch)
+    // -------------------------------------------------------------------------
+    it('should call fetchAuthorizedPaymentDetails for subscription_authorized_payment.created events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-1',
+            payload: {
+                data: { id: 'authorized-payment-123' }
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            makeBillingMock({ id: 'cust-1' }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        // Return a not-found result so the retry ends with no DB record written
+        // (simulates the common case where the authorized payment can't be fetched yet)
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'not-found',
+            authorizedPaymentId: 'authorized-payment-123'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — fetchAuthorizedPaymentDetails must be called (proves the new switch case ran)
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledOnce();
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledWith(
+            expect.objectContaining({ authorizedPaymentId: 'authorized-payment-123' })
+        );
+        expect(result.success).toBe(true);
+        // processSubscriptionUpdated is NOT called for authorized_payment events
+        expect(processSubscriptionUpdated).not.toHaveBeenCalled();
+        // extractPaymentInfo (payment.updated path) is also not called
+        expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5e: subscription_authorized_payment.updated — same retry handler
+    // -------------------------------------------------------------------------
+    it('should call fetchAuthorizedPaymentDetails for subscription_authorized_payment.updated events', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.updated',
+            providerEventId: 'mp-auth-pay-upd-1',
+            payload: {
+                data: { id: 'authorized-payment-456' }
+            }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            makeBillingMock({ id: 'cust-2' }) as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'not-found',
+            authorizedPaymentId: 'authorized-payment-456'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — authorized_payment.updated takes the same retry path as .created
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledOnce();
+        expect(fetchAuthorizedPaymentDetails).toHaveBeenCalledWith(
+            expect.objectContaining({ authorizedPaymentId: 'authorized-payment-456' })
+        );
+        expect(result.success).toBe(true);
+        expect(processSubscriptionUpdated).not.toHaveBeenCalled();
+        expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5f: subscription_authorized_payment — billing not configured → resolves (no-op)
+    // -------------------------------------------------------------------------
+    it('should resolve subscription_authorized_payment event when billing is not configured', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-no-billing',
+            payload: { data: { id: 'authorized-payment-789' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(null);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — billing not configured: no retry possible, resolve gracefully
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5g: authorized_payment happy path — records with resolved customerId/subscriptionId
+    // Verifies M2 fix: retry mirrors live handler (real customerId + subscriptionId, not '')
+    // -------------------------------------------------------------------------
+    it('should record authorized payment with resolved customerId and subscriptionId (M2 fix)', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-happy',
+            payload: { data: { id: 'authorized-payment-happy' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const paymentsRecord = vi.fn().mockResolvedValue({ id: 'payment-record-1' });
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-happy',
+                preapprovalId: 'preapproval-123',
+                paymentId: 'mp-payment-999',
+                transactionAmount: 999.5,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: '2026-06-05'
+            }
+        });
+
+        // Subscription found (M2 fix: subscription is resolved from preapprovalId)
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
+            id: 'sub-local-1',
+            customerId: 'cust-resolved-1'
+        });
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(false);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+
+        // findLocalSubscriptionByPreapprovalId was called with the preapproval ID
+        expect(findLocalSubscriptionByPreapprovalId).toHaveBeenCalledWith('preapproval-123');
+
+        // paymentAlreadyRecorded was called before recording
+        expect(paymentAlreadyRecorded).toHaveBeenCalledWith('mp-payment-999');
+
+        // billing.payments.record called with real customerId and subscriptionId (not '')
+        expect(paymentsRecord).toHaveBeenCalledOnce();
+        const recordArg = paymentsRecord.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(recordArg.customerId).toBe('cust-resolved-1');
+        expect(recordArg.subscriptionId).toBe('sub-local-1');
+        expect(recordArg.providerPaymentId).toBe('mp-payment-999');
+        expect(recordArg.amount).toBe(99950); // 999.50 * 100
+
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5h: authorized_payment already-recorded → idempotent, no duplicate record
+    // -------------------------------------------------------------------------
+    it('should skip recording and return true when payment is already recorded (idempotency)', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-dup',
+            payload: { data: { id: 'authorized-payment-dup' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const paymentsRecord = vi.fn();
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-dup',
+                preapprovalId: 'preapproval-456',
+                paymentId: 'mp-payment-dup',
+                transactionAmount: 500,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: null
+            }
+        });
+
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue({
+            id: 'sub-local-2',
+            customerId: 'cust-2'
+        });
+        // Already recorded — must NOT call billing.payments.record
+        vi.mocked(paymentAlreadyRecorded).mockResolvedValue(true);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — idempotent path: success with no duplicate record call
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(paymentsRecord).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5i: authorized_payment — subscription not resolvable → returns true + no record
+    // -------------------------------------------------------------------------
+    it('should resolve without recording when local subscription cannot be found (no preapproval match)', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_authorized_payment.created',
+            providerEventId: 'mp-auth-pay-no-sub',
+            payload: { data: { id: 'authorized-payment-no-sub' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const paymentsRecord = vi.fn();
+        const billing = {
+            customers: { get: vi.fn().mockResolvedValue(null) },
+            payments: { record: paymentsRecord }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue({
+            kind: 'ok',
+            details: {
+                authorizedPaymentId: 'authorized-payment-no-sub',
+                preapprovalId: 'preapproval-nonexistent',
+                paymentId: 'mp-payment-no-sub',
+                transactionAmount: 100,
+                currencyId: 'ARS',
+                status: 'processed',
+                paymentStatus: 'approved',
+                debitDate: null
+            }
+        });
+
+        // No local subscription found → permanent skip
+        vi.mocked(findLocalSubscriptionByPreapprovalId).mockResolvedValue(null);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — permanent skip: no record, resolves dead-letter
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(paymentsRecord).not.toHaveBeenCalled();
+        expect(paymentAlreadyRecorded).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 6: Unknown MercadoPago event type — resolves with a warning (NOT silently eaten)
+    // Decision (realign 2026-06-05): resolve-with-loud-log to avoid dead-letter queue rot.
+    // A genuinely-unknown type that enters the queue would loop forever without ever
+    // succeeding; resolving it with an explicit loud log is the correct trade-off.
     // -------------------------------------------------------------------------
     it('should resolve unknown MercadoPago event types without failing', async () => {
         // Arrange
@@ -507,6 +884,38 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         // Assert
         expect(result.success).toBe(true);
         expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 6b: Unknown MercadoPago event type — captureMessage called (m3 fix)
+    // The default dead-letter resolution must emit a Sentry warning so the
+    // unknown-type gap is visible in the alert pipeline, not just in stdout logs.
+    // -------------------------------------------------------------------------
+    it('should call Sentry.captureMessage (level=warning) for unknown MercadoPago event types', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({ type: 'some.unknown_type', provider: 'mercadopago' });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            makeBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const ctx = makeCronContext();
+
+        // Act
+        await webhookRetryJob.handler(ctx);
+
+        // Assert — Sentry.captureMessage called with warning level and correct tags
+        expect(vi.mocked(Sentry.captureMessage)).toHaveBeenCalledOnce();
+        const [message, options] = vi.mocked(Sentry.captureMessage).mock.calls[0] ?? [];
+        expect(message).toContain('some.unknown_type');
+        expect((options as Record<string, unknown>)?.level).toBe('warning');
+        const tags = ((options as Record<string, unknown>)?.tags as Record<string, unknown>) ?? {};
+        expect(tags.event_type).toBe('some.unknown_type');
+        expect(tags.module).toBe('cron');
+        expect(tags.job_name).toBe('webhook-retry');
+        // Marking dead-letter as resolved must still happen
         expect(db.update).toHaveBeenCalled();
     });
 });

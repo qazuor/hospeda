@@ -116,7 +116,13 @@
     "properties": {
         "list": {
             "title": "[TODO]",
-            "subtitle": "[TODO]"
+            "subtitle": "[TODO]",
+            "publishAnother": "Publicar outra"
+        },
+        "usage": {
+            "label": "{{current}} de {{max}} propriedades",
+            "unlimited": "Propriedades ilimitadas",
+            "upgrade": "Melhorar plano"
         },
         "card": {
             "status": {
@@ -125,12 +131,115 @@
                 "SUSPENDED": "[TODO]"
             },
             "actions": {
-                "edit": "[TODO]",
+                "edit": "Editar",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
                 "viewOnSite": "[TODO]"
             },
             "pricePerNight": "[TODO]"
+        },
+        "editor": {
+            "section": {
+                "basicInfo": "Informações básicas",
+                "location": "Localização",
+                "capacity": "Capacidade",
+                "pricing": "Preço",
+                "amenities": "Comodidades e recursos",
+                "contact": "Contato",
+                "socialNetworks": "Redes sociais",
+                "photos": "Fotos",
+                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes"
+            },
+            "field": {
+                "name": "Nome",
+                "summary": "Resumo",
+                "description": "Descrição",
+                "type": "Tipo",
+                "destination": "Destino",
+                "destinationPlaceholder": "Selecionar destino...",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "locationHint": "Insira as coordenadas exatas da sua propriedade.",
+                "maxGuests": "Máx. hóspedes",
+                "bedrooms": "Quartos",
+                "bathrooms": "Banheiros",
+                "price": "Preço por noite",
+                "currency": "Moeda",
+                "amenities": "Comodidades",
+                "features": "Recursos",
+                "phone": "Telefone",
+                "email": "Email",
+                "website": "Site",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Imagem principal",
+                "featuredAlt": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "galleryAlt": "Foto {{index}}",
+                "dropOrClick": "Arraste uma imagem ou clique para selecionar",
+                "formats": "JPG, PNG ou WebP — máx. 5MB",
+                "remove": "Remover",
+                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode exceder 5MB",
+                "uploadFailed": "Falha ao fazer upload da imagem",
+                "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "galleryCapLabel": "Galeria cheia"
+            },
+            "action": {
+                "save": "Salvar",
+                "saving": "Salvando...",
+                "cancel": "Cancelar"
+            },
+            "validation": {
+                "nameRequired": "O nome é obrigatório",
+                "nameMin": "O nome deve ter pelo menos 3 caracteres",
+                "summaryRequired": "O resumo é obrigatório",
+                "summaryMin": "O resumo deve ter pelo menos 10 caracteres",
+                "pricePositive": "O preço deve ser um número positivo",
+                "currencyInvalid": "A moeda deve ser ARS ou USD"
+            },
+            "error": {
+                "saveFailed": "Erro ao salvar",
+                "network": "Erro de conexão"
+            },
+            "toast": {
+                "saveSuccess": "Alterações salvas",
+                "saveError": "Não pudemos salvar suas alterações. Tente novamente."
+            },
+            "entitlement": {
+                "premiumFeature": "Recurso premium",
+                "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
+                "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
+                "genericNudge": "Este recurso está disponível em um plano superior.",
+                "upgradeLink": "Melhorar plano"
+            },
+            "richText": {
+                "placeholder": "Descreva sua propriedade em detalhes...",
+                "toolbarBold": "Negrito",
+                "toolbarItalic": "Itálico",
+                "toolbarUnderline": "Sublinhado",
+                "toolbarH2": "Título 2",
+                "toolbarH3": "Título 3",
+                "toolbarList": "Lista",
+                "toolbarOrderedList": "Lista numerada",
+                "toolbarQuote": "Citação",
+                "toolbarLink": "Link"
+            },
+            "location": {
+                "searchAddress": "Buscar endereço",
+                "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
+                "useMyLocation": "Usar minha localização atual",
+                "mapHint": "Arraste o pin para ajustar a localização exata.",
+                "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
+                "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
+                "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço."
+            }
         },
         "empty": {
             "title": "[TODO]",
@@ -142,5 +251,71 @@
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
         "secondaryCta": "[TODO]"
+    },
+    "fromAdminBanner": {
+        "eyebrow": "Trouxemos você do painel — você precisa publicar uma propriedade primeiro para gerenciar suas acomodações."
+    },
+    "miniForm": {
+        "fields": {
+            "type": "Tipo de acomodação",
+            "typePlaceholder": "Escolha uma opção"
+        },
+        "types": {
+            "APARTMENT": "Apartamento",
+            "HOUSE": "Casa",
+            "COUNTRY_HOUSE": "Casa de campo",
+            "CABIN": "Cabana",
+            "HOTEL": "Hotel",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Quarto",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
+    },
+    "dashboard": {
+        "analytics": {
+            "views": {
+                "title": "Visualizações",
+                "empty": "Sem dados de visualizações ainda",
+                "window": {
+                    "7d": "7d",
+                    "30d": "30d"
+                }
+            },
+            "favorites": {
+                "title": "Favoritos",
+                "empty": "Sem favoritos ainda"
+            },
+            "responseRate": {
+                "title": "Tempo de resposta",
+                "empty": "Sem dados de resposta ainda",
+                "avgTime": "Média",
+                "minutes": "min",
+                "notAvailable": "N/D"
+            },
+            "inquiries": {
+                "title": "Consultas",
+                "empty": "Sem dados de consultas ainda"
+            },
+            "marketComparison": {
+                "title": "Comparação de mercado",
+                "empty": "Sem dados de comparação ainda",
+                "headers": {
+                    "accommodation": "Acomodação",
+                    "yourRating": "Sua avaliação",
+                    "avgRating": "Méd. destino",
+                    "yourPrice": "Seu preço",
+                    "avgPrice": "Méd. preço"
+                }
+            },
+            "sectionTitle": "Estatísticas",
+            "locked": {
+                "title": "Estatísticas disponíveis no seu próximo plano",
+                "description": "Faça upgrade na sua assinatura para ver estatísticas detalhadas das suas propriedades."
+            },
+            "loading": "Carregando estatísticas...",
+            "error": "Erro ao carregar estatísticas"
+        }
     }
 }

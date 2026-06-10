@@ -377,21 +377,35 @@ export class AccommodationService {
 }
 ```
 
-### In React Forms
+### In React Forms (admin uses TanStack Form + Zod)
 
 ```tsx
 import { createAccommodationSchema } from '@repo/schemas';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@tanstack/react-form';
 
 export function AccommodationForm() {
   const form = useForm({
-    resolver: zodResolver(createAccommodationSchema),
+    defaultValues: {
+      // initial values
+    },
+    onSubmit: async ({ value }) => {
+      // Validate at submit boundary with safeParse
+      const result = createAccommodationSchema.safeParse(value);
+      if (!result.success) {
+        // surface result.error.issues to fields
+        return;
+      }
+      // submit result.data — fully typed
+    },
   });
 
-  // Form is type-safe based on schema
+  // Field-level validation can use schema sub-shapes:
+  //   form.Field({ name: 'title', validators: { onBlur: ({ value }) =>
+  //     createAccommodationSchema.shape.title.safeParse(value).success ? undefined : 'Invalid' } })
 }
 ```
+
+NOTE: hospeda admin does NOT use React Hook Form. The pattern is `@tanstack/react-form` + `schema.safeParse()` at submit and (optionally) per-field validators. Do not introduce `@hookform/resolvers`.
 
 ## Testing Schemas
 

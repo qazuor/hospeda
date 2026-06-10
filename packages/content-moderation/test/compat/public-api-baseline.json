@@ -1,0 +1,12 @@
+{
+    "exportKeys": [
+        "MODERATION_PENDING_THRESHOLD",
+        "MODERATION_REJECT_THRESHOLD",
+        "moderateText",
+        "moderateTextInputSchema"
+    ],
+    "pendingThreshold": 0.5,
+    "resultCategoryKeys": ["harassment", "hate", "other", "sexual", "spam", "violence"],
+    "resultKeys": ["categories", "matchedTerms", "score"],
+    "moderateTextReturnsPromise": true
+}

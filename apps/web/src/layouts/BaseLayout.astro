@@ -17,9 +17,11 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl, getDeployVersion, isFeedbackEnabled } from '@/lib/env';
+import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
+import GlobalAnnouncements from '@/components/GlobalAnnouncements.astro';
 import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
@@ -41,6 +43,13 @@ import '@repo/feedback/styles.css';
 // and lift the FAB above the ScrollToTop button. Loaded after the package CSS
 // so the override selectors win without needing higher specificity.
 import '@/styles/feedback-overrides.css';
+// Static stylesheet for the inline CollectionPickerPopover React island.
+// Imported here (not as a CSS Module co-located with the island) so the styles
+// are bundled into the page's main stylesheet and survive ClientRouter swaps.
+// A CSS Module would be dynamically injected by Vite and dropped on head-merge,
+// leaving the popover unstyled (full-width block, invisibly off-screen) after
+// the user navigates away and back.
+import '@/components/shared/favorite/collection-picker-popover.css';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -59,6 +68,8 @@ const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 
 const feedbackEnabled = isFeedbackEnabled();
 const apiUrl = getApiUrl();
+// SPEC-157 REQ-4: API origin for the <head> preconnect hint (env-derived).
+const apiOrigin = new URL(apiUrl).origin;
 const deployVersion = getDeployVersion();
 
 /**
@@ -76,7 +87,23 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<meta name="description" content={description} />
+		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. The light
+		     value matches site.webmanifest theme_color; the dark variant keeps the
+		     chrome on-brand under prefers-color-scheme: dark (the manifest stays
+		     single-valued — only the meta tag can be media-gated). -->
+		<meta name="theme-color" content={BRAND_THEME_COLOR} />
+		<meta
+			name="theme-color"
+			content={BRAND_THEME_COLOR_DARK}
+			media="(prefers-color-scheme: dark)"
+		/>
+
+		<!-- SPEC-157 REQ-4: open the image-CDN and API connections early. Most
+		     LCP images are served from Cloudinary; preconnecting shaves the TLS
+		     handshake off the critical path. REQ-11: the meta description lives
+		     in SEOHead only (was duplicated here, two tags per page). -->
+		<link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+		<link rel="preconnect" href={apiOrigin} />
 
 		<!-- Favicon -->
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -90,25 +117,11 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<ThemeFoucScript cspNonce={cspNonce} />
 
-		<!-- FOUC prevention: hide text until fonts load.
-			 Guard with fonts.status check so client-side View Transition
-			 navigations (where fonts are already cached) never hide the body. -->
-		<script is:inline nonce={cspNonce}>
-			if (document.fonts.status !== 'loaded') {
-				document.documentElement.classList.add('fonts-loading');
-			}
-			document.fonts.ready.then(function() {
-				document.documentElement.classList.remove('fonts-loading');
-			});
-		</script>
-		<style is:inline nonce={cspNonce}>
-			.fonts-loading body {
-				opacity: 0;
-			}
-			body {
-				transition: opacity 0.2s ease;
-			}
-		</style>
+		<!-- SPEC-157 REQ-10: the full-page opacity:0 font gate was removed.
+		     Fonts load with font-display: swap (see FontsLoader), which prevents
+		     FOIT without hiding the whole body — the gate only delayed FCP on
+		     cold loads. -->
+
 
 		<ClientRouter />
 
@@ -207,8 +220,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	</head>
 	<body>
 		<NavigationProgress />
-		<SkipToContent />
+		<SkipToContent locale={locale} />
 		<Header locale={locale} />
+		<GlobalAnnouncements locale={locale} />
 
 		<main id="main-content">
 			<slot />
@@ -223,7 +237,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			cookiesPolicyUrl={cookiesPolicyUrl}
 		/>
 
-		<ToastViewport client:idle />
+		<ToastViewport client:idle locale={locale} />
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
 		<PaginationLoading client:idle />

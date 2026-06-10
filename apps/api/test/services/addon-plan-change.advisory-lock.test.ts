@@ -28,59 +28,96 @@ import { createMockBilling, createMockCustomer } from '../helpers/mock-factories
 // Variables used inside vi.mock() factory functions MUST be declared with
 // vi.hoisted() because vi.mock() is statically hoisted to the top of the file.
 
-const { mockWithServiceTransaction, mockSendNotification, mockCaptureSentryMessage } = vi.hoisted(
-    () => {
-        /**
-         * Default passthrough: executes the callback with a minimal tx mock that
-         * handles all DB call patterns used by the service.
-         */
-        const buildDefaultTx = (
-            overrides?: Partial<{
-                execute: ReturnType<typeof vi.fn>;
-                selectResult: unknown[];
-            }>
-        ) => {
-            const emptySelectChain = (rows: unknown[] = []) => {
-                const limit = vi.fn().mockResolvedValue(rows);
-                const where = vi.fn().mockReturnValue({ limit });
-                const innerJoin = vi.fn().mockReturnValue({ where });
-                const from = vi.fn().mockReturnValue({ where, innerJoin });
-                return { select: vi.fn().mockReturnValue({ from }) };
-            };
-
-            const { select } = emptySelectChain(overrides?.selectResult ?? []);
-            return {
-                execute: overrides?.execute ?? vi.fn().mockResolvedValue([]),
-                select
-            };
+const {
+    mockWithServiceTransaction,
+    mockSendNotification,
+    mockCaptureSentryMessage,
+    mockAddonCatalogGetBySlug,
+    mockPlanServiceGetById,
+    mockPlanServiceGetBySlug
+} = vi.hoisted(() => {
+    /**
+     * Default passthrough: executes the callback with a minimal tx mock that
+     * handles all DB call patterns used by the service.
+     */
+    const buildDefaultTx = (
+        overrides?: Partial<{
+            execute: ReturnType<typeof vi.fn>;
+            selectResult: unknown[];
+        }>
+    ) => {
+        const emptySelectChain = (rows: unknown[] = []) => {
+            const limit = vi.fn().mockResolvedValue(rows);
+            const where = vi.fn().mockReturnValue({ limit });
+            const innerJoin = vi.fn().mockReturnValue({ where });
+            const from = vi.fn().mockReturnValue({ where, innerJoin });
+            return { select: vi.fn().mockReturnValue({ from }) };
         };
 
-        const mockWithServiceTransaction = vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
-            return cb({ tx: buildDefaultTx(), hookState: {} });
-        });
-
-        const mockSendNotification = vi.fn().mockResolvedValue(undefined);
-        const mockCaptureSentryMessage = vi.fn().mockReturnValue('');
-
+        const { select } = emptySelectChain(overrides?.selectResult ?? []);
         return {
-            mockWithServiceTransaction,
-            buildDefaultTx,
-            mockSendNotification,
-            mockCaptureSentryMessage
+            execute: overrides?.execute ?? vi.fn().mockResolvedValue([]),
+            select
         };
-    }
-);
+    };
+
+    const mockWithServiceTransaction = vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => {
+        return cb({ tx: buildDefaultTx(), hookState: {} });
+    });
+
+    const mockSendNotification = vi.fn().mockResolvedValue(undefined);
+    const mockCaptureSentryMessage = vi.fn().mockReturnValue('');
+
+    // DB-backed addon catalog mock — returns NOT_FOUND by default.
+    // Tests that need a specific addon configure this per-test.
+    const mockAddonCatalogGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Add-on not found' }
+    });
+
+    // DB-backed plan service mocks — both return NOT_FOUND by default.
+    // Tests that need specific plan data configure these per-test.
+    const mockPlanServiceGetById = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+    const mockPlanServiceGetBySlug = vi.fn().mockResolvedValue({
+        success: false,
+        error: { code: 'NOT_FOUND', message: 'Plan not found' }
+    });
+
+    return {
+        mockWithServiceTransaction,
+        buildDefaultTx,
+        mockSendNotification,
+        mockCaptureSentryMessage,
+        mockAddonCatalogGetBySlug,
+        mockPlanServiceGetById,
+        mockPlanServiceGetBySlug
+    };
+});
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
 // Mock @repo/service-core — replaces withServiceTransaction with the test-
-// controlled implementation declared above.
+// controlled implementation declared above. Also mocks AddonCatalogService and
+// PlanService (SPEC-192 T-013/T-026): addon-plan-change.service.ts instantiates
+// these at module scope via @repo/service-core imports. Without mocks, their
+// getBySlug/getById calls hit the real getDb() which throws in tests.
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
         withServiceTransaction: (...args: unknown[]) =>
-            mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>))
+            mockWithServiceTransaction(...(args as Parameters<typeof mockWithServiceTransaction>)),
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug,
+            list: vi.fn().mockResolvedValue({ success: true, data: [] })
+        })),
+        PlanService: vi.fn().mockImplementation(() => ({
+            getById: mockPlanServiceGetById,
+            getBySlug: mockPlanServiceGetBySlug
+        }))
     };
 });
 
@@ -222,32 +259,45 @@ const NEW_PLAN_SLUG = 'owner-basico';
 const LIMIT_KEY = 'max_active_accommodations';
 const CUSTOMER_ID = 'cus_advisory_lock_test_001';
 
+// DB shape: limits is Record<string, number> (SPEC-192 T-026 cutover).
 const mockOldPlan = {
+    id: 'plan-uuid-owner-pro',
     slug: OLD_PLAN_SLUG,
     name: 'Owner Pro',
     description: 'Pro plan',
+    category: 'owner' as const,
     monthlyPriceArs: 5000,
     annualPriceArs: null,
-    targetCategories: ['owner'],
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
     isActive: true,
     sortOrder: 2,
-    features: [],
-    limits: [{ key: LIMIT_KEY, value: 10 }],
-    entitlements: []
+    limits: { [LIMIT_KEY]: 10 } as Record<string, number>,
+    entitlements: [] as string[],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
 };
 
 const mockNewPlan = {
+    id: 'plan-uuid-owner-basico',
     slug: NEW_PLAN_SLUG,
     name: 'Owner Basico',
     description: 'Basic plan',
+    category: 'owner' as const,
     monthlyPriceArs: 2000,
     annualPriceArs: null,
-    targetCategories: ['owner'],
+    monthlyPriceUsdRef: 2,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: true,
     isActive: true,
     sortOrder: 1,
-    features: [],
-    limits: [{ key: LIMIT_KEY, value: 3 }],
-    entitlements: []
+    limits: { [LIMIT_KEY]: 3 } as Record<string, number>,
+    entitlements: [] as string[],
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z'
 };
 
 const mockAddonDef = {
@@ -339,15 +389,31 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
         mockSendNotification.mockResolvedValue(undefined);
         mockCaptureSentryMessage.mockReturnValue('');
 
-        const { getPlanBySlug, getAddonBySlug } = await import('@repo/billing');
-        (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
-            if (slug === OLD_PLAN_SLUG) return mockOldPlan;
-            if (slug === NEW_PLAN_SLUG) return mockNewPlan;
-            return null;
+        // DB-backed plan service (SPEC-192 T-026 cutover).
+        // Dual-resolve: getById returns NOT_FOUND (slug used as planId); getBySlug is the path.
+        mockPlanServiceGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'Plan not found' }
         });
-        (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
-            if (slug === 'extra-accommodations-5') return mockAddonDef;
-            return null;
+        mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
+            if (slug === OLD_PLAN_SLUG)
+                return Promise.resolve({ success: true, data: mockOldPlan });
+            if (slug === NEW_PLAN_SLUG)
+                return Promise.resolve({ success: true, data: mockNewPlan });
+            return Promise.resolve({
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
+            });
+        });
+
+        // DB-backed addon catalog (SPEC-192 T-013 cutover).
+        mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+            if (slug === 'extra-accommodations-5')
+                return Promise.resolve({ success: true, data: mockAddonDef });
+            return Promise.resolve({
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+            });
         });
 
         billing = createMockBilling();
@@ -600,39 +666,55 @@ describe('handlePlanChangeAddonRecalculation — advisory lock (SPEC-064 T-018)'
                 entitlementAdjustments: []
             };
 
-            const { getAddonBySlug, getPlanBySlug } = await import('@repo/billing');
-            (getAddonBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
-                if (slug === 'extra-accommodations-5') return mockAddonDef;
+            // Configure DB-backed catalog and plan mocks for two-key scenario
+            mockAddonCatalogGetBySlug.mockImplementation((slug: string) => {
+                if (slug === 'extra-accommodations-5')
+                    return Promise.resolve({ success: true, data: mockAddonDef });
                 if (slug === 'extra-featured-3') {
-                    return {
-                        ...mockAddonDef,
-                        slug: 'extra-featured-3',
-                        affectsLimitKey: 'max_featured_listings',
-                        limitIncrease: 3
-                    };
+                    return Promise.resolve({
+                        success: true,
+                        data: {
+                            ...mockAddonDef,
+                            slug: 'extra-featured-3',
+                            affectsLimitKey: 'max_featured_listings',
+                            limitIncrease: 3
+                        }
+                    });
                 }
-                return null;
+                return Promise.resolve({
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+                });
             });
-            (getPlanBySlug as unknown as MockInstance).mockImplementation((slug: string) => {
+            mockPlanServiceGetBySlug.mockImplementation((slug: string) => {
                 if (slug === OLD_PLAN_SLUG) {
-                    return {
-                        ...mockOldPlan,
-                        limits: [
-                            { key: LIMIT_KEY, value: 10 },
-                            { key: 'max_featured_listings', value: 2 }
-                        ]
-                    };
+                    return Promise.resolve({
+                        success: true,
+                        data: {
+                            ...mockOldPlan,
+                            limits: { [LIMIT_KEY]: 10, max_featured_listings: 2 } as Record<
+                                string,
+                                number
+                            >
+                        }
+                    });
                 }
                 if (slug === NEW_PLAN_SLUG) {
-                    return {
-                        ...mockNewPlan,
-                        limits: [
-                            { key: LIMIT_KEY, value: 3 },
-                            { key: 'max_featured_listings', value: 1 }
-                        ]
-                    };
+                    return Promise.resolve({
+                        success: true,
+                        data: {
+                            ...mockNewPlan,
+                            limits: { [LIMIT_KEY]: 3, max_featured_listings: 1 } as Record<
+                                string,
+                                number
+                            >
+                        }
+                    });
                 }
-                return null;
+                return Promise.resolve({
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Plan not found: ${slug}` }
+                });
             });
 
             mockWithServiceTransaction.mockImplementation(

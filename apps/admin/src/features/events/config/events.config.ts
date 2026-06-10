@@ -50,6 +50,30 @@ export const eventsConfig: EntityConfig<Event> = {
                 order: 3
             },
             {
+                paramKey: 'startDate',
+                labelKey: 'admin-filters.startDate.label',
+                type: 'date-range',
+                paramKeyFrom: 'startDateAfter',
+                paramKeyTo: 'startDateBefore',
+                order: 4
+            },
+            {
+                paramKey: 'endDate',
+                labelKey: 'admin-filters.endDate.label',
+                type: 'date-range',
+                paramKeyFrom: 'endDateAfter',
+                paramKeyTo: 'endDateBefore',
+                order: 5
+            },
+            {
+                paramKey: 'createdAt',
+                labelKey: 'admin-filters.createdAt.label',
+                type: 'date-range',
+                paramKeyFrom: 'createdAfter',
+                paramKeyTo: 'createdBefore',
+                order: 6
+            },
+            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
@@ -88,7 +112,84 @@ export const eventsConfig: EntityConfig<Event> = {
         showCreateButton: true,
         createButtonPath: '/events/new'
     },
-    createColumns: createEventsColumns
+    createColumns: createEventsColumns,
+
+    /**
+     * Curated peek drawer fields for events.
+     *
+     * Badge fields (category, visibility, lifecycleState) resolve their badgeOptions
+     * automatically from the matching column definitions — no duplication needed.
+     * Only fields present on the EventListItemSchema (admin-extended) are included.
+     * Field order follows the product-owner specification exactly.
+     */
+    peekFields: [
+        { accessorKey: 'id', labelKey: 'admin-entities.columns.id', format: 'text' },
+        {
+            accessorKey: 'category',
+            labelKey: 'admin-entities.columns.category',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'visibility',
+            labelKey: 'admin-entities.columns.visibility',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'lifecycleState',
+            labelKey: 'admin-entities.columns.status',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'summary',
+            labelKey: 'admin-entities.columns.summary',
+            format: 'text',
+            maxLength: 300
+        },
+        {
+            accessorKey: 'organizerName',
+            labelKey: 'admin-entities.columns.organizer',
+            format: 'text'
+        },
+        {
+            accessorKey: 'locationName',
+            labelKey: 'admin-entities.columns.location',
+            format: 'text'
+        },
+        {
+            accessorKey: 'date.start',
+            labelKey: 'admin-entities.columns.startDate',
+            format: 'date'
+        },
+        {
+            accessorKey: 'date.end',
+            labelKey: 'admin-entities.columns.endDate',
+            format: 'date'
+        },
+        {
+            accessorKey: 'pricing.price',
+            labelKey: 'admin-entities.columns.price',
+            format: 'text'
+        },
+        {
+            accessorKey: 'media.featuredImage.url',
+            labelKey: 'admin-entities.columns.featuredImage',
+            format: 'image'
+        },
+        { accessorKey: 'tags', labelKey: 'admin-entities.columns.tags', format: 'list' },
+        {
+            accessorKey: 'createdAt',
+            labelKey: 'admin-entities.columns.createdAt',
+            format: 'date'
+        },
+        {
+            accessorKey: 'updatedAt',
+            labelKey: 'admin-entities.columns.updatedAt',
+            format: 'date'
+        }
+    ],
+    // Header extras: slug as subtitle, isFeatured as a chip next to the title.
+    peekSubtitleField: 'slug',
+    peekFeaturedField: 'isFeatured'
 };
 
 const { component, route } = createEntityListPage(eventsConfig);

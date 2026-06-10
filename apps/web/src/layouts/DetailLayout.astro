@@ -20,8 +20,27 @@ interface Props {
 	readonly canonicalPath?: string;
 	readonly showBreadcrumbs?: boolean;
 	readonly showSidebar?: boolean;
-	/** Open Graph image URL for social sharing cards. */
+	/**
+	 * Entity featured image URL. Forwarded to SEOHead as `ogImage`, which makes
+	 * the generated `/api/og` card render in PHOTO mode (full-bleed image +
+	 * type badge + rating). Omit it (or pass a placeholder) for a brand card.
+	 */
 	readonly ogImage?: string;
+	/** OG photo-card type badge (Alojamiento/Destino/Evento/Guía). */
+	readonly ogType?: string;
+	/** OG photo-card subtitle line (locality/region). */
+	readonly ogSubtitle?: string;
+	/** OG photo-card rating value (e.g. "4.8"). */
+	readonly ogRating?: string;
+	/**
+	 * Open Graph object type. Article detail pages (blog posts) pass 'article';
+	 * everything else falls back to the SEOHead default ('website').
+	 */
+	readonly ogMetaType?: 'website' | 'article';
+	/** ISO published date — forwarded as article:published_time for articles. */
+	readonly articlePublishedTime?: string;
+	/** ISO modified date — forwarded as article:modified_time for articles. */
+	readonly articleModifiedTime?: string;
 }
 
 const {
@@ -32,6 +51,12 @@ const {
 	showBreadcrumbs = true,
 	showSidebar = true,
 	ogImage,
+	ogType,
+	ogSubtitle,
+	ogRating,
+	ogMetaType,
+	articlePublishedTime,
+	articleModifiedTime,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -48,7 +73,13 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		description={resolvedDescription}
 		locale={locale}
 		canonical={canonicalUrl}
-		image={ogImage}
+		ogImage={ogImage}
+		ogType={ogType}
+		ogSubtitle={ogSubtitle}
+		ogRating={ogRating}
+		type={ogMetaType}
+		articlePublishedTime={articlePublishedTime}
+		articleModifiedTime={articleModifiedTime}
 	/>
 	<slot name="head-extra" slot="head" />
 

@@ -244,7 +244,7 @@ const hasSocial = social &&
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
-        border-top: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.1));
+        border-top: 1px solid var(--border, var(--core-foreground-a10));
         padding-top: var(--space-3, 0.75rem);
     }
 
@@ -275,7 +275,7 @@ const hasSocial = social &&
         align-items: center;
         gap: 0.5rem;
         flex-wrap: wrap;
-        border-top: 1px solid var(--border, oklch(from var(--core-foreground) l c h / 0.1));
+        border-top: 1px solid var(--border, var(--core-foreground-a10));
         padding-top: var(--space-3, 0.75rem);
     }
 
@@ -286,7 +286,7 @@ const hasSocial = social &&
         width: 36px;
         height: 36px;
         border-radius: var(--radius-md);
-        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        background-color: var(--brand-primary-a10);
         color: var(--brand-primary);
         transition:
             background-color var(--duration-normal, 0.4s) ease,

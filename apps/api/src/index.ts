@@ -4,31 +4,56 @@
  */
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
-import { getDb, rolePermission } from '@repo/db';
+import {
+    initializeModerationEngine,
+    registerModerationMonitoringHooks
+} from '@repo/content-moderation/engine/index';
+import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { locales } from '@repo/i18n';
-import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
+import { LogFormat, configureLogger } from '@repo/logger';
+import {
+    ensureDefaultPromoCodes,
+    initializeRevalidationService,
+    setPermissionChangeAuditEmitter,
+    setUserPermissionsCacheInvalidator
+} from '@repo/service-core';
+import * as Sentry from '@sentry/node';
 import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { registerAppLogDbSink } from './lib/app-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
+import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
+import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
     getBullMQConnection,
     getNewsletterDeliveryService
 } from './services/newsletter/delivery-factory';
+import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
-import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
+import {
+    destroyUserPermissionsCache,
+    invalidateUserPermissionsCache
+} from './utils/user-permissions-cache';
 import { startNewsletterWorker } from './workers/newsletter-dispatch.worker';
 
 // Validate environment variables before starting the server
 validateApiEnv();
+
+// Apply the global logger output format (pretty | json) from API_LOG_FORMAT.
+// FORMAT is a process-wide setting, so it belongs at server bootstrap (here),
+// not in the shared logger module that test mocks import.
+configureLogger({
+    FORMAT: env.API_LOG_FORMAT === 'json' ? LogFormat.JSON : LogFormat.PRETTY
+});
 
 // Initialize Sentry for error tracking (if DSN is configured)
 initializeSentry();
@@ -49,6 +74,54 @@ const startServer = async (): Promise<void> => {
 
         // Initialize database connection before starting the server
         await initializeDatabase();
+
+        initializeModerationEngine({
+            env: {
+                provider: env.HOSPEDA_MODERATION_PROVIDER,
+                openaiApiKey: env.HOSPEDA_OPENAI_API_KEY,
+                timeoutMs: env.HOSPEDA_MODERATION_TIMEOUT_MS,
+                cacheTtlSeconds: env.HOSPEDA_MODERATION_CACHE_TTL_SECONDS
+            },
+            termLoader: async () => {
+                const rows = await new ContentModerationTermModel().findEnabledTerms();
+                return rows.map((row) => ({
+                    term: row.term,
+                    kind: row.kind as 'word' | 'domain',
+                    category: row.category as import(
+                        '@repo/content-moderation/types'
+                    ).ModerationCategory,
+                    severity: row.severity
+                }));
+            }
+        });
+        registerModerationMonitoringHooks({
+            onFallbackLocal: ({ error, context }) => {
+                Sentry.addBreadcrumb({
+                    category: 'moderation.fallback.local',
+                    level: 'warning',
+                    data: {
+                        context,
+                        error: error.message
+                    }
+                });
+            },
+            onDegraded: ({ error, context }) => {
+                Sentry.captureMessage('moderation.degraded', {
+                    level: 'warning',
+                    tags: { module: 'content-moderation' },
+                    contexts: {
+                        moderation: {
+                            context,
+                            error: error.message
+                        }
+                    }
+                });
+            }
+        });
+
+        // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
+        // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.
+        registerAppLogDbSink();
 
         // SPEC-103 T-073: fail-fast healthcheck against an essential table.
         // The /health endpoint does NOT touch the DB by design, so an
@@ -73,8 +146,37 @@ const startServer = async (): Promise<void> => {
         }
         apiLogger.info(`Startup healthcheck OK: role_permission has ${rolePermissionCount} rows`);
 
+        // SPEC-198: fail-loud moderation-credential healthcheck.
+        // When HOSPEDA_AI_MODERATION_REQUIRED=true, AI content moderation
+        // (text-improve / chat) is treated as mandatory, so a missing OpenAI
+        // vault credential is a hard misconfiguration — refuse to start rather
+        // than run silently-unmoderated. The credential lives in the DB vault,
+        // so this MUST run after initializeDatabase(). Transient/disabled cases
+        // are out of scope here; this only checks credential presence.
+        if (env.HOSPEDA_AI_MODERATION_REQUIRED) {
+            const cred = await getDecryptedAiProviderCredential({ providerId: 'openai' });
+            if (!cred.data) {
+                apiLogger.error(
+                    'STARTUP HEALTHCHECK FAILED: HOSPEDA_AI_MODERATION_REQUIRED=true but no ' +
+                        'resolvable OpenAI credential in the AI vault. AI moderation cannot run. ' +
+                        'Store a credential via the admin credentials API (and ensure ' +
+                        'HOSPEDA_AI_VAULT_MASTER_KEY is set). Refusing to start.'
+                );
+                process.exit(1);
+            }
+            apiLogger.info('Startup healthcheck OK: OpenAI moderation credential resolved');
+        }
+
         // Validate billing configuration
         validateBillingConfigOrThrow();
+
+        // Mount qzpay-hono admin tier under /api/v1/admin/billing/*.
+        // Deferred until after initializeDatabase() because the mount calls
+        // getQZPayBilling() which needs the DB pool ready. See the comment on
+        // mountQZPayAdminTier() in routes/billing/admin/index.ts for the
+        // ESM-hoisting reason this cannot live at module-load time.
+        const { mountQZPayAdminTier } = await import('./routes/billing/admin');
+        mountQZPayAdminTier();
 
         // Ensure default promo codes exist (HOSPEDA_FREE, etc.)
         await ensureDefaultPromoCodes();
@@ -90,6 +192,15 @@ const startServer = async (): Promise<void> => {
             });
             apiLogger.info('ISR revalidation service initialized');
         }
+
+        // SPEC-170: wire per-user permission-override side-effects into
+        // @repo/service-core. The service cannot import the API's in-memory
+        // permission cache or audit logger (package may not depend on an app),
+        // so the API registers them here at startup (mirrors the revalidation init).
+        setUserPermissionsCacheInvalidator(invalidateUserPermissionsCache);
+        setPermissionChangeAuditEmitter((payload) =>
+            auditLog({ auditEvent: AuditEventType.PERMISSION_CHANGE, ...payload })
+        );
 
         const app = initApp();
 
@@ -215,6 +326,9 @@ const startServer = async (): Promise<void> => {
                         error instanceof Error ? error.message : String(error)
                     );
                 }
+
+                // Flush PostHog AI analytics events
+                await shutdownPostHog();
 
                 // Flush Sentry events
                 await closeSentry(2000);

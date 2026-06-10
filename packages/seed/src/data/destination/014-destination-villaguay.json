@@ -4,7 +4,7 @@
     "slug": "villaguay",
     "name": "Villaguay",
     "summary": "Ciudad cabecera en el centro geográfico de Entre Ríos, conocida como Ciudad de los Encuentros, con fuerte tradición ganadera y herencia de las colonias judías.",
-    "description": "Villaguay es la ciudad cabecera del departamento homónimo, ubicada en el centro geográfico de la provincia de Entre Ríos. Fundada formalmente el 20 de noviembre de 1823 durante la gobernación de Mansilla, su nombre proviene del guaraní y se asocia a interpretaciones como río del tigre. Equidistante del Paraná y del Uruguay, fue históricamente una posta entre el Arroyo de la China y la Bajada del Paraná. Desde 1880 recibió inmigración belga, italiana, alemana, sirio-libanesa y especialmente judía a través de la Jewish Colonization Association del Barón Hirsch, dando origen a colonias cercanas como Villa Clara, Villa Domínguez, Carmel e Ingeniero Sajaroff, hoy parte del Circuito de las Colonias Judías del Centro de Entre Ríos. La ciudad combina producción agropecuaria, cría de caballos criollos de prestigio nacional, balnearios sobre arroyos y ríos del entorno con arena limpia, y una intensa agenda de festivales que la consolidan como Ciudad de los Encuentros.",
+    "description": "## Villaguay, en el corazón de Entre Ríos\n\n**Villaguay** es la ciudad cabecera del departamento homónimo y se ubica prácticamente en el **centro geográfico de la provincia de Entre Ríos**. Equidistante del Paraná y del Uruguay, fue históricamente una posta de paso entre ambas costas, una vocación que la ciudad resignifica hoy con el lema de **\"Ciudad de los Encuentros\"**. Esa posición central la convierte en una escala estratégica y cómoda hacia los principales destinos turísticos entrerrianos.\n\n## Herencia inmigrante y colonias judías\n\nA partir del último cuarto del siglo XIX, la región recibió un fuerte impulso de la inmigración: colectividades belgas, italianas, alemanas, sirio-libanesas, españolas y, muy especialmente, judías. La **Jewish Colonization Association**, impulsada por el barón Hirsch, compró tierras en la provincia desde 1892 y dio origen a un conjunto de colonias cercanas. Hoy Villaguay integra, junto con **Villa Clara**, **Villa Domínguez** y **Basavilbaso**, el **Circuito Histórico de las Colonias Judías del Centro de Entre Ríos**, un recorrido por templos, escuelas y cooperativas que marcaron la identidad regional.\n\n## Termas, naturaleza y balnearios\n\nUno de sus atractivos más buscados son las **Termas de Villaguay**, con aguas que brotan a unos 38 °C, ricas en minerales, distribuidas en piscinas cubiertas y al aire libre de distintas temperaturas. La naturaleza se disfruta también en la reserva **La Chinita**, con senderos y lagunas, y en el **Parque Balneario Municipal**, sobre el arroyo Villaguay a unos 2 km del centro, que ofrece camping, piletas, parrillas y canchas deportivas.\n\n## Cultura y festivales\n\nFiel a su lema, Villaguay sostiene una agenda intensa de eventos durante todo el año. En enero se realiza el **Encuentro Entrerriano de Folclore**, certamen de carácter provincial con delegaciones de toda la provincia, peñas y muestras artesanales a lo largo de tres jornadas. El carnaval y diversas fiestas populares completan una propuesta que combina tradición, campo y descanso.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -282,6 +282,38 @@
         "012-attraction-catedral_principal",
         "056-attraction-museo_regional",
         "013-attraction-centro_agropecuario"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Villaguay desde Paraná?",
+            "answer": "Villaguay está a unos 154 km de Paraná, la capital provincial, por la Ruta Nacional 18, con un viaje en auto de alrededor de 2 a 3 horas. También hay servicios regulares de micro entre ambas ciudades. Por su ubicación en el centro de la provincia, es además un punto de paso cómodo hacia el resto de Entre Ríos.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Villaguay?",
+            "answer": "Las Termas de Villaguay, con piscinas de aguas termales a unos 38 °C, son su principal atractivo. Se suman la reserva natural La Chinita con senderos y lagunas, el Parque Balneario Municipal sobre el arroyo Villaguay con camping y piletas, y el Circuito de las Colonias Judías del Centro de Entre Ríos, que recorre el patrimonio inmigrante de la región.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Qué son las Termas de Villaguay?",
+            "answer": "Es un complejo termal con aguas que emergen a alrededor de 38 °C, ricas en minerales y oligoelementos. Cuenta con varias piscinas, cubiertas y al aire libre, de distintas temperaturas y tamaños, pensadas para el relax y el descanso. Funcionan durante todo el año.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Villaguay?",
+            "answer": "Las termas se disfrutan todo el año, y son especialmente agradables en otoño e invierno por el contraste del agua caliente. El verano es ideal para el balneario sobre el arroyo, mientras que enero concentra el Encuentro Entrerriano de Folclore. La primavera y el otoño ofrecen el clima más templado para recorrer la zona.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios encuentro en Villaguay?",
+            "answer": "Como ciudad cabecera departamental, Villaguay ofrece hoteles, cabañas, gastronomía, comercios, bancos, estaciones de servicio y atención médica. El complejo termal y el balneario municipal suman servicios específicos como alojamiento, camping, cantinas y áreas recreativas.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué es el Circuito de las Colonias Judías?",
+            "answer": "Es un recorrido histórico-cultural que reúne a Villaguay junto con Villa Clara, Villa Domínguez y Basavilbaso. Permite conocer el legado de las colonias fundadas por la Jewish Colonization Association a fines del siglo XIX: templos, escuelas, cementerios y cooperativas que dejaron una huella profunda en el centro de Entre Ríos.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

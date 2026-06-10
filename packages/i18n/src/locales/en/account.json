@@ -187,6 +187,7 @@
     },
     "favorites": {
         "tabs": {
+            "all": "All",
             "accommodation": "Accommodations",
             "destination": "Destinations",
             "event": "Events",
@@ -208,7 +209,9 @@
             "removing": "Removing...",
             "removeError": "Error removing favorite from collection",
             "removeConfirm": "Remove this favorite from the collection? It will stay in your saved items.",
-            "fetchError": "Could not load the collection. Please try again later.",
+            "fetchError": "We had a temporary problem loading this collection. Please try again in a few minutes.",
+            "errorTitle": "We couldn't load the collection",
+            "backToList": "Back to my favorites",
             "prevPage": "Previous page",
             "nextPage": "Next page",
             "pageInfo": "Page {{page}} of {{total}}",
@@ -291,7 +294,8 @@
         "ratingEditLabel": "Rating",
         "saving": "Saving...",
         "deleting": "Deleting...",
-        "total": "Total: {{count}} reviews",
+        "total_one": "Total: {{count}} review",
+        "total_other": "Total: {{count}} reviews",
         "typeAccommodation": "Accommodation",
         "typeDestination": "Destination",
         "errors": {
@@ -375,6 +379,21 @@
             "cancelButton": "Cancel subscription",
             "viewPlans": "View plans",
             "upgradeLink": "Upgrade plan",
+            "pauseButton": "Pause subscription",
+            "pauseAriaLabel": "Pause subscription",
+            "resumeButton": "Resume subscription",
+            "pauseSuccess": "Subscription paused.",
+            "pauseError": "Could not pause the subscription.",
+            "resumeSuccess": "Subscription resumed.",
+            "resumeError": "Could not resume the subscription.",
+            "status": {
+                "paused": "Paused"
+            },
+            "pauseModal": {
+                "title": "Pause subscription",
+                "body": "While paused, you stop being charged and your listings are hidden from the site and cannot be edited until you resume. All your settings are preserved and return unchanged when you resume.",
+                "confirm": "Pause"
+            },
             "cancelModal": {
                 "title": "Cancel subscription?",
                 "confirm": "Yes, cancel subscription"

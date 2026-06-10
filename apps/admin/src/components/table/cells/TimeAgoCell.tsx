@@ -58,10 +58,16 @@ export const TimeAgoCell = ({ value, locale = defaultIntlLocale }: TimeAgoCellPr
             }
         });
 
+        const formattedTime = formatDate({
+            date,
+            locale,
+            options: { hour: '2-digit', minute: '2-digit' }
+        });
+
         return (
-            <div className="flex flex-col">
+            <div className="flex flex-col leading-tight">
                 <span
-                    className="text-foreground"
+                    className="font-medium text-foreground text-sm"
                     title={formattedFull}
                 >
                     {formattedDate}
@@ -70,7 +76,7 @@ export const TimeAgoCell = ({ value, locale = defaultIntlLocale }: TimeAgoCellPr
                     dateTime={isoString}
                     className="text-muted-foreground text-xss"
                 >
-                    {formattedDate}
+                    {formattedTime}
                 </time>
             </div>
         );

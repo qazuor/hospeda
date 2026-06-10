@@ -128,11 +128,13 @@ const POST_WITH_RELATIONS = {
         sponsorId: '99999999-9999-4999-8999-999999999999',
         description: 'Sponsored by Test Corp',
         isHighlighted: true,
+        // PostSponsorPublicSchema is { id, name, type (ClientType), description, logo },
+        // not a user-shaped object — the sponsor is a Client entity.
         sponsor: {
             id: '99999999-9999-4999-8999-999999999999',
-            displayName: 'Test Corp',
-            slug: 'test-corp',
-            role: 'SPONSOR'
+            name: 'Test Corp',
+            type: 'POST_SPONSOR',
+            description: 'Sponsored by Test Corp'
         }
     }
 };

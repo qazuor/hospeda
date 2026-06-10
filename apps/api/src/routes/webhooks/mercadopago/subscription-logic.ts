@@ -14,7 +14,7 @@ import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
@@ -404,6 +404,43 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
+    // Step 6b: Guard — verify the transition is permitted by the state machine
+    // before writing. Idempotent webhook redeliveries with the same status are
+    // already short-circuited by the `previousStatus === mappedStatus` check in
+    // Step 6 (above), so by the time we reach here we know the statuses differ.
+    //
+    // If the guard fires it means MP sent a status we cannot legally transition
+    // to from the local state — log an error and skip the write. Skip is safe:
+    // the local subscription row remains authoritative; MP will NOT retry an
+    // event that we acknowledge (return 200). The mismatch should be investigated
+    // via Sentry / ops tooling.
+    //
+    // Side effects that depend on the status write (notifications, polling-job
+    // cleanup, addon cancellation, payment failure tracking) are gated below the
+    // transaction, so skipping the write correctly skips them all — they would
+    // otherwise act on a status that was never actually persisted.
+    const transitionGuard = checkSubscriptionStatusTransition({
+        from: previousStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+        to: mappedStatus,
+        subscriptionId: localSubscription.id
+    });
+    if (!transitionGuard.valid) {
+        apiLogger.error(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                from: previousStatus,
+                to: mappedStatus,
+                mpPreapprovalId: maskId(mpPreapprovalId),
+                providerEventId,
+                source,
+                reason: transitionGuard.reason
+            },
+            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects'
+        );
+        return { success: true, statusChanged: false };
+    }
+
     // Step 7: Update billing_subscriptions and insert audit log in a single transaction.
     // withServiceTransaction is used here instead of db.transaction() to follow the
     // project-wide pattern for atomic multi-write operations (SPEC-059 T-059G-032-C).
@@ -427,9 +464,113 @@ export async function processSubscriptionUpdated({
         updateData.cancelAtPeriodEnd = false;
     }
 
+    // Track whether the transaction observed a status change so callers can decide
+    // whether to run the post-commit side effects (notifications, addon cleanup, etc.).
+    let txStatusChanged = true;
+
     await withServiceTransaction(async (ctx) => {
         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
         const tx = ctx.tx!;
+
+        // ── Authoritative TOCTOU guard (item 5 / SPEC-194 adversarial review) ──
+        // The initial SELECT at Step 5 ran OUTSIDE this transaction. Between that
+        // read and now another webhook replica may have written a new status. Re-read
+        // the row with SELECT … FOR UPDATE to serialize concurrent writes, then
+        // re-evaluate the same-status short-circuit, the soft-cancel grace guard
+        // (SPEC-147 T-007), and the transition guard on the FRESH status.
+        // The earlier guards (Steps 6 and 6b above) are cheap fast-path checks only.
+        //
+        // cancelAtPeriodEnd is fetched here (not just status) so the SPEC-147 T-007
+        // guard can read the authoritative value under the row lock, preventing a race
+        // where the soft-cancel tx writes the flag concurrently with this webhook.
+        const [freshRow] = await tx
+            .select({
+                status: billingSubscriptions.status,
+                cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd
+            })
+            .from(billingSubscriptions)
+            .where(eq(billingSubscriptions.id, localSubscription.id))
+            .for('update');
+
+        const freshStatus = freshRow?.status;
+
+        if (!freshStatus) {
+            // Row disappeared between Step 5 and here — nothing to update.
+            apiLogger.warn(
+                { subscriptionId: localSubscription.id, source },
+                'Subscription webhook tx: row not found under FOR UPDATE lock — skipping write'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        if (freshStatus === mappedStatus) {
+            // Another replica already applied this transition — idempotent skip.
+            apiLogger.debug(
+                { subscriptionId: localSubscription.id, freshStatus, mappedStatus, source },
+                'Subscription webhook tx: status already up-to-date (concurrent write) — skipping'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        // ── SPEC-147 T-007: Soft-cancel grace-period guard ────────────────────
+        // When the soft-cancel service (T-005) pauses the MP preapproval, MP
+        // emits subscription_preapproval.updated status='paused'. That normally
+        // maps to local PAUSED — which would cut entitlements mid-grace-period.
+        // Guard: if the mapped target is PAUSED AND the fresh row already has
+        // cancelAtPeriodEnd=true (intentional soft-cancel pause), skip the PAUSED
+        // transition entirely. The subscription stays ACTIVE+cancelAtPeriodEnd=true
+        // until the finalization cron runs after current_period_end.
+        //
+        // Exemption: a real admin/provider pause where cancelAtPeriodEnd=false
+        // MUST still go PAUSED — the guard does NOT apply in that case.
+        //
+        // Ordering race note (SPEC-147 T-007): the soft-cancel service writes
+        // cancelAtPeriodEnd=true BEFORE calling the provider (see T-005 Step 3.5),
+        // so by the time MP fires the paused webhook, the flag is already committed.
+        // The FOR UPDATE lock here serializes any concurrent soft-cancel tx that
+        // hasn't committed yet — if the flag is still false under the lock, the
+        // guard does not fire and the webhook goes PAUSED (rare but safe: the
+        // finalization cron will still honour cancelAtPeriodEnd if it is set later).
+        if (mappedStatus === SubscriptionStatusEnum.PAUSED && freshRow.cancelAtPeriodEnd === true) {
+            apiLogger.info(
+                {
+                    subscriptionId: localSubscription.id,
+                    freshStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source
+                },
+                'Subscription webhook tx: skipping PAUSED transition — intentional soft-cancel grace period'
+            );
+            txStatusChanged = false;
+            return;
+        }
+
+        const txTransitionGuard = checkSubscriptionStatusTransition({
+            from: freshStatus as `${(typeof SubscriptionStatusEnum)[keyof typeof SubscriptionStatusEnum]}`,
+            to: mappedStatus,
+            subscriptionId: localSubscription.id
+        });
+        if (!txTransitionGuard.valid) {
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    freshStatus,
+                    from: freshStatus,
+                    to: mappedStatus,
+                    previousStatus,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    providerEventId,
+                    source,
+                    reason: txTransitionGuard.reason
+                },
+                'Subscription webhook tx: invalid transition on fresh status — committing nothing'
+            );
+            txStatusChanged = false;
+            return;
+        }
 
         await tx
             .update(billingSubscriptions)
@@ -476,6 +617,12 @@ export async function processSubscriptionUpdated({
         }
     });
 
+    // If the tx-internal guard determined no write happened (stale-read scenario),
+    // skip all post-commit side effects and return statusChanged:false.
+    if (!txStatusChanged) {
+        return { success: true, statusChanged: false };
+    }
+
     // Clear entitlement cache to reflect status change immediately
     clearEntitlementCache(localSubscription.customerId);
 
@@ -489,6 +636,49 @@ export async function processSubscriptionUpdated({
         },
         `Subscription status updated: ${previousStatus} -> ${mappedStatus}`
     );
+
+    // Step 8a: SPEC-143 Finding #17 fallback cleanup.
+    //
+    // Mark any active polling job for this subscription as `succeeded` so
+    // the cron stops querying MP for a sub whose status the webhook just
+    // resolved. This is purely a cleanup — even if it fails, the next poll
+    // would see the local sub is already in a terminal state and complete
+    // the job normally (idempotent path). Skipped when source='polling'
+    // because in that case the cron itself is updating the job.
+    if (source !== 'polling') {
+        try {
+            const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+            if (pollingStorage) {
+                const activeJob = await pollingStorage.findActiveBySubscriptionId(
+                    localSubscription.id
+                );
+                if (activeJob) {
+                    await pollingStorage.update({
+                        id: activeJob.id,
+                        expectedVersion: activeJob.version,
+                        status: 'succeeded',
+                        completedAt: new Date(),
+                        lastError: 'webhook_arrived_first'
+                    });
+                    apiLogger.debug(
+                        {
+                            jobId: activeJob.id,
+                            subscriptionId: localSubscription.id
+                        },
+                        'Marked polling job as succeeded after webhook transition'
+                    );
+                }
+            }
+        } catch (cleanupError) {
+            apiLogger.warn(
+                {
+                    error: cleanupError,
+                    subscriptionId: localSubscription.id
+                },
+                'Failed to mark polling job as succeeded after webhook — cron will complete it on next tick'
+            );
+        }
+    }
 
     // Step 8b: Addon cancellation cleanup (CANCELLED transitions only)
     //

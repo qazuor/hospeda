@@ -33,7 +33,10 @@ function AttractionEditPage() {
                     entityData={entityData}
                     zodSchema={AttractionUpdateInputSchema}
                 >
-                    <EntityEditContent entityType="attraction" />
+                    <EntityEditContent
+                        entityType="attraction"
+                        flat
+                    />
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>

@@ -10,6 +10,10 @@
  * PROTECTED_SEGMENTS), so this page does its own in-page auth guard, same
  * pattern as /mi-cuenta/*.
  *
+ * F4: If the user is at or over their max_accommodations limit, replaces the
+ * form with an AtLimit panel so the user sees a clear upgrade prompt instead
+ * of a confusing form that would fail on submit.
+ *
  * @route    /{lang}/publicar/nueva/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
@@ -22,6 +26,14 @@ import { getAdminUrlOrThrow, getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { CreatePropertyMiniForm } from '@/components/host/CreatePropertyMiniForm.client';
+import {
+    BuildingsIcon,
+    ImageIcon,
+    FileTextIcon,
+    CheckCircleIcon,
+    AlertCircleIcon,
+    ArrowRightIcon
+} from '@repo/icons';
 
 export const prerender = false;
 
@@ -47,12 +59,13 @@ const pageDescription = t(
 const apiUrl = import.meta.env.PUBLIC_API_URL as string;
 const adminUrl = getAdminUrlOrThrow();
 
+const cookieHeader = Astro.request.headers.get('cookie');
+
 // Resolve admin panel access server-side so the form can branch the
 // post-create redirect: HOST users without `access.panelAdmin` would
 // otherwise land on /auth/forbidden after being sent to /admin/*.
 let canAccessAdminPanel = false;
 try {
-    const cookieHeader = Astro.request.headers.get('cookie');
     if (cookieHeader) {
         const meResponse = await fetch(`${getApiUrl()}/api/v1/public/auth/me`, {
             headers: { cookie: cookieHeader }
@@ -69,7 +82,87 @@ try {
     logger.warn({ error }, 'publicar/nueva: failed to resolve admin panel access');
 }
 
+// F4: Check if the user has hit their max_accommodations limit.
+// If so, render the AtLimit panel instead of the form.
+//
+// Two fetches are needed:
+//   1. /me/entitlements  → limits.max_accommodations (plan ceiling; -1 = unlimited)
+//   2. /accommodations?pageSize=1  → pagination.total (actual owned count)
+//
+// Either fetch failing is non-fatal: we fall through and render the form,
+// letting the API reject on submit if needed.
+let isAtAccommodationLimit = false;
+let currentAccommodationCount = 0;
+let maxAccommodationAllowed = 0;
+
+try {
+    if (cookieHeader) {
+        const [entitlementsResponse, ownedResponse] = await Promise.all([
+            fetch(`${getApiUrl()}/api/v1/protected/users/me/entitlements`, {
+                headers: { cookie: cookieHeader }
+            }),
+            // pageSize=1 is enough — we only need pagination.total, not the items.
+            fetch(`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`, {
+                headers: { cookie: cookieHeader }
+            })
+        ]);
+
+        let maxAllowed: number | undefined;
+        let currentCount: number | undefined;
+
+        if (entitlementsResponse.ok) {
+            const entJson = (await entitlementsResponse.json()) as {
+                data?: {
+                    limits?: Readonly<Record<string, number>>;
+                };
+            };
+            const raw = entJson.data?.limits?.max_accommodations;
+            if (typeof raw === 'number') {
+                maxAllowed = raw;
+            }
+        } else {
+            logger.warn(
+                { status: entitlementsResponse.status },
+                'publicar/nueva: entitlements fetch returned non-ok'
+            );
+        }
+
+        if (ownedResponse.ok) {
+            const ownedJson = (await ownedResponse.json()) as {
+                data?: {
+                    pagination?: { total?: number };
+                };
+            };
+            const raw = ownedJson.data?.pagination?.total;
+            if (typeof raw === 'number') {
+                currentCount = raw;
+            }
+        } else {
+            logger.warn(
+                { status: ownedResponse.status },
+                'publicar/nueva: owned-accommodations fetch returned non-ok'
+            );
+        }
+
+        // Only flip the gate when BOTH values resolved successfully.
+        // A limit of -1 means unlimited — never block in that case.
+        if (
+            typeof maxAllowed === 'number' &&
+            maxAllowed !== -1 &&
+            typeof currentCount === 'number'
+        ) {
+            maxAccommodationAllowed = maxAllowed;
+            currentAccommodationCount = currentCount;
+            isAtAccommodationLimit = currentCount >= maxAllowed;
+        }
+    }
+} catch (error) {
+    logger.warn({ error }, 'publicar/nueva: failed to fetch entitlements or owned count for limit check');
+    // Non-fatal: render the form normally on error (let the API reject on submit if needed).
+}
+
 const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' });
+const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 ---
 
 <MarketingLayout
@@ -77,53 +170,176 @@ const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' })
     title={pageTitle}
     description={pageDescription}
 >
-    <section class="nueva-hero section section--warm">
-        <div class="nueva-hero__container">
-            <nav
-                class="nueva-hero__breadcrumb"
-                aria-label={t('host.pages.nueva.breadcrumbLabel', 'Ruta de navegación')}
-            >
-                <a
-                    href={buildUrl({ locale, path: 'publicar' })}
-                    class="nueva-hero__breadcrumb-link"
-                >
-                    {t('host.landing.heroHeadline', 'Para propietarios')}
-                </a>
-                <span class="nueva-hero__breadcrumb-sep" aria-hidden="true">/</span>
-                <span class="nueva-hero__breadcrumb-current" aria-current="page">
-                    {pageTitle}
-                </span>
-            </nav>
+    <section class="nueva-hero nueva-hero--compact section section--warm">
+        <div class="nueva-hero__decoratives" aria-hidden="true">
+            <img
+                src="/assets/images/shapes/deco-arrow-1.svg"
+                alt=""
+                class="nueva-hero__deco nueva-hero__deco--arrow"
+                loading="eager"
+            />
+        </div>
 
-            <h1 class="nueva-hero__title">{pageTitle}</h1>
-            <p class="nueva-hero__desc">
-                {t(
-                    'host.pages.nueva.subtitle',
-                    'Empezá con lo esencial. Después completás todos los detalles desde el panel.'
-                )}
-            </p>
+        <div class="nueva-hero__container">
+            <div class="nueva-hero__text">
+                <nav
+                    class="nueva-hero__breadcrumb"
+                    aria-label={t('host.pages.nueva.breadcrumbLabel', 'Ruta de navegación')}
+                >
+                    <a
+                        href={buildUrl({ locale, path: 'publicar' })}
+                        class="nueva-hero__breadcrumb-link"
+                    >
+                        {t('owners.hero.tagline', 'Para propietarios')}
+                    </a>
+                    <span class="nueva-hero__breadcrumb-sep" aria-hidden="true">/</span>
+                    <span class="nueva-hero__breadcrumb-current" aria-current="page">
+                        {pageTitle}
+                    </span>
+                </nav>
+
+                <p class="nueva-hero__tagline">
+                    {t('host.pages.nueva.tagline', 'Empecemos')}
+                </p>
+                <h1 class="nueva-hero__title">{pageTitle}</h1>
+                <p class="nueva-hero__desc">
+                    {t(
+                        'host.pages.nueva.subtitle',
+                        'Empezá con lo esencial. Después completás todos los detalles desde el panel.'
+                    )}
+                </p>
+            </div>
+
+            <aside class="nueva-hero__visual" aria-hidden="true">
+                <div class="nueva-hero__blob"></div>
+                <div class="nueva-hero__icon-wrap">
+                    <BuildingsIcon size={96} weight="duotone" />
+                </div>
+                <div class="nueva-hero__floating nueva-hero__floating--image">
+                    <ImageIcon size="md" weight="duotone" />
+                </div>
+                <div class="nueva-hero__floating nueva-hero__floating--text">
+                    <FileTextIcon size="md" weight="duotone" />
+                </div>
+                <div class="nueva-hero__floating nueva-hero__floating--check">
+                    <CheckCircleIcon size="md" weight="duotone" />
+                </div>
+            </aside>
         </div>
     </section>
 
-    <section class="nueva-form section">
+    <section class="nueva-form nueva-form--compact section">
         <div class="nueva-form__container">
-            <CreatePropertyMiniForm
-                client:load
-                locale={locale}
-                apiUrl={apiUrl}
-                adminUrl={adminUrl}
-                accountPropertiesUrl={accountPropertiesUrl}
-                canAccessAdminPanel={canAccessAdminPanel}
-            />
+            {isAtAccommodationLimit ? (
+                <!-- F4: AtLimit panel — shown when the user has reached max_accommodations -->
+                <div class="at-limit-panel" role="alert" aria-live="polite">
+                    <span class="at-limit-panel__icon" aria-hidden="true">
+                        <AlertCircleIcon size={40} weight="duotone" />
+                    </span>
+                    <h2 class="at-limit-panel__title">
+                        {t(
+                            'billing.limit.max_accommodations.atLimitPanel.title',
+                            'Llegaste al límite de tu plan'
+                        )}
+                    </h2>
+                    <p class="at-limit-panel__body">
+                        {t(
+                            'billing.limit.max_accommodations.atLimitPanel.body',
+                            'Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.',
+                            { currentCount: currentAccommodationCount, maxAllowed: maxAccommodationAllowed }
+                        )}
+                    </p>
+                    <div class="at-limit-panel__actions">
+                        <a
+                            href={subscriptionUrl}
+                            class="at-limit-panel__primary-cta btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
+                        >
+                            <span class="gradient-btn__label">
+                                {t(
+                                    'billing.limit.max_accommodations.atLimitPanel.primaryCta',
+                                    'Ver mi suscripción'
+                                )}
+                            </span>
+                            <span aria-hidden="true">
+                                <ArrowRightIcon size={16} weight="bold" />
+                            </span>
+                        </a>
+                        <a
+                            href={accountPropertiesUrl}
+                            class="at-limit-panel__secondary-link"
+                        >
+                            {t(
+                                'billing.limit.max_accommodations.atLimitPanel.secondaryCta',
+                                'Ver mis propiedades'
+                            )}
+                        </a>
+                    </div>
+                </div>
+            ) : (
+                <CreatePropertyMiniForm
+                    client:load
+                    locale={locale}
+                    apiUrl={apiUrl}
+                    adminUrl={adminUrl}
+                    accountPropertiesUrl={accountPropertiesUrl}
+                    canAccessAdminPanel={canAccessAdminPanel}
+                />
+            )}
         </div>
     </section>
 </MarketingLayout>
 
 <style>
+    /* ── Hero ──────────────────────────────────────────────────────────── */
+    .nueva-hero {
+        position: relative;
+        overflow: hidden;
+    }
+
+    /*
+     * The "nueva" page is form-first: the hero is context, not the headline.
+     * Override .section's generous padding-block so the form is visible
+     * above the fold on standard laptop viewports without scrolling.
+     *
+     * The padding window is tuned to land close to (but still a notch below)
+     * the `/publicar/` hero so navigating between both pages doesn't feel
+     * like a height "jump" in the vertical rhythm.
+     */
+    .nueva-hero--compact {
+        padding-block: clamp(2rem, 5.5vw, 4rem);
+    }
+
+    .nueva-hero__decoratives {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .nueva-hero__deco--arrow {
+        position: absolute;
+        top: clamp(18%, 22%, 28%);
+        right: clamp(2%, 4vw, 6%);
+        width: clamp(60px, 8vw, 110px);
+        height: auto;
+        opacity: 0.5;
+        transform: rotate(15deg);
+    }
+
+    @media (max-width: 900px) {
+        .nueva-hero__deco--arrow { display: none; }
+    }
+
     .nueva-hero__container {
+        position: relative;
+        z-index: 1;
         max-width: var(--container-max);
         margin: 0 auto;
-        padding: var(--space-8) var(--space-container-x) var(--space-6);
+        padding: 0 var(--space-container-x);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-6);
+        align-items: center;
     }
 
     .nueva-hero__breadcrumb {
@@ -155,13 +371,22 @@ const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' })
         color: var(--core-muted-foreground);
     }
 
+    .nueva-hero__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: var(--text-tagline);
+        color: var(--brand-accent);
+        margin: 0 0 var(--space-2);
+    }
+
     .nueva-hero__title {
         font-family: var(--font-heading);
         font-weight: 700;
-        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-size: var(--text-h2);
         color: var(--core-foreground);
         margin: 0 0 var(--space-3);
-        line-height: 1.2;
+        line-height: 1.15;
+        text-wrap: balance;
     }
 
     .nueva-hero__desc {
@@ -173,9 +398,174 @@ const accountPropertiesUrl = buildUrl({ locale, path: 'mi-cuenta/propiedades' })
         max-width: 60ch;
     }
 
+    /* ── Hero visual aside ─────────────────────────────────────────────── */
+    .nueva-hero__visual {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 280px;
+    }
+
+    .nueva-hero__blob {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: clamp(220px, 24vw, 340px);
+        height: clamp(220px, 24vw, 340px);
+        border-radius: 50%;
+        background: radial-gradient(
+            circle at 30% 30%,
+            var(--brand-primary-a20),
+            var(--brand-accent-a08) 60%,
+            transparent 75%
+        );
+        filter: blur(2px);
+    }
+
+    .nueva-hero__icon-wrap {
+        position: relative;
+        z-index: 2;
+        width: clamp(120px, 13vw, 170px);
+        height: clamp(120px, 13vw, 170px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--core-card);
+        border-radius: 50%;
+        box-shadow: var(--shadow-card);
+        color: var(--brand-primary);
+    }
+
+    .nueva-hero__floating {
+        position: absolute;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        animation: nueva-float 6s ease-in-out infinite;
+    }
+
+    .nueva-hero__floating--image {
+        top: 10%;
+        left: 6%;
+        color: var(--brand-primary);
+        animation-delay: 0s;
+    }
+
+    .nueva-hero__floating--text {
+        bottom: 16%;
+        left: 2%;
+        color: var(--brand-accent);
+        animation-delay: 1.5s;
+    }
+
+    .nueva-hero__floating--check {
+        top: 18%;
+        right: 4%;
+        color: oklch(0.65 0.18 145);
+        animation-delay: 3s;
+    }
+
+    @keyframes nueva-float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nueva-hero__floating { animation: none; }
+    }
+
+    /* ── Form section ──────────────────────────────────────────────────── */
+    .nueva-form--compact {
+        padding-block: clamp(var(--space-6), 5vw, var(--space-10));
+    }
+
     .nueva-form__container {
         max-width: var(--container-max);
         margin: 0 auto;
-        padding: 0 var(--space-container-x) var(--space-section);
+        padding: 0 var(--space-container-x);
+    }
+
+    /* ── Responsive ────────────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .nueva-hero__container { grid-template-columns: 1fr; }
+        .nueva-hero__visual { order: -1; min-height: 240px; }
+    }
+
+    /* ── AtLimit panel (F4) ────────────────────────────────────────────── */
+    .at-limit-panel {
+        max-width: 520px;
+        margin: 0 auto;
+        background-color: var(--core-card);
+        border: 1px solid var(--brand-accent-a30);
+        border-radius: var(--radius-card);
+        padding: var(--space-8) var(--space-6);
+        text-align: center;
+        box-shadow: var(--shadow-card);
+    }
+
+    .at-limit-panel__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+        margin-bottom: var(--space-4);
+    }
+
+    .at-limit-panel__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h3);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-3);
+        text-wrap: balance;
+    }
+
+    .at-limit-panel__body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0 0 var(--space-6);
+        max-width: 44ch;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .at-limit-panel__actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .at-limit-panel__primary-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none;
+    }
+
+    .at-limit-panel__secondary-link {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .at-limit-panel__secondary-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
     }
 </style>

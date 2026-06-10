@@ -16,6 +16,7 @@ import type {
     ArticleCardData,
     CardAmenityFeature,
     DestinationCardData,
+    DetailFaq,
     EventCardData,
     EventDetailData,
     ReviewCardData
@@ -28,6 +29,7 @@ import {
     extractGalleryItems,
     extractGalleryUrls
 } from '../media';
+import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -43,6 +45,24 @@ export type {
     EventLocation,
     ReviewCardData
 } from '@/data/types';
+
+/**
+ * Normalizes a raw destination `faqs` array (from the public detail API) into
+ * the clean `DetailFaq[]` shape consumed by `DestinationFaqAccordion` and the
+ * `FAQPageJsonLd` builder. Tolerates a missing/non-array input (returns []).
+ *
+ * @param raw - The `faqs` field from a destination detail API response.
+ * @returns Array of normalized FAQ items (empty when absent).
+ */
+export function toDestinationFaqs(raw: unknown): DetailFaq[] {
+    if (!Array.isArray(raw)) return [];
+    return (raw as ReadonlyArray<Record<string, unknown>>).map((faq) => ({
+        id: String(faq.id || ''),
+        question: String(faq.question || ''),
+        answer: String(faq.answer || ''),
+        category: faq.category ? String(faq.category) : null
+    }));
+}
 
 // --- Accommodation Card Data (Detailed) --- unique to transforms
 
@@ -541,12 +561,19 @@ export function toTestimonialCardProps({
  * IMPORTANT: Uses `price.price` (canonical PriceSchema field).
  * Does NOT propagate the legacy `price.amount` fallback.
  *
+ * SPEC-172 PR2: amenity and feature catalog `name` (and `description`) changed
+ * from plain strings to JSONB i18n objects `{ es, en, pt }`. The `locale`
+ * parameter is used to resolve these objects to plain strings before the data
+ * reaches components. Defaults to `'es'` if omitted.
+ *
  * @param item - Raw accommodation object from the API (getBySlug response)
+ * @param locale - Page locale used to resolve i18n name/description fields
  * @returns Typed AccommodationDetailData for the detail page components
  */
 export function toAccommodationDetailPageProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationDetailData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
     const locationObj = item.location as Record<string, unknown> | undefined;
     // SPEC-095: prefer the `cityDestination` projection from the API; fall back
@@ -568,6 +595,7 @@ export function toAccommodationDetailPageProps({
         name: String(item.name || ''),
         summary: String(item.summary || ''),
         description: String(item.description || ''),
+        richDescription: item.richDescription == null ? undefined : String(item.richDescription),
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
@@ -576,12 +604,39 @@ export function toAccommodationDetailPageProps({
         featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
+            const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
+            // Normalize videos to `{ url, caption?, description? }`. Accepts both
+            // the schema shape (objects) and legacy bare-URL strings so older
+            // accommodation records keep rendering. `moderationState` from the
+            // schema is intentionally dropped — public reads don't surface it.
+            const videos = (rawVideos ?? [])
+                .map((entry) => {
+                    if (typeof entry === 'string') {
+                        return entry.length > 0 ? { url: entry } : null;
+                    }
+                    if (entry && typeof entry === 'object') {
+                        const v = entry as Record<string, unknown>;
+                        const url = typeof v.url === 'string' ? v.url : '';
+                        if (!url) return null;
+                        return {
+                            url,
+                            caption: typeof v.caption === 'string' ? v.caption : undefined,
+                            description:
+                                typeof v.description === 'string' ? v.description : undefined
+                        };
+                    }
+                    return null;
+                })
+                .filter(
+                    (entry): entry is { url: string; caption?: string; description?: string } =>
+                        entry !== null
+                );
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
-                // HeroGallery + fotos can surface them (GAP-078-136).
+                // photo page and lightbox views can surface them (GAP-078-136).
                 galleryItems,
-                videos: mediaObj?.videos ?? []
+                videos
             };
         })(),
         location: {
@@ -654,12 +709,25 @@ export function toAccommodationDetailPageProps({
         // SPEC-018: extract displayWeight from either the join row or the
         // nested entity (API shape varies), then order DESC so the detail
         // page renders the most important amenities/features first.
+        //
+        // SPEC-172 PR4: amenity/feature `name` is now a JSONB i18n object
+        // `{ es, en, pt }` from PR2. We resolve it to a plain string here
+        // using the page locale so that downstream components (AmenitiesGrid,
+        // FeaturesGrid) receive a stable string and translateAmenity() can
+        // build the `accommodations.amenityNames.<key>` i18n lookup as before.
+        // The `name.es` value contains the slug-like catalog name (e.g. 'wifi',
+        // 'pool') used as the i18n key — resolving with locale + es fallback
+        // preserves this behavior while correctly surfacing the translated
+        // catalog name for en/pt locales that have a matching amenityNames entry.
         amenities: (amenitiesArr ?? [])
             .map((a) => {
                 const nestedAmenity = a.amenity as Record<string, unknown> | undefined;
                 return {
                     amenityId: String(a.amenityId || ''),
-                    name: String(a.name || ''),
+                    name: resolveI18nText(
+                        a.name as I18nTextLike | string | null | undefined,
+                        locale
+                    ),
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
                     additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null,
@@ -672,7 +740,10 @@ export function toAccommodationDetailPageProps({
                 const nestedFeature = f.feature as Record<string, unknown> | undefined;
                 return {
                     featureId: String(f.featureId || ''),
-                    name: String(f.name || ''),
+                    name: resolveI18nText(
+                        f.name as I18nTextLike | string | null | undefined,
+                        locale
+                    ),
                     icon: f.icon ? String(f.icon) : null,
                     hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
                     comments: f.comments ? String(f.comments) : null,
@@ -834,6 +905,170 @@ export function processEntityImages<T extends Record<string, unknown>>({
  * @param item - Raw event object from the API (getBySlug response)
  * @returns Typed EventDetailData for the event detail page components
  */
+/**
+ * Transforms a raw API host dashboard response into HostDashboardData
+ * for the HostDashboard React island.
+ *
+ * Drops `archived` from properties (not shown in the summary),
+ * maps `unreadConversations` → `unreadCount`, and synthesizes
+ * `quickActions` for the host's self-service shortcuts.
+ *
+ * @param item - Raw dashboard response from the API's host dashboard endpoint
+ * @returns Typed HostDashboardData for the HostDashboard component
+ *
+ * @example
+ * ```ts
+ * const apiResult = await hostDashboardApi.get();
+ * if (apiResult.ok) {
+ *   const data = transformHostDashboard({ item: apiResult.data });
+ * }
+ * ```
+ */
+export function transformHostDashboard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').HostDashboardData {
+    const properties = item.properties as Record<string, unknown> | undefined;
+    const plan = item.plan as Record<string, unknown> | null | undefined;
+
+    return {
+        propertySummary: {
+            total: Number(properties?.total ?? 0),
+            published: Number(properties?.published ?? 0),
+            draft: Number(properties?.draft ?? 0)
+        },
+        planInfo: plan
+            ? {
+                  name: String(plan.name ?? ''),
+                  status: String(plan.status ?? ''),
+                  isTrial: Boolean(plan.isTrial)
+              }
+            : null,
+        unreadCount: Number(item.unreadConversations ?? 0),
+        quickActions: [
+            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
+            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
+            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+        ]
+    };
+}
+
+// --- Host Analytics Transforms (SPEC-207) ---
+
+/**
+ * Transforms raw API response into accommodation views data for the ViewsWidget.
+ *
+ * @param item - Raw API response from the host analytics views endpoint
+ * @returns Typed AccommodationViewsData for the ViewsWidget component
+ */
+export function transformAccommodationViews({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').AccommodationViewsData {
+    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        window: (item.window === '30d' ? '30d' : '7d') as '7d' | '30d',
+        items: (rawItems ?? []).map((entry) => ({
+            date: String(entry.date ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into favorites breakdown data for the FavoritesWidget.
+ *
+ * @param item - Raw API response from the host analytics favorites endpoint
+ * @returns Typed FavoritesBreakdownData for the FavoritesWidget component
+ */
+export function transformFavoritesBreakdown({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').FavoritesBreakdownData {
+    const rawCollections = item.collections as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        collections: (rawCollections ?? []).map((entry) => ({
+            collection: String(entry.collection ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into response rate data for the ResponseRateWidget.
+ *
+ * @param item - Raw API response from the host analytics response-rate endpoint
+ * @returns Typed ResponseRateData for the ResponseRateWidget component
+ */
+export function transformResponseRate({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').ResponseRateData {
+    return {
+        responseRatePct: Number(item.responseRatePct ?? 0),
+        avgResponseTimeMinutes:
+            item.avgResponseTimeMinutes != null ? Number(item.avgResponseTimeMinutes) : null
+    };
+}
+
+/**
+ * Transforms raw API response into monthly inquiry trend data for the InquiryTrendWidget.
+ *
+ * @param item - Raw API response from the host analytics inquiries endpoint
+ * @returns Typed InquiryTrendData for the InquiryTrendWidget component
+ */
+export function transformInquiryTrend({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').InquiryTrendData {
+    const rawMonths = item.months as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        months: (rawMonths ?? []).map((entry) => ({
+            month: String(entry.month ?? ''),
+            count: Number(entry.count ?? 0)
+        }))
+    };
+}
+
+/**
+ * Transforms raw API response into market comparison data for the MarketComparisonWidget.
+ *
+ * @param item - Raw API response from the host analytics market-comparison endpoint
+ * @returns Typed MarketComparisonData for the MarketComparisonWidget component
+ */
+export function transformMarketComparison({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').MarketComparisonData {
+    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+
+    return {
+        items: (rawItems ?? []).map((entry) => ({
+            accommodationId: String(entry.accommodationId ?? ''),
+            accommodationName: String(entry.accommodationName ?? ''),
+            accommodationType: String(entry.accommodationType ?? ''),
+            destinationName: entry.destinationName != null ? String(entry.destinationName) : null,
+            yourRating: entry.yourRating != null ? Number(entry.yourRating) : null,
+            yourReviews: Number(entry.yourReviews ?? 0),
+            destinationAvgRating:
+                entry.destinationAvgRating != null ? Number(entry.destinationAvgRating) : null,
+            yourPrice: entry.yourPrice != null ? Number(entry.yourPrice) : null,
+            destinationAvgPrice:
+                entry.destinationAvgPrice != null ? Number(entry.destinationAvgPrice) : null
+        }))
+    };
+}
+
 export function toEventDetailProps({
     item
 }: { readonly item: Record<string, unknown> }): EventDetailData {
@@ -1071,4 +1306,224 @@ export function toEventDetailProps({
         isPast,
         eventStatus
     };
+}
+
+// --- Accommodation Editor Transforms (SPEC-208) ---
+
+import type { AccommodationEditData, AmenityData, DestinationData, MediaImage } from './types';
+
+/**
+ * Transforms a raw API accommodation object into AccommodationEditData
+ * for the web editor form.
+ *
+ * Handles both relation-join amenities/features (objects with nested amenity/feature)
+ * and plain ID arrays. Price is extracted from the nested `price.price` or
+ * `price.amount` shape.
+ *
+ * @param item - Raw accommodation object from the protected GET endpoint
+ * @returns Typed AccommodationEditData for the editor form
+ */
+export function transformAccommodationEdit({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationEditData {
+    const priceObj = item.price as
+        | { price?: number; amount?: number; currency?: string }
+        | undefined;
+
+    const amenitiesArr = item.amenities as
+        | readonly (Record<string, unknown> | string)[]
+        | undefined;
+    const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
+
+    return {
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        summary: String(item.summary ?? ''),
+        description: String(item.description ?? ''),
+        type: String(item.type ?? ''),
+        destinationId: String(item.destinationId ?? ''),
+        latitude: item.latitude != null ? Number(item.latitude) : null,
+        longitude: item.longitude != null ? Number(item.longitude) : null,
+        maxGuests: item.maxGuests != null ? Number(item.maxGuests) : null,
+        bedrooms: item.bedrooms != null ? Number(item.bedrooms) : null,
+        bathrooms: item.bathrooms != null ? Number(item.bathrooms) : null,
+        beds: item.beds != null ? Number(item.beds) : null,
+        basePrice:
+            priceObj?.price != null
+                ? Number(priceObj.price)
+                : priceObj?.amount != null
+                  ? Number(priceObj.amount)
+                  : null,
+        currency: priceObj?.currency != null ? String(priceObj.currency) : null,
+        isAvailable: item.isAvailable != null ? Boolean(item.isAvailable) : true,
+        isFeatured: item.isFeatured != null ? Boolean(item.isFeatured) : false,
+        amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
+        featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
+        // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
+        phone: String(
+            (item.phone as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.mobilePhone as string) ??
+                ''
+        ),
+        email: String(
+            (item.email as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.personalEmail as string) ??
+                ''
+        ),
+        website: String(
+            (item.website as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.website as string) ??
+                ''
+        ),
+        // Phase B: social networks (flat HTTP fields from the domain socialNetworks object)
+        facebookUrl: String(
+            (item.facebook as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.facebook as string) ??
+                ''
+        ),
+        instagramUrl: String(
+            (item.instagram as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.instagram as string) ??
+                ''
+        ),
+        twitterUrl: String(
+            (item.twitter as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.twitter as string) ??
+                ''
+        ),
+        linkedinUrl: String(
+            (item.linkedin as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.linkedIn as string) ??
+                ''
+        ),
+        tiktokUrl: String(
+            (item.tiktok as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.tiktok as string) ??
+                ''
+        ),
+        youtubeUrl: String(
+            (item.youtube as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.youtube as string) ??
+                ''
+        )
+    };
+}
+
+/**
+ * Extracts a list of string IDs from either relation-join objects
+ * (with a nested key) or plain string entries.
+ */
+function extractIdList(
+    items: readonly (Record<string, unknown> | string)[] | undefined,
+    idKey: string,
+    nestedKey: string
+): readonly string[] {
+    if (!items) return [];
+    return items
+        .map((entry) => {
+            if (typeof entry === 'string') return entry;
+            const nested = entry[nestedKey] as Record<string, unknown> | undefined;
+            return String(entry[idKey] ?? nested?.id ?? '');
+        })
+        .filter((id) => id.length > 0);
+}
+
+/**
+ * Transforms a list of raw amenity objects into AmenityData[].
+ *
+ * @param items - Raw amenity objects from the public amenities endpoint
+ * @returns Typed AmenityData array for the editor's checkbox group
+ */
+export function transformAmenityList({
+    items
+}: { readonly items: readonly Record<string, unknown>[] }): readonly AmenityData[] {
+    return items.map((item) => ({
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        category: item.category != null ? String(item.category) : null
+    }));
+}
+
+/**
+ * Transforms a list of raw destination objects into DestinationData[].
+ *
+ * @param items - Raw destination objects from the public destinations endpoint
+ * @returns Typed DestinationData array for the editor's destination select
+ */
+export function transformDestinationList({
+    items
+}: { readonly items: readonly Record<string, unknown>[] }): readonly DestinationData[] {
+    return items.map((item) => ({
+        id: String(item.id ?? ''),
+        name: String(item.name ?? ''),
+        path: String(item.path ?? '')
+    }));
+}
+
+/**
+ * Result of `transformAccommodationMedia`.
+ */
+export interface AccommodationMediaResult {
+    readonly featuredImage: MediaImage | null;
+    readonly gallery: readonly MediaImage[];
+}
+
+/**
+ * Extracts the raw media field from an API accommodation response and converts
+ * it into the `MediaImage` shape used by the editor's PhotoSection component.
+ *
+ * Only `url` is guaranteed; `publicId`, `width`, and `height` are seeded with
+ * empty/zero values when the stored domain image does not carry them. The
+ * display logic in PhotoSection only requires `url`.
+ *
+ * NEVER passes raw API data to components (project rule). Always use this
+ * transform as the bridge from the API response to the editor props.
+ *
+ * @param item - Raw accommodation object from the protected GET endpoint
+ * @returns `{ featuredImage, gallery }` shaped for AccommodationEditor props
+ */
+export function transformAccommodationMedia({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationMediaResult {
+    const media = item.media as
+        | {
+              featuredImage?: {
+                  url?: string;
+                  publicId?: string;
+                  width?: number;
+                  height?: number;
+              } | null;
+              gallery?: ReadonlyArray<{
+                  url?: string;
+                  publicId?: string;
+                  width?: number;
+                  height?: number;
+              }>;
+          }
+        | null
+        | undefined;
+
+    const toMediaImage = (
+        img: { url?: string; publicId?: string; width?: number; height?: number } | null | undefined
+    ): MediaImage | null => {
+        if (!img?.url) return null;
+        return {
+            url: img.url,
+            publicId: img.publicId ?? '',
+            width: img.width ?? 0,
+            height: img.height ?? 0
+        };
+    };
+
+    const featuredImage = toMediaImage(media?.featuredImage);
+    const gallery: readonly MediaImage[] = (media?.gallery ?? [])
+        .map(toMediaImage)
+        .filter((img): img is MediaImage => img !== null);
+
+    return { featuredImage, gallery };
 }

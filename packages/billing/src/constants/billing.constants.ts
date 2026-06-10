@@ -9,10 +9,19 @@ export const OWNER_TRIAL_DAYS = 14;
 export const COMPLEX_TRIAL_DAYS = 14;
 
 /**
- * Default grace period in days after payment failure.
+ * Reference constant for the initial-payment grace window, in days.
  *
- * This is the initial grace period before the dunning process starts.
- * The operational dunning grace period is defined by DUNNING_GRACE_PERIOD_DAYS.
+ * IMPORTANT: This constant is NOT the value enforced at runtime. qzpay-core's
+ * `daysRemainingInGrace()` and `isInGracePeriod()` use `DUNNING_GRACE_PERIOD_DAYS=7`
+ * against `current_period_end` for both the grace window and the dunning cutoff.
+ * There is currently no separate payment-grace enforcement.
+ *
+ * This constant is kept as a reference for documentation and as a tripwire for
+ * the warning log in `apps/api/src/middlewares/past-due-grace.middleware.ts`. The
+ * middleware logs a warning at import time if this value diverges from 3, but
+ * the runtime grace behavior follows qzpay-core regardless.
+ *
+ * See `docs/billing/grace-period-source-of-truth.md` for the full picture.
  */
 export const PAYMENT_GRACE_PERIOD_DAYS = 3;
 
@@ -60,3 +69,17 @@ export const REFERENCE_CURRENCY = 'USD';
 
 /** Default timeout for MercadoPago API requests in milliseconds */
 export const MERCADO_PAGO_DEFAULT_TIMEOUT_MS = 5000;
+
+/**
+ * Maximum lag window in hours that the cron renewal checker tolerates before
+ * raising a Sentry alert for a subscription that has not been renewed.
+ *
+ * Rationale: MercadoPago webhook delivery is eventually consistent and can lag
+ * several hours during high-traffic periods. A 6-hour window absorbs that jitter
+ * at renewal time without masking real outages. PAST this window, access is
+ * intentionally NOT blocked (billing is never a hard gate on service access), but
+ * a Sentry alert fires so the team can investigate the delay.
+ *
+ * Owner decision 2026-06-09, SPEC-148 Part A.
+ */
+export const BILLING_CRON_LAG_GRACE_HOURS = 6;

@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "011-event-culture-obra-teatro",
     "slug": "obra-teatro",
-    "name": "Obra de Teatro",
-    "summary": "Evento culture - Obra de Teatro",
-    "description": "Descripción detallada del evento Obra de Teatro. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "name": "Obra de Teatro: 'Voces del Litoral'",
+    "summary": "Obra teatral original de un autor entrerriano que recorre las voces, las historias y la memoria del litoral argentino. Una hora y media de teatro independiente con elenco local. Entrada libre y gratuita.",
+    "description": "'Voces del Litoral' es una obra teatral original escrita por un autor entrerriano contemporáneo, que recorre las voces, las historias y la memoria del litoral argentino a través de cinco personajes que se cruzan en una estación de tren abandonada del interior de la provincia.\n\n**Sobre la obra**\n\nLa obra mezcla tradición y modernidad: textos basados en testimonios reales de habitantes del campo, complementados con escenas contemporáneas que reflexionan sobre la identidad, la migración hacia las ciudades y el desarraigo. Es una propuesta de teatro independiente con elenco íntegramente entrerriano.\n\n**Ficha técnica**\n\n- **Autor y director:** dramaturgo local con varios reconocimientos provinciales.\n- **Elenco:** cinco actores y actrices del litoral.\n- **Duración:** 90 minutos, sin intervalo.\n- **Estética:** minimalismo escénico, música en vivo con guitarra y bandoneón.\n- **Recomendada para:** mayores de 14 años.\n\n**Por qué verla**\n\nEl teatro independiente es uno de los pulsos culturales más vivos pero menos visibles del litoral. Obras como esta, que recuperan voces locales y las llevan al escenario con calidad profesional, merecen ser apoyadas y disfrutadas. Es una buena oportunidad para acercarse al mundo del teatro provincial.\n\n**Información práctica**\n\n- **Cuándo:** una función en mayo.\n- **Dónde:** sala de eventos en Gualeguaychú (espacio cerrado, con butacas).\n- **Entrada:** GRATUITA, con inscripción previa por cupo limitado.\n- **Servicios:** buffet de bebidas y snacks en el hall.",
     "category": "CULTURE",
     "authorId": "admin-user",
     "pricing": {
@@ -23,14 +23,22 @@
         }
     },
     "seo": {
-        "title": "Obra de Teatro 2025 - Entre Ríos - Hospeda",
-        "description": "Disfruta de la Obra de Teatro 2025 en Entre Ríos. Una experiencia cultural única con actores locales y nacionales en un ambiente mágico.",
-        "keywords": ["culture", "entre rios", "evento", "cultura"]
+        "title": "Obra de Teatro 'Voces del Litoral' en Gualeguaychú - Hospeda",
+        "description": "Teatro independiente con elenco entrerriano: 'Voces del Litoral' recorre las historias y la memoria del litoral argentino. Función única, entrada gratuita.",
+        "keywords": [
+            "obra de teatro",
+            "teatro independiente",
+            "voces del litoral",
+            "gualeguaychú teatro",
+            "teatro entre ríos",
+            "dramaturgia argentina",
+            "teatro gratuito",
+            "cultura litoral"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {
-        "start": "2026-05-20T00:00:00-03:00",
-        "end": "2025-04-25T00:00:00-03:00"
+        "start": "2026-05-20T21:00:00-03:00"
     },
     "locationId": "003-eventLocation-gualeguaychu-corsodromo-gualeguaychu"
 }

@@ -13,6 +13,7 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { FILTER_ALL_VALUE } from './filter-types';
 import type { BooleanFilterConfig } from './filter-types';
@@ -61,27 +62,22 @@ export function FilterBoolean({ config, value, onChange }: FilterBooleanProps) {
             onValueChange={handleChange}
         >
             <SelectTrigger
-                className={
-                    isActive
-                        ? 'h-8 border-primary border-solid text-sm'
-                        : 'h-8 border-dashed text-sm'
-                }
+                className={cn(
+                    'h-8 w-auto min-w-[8rem] max-w-[14rem] gap-1 text-sm focus:ring-1 focus:ring-primary/30 focus:ring-offset-0',
+                    isActive ? 'border-primary border-solid' : 'border-dashed'
+                )}
                 aria-label={
                     isActive
                         ? `${t(config.labelKey as TranslationKey)}: ${value === 'true' ? t('admin-filters.booleanYes') : t('admin-filters.booleanNo')}`
                         : t(config.labelKey as TranslationKey)
                 }
             >
-                {isActive ? (
-                    <span>
-                        <span className="text-muted-foreground">
-                            {t(config.labelKey as TranslationKey)}:
-                        </span>{' '}
-                        <SelectValue placeholder={t('admin-filters.allOption')} />
-                    </span>
-                ) : (
+                <span className="truncate">
+                    <span className="text-muted-foreground">
+                        {t(config.labelKey as TranslationKey)}:
+                    </span>{' '}
                     <SelectValue placeholder={t('admin-filters.allOption')} />
-                )}
+                </span>
             </SelectTrigger>
             <SelectContent>
                 <SelectItem value={FILTER_ALL_VALUE}>{t('admin-filters.allOption')}</SelectItem>

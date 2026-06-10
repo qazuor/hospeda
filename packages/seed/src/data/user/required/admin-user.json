@@ -96,7 +96,6 @@
         "accommodation.review.update",
         "destination.review.create",
         "destination.review.update",
-
         "host.contact.view",
         "host.message.send",
         "auditLog.view",
@@ -145,21 +144,16 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Gualeguaychú",
         "country": "Argentina",
-        "zipCode": "2840",
-        "street": "Av. Costanera",
-        "number": "1500",
-        "coordinates": {
-            "lat": "-33.0089",
-            "long": "-58.5133"
-        }
+        "region": "Entre Ríos",
+        "city": "Gualeguaychú",
+        "addressLine1": "Av. Costanera 1500",
+        "postalCode": "2840"
     },
     "socialNetworks": {
         "facebook": "https://facebook.com/admin.hospeda",
         "instagram": "https://instagram.com/admin_hospeda",
-        "linkedin": "https://linkedin.com/in/admin-hospeda"
+        "linkedIn": "https://linkedin.com/in/admin-hospeda"
     },
     "profile": {
         "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",

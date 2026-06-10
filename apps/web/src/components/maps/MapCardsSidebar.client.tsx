@@ -59,8 +59,6 @@ export interface MapSidebarCardData {
     /** Status corner background + text colors (matches AccommodationCard). */
     readonly newBg?: string;
     readonly newText?: string;
-    readonly featuredBg?: string;
-    readonly featuredText?: string;
     /** Pre-translated copy for the price block + CTA. */
     readonly priceFromLabel?: string;
     readonly pricePerNightLabel?: string;
@@ -263,17 +261,13 @@ export function MapCardsSidebar({
                                     {/* Featured badge */}
                                     {item.isFeatured && item.featuredLabel ? (
                                         <div
-                                            className={sidebarStyles.cardFeaturedBadge}
-                                            style={
-                                                {
-                                                    backgroundColor:
-                                                        item.featuredBg ?? 'var(--brand-primary)',
-                                                    color:
-                                                        item.featuredText ??
-                                                        'var(--primary-foreground)'
-                                                } as React.CSSProperties
-                                            }
+                                            className={`${sidebarStyles.cardFeaturedBadge} featured-badge`}
                                         >
+                                            <StarIcon
+                                                size={12}
+                                                weight="fill"
+                                                aria-hidden="true"
+                                            />
                                             <span>{item.featuredLabel}</span>
                                         </div>
                                     ) : null}

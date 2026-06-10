@@ -85,8 +85,38 @@ describe('getAccommodationTypeColor', () => {
         expect(result).toHaveProperty('border');
     });
 
-    it('should return accent scheme for unknown types', () => {
+    it('should use the per-type token with the contrast treatment (light fill + dark text)', () => {
+        // Web now consumes the SAME `contrast` variant as admin so the badge
+        // is identical across apps. Each type references its own distinct
+        // per-type token `--accommodation-type-<type>` and the contrast variant
+        // derives bg (0.95 L / reduced chroma), text (0.4 L / full chroma),
+        // border (0.88 L / reduced chroma) from that token's hue.
+        const result = getAccommodationTypeColor({ type: 'hotel' });
+        expect(result.bg).toBe('oklch(from var(--accommodation-type-hotel) 0.95 calc(c * 0.55) h)');
+        expect(result.text).toBe('oklch(from var(--accommodation-type-hotel) 0.4 c h)');
+        expect(result.border).toBe(
+            'oklch(from var(--accommodation-type-hotel) 0.88 calc(c * 0.55) h)'
+        );
+    });
+
+    it('should give each type its OWN distinct per-type token', () => {
+        const hotel = getAccommodationTypeColor({ type: 'hotel' });
+        const cabin = getAccommodationTypeColor({ type: 'cabin' });
+        const resort = getAccommodationTypeColor({ type: 'resort' });
+        expect(hotel.text).toContain('--accommodation-type-hotel');
+        expect(cabin.text).toContain('--accommodation-type-cabin');
+        expect(resort.text).toContain('--accommodation-type-resort');
+        // No two types share the same token.
+        expect(new Set([hotel.text, cabin.text, resort.text]).size).toBe(3);
+    });
+
+    it('should normalize country_house to the kebab-case per-type token', () => {
+        const result = getAccommodationTypeColor({ type: 'COUNTRY_HOUSE' });
+        expect(result.text).toBe('oklch(from var(--accommodation-type-country-house) 0.4 c h)');
+    });
+
+    it('should fall back to the hotel per-type token for unknown types', () => {
         const result = getAccommodationTypeColor({ type: 'unknown_type' });
-        expect(result.text).toContain('accent');
+        expect(result.text).toBe('oklch(from var(--accommodation-type-hotel) 0.4 c h)');
     });
 });

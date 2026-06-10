@@ -86,6 +86,16 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .min(32, 'HOSPEDA_LOCATION_SALT must be at least 32 characters'),
     /**
+     * Server-only HMAC secret (pepper) for computing privacy-safe, day-scoped
+     * visitor deduplication hashes used by cross-entity view tracking (SPEC-159).
+     * Hash form: SHA-256(HMAC-SHA256(secret, 'yyyy-mm-dd') + truncatedIp + UA).
+     * Raw IPs are never stored or logged. Min 32 chars; rotating invalidates
+     * all current-day hashes (visitors are recounted as new for that day).
+     */
+    HOSPEDA_VIEWS_HASH_SECRET: z
+        .string()
+        .min(32, 'HOSPEDA_VIEWS_HASH_SECRET must be at least 32 characters'),
+    /**
      * User-Agent header sent to Nominatim and Photon when geocoding addresses
      * for the admin location picker (SPEC-097, Phase 6). Nominatim's usage
      * policy requires an identifiable User-Agent; missing or generic values
@@ -102,6 +112,15 @@ export const ApiEnvBaseSchema = z.object({
     // Trusted origins
     HOSPEDA_SITE_URL: z.string().url('Must be a valid URL for the web app'),
     HOSPEDA_ADMIN_URL: z.string().url().optional(),
+
+    /**
+     * Dev-only session-cookie domain override (SPEC-182). Set to
+     * `.hospeda.local` (with the `/etc/hosts` recipe in
+     * docs/guides/auth-local-dev.md) to share the Better Auth cookie across
+     * web/admin/api dev hosts, mirroring production cross-subdomain behavior.
+     * Ignored in production (the apex is pinned in auth-cookie-domain.ts).
+     */
+    HOSPEDA_DEV_COOKIE_DOMAIN: z.string().optional(),
 
     // Test / debug flags (explicit opt-in; use HOSPEDA_* names)
     // NOTE: we use string→boolean transform here instead of z.coerce.boolean()
@@ -163,6 +182,11 @@ export const ApiEnvBaseSchema = z.object({
     API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
     API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
     API_LOG_STRINGIFY: z.coerce.boolean().default(false),
+    API_LOG_FORMAT: z
+        .string()
+        .transform((val) => val.toLowerCase())
+        .pipe(z.enum(['pretty', 'json']))
+        .default('pretty'),
 
     // CORS
     API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),
@@ -186,10 +210,17 @@ export const ApiEnvBaseSchema = z.object({
     API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
     API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
-    // Rate Limiting - global
+    // Rate Limiting - global "general" tier (catch-all for non-auth/admin/public/billing/webhook).
+    //
+    // This is the tier that covers `/api/v1/protected/*` (authenticated user routes — favorites,
+    // collections, preferences, profile reads, etc.). A typical /mi-cuenta visit fires 3–6 API
+    // calls just to render one page (SSR + island hydration + counters), so the previous default
+    // of 100 / 15 min (≈6.7 req/min average) tripped 429 well below normal interactive use.
+    // Bumped to 500 / 15 min (≈33 req/min) which comfortably absorbs human navigation while
+    // still leaving headroom over the public tier ceiling.
     API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
     API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
-    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(500),
     API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
     /**
      * Which response classes to exclude from rate-limit counting.
@@ -351,6 +382,30 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .transform((v) => v !== 'false'),
     /**
+     * Feature flag for the user self-service subscription cancellation route
+     * (SPEC-147). Ships dark (default false) until the SPEC-203 UI lands.
+     * Set to 'true' to enable. Absent or any other value keeps the route
+     * disabled (opt-in: only the literal string 'true' enables it).
+     */
+    HOSPEDA_USER_CANCEL_ENABLED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+    /**
+     * Feature flag for the MercadoPago subscription_preapproval polling
+     * fallback (SPEC-143 Finding #17). When `true` (default), start-paid
+     * schedules a polling job that queries MP `/preapproval/{id}` until
+     * the preapproval reports `authorized`, then flips the local
+     * subscription to `active`. Set to `false` as a kill-switch if the
+     * polling layer misbehaves in production — the webhook handler
+     * still works regardless of this flag.
+     */
+    HOSPEDA_BILLING_POLLING_ENABLED: z
+        .string()
+        .optional()
+        .default('true')
+        .transform((v) => v !== 'false'),
+    /**
      * Statement descriptor that appears on the cardholder's bank statement
      * after a MercadoPago payment. MP rejects descriptors longer than 11
      * characters and recommends uppercase ASCII (letters, digits, spaces) so
@@ -416,6 +471,11 @@ export const ApiEnvBaseSchema = z.object({
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
+    // PostHog (AI event analytics — optional, no-op when unset)
+    /** PostHog project API key for server-side AI event analytics (e.g. 'phc_xxx'). */
+    HOSPEDA_POSTHOG_KEY: z.string().optional(),
+    /** PostHog API host. Defaults to 'https://us.i.posthog.com' when unset. */
+    HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
     /**
@@ -443,6 +503,43 @@ export const ApiEnvBaseSchema = z.object({
     /** Lockout window in milliseconds (default: 900000 = 15 min) */
     HOSPEDA_AUTH_LOCKOUT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
 
+    // Content moderation blocklists (SPEC-166)
+    /**
+     * Comma-separated list of word substrings to block in user-generated text
+     * (messages, reviews, posts). Case-insensitive substring match.
+     * Parsed at startup by @repo/content-moderation. Example: "badword,spam,forbidden"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_WORDS: z.string().optional(),
+    /**
+     * Comma-separated list of domain names to block when they appear in URLs
+     * inside user-generated text. Matches exact hostname and sub-domain suffixes.
+     * Parsed at startup by @repo/content-moderation. Example: "spam.com,evil.org"
+     */
+    HOSPEDA_MESSAGING_BLOCKED_DOMAINS: z.string().optional(),
+
+    // Content auto-moderation engine (SPEC-195)
+    /** Moderation engine provider: 'openai' | 'local' | 'stub' (kill-switch). Default 'stub' preserves v1 binary behavior. */
+    HOSPEDA_MODERATION_PROVIDER: z.enum(['openai', 'local', 'stub']).default('stub'),
+    /** OpenAI API key for the Moderation API. Required when HOSPEDA_MODERATION_PROVIDER=openai. */
+    HOSPEDA_OPENAI_API_KEY: z.string().min(1).optional(),
+    /** TTL in seconds for the in-memory LRU moderation cache. */
+    HOSPEDA_MODERATION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
+    /** Timeout in ms for the OpenAI Moderation API call before falling back to local. */
+    HOSPEDA_MODERATION_TIMEOUT_MS: z.coerce.number().int().positive().default(1500),
+    /**
+     * Gates the startup moderation-credential healthcheck (SPEC-198). When `true`,
+     * the API refuses to start (process.exit(1)) if no resolvable OpenAI credential
+     * exists in the AI vault. Default `false` so envs without AI moderation boot
+     * normally. Set to `true` in production once the vault credential is provisioned.
+     *
+     * Uses the string→boolean transform (NOT z.coerce.boolean()) so the literal
+     * 'false' evaluates to false — see the footgun note on HOSPEDA_DISABLE_AUTH.
+     */
+    HOSPEDA_AI_MODERATION_REQUIRED: z
+        .string()
+        .optional()
+        .transform((v) => v === 'true'),
+
     // Infrastructure
     HOSPEDA_REDIS_URL: z.string().optional(),
 
@@ -460,7 +557,19 @@ export const ApiEnvBaseSchema = z.object({
      * Used by `UserBookmarkCollectionService._canCreate` to enforce the limit.
      * Default: 10. Range: 1–10000.
      */
-    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10)
+    HOSPEDA_MAX_COLLECTIONS_PER_USER: z.coerce.number().int().min(1).max(10000).default(10),
+
+    // AI / Credential Vault
+    // Decision (owner-approved 2026-06-04): base-optional so non-production envs
+    // (local dev / test / CI) where the AI feature is not yet active do not fail
+    // at boot. In PRODUCTION the key is REQUIRED — enforced by the cross-field
+    // `.superRefine` below (NODE_ENV === 'production' + missing → validation
+    // error). The vault crypto (T-021) still throws at runtime with a clear
+    // error if the key is accessed-but-missing in a non-production env.
+    HOSPEDA_AI_VAULT_MASTER_KEY: z
+        .string()
+        .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
+        .optional()
 });
 
 /**
@@ -481,6 +590,20 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             path: ['HOSPEDA_REDIS_URL'],
             message:
                 'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
+        });
+    }
+    // AI credential vault master key is REQUIRED in production: the vault crypto
+    // cannot decrypt provider credentials without it, so a missing key would let
+    // the API boot but fail every AI call at runtime. Fail fast at startup instead.
+    if (
+        data.NODE_ENV === 'production' &&
+        (!data.HOSPEDA_AI_VAULT_MASTER_KEY || data.HOSPEDA_AI_VAULT_MASTER_KEY.trim() === '')
+    ) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_AI_VAULT_MASTER_KEY'],
+            message:
+                'HOSPEDA_AI_VAULT_MASTER_KEY is required in production (vault crypto cannot decrypt AI provider credentials without it)'
         });
     }
     // OAuth cross-validation: require secret when client ID is set

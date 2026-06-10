@@ -5,7 +5,7 @@ export default defineConfig({
     entry: ['src/index.ts', 'src/vercel.ts'],
     outDir: 'dist',
     target: 'es2022',
-    format: ['esm', 'cjs'],
+    format: ['esm'],
     splitting: false,
     sourcemap: true,
     clean: true,
@@ -48,7 +48,13 @@ export default defineConfig({
         '@react-email/render',
         'resend',
         'ioredis',
-        'node-cron'
+        'node-cron',
+        // @vercel/oidc uses dynamic require("path")/require("fs") which esbuild's
+        // polyfill cannot resolve at runtime in ESM. Externalize to let Node's
+        // native CJS interop handle it. It's a transitive dep of ai ->
+        // @ai-sdk/gateway -> @vercel/oidc.
+        '@vercel/oidc',
+        '@ai-sdk/gateway'
     ],
     noExternal: [
         /@repo\/.*/,

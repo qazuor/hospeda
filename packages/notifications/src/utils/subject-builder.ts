@@ -33,7 +33,23 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // Newsletter (SPEC-101)
     [NotificationType.NEWSLETTER_VERIFICATION]: 'Confirmá tu suscripción al newsletter de Hospeda',
     [NotificationType.NEWSLETTER_WELCOME]: 'Bienvenido al newsletter de Hospeda',
-    [NotificationType.NEWSLETTER_CAMPAIGN]: '{subject}'
+    [NotificationType.NEWSLETTER_CAMPAIGN]: '{subject}',
+
+    // AI cost threshold alert (SPEC-173 T-025)
+    [NotificationType.AI_COST_THRESHOLD_ALERT]:
+        '[Admin] Alerta de costo IA — {thresholdPct}% del presupuesto ({scope})',
+
+    // Soft-cancel confirmation (SPEC-147)
+    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]:
+        'Cancellation confirmed — {planName} access until {accessUntil}',
+
+    // D3 access-ending reminder (SPEC-147 T-010)
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
+        'Your {planName} access ends in {daysRemaining} days — act now to keep it',
+
+    // Plan retirement notification (SPEC-148)
+    [NotificationType.PLAN_BEING_RETIRED]:
+        'Important: {planName} is being retired — your access continues until {accessUntil}'
 };
 
 /**

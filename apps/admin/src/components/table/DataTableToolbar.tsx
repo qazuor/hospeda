@@ -1,19 +1,25 @@
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from '@/components/ui/dropdown-menu';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
-import { CloseIcon, LoaderIcon, SearchIcon } from '@repo/icons';
-import type { ChangeEvent } from 'react';
+import { ChevronDownIcon, GridIcon, ListIcon } from '@repo/icons';
 import { useCallback } from 'react';
 
 export type DataTableToolbarProps = {
     readonly view: 'table' | 'grid';
     readonly onViewChange: (next: 'table' | 'grid') => void;
-
-    readonly query: string;
-    readonly onQueryChange: (value: string) => void;
-    readonly isSearching?: boolean;
-    readonly onClearSearch?: () => void;
-    readonly searchMinChars?: number;
-    readonly searchPlaceholder?: string;
+    /**
+     * When false, the table/grid toggle buttons are hidden entirely.
+     * The view is fixed to `view` and cannot be changed from the toolbar.
+     * Defaults to true (toggle shown).
+     */
+    readonly showViewToggle?: boolean;
 
     readonly columnVisibility: Record<string, boolean>;
     readonly onColumnVisibilityChange: (visibility: Record<string, boolean>) => void;
@@ -26,19 +32,14 @@ export type DataTableToolbarProps = {
 export const DataTableToolbar = ({
     view,
     onViewChange,
-    query,
-    onQueryChange,
-    isSearching = false,
-    onClearSearch,
-    searchMinChars = 3,
-    searchPlaceholder,
+    showViewToggle = true,
     columnVisibility,
     onColumnVisibilityChange,
     availableColumns
 }: DataTableToolbarProps) => {
-    const handleCheckbox = useCallback(
-        (id: string) => (e: ChangeEvent<HTMLInputElement>) => {
-            onColumnVisibilityChange({ ...columnVisibility, [id]: e.target.checked });
+    const handleColumnToggle = useCallback(
+        (id: string, checked: boolean) => {
+            onColumnVisibilityChange({ ...columnVisibility, [id]: checked });
         },
         [columnVisibility, onColumnVisibilityChange]
     );
@@ -46,94 +47,80 @@ export const DataTableToolbar = ({
     const { t } = useTranslations();
     return (
         <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-                <button
-                    type="button"
-                    aria-label={t('ui.accessibility.tableView')}
-                    className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'table' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
-                    )}
-                    onClick={() => onViewChange('table')}
-                >
-                    {t('ui.table.tableView')}
-                </button>
-                <button
-                    type="button"
-                    aria-label={t('ui.accessibility.gridView')}
-                    className={cn(
-                        'rounded-md border px-3 py-1.5 text-sm',
-                        view === 'grid' ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/40'
-                    )}
-                    onClick={() => onViewChange('grid')}
-                >
-                    {t('ui.table.gridView')}
-                </button>
-            </div>
-
-            <div className="flex items-center gap-3">
-                <div className="relative">
-                    <SearchIcon
-                        size="xs"
-                        className="-translate-y-1/2 absolute top-1/2 left-3 text-muted-foreground"
-                    />
-                    <input
-                        type="search"
-                        placeholder={
-                            searchPlaceholder ||
-                            t('ui.table.searchPlaceholder', { minChars: searchMinChars })
-                        }
-                        className="h-9 rounded-md border pr-8 pl-8 text-sm"
-                        value={query}
-                        onChange={(e) => onQueryChange(e.target.value)}
-                        aria-label={t('ui.accessibility.search')}
-                    />
-                    <div className="-translate-y-1/2 absolute top-1/2 right-3">
-                        {isSearching ? (
-                            <LoaderIcon
-                                size="xs"
-                                className="text-muted-foreground"
-                                aria-label={t('common.search')}
-                            />
-                        ) : query.length > 0 ? (
-                            <button
-                                type="button"
-                                onClick={onClearSearch}
-                                className="text-muted-foreground transition-colors hover:text-foreground"
-                                aria-label={t('common.clear')}
-                            >
-                                <CloseIcon size="xs" />
-                            </button>
-                        ) : null}
-                    </div>
+            {showViewToggle && (
+                <div className="inline-flex overflow-hidden rounded-md border">
+                    <button
+                        type="button"
+                        aria-label={t('ui.accessibility.tableView')}
+                        aria-pressed={view === 'table'}
+                        className={cn(
+                            'inline-flex items-center gap-1.5 px-3 py-1.5 text-sm',
+                            view === 'table'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent/40'
+                        )}
+                        onClick={() => onViewChange('table')}
+                    >
+                        <ListIcon
+                            weight={view === 'table' ? 'fill' : 'regular'}
+                            className="h-4 w-4"
+                        />
+                        {t('ui.table.tableView')}
+                    </button>
+                    <button
+                        type="button"
+                        aria-label={t('ui.accessibility.gridView')}
+                        aria-pressed={view === 'grid'}
+                        className={cn(
+                            'inline-flex items-center gap-1.5 border-l px-3 py-1.5 text-sm',
+                            view === 'grid'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'hover:bg-accent/40'
+                        )}
+                        onClick={() => onViewChange('grid')}
+                    >
+                        <GridIcon
+                            weight={view === 'grid' ? 'fill' : 'regular'}
+                            className="h-4 w-4"
+                        />
+                        {t('ui.table.gridView')}
+                    </button>
                 </div>
+            )}
 
-                <div className="relative">
-                    <details>
-                        <summary className="cursor-pointer select-none rounded-md border px-3 py-1.5 text-sm hover:bg-accent/40">
-                            {t('ui.table.columns')}
-                        </summary>
-                        <div className="absolute right-0 z-10 mt-1 w-56 rounded-md border bg-background p-2 shadow-md">
-                            <div className="space-y-1 text-sm">
-                                {availableColumns.map((c) => (
-                                    <label
-                                        key={c.id}
-                                        className="flex items-center justify-between gap-3"
-                                    >
-                                        <span>{c.label}</span>
-                                        <input
-                                            type="checkbox"
-                                            className="h-4 w-4"
-                                            checked={columnVisibility[c.id] ?? true}
-                                            onChange={handleCheckbox(c.id)}
-                                        />
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-                    </details>
-                </div>
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent/40"
+                    >
+                        {t('ui.table.columns')}
+                        <ChevronDownIcon
+                            weight="regular"
+                            className="h-4 w-4 opacity-60"
+                        />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                    align="end"
+                    className="w-56"
+                >
+                    <DropdownMenuLabel>{t('ui.table.columns')}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {availableColumns.map((c) => (
+                        <DropdownMenuCheckboxItem
+                            key={c.id}
+                            checked={columnVisibility[c.id] ?? true}
+                            onCheckedChange={(checked) =>
+                                handleColumnToggle(c.id, checked === true)
+                            }
+                            onSelect={(e) => e.preventDefault()}
+                        >
+                            {c.label}
+                        </DropdownMenuCheckboxItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     );
 };

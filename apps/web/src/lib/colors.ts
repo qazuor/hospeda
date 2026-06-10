@@ -5,6 +5,7 @@
  * Values are intended for inline styles (style attribute), not class names.
  */
 
+import { getAccommodationTypeColorScheme, getAccommodationTypeColorTokens } from '@repo/icons';
 import { PostCategoryEnum } from '@repo/schemas';
 
 /**
@@ -13,11 +14,11 @@ import { PostCategoryEnum } from '@repo/schemas';
  * Apply via inline style: `background-color: ${scheme.bg}; color: ${scheme.text}; border-color: ${scheme.border};`
  */
 export interface ColorScheme {
-    /** CSS background-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.15)') */
+    /** CSS background-color value (e.g. 'var(--brand-accent-a15)') */
     readonly bg: string;
     /** CSS color value (e.g. 'var(--brand-accent)') */
     readonly text: string;
-    /** CSS border-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.30)') */
+    /** CSS border-color value (e.g. 'var(--brand-accent-a30)') */
     readonly border: string;
 }
 
@@ -113,34 +114,18 @@ function schemeSolid({
  * @example
  * ```ts
  * getAccommodationTypeColor({ type: 'hotel' })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', text: 'var(--brand-accent)', border: 'oklch(from var(--brand-accent) l c h / 0.30)' }
+ * // { bg: 'var(--brand-accent-a15)', text: 'var(--brand-accent)', border: 'var(--brand-accent-a30)' }
  * ```
  */
 export function getAccommodationTypeColor({ type }: { readonly type: string }): ColorScheme {
-    switch (type) {
-        case 'hotel':
-            return scheme({ token: 'accent' });
-        case 'cabin':
-            return scheme({ token: 'hospeda-forest' });
-        case 'camping':
-            return scheme({ token: 'hospeda-sand', textToken: 'foreground' });
-        case 'apartment':
-            return scheme({ token: 'primary' });
-        case 'country_house':
-            return scheme({ token: 'secondary' });
-        case 'hostel':
-            return scheme({ token: 'hospeda-river', textToken: 'card' });
-        case 'resort':
-            return scheme({ token: 'hospeda-sky' });
-        case 'house':
-            return scheme({ token: 'muted', textToken: 'foreground' });
-        case 'motel':
-            return scheme({ token: 'warning', textToken: 'warning-foreground' });
-        case 'room':
-            return scheme({ token: 'info', textToken: 'info-foreground' });
-        default:
-            return scheme({ token: 'accent' });
-    }
+    // The per-type token mapping is the single source of truth in `@repo/icons`
+    // (shared with apps/admin). Web now uses the SAME `contrast` treatment as
+    // admin so a given accommodation type renders identically in both apps:
+    // each per-type token (`--accommodation-type-<type>`) is a distinct,
+    // saturated hue, and `contrast` derives a legible light fill + dark text
+    // from it. This intentionally changes the web badge look (product-owner
+    // approved) from the previous translucent 0.15-alpha pill.
+    return getAccommodationTypeColorScheme({ type, variant: 'contrast' });
 }
 
 /**
@@ -158,30 +143,12 @@ export function getAccommodationTypeColorSolid({
 }: {
     readonly type: string;
 }): ColorScheme {
-    switch (type) {
-        case 'hotel':
-            return schemeSolid({ token: 'accent' });
-        case 'cabin':
-            return schemeSolid({ token: 'hospeda-forest' });
-        case 'camping':
-            return schemeSolid({ token: 'hospeda-sand' });
-        case 'apartment':
-            return schemeSolid({ token: 'primary' });
-        case 'country_house':
-            return schemeSolid({ token: 'secondary' });
-        case 'hostel':
-            return schemeSolid({ token: 'hospeda-river' });
-        case 'resort':
-            return schemeSolid({ token: 'hospeda-sky' });
-        case 'house':
-            return schemeSolid({ token: 'muted' });
-        case 'motel':
-            return schemeSolid({ token: 'warning' });
-        case 'room':
-            return schemeSolid({ token: 'info' });
-        default:
-            return schemeSolid({ token: 'accent' });
-    }
+    // Reuse the shared per-type token mapping (SSOT in `@repo/icons`) but keep
+    // the solid (fully-opaque, contrast-clamped) rendering local to web. The
+    // solid variant intentionally ignores the mapping's `textToken` and uses
+    // `schemeSolid`'s default contrasting `card` text.
+    const { colorToken } = getAccommodationTypeColorTokens({ type });
+    return schemeSolid({ token: colorToken });
 }
 
 /**
@@ -226,10 +193,10 @@ export function getAccommodationTypeLabel({
  * @example
  * ```ts
  * getEventCategoryColor({ category: 'music' })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.15)', ... }
+ * // { bg: 'var(--brand-accent-a15)', ... }
  *
  * getEventCategoryColor({ category: 'music', bgOpacity: 0.85 })
- * // { bg: 'oklch(from var(--brand-accent) l c h / 0.85)', ... }
+ * // { bg: 'var(--brand-accent-a85)', ... }
  * ```
  */
 export function getEventCategoryColor({
@@ -246,21 +213,21 @@ export function getEventCategoryColor({
             return scheme({ token: 'primary', bgOpacity });
         case 'cultural':
         case 'culture':
-            return scheme({ token: 'hospeda-sky', bgOpacity });
+            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
         case 'gastronomy':
             return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'festival':
-            return scheme({ token: 'hospeda-sky', bgOpacity });
+            return scheme({ token: 'hospeda-sky', textToken: 'hospeda-river', bgOpacity });
         case 'wellness':
-            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
+            return scheme({ token: 'hospeda-river', bgOpacity });
         case 'art':
             return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'family':
-            return scheme({ token: 'info', textToken: 'info-foreground', bgOpacity });
+            return scheme({ token: 'info', bgOpacity });
         case 'nature':
             return scheme({ token: 'hospeda-forest', bgOpacity });
         case 'theater':
-            return scheme({ token: 'hospeda-river', textToken: 'card', bgOpacity });
+            return scheme({ token: 'hospeda-river', bgOpacity });
         case 'workshop':
             return scheme({ token: 'hospeda-sand', textToken: 'foreground', bgOpacity });
         case 'other':
@@ -280,17 +247,17 @@ const POST_CATEGORY_COLOR: Readonly<Record<string, ColorScheme>> = {
     [PostCategoryEnum.TIPS]: scheme({ token: 'accent' }),
     [PostCategoryEnum.GASTRONOMY]: scheme({ token: 'hospeda-forest' }),
     [PostCategoryEnum.CULTURE]: scheme({ token: 'hospeda-river', textToken: 'foreground' }),
-    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river', textToken: 'card' }),
-    [PostCategoryEnum.EVENTS]: scheme({ token: 'info', textToken: 'info-foreground' }),
-    [PostCategoryEnum.SPORT]: scheme({ token: 'hospeda-sky' }),
+    [PostCategoryEnum.NATURE]: scheme({ token: 'hospeda-river' }),
+    [PostCategoryEnum.EVENTS]: scheme({ token: 'info' }),
+    [PostCategoryEnum.SPORT]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
     [PostCategoryEnum.CARNIVAL]: scheme({ token: 'accent' }),
-    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river', textToken: 'card' }),
+    [PostCategoryEnum.NIGHTLIFE]: scheme({ token: 'hospeda-river' }),
     [PostCategoryEnum.HISTORY]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
     [PostCategoryEnum.TRADITIONS]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
     [PostCategoryEnum.WELLNESS]: scheme({ token: 'hospeda-forest' }),
-    [PostCategoryEnum.FAMILY]: scheme({ token: 'info', textToken: 'info-foreground' }),
+    [PostCategoryEnum.FAMILY]: scheme({ token: 'info' }),
     [PostCategoryEnum.ART]: scheme({ token: 'hospeda-sand', textToken: 'foreground' }),
-    [PostCategoryEnum.BEACH]: scheme({ token: 'hospeda-sky' }),
+    [PostCategoryEnum.BEACH]: scheme({ token: 'hospeda-sky', textToken: 'hospeda-river' }),
     [PostCategoryEnum.RURAL]: scheme({ token: 'hospeda-forest' }),
     [PostCategoryEnum.FESTIVALS]: scheme({ token: 'accent' }),
     [PostCategoryEnum.GENERAL]: scheme({ token: 'primary' })
@@ -331,7 +298,7 @@ const POST_CATEGORY_I18N_KEY: Readonly<Record<string, string>> = {
  * @example
  * ```ts
  * getPostCategoryColor({ category: 'SPORT' })
- * // { bg: 'oklch(from var(--hospeda-sky) l c h / 0.15)', ... }
+ * // { bg: 'var(--hospeda-sky-a15)', ... }
  * ```
  */
 export function getPostCategoryColor({ category }: { readonly category: string }): ColorScheme {
@@ -473,7 +440,7 @@ export function getBadgeStatusColor({ status }: { readonly status: string }): Co
  * @example
  * ```ts
  * getDestinationBadgeColor()
- * // { bg: 'oklch(from var(--brand-primary) l c h / 0.15)', text: 'var(--brand-primary)', border: 'oklch(from var(--brand-primary) l c h / 0.30)' }
+ * // { bg: 'var(--brand-primary-a15)', text: 'var(--brand-primary)', border: 'var(--brand-primary-a30)' }
  * ```
  */
 export function getDestinationBadgeColor(): ColorScheme {
@@ -493,14 +460,14 @@ export function getDestinationBadgeColor(): ColorScheme {
  * @example
  * ```ts
  * getMutedColorScheme()
- * // { bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)', text: 'var(--core-muted-foreground)', border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)' }
+ * // { bg: 'var(--core-muted-foreground-a08)', text: 'var(--core-muted-foreground)', border: 'var(--core-muted-foreground-a20)' }
  * ```
  */
 export function getMutedColorScheme(): ColorScheme {
     return {
-        bg: 'oklch(from var(--core-muted-foreground) l c h / 0.08)',
+        bg: 'var(--core-muted-foreground-a08)',
         text: 'var(--core-muted-foreground)',
-        border: 'oklch(from var(--core-muted-foreground) l c h / 0.20)'
+        border: 'var(--core-muted-foreground-a20)'
     };
 }
 

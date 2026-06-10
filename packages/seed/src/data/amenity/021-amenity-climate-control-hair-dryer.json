@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "021-amenity-climate-control-hair-dryer",
-    "name": "hair_dryer",
+    "name": {
+        "es": "hair_dryer",
+        "en": "hair_dryer",
+        "pt": "hair_dryer"
+    },
     "slug": "hair_dryer",
-    "description": "Secador de pelo",
+    "description": {
+        "es": "Secador de pelo",
+        "en": "Secador de pelo",
+        "pt": "Secador de pelo"
+    },
     "type": "CLIMATE_CONTROL",
     "icon": "HairDryerIcon",
     "isBuiltin": false,

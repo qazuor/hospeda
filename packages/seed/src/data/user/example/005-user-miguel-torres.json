@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Victoria",
         "country": "Argentina",
-        "zipCode": "3153",
-        "street": "Ruta Provincial 11",
-        "number": "km 15",
-        "coordinates": {
-            "lat": "-32.6167",
-            "long": "-60.1500"
-        }
+        "region": "Entre Ríos",
+        "city": "Victoria",
+        "addressLine1": "Ruta Provincial 11 km 15",
+        "postalCode": "3153"
     },
     "socialNetworks": {
         "facebook": "https://facebook.com/cabanas.miguel",

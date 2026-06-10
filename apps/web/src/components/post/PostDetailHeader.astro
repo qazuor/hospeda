@@ -98,9 +98,9 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 					</span>
 				)}
 				{isFeatured && (
-					<span class="post-header__flag post-header__flag--featured">
+					<span class="post-header__flag--featured featured-badge">
 						<StarIcon size={12} weight="fill" aria-hidden="true" />
-						{t('blog.detail.badge.featured', 'Destacado')}
+						<span>{t('blog.detail.badge.featured', 'Destacado')}</span>
 					</span>
 				)}
 			</div>
@@ -240,14 +240,10 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 	}
 
 	.post-header__flag--news {
-		background-color: oklch(from var(--brand-primary) l c h / 0.12);
+		background-color: var(--brand-primary-a12);
 		color: var(--brand-primary);
 	}
 
-	.post-header__flag--featured {
-		background-color: oklch(from var(--brand-accent) l c h / 0.15);
-		color: var(--brand-accent);
-	}
 
 	.post-header__title {
 		font-family: var(--font-heading);

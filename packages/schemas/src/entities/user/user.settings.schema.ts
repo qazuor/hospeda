@@ -103,14 +103,57 @@ export const UserSettingsSchema = z.object({
      */
     languageAdmin: LanguageEnumSchema.default('es').optional(),
 
-    /** Notification channel preferences. */
-    notifications: UserNotificationsSchema,
+    /** Notification channel preferences. Optional so that legacy stored JSONB without this key still parses (BETA-36). */
+    notifications: UserNotificationsSchema.optional(),
 
     /**
      * Whether the user has opted in to the marketing newsletter.
      * Defaults to `false`.
      */
-    newsletter: z.boolean().default(false).optional()
+    newsletter: z.boolean().default(false).optional(),
+
+    /**
+     * Onboarding progress namespace. Shared by SPEC-174 (welcome tour) and
+     * SPEC-175 (What's New). Added additively — no DB migration required.
+     *
+     * **CRITICAL**: Do NOT add `.default({})` to this field or any sub-object.
+     * Adding a default causes Zod to rewrite the stored JSONB on every parse,
+     * silently zeroing onboarding state for users whose column lacks the key.
+     * A stored settings object WITHOUT `onboarding` must parse cleanly.
+     */
+    onboarding: z
+        .object({
+            /**
+             * Welcome-tour step counters, keyed by tour id.
+             * Each value is the last completed step index (non-negative integer).
+             *
+             * This key belongs to SPEC-174 (admin-welcome-tour) semantics.
+             * It is defined here because both SPEC-174 and SPEC-175 share the
+             * same `onboarding` JSONB namespace; each spec's dedicated PATCH
+             * endpoint only touches its own sub-key and preserves the other.
+             */
+            adminTours: z.record(z.string(), z.number().int().nonnegative()).optional(),
+
+            /**
+             * What's New seen-state for the authenticated user (SPEC-175).
+             *
+             * - `baselineAt`: ISO datetime set on the user's first
+             *   `GET /api/v1/protected/whats-new` hit (lazy init). Entries
+             *   with `publishedAt <= baselineAt` are automatically treated as
+             *   seen, preventing flooding pre-existing users on feature deploy.
+             * - `seenIds`: set of entry ids explicitly marked seen by the user
+             *   (via `PATCH /api/v1/protected/users/me/whats-new-seen`).
+             */
+            whatsNew: z
+                .object({
+                    /** ISO datetime of the user's first GET hit. Set by lazy-init logic. */
+                    baselineAt: z.string().datetime().optional(),
+                    /** Entry ids that the user has explicitly marked as seen. */
+                    seenIds: z.array(z.string()).optional()
+                })
+                .optional()
+        })
+        .optional()
 });
 
 /**
@@ -161,3 +204,27 @@ export type UserNotifications = z.infer<typeof UserNotificationsSchema>;
 export type UserSettings = z.infer<typeof UserSettingsSchema>;
 export type UserSettingsWebPatch = z.infer<typeof UserSettingsWebPatchSchema>;
 export type UserSettingsAdminPatch = z.infer<typeof UserSettingsAdminPatchSchema>;
+
+/**
+ * The `onboarding.whatsNew` sub-object from {@link UserSettingsSchema}.
+ *
+ * Holds the What's New seen-state persisted in the user's `settings` JSONB
+ * column. Both fields are optional — a value is only written by the lazy-init
+ * logic on the user's first `GET /api/v1/protected/whats-new` request.
+ *
+ * @see SPEC-175 §6.1, §6.5
+ */
+export type UserOnboardingWhatsNew = NonNullable<
+    NonNullable<UserSettings['onboarding']>['whatsNew']
+>;
+
+/**
+ * The full `onboarding` sub-object from {@link UserSettingsSchema}.
+ *
+ * Aggregates all onboarding sub-keys:
+ * - `adminTours` (SPEC-174): welcome-tour step counters.
+ * - `whatsNew` (SPEC-175): What's New seen-state.
+ *
+ * @see SPEC-174, SPEC-175 §6.1
+ */
+export type UserOnboarding = NonNullable<UserSettings['onboarding']>;

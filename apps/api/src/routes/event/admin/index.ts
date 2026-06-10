@@ -9,6 +9,7 @@ import { adminDeleteEventRoute } from './delete';
 import { adminGetEventByIdRoute } from './getById';
 import { adminHardDeleteEventRoute } from './hardDelete';
 import { adminListEventsRoute } from './list';
+import { adminEventOptionsRoute } from './options';
 import { adminPatchEventRoute } from './patch';
 import { adminRestoreEventRoute } from './restore';
 import { adminUpdateEventRoute } from './update';
@@ -20,6 +21,10 @@ app.route('/', adminListEventsRoute);
 
 // POST / - Create event
 app.route('/', adminCreateEventRoute);
+
+// GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
+// Registered before /:id so Hono does not resolve "options" as a UUID param
+app.route('/', adminEventOptionsRoute);
 
 // GET /:id - Get by ID
 app.route('/', adminGetEventByIdRoute);

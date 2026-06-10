@@ -190,4 +190,22 @@ describe('handleRouteError — ServiceError.reason propagation', () => {
         // Assert
         expect(calls[0]?.status).toBe(403);
     });
+
+    it('maps PLAN_DISABLED to HTTP 410 via handleRouteError (SPEC-148 T-003)', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+        const error = new ServiceError(
+            ServiceErrorCode.PLAN_DISABLED,
+            'The selected plan is no longer available'
+        );
+
+        // Act
+        handleRouteError(error, ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(410);
+        const body = calls[0]?.body as Record<string, unknown>;
+        const responseError = body?.error as Record<string, unknown>;
+        expect(responseError?.code).toBe('PLAN_DISABLED');
+    });
 });

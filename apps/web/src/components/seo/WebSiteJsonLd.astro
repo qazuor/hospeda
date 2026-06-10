@@ -1,0 +1,51 @@
+---
+/**
+ * @file WebSiteJsonLd.astro
+ * @description WebSite JSON-LD component for the homepage.
+ * Generates schema.org `WebSite` structured data with a `SearchAction`
+ * so search engines can surface a sitelinks search box in SERP.
+ *
+ * SPEC-157 / REQ-5.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Props interface for WebSiteJsonLd component. */
+interface Props {
+	/** Site/brand name (e.g. "Hospeda"). */
+	readonly name: string;
+	/** Canonical absolute URL of the site root (e.g. "https://hospeda.com.ar"). */
+	readonly url: string;
+	/**
+	 * BCP47 locale tag for the search target path (e.g. "es").
+	 * Used to build the SearchAction target URL with the correct locale prefix.
+	 */
+	readonly locale: string;
+}
+
+const { name, url, locale } = Astro.props;
+
+// The {search_term_string} placeholder MUST appear verbatim and unencoded in
+// the JSON-LD output so Google can substitute the query at runtime.
+// JSON.stringify would turn the braces into { / }, which breaks the
+// sitelinks-searchbox feature. We build the target string outside the
+// structuredData object and inject it as a pre-formed string value.
+const searchTarget = `${url}/${locale}/busqueda/?q={search_term_string}`;
+
+const structuredData: Record<string, unknown> = {
+	'@context': 'https://schema.org',
+	'@type': 'WebSite',
+	name,
+	url,
+	potentialAction: {
+		'@type': 'SearchAction',
+		target: {
+			'@type': 'EntryPoint',
+			urlTemplate: searchTarget,
+		},
+		'query-input': 'required name=search_term_string',
+	},
+};
+---
+
+<JsonLd data={structuredData} />

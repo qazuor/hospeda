@@ -4,17 +4,29 @@
  * Displays the current user's avatar with a dropdown menu for
  * profile access and sign-out. Uses AuthContext for user state.
  *
+ * SPEC-174 T-014 additions (§7.8, D8):
+ * - "Ver guía" — relaunches the role's welcome tour (ignores version/seen state,
+ *   source: 'manual').
+ * - "Ver guía de esta página" — relaunches the contextual tour for the current
+ *   route when one exists (source: 'manual-page'). Hidden on routes without a
+ *   contextual tour.
+ *
  * @note This file is kept at the original path to minimize import
  * changes across existing components. Will be moved to a proper
  * location in the cleanup phase.
  */
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import type { TourRole } from '@/config/ia/tour.schema';
+import { useTour } from '@/contexts/tour-context';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useContextualTourForRoute, useWelcomeTourForRole } from '@/hooks/use-tours';
+import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { getInitialsFromName } from '@/lib/avatar-utils';
+import { CompassIcon, MapIcon } from '@repo/icons';
 import { getMediaUrl } from '@repo/media';
-import { useRouter } from '@tanstack/react-router';
+import { useLocation, useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 /**
@@ -23,8 +35,16 @@ import { useEffect, useRef, useState } from 'react';
 export function HeaderUser() {
     const { user, isLoading } = useAuthContext();
     const router = useRouter();
+    const { pathname } = useLocation();
+    const { t } = useTranslations();
+    const { startTour } = useTour();
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    // Tour selectors (SPEC-174 T-014, §7.8)
+    const role = (user?.role as TourRole | null | undefined) ?? null;
+    const welcomeTour = useWelcomeTourForRole({ role });
+    const contextualTour = useContextualTourForRoute({ pathname });
 
     // Close menu on outside click
     useEffect(() => {
@@ -67,7 +87,9 @@ export function HeaderUser() {
         setIsOpen(false);
         await signOut();
         if (typeof window !== 'undefined') {
-            window.location.href = '/auth/signin';
+            // SPEC-182: land on the admin root after sign-out; the _authed
+            // guard redirects the unauthenticated user to the unified web signin.
+            window.location.href = '/';
         }
     };
 
@@ -81,6 +103,7 @@ export function HeaderUser() {
                 onClick={() => setIsOpen((v) => !v)}
                 className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="User menu"
+                data-tour="user-menu"
             >
                 <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
                     {user.avatar ? (
@@ -108,7 +131,7 @@ export function HeaderUser() {
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
-                                router.navigate({ to: '/me/profile' });
+                                router.navigate({ to: '/account/profile' });
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >
@@ -118,12 +141,53 @@ export function HeaderUser() {
                             type="button"
                             onClick={() => {
                                 setIsOpen(false);
-                                router.navigate({ to: '/me/settings' });
+                                router.navigate({ to: '/account/preferences' });
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >
                             Settings
                         </button>
+
+                        {/* Tour entry points (SPEC-174 T-014, §7.8, D8) */}
+                        {welcomeTour && (
+                            <>
+                                <hr className="my-1" />
+                                {/* "Ver guía" — replay role welcome tour, ignores seen/version */}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsOpen(false);
+                                        startTour({ tourId: welcomeTour.id, source: 'manual' });
+                                    }}
+                                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent"
+                                    aria-label={t('admin-common.tour.replay')}
+                                >
+                                    <CompassIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                    {t('admin-common.tour.replay')}
+                                </button>
+
+                                {/* "Ver guía de esta página" — only when a contextual tour
+                                    exists for the current route */}
+                                {contextualTour && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setIsOpen(false);
+                                            startTour({
+                                                tourId: contextualTour.id,
+                                                source: 'manual-page'
+                                            });
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-accent"
+                                        aria-label={t('admin-common.tour.replayPage')}
+                                    >
+                                        <MapIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                        {t('admin-common.tour.replayPage')}
+                                    </button>
+                                )}
+                            </>
+                        )}
+
                         <hr className="my-1" />
                         <button
                             type="button"

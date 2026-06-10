@@ -72,8 +72,11 @@ type MockUseSession = ReturnType<typeof vi.fn>;
 
 /** Default props used across most tests. */
 const defaultProps = {
-    planId: 'plan_starter',
-    price: 1200,
+    planSlug: 'plan_starter',
+    // 120000 cents = $1200 ARS — formatPrice divides by 100 internally
+    // to convert to the major-unit display value.
+    monthlyPrice: 120000,
+    annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
     locale: 'es' as const
@@ -144,9 +147,15 @@ function mockSessionPending() {
  * file (`unauthenticated user`, `API error`, `network error`,
  * `idle state rendering`) remain enabled.
  *
- * See `.claude/specs/SPEC-131-plan-purchase-button-async-state-tests/spec.md`.
+ * See `.qtm/specs/SPEC-131-plan-purchase-button-async-state-tests/spec.md`.
  */
-const SPEC_131_PENDING = true;
+// SPEC-131 resolved: the root cause was apiClient.request() calling getBaseUrl() outside
+// its try/catch, causing validateWebEnv() to throw in test environments where PUBLIC_API_URL
+// is unset. The fix: (1) move URL computation inside try/catch in client.ts so env errors
+// return { ok: false } instead of throwing; (2) add PUBLIC_API_URL + PUBLIC_SITE_URL to
+// vitest.config.ts test.env so fetch mocks are reachable; (3) update the endpoint assertion
+// from the legacy /checkout path (SPEC-126 deprecated) to /subscriptions/start-paid.
+const SPEC_131_PENDING = false;
 
 // ---------------------------------------------------------------------------
 // Setup / teardown
@@ -645,7 +654,7 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    planId="plan_pro"
+                    planSlug="plan_pro"
                 />
             );
 
@@ -655,10 +664,13 @@ describe('PlanPurchaseButton', () => {
                 expect(fetchMock).toHaveBeenCalled();
             });
 
-            // Assert — body contains planId from props
+            // Assert — body contains planSlug + billingInterval (default 'monthly')
             const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
-            const body = JSON.parse(requestInit.body as string) as { planId: string };
-            expect(body).toEqual({ planId: 'plan_pro' });
+            const body = JSON.parse(requestInit.body as string) as {
+                planSlug: string;
+                billingInterval: string;
+            };
+            expect(body).toEqual({ planSlug: 'plan_pro', billingInterval: 'monthly' });
         });
 
         it('sends POST method with Content-Type application/json', async () => {
@@ -749,9 +761,11 @@ describe('PlanPurchaseButton', () => {
                 expect(fetchMock).toHaveBeenCalled();
             });
 
-            // Assert — endpoint path matches the component's hardcoded path
+            // Assert — endpoint path matches the component's actual checkout path.
+            // NOTE: /billing/checkout was the legacy endpoint deprecated in SPEC-126;
+            // the component now uses /billing/subscriptions/start-paid.
             const [url] = fetchMock.mock.calls[0] as [string];
-            expect(url).toContain('/api/v1/protected/billing/checkout');
+            expect(url).toContain('/api/v1/protected/billing/subscriptions/start-paid');
         });
     });
 
@@ -780,7 +794,9 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    price={1200}
+                    // 120000 cents = $1200 ARS; the component divides by 100
+                    // for display.
+                    monthlyPrice={120000}
                     currency="ARS"
                 />
             );
@@ -795,7 +811,8 @@ describe('PlanPurchaseButton', () => {
             render(
                 <PlanPurchaseButton
                     {...defaultProps}
-                    price={12}
+                    // 1200 cents = $12 USD
+                    monthlyPrice={1200}
                     currency="USD"
                 />
             );
@@ -811,7 +828,7 @@ describe('PlanPurchaseButton', () => {
                 <PlanPurchaseButton
                     {...defaultProps}
                     ctaText="Contratar"
-                    price={1200}
+                    monthlyPrice={120000}
                     currency="ARS"
                 />
             );

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "014-feature-pet_suitable",
-    "name": "Apto para mascotas",
+    "name": {
+        "es": "Apto para mascotas",
+        "en": "Apto para mascotas",
+        "pt": "Apto para mascotas"
+    },
     "slug": "pet_suitable",
-    "description": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly",
+    "description": {
+        "es": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly",
+        "en": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly",
+        "pt": "Instalaciones preparadas para recibir mascotas con áreas seguras, servicios veterinarios cercanos y políticas pet-friendly"
+    },
     "icon": "PetFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

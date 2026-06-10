@@ -15,6 +15,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NewsletterForm } from '../../../src/components/newsletter/NewsletterForm.client';
+import { AUTH_ME_CACHE_KEY } from '../../../src/lib/auth-cache';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -69,7 +70,27 @@ vi.mock('../../../src/components/auth/AuthRequiredPopover.client', () => ({
 const API_URL = 'http://api.test';
 const USER_EMAIL = 'test@example.com';
 
+/**
+ * Seed the shared `/auth/me` sessionStorage cache so the component's mount
+ * effect short-circuits on cache hit instead of triggering an extra fetch.
+ * The existing assertions in this file count fetch calls (e.g. "does NOT
+ * call GET /status on mount for guest users"), so suppressing the implicit
+ * `/auth/me` call keeps those assertions meaningful.
+ */
+function seedAuthMeCache(input: { isAuthenticated: boolean; email?: string }) {
+    sessionStorage.setItem(
+        AUTH_ME_CACHE_KEY,
+        JSON.stringify({
+            isAuthenticated: input.isAuthenticated,
+            user: input.isAuthenticated ? { id: 'user-1', email: input.email ?? '' } : null,
+            permissions: [],
+            cachedAt: Date.now()
+        })
+    );
+}
+
 function renderGuest() {
+    seedAuthMeCache({ isAuthenticated: false });
     return render(
         <NewsletterForm
             isAuthenticated={false}
@@ -80,6 +101,7 @@ function renderGuest() {
 }
 
 function renderAuth(email = USER_EMAIL) {
+    seedAuthMeCache({ isAuthenticated: true, email });
     return render(
         <NewsletterForm
             isAuthenticated={true}
@@ -104,8 +126,11 @@ function mockFetchOk(body: unknown): ReturnType<typeof vi.fn> {
 
 describe('NewsletterForm', () => {
     beforeEach(() => {
-        // Reset the global fetch mock before each test
+        // Reset the global fetch mock + the /auth/me sessionStorage cache so each
+        // test starts from a clean slate. Helpers (`renderGuest`/`renderAuth`)
+        // re-seed the cache to match the prop shape.
         vi.stubGlobal('fetch', vi.fn());
+        sessionStorage.clear();
     });
 
     // =========================================================================
@@ -129,13 +154,6 @@ describe('NewsletterForm', () => {
             expect(input).not.toHaveAttribute('readonly');
         });
 
-        it('shows lock badge for guest state', () => {
-            renderGuest();
-            // The lock badge has the title attribute with the lock label
-            const badge = document.querySelector('[title]');
-            expect(badge?.getAttribute('title')).toMatch(/iniciá sesión/i);
-        });
-
         it('does NOT call GET /status on mount for guest users', () => {
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
@@ -143,75 +161,143 @@ describe('NewsletterForm', () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it('opens AuthRequiredPopover when subscribe button is clicked', async () => {
-            renderGuest();
-            const button = screen.getByRole('button', { name: /suscribirme/i });
-            fireEvent.click(button);
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
-            });
-        });
-
-        it('opens AuthRequiredPopover when email input is focused', async () => {
-            renderGuest();
-            const input = screen.getByRole('textbox');
-            fireEvent.focus(input);
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
-            });
-        });
-
-        it('does NOT send a POST request when guest clicks subscribe', async () => {
+        it('rejects an empty submit with a validation error message', async () => {
             const fetchMock = vi.fn();
             vi.stubGlobal('fetch', fetchMock);
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
+
+            // Use form submission rather than button click so the empty-email
+            // validator fires.
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
             await waitFor(() => {
-                expect(fetchMock).not.toHaveBeenCalledWith(
-                    expect.stringContaining('/subscribe'),
-                    expect.anything()
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+                expect(screen.getByRole('alert').textContent).toMatch(/email/i);
+            });
+            // No network round-trip for a client-side invalid payload.
+            expect(fetchMock).not.toHaveBeenCalledWith(
+                expect.stringContaining('/subscribe'),
+                expect.anything()
+            );
+        });
+
+        it('POSTs the typed email to /api/v1/public/newsletter/subscribe', async () => {
+            const fetchMock = mockFetchOk({ status: 'pending_verification' });
+            vi.stubGlobal('fetch', fetchMock);
+            // Stub window.location.assign so the redirect doesn't navigate jsdom.
+            const assignMock = vi.fn();
+            const originalLocation = window.location;
+            Object.defineProperty(window, 'location', {
+                value: { ...originalLocation, assign: assignMock, href: originalLocation.href },
+                writable: true
+            });
+
+            renderGuest();
+
+            const input = screen.getByRole('textbox') as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'guest@example.com' } });
+
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledWith(
+                    `${API_URL}/api/v1/public/newsletter/subscribe`,
+                    expect.objectContaining({
+                        method: 'POST',
+                        body: expect.stringContaining('guest@example.com')
+                    })
                 );
             });
         });
 
-        it('closes AuthRequiredPopover when popover close button is clicked', async () => {
-            renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
-
-            await waitFor(() => {
-                expect(screen.getByTestId('auth-required-popover')).toBeInTheDocument();
+        it('redirects to /{locale}/newsletter/confirma-tu-email on pending_verification', async () => {
+            const fetchMock = mockFetchOk({ status: 'pending_verification' });
+            vi.stubGlobal('fetch', fetchMock);
+            const assignMock = vi.fn();
+            Object.defineProperty(window, 'location', {
+                value: { assign: assignMock, href: 'http://test/' },
+                writable: true
             });
 
-            fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
+            renderGuest();
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
             await waitFor(() => {
-                expect(screen.queryByTestId('auth-required-popover')).not.toBeInTheDocument();
+                expect(assignMock).toHaveBeenCalledWith(
+                    expect.stringContaining(
+                        '/es/newsletter/confirma-tu-email?email=guest%40example.com'
+                    )
+                );
             });
         });
 
-        it('closes AuthRequiredPopover on Escape key', async () => {
+        it('shows already-active banner inline when the email is somehow already active', async () => {
+            const fetchMock = mockFetchOk({ status: 'active' });
+            vi.stubGlobal('fetch', fetchMock);
+
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
-
-            await waitFor(() => {
-                expect(screen.getByRole('dialog')).toBeInTheDocument();
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'already@example.com' }
             });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
-            // The mock doesn't implement Escape itself — the real AuthRequiredPopover does.
-            // We test the NewsletterForm's `isPopoverOpen` flag via closing the mock's button.
-            // (The actual Escape behavior is covered in AuthRequiredPopover's own tests.)
-            fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
             await waitFor(() => {
-                expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+                const banner = document.querySelector('[data-state="already-active"]');
+                expect(banner).toBeInTheDocument();
             });
         });
 
-        it('popover message contains newsletter-specific copy', async () => {
+        it('shows the generic error banner on a non-2xx response', async () => {
+            const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 429 });
+            vi.stubGlobal('fetch', fetchMock);
+
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
-            await waitFor(() => {
-                expect(screen.getByText(/creá una cuenta gratuita/i)).toBeInTheDocument();
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
             });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert').textContent).toMatch(/no pudimos/i);
+            });
+        });
+
+        it('keeps the email input editable in the error state so a guest can correct and retry (BETA-25)', async () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+            renderGuest();
+
+            // Mistype an email and submit → client-side validation → error state.
+            const input = screen.getByRole('textbox') as HTMLInputElement;
+            fireEvent.change(input, { target: { value: 'not-an-email' } });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+
+            // Regression: a guest input that flips to readonly in the error state
+            // can never be corrected — and a readonly input also suppresses the
+            // mobile keyboard (the BETA-25 symptom). It must stay editable.
+            const inputAfterError = screen.getByRole('textbox') as HTMLInputElement;
+            expect(inputAfterError).not.toHaveAttribute('readonly');
+            expect(inputAfterError).toHaveValue('not-an-email');
+
+            // Editing clears the error so the guest can resubmit.
+            fireEvent.change(inputAfterError, { target: { value: 'guest@example.com' } });
+            await waitFor(() => {
+                expect(screen.queryByRole('alert')).toBeNull();
+            });
+            expect(inputAfterError).toHaveValue('guest@example.com');
         });
     });
 
@@ -233,20 +319,35 @@ describe('NewsletterForm', () => {
             );
         });
 
-        it('renders form with pre-filled read-only email input', async () => {
+        it('renders the account email as static text, not an input', async () => {
             renderAuth();
-            // Wait for status fetch to resolve
+            // Wait for status fetch to resolve into idle-auth.
             await waitFor(() => {
-                const input = screen.getByRole('textbox');
-                expect(input).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
         });
 
-        it('email input is read-only in idle-auth state', async () => {
+        it('does NOT render an email input in idle-auth state (BETA-25 mobile keyboard)', async () => {
             renderAuth();
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveAttribute('readonly');
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
+            // Regression: a read-only <input> looks editable but never opens the
+            // keyboard on Android / Samsung Internet. The authed view must show
+            // the email as text, so there is no textbox at all.
+            expect(screen.queryByRole('textbox')).toBeNull();
+            // The visually-hidden label must not keep a dangling `for` pointing
+            // at the now-removed input id.
+            expect(document.querySelector('label')).not.toHaveAttribute('for');
+        });
+
+        it('shows a "Configurar" link to the newsletter settings page', async () => {
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
+            });
+            const configureLink = screen.getByRole('link', { name: /configurar/i });
+            expect(configureLink).toHaveAttribute('href', '/es/mi-cuenta/newsletter/');
         });
 
         it('calls GET /api/v1/protected/newsletter/status on mount', async () => {
@@ -298,9 +399,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
             renderAuth();
 
-            // Wait for status to resolve
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             const button = screen.getByRole('button', { name: /suscribirme/i });
@@ -328,8 +429,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
             renderAuth();
 
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             const form = screen.getByRole('form');
@@ -365,8 +467,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             fireEvent.submit(screen.getByRole('form'));
@@ -395,8 +498,9 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
+            // Wait for status to resolve — authed view shows email as static text
             await waitFor(() => {
-                expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL);
+                expect(screen.getByText(USER_EMAIL)).toBeInTheDocument();
             });
 
             fireEvent.submit(screen.getByRole('form'));
@@ -445,11 +549,98 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
                 expect(screen.queryByRole('form')).not.toBeInTheDocument();
+            });
+        });
+    });
+
+    // =========================================================================
+    // STATE: blocked-unverified
+    // =========================================================================
+
+    describe('blocked-unverified state', () => {
+        it('switches to blocked-unverified banner when the API returns NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED', async () => {
+            // First call: /status (returns not-subscribed). Second call: subscribe
+            // returns the 403 with the reason.
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: false,
+                    status: 403,
+                    json: async () => ({
+                        success: false,
+                        error: {
+                            code: 'FORBIDDEN',
+                            message: 'unverified',
+                            reason: 'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED'
+                        }
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            renderAuth();
+
+            // Wait for the initial status check to land us in idle-auth.
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                const banner = document.querySelector('[data-state="blocked-unverified"]');
+                expect(banner).toBeInTheDocument();
+                expect(banner?.textContent).toMatch(/verificá el email de tu cuenta/i);
+            });
+        });
+
+        it('renders a "go to my account" link in the blocked-unverified banner', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: false,
+                    status: 403,
+                    json: async () => ({
+                        success: false,
+                        error: { reason: 'NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED' }
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
+
+            await waitFor(() => {
+                const link = screen.getByRole('link', { name: /ir a mi cuenta/i });
+                expect(link).toHaveAttribute('href', '/es/mi-cuenta/');
             });
         });
     });
@@ -493,10 +684,7 @@ describe('NewsletterForm', () => {
             await waitFor(() => {
                 const manageLink = screen.getByRole('link', { name: /gestionar suscripción/i });
                 expect(manageLink).toBeInTheDocument();
-                expect(manageLink).toHaveAttribute(
-                    'href',
-                    '/es/mi-cuenta/preferencias/newsletter/'
-                );
+                expect(manageLink).toHaveAttribute('href', '/es/mi-cuenta/newsletter/');
             });
         });
 
@@ -515,6 +703,120 @@ describe('NewsletterForm', () => {
 
             await waitFor(() => {
                 expect(screen.queryByRole('form')).not.toBeInTheDocument();
+            });
+        });
+
+        it('renders an inline Desuscribirme button in the already-active banner', async () => {
+            vi.stubGlobal(
+                'fetch',
+                mockFetchOk({
+                    subscribed: true,
+                    status: 'active',
+                    subscribedAt: '2026-01-01T00:00:00.000Z',
+                    verifiedAt: '2026-01-02T00:00:00.000Z'
+                })
+            );
+
+            renderAuth();
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+        });
+
+        it('does NOT call DELETE when the confirm prompt is cancelled', async () => {
+            const fetchMock = vi.fn().mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    subscribed: true,
+                    status: 'active',
+                    subscribedAt: '2026-01-01T00:00:00.000Z',
+                    verifiedAt: '2026-01-02T00:00:00.000Z'
+                })
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            // Only the initial /status call should have happened — no DELETE.
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it('DELETEs /unsubscribe and falls back to idle-auth on confirm', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: true,
+                        status: 'active',
+                        subscribedAt: '2026-01-01T00:00:00.000Z',
+                        verifiedAt: '2026-01-02T00:00:00.000Z'
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({ status: 'unsubscribed' })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            // The DELETE call lands as the second invocation.
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+                expect(fetchMock).toHaveBeenNthCalledWith(
+                    2,
+                    `${API_URL}/api/v1/protected/newsletter/unsubscribe`,
+                    expect.objectContaining({ method: 'DELETE' })
+                );
+            });
+
+            // After success the banner is gone and the subscribe form re-appears.
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /suscribirme/i })).toBeInTheDocument();
+            });
+        });
+
+        it('returns to already-active on DELETE failure (no permanent state loss)', async () => {
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: true,
+                        status: 'active',
+                        subscribedAt: '2026-01-01T00:00:00.000Z',
+                        verifiedAt: '2026-01-02T00:00:00.000Z'
+                    })
+                })
+                .mockResolvedValueOnce({ ok: false, status: 500 });
+            vi.stubGlobal('fetch', fetchMock);
+            vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+            renderAuth();
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /desuscribirme/i })).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByRole('button', { name: /desuscribirme/i }));
+
+            await waitFor(() => {
+                // Still on already-active so the user can retry.
+                const banner = document.querySelector('[data-state="already-active"]');
+                expect(banner).toBeInTheDocument();
             });
         });
 
@@ -537,7 +839,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -572,7 +875,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             // The alert role specifically targets the <p role="alert"> error paragraph
@@ -599,7 +903,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             // The alert role specifically targets the <p role="alert"> error paragraph
@@ -626,7 +931,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -651,7 +957,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -685,7 +992,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -716,7 +1024,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -743,7 +1052,8 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
             const form = screen.getByRole('form');
             const describedById = form.getAttribute('aria-describedby');
@@ -766,7 +1076,8 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
             const liveRegion = document.querySelector('[aria-live="polite"]');
             expect(liveRegion).toBeInTheDocument();
@@ -789,7 +1100,8 @@ describe('NewsletterForm', () => {
             vi.stubGlobal('fetch', fetchMock);
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(USER_EMAIL));
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
             fireEvent.submit(screen.getByRole('form'));
 
             await waitFor(() => {
@@ -798,7 +1110,7 @@ describe('NewsletterForm', () => {
             });
         });
 
-        it('email input has an associated label element', async () => {
+        it('authed email display has an associated label element via aria-labelledby', async () => {
             vi.stubGlobal(
                 'fetch',
                 mockFetchOk({
@@ -810,10 +1122,13 @@ describe('NewsletterForm', () => {
             );
 
             renderAuth();
-            await waitFor(() => expect(screen.getByRole('textbox')).toBeInTheDocument());
+            // Wait for status to resolve — authed view shows email as static text
+            await waitFor(() => expect(screen.getByText(USER_EMAIL)).toBeInTheDocument());
 
-            const input = screen.getByRole('textbox');
-            const labelId = input.getAttribute('aria-labelledby');
+            // In authed mode there is no textbox; the email display div carries aria-labelledby
+            const authedEmailDiv = document.querySelector('[aria-labelledby]');
+            expect(authedEmailDiv).toBeInTheDocument();
+            const labelId = authedEmailDiv?.getAttribute('aria-labelledby');
             expect(labelId).toBeTruthy();
             const label = document.getElementById(labelId as string);
             expect(label).toBeInTheDocument();
@@ -879,19 +1194,152 @@ describe('NewsletterForm', () => {
             win.dataLayer = originalDl;
         });
 
-        it('pushes newsletter_subscribe_clicked to dataLayer on guest click', async () => {
+        it('pushes newsletter_subscribe_clicked to dataLayer on guest form submit', async () => {
             const dl: unknown[] = [];
             (window as unknown as { dataLayer: unknown[] }).dataLayer = dl;
+            vi.stubGlobal('fetch', mockFetchOk({ status: 'pending_verification' }));
+            Object.defineProperty(window, 'location', {
+                value: { assign: vi.fn(), href: 'http://test/' },
+                writable: true
+            });
 
             renderGuest();
-            fireEvent.click(screen.getByRole('button', { name: /suscribirme/i }));
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'guest@example.com' }
+            });
+            const form = document.querySelector('form');
+            if (form) fireEvent.submit(form);
 
-            expect(dl).toContainEqual(
-                expect.objectContaining({ event: 'newsletter_subscribe_clicked' })
-            );
+            await waitFor(() => {
+                expect(dl).toContainEqual(
+                    expect.objectContaining({
+                        event: 'newsletter_subscribe_clicked',
+                        auth: false
+                    })
+                );
+            });
 
             // Reset dataLayer after test
             (window as unknown as { dataLayer?: unknown[] }).dataLayer = undefined;
+        });
+    });
+
+    // =========================================================================
+    // Client-side auth resolution (cross-page session detection)
+    //
+    // The Astro Footer reads `Astro.locals.user` and forwards `isAuthenticated`
+    // as a prop. On pages OUTSIDE `SESSION_OPTIONAL_SEGMENTS` (home, contacto,
+    // legal, …) the middleware does NOT parse the cookie, so `Astro.locals.user`
+    // is null even when the visitor has a live session. The island MUST recover
+    // the auth state client-side via the shared /auth/me cache + fetch fallback.
+    // =========================================================================
+
+    describe('client-side auth resolution', () => {
+        it('promotes idle-guest → idle-auth when /auth/me reports an authenticated session via cache', async () => {
+            // SSR thought the visitor was a guest (middleware did not parse session
+            // on this route), but the cached /auth/me snapshot disagrees.
+            seedAuthMeCache({ isAuthenticated: true, email: 'cached@example.com' });
+
+            // The mount effect must NOT hit /auth/me (cache hit) but it WILL hit
+            // /status. Stub the status endpoint with a "not subscribed" response.
+            vi.stubGlobal(
+                'fetch',
+                mockFetchOk({
+                    subscribed: false,
+                    status: null,
+                    subscribedAt: null,
+                    verifiedAt: null
+                })
+            );
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={false}
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            // After promotion to idle-auth the email is shown as static text, not an input.
+            await waitFor(() => {
+                expect(screen.getByText('cached@example.com')).toBeInTheDocument();
+                expect(screen.queryByRole('textbox')).toBeNull();
+            });
+        });
+
+        it('falls back to fetching /api/v1/public/auth/me when no cache is seeded', async () => {
+            // No sessionStorage cache → component must call /auth/me first, then /status.
+            const fetchMock = vi
+                .fn()
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        data: {
+                            isAuthenticated: true,
+                            actor: { id: 'u-1', email: 'fetched@example.com' }
+                        }
+                    })
+                })
+                .mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => ({
+                        subscribed: false,
+                        status: null,
+                        subscribedAt: null,
+                        verifiedAt: null
+                    })
+                });
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={false}
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            // After promotion to idle-auth the email is shown as static text, not an input.
+            await waitFor(() => {
+                expect(screen.getByText('fetched@example.com')).toBeInTheDocument();
+                expect(screen.queryByRole('textbox')).toBeNull();
+            });
+
+            // First call is /auth/me, second is /status.
+            expect(fetchMock).toHaveBeenNthCalledWith(
+                1,
+                `${API_URL}/api/v1/public/auth/me`,
+                expect.objectContaining({ credentials: 'include' })
+            );
+            expect(fetchMock).toHaveBeenNthCalledWith(
+                2,
+                `${API_URL}/api/v1/protected/newsletter/status`,
+                expect.objectContaining({ credentials: 'include' })
+            );
+        });
+
+        it('demotes idle-auth → idle-guest when /auth/me reports an anonymous visitor', async () => {
+            // SSR thought the visitor was authenticated (e.g. cookie present at
+            // SSR but expired by hydration), but /auth/me says otherwise.
+            seedAuthMeCache({ isAuthenticated: false });
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+
+            render(
+                <NewsletterForm
+                    isAuthenticated={true}
+                    userEmail="ssr@example.com"
+                    apiUrl={API_URL}
+                    locale="es"
+                />
+            );
+
+            // The input becomes the editable guest input (no `readonly`).
+            await waitFor(() => {
+                expect(screen.getByRole('textbox')).not.toHaveAttribute('readonly');
+            });
+            // /status must NOT be called since the resolved state is guest.
+            expect(fetchMock).not.toHaveBeenCalled();
         });
     });
 });

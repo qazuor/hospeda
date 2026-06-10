@@ -159,8 +159,11 @@ describe('FavoriteButton — guest render', () => {
             />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toBeInTheDocument();
+        // Assert — the component now renders two FavoriteIcon elements: the
+        // visible "regular" icon and a hidden "fill" icon used for the CSS
+        // hover preview effect (icon stack pattern, commit 35b93bca1). Use
+        // getAllByTestId and check at least one icon is present.
+        expect(screen.getAllByTestId('favorite-icon').length).toBeGreaterThanOrEqual(1);
     });
 
     it('has aria-pressed=false when not favorited', () => {
@@ -222,8 +225,11 @@ describe('FavoriteButton — authenticated not favorited', () => {
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toHaveAttribute('data-weight', 'regular');
+        // Assert — when not favorited the component renders two icons (CSS hover
+        // stack, commit 35b93bca1): the first visible icon has weight="regular"
+        // and the second hidden icon has weight="fill" for the hover preview.
+        const icons = screen.getAllByTestId('favorite-icon');
+        expect(icons[0]).toHaveAttribute('data-weight', 'regular');
     });
 });
 
@@ -248,8 +254,10 @@ describe('FavoriteButton — authenticated favorited', () => {
             <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: true })} />
         );
 
-        // Assert
-        expect(screen.getByTestId('favorite-icon')).toHaveAttribute('data-weight', 'fill');
+        // Assert — when favorited only one icon renders (no hover-preview layer
+        // because the button is already in the "filled" state, commit 35b93bca1).
+        const icons = screen.getAllByTestId('favorite-icon');
+        expect(icons[0]).toHaveAttribute('data-weight', 'fill');
     });
 });
 
@@ -564,8 +572,8 @@ describe('FavoriteButton — API 403 LIMIT_REACHED', () => {
         });
     });
 
-    it('calls addToast with limit-reached fallback message', async () => {
-        // Arrange
+    it('calls addToast with generic limit-reached message when no details provided', async () => {
+        // Arrange — error without details: falls back to billing.limit.generic.message
         mockToggle.mockResolvedValue({
             ok: false,
             error: { status: 403, code: 'LIMIT_REACHED', message: 'Plan limit exceeded' }
@@ -577,12 +585,56 @@ describe('FavoriteButton — API 403 LIMIT_REACHED', () => {
         // Act
         fireEvent.click(screen.getByRole('button'));
 
-        // Assert — the toast message uses the limit_reached i18n fallback
+        // Assert — the toast shows the generic fallback message and an upgrade action
         await waitFor(() => {
             expect(mockAddToast).toHaveBeenCalledWith(
                 expect.objectContaining({
                     type: 'error',
-                    message: expect.stringContaining('límite de favoritos')
+                    message: expect.stringContaining('límite de tu plan'),
+                    action: expect.objectContaining({
+                        label: expect.any(String),
+                        href: expect.stringContaining('suscripcion')
+                    })
+                })
+            );
+        });
+    });
+
+    it('calls addToast with upgrade action CTA when details.limitKey is provided', async () => {
+        // Arrange — error with details.limitKey='max_favorites': the helper looks up
+        // billing.limit.max_favorites.* but in tests the i18n mock always returns the
+        // fallback string. We verify the important contract: the action href is present.
+        mockToggle.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 403,
+                code: 'LIMIT_REACHED',
+                message: 'Plan limit exceeded',
+                details: {
+                    limitKey: 'max_favorites',
+                    currentCount: 3,
+                    maxAllowed: 3,
+                    usagePercent: 100,
+                    upgradeAudience: 'tourist'
+                }
+            }
+        });
+        render(
+            <FavoriteButton {...buildProps({ isAuthenticated: true, initialIsFavorited: false })} />
+        );
+
+        // Act
+        fireEvent.click(screen.getByRole('button'));
+
+        // Assert — the toast is an error with an upgrade CTA action.
+        // The i18n mock returns fallbacks, so we verify shape not exact string.
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'error',
+                    action: expect.objectContaining({
+                        href: expect.stringContaining('suscripcion')
+                    })
                 })
             );
         });

@@ -15,6 +15,125 @@ export { ICON_MAP, resolveIcon } from './icon-resolver';
 // Export Phosphor icon factory
 export { createPhosphorIcon } from './create-phosphor-icon';
 
+// Export custom brand-mark factory (single-color SVG logos that aren't part
+// of the Phosphor catalog, e.g. payment provider marks).
+export { createBrandIcon } from './create-brand-icon';
+
+// Export domain mappings (accommodation type → icon + color tokens). Single
+// source of truth shared by apps/web and apps/admin.
+export {
+    ACCOMMODATION_TYPE_FALLBACK_VISUAL,
+    ACCOMMODATION_TYPE_VISUALS,
+    getAccommodationTypeColorScheme,
+    getAccommodationTypeColorTokens,
+    getAccommodationTypeIcon,
+    getAccommodationTypeVisual
+} from './domain/accommodation-type';
+export type {
+    AccommodationTypeColorScheme,
+    AccommodationTypeVisual
+} from './domain/accommodation-type';
+
+// Attraction icon slug (Material Symbols) → Phosphor component. Single source of
+// truth shared by apps/web and apps/admin.
+export { getAttractionIcon } from './domain/attraction-icon';
+
+// Event-category → icon + color tokens. Single source of truth shared by
+// apps/web and apps/admin.
+export {
+    EVENT_CATEGORY_FALLBACK_VISUAL,
+    EVENT_CATEGORY_VISUALS,
+    getEventCategoryColorScheme,
+    getEventCategoryIcon,
+    getEventCategoryVisual
+} from './domain/event-category';
+export type {
+    EventCategoryColorScheme,
+    EventCategoryColorVariant,
+    EventCategoryVisual
+} from './domain/event-category';
+
+// Post-category → icon + color tokens. Single source of truth shared by
+// apps/web and apps/admin.
+export {
+    POST_CATEGORY_FALLBACK_VISUAL,
+    POST_CATEGORY_VISUALS,
+    getPostCategoryColorScheme,
+    getPostCategoryIcon,
+    getPostCategoryVisual
+} from './domain/post-category';
+export type {
+    PostCategoryColorScheme,
+    PostCategoryColorVariant,
+    PostCategoryVisual
+} from './domain/post-category';
+
+// User-role → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    USER_ROLE_FALLBACK_VISUAL,
+    USER_ROLE_VISUALS,
+    getUserRoleColorScheme,
+    getUserRoleIcon,
+    getUserRoleVisual
+} from './domain/user-role';
+export type {
+    UserRoleColorScheme,
+    UserRoleColorVariant,
+    UserRoleVisual
+} from './domain/user-role';
+
+// Auth-provider → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    AUTH_PROVIDER_FALLBACK_VISUAL,
+    AUTH_PROVIDER_VISUALS,
+    getAuthProviderColorScheme,
+    getAuthProviderIcon,
+    getAuthProviderVisual
+} from './domain/auth-provider';
+export type {
+    AuthProviderColorScheme,
+    AuthProviderColorVariant,
+    AuthProviderVisual
+} from './domain/auth-provider';
+
+// Amenity-type → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    AMENITY_TYPE_FALLBACK_VISUAL,
+    AMENITY_TYPE_VISUALS,
+    getAmenityTypeColorScheme,
+    getAmenityTypeIcon,
+    getAmenityTypeVisual
+} from './domain/amenity-type';
+export type {
+    AmenityTypeColorScheme,
+    AmenityTypeColorVariant,
+    AmenityTypeVisual
+} from './domain/amenity-type';
+
+// Sponsor-type → icon + color tokens. Single source of truth shared by apps/web
+// and apps/admin.
+export {
+    SPONSOR_TYPE_FALLBACK_VISUAL,
+    SPONSOR_TYPE_VISUALS,
+    getSponsorTypeColorScheme,
+    getSponsorTypeIcon,
+    getSponsorTypeVisual
+} from './domain/sponsor-type';
+export type {
+    SponsorTypeColorScheme,
+    SponsorTypeColorVariant,
+    SponsorTypeVisual
+} from './domain/sponsor-type';
+
+// Export payment brand icons
+export { AmericanExpressIcon } from './icons/payment/AmericanExpressIcon';
+export { MasterCardIcon } from './icons/payment/MasterCardIcon';
+export { MercadoPagoIcon } from './icons/payment/MercadoPagoIcon';
+export { VisaIcon } from './icons/payment/VisaIcon';
+
 // Export entity icons
 export { AccommodationIcon } from './icons/entities/AccommodationIcon';
 export { ContentIcon } from './icons/entities/ContentIcon';
@@ -299,6 +418,7 @@ export { QuotesIcon } from './icons/system/QuotesIcon';
 export { SparkleIcon } from './icons/system/SparkleIcon';
 export { AddressIcon } from './icons/system/AddressIcon';
 export { AdminIcon } from './icons/system/AdminIcon';
+export { ArrowLeftIcon } from './icons/system/ArrowLeftIcon';
 export { ArrowRightIcon } from './icons/system/ArrowRightIcon';
 export { AlertsIcon } from './icons/system/AlertsIcon';
 export { AlertTriangleIcon } from './icons/system/AlertTriangleIcon';
@@ -390,6 +510,18 @@ export { PowerIcon } from './icons/system/PowerIcon';
 export { PowerOffIcon } from './icons/system/PowerOffIcon';
 export { ReceiptIcon } from './icons/system/ReceiptIcon';
 export { ShieldAlertIcon } from './icons/system/ShieldAlertIcon';
+export { BedIcon } from './icons/system/BedIcon';
+export { BriefcaseIcon } from './icons/system/BriefcaseIcon';
+export { ConfettiIcon } from './icons/system/ConfettiIcon';
+export { CrownIcon } from './icons/system/CrownIcon';
+export { ForkKnifeIcon } from './icons/system/ForkKnifeIcon';
+export { LockIcon } from './icons/system/LockIcon';
+export { MegaphoneIcon } from './icons/system/MegaphoneIcon';
+export { TelevisionIcon } from './icons/system/TelevisionIcon';
+export { ThermometerIcon } from './icons/system/ThermometerIcon';
+export { UsersThreeIcon } from './icons/system/UsersThreeIcon';
+export { WheelchairIcon } from './icons/system/WheelchairIcon';
+export { WrenchIcon } from './icons/system/WrenchIcon';
 export { ShieldIcon } from './icons/system/ShieldIcon';
 export { SunIcon } from './icons/system/SunIcon';
 export { ShoppingCartIcon } from './icons/system/ShoppingCartIcon';
@@ -428,10 +560,14 @@ export { UnavailableIcon } from './icons/booking/UnavailableIcon';
 
 // Export social icons
 export { FacebookIcon } from './icons/social/FacebookIcon';
+export { GithubIcon } from './icons/social/GithubIcon';
+export { GoogleIcon } from './icons/social/GoogleIcon';
+export { LinkedInIcon } from './icons/social/LinkedInIcon';
+export { TiktokIcon } from './icons/social/TiktokIcon';
 export { YoutubeIcon } from './icons/social/YoutubeIcon';
 export { InstagramIcon } from './icons/social/InstagramIcon';
 export { WebIcon } from './icons/social/WebIcon';
-export { TwitterIcon } from './icons/social/TwitterIcon';
+export { TwitterIcon, XIcon } from './icons/social/TwitterIcon';
 export { WhatsappIcon } from './icons/social/WhatsappIcon';
 
 // Export communication icons

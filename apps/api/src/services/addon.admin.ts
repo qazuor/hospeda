@@ -8,7 +8,6 @@
  * @module services/addon.admin
  */
 
-import { getAddonBySlug } from '@repo/billing';
 import {
     type DrizzleClient,
     billingAddonPurchases,
@@ -17,11 +16,16 @@ import {
     safeIlike,
     withTransaction
 } from '@repo/db';
+import { AddonCatalogService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { type SQL, and, count, desc, eq, isNull, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';
+
+// ─── Module-level singleton ────────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
 
 /**
  * Input parameters for listing customer add-on purchases
@@ -52,6 +56,10 @@ export interface CustomerAddonRow {
     subscriptionId: string | null;
     addonSlug: string;
     addonId: string | null;
+    /** Human-readable name from the add-on catalog (null if slug not in catalog) */
+    addonName: string | null;
+    /** Price in ARS centavos from the add-on catalog (null if slug not in catalog) */
+    priceArs: number | null;
     status: string;
     purchasedAt: string;
     expiresAt: string | null;
@@ -190,26 +198,38 @@ export class AdminAddonService {
                 'Admin retrieved customer add-on purchases'
             );
 
-            const data: CustomerAddonRow[] = results.map((row) => ({
-                id: row.id,
-                customerId: row.customerId,
-                customerEmail: row.customerEmail,
-                customerName: row.customerName ?? null,
-                subscriptionId: row.subscriptionId ?? null,
-                addonSlug: row.addonSlug,
-                addonId: row.addonId ?? null,
-                status: row.status,
-                purchasedAt: row.purchasedAt.toISOString(),
-                expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
-                canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
-                deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
-                paymentId: row.paymentId ?? null,
-                limitAdjustments: row.limitAdjustments ?? null,
-                entitlementAdjustments: row.entitlementAdjustments ?? null,
-                metadata: row.metadata ?? null,
-                createdAt: row.createdAt.toISOString(),
-                updatedAt: row.updatedAt.toISOString()
-            }));
+            // Build catalog Map once per request — O(1) lookup per row.
+            // Reads from the DB-backed catalog service (SPEC-192 T-009 cutover).
+            const catalogListResult = await catalogService.list();
+            const catalogBySlug = new Map(
+                (catalogListResult.success ? catalogListResult.data : []).map((a) => [a.slug, a])
+            );
+
+            const data: CustomerAddonRow[] = results.map((row) => {
+                const catalog = catalogBySlug.get(row.addonSlug) ?? null;
+                return {
+                    id: row.id,
+                    customerId: row.customerId,
+                    customerEmail: row.customerEmail,
+                    customerName: row.customerName ?? null,
+                    subscriptionId: row.subscriptionId ?? null,
+                    addonSlug: row.addonSlug,
+                    addonId: row.addonId ?? null,
+                    addonName: catalog?.name ?? null,
+                    priceArs: catalog?.priceArs ?? null,
+                    status: row.status,
+                    purchasedAt: row.purchasedAt.toISOString(),
+                    expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
+                    canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
+                    deletedAt: row.deletedAt ? row.deletedAt.toISOString() : null,
+                    paymentId: row.paymentId ?? null,
+                    limitAdjustments: row.limitAdjustments ?? null,
+                    entitlementAdjustments: row.entitlementAdjustments ?? null,
+                    metadata: row.metadata ?? null,
+                    createdAt: row.createdAt.toISOString(),
+                    updatedAt: row.updatedAt.toISOString()
+                };
+            });
 
             return {
                 success: true,
@@ -341,7 +361,9 @@ export class AdminAddonService {
                 lockedPurchase = row;
 
                 // ── 2. Calculate new expiresAt ────────────────────────────────
-                const addon = getAddonBySlug(row.addonSlug);
+                // Resolve addon definition from the DB-backed catalog service.
+                const addonCatalogResult = await catalogService.getBySlug(row.addonSlug);
+                const addon = addonCatalogResult.success ? addonCatalogResult.data : null;
                 const now = new Date();
 
                 if (
@@ -528,6 +550,10 @@ export class AdminAddonService {
                 };
             }
 
+            // Resolve from DB-backed catalog service (SPEC-192 T-009 cutover).
+            const catalogResult = await catalogService.getBySlug(row.addonSlug);
+            const catalog = catalogResult.success ? catalogResult.data : null;
+
             return {
                 success: true,
                 data: {
@@ -538,6 +564,8 @@ export class AdminAddonService {
                     subscriptionId: row.subscriptionId ?? null,
                     addonSlug: row.addonSlug,
                     addonId: row.addonId ?? null,
+                    addonName: catalog?.name ?? null,
+                    priceArs: catalog?.priceArs ?? null,
                     status: row.status,
                     purchasedAt: row.purchasedAt.toISOString(),
                     expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,

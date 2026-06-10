@@ -26,11 +26,13 @@ import {
 import { PromoCodeDeleteDialog } from '@/features/promo-codes/components/PromoCodeDeleteDialog';
 import { PromoCodeFormDialog } from '@/features/promo-codes/components/PromoCodeFormDialog';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/promo-codes')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingPromoCodesPage
 });
 
@@ -231,9 +233,9 @@ function BillingPromoCodesPage() {
 
                 {/* API Warning */}
                 {!data?.items && (
-                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+                    <Card className="border-warning/30 bg-warning/10">
                         <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            <p className="text-foreground text-sm">
                                 <strong>{t('admin-billing.promoCodes.noteLabel')}</strong>{' '}
                                 {t('admin-billing.promoCodes.apiUnavailable')}
                             </p>

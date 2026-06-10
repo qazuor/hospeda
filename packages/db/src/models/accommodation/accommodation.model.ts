@@ -12,6 +12,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
@@ -24,20 +25,8 @@ import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
  * With `DESC`, Postgres places NULLs FIRST by default — so "sort by rating desc" would
  * bubble up rows WITHOUT rating. We force `NULLS LAST` for these fields regardless of
  * direction so empty values are always last.
- *
- * `minPrice` / `maxPrice` are listed for spec-literal compatibility (SPEC-076) but are
- * NOT actual columns on the accommodations table — price is stored under a JSONB `price`
- * object. These entries are defensive: if a future refactor ever exposes them as direct
- * sort-eligible columns, the `NULLS LAST` rule will apply automatically. Until then the
- * `columns[field]` lookup in `buildAccommodationOrderBy` returns `undefined` and the
- * entry is silently skipped (same as any unknown column).
  */
-const NUMERIC_NULLABLE_FIELDS = new Set<string>([
-    'averageRating',
-    'reviewsCount',
-    'minPrice',
-    'maxPrice'
-]);
+const NUMERIC_NULLABLE_FIELDS = new Set<string>(['averageRating', 'reviewsCount']);
 
 /**
  * Build a Drizzle-compatible sort expression. For nullable numeric fields we emit a raw
@@ -64,6 +53,15 @@ function buildSortExpr(column: AnyColumn, order: 'asc' | 'desc', field: string):
 const MOST_SAVED_SORT_FIELD = 'mostSaved';
 
 /**
+ * Synthetic sort field name that orders accommodations by their JSONB-extracted
+ * base price. Backed by `(price->>'price')::numeric` — the seed/model contract
+ * stores the nightly base price under `price.price` in ARS, with sibling fields
+ * `currency` and `discounts`. Accommodations with `price = NULL` or no `price`
+ * key bubble to the end thanks to `NULLS LAST`.
+ */
+const PRICE_SORT_FIELD = 'price';
+
+/**
  * Build the correlated subquery used as the ORDER BY expression for the
  * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are folded
  * to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
@@ -76,6 +74,67 @@ function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
           AND ${userBookmarks.entityType} = 'ACCOMMODATION'
           AND ${userBookmarks.deletedAt} IS NULL
     ) ${direction}`;
+}
+
+/**
+ * Build the ORDER BY expression for the `price` synthetic sort. Extracts the
+ * base price from the JSONB `price` column (`price.price`) as numeric. NULLs go
+ * last regardless of direction so unpriced rows do not dominate the first page
+ * of a `priceAsc` sort.
+ */
+function buildPriceOrderExpr(order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(${accommodations.price}->>'price')::numeric ${direction} NULLS LAST`;
+}
+
+/**
+ * Synthetic sort field that orders accommodations by haversine distance from a
+ * caller-supplied `(centerLat, centerLong)` center. Only honored when the
+ * caller passes the coordinates in (otherwise the field is silently dropped
+ * upstream so the URL stays usable when no geo center is active). Mirrors the
+ * SQL formula used by `buildGeoRadiusClause` (Earth radius 6371 km) so the
+ * sort distance and the filter distance match exactly.
+ *
+ * Rows missing JSONB coordinates bubble to the end via `NULLS LAST`, which
+ * also keeps the result deterministic when the cast yields NULL.
+ */
+const DISTANCE_SORT_FIELD = 'distance';
+
+function buildDistanceOrderExpr(centerLat: number, centerLong: number, order: 'asc' | 'desc'): SQL {
+    const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
+    return sql`(
+        2 * 6371 * asin(
+            sqrt(
+                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
+                + cos(radians(${centerLat}))
+                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
+                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
+            )
+        )
+    ) ${direction} NULLS LAST`;
+}
+
+/**
+ * Build WHERE-clause conditions for `minPrice` / `maxPrice` filters. Operates
+ * on the JSONB-extracted base price (`(price->>'price')::numeric`) instead of
+ * comparing the whole JSONB object to a number (which Postgres allows but
+ * yields lexicographic comparisons, not numeric — i.e. silently wrong).
+ *
+ * Returns an empty array when neither bound is set so callers can spread the
+ * result into a `whereClauses` array unconditionally.
+ */
+function buildBasePriceConditions(
+    min: number | undefined,
+    max: number | undefined
+): SQL<unknown>[] {
+    const out: SQL<unknown>[] = [];
+    if (min !== undefined) {
+        out.push(sql`(${accommodations.price}->>'price')::numeric >= ${min}`);
+    }
+    if (max !== undefined) {
+        out.push(sql`(${accommodations.price}->>'price')::numeric <= ${max}`);
+    }
+    return out;
 }
 
 /**
@@ -99,6 +158,15 @@ export function buildAccommodationOrderBy(params: {
     sorts?: SortField[];
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    /**
+     * Center latitude for the `distance` synthetic sort. Required for the
+     * `distance` sort to be honored; if absent (or `longitude` is absent), any
+     * `distance` entry in `sorts`/`sortBy` is silently dropped so the URL
+     * remains usable when no geo center is active.
+     */
+    latitude?: number;
+    /** Center longitude for the `distance` synthetic sort. See `latitude`. */
+    longitude?: number;
 }): SQL[] {
     const orderBy: SQL[] = [];
 
@@ -117,12 +185,38 @@ export function buildAccommodationOrderBy(params: {
         ? rawSortFields.filter((s) => s.field !== 'isFeatured')
         : rawSortFields;
 
+    const hasGeoCenter = params.latitude !== undefined && params.longitude !== undefined;
+
     for (const sort of sortFields) {
         // SPEC-098 T-052 — synthetic field backed by a correlated subquery
         // against `user_bookmarks`. Handled before the column lookup because
         // `mostSaved` is not a real accommodation column.
         if (sort.field === MOST_SAVED_SORT_FIELD) {
             orderBy.push(buildMostSavedOrderExpr(sort.order));
+            continue;
+        }
+        // Synthetic field that orders by JSONB-extracted base price. `price`
+        // IS a column on the table but it is JSONB — Drizzle's `asc()/desc()`
+        // would compare the whole object lexicographically. We extract the
+        // base value explicitly to get numeric ordering.
+        if (sort.field === PRICE_SORT_FIELD) {
+            orderBy.push(buildPriceOrderExpr(sort.order));
+            continue;
+        }
+        // Synthetic field that orders by haversine distance from a geo
+        // center. Silently dropped if the caller did not supply
+        // `latitude`/`longitude` — keeps the URL roundtrip stable when the
+        // user toggles geo-radius off without changing the sort param.
+        if (sort.field === DISTANCE_SORT_FIELD) {
+            if (hasGeoCenter) {
+                orderBy.push(
+                    buildDistanceOrderExpr(
+                        params.latitude as number,
+                        params.longitude as number,
+                        sort.order
+                    )
+                );
+            }
             continue;
         }
         const column = accommodations[sort.field as keyof typeof accommodations];
@@ -150,14 +244,58 @@ export function buildAccommodationOrderBy(params: {
  * When a single ID is provided the HAVING clause is `= 1`, which is
  * equivalent to a plain EXISTS but keeps the implementation uniform.
  */
+/**
+ * Build a WHERE clause that restricts accommodations to those that have ALL
+ * of the provided amenity IDs (set intersection — AND semantics).
+ *
+ * Implementation note (`sql.raw` for column refs): when this clause is
+ * composed into `searchWithRelations` (Drizzle's relational query API with
+ * lateral joins), template-literal column refs like
+ * `${rAccommodationAmenity.accommodationId}` get re-aliased to the OUTER
+ * table (`accommodations`) and the subquery fails at runtime — the resulting
+ * SQL reads `WHERE "accommodations"."amenity_id" = ...`, which is nonsense.
+ *
+ * Workaround: emit the column names as raw identifiers so Drizzle doesn't
+ * try to alias them. The table reference (`${rAccommodationAmenity}`) is
+ * kept as a template arg because Drizzle correctly resolves it to the
+ * table name string in the FROM clause.
+ */
 function buildAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unknown> {
     const n = amenityIds.length;
+    const idList = sql.join(
+        amenityIds.map((id) => sql`${id}`),
+        sql`, `
+    );
     return sql<unknown>`${accommodations.id} IN (
-        SELECT ${rAccommodationAmenity.accommodationId}
+        SELECT "r_accommodation_amenity"."accommodation_id"
         FROM ${rAccommodationAmenity}
-        WHERE ${inArray(rAccommodationAmenity.amenityId, amenityIds as string[])}
-        GROUP BY ${rAccommodationAmenity.accommodationId}
-        HAVING COUNT(DISTINCT ${rAccommodationAmenity.amenityId}) = ${n}
+        WHERE "r_accommodation_amenity"."amenity_id" IN (${idList})
+        GROUP BY "r_accommodation_amenity"."accommodation_id"
+        HAVING COUNT(DISTINCT "r_accommodation_amenity"."amenity_id") = ${n}
+    )`;
+}
+
+/**
+ * Build a WHERE clause that restricts accommodations to those that have AT
+ * LEAST ONE of the provided amenity IDs (OR semantics within the set).
+ *
+ * Used to back the public boolean shortcuts (`hasWifi`, `hasPool`,
+ * `hasParking`, `allowsPets`) where the toggle should match against multiple
+ * slug variants (e.g. `pool` + `heated_pool`). Different from
+ * {@link buildAmenityIntersectionClause} which requires ALL ids.
+ *
+ * Same raw-identifier workaround as the intersection clause — see that
+ * function's docstring for the Drizzle-aliasing background.
+ */
+function buildAnyAmenityClause(amenityIds: readonly string[]): SQL<unknown> {
+    const idList = sql.join(
+        amenityIds.map((id) => sql`${id}`),
+        sql`, `
+    );
+    return sql<unknown>`${accommodations.id} IN (
+        SELECT "r_accommodation_amenity"."accommodation_id"
+        FROM ${rAccommodationAmenity}
+        WHERE "r_accommodation_amenity"."amenity_id" IN (${idList})
     )`;
 }
 
@@ -170,13 +308,40 @@ function buildAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unkn
  */
 function buildFeatureIntersectionClause(featureIds: readonly string[]): SQL<unknown> {
     const n = featureIds.length;
+    const idList = sql.join(
+        featureIds.map((id) => sql`${id}`),
+        sql`, `
+    );
     return sql<unknown>`${accommodations.id} IN (
-        SELECT ${rAccommodationFeature.accommodationId}
+        SELECT "r_accommodation_feature"."accommodation_id"
         FROM ${rAccommodationFeature}
-        WHERE ${inArray(rAccommodationFeature.featureId, featureIds as string[])}
-        GROUP BY ${rAccommodationFeature.accommodationId}
-        HAVING COUNT(DISTINCT ${rAccommodationFeature.featureId}) = ${n}
+        WHERE "r_accommodation_feature"."feature_id" IN (${idList})
+        GROUP BY "r_accommodation_feature"."accommodation_id"
+        HAVING COUNT(DISTINCT "r_accommodation_feature"."feature_id") = ${n}
     )`;
+}
+
+/**
+ * Builds a WHERE clause that keeps accommodations whose stored coordinates are
+ * within `radiusKm` of the supplied center using the haversine formula. The
+ * coordinates live under `location.coordinates.{lat,long}` (JSONB, stored as
+ * strings) and are cast to numeric on the fly. Earth radius is 6371 km.
+ */
+function buildGeoRadiusClause(
+    centerLat: number,
+    centerLong: number,
+    radiusKm: number
+): SQL<unknown> {
+    return sql<unknown>`(
+        2 * 6371 * asin(
+            sqrt(
+                power(sin(radians(((${accommodations.location}->'coordinates'->>'lat')::numeric - ${centerLat}) / 2)), 2)
+                + cos(radians(${centerLat}))
+                  * cos(radians((${accommodations.location}->'coordinates'->>'lat')::numeric))
+                  * power(sin(radians(((${accommodations.location}->'coordinates'->>'long')::numeric - ${centerLong}) / 2)), 2)
+            )
+        )
+    ) <= ${radiusKm}`;
 }
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
@@ -210,7 +375,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     }
 
     public async countByFilters(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public counts. */
+            excludePlanRestricted?: boolean;
+        },
         tx?: DrizzleClient
     ): Promise<{ count: number }> {
         const db = this.getClient(tx);
@@ -226,12 +396,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
         if (params.destinationIds && params.destinationIds.length > 0) {
             whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
         } else if (params.destinationId) {
@@ -240,85 +405,13 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
         }
-        if (params.minGuests !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
-            );
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
         }
-        if (params.maxGuests !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'capacity')::int <= ${params.maxGuests}`
-            );
-        }
-        if (params.minBedrooms !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'bedrooms')::int >= ${params.minBedrooms}`
-            );
-        }
-        if (params.maxBedrooms !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'bedrooms')::int <= ${params.maxBedrooms}`
-            );
-        }
-        if (params.minBathrooms !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'bathrooms')::int >= ${params.minBathrooms}`
-            );
-        }
-        if (params.maxBathrooms !== undefined) {
-            whereClauses.push(
-                sql`(${accommodations.extraInfo}->>'bathrooms')::int <= ${params.maxBathrooms}`
-            );
-        }
-        if (params.minRating !== undefined) {
-            whereClauses.push(gte(accommodations.averageRating, params.minRating));
-        }
-        if (params.q) {
-            whereClauses.push(
-                or(
-                    safeIlike(accommodations.name, params.q),
-                    safeIlike(accommodations.description, params.q)
-                ) as SQL<unknown>
-            );
-        }
-
-        const where = and(...whereClauses);
-
-        const totalQuery = db.select({ count: count() }).from(this.table).where(where);
-        const totalResult = await totalQuery;
-        return { count: Number(totalResult[0]?.count ?? 0) };
-    }
-
-    public async search(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
-        tx?: DrizzleClient
-    ): Promise<{ items: Accommodation[]; total: number }> {
-        const db = this.getClient(tx);
-
-        const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
-        if (params.ownerId) {
-            whereClauses.push(eq(accommodations.ownerId, params.ownerId));
-        }
-        if (params.types && params.types.length > 0) {
-            whereClauses.push(
-                inArray(accommodations.type, params.types as (typeof accommodations.type._.data)[])
-            );
-        } else if (params.type) {
-            whereClauses.push(eq(accommodations.type, params.type));
-        }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
-        if (params.destinationIds && params.destinationIds.length > 0) {
-            whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
-        } else if (params.destinationId) {
-            whereClauses.push(eq(accommodations.destinationId, params.destinationId));
-        }
-        if (params.excludeRestricted) {
-            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        // Mirrors excludeOwnerSuspended treatment (same layers, same query helper).
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -357,6 +450,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
             whereClauses.push(buildAmenityIntersectionClause(params.amenities));
         }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
+        }
         if (params.features && params.features.length > 0) {
             // Intersection semantics: accommodation must have ALL provided feature IDs.
             whereClauses.push(buildFeatureIntersectionClause(params.features));
@@ -370,13 +476,182 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // SPEC-097 — Viewport bbox filter on EXACT coordinates stored under
+        // location.coordinates (JSONB). Mirrors the predicate in
+        // searchWithRelations so paginated counts and totals agree.
+        if (
+            params.bboxNorth !== undefined &&
+            params.bboxSouth !== undefined &&
+            params.bboxEast !== undefined &&
+            params.bboxWest !== undefined
+        ) {
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'lat')::numeric BETWEEN ${params.bboxSouth} AND ${params.bboxNorth}`
+            );
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
+        // Geo radius filter — haversine distance in kilometers between the
+        // accommodation's stored coordinates and the supplied center, capped at
+        // `radius`. Requires the full triplet; partial input is ignored.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
+            );
+        }
+
+        const where = and(...whereClauses);
+
+        const totalQuery = db.select({ count: count() }).from(this.table).where(where);
+        const totalResult = await totalQuery;
+        return { count: Number(totalResult[0]?.count ?? 0) };
+    }
+
+    public async search(
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
+            excludePlanRestricted?: boolean;
+        },
+        tx?: DrizzleClient
+    ): Promise<{ items: Accommodation[]; total: number }> {
+        const db = this.getClient(tx);
+
+        const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
+        if (params.ownerId) {
+            whereClauses.push(eq(accommodations.ownerId, params.ownerId));
+        }
+        if (params.types && params.types.length > 0) {
+            whereClauses.push(
+                inArray(accommodations.type, params.types as (typeof accommodations.type._.data)[])
+            );
+        } else if (params.type) {
+            whereClauses.push(eq(accommodations.type, params.type));
+        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
+        if (params.destinationIds && params.destinationIds.length > 0) {
+            whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
+        } else if (params.destinationId) {
+            whereClauses.push(eq(accommodations.destinationId, params.destinationId));
+        }
+        if (params.excludeRestricted) {
+            whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
+        }
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
+        }
+        if (params.minGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int >= ${params.minGuests}`
+            );
+        }
+        if (params.maxGuests !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'capacity')::int <= ${params.maxGuests}`
+            );
+        }
+        if (params.minBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int >= ${params.minBedrooms}`
+            );
+        }
+        if (params.maxBedrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bedrooms')::int <= ${params.maxBedrooms}`
+            );
+        }
+        if (params.minBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int >= ${params.minBathrooms}`
+            );
+        }
+        if (params.maxBathrooms !== undefined) {
+            whereClauses.push(
+                sql`(${accommodations.extraInfo}->>'bathrooms')::int <= ${params.maxBathrooms}`
+            );
+        }
+        if (params.minRating !== undefined) {
+            whereClauses.push(gte(accommodations.averageRating, params.minRating));
+        }
+        if (params.amenities && params.amenities.length > 0) {
+            // Intersection semantics: accommodation must have ALL provided amenity IDs.
+            whereClauses.push(buildAmenityIntersectionClause(params.amenities));
+        }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
+        }
+        if (params.features && params.features.length > 0) {
+            // Intersection semantics: accommodation must have ALL provided feature IDs.
+            whereClauses.push(buildFeatureIntersectionClause(params.features));
+        }
+        if (params.q) {
+            whereClauses.push(
+                or(
+                    safeIlike(accommodations.name, params.q),
+                    safeIlike(accommodations.description, params.q)
+                ) as SQL<unknown>
+            );
+        }
+
+        // SPEC-097 — Viewport bbox filter on EXACT coordinates stored under
+        // location.coordinates (JSONB). Mirrors the predicate in
+        // searchWithRelations so the flat-list search also honors the map
+        // viewport.
+        if (
+            params.bboxNorth !== undefined &&
+            params.bboxSouth !== undefined &&
+            params.bboxEast !== undefined &&
+            params.bboxWest !== undefined
+        ) {
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'lat')::numeric BETWEEN ${params.bboxSouth} AND ${params.bboxNorth}`
+            );
+            whereClauses.push(
+                sql`(${accommodations.location}->'coordinates'->>'long')::numeric BETWEEN ${params.bboxWest} AND ${params.bboxEast}`
+            );
+        }
+
+        // Geo radius filter — see countByFilters() for rationale.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
+            );
+        }
+
         const where = and(...whereClauses);
 
         const orderBy = buildAccommodationOrderBy({
             featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder
+            sortOrder: params.sortOrder,
+            latitude: params.latitude,
+            longitude: params.longitude
         });
 
         const page = params.page ?? 1;
@@ -403,7 +678,12 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      * Search accommodations with destination and owner relations
      */
     public async searchWithRelations(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        params: AccommodationSearchInput & {
+            excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
+            excludePlanRestricted?: boolean;
+        },
         tx?: DrizzleClient
     ): Promise<{
         items: Array<
@@ -427,12 +707,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         } else if (params.type) {
             whereClauses.push(eq(accommodations.type, params.type));
         }
-        if (params.minPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} >= ${params.minPrice}`);
-        }
-        if (params.maxPrice !== undefined) {
-            whereClauses.push(sql`${accommodations.price} <= ${params.maxPrice}`);
-        }
+        whereClauses.push(...buildBasePriceConditions(params.minPrice, params.maxPrice));
         if (params.destinationIds && params.destinationIds.length > 0) {
             whereClauses.push(inArray(accommodations.destinationId, params.destinationIds));
         } else if (params.destinationId) {
@@ -440,6 +715,13 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.excludeOwnerSuspended) {
+            whereClauses.push(eq(accommodations.ownerSuspended, false));
+        }
+        // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+        if (params.excludePlanRestricted) {
+            whereClauses.push(eq(accommodations.planRestricted, false));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -477,6 +759,19 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.amenities && params.amenities.length > 0) {
             // Intersection semantics: accommodation must have ALL provided amenity IDs.
             whereClauses.push(buildAmenityIntersectionClause(params.amenities));
+        }
+        if (params.anyAmenityGroups && params.anyAmenityGroups.length > 0) {
+            // OR within each inner array (any variant counts), AND across
+            // groups (each toggle is enforced independently). An empty inner
+            // array means "the toggle was active but none of its canonical
+            // slugs exist in the catalog" — match nothing, not everything.
+            for (const group of params.anyAmenityGroups) {
+                if (group.length === 0) {
+                    whereClauses.push(sql<unknown>`FALSE`);
+                } else {
+                    whereClauses.push(buildAnyAmenityClause(group));
+                }
+            }
         }
         if (params.features && params.features.length > 0) {
             // Intersection semantics: accommodation must have ALL provided feature IDs.
@@ -508,13 +803,26 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             );
         }
 
+        // Geo radius filter — see countByFilters() for rationale.
+        if (
+            params.latitude !== undefined &&
+            params.longitude !== undefined &&
+            params.radius !== undefined
+        ) {
+            whereClauses.push(
+                buildGeoRadiusClause(params.latitude, params.longitude, params.radius)
+            );
+        }
+
         const where = and(...whereClauses);
 
         const orderBy = buildAccommodationOrderBy({
             featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
-            sortOrder: params.sortOrder
+            sortOrder: params.sortOrder,
+            latitude: params.latitude,
+            longitude: params.longitude
         });
 
         const page = params.page ?? 1;
@@ -563,7 +871,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                         lifecycleState: true,
                         createdAt: true
                     }
-                }
+                },
+                // Optional projections, opt-in via params. Same nested
+                // junction shape that `findTopRated` uses, which the web's
+                // `extractRelationItems(item.amenities, 'amenity')` expects.
+                // Drizzle expands these via lateral joins in a single query,
+                // so pagination on the outer accommodations stays correct.
+                ...(params.includeAmenities ? { amenities: { with: { amenity: true } } } : {}),
+                ...(params.includeFeatures ? { features: { with: { feature: true } } } : {})
             },
             orderBy,
             limit: pageSize,
@@ -599,6 +914,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             type?: string;
             onlyFeatured?: boolean;
             excludeRestricted?: boolean;
+            excludeOwnerSuspended?: boolean;
+            /** SPEC-167 T-004: exclude plan-restricted accommodations from public top-rated lists. */
+            excludePlanRestricted?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<Accommodation[]> {
@@ -608,7 +926,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             destinationId,
             type,
             onlyFeatured = false,
-            excludeRestricted = false
+            excludeRestricted = false,
+            excludeOwnerSuspended = false,
+            excludePlanRestricted = false
         } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
@@ -620,6 +940,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
+                if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
+                // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
+                if (excludePlanRestricted) clauses.push(eq(fields.planRestricted, false));
                 return and(...clauses);
             },
             with: {
@@ -667,14 +990,37 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     ): Promise<Accommodation | null> {
         warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         try {
-            if (relations.destination) {
+            // Build the `with` object from the requested relations. 'faqs' was
+            // previously unsupported here (only `destination` was handled), so
+            // getFaqs() silently fell back to findOne and returned no FAQs (SPEC-158).
+            const withObj: Record<string, boolean> = {};
+            for (const key of ['destination', 'faqs']) {
+                if (relations[key]) withObj[key] = true;
+            }
+            if (Object.keys(withObj).length > 0) {
                 const db = this.getClient(tx);
+                // Build the final `with` config: if `faqs` was requested, apply
+                // display_order ASC NULLS LAST, created_at ASC ordering (SPEC-177 T-012).
+                // biome-ignore lint/suspicious/noExplicitAny: Drizzle relational orderBy callback fields type is inferred at runtime; we use `any` solely for the config object shape
+                const withConfig: Record<string, any> = { ...withObj };
+                if (withObj.faqs) {
+                    withConfig.faqs = {
+                        where: (
+                            fields: { deletedAt: AnyColumn },
+                            { isNull }: { isNull: (col: AnyColumn) => unknown }
+                        ) => isNull(fields.deletedAt),
+                        orderBy: (fields: { displayOrder: AnyColumn; createdAt: AnyColumn }) => [
+                            sql`${fields.displayOrder} ASC NULLS LAST`,
+                            asc(fields.createdAt)
+                        ]
+                    };
+                }
                 const result = await db.query.accommodations.findFirst({
                     where: (fields, { eq }) => eq(fields.id, where.id as string),
-                    with: { destination: true }
+                    with: withConfig
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                // DRIZZLE-LIMITATION: findFirst with `with: { destination: true }` returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.
+                // DRIZZLE-LIMITATION: findFirst with relations returns nested relation shape; Accommodation entity type from @repo/schemas differs structurally.
                 return result as unknown as Accommodation | null;
             }
             const result = await this.findOne(where, tx);
@@ -688,6 +1034,172 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 { where, relations },
                 (error as Error).message
             );
+        }
+    }
+
+    /**
+     * Returns the IDs of all non-deleted accommodations owned by a given user.
+     *
+     * Intended for service-layer scoping (e.g. conversation response-rate KPIs)
+     * where only the IDs are needed, avoiding the overhead of hydrating full
+     * accommodation rows.
+     *
+     * @param ownerId - UUID of the accommodation owner.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns Array of accommodation UUID strings (may be empty).
+     */
+    async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+        try {
+            const rows = await db
+                .select({ id: accommodations.id })
+                .from(accommodations)
+                .where(and(eq(accommodations.ownerId, ownerId), isNull(accommodations.deletedAt)));
+
+            const ids = rows.map((r) => r.id);
+            logQuery(this.entityName, 'findIdsByOwnerId', ctx, { count: ids.length });
+            return ids;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'findIdsByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'findIdsByOwnerId', ctx, err.message);
+        }
+    }
+
+    /**
+     * Per-accommodation market comparison for the HOST card J redesign.
+     *
+     * For each of the owner's active accommodations, returns the listing's
+     * own rating + review count alongside the average rating + total
+     * review count of every other active accommodation in the same
+     * destination. The widget uses these pairs to draw a "you vs
+     * destination" indicator per row.
+     *
+     * (Price comparison was considered but skipped — `accommodations.price`
+     * is stored as JSONB with currency + modifier metadata, so aggregating
+     * across listings is not a straight `AVG()`. A future redesign can
+     * surface price once we expose a `base_amount_centavos` projection.)
+     *
+     * Returns an empty array immediately when the owner has zero
+     * accommodations.
+     *
+     * @param ownerId - The host's user id.
+     * @param tx - Optional Drizzle transaction client.
+     */
+    async getMarketComparisonByOwnerId(
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<
+        ReadonlyArray<{
+            readonly accommodationId: string;
+            readonly accommodationName: string;
+            readonly accommodationType: string;
+            readonly destinationId: string;
+            readonly destinationName: string | null;
+            readonly yourRating: number | null;
+            readonly yourReviews: number;
+            readonly destinationAvgRating: number | null;
+            readonly destinationReviewsTotal: number;
+            readonly yourPrice: number | null;
+            readonly destinationAvgPrice: number | null;
+        }>
+    > {
+        const db = this.getClient(tx);
+        const ctx = { ownerId };
+
+        try {
+            // Correlated sub-queries for the destination averages.
+            // Average rating is computed only over listings with ≥1 review
+            // so the mean reflects actual signal, not noise.
+            const ratedListingsForDestination = sql<number | null>`
+                (
+                    SELECT AVG(a2.average_rating)::float
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                      AND a2.reviews_count > 0
+                )
+            `;
+            const reviewsTotalForDestination = sql<number | null>`
+                (
+                    SELECT SUM(a2.reviews_count)::int
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                )
+            `;
+            // Price is stored as JSONB { price: number, currency, ... }.
+            // We extract the numeric base price for the host's listing and
+            // for the destination average using the same JSONB cast the sort
+            // helpers in this file already use (see buildPriceOrderExpr).
+            // Price average is filtered by `type` so a "Casa quinta para 30"
+            // doesn't get compared against a "Monoambiente para 1".
+            const yourPrice = sql<number | null>`
+                (${accommodations.price}->>'price')::numeric
+            `;
+            const avgPriceForDestinationAndType = sql<number | null>`
+                (
+                    SELECT AVG((a2.price->>'price')::numeric)
+                    FROM ${accommodations} a2
+                    WHERE a2.destination_id = ${accommodations.destinationId}
+                      AND a2.type = ${accommodations.type}
+                      AND a2.lifecycle_state = 'ACTIVE'
+                      AND a2.deleted_at IS NULL
+                      AND (a2.price->>'price') IS NOT NULL
+                      AND (a2.price->>'price')::numeric > 0
+                )
+            `;
+
+            const rows = await db
+                .select({
+                    accommodationId: accommodations.id,
+                    accommodationName: accommodations.name,
+                    accommodationType: accommodations.type,
+                    destinationId: accommodations.destinationId,
+                    destinationName: destinations.name,
+                    yourRating: accommodations.averageRating,
+                    yourReviews: accommodations.reviewsCount,
+                    destinationAvgRating: ratedListingsForDestination,
+                    destinationReviewsTotal: reviewsTotalForDestination,
+                    yourPrice,
+                    destinationAvgPrice: avgPriceForDestinationAndType
+                })
+                .from(accommodations)
+                .leftJoin(destinations, eq(destinations.id, accommodations.destinationId))
+                .where(
+                    and(
+                        eq(accommodations.ownerId, ownerId),
+                        eq(accommodations.lifecycleState, 'ACTIVE'),
+                        isNull(accommodations.deletedAt)
+                    )
+                )
+                .orderBy(asc(accommodations.name))
+                .limit(20);
+
+            logQuery(this.entityName, 'getMarketComparisonByOwnerId', ctx, { count: rows.length });
+
+            return rows.map((row) => ({
+                accommodationId: row.accommodationId,
+                accommodationName: row.accommodationName,
+                accommodationType: row.accommodationType as string,
+                destinationId: row.destinationId,
+                destinationName: row.destinationName ?? null,
+                yourRating: row.yourRating !== null ? Number(row.yourRating) : null,
+                yourReviews: Number(row.yourReviews ?? 0),
+                destinationAvgRating:
+                    row.destinationAvgRating !== null ? Number(row.destinationAvgRating) : null,
+                destinationReviewsTotal: Number(row.destinationReviewsTotal ?? 0),
+                yourPrice: row.yourPrice !== null ? Number(row.yourPrice) : null,
+                destinationAvgPrice:
+                    row.destinationAvgPrice !== null ? Number(row.destinationAvgPrice) : null
+            }));
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'getMarketComparisonByOwnerId', ctx, err);
+            throw new DbError(this.entityName, 'getMarketComparisonByOwnerId', ctx, err.message);
         }
     }
 }

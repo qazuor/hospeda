@@ -120,7 +120,7 @@ describe('FeedbackErrorBoundary: error UI strings', () => {
     });
 
     it('errorBoundary.title should match expected Spanish text', () => {
-        expect(FEEDBACK_STRINGS.errorBoundary.title).toBe('Algo salio mal');
+        expect(FEEDBACK_STRINGS.errorBoundary.title).toBe('Algo salió mal');
     });
 
     it('errorBoundary.message should contain helpful guidance text', () => {

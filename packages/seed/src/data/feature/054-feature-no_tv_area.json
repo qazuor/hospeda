@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "054-feature-no_tv_area",
-    "name": "Área sin televisión",
+    "name": {
+        "es": "Área sin televisión",
+        "en": "Área sin televisión",
+        "pt": "Área sin televisión"
+    },
     "slug": "no_tv_area",
-    "description": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
+    "description": {
+        "es": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
+        "en": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural",
+        "pt": "Espacios libres de televisores para promover la interacción social y el disfrute del entorno natural"
+    },
     "icon": "DigitalDetoxIcon",
     "isBuiltin": true,
     "isFeatured": false,

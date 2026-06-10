@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "019-event-nature-caminata-ecologica",
     "slug": "caminata-ecologica",
-    "name": "Caminata Ecológica",
-    "summary": "Evento nature - Caminata Ecológica",
-    "description": "Descripción detallada del evento Caminata Ecológica. Este es un evento de categoría NATURE que se desarrolla en Entre Ríos.",
+    "name": "Caminata Ecológica por el Parque Nacional El Palmar",
+    "summary": "Caminata guiada de medio día por los senderos del Parque Nacional El Palmar, con interpretación ambiental, observación de fauna y charla sobre conservación del palmar de yatay. Apto para toda la familia.",
+    "description": "Una caminata guiada de medio día por uno de los paisajes más únicos de Argentina: el Parque Nacional El Palmar, hogar del último gran palmar de yatay del país. La actividad combina senderismo suave con interpretación ambiental, observación de fauna y una charla sobre los desafíos de la conservación del ecosistema.\n\n**El recorrido**\n\n- **Sendero La Glorieta:** 1,5 km, accesible, con miradores sobre el palmar y el arroyo El Palmar.\n- **Sendero El Mollar:** 2 km, atraviesa zonas de bosque ribereño y permite avistaje de carpinchos.\n- **Tramo final:** llegada al mirador panorámico con vista al río Uruguay y al horizonte de palmeras.\n\n**Lo que se aprende**\n\n- Historia geológica del palmar de yatay y por qué es único en el mundo.\n- Identificación de especies vegetales nativas (yatay, ñandubay, espinillo, ceibo).\n- Reconocimiento de aves más comunes: chajaes, hocó colorado, jacaná, garcita azulada.\n- Hábitos de los mamíferos del parque: carpinchos, monos caraya, zorros, vizcachas.\n- Amenazas actuales y estrategias de conservación del ecosistema.\n\n**Información práctica**\n\n- **Cuándo:** un domingo de abril, de 8 a 13 horas.\n- **Dónde:** Parque Nacional El Palmar, entre Concordia y Colón sobre la Ruta 14.\n- **Punto de encuentro:** centro de informes del parque.\n- **Entrada:** GRATUITA. Sólo se abona el ingreso al parque (tarifa nacional vigente).\n- **Apto para:** toda la familia. Niños desde 6 años pueden hacer el recorrido completo.\n- **Llevá:** zapatillas o borceguíes, gorra, agua (al menos 1 litro por persona), protector solar, repelente, snacks. Binoculares opcionales pero recomendados.\n\n**Quién la dicta**\n\nGuías intérpretes habilitados por la Administración de Parques Nacionales, con formación específica en interpretación ambiental y conocimiento profundo del ecosistema local. Cupos limitados a 25 personas por turno para garantizar calidad de la experiencia.",
     "category": "NATURE",
     "authorId": "admin-user",
     "pricing": {
@@ -23,13 +23,22 @@
         }
     },
     "seo": {
-        "title": "Caminata Ecológica 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en la Caminata Ecológica 2025 en Entre Ríos. Cinco días de senderismo y contacto con la naturaleza en paisajes únicos.",
-        "keywords": ["nature", "entre rios", "evento", "cultura"]
+        "title": "Caminata Ecológica en El Palmar - Hospeda",
+        "description": "Caminata guiada por el Parque Nacional El Palmar: senderos, observación de fauna, palmeras yatay y charla de conservación. Gratuita, apta para familias.",
+        "keywords": [
+            "caminata ecológica",
+            "parque nacional el palmar",
+            "yatay",
+            "ecoturismo entre ríos",
+            "senderismo",
+            "observación de aves",
+            "carpincho",
+            "interpretación ambiental"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {
-        "start": "2026-04-23T00:00:00-03:00",
-        "end": "2025-01-27T00:00:00-03:00"
+        "start": "2026-04-26T08:00:00-03:00",
+        "end": "2026-04-26T13:00:00-03:00"
     }
 }

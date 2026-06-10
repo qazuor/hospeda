@@ -17,7 +17,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
-import { billingSubscriptionEvents, getDb } from '@repo/db';
+import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import type { DrizzleClient } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
@@ -30,6 +30,7 @@ import {
     type TrialEndingSubscription,
     type TrialStatus,
     calculateTrialDaysRemaining,
+    checkSubscriptionStatusTransition,
     withServiceTransaction
 } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
@@ -59,6 +60,19 @@ export type {
  * collisions.
  */
 const BLOCK_EXPIRED_TRIALS_LOCK_KEY = 1004;
+
+/**
+ * Maximum number of trialing subscriptions claimed per `blockExpiredTrials` run.
+ *
+ * The cron fires daily, so unprocessed subs are claimed on the next tick.
+ * Keeping this bound prevents a single run from holding the advisory lock
+ * for an unbounded duration while fetching a huge result set from QZPay.
+ *
+ * `subscriptions.list()` supports `limit` + `offset`
+ * (QZPayListOptions / QZPayPaginatedResult). We pass `limit` here and rely
+ * on the cron cadence to drain the full backlog over successive runs.
+ */
+const BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200;
 
 /**
  * Result of a reconciliation run for a single customer.
@@ -226,13 +240,45 @@ export class TrialService {
             );
 
             if (!activeSubscription) {
+                // No active/trialing subscription — check whether there is a historical
+                // canceled/ended subscription with a trial_end set. If found, surface the
+                // trial as expired rather than returning the "never had a trial" defaults.
+                // Note: a trial that converted to a paid plan (trialing → canceled + new active)
+                // won't reach this branch because the new active sub was found above.
+                const historicalTrialSub = subscriptions
+                    .filter((sub) => sub.status === 'canceled' && sub.trialEnd != null)
+                    .sort((a, b) => {
+                        // Most-recent first: use trialEnd as the ordering key.
+                        const aTime = a.trialEnd ? new Date(a.trialEnd).getTime() : 0;
+                        const bTime = b.trialEnd ? new Date(b.trialEnd).getTime() : 0;
+                        return bTime - aTime;
+                    })[0];
+
+                if (!historicalTrialSub) {
+                    // Never had a trial.
+                    return {
+                        isOnTrial: false,
+                        isExpired: false,
+                        startedAt: null,
+                        expiresAt: null,
+                        daysRemaining: 0,
+                        planSlug: null
+                    };
+                }
+
+                // Historical canceled/ended sub with a trial — fetch plan for its slug.
+                const historicalPlan = await this.billing.plans.get(historicalTrialSub.planId);
                 return {
                     isOnTrial: false,
-                    isExpired: false,
-                    startedAt: null,
-                    expiresAt: null,
+                    isExpired: true,
+                    startedAt: historicalTrialSub.trialStart
+                        ? new Date(historicalTrialSub.trialStart).toISOString()
+                        : null,
+                    expiresAt: historicalTrialSub.trialEnd
+                        ? new Date(historicalTrialSub.trialEnd).toISOString()
+                        : null,
                     daysRemaining: 0,
-                    planSlug: null
+                    planSlug: historicalPlan?.name || null
                 };
             }
 
@@ -300,13 +346,26 @@ export class TrialService {
      * Finds all expired trials and updates their status.
      * This is typically called by a cron job.
      *
-     * Concurrency safety:
-     * - Uses `pg_try_advisory_xact_lock(1004)` inside a transaction to prevent
-     *   concurrent runs across multiple API replicas. If the lock cannot be
-     *   acquired, the invocation skips silently.
+     * Concurrency safety (ADR-019):
+     * - Lock + fetch (claim) happen atomically inside ONE `withServiceTransaction`.
+     *   `pg_try_advisory_xact_lock(1004)` is acquired, then `subscriptions.list()`
+     *   is called while the transaction (and therefore the lock) is still open.
+     *   When the transaction commits both the lock is released AND the claimed list
+     *   is in hand. A concurrent invocation that arrives while this tx is open will
+     *   get `pg_try_advisory_xact_lock = false` and skip without fetching.
+     * - External calls (QZPay cancel, notifications) happen OUTSIDE the lock-holding
+     *   tx, per ADR-019 ("external calls are not rollback-able; external call first,
+     *   then transaction").
      * - Per-subscription idempotency: before processing each subscription a
-     *   `TRIAL_BLOCKED` event is checked in `billing_subscription_events`. If
-     *   already present the subscription is skipped (dedup guard, SPEC-064 T-041).
+     *   `TRIAL_BLOCKED` event is checked in `billing_subscription_events`. This
+     *   re-check guard protects against the window between the claim commit and
+     *   the per-sub processing (SPEC-064 T-041).
+     *
+     * Claim phase pagination (T-016):
+     * `subscriptions.list()` is called with `limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE`
+     * (currently 200). Only one batch is claimed per cron tick. The daily cron
+     * cadence drains the backlog over successive runs without ever holding the
+     * advisory lock while fetching an unbounded result set.
      *
      * @returns Number of trials blocked in this run
      */
@@ -316,18 +375,51 @@ export class TrialService {
             return 0;
         }
 
-        // Attempt to acquire the process-level advisory lock inside a transaction.
-        // pg_try_advisory_xact_lock returns TRUE if the lock was acquired, FALSE otherwise.
-        // The lock is automatically released when the transaction ends.
-        let lockAcquired = false;
+        // ── CLAIM PHASE (ADR-019) ──────────────────────────────────────────────────
+        // Acquire the advisory lock AND fetch the candidate list inside the SAME
+        // transaction. The lock is held for the full duration of the tx so that a
+        // concurrent invocation that tries to acquire the lock while we are still
+        // fetching will get false and skip immediately. Once this tx commits, the
+        // lock auto-releases and the fetched list is in hand for processing.
+        //
+        // External API calls (QZPay cancel, notifications) are NOT allowed inside
+        // a lock-holding transaction (ADR-019 §Negative). They run in the process
+        // phase below, after the claim tx has committed.
+        let claimedSubscriptions:
+            | Awaited<ReturnType<typeof this.billing.subscriptions.list>>['data']
+            | null = null;
 
         try {
-            await withServiceTransaction(async (ctx) => {
+            claimedSubscriptions = await withServiceTransaction(async (ctx) => {
                 // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
                 const lockResult = await ctx.tx!.execute<{ pg_try_advisory_xact_lock: boolean }>(
                     sql`SELECT pg_try_advisory_xact_lock(${BLOCK_EXPIRED_TRIALS_LOCK_KEY})`
                 );
-                lockAcquired = lockResult.rows[0]?.pg_try_advisory_xact_lock === true;
+                const lockAcquired = lockResult.rows[0]?.pg_try_advisory_xact_lock === true;
+
+                if (!lockAcquired) {
+                    // Return null to signal "lock not acquired — skip this run"
+                    return null;
+                }
+
+                // Fetch candidate list while the lock is still held.
+                // When the tx commits the lock is released, but we already have the list.
+                // Capped at BLOCK_EXPIRED_TRIALS_BATCH_SIZE to bound lock-hold duration
+                // (T-016). Remaining subs are processed on the next cron tick.
+                //
+                // ADR-019 exception (item 9d / SPEC-194 adversarial review):
+                // Calling the external QZPay subscriptions.list() inside the lock-holding
+                // tx is intentional here. The atomic claim requires reading the candidate
+                // list under the advisory lock so a concurrent invocation that acquires
+                // the lock next sees an empty (or different) batch — preventing duplicate
+                // processing. The batch size (BLOCK_EXPIRED_TRIALS_BATCH_SIZE = 200)
+                // bounds the maximum lock-hold duration per run.
+                const result = await this.billing?.subscriptions.list({
+                    filters: { status: 'trialing' },
+                    limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE
+                });
+
+                return result?.data ?? [];
             });
         } catch (lockErr) {
             apiLogger.error(
@@ -337,32 +429,34 @@ export class TrialService {
             return 0;
         }
 
-        if (!lockAcquired) {
+        // null means another instance holds the lock — skip silently
+        if (claimedSubscriptions === null) {
             apiLogger.warn(
                 'blockExpiredTrials is already running (advisory lock held by another process), skipping concurrent invocation'
             );
             return 0;
         }
 
+        if (claimedSubscriptions.length === 0) {
+            apiLogger.info('No trialing subscriptions found');
+            return 0;
+        }
+
+        // ── PROCESS PHASE ─────────────────────────────────────────────────────────
+        // Lock has been released. Process each claimed subscription individually.
+        // Per ADR-019, external API calls (QZPay, notifications) run here, outside
+        // any lock-holding transaction. Each sub is re-checked for the TRIAL_BLOCKED
+        // dedup event to guard against the window between claim commit and processing.
+
         try {
             apiLogger.info('Starting expired trial blocking batch job');
-
-            // Get all trialing subscriptions
-            const allSubscriptionsResult = await this.billing.subscriptions.list({
-                filters: { status: 'trialing' }
-            });
-
-            if (!allSubscriptionsResult || allSubscriptionsResult.data.length === 0) {
-                apiLogger.info('No trialing subscriptions found');
-                return 0;
-            }
 
             const now = new Date();
             const db = getDb();
             let blockedCount = 0;
 
             // Check each trial subscription
-            for (const subscription of allSubscriptionsResult.data) {
+            for (const subscription of claimedSubscriptions) {
                 const trialEnd = subscription.trialEnd ? new Date(subscription.trialEnd) : null;
 
                 // Skip if no trial end date
@@ -370,128 +464,171 @@ export class TrialService {
                     continue;
                 }
 
-                // Check if expired
-                if (now > trialEnd) {
-                    try {
-                        // ── T-041: DB-backed dedup guard ──────────────────────────────────
-                        // Before processing, check if a TRIAL_BLOCKED event already exists
-                        // for this subscription. If so, skip (idempotent run protection).
-                        const existingBlock = await db
-                            .select({ id: billingSubscriptionEvents.id })
-                            .from(billingSubscriptionEvents)
-                            .where(
-                                and(
-                                    eq(billingSubscriptionEvents.subscriptionId, subscription.id),
-                                    eq(
-                                        billingSubscriptionEvents.eventType,
-                                        BILLING_EVENT_TYPES.TRIAL_BLOCKED
-                                    )
+                // Skip if not yet expired
+                if (now <= trialEnd) {
+                    continue;
+                }
+
+                try {
+                    // ── Re-check guard (ADR-019 + SPEC-064 T-041) ─────────────────
+                    // Between the claim commit and now, another instance or a prior run
+                    // may have already processed this subscription. Re-verify by checking
+                    // for a TRIAL_BLOCKED event before making any external calls.
+                    const existingBlock = await db
+                        .select({ id: billingSubscriptionEvents.id })
+                        .from(billingSubscriptionEvents)
+                        .where(
+                            and(
+                                eq(billingSubscriptionEvents.subscriptionId, subscription.id),
+                                eq(
+                                    billingSubscriptionEvents.eventType,
+                                    BILLING_EVENT_TYPES.TRIAL_BLOCKED
                                 )
                             )
-                            .limit(1);
+                        )
+                        .limit(1);
 
-                        if (existingBlock.length > 0) {
-                            apiLogger.debug(
-                                { subscriptionId: subscription.id },
-                                'blockExpiredTrials: TRIAL_BLOCKED event already exists, skipping (idempotent)'
-                            );
-                            continue;
-                        }
+                    if (existingBlock.length > 0) {
+                        apiLogger.debug(
+                            { subscriptionId: subscription.id },
+                            'blockExpiredTrials: TRIAL_BLOCKED event already exists, skipping (idempotent)'
+                        );
+                        continue;
+                    }
 
-                        // Get customer details for notification
-                        const customer = await this.billing.customers.get(subscription.customerId);
-                        const plan = await this.billing.plans.get(subscription.planId);
-
-                        // Capture to Sentry if customer lookup fails so we can investigate
-                        if (!customer) {
-                            const lookupError = new Error(
-                                `Customer not found during blockExpiredTrials: ${subscription.customerId}`
-                            );
-                            Sentry.captureException(lookupError, {
-                                extra: {
-                                    subscriptionId: subscription.id,
-                                    customerId: subscription.customerId,
-                                    planId: subscription.planId,
-                                    trialEnd: trialEnd.toISOString()
-                                },
-                                tags: {
-                                    module: 'trial-service',
-                                    operation: 'blockExpiredTrials'
-                                }
-                            });
-                            apiLogger.warn(
-                                {
-                                    subscriptionId: subscription.id,
-                                    customerId: subscription.customerId
-                                },
-                                'Customer not found during blockExpiredTrials, proceeding with cancellation'
-                            );
-                        }
-
-                        // Update subscription to cancel (QZPay doesn't support 'expired' status)
-                        await this.billing.subscriptions.cancel(subscription.id);
-
-                        // ── T-041: Insert TRIAL_BLOCKED dedup event after successful cancel ─
-                        // This must be written after the QZPay cancel call so we only mark
-                        // a subscription as processed once it has actually been cancelled.
-                        // Follows the operational-event row convention: eventType is set,
-                        // previousStatus/newStatus are omitted (null).
-                        await db.insert(billingSubscriptionEvents).values({
-                            subscriptionId: subscription.id,
-                            eventType: BILLING_EVENT_TYPES.TRIAL_BLOCKED,
-                            triggerSource: 'block-expired-trials-cron',
-                            metadata: {
-                                trialEnd: trialEnd.toISOString(),
-                                blockedAt: new Date().toISOString()
-                            }
-                        });
-
-                        // Clear entitlement cache to reflect trial expiry immediately
-                        clearEntitlementCache(subscription.customerId);
-
-                        blockedCount++;
-
-                        apiLogger.info(
+                    // ── Pre-cancel status guard (item 4 / SPEC-194 adversarial review) ──
+                    // The claimed subscription object may be stale (fetched inside the
+                    // claim tx that has since committed). Re-validate the status transition
+                    // before calling the external QZPay cancel API to avoid erroring on
+                    // subscriptions that were already cancelled/expired/abandoned between
+                    // the claim and the process phases.
+                    const transitionGuard = checkSubscriptionStatusTransition({
+                        from: subscription.status as `${SubscriptionStatusEnum}`,
+                        to: SubscriptionStatusEnum.CANCELLED,
+                        subscriptionId: subscription.id
+                    });
+                    if (!transitionGuard.valid) {
+                        apiLogger.warn(
                             {
+                                subscriptionId: subscription.id,
+                                currentStatus: subscription.status,
+                                reason: transitionGuard.reason
+                            },
+                            'blockExpiredTrials: claimed subscription is in a terminal state — skipping cancel call'
+                        );
+                        continue;
+                    }
+
+                    // Get customer details for notification
+                    const customer = await this.billing.customers.get(subscription.customerId);
+                    const plan = await this.billing.plans.get(subscription.planId);
+
+                    // Capture to Sentry if customer lookup fails so we can investigate
+                    if (!customer) {
+                        const lookupError = new Error(
+                            `Customer not found during blockExpiredTrials: ${subscription.customerId}`
+                        );
+                        Sentry.captureException(lookupError, {
+                            extra: {
                                 subscriptionId: subscription.id,
                                 customerId: subscription.customerId,
+                                planId: subscription.planId,
                                 trialEnd: trialEnd.toISOString()
                             },
-                            'Blocked expired trial subscription'
-                        );
-
-                        // Send TRIAL_EXPIRED notification (fire-and-forget)
-                        if (this.sendNotification && customer && plan) {
-                            this.sendNotification({
-                                type: NotificationType.TRIAL_EXPIRED,
-                                recipientEmail: customer.email,
-                                recipientName: String(customer.metadata?.name || customer.email),
-                                userId: String(customer.metadata?.userId || null),
-                                customerId: customer.id,
-                                planName: plan.name,
-                                trialEndDate: trialEnd.toISOString(),
-                                upgradeUrl: `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`
-                            });
-
-                            apiLogger.debug(
-                                {
-                                    customerId: customer.id,
-                                    emailDomain: customer.email.split('@')[1]
-                                },
-                                'Trial expired notification queued'
-                            );
-                        }
-                    } catch (error) {
-                        const errorMessage = error instanceof Error ? error.message : String(error);
-
-                        apiLogger.error(
+                            tags: {
+                                module: 'trial-service',
+                                operation: 'blockExpiredTrials'
+                            }
+                        });
+                        apiLogger.warn(
                             {
                                 subscriptionId: subscription.id,
-                                error: errorMessage
+                                customerId: subscription.customerId
                             },
-                            'Failed to block expired trial subscription'
+                            'Customer not found during blockExpiredTrials, proceeding with cancellation'
                         );
                     }
+
+                    // Update subscription to cancel (QZPay doesn't support 'expired' status)
+                    await this.billing.subscriptions.cancel(subscription.id);
+
+                    // ── SPEC-143 Block 3 / Finding #30: stamp trial_converted_at ─
+                    // The schema carries `trial_converted` (boolean, default false)
+                    // and `trial_converted_at` (timestamp, nullable) as first-class
+                    // columns. For a trial that expired WITHOUT conversion, the
+                    // canonical record is `trial_converted=false` (already the
+                    // default) and `trial_converted_at=<expiry timestamp>` so
+                    // analytics and the admin dashboard can distinguish
+                    // "trial expired without converting" from a manual cancel.
+                    // The qzpay-hono SDK cancel() doesn't write these columns,
+                    // so we do it here directly. Trial cancel is the only path
+                    // that should ever set trial_converted_at; conversion-to-paid
+                    // flips trial_converted=true via a different path.
+                    await db
+                        .update(billingSubscriptions)
+                        .set({ trialConvertedAt: new Date() })
+                        .where(eq(billingSubscriptions.id, subscription.id));
+
+                    // ── T-041: Insert TRIAL_BLOCKED dedup event after successful cancel ─
+                    // This must be written after the QZPay cancel call so we only mark
+                    // a subscription as processed once it has actually been cancelled.
+                    // Follows the operational-event row convention: eventType is set,
+                    // previousStatus/newStatus are omitted (null).
+                    await db.insert(billingSubscriptionEvents).values({
+                        subscriptionId: subscription.id,
+                        eventType: BILLING_EVENT_TYPES.TRIAL_BLOCKED,
+                        triggerSource: 'block-expired-trials-cron',
+                        metadata: {
+                            trialEnd: trialEnd.toISOString(),
+                            blockedAt: new Date().toISOString()
+                        }
+                    });
+
+                    // Clear entitlement cache to reflect trial expiry immediately
+                    clearEntitlementCache(subscription.customerId);
+
+                    blockedCount++;
+
+                    apiLogger.info(
+                        {
+                            subscriptionId: subscription.id,
+                            customerId: subscription.customerId,
+                            trialEnd: trialEnd.toISOString()
+                        },
+                        'Blocked expired trial subscription'
+                    );
+
+                    // Send TRIAL_EXPIRED notification (fire-and-forget)
+                    if (this.sendNotification && customer && plan) {
+                        this.sendNotification({
+                            type: NotificationType.TRIAL_EXPIRED,
+                            recipientEmail: customer.email,
+                            recipientName: String(customer.metadata?.name || customer.email),
+                            userId: String(customer.metadata?.userId || null),
+                            customerId: customer.id,
+                            planName: plan.name,
+                            trialEndDate: trialEnd.toISOString(),
+                            upgradeUrl: `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`
+                        });
+
+                        apiLogger.debug(
+                            {
+                                customerId: customer.id,
+                                emailDomain: customer.email.split('@')[1]
+                            },
+                            'Trial expired notification queued'
+                        );
+                    }
+                } catch (error) {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+
+                    apiLogger.error(
+                        {
+                            subscriptionId: subscription.id,
+                            error: errorMessage
+                        },
+                        'Failed to block expired trial subscription'
+                    );
                 }
             }
 

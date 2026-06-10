@@ -4,13 +4,15 @@
  * Request body schemas for newsletter subscriber endpoints (SPEC-101).
  *
  * Covers:
- * - `CreateNewsletterSubscriberSchema`    — protected subscribe (body-less; identity from session)
- * - `UnsubscribeNewsletterRequestSchema`  — public unsubscribe via HMAC token
- * - `VerifyNewsletterTokenRequestSchema`  — public double opt-in verification
- * - `ResendVerificationRequestSchema`     — protected resend (body-less)
+ * - `CreateNewsletterSubscriberSchema`         — protected subscribe (body-less; identity from session)
+ * - `UnsubscribeNewsletterRequestSchema`       — public unsubscribe via HMAC token
+ * - `VerifyNewsletterTokenRequestSchema`       — public double opt-in verification
+ * - `ResendVerificationRequestSchema`          — protected resend (body-less)
+ * - `UpdateNewsletterPreferencesInputSchema`   — protected per-content-type toggles (PATCH body)
  */
 
 import { z } from 'zod';
+import { NewsletterContentPreferencesSchema } from './newsletter-subscriber.schema.js';
 
 // ============================================================================
 // CreateNewsletterSubscriberSchema
@@ -103,3 +105,35 @@ export const ResendVerificationRequestSchema = z.object({}).strict();
 
 /** TypeScript type inferred from {@link ResendVerificationRequestSchema}. */
 export type ResendVerificationRequest = z.infer<typeof ResendVerificationRequestSchema>;
+
+// ============================================================================
+// UpdateNewsletterPreferencesInputSchema
+// ============================================================================
+
+/**
+ * Request body for `PATCH /api/v1/protected/newsletter/preferences`.
+ *
+ * Accepts a partial map of `NewsletterContentTypeEnum` → boolean: the client
+ * sends ONLY the keys it wants to flip. Unknown keys are rejected
+ * (`.strict()`) and at least one key must be provided so callers can't waste
+ * a round-trip on an empty no-op payload.
+ *
+ * The service merges this partial onto the stored `preferences` JSONB so the
+ * other keys retain whatever value they already had.
+ *
+ * @example
+ * ```ts
+ * UpdateNewsletterPreferencesInputSchema.parse({ offers: false });
+ * // Toggles "offers" off without touching events/guides/productNews.
+ * ```
+ */
+export const UpdateNewsletterPreferencesInputSchema = NewsletterContentPreferencesSchema.partial()
+    .strict()
+    .refine((value) => Object.keys(value).length > 0, {
+        message: 'zodError.entity.newsletterSubscriber.preferences.atLeastOne'
+    });
+
+/** TypeScript type inferred from {@link UpdateNewsletterPreferencesInputSchema}. */
+export type UpdateNewsletterPreferencesInput = z.infer<
+    typeof UpdateNewsletterPreferencesInputSchema
+>;

@@ -7,9 +7,12 @@ export default defineConfig({
         environment: 'node',
         setupFiles: ['./test/setup.ts'],
         // Default 5s is too tight under parallel load (3 forks + concurrent monorepo
-        // packages). A handful of tests cold-import and instantiate Hono apps; bumping
-        // to 15s avoids flakes without masking real hangs.
-        testTimeout: 15000,
+        // packages). A handful of tests cold-import and instantiate Hono apps. 15s held
+        // until the suite grew (SPEC-156/165/177 + baseline-recovery); under CI load the
+        // route-module-wiring tests (platform-settings-admin/public) now cold-import in
+        // ~16s and intermittently tripped the 15s cap, failing shard 3. Bumped to 30s for
+        // headroom; the real fix (cutting per-file cold-import cost) is tracked in SPEC-188.
+        testTimeout: 30000,
         pool: 'forks',
         poolOptions: {
             forks: {
@@ -64,6 +67,18 @@ export default defineConfig({
             '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
             '@repo/email': resolve(__dirname, '../../packages/email/src'),
+            // SPEC-187: alias content-moderation so unit tests of files in the
+            // entitlement-filter chain (e.g. entitlement-filter-strip.test.ts
+            // importing stripMarkdown) can resolve the transitive import in
+            // service-core's message.service.ts without needing the package's
+            // dist/ to be built. Mirrors the pattern used for the other
+            // @repo/* packages above.
+            '@repo/content-moderation': resolve(__dirname, '../../packages/content-moderation/src'),
+            // Pre-existing: ai-core has the same dist-required problem; without
+            // this alias, every test that transitively imports
+            // `apps/api/src/utils/ai-error-mapper.ts` (e.g. platform-settings
+            // routes under SPEC-156) fails to load.
+            '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),
             // Subpath aliases for @repo/feedback must be listed before the base alias
             // so Vite matches the more specific path first.
             '@repo/feedback/schemas': resolve(

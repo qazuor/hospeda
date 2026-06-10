@@ -7,10 +7,14 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveIcon } from '@repo/icons';
 import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
+import { GeoRadiusFilter } from './GeoRadiusFilter';
 import { IconChipsFilter } from './IconChipsFilter';
+import { PriceCompositeFilter } from './PriceCompositeFilter';
+import { SearchFilter } from './SearchFilter';
 import { SelectSearchFilter } from './SelectSearchFilter';
 import { StarsFilter } from './StarsFilter';
 import { StepperFilter } from './StepperFilter';
@@ -19,7 +23,9 @@ import type {
     FilterDispatch,
     FilterGroup,
     FilterState,
-    IconChipsFilterConfig
+    GeoRadiusFilterConfig,
+    IconChipsFilterConfig,
+    PriceCompositeFilterConfig
 } from './filter.types';
 import type {
     DateRangeFilterConfig,
@@ -54,21 +60,20 @@ export function FilterGroupContent({
     const { t } = createTranslations(locale);
 
     if (group.type === 'search') {
-        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const commit = (next: string) => {
             if (onSearchChange) {
-                onSearchChange(e.target.value);
+                onSearchChange(next);
             } else {
-                dispatch({ type: 'SET_SEARCH', value: e.target.value });
+                dispatch({ type: 'SET_SEARCH', value: next });
             }
         };
         return (
-            <input
-                type="text"
-                className={styles.searchInput}
-                placeholder={group.placeholder ?? t('ui.filter.searchPlaceholder', 'Buscar...')}
+            <SearchFilter
                 value={state.search}
-                onChange={handleChange}
-                aria-label={group.label}
+                onCommit={commit}
+                placeholder={group.placeholder}
+                ariaLabel={group.label}
+                locale={locale}
             />
         );
     }
@@ -236,20 +241,104 @@ export function FilterGroupContent({
 
     if (group.type === 'icon-chips') {
         const iconChipsConfig = group as IconChipsFilterConfig;
+        const priorityOptions = iconChipsConfig.priorityOptions;
         return (
-            <IconChipsFilter
-                config={iconChipsConfig}
-                value={state.selections[group.id] ?? []}
-                onChange={(selected) => {
-                    const current = state.selections[group.id] ?? [];
-                    const toToggle = [
-                        ...selected.filter((v) => !current.includes(v)),
-                        ...current.filter((v) => !selected.includes(v))
-                    ];
-                    for (const v of toToggle) {
-                        dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
-                    }
-                }}
+            <div className={styles.iconChipsWrapper}>
+                {priorityOptions && priorityOptions.length > 0 && (
+                    <fieldset
+                        className={styles.priorityChipsRow}
+                        aria-label={`${iconChipsConfig.label} — destacados`}
+                    >
+                        {priorityOptions.map((opt) => (
+                            <PriorityChipButton
+                                key={opt.value}
+                                label={opt.label}
+                                icon={opt.icon}
+                                isActive={state.toggles[opt.value] === true}
+                                onToggle={() =>
+                                    dispatch({
+                                        type: 'SET_TOGGLE',
+                                        groupId: opt.value,
+                                        value: !state.toggles[opt.value]
+                                    })
+                                }
+                            />
+                        ))}
+                    </fieldset>
+                )}
+                <IconChipsFilter
+                    config={iconChipsConfig}
+                    value={state.selections[group.id] ?? []}
+                    onChange={(selected) => {
+                        const current = state.selections[group.id] ?? [];
+                        const toToggle = [
+                            ...selected.filter((v) => !current.includes(v)),
+                            ...current.filter((v) => !selected.includes(v))
+                        ];
+                        for (const v of toToggle) {
+                            dispatch({ type: 'TOGGLE_CHECKBOX', groupId: group.id, value: v });
+                        }
+                    }}
+                    locale={locale}
+                />
+            </div>
+        );
+    }
+
+    if (group.type === 'geo-radius') {
+        const geoConfig = group as GeoRadiusFilterConfig;
+        return (
+            <GeoRadiusFilter
+                config={geoConfig}
+                value={state.geo[geoConfig.id]}
+                onChange={(next) =>
+                    dispatch({ type: 'SET_GEO', groupId: geoConfig.id, value: next })
+                }
+                locale={locale}
+            />
+        );
+    }
+
+    if (group.type === 'price-composite') {
+        const priceConfig = group as PriceCompositeFilterConfig;
+        const isFree = !!state.toggles[`${priceConfig.id}_isFree`];
+        const includeUnpriced = state.toggles[`${priceConfig.id}_includeUnpriced`] ?? true;
+        return (
+            <PriceCompositeFilter
+                config={priceConfig}
+                isFree={isFree}
+                includeUnpriced={includeUnpriced}
+                range={state.ranges[priceConfig.id] ?? { min: '', max: '' }}
+                onIsFreeChange={(v) =>
+                    dispatch({
+                        type: 'SET_TOGGLE',
+                        groupId: `${priceConfig.id}_isFree`,
+                        value: v
+                    })
+                }
+                onIncludeUnpricedChange={(v) =>
+                    dispatch({
+                        type: 'SET_TOGGLE',
+                        groupId: `${priceConfig.id}_includeUnpriced`,
+                        value: v
+                    })
+                }
+                onMinChange={(v) =>
+                    dispatch({
+                        type: 'SET_RANGE',
+                        groupId: priceConfig.id,
+                        field: 'min',
+                        value: v
+                    })
+                }
+                onMaxChange={(v) =>
+                    dispatch({
+                        type: 'SET_RANGE',
+                        groupId: priceConfig.id,
+                        field: 'max',
+                        value: v
+                    })
+                }
                 locale={locale}
             />
         );
@@ -311,4 +400,42 @@ export function FilterGroupContent({
     }
 
     return null;
+}
+
+/**
+ * Standalone chip rendered above the regular icon-chips list for a "priority"
+ * (boolean shortcut) option. Same visual language as the normal chips but
+ * with a stronger active state so users perceive these as the marquee
+ * quick-filters of the group (e.g. "WiFi", "Pileta", "Estacionamiento").
+ */
+interface PriorityChipButtonProps {
+    readonly label: string;
+    readonly icon?: string;
+    readonly isActive: boolean;
+    readonly onToggle: () => void;
+}
+
+function PriorityChipButton({ label, icon, isActive, onToggle }: PriorityChipButtonProps) {
+    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    return (
+        <button
+            type="button"
+            className={cn(styles.priorityChip, isActive && styles.priorityChipActive)}
+            aria-pressed={isActive}
+            onClick={onToggle}
+        >
+            {IconComponent && (
+                <span
+                    className={styles.priorityChipIcon}
+                    aria-hidden="true"
+                >
+                    <IconComponent
+                        size={14}
+                        weight="duotone"
+                    />
+                </span>
+            )}
+            {label}
+        </button>
+    );
 }

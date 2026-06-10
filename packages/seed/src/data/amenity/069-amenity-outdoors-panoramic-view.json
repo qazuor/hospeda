@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "069-amenity-outdoors-panoramic-view",
-    "name": "panoramic_view",
+    "name": {
+        "es": "panoramic_view",
+        "en": "panoramic_view",
+        "pt": "panoramic_view"
+    },
     "slug": "panoramic_view",
-    "description": "Vista panorámica",
+    "description": {
+        "es": "Vista panorámica",
+        "en": "Vista panorámica",
+        "pt": "Vista panorámica"
+    },
     "type": "OUTDOORS",
     "icon": "PrivateViewpointIcon",
     "isBuiltin": false,

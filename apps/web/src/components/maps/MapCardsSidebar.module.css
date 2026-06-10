@@ -133,8 +133,13 @@
 }
 
 /* Diagonal "Nuevo" status corner (top-left) — same geometry as
- * AccommodationCard.astro (80×80 triangle, 14px font). */
+ * AccommodationCard.astro (80×80 triangle, 14px font). `--corner-bg` and
+ * `--corner-text` are set per card by the JSX inline style; the defaults
+ * here register the names with the css-tokens lint pass and provide a sane
+ * fallback if the inline style is omitted. */
 .cardStatusCorner {
+    --corner-bg: var(--brand-accent);
+    --corner-text: var(--accent-foreground);
     position: absolute;
     top: 0;
     left: 0;
@@ -171,17 +176,12 @@
 /* Featured badge: same look as AccommodationCard.astro mobile (bottom-left
  * above the wave so it doesn't collide with the actions column). Sidebar
  * cards always render at ~mobile widths, so we keep the mobile placement
- * regardless of viewport. */
+ * regardless of viewport. Look (color/font/padding/icon gap) comes from
+ * the shared `.featured-badge` rule in components.css. */
 .cardFeaturedBadge {
     position: absolute;
     bottom: 48px;
     left: 12px;
-    font-family: var(--font-sans);
-    font-weight: 700;
-    font-size: 14px;
-    line-height: 22.4px;
-    padding: 4px 10px;
-    border-radius: var(--radius-pill, 9999px);
     z-index: 2;
 }
 
@@ -226,7 +226,7 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background-color: oklch(from var(--core-foreground) l c h / 0.55);
+    background-color: var(--core-foreground-a55);
     padding: 6px 12px;
     border-radius: var(--radius-pill, 9999px);
     color: var(--primary-foreground, white);
@@ -491,7 +491,7 @@
     font-family: var(--font-sans, sans-serif);
     font-size: 0.875rem;
     font-weight: 600;
-    border: 1px solid oklch(from var(--core-foreground) l c h / 0.4);
+    border: 1px solid var(--core-foreground-a40);
     cursor: pointer;
     box-shadow: 0 4px 18px oklch(0 0 0 / 0.25), 0 1px 3px oklch(0 0 0 / 0.08);
     transition: transform var(--duration-fast, 0.2s) ease, background-color
@@ -500,7 +500,7 @@
 
 .sheetTrigger:hover {
     transform: translateY(-1px);
-    background-color: oklch(from var(--core-foreground) l c h / 0.82);
+    background-color: var(--core-foreground-a82);
 }
 
 /* Tighten padding + label on very narrow phones so the full label
@@ -524,7 +524,7 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .sheetTrigger {
-        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+        background-color: var(--core-foreground-a90);
     }
 }
 

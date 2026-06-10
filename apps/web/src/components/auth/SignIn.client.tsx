@@ -8,6 +8,7 @@
  */
 
 import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { translateApiError } from '@/lib/api-errors';
 import { signIn } from '@/lib/auth-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -21,6 +22,15 @@ export interface SignInProps {
     readonly locale: SupportedLocale;
     /** URL to redirect to after a successful sign-in. */
     readonly redirectTo: string;
+    /**
+     * Marks `redirectTo` as a server-validated EXTERNAL URL (SPEC-182): a
+     * cross-app `callbackUrl` (e.g. the admin panel) that already passed the
+     * server-side allowlist in `signin.astro`. When true, the island uses
+     * `redirectTo` verbatim — the host-strip+reattach workaround below would
+     * otherwise rewrite the admin origin onto the web origin and silently
+     * break the web→admin hand-off. Defaults to false (same-app redirects).
+     */
+    readonly externalRedirect?: boolean;
     /** Whether to show OAuth provider buttons. Defaults to true. */
     readonly showOAuth?: boolean;
     /**
@@ -68,7 +78,13 @@ function providerLabel(provider: string | undefined): string {
  * <SignIn client:load locale={locale} redirectTo="/es/mi-cuenta/" showOAuth={true} />
  * ```
  */
-export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError }: SignInProps) {
+export function SignIn({
+    locale,
+    redirectTo,
+    externalRedirect = false,
+    showOAuth = true,
+    initialOAuthError
+}: SignInProps) {
     const { t } = createTranslations(locale);
 
     const [email, setEmail] = useState('');
@@ -142,7 +158,19 @@ export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError
             const result = await signIn.email({ email, password });
 
             if (result.error) {
-                setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesión'));
+                setError(
+                    translateApiError({
+                        error: result.error,
+                        t,
+                        fallback: t('auth.signIn.error', 'Error al iniciar sesión')
+                    })
+                );
+            } else if (externalRedirect) {
+                // SPEC-182: redirectTo is a server-allowlisted absolute URL
+                // (e.g. the admin panel). The host-strip below would rewrite
+                // it onto the web origin and break the cross-app hand-off —
+                // use it verbatim.
+                window.location.replace(redirectTo);
             } else {
                 // Mirror the OAuth host-strip+re-attach below. The
                 // server-built `redirectTo` can carry `https://localhost`
@@ -189,20 +217,30 @@ export function SignIn({ locale, redirectTo, showOAuth = true, initialOAuthError
             // URL matches whatever host the user opened (staging.* in
             // pre-launch, hospeda.com.ar post-launch, etc.).
             const origin = window.location.origin;
-            const rawTarget = redirectTo || window.location.pathname || '/';
-            let path = rawTarget;
-            if (path.startsWith('http')) {
-                try {
-                    const parsed = new URL(path);
-                    path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
-                } catch {
-                    path = '/';
+            let callbackURL: string;
+            if (externalRedirect) {
+                // SPEC-182: server-allowlisted cross-app callbackUrl (e.g. the
+                // admin panel). Better Auth validates it against its
+                // trustedOrigins (the admin URL is trusted), so it can be used
+                // verbatim — stripping it onto the web origin would break the
+                // post-OAuth hand-off.
+                callbackURL = redirectTo;
+            } else {
+                const rawTarget = redirectTo || window.location.pathname || '/';
+                let path = rawTarget;
+                if (path.startsWith('http')) {
+                    try {
+                        const parsed = new URL(path);
+                        path = `${parsed.pathname}${parsed.search}${parsed.hash}` || '/';
+                    } catch {
+                        path = '/';
+                    }
                 }
+                if (!path.startsWith('/')) {
+                    path = `/${path}`;
+                }
+                callbackURL = `${origin}${path}`;
             }
-            if (!path.startsWith('/')) {
-                path = `/${path}`;
-            }
-            const callbackURL = `${origin}${path}`;
             const errorCallbackURL = `${origin}${window.location.pathname || '/'}`;
             await signIn.social({ provider, callbackURL, errorCallbackURL });
         } catch (err) {

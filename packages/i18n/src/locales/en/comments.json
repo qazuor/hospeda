@@ -1,0 +1,86 @@
+{
+    "thread": {
+        "header": "Comments",
+        "empty": "Be the first to comment"
+    },
+    "form": {
+        "placeholder": "Write your comment...",
+        "submit": "Comment",
+        "submitting": "Sending...",
+        "errorNetwork": "Your comment couldn't be sent. Please try again.",
+        "errorRateLimit": "Too many comments, please wait a moment.",
+        "errorAuthCta": "Sign in to comment",
+        "charCount": "{{count}}/{{max}}"
+    },
+    "moderation": {
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "pending": "Pending"
+    },
+    "actions": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "delete": "Delete",
+        "restore": "Restore",
+        "hardDelete": "Delete permanently"
+    },
+    "homeCard": {
+        "title": "Recent comments",
+        "empty": "No recent comments"
+    },
+    "list": {
+        "loading": "Loading comments…",
+        "error": "Failed to load comments. Please try again.",
+        "empty": "No comments yet.",
+        "emptyFiltered": "No comments match the current filters.",
+        "clearFilters": "Clear filters",
+        "pagination": "Page {{page}} of {{totalPages}} · {{total}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "prevPage": "Previous",
+        "nextPage": "Next",
+        "filters": {
+            "entityType": "Entity type",
+            "moderationState": "Moderation state",
+            "search": "Search",
+            "searchPlaceholder": "Content, author…",
+            "all": "All",
+            "entityTypePost": "Post",
+            "entityTypeEvent": "Event",
+            "includeDeleted": "Include deleted"
+        }
+    },
+    "detail": {
+        "title": "Comment detail",
+        "backToList": "← Back to comments",
+        "backToListShort": "Back to list",
+        "loading": "Loading comment…",
+        "error": "Failed to load comment. Please try again.",
+        "notFound": "Comment not found.",
+        "contentHeading": "Comment content",
+        "authorHeading": "Author",
+        "authorName": "Name:",
+        "deletedUserNote": "(Deleted account — no link available)",
+        "entityHeading": "Commented entity",
+        "entityType": "Type:",
+        "entityId": "ID:",
+        "metadataHeading": "Metadata",
+        "state": "State:",
+        "createdAt": "Created:",
+        "updatedAt": "Updated:",
+        "deletedAt": "Deleted:",
+        "hardDeleteTitle": "Delete comment permanently",
+        "hardDeleteDescription": "This action cannot be undone. The comment will be permanently deleted from the database.",
+        "hardDeleteCancel": "Cancel"
+    },
+    "table": {
+        "ariaLabel": "Comments table",
+        "colEntityType": "Type / Entity",
+        "colContent": "Content",
+        "colAuthor": "Author",
+        "colState": "State",
+        "colCreatedAt": "Created",
+        "colActions": "Actions",
+        "viewDetail": "View detail"
+    }
+}

@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "041-feature-smoking_area",
-    "name": "Sector para fumadores",
+    "name": {
+        "es": "Sector para fumadores",
+        "en": "Sector para fumadores",
+        "pt": "Sector para fumadores"
+    },
     "slug": "smoking_area",
-    "description": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
+    "description": {
+        "es": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
+        "en": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores",
+        "pt": "Espacio al aire libre especialmente designado y ventilado para huéspedes fumadores"
+    },
     "icon": "SmokingAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -750,7 +750,8 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
                 communication: 5,
                 location: 5
             },
-            averageRating: 5
+            averageRating: 5,
+            moderationState: 'APPROVED'
         },
         sensitiveFields: STANDARD_SENSITIVE_FIELDS
     },
@@ -767,7 +768,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             adminInfo: ADMIN_INFO_MOCK,
             lifecycleState: LIFECYCLE_MOCK,
             id: UUID1,
-            name: 'WiFi',
+            name: { es: 'WiFi', en: 'WiFi', pt: 'WiFi' },
             type: 'CONNECTIVITY',
             isBuiltin: true,
             isFeatured: false,
@@ -903,7 +904,8 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             helpfulVotes: 0,
             totalVotes: 0,
             hasOwnerResponse: false,
-            isBusinessTravel: false
+            isBusinessTravel: false,
+            moderationState: 'APPROVED'
         },
         sensitiveFields: [
             ...STANDARD_SENSITIVE_FIELDS,
@@ -1104,7 +1106,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             lifecycleState: LIFECYCLE_MOCK,
             id: UUID1,
             slug: 'test-feature',
-            name: 'Test Feature',
+            name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
             isBuiltin: false,
             isFeatured: false,
             displayWeight: 50

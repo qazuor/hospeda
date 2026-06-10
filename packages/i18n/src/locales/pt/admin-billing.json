@@ -73,6 +73,7 @@
             "statusActive": "Ativo",
             "statusDisabled": "Desabilitado",
             "scheduleLabel": "Programação:",
+            "scheduleRawLabel": "Expr. cron:",
             "dryRunLabel": "Modo Dry Run",
             "dryRunHint": "Executar sem fazer alterações reais",
             "runButton": "Executar agora",
@@ -85,7 +86,14 @@
             "modeLabel": "Modo:",
             "modeDryRun": "Teste",
             "modeReal": "Real",
-            "runErrorTitle": "Erro ao executar tarefa"
+            "runErrorTitle": "Erro ao executar tarefa",
+            "lastRunLabel": "Última execução:",
+            "nextRunLabel": "Próxima execução:",
+            "neverRun": "Sem execuções",
+            "noNextRun": "—",
+            "lastRunSuccess": "OK",
+            "lastRunFailed": "Falhou",
+            "lastRunTimeout": "Timeout"
         },
         "schedules": {
             "daily": "Diariamente à meia-noite",
@@ -109,6 +117,7 @@
         "searchError": "Erro ao buscar clientes",
         "noCustomers": "Nenhum cliente encontrado",
         "searchHint": "Insira pelo menos 2 caracteres para buscar",
+        "searchDisabled": "A busca de clientes e o detalhe de uso individual estão temporariamente desabilitados: os endpoints do backend estão pendentes. Até lá, use os cartões de uso do sistema e a tabela de clientes próximos do limite mostrada acima.",
         "loadingUsage": "Carregando análises de uso...",
         "errorUsage": "Erro ao carregar análises",
         "emptyTitle": "Busque um cliente para ver suas análises de uso",
@@ -147,15 +156,15 @@
     },
     "plans": {
         "title": "Planos de Assinatura",
-        "description": "Visualizacao somente leitura dos planos de assinatura disponiveis. Os planos sao gerenciados no codigo fonte.",
-        "apiRequired": "Os planos sao gerenciados no codigo fonte (packages/billing/src/config/plans.config.ts). Para criar, editar ou excluir planos, modifique esse arquivo e faca deploy.",
+        "description": "Gerencie os planos de assinatura: preços, funcionalidades e limites. Todas as alterações são registradas no log de auditoria.",
+        "apiRequired": "Todas as alterações nos planos são registradas no log de auditoria para rastreabilidade e reversão se necessário.",
         "confirmActivate": "Você tem certeza que deseja ativar este plano?",
         "confirmDeactivate": "Você tem certeza que deseja desativar este plano?",
         "confirmDelete": "Você tem certeza que deseja excluir este plano? Esta ação não pode ser desfeita e afetará os usuários com este plano.",
         "apiLoadError": "Não foi possível carregar os planos da API.",
-        "staticFallback": "Exibindo planos definidos no codigo fonte.",
-        "noteLabel": "Fonte unica de verdade:",
-        "apiUnavailable": "Os planos sao somente leitura neste painel. A fonte unica de verdade e packages/billing/src/config/plans.config.ts. Para alterar precos, entitlements ou limites, edite esse arquivo e faca deploy. Em breve: SPEC para habilitar edicao no painel.",
+        "staticFallback": "Nenhum plano disponível no momento.",
+        "noteLabel": "Registro de alterações:",
+        "apiUnavailable": "As alterações nos planos são registradas no log de auditoria. Para revisar o histórico de alterações, consulte a seção de auditoria.",
         "allCategories": "Todas as categorias",
         "categoryOwner": "Proprietário",
         "categoryComplex": "Complexo",
@@ -197,6 +206,20 @@
         "actionDeactivate": "Desativar",
         "actionEdit": "Editar",
         "actionDelete": "Excluir",
+        "actionRestore": "Restaurar",
+        "actionHardDelete": "Excluir permanentemente",
+        "showDeleted": "Mostrar excluídos",
+        "confirmSoftDeleteWithCount": "Este plano tem {count} assinatura(s) ativa(s). Ao excluí-lo, ele deixará de estar disponível para novas assinaturas. Esta ação pode ser revertida restaurando-o. Deseja continuar?",
+        "confirmHardDelete": "Esta ação exclui o plano de forma permanente e não pode ser desfeita. Só é possível se nenhum assinante o referenciar. Deseja continuar?",
+        "hardDeleteBlocked": "Não é possível excluir permanentemente: o plano ainda é referenciado por assinaturas.",
+        "toastDeletedTitle": "Plano excluído",
+        "toastDeletedMessage": "O plano foi excluído e pode ser restaurado.",
+        "toastRestoredTitle": "Plano restaurado",
+        "toastRestoredMessage": "O plano foi restaurado com sucesso.",
+        "toastHardDeletedTitle": "Plano excluído permanentemente",
+        "toastHardDeletedMessage": "O plano foi excluído permanentemente.",
+        "toastErrorTitle": "Erro",
+        "toastErrorMessage": "Não foi possível concluir a operação.",
         "dialog": {
             "createTitle": "Criar Plano",
             "editTitle": "Editar Plano",
@@ -295,7 +318,9 @@
             "status": "Status",
             "actions": "Ações",
             "perMonth": "/mês",
-            "daysUnit": "dias"
+            "daysUnit": "dias",
+            "slug": "Slug",
+            "deleted": "Excluído"
         },
         "billingTypeLabels": {
             "oneTime": "Único",
@@ -395,7 +420,13 @@
             "expiresAtLabel": "Data de expiração:",
             "paymentIdLabel": "ID de Pagamento:",
             "recordIdLabel": "ID do registro:"
-        }
+        },
+        "actionRestore": "Restaurar add-on",
+        "actionHardDelete": "Excluir permanentemente",
+        "confirmSoftDeleteDesc": "O add-on deixará de estar disponível para novas compras. Você vai excluir:",
+        "confirmHardDeleteDesc": "Esta ação não pode ser desfeita e será bloqueada se o add-on tiver compras ou assinaturas associadas. Você vai excluir permanentemente:",
+        "statusInactive": "Inativo",
+        "statusDeleted": "Excluído"
     },
     "settings": {
         "title": "Configuração de Faturamento",
@@ -417,7 +448,11 @@
             "durationLabel": "Duração do Teste (dias)",
             "durationHint": "Para planos de Proprietário e Complexo",
             "autoBlockLabel": "Bloqueio Automático",
-            "autoBlockHint": "Bloquear funções ao término do período"
+            "autoBlockHint": "Bloquear funções ao término do período",
+            "ownerDurationLabel": "Duração do teste — Proprietário (dias)",
+            "ownerDurationHint": "Dias de teste para planos de proprietário",
+            "complexDurationLabel": "Duração do teste — Complexo (dias)",
+            "complexDurationHint": "Dias de teste para planos de complexo"
         },
         "payment": {
             "title": "Configuração de Pagamentos",
@@ -429,7 +464,9 @@
             "intervalLabel": "Intervalo de Tentativas (horas)",
             "intervalHint": "Tempo entre tentativas de pagamento",
             "currencyLabel": "Moeda Padrão",
-            "currencyHint": "Código de moeda ISO (3 letras)"
+            "currencyHint": "Código de moeda ISO (3 letras)",
+            "taxRateLabel": "Taxa de imposto (%)",
+            "taxRateHint": "Percentual de imposto aplicado (0-100)"
         },
         "webhook": {
             "title": "Configuração de Webhooks",
@@ -449,7 +486,15 @@
             "daysLabel": "Dias de Antecedência",
             "daysHint": "Enviar lembrete X dias antes do vencimento",
             "receiptLabel": "Recibo de Pagamento",
-            "receiptHint": "Enviar recibo automaticamente ao processar pagamento"
+            "receiptHint": "Enviar recibo automaticamente ao processar pagamento",
+            "trialReminderLabel": "Lembrete de fim do teste",
+            "trialReminderHint": "Avisar antes de o período de teste expirar",
+            "trialReminderDaysLabel": "Dias de antecedência do lembrete",
+            "trialReminderDaysHint": "Enviar o lembrete X dias antes do vencimento",
+            "paymentFailedLabel": "Notificar pagamento falhado",
+            "paymentFailedHint": "Avisar o cliente quando um pagamento falha",
+            "subscriptionCancelledLabel": "Notificar cancelamento de assinatura",
+            "subscriptionCancelledHint": "Avisar o cliente quando a assinatura é cancelada"
         }
     },
     "sponsorships": {
@@ -994,7 +1039,9 @@
             "entitlementsMore": "mais...",
             "changePlanButton": "Mudar plano",
             "extendTrialButton": "Estender teste",
-            "cancelSubscriptionButton": "Cancelar assinatura"
+            "cancelSubscriptionButton": "Cancelar assinatura",
+            "pauseButton": "Pausar",
+            "resumeButton": "Retomar"
         },
         "paymentHistory": {
             "title": "Histórico de pagamentos",
@@ -1053,6 +1100,22 @@
             "newEnd": "Novo fim:",
             "confirmButton": "Estender teste"
         },
+        "pauseDialog": {
+            "title": "Pausar assinatura",
+            "description": "Confirme a pausa da assinatura de",
+            "scopeLabel": "Escopo da pausa",
+            "scopeFull": "Pausa completa (faturamento + ocultar anúncios)",
+            "scopeBillingOnly": "Apenas faturamento (os anúncios continuam visíveis)",
+            "fullWarning": "A pausa completa oculta os anúncios do proprietário do site público e bloqueia a edição até retomar.",
+            "backButton": "Voltar",
+            "confirmButton": "Confirmar pausa"
+        },
+        "resumeDialog": {
+            "title": "Retomar assinatura",
+            "description": "Confirme a retomada da assinatura de",
+            "backButton": "Voltar",
+            "confirmButton": "Confirmar retomada"
+        },
         "toasts": {
             "cancelledImmediate": "Assinatura cancelada imediatamente",
             "cancelledScheduled": "Assinatura agendada para cancelamento",
@@ -1061,7 +1124,11 @@
             "planChangeError": "Erro ao mudar plano:",
             "trialExtended": "Período de teste estendido por",
             "trialExtendedDays": "dia(s)",
-            "trialExtendError": "Erro ao estender teste:"
+            "trialExtendError": "Erro ao estender teste:",
+            "paused": "Assinatura pausada",
+            "resumed": "Assinatura retomada",
+            "pauseError": "Erro ao pausar assinatura:",
+            "resumeError": "Erro ao retomar assinatura:"
         }
     },
     "exchangeRates": {

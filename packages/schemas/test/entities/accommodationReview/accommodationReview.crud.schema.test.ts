@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AccommodationReviewCreateBodySchema,
     AccommodationReviewCreateInputSchema,
     AccommodationReviewCreateOutputSchema,
     AccommodationReviewDeleteInputSchema,
@@ -10,6 +11,7 @@ import {
     AccommodationReviewUpdateInputSchema,
     AccommodationReviewUpdateOutputSchema
 } from '../../../src/entities/accommodationReview/accommodationReview.crud.schema.js';
+import { ModerationStatusEnum } from '../../../src/enums/moderation-status.enum.js';
 
 describe('AccommodationReview CRUD Schemas', () => {
     describe('AccommodationReviewCreateInputSchema', () => {
@@ -175,6 +177,61 @@ describe('AccommodationReview CRUD Schemas', () => {
 
             const result =
                 AccommodationReviewCreateInputSchema.safeParse(inputWithInvalidLifecycle);
+            expect(result.success).toBe(false);
+        });
+    });
+
+    // ===========================================================================
+    // AccommodationReviewCreateBodySchema (strict HTTP boundary)
+    // ===========================================================================
+
+    describe('AccommodationReviewCreateBodySchema', () => {
+        const validRating = {
+            cleanliness: 5,
+            hospitality: 4,
+            services: 5,
+            accuracy: 4,
+            communication: 5,
+            location: 4
+        };
+
+        it('accepts a rating-only payload', () => {
+            const result = AccommodationReviewCreateBodySchema.safeParse({ rating: validRating });
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts optional title and content alongside rating', () => {
+            const result = AccommodationReviewCreateBodySchema.safeParse({
+                rating: validRating,
+                title: 'Great place!',
+                content: 'This accommodation was amazing and exceeded all expectations.'
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('REJECTS a body containing userId (strict schema)', () => {
+            // userId must come from the actor, never from the client body
+            const result = AccommodationReviewCreateBodySchema.safeParse({
+                rating: validRating,
+                userId: '123e4567-e89b-12d3-a456-426614174001'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('REJECTS a body containing accommodationId (strict schema)', () => {
+            // accommodationId comes from the URL path, not the body
+            const result = AccommodationReviewCreateBodySchema.safeParse({
+                rating: validRating,
+                accommodationId: '123e4567-e89b-12d3-a456-426614174002'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('REJECTS a body containing arbitrary unknown fields (strict schema)', () => {
+            const result = AccommodationReviewCreateBodySchema.safeParse({
+                rating: validRating,
+                moderationState: 'APPROVED'
+            });
             expect(result.success).toBe(false);
         });
     });
@@ -351,6 +408,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -383,6 +441,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -415,6 +474,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                 },
                 averageRating: 4.5,
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -444,6 +504,7 @@ describe('AccommodationReview CRUD Schemas', () => {
                     location: 4
                 },
                 lifecycleState: 'ACTIVE',
+                moderationState: ModerationStatusEnum.APPROVED,
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',

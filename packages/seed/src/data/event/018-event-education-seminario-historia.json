@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "018-event-education-seminario-historia",
     "slug": "seminario-historia",
-    "name": "Seminario de Historia",
-    "summary": "Evento education - Seminario de Historia",
-    "description": "Descripción detallada del evento Seminario de Historia. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
+    "name": "Seminario: 'Entre Ríos en la Organización Nacional'",
+    "summary": "Seminario gratuito sobre el rol de Entre Ríos en la organización nacional argentina (1820-1870). Cuatro mesas temáticas con historiadores especializados, abierto al público general y a estudiantes.",
+    "description": "Un seminario de jornada completa dedicado al rol de Entre Ríos en la organización nacional argentina, ese período entre 1820 y 1870 en que la provincia fue protagonista absoluta del desarrollo institucional del país. Organizado por la Fundación Cultural Entre Ríos con apoyo académico de universidades regionales.\n\n**Las mesas temáticas**\n\n- **'Urquiza y la Confederación' (10:00):** repaso del período de gobernación de Urquiza, su rol en la Batalla de Caseros, la Convención Constituyente de 1853 y los desafíos de la organización institucional.\n- **'Economía del litoral en el siglo XIX' (11:30):** la habilitación de los ríos a la navegación internacional, el auge de los saladeros, el desarrollo de los puertos y el rol de Entre Ríos como bisagra económica entre Buenos Aires y el litoral.\n- **'Colonización agrícola e inmigración' (14:30):** la llegada de las colonias suizas, alemanas del Volga, judías y francesas. Cómo transformaron el paisaje rural y la cultura entrerriana.\n- **'La caída de Urquiza y el final de la organización' (16:00):** el asesinato de Urquiza en 1870, el levantamiento de López Jordán y el fin de la influencia entrerriana en la política nacional.\n\n**Quién dicta**\n\nHistoriadores e investigadores con trayectoria en la temática: integrantes del CONICET, docentes universitarios y miembros de la Junta de Estudios Históricos de Entre Ríos. Cada mesa tiene un moderador que abre el espacio a preguntas del público.\n\n**Material complementario**\n\nLos asistentes reciben una bibliografía recomendada y acceso a fuentes documentales primarias para profundizar en cada tema. Se realiza también una visita guiada virtual al archivo histórico provincial.\n\n**Información práctica**\n\n- **Cuándo:** un sábado de abril, de 10 a 18 horas.\n- **Dónde:** auditorio en Paraná (sede a confirmar).\n- **Entrada:** GRATUITA, con inscripción previa.\n- **Para quién es:** estudiantes de historia y humanidades, docentes, investigadores, aficionados a la historia argentina y cualquier persona interesada en entender mejor el siglo XIX entrerriano.\n- **Certificación:** se entrega certificado de asistencia válido para puntaje docente.",
     "category": "OTHER",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Seminario de Historia 2025 - Entre Ríos - Hospeda",
-        "description": "Asiste al Seminario de Historia 2025 en Entre Ríos. Charlas y debates sobre la historia regional con expertos historiadores.",
-        "keywords": ["education", "entre rios", "evento", "cultura"]
+        "title": "Seminario: Entre Ríos en la Organización Nacional - Hospeda",
+        "description": "Seminario gratuito sobre el rol de Entre Ríos en la organización nacional (1820-1870): Urquiza, Caseros, colonización inmigrante y la economía del litoral.",
+        "keywords": [
+            "seminario historia",
+            "urquiza",
+            "organización nacional",
+            "historia entre ríos",
+            "siglo xix argentino",
+            "constitución 1853",
+            "evento educativo",
+            "historia argentina"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

@@ -4,7 +4,7 @@
     "slug": "gualeguay",
     "name": "Gualeguay",
     "summary": "Una de las ciudades más antiguas de Entre Ríos (fundada en 1783), a orillas del río Gualeguay, con patrimonio colonial, carnaval y pesca deportiva.",
-    "description": "Gualeguay es una de las ciudades más antiguas de Entre Ríos, fundada el 19 de marzo de 1783 por Tomás de Rocamora como Villa de San Antonio de Gualeguay Grande. Ubicada a orillas del río Gualeguay en el departamento homónimo, fue declarada ciudad en 1851 durante el gobierno de Justo José de Urquiza y llegó a ser primera capital de la provincia. Conocida como la Capital Nacional de la Cordialidad, conserva un valioso patrimonio histórico y cultural, incluyendo la casa natal del poeta Olegario Víctor Andrade, una de las figuras literarias más importantes de la región. Su carnaval, con desfiles de comparsas en el corsódromo emplazado en la antigua estación de ferrocarril, es uno de los más tradicionales del litoral. El río Gualeguay y sus arroyos ofrecen playas de arena, pesca deportiva, deportes náuticos y paseos por la costanera y el Parque Intendente Quintana.",
+    "description": "## Gualeguay, historia y río en el sur entrerriano\n\nGualeguay es una de las ciudades más antiguas de Entre Ríos, fundada el **19 de marzo de 1783** por Tomás de Rocamora con el nombre de Villa de San Antonio de Gualeguay Grande, en honor a San Antonio de Padua. Rocamora fundó en ese período las tres villas históricas del sur entrerriano: Gualeguay, Gualeguaychú y Concepción del Uruguay. Ubicada a orillas del río Gualeguay, en el departamento homónimo, conserva un casco urbano con plazas, edificios antiguos y un fuerte arraigo a sus tradiciones.\n\n## Cultura, carnaval y literatura\n\nGualeguay es tierra de poetas. En la ciudad nació **Carlos Mastronardi** (1901), poeta y ensayista del simbolismo tardío, y muy cerca, en Puerto Ruiz, nació **Juan L. Ortiz** (1896), una de las voces fundamentales de la poesía argentina. Ambos compartieron tertulias literarias en la propia Gualeguay, lo que dejó una huella cultural que aún se celebra.\n\nEl **carnaval** es otro de los grandes orgullos locales: cada enero y febrero las comparsas mayores y menores desfilan en el corsódromo cercano a la costanera, con cientos de bailarines, música y color tropical.\n\n## Río, playas y aire libre\n\nEl río Gualeguay y sus arroyos son el corazón de la propuesta al aire libre. Hay **playas de arena** enmarcadas por arboledas, **pesca deportiva**, deportes náuticos y paseos por la **costanera**. El **Parque Intendente Quintana** es uno de los espacios verdes más concurridos para la recreación familiar, mientras que en los alrededores se desarrolla el turismo de estancia, que invita a conocer la vida rural entrerriana.\n\nUbicada a poco más de 200 km de Buenos Aires por la Ruta Nacional 12, Gualeguay combina **patrimonio histórico, vida literaria, carnaval y naturaleza ribereña** en un entorno tranquilo y hospitalario.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -267,6 +267,38 @@
         "031-attraction-costanera",
         "065-attraction-pesca_deportiva",
         "030-attraction-corsodromo"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Gualeguay desde Buenos Aires?",
+            "answer": "Desde Buenos Aires se accede principalmente por la Ruta Nacional 12, tras cruzar el Complejo Ferrovial Zárate-Brazo Largo. El trayecto ronda los 200 km y unas 2 horas y media a 3 horas en auto. Gualeguay también cuenta con terminal de ómnibus, con servicios de larga distancia que la conectan con Buenos Aires y otras ciudades de Entre Ríos.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Gualeguay?",
+            "answer": "Gualeguay invita a recorrer su casco histórico, plazas y museos, disfrutar de las playas y la pesca deportiva sobre el río Gualeguay, pasear por la costanera y el Parque Intendente Quintana, y conocer su tradición literaria ligada a los poetas Carlos Mastronardi y Juan L. Ortiz. En verano, el carnaval con desfile de comparsas es una de las grandes atracciones.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar Gualeguay?",
+            "answer": "El verano es ideal para disfrutar de las playas del río, los deportes náuticos y el carnaval, que se realiza en enero y febrero. La primavera y el otoño ofrecen un clima agradable para recorrer el patrimonio histórico, las estancias y los paseos al aire libre. La ciudad recibe visitantes durante todo el año gracias a su oferta cultural y natural.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos tiene Gualeguay?",
+            "answer": "La ciudad dispone de hoteles, cabañas, estancias y campings, además de restaurantes, comercios y estaciones de servicio. Cuenta con terminal de ómnibus, oficina de información turística y centros de salud. Su perfil de ciudad histórica y tranquila la hace cómoda para estadías familiares y escapadas de fin de semana.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Por qué Gualeguay es importante en la historia de Entre Ríos?",
+            "answer": "Gualeguay fue fundada en 1783 por Tomás de Rocamora, siendo una de las primeras villas del sur entrerriano junto con Gualeguaychú y Concepción del Uruguay. Por su antigüedad, su patrimonio y su rol en la organización del territorio, es considerada una de las ciudades fundacionales de la provincia y un referente de su historia colonial.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Gualeguay y Gualeguaychú son la misma ciudad?",
+            "answer": "No, son dos ciudades diferentes del sur de Entre Ríos con nombres muy parecidos. Gualeguay está sobre el río Gualeguay y es una de las ciudades más antiguas de la provincia, ligada a la poesía y a la historia colonial. Gualeguaychú, unos 60 km al este, está sobre el río Gualeguaychú, cerca del río Uruguay, y es la Capital Nacional del Carnaval.",
+            "category": "Cómo llegar"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

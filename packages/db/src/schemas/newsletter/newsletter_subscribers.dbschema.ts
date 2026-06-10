@@ -1,5 +1,6 @@
+import { DEFAULT_NEWSLETTER_PREFERENCES, type NewsletterContentTypeEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import {
     NewsletterChannelPgEnum,
     NewsletterSourcePgEnum,
@@ -33,10 +34,15 @@ export const newsletterSubscribers = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
 
-        /** FK → users.id. ON DELETE CASCADE: a hard-deleted user takes their subscription with them (consent gone). */
-        userId: uuid('user_id')
-            .notNull()
-            .references(() => users.id, { onDelete: 'cascade' }),
+        /**
+         * FK → users.id. Nullable to support GUEST subscriptions (the guest
+         * subscribe flow creates a row with `user_id IS NULL` and the
+         * post-signup hook backfills it via
+         * `NewsletterSubscriberService.linkAnonymousSubscribersToUser`).
+         * ON DELETE CASCADE: a hard-deleted user takes their subscription
+         * with them (consent gone).
+         */
+        userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
 
         /** Recipient email captured at subscribe time. Denormalised so we never have to JOIN users on dispatch. */
         email: varchar('email', { length: 255 }).notNull(),
@@ -54,6 +60,22 @@ export const newsletterSubscribers = pgTable(
 
         /** Acquisition source. Used for analytics segmentation. */
         source: NewsletterSourcePgEnum('source').notNull().default('web_footer'),
+
+        /**
+         * Per-content-type opt-in flags. Stored as a JSONB record keyed by
+         * `NewsletterContentTypeEnum` values. Used by `getEligibleForCampaign`
+         * to filter recipients per campaign `contentType` without joining a
+         * separate preferences table.
+         *
+         * Default: all content types enabled (`true`). The default is also
+         * applied at the DB level via the manual migration
+         * `0026_newsletter_subscribers_preferences.sql` so that rows inserted
+         * by raw SQL or legacy migration paths get the same shape.
+         */
+        preferences: jsonb('preferences')
+            .$type<Record<NewsletterContentTypeEnum, boolean>>()
+            .notNull()
+            .default(DEFAULT_NEWSLETTER_PREFERENCES),
 
         // ---- Consent audit (Ley 25.326 AR / GDPR) ----
 

@@ -307,6 +307,10 @@ export interface CreateTestAddonResult {
  * Distinct from {@link createTestSubscriptionAddon} which links a subscription
  * to a purchased addon.
  *
+ * NOTE: the DB column is `billing_interval` (NOT NULL); the Drizzle JS key is
+ * `billingInterval`. Using `billingType` as the key (the old bug) silently fails
+ * the NOT NULL constraint — fixed here.
+ *
  * @param input - All fields optional
  * @param db - Drizzle client; defaults to {@link getDb}
  */
@@ -325,7 +329,10 @@ export async function createTestAddon(
         .values({
             name,
             description: input.description ?? `E2E test addon ${slug}`,
-            billingType,
+            // billingInterval is the correct Drizzle key (maps to the NOT NULL
+            // `billing_interval` DB column). The old `billingType` key caused a
+            // silent NOT NULL violation — fixed here.
+            billingInterval: billingType,
             unitAmount,
             currency: input.currency ?? 'ARS',
             active: input.active ?? true,

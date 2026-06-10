@@ -17,6 +17,8 @@
             "communication": "Communication",
             "location": "Location"
         },
+        "subheading": "Share your experience at {{name}} to help other travellers.",
+        "ratingHelp": "Tap the stars to rate each aspect",
         "titleLabel": "Title",
         "titlePlaceholder": "Summary of your experience",
         "contentLabel": "Review",
@@ -33,7 +35,32 @@
             "contentMinLength": "Review must be at least 10 characters",
             "submitFailed": "Failed to submit your review. Please try again.",
             "alreadyReviewed": "You have already submitted a review for this accommodation."
+        },
+        "destination": {
+            "pendingNotice": "Your review is pending approval and will be visible once it has been checked.",
+            "alreadyReviewed": "You have already submitted a review for this destination.",
+            "categoryHint": "Rate each category, or expand it to fine-tune each aspect."
         }
+    },
+    "locked": {
+        "title": "Contact the host first",
+        "description": "To keep reviews honest, only travellers who have already contacted the host can leave one. Send an enquiry from the contact button and come back when you're ready to share your opinion."
+    },
+    "sidebar": {
+        "title": "Your review",
+        "canLeaveReview": "You've contacted the host. Share your experience to help other travellers.",
+        "cta": "Leave a review",
+        "locked": "To leave a review, first message the host from the contact button."
+    },
+    "destinationSidebar": {
+        "title": "Your opinion",
+        "canLeaveReview": "Share your experience at this destination to help other travellers.",
+        "cta": "Leave a review",
+        "signInCta": "Sign in to leave a review",
+        "signInCtaHint": "You need an account to leave your review."
+    },
+    "dialog": {
+        "close": "Close"
     },
     "list": {
         "title": "Reviews",

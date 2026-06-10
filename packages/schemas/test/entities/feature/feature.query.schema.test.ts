@@ -126,12 +126,14 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureListItemSchema', () => {
         it('should validate list item with required fields', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
+            const descEs = faker.lorem.sentence().slice(0, 490);
             const listItem = {
                 id: faker.string.uuid(),
-                name: faker.lorem.words({ min: 2, max: 5 }),
+                name: { es: nameEs, en: nameEs, pt: nameEs },
                 slug: faker.lorem.slug(3),
                 icon: faker.lorem.word(),
-                description: faker.lorem.paragraph(),
+                description: { es: descEs, en: descEs, pt: descEs },
                 createdAt: faker.date.past(),
                 updatedAt: faker.date.recent()
             };
@@ -141,13 +143,14 @@ describe('Feature Query Schemas', () => {
             const result = FeatureListItemSchema.parse(listItem);
             expect(result.id).toBe(listItem.id);
             expect(result.slug).toBe(listItem.slug);
-            expect(result.name).toBe(listItem.name);
+            expect(result.name).toEqual(listItem.name);
         });
 
         it('should validate list item with optional fields undefined', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
             const listItem = {
                 id: faker.string.uuid(),
-                name: faker.lorem.words({ min: 2, max: 5 }),
+                name: { es: nameEs, en: nameEs, pt: nameEs },
                 slug: faker.lorem.slug(3),
                 icon: undefined,
                 description: undefined,
@@ -169,11 +172,12 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureListResponseSchema', () => {
         it('should validate list output', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
             const listOutput = {
                 data: [
                     {
                         id: faker.string.uuid(),
-                        name: faker.lorem.words({ min: 2, max: 5 }),
+                        name: { es: nameEs, en: nameEs, pt: nameEs },
                         slug: faker.lorem.slug(3),
                         createdAt: faker.date.past(),
                         updatedAt: faker.date.recent()
@@ -268,9 +272,10 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureSearchResultItemSchema', () => {
         it('should validate search result', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
             const searchResultItem = {
                 id: faker.string.uuid(),
-                name: faker.lorem.words({ min: 2, max: 5 }),
+                name: { es: nameEs, en: nameEs, pt: nameEs },
                 slug: faker.lorem.slug(3),
                 createdAt: faker.date.past(),
                 updatedAt: faker.date.recent(),
@@ -284,11 +289,12 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureSearchResponseSchema', () => {
         it('should validate search output', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
             const searchOutput = {
                 data: [
                     {
                         id: faker.string.uuid(),
-                        name: faker.lorem.words({ min: 2, max: 5 }),
+                        name: { es: nameEs, en: nameEs, pt: nameEs },
                         slug: faker.lorem.slug(3),
                         createdAt: faker.date.past(),
                         updatedAt: faker.date.recent()
@@ -335,11 +341,13 @@ describe('Feature Query Schemas', () => {
 
     describe('FeatureSummarySchema', () => {
         it('should validate summary schema', () => {
+            const nameEs = faker.lorem.words({ min: 2, max: 5 });
+            const descEs = faker.lorem.sentence().slice(0, 490);
             const summaryData = {
                 id: faker.string.uuid(),
                 slug: faker.lorem.slug(3),
-                name: faker.lorem.words({ min: 2, max: 5 }),
-                description: faker.lorem.paragraph(),
+                name: { es: nameEs, en: nameEs, pt: nameEs },
+                description: { es: descEs, en: descEs, pt: descEs },
                 icon: faker.lorem.word()
             };
 

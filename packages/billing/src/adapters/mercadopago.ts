@@ -5,6 +5,7 @@
  * with environment-based settings.
  */
 
+import type { QZPayLogger } from '@qazuor/qzpay-core';
 import {
     type QZPayMercadoPagoAdapter,
     type QZPayMercadoPagoConfig,
@@ -84,6 +85,16 @@ export interface MercadoPagoAdapterConfig {
         maxAttempts?: number;
         initialDelayMs?: number;
     };
+
+    /**
+     * Optional structured logger forwarded to the underlying qzpay
+     * MercadoPago adapter (and through it, to the webhook sub-adapter).
+     * Pass `qzpayLogger` from `apps/api/src/lib/qzpay-logger.ts` so all
+     * webhook signature verification, HMAC mismatch diagnostics, IPN
+     * dispatch, and event mapping logs land in the API's structured
+     * log stream. Without this, the adapter is silent.
+     */
+    logger?: QZPayLogger;
 }
 
 /**
@@ -196,6 +207,10 @@ export function createMercadoPagoAdapter(
 
     if (integratorId) {
         adapterConfig.integratorId = integratorId;
+    }
+
+    if (config.logger) {
+        adapterConfig.logger = config.logger;
     }
 
     // Create and return adapter

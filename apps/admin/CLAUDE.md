@@ -480,6 +480,49 @@ This app runs as two Coolify resources on the self-hosted VPS:
 
 Each resource has its own database, env vars, and OAuth client. The operational toolkit (`scripts/server-tools/`, command `hops`) is target-aware via `--target=prod|staging` (defaults to prod). See [docs/migration/staging-prod-db-separation.md](../../docs/migration/staging-prod-db-separation.md) for the full split rationale.
 
+### Healthcheck — probe `/healthz`, never `GET /` (SPEC-209)
+
+The container healthcheck MUST hit `/healthz`, not `GET /`. Probing `/` server-renders
+the entire React root on every probe (every 30 s), and each SSR render of the root used to
+construct a fresh `QZPayBilling` instance — the production admin grew to ~986 MB in 48 h
+with no real users, fed almost entirely by the healthcheck. See engram
+`deploy/vps-memory-pressure` and `spec/SPEC-209/progress`.
+
+- **Endpoint**: `/healthz` returns `200 {"status":"ok"}` (`application/json`) without
+  invoking React SSR, the `cspMiddleware`, the `_authed` auth guard, or any billing
+  construction. It is implemented as a path intercept in `src/server.ts`
+  (`healthcheckResponse(request)`), returned BEFORE `createStartHandler` runs — NOT as a
+  TanStack Start `server.handlers` route. Server routes (`createFileRoute(...).server.handlers`)
+  are a **no-op** in TanStack Start / router-generator `1.131.26`: the generator never emits
+  `serverRouteTree`, so the SSR dispatch short-circuits and the handler never fires. Re-evaluate
+  if the framework is upgraded.
+- **Dockerfile**: the `HEALTHCHECK` instruction in `apps/admin/Dockerfile` targets `/healthz`.
+- **Coolify caveat**: a healthcheck configured in the Coolify resource UI (Health Checks tab)
+  OVERRIDES the Dockerfile instruction. When deploying, confirm the UI healthcheck (if any)
+  also points at `/healthz`, or the container silently keeps probing `GET /`.
+
+### SSR safety in the root — never build per-request singletons client-side-only (SPEC-209)
+
+`src/routes/__root.tsx` `RootDocument` mounts **once per request** on the server (TanStack
+Start SSR). A `useState(() => createX())` lazy initializer is the correct *browser* pattern
+(one instance per mounted tree) but on the server it runs on EVERY request, leaking a fresh
+instance per render.
+
+- **QZPayBilling** is therefore built CLIENT-ONLY: `const [billing, setBilling] = useState(null)`
+  - `useEffect(() => setBilling(createQZPayBilling(...)), [])`. `useEffect` never runs on the
+  server, so SSR builds zero billing instances; the client builds exactly one on mount.
+  `QZPayProvider` does not tolerate `null` billing (it calls `billing.isLivemode()` during
+  render), so it is mounted conditionally (`{billing !== null ? <QZPayProvider…> : children}`)
+  with the theme/query/toast providers kept stable outside the conditional.
+- **QueryClient** is intentionally LEFT as a per-request `useState` lazy initializer — a
+  per-request QueryClient is the recommended TanStack Query SSR pattern (cache isolation
+  between requests) and is NOT a leak. Do not collapse it into a module-level singleton.
+- **Guard**: `test/routes/__root.ssr-guard.test.ts` (and the web twin
+  `apps/web/test/layouts/BaseLayout.ssr-guard.test.ts`) statically fail CI if
+  `createQZPayBilling(` / `new QueryClient(` reappears in a root/layout outside a client-only
+  guard. The memory-validation procedure for staging lives in
+  [`.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md`](../../.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md).
+
 ## Environment Variables
 
 See `apps/admin/.env.example` for a full list. Client-side variables use the `VITE_` prefix (required by Vite to expose them to the browser). Server-side secrets that the admin build process needs use the `HOSPEDA_` prefix.
@@ -569,6 +612,28 @@ export function Button({ variant, size, className, ...props }) {
 - `@radix-ui/*` - Unstyled UI primitives
 - `tailwindcss` - Utility-first CSS
 
+## FAQ Management (SPEC-177, Phase 2 of SPEC-158)
+
+Destinations and accommodations expose an admin **"FAQs" sub-tab** to create, edit, delete and
+**reorder** their structured FAQs. The UI is a single generic, reusable component:
+
+- `components/faqs/FaqManager.tsx` + `SortableFaqRow.tsx` + `FaqCategoryCombobox.tsx`. Props:
+  `{ entityType: 'destinations' | 'accommodations', parentId }`.
+- Data via the generic `features/faqs/hooks/useFaqs(entityType, parentId)` (TanStack Query):
+  list + create/update/delete/reorder mutations hitting
+  `/api/v1/admin/{entityType}/:id/faqs[/:faqId | /reorder]`.
+- **Granular per-item CRUD**: each row saves on its own (PUT), deletes on its own (DELETE), and
+  "Add FAQ" POSTs — there is no bulk form-array save.
+- **Reorder** is drag-and-drop (dnd-kit, copied from `GalleryField` + `SortableGalleryItem`) and
+  persists via `PATCH .../faqs/reorder`. Order is stored in the nullable `display_order` column;
+  reads return FAQs ordered by `display_order ASC NULLS LAST, created_at ASC` (so the public
+  destination/accommodation pages reflect the admin order).
+- **Category** is a free string with `FAQ_BASELINE_CATEGORIES` (from `@repo/schemas`) offered as
+  `<datalist>` suggestions. **Answer** is plain text (no markdown).
+- **Permissions** are enforced server-side by the service `_canUpdate` gate (destinations need
+  `DESTINATION_UPDATE`; accommodations allow `UPDATE_ANY` or `UPDATE_OWN` + ownership, so owning
+  hosts can manage their own accommodation FAQs). The routes themselves only require admin-panel access.
+
 ## Common Gotchas
 
 ### Fresh `pnpm install` requires a workspace build before `pnpm dev`
@@ -591,6 +656,35 @@ The following warnings appear on every `pnpm dev` startup or page load and are *
 - `optimizeDeps.rollupOptions` deprecation hint suggesting `optimizeDeps.rolldownOptions`. Out of scope.
 - `@vitejs/plugin-react` recommends switching to `@vitejs/plugin-react-oxc`. Out of scope.
 - `Open TanStack Devtools` floating button visible at the bottom-left of every page in dev. Cosmetic only — the button is gated by `env.NODE_ENV === 'development'` and never reaches production builds. Document, do not fix.
+
+### Accepted production-build warnings (`pnpm build`)
+
+`pnpm build` (Vite + Nitro) completes successfully (exit 0). It emits the dev-only
+recommendations above (plugin-react / `optimizeDeps.rollupOptions`) once per build
+environment, plus the following build-specific warnings. All were reviewed under
+BETA-81 and accepted — they are **not defects**. Do NOT "fix" them by swapping to
+`@vitejs/plugin-react-oxc` or removing `vite-tsconfig-paths`: those are explicitly
+out of scope (SPEC-117 CE-6, CE-8).
+
+- **`Module "crypto" has been externalized for browser compatibility`** (imported by
+  `@qazuor/qzpay-mercadopago/dist/index.js`). The MercadoPago SDK is pulled in
+  transitively via `@repo/billing` / `@repo/service-core` (aliased to `src/`); no
+  admin client code imports it directly. Its `crypto` usage is server-side (MP
+  webhook signing) and is never invoked from the browser — Vite stubs it to empty
+  in the client bundle. Benign; accepted.
+- **`"import.meta" is not available in the configured target environment ("es2019") and will be empty`**
+  (Nitro server build, e.g. `components-entity-*.js`). These are all
+  `import.meta.env.DEV` debug gates (EntityCreateContent, VirtualizedEntityList,
+  FilterSelect, …). In production `import.meta.env.DEV` resolves to falsy, so the
+  debug blocks correctly do NOT render. The empty value under Nitro's es2019
+  esbuild target is the desired behavior. Cosmetic; accepted.
+- **`(!) Some chunks are larger than 500 kB`** — worst case `components-entity`
+  (~4 MB), also `lib-utils` (~566 kB). Caused by the `manualChunks` rule
+  `id.includes('/components/entity-')` collapsing ~158 entity components + TipTap +
+  Leaflet + dnd-kit into one chunk. This is a **runtime load-performance** concern
+  only (it does NOT affect test time — Vitest never bundles — and only marginally
+  affects build time). Tracked separately for optimization in **BETA-86**; not a
+  blocker for BETA-81.
 
 ### Vite + `@repo/i18n` SSR cache (hard reload required after JSON edits)
 

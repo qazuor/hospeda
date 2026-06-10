@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "033-feature-fire_pit_area",
-    "name": "Espacio de fogón",
+    "name": {
+        "es": "Espacio de fogón",
+        "en": "Espacio de fogón",
+        "pt": "Espacio de fogón"
+    },
     "slug": "fire_pit_area",
-    "description": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
+    "description": {
+        "es": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
+        "en": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios",
+        "pt": "Área segura y acondicionada para hacer fogatas con asientos alrededor y medidas de seguridad contra incendios"
+    },
     "icon": "FirePitAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

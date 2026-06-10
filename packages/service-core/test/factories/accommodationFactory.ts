@@ -64,6 +64,8 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
     isFeatured: false,
+    ownerSuspended: false,
+    planRestricted: false,
 
     // Base review fields
     reviewsCount: 0,
@@ -96,6 +98,9 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     contactInfo: {
         mobilePhone: '+1-555-0123'
     },
+
+    // Social networks - undefined by default
+    socialNetworks: undefined,
 
     // Base audit fields
     createdAt: new Date(),

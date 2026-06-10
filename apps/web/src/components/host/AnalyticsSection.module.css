@@ -1,0 +1,143 @@
+/* AnalyticsSection.module.css — analytics section container and grid */
+
+.section {
+    width: 100%;
+    margin-top: var(--space-5, 1.25rem);
+}
+
+.sectionTitle {
+    margin: 0 0 var(--space-4, 1rem);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--core-foreground);
+}
+
+/* ── Analytics grid ── */
+
+.analyticsGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 1.875rem);
+}
+
+@media (min-width: 640px) {
+    .analyticsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .analyticsGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Last row (inquiry + market) spans full width on 2-col, 2-col on 3-col */
+@media (min-width: 640px) and (max-width: 899px) {
+    .analyticsGrid > :nth-child(4),
+    .analyticsGrid > :nth-child(5) {
+        grid-column: span 1;
+    }
+}
+
+/* ── Skeleton grid ── */
+
+.skeletonGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap, 1.875rem);
+}
+
+@media (min-width: 640px) {
+    .skeletonGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 900px) {
+    .skeletonGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.skeletonWidget {
+    height: 180px;
+    border-radius: var(--radius-card, 24px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a08) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ── Locked widget ── */
+
+.lockedWidget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-8, 2rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-card, 24px);
+    text-align: center;
+}
+
+.lockedTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+}
+
+.lockedDescription {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    max-width: 320px;
+}
+
+/* ── Error widget ── */
+
+.errorWidget {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-8, 2rem);
+    background-color: var(--core-card);
+    border: 1px solid oklch(0.82 0.08 25 / 0.3);
+    border-radius: var(--radius-card, 24px);
+    text-align: center;
+}
+
+.errorText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.5 0.18 25);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+    .skeletonWidget {
+        animation: none;
+    }
+}

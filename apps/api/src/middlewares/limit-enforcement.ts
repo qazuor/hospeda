@@ -19,17 +19,68 @@
  */
 
 import { LimitKey } from '@repo/billing';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
+    type Actor,
     OwnerPromotionService,
+    ServiceError,
     UserBookmarkService
 } from '@repo/service-core';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import type { AppMiddleware } from '../types';
+import type { AppBindings, AppMiddleware } from '../types';
 import { getActorFromContext } from '../utils/actor';
 import { calculateThreshold, calculateUsagePercent, checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
+
+/** Audience that should be directed to upgrade when a limit is reached. */
+type UpgradeAudience = 'tourist' | 'host';
+
+/**
+ * Maps a limit key to the audience that should be directed to upgrade.
+ *
+ * - `max_favorites` is a tourist-tier limit.
+ * - All other supported limit keys are host-tier limits.
+ */
+const LIMIT_KEY_AUDIENCE: Record<string, UpgradeAudience> = {
+    [LimitKey.MAX_FAVORITES]: 'tourist',
+    [LimitKey.MAX_ACCOMMODATIONS]: 'host',
+    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 'host',
+    [LimitKey.MAX_ACTIVE_PROMOTIONS]: 'host',
+    [LimitKey.MAX_PROPERTIES]: 'host',
+    [LimitKey.MAX_STAFF_ACCOUNTS]: 'host'
+};
+
+/**
+ * Builds the structured `details` object for a LIMIT_REACHED ServiceError.
+ *
+ * Includes `upgradeAudience` (either `'tourist'` or `'host'`) so consumers
+ * can map to their own upgrade routes without relying on a hard-coded URL.
+ *
+ * @param limitKey - The limit that was reached.
+ * @param currentCount - The current usage count.
+ * @param maxAllowed - The maximum count allowed by the plan.
+ * @param usagePercent - Usage as a percentage of maxAllowed.
+ * @returns Structured details object for a LIMIT_REACHED error.
+ */
+export function buildLimitReachedDetails(input: {
+    limitKey: LimitKey | string;
+    currentCount: number;
+    maxAllowed: number;
+    usagePercent: number;
+}): {
+    limitKey: LimitKey | string;
+    currentCount: number;
+    maxAllowed: number;
+    usagePercent: number;
+    upgradeAudience: UpgradeAudience;
+} {
+    const { limitKey, currentCount, maxAllowed, usagePercent } = input;
+    const upgradeAudience: UpgradeAudience =
+        (LIMIT_KEY_AUDIENCE[limitKey as string] as UpgradeAudience | undefined) ?? 'host';
+    return { limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience };
+}
 
 /**
  * Enforces accommodation limit before creation
@@ -109,29 +160,23 @@ export function enforceAccommodationLimit(): AppMiddleware {
                     `Accommodation limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_ACCOMMODATIONS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Accommodation limit reached',
+                    buildLimitReachedDetails({
+                        limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent
                     })
-                });
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -241,29 +286,23 @@ export function enforcePhotoLimit(): AppMiddleware {
                     `Photo limit reached for accommodation ${accommodationId}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Photo limit reached',
+                    buildLimitReachedDetails({
+                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent
                     })
-                });
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -355,29 +394,23 @@ export function enforcePromotionLimit(): AppMiddleware {
                     `Promotion limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Promotion limit reached',
+                    buildLimitReachedDetails({
+                        limitKey: LimitKey.MAX_ACTIVE_PROMOTIONS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent
                     })
-                });
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -415,6 +448,84 @@ export function enforcePromotionLimit(): AppMiddleware {
  * );
  * ```
  */
+/**
+ * Asserts the authenticated actor has not reached their MAX_FAVORITES limit,
+ * throwing a 403 LIMIT_REACHED ServiceError when they have. Also emits the
+ * `X-Usage-Warning` header at the warning/critical thresholds.
+ *
+ * Extracted from {@link enforceFavoritesLimit} so the bookmark toggle route can
+ * invoke it imperatively from its CREATE branch ONLY. A toggle that REMOVES an
+ * existing favorite must never be blocked by the limit — otherwise a user
+ * sitting at their cap cannot even un-favorite to free up space (BETA-42).
+ *
+ * @param params.context - Hono request context carrying the loaded user limits.
+ * @param params.actor - The authenticated actor.
+ */
+export async function assertFavoritesLimitOrThrow(params: {
+    readonly context: Context<AppBindings>;
+    readonly actor: Actor;
+}): Promise<void> {
+    const { context: c, actor } = params;
+
+    // Get current favorites (bookmarks) count from UserBookmarkService
+    let currentCount = 0;
+    try {
+        const bookmarkService = new UserBookmarkService({ logger: apiLogger });
+        const countResult = await bookmarkService.countBookmarksForUser(actor, {
+            userId: actor.id
+        });
+
+        if (countResult.data) {
+            currentCount = countResult.data.count;
+        } else if (countResult.error) {
+            apiLogger.warn(
+                `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
+            );
+        }
+    } catch (countError) {
+        apiLogger.warn(
+            `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
+        );
+        // Continue with 0 count - don't block user on service failure
+    }
+
+    // Check limit
+    const limitCheck = checkLimit({
+        context: c,
+        limitKey: LimitKey.MAX_FAVORITES,
+        currentCount
+    });
+
+    // Calculate threshold and usage percentage
+    const threshold = calculateThreshold(currentCount, limitCheck.maxAllowed);
+    const usagePercent = calculateUsagePercent(currentCount, limitCheck.maxAllowed);
+
+    // Add X-Usage-Warning header if at warning or critical threshold
+    if (threshold === 'warning' || threshold === 'critical') {
+        c.header(
+            'X-Usage-Warning',
+            `limitKey=${LimitKey.MAX_FAVORITES};usage=${currentCount};max=${limitCheck.maxAllowed};threshold=${threshold}`
+        );
+    }
+
+    if (!limitCheck.allowed) {
+        apiLogger.warn(
+            `Favorites limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
+        );
+
+        throw new ServiceError(
+            ServiceErrorCode.LIMIT_REACHED,
+            limitCheck.upgradeMessage ?? 'Favorites limit reached',
+            buildLimitReachedDetails({
+                limitKey: LimitKey.MAX_FAVORITES,
+                currentCount: limitCheck.currentCount,
+                maxAllowed: limitCheck.maxAllowed,
+                usagePercent
+            })
+        );
+    }
+}
+
 export function enforceFavoritesLimit(): AppMiddleware {
     return async (c, next) => {
         try {
@@ -427,75 +538,13 @@ export function enforceFavoritesLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current favorites (bookmarks) count from UserBookmarkService
-            let currentCount = 0;
-            try {
-                const bookmarkService = new UserBookmarkService({ logger: apiLogger });
-                const countResult = await bookmarkService.countBookmarksForUser(actor, {
-                    userId: actor.id
-                });
-
-                if (countResult.data) {
-                    currentCount = countResult.data.count;
-                } else if (countResult.error) {
-                    apiLogger.warn(
-                        `Failed to get bookmark count for user ${actor.id}: ${countResult.error.message}`
-                    );
-                }
-            } catch (countError) {
-                apiLogger.warn(
-                    `Error fetching bookmark count for user ${actor.id}: ${countError instanceof Error ? countError.message : String(countError)}`
-                );
-                // Continue with 0 count - don't block user on service failure
-            }
-
-            // Check limit
-            const limitCheck = checkLimit({
-                context: c,
-                limitKey: LimitKey.MAX_FAVORITES,
-                currentCount
-            });
-
-            // Calculate threshold and usage percentage
-            const threshold = calculateThreshold(currentCount, limitCheck.maxAllowed);
-            const usagePercent = calculateUsagePercent(currentCount, limitCheck.maxAllowed);
-
-            // Add X-Usage-Warning header if at warning or critical threshold
-            if (threshold === 'warning' || threshold === 'critical') {
-                c.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_FAVORITES};usage=${currentCount};max=${limitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!limitCheck.allowed) {
-                apiLogger.warn(
-                    `Favorites limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
-                );
-
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_FAVORITES,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
-                    })
-                });
-            }
+            await assertFavoritesLimitOrThrow({ context: c, actor });
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -555,10 +604,11 @@ export function enforcePropertiesLimit(): AppMiddleware {
                 return;
             }
 
-            // FUTURE FEATURE: Complex accommodations (hotels/hostels) with room/unit management.
-            // This limit enforces the maximum number of rooms/units within a single complex
-            // accommodation. The accommodation type (simple vs complex) is defined on the
-            // accommodation entity, and complex types will have a related rooms/units table.
+            // RESERVED-LIMIT (SPEC-145): counting service not built; see docs/billing/endpoint-gate-matrix.md
+            // (Reserved — Limit Stubs section). The multi-property management service
+            // (AccommodationRoomService) does not exist yet. Complex accommodations (hotels/
+            // hostels with multiple rooms/units) are a future feature. Until that service is
+            // built and this stub is wired, the count is always 0 and the limit never fires.
             //
             // When the complex accommodation feature is implemented, replace with:
             //   const roomService = new AccommodationRoomService({ logger: apiLogger });
@@ -593,29 +643,23 @@ export function enforcePropertiesLimit(): AppMiddleware {
                     `Properties limit reached for complex ${complexId}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_PROPERTIES,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Properties limit reached',
+                    buildLimitReachedDetails({
+                        limitKey: LimitKey.MAX_PROPERTIES,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent
                     })
-                });
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 
@@ -665,20 +709,20 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                 return;
             }
 
-            // FUTURE FEATURE: Staff account management.
-            // In v1, each accommodation is managed by a single user (the owner).
-            // Staff accounts will be implemented in a future version to allow owners
-            // to invite team members (receptionists, managers) with granular permissions.
+            // RESERVED-LIMIT (SPEC-145): counting service not built; see docs/billing/endpoint-gate-matrix.md
+            // (Reserved — Limit Stubs section). The staff accounts management service
+            // (StaffService) does not exist yet. In v1, each accommodation is managed by a
+            // single owner. Staff accounts (invite team members with granular permissions) are
+            // a future feature. Until that service is built and this stub is wired, the count
+            // is always 0 and the limit never fires.
             //
-            // Implementation plan:
+            // Implementation plan when ready:
             //   1. Create staff_invitations table (owner_user_id, email, role, status, etc.)
             //   2. Create StaffService with invite/accept/revoke flows
             //   3. Replace this stub with:
             //      const staffService = new StaffService({ logger: apiLogger });
             //      const countResult = await staffService.countAcceptedByOwner(actor, { ownerId: actor.id });
             //      const currentCount = countResult.data?.count || 0;
-            //
-            // Until then, the limit is never reached (count is always 0).
             const currentCount = 0;
 
             // Check limit
@@ -705,29 +749,23 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                     `Staff accounts limit reached for user ${actor.id}: ${limitCheck.currentCount}/${limitCheck.maxAllowed}`
                 );
 
-                throw new HTTPException(403, {
-                    message: JSON.stringify({
-                        success: false,
-                        error: {
-                            code: 'LIMIT_REACHED',
-                            message: limitCheck.upgradeMessage,
-                            details: {
-                                limitKey: LimitKey.MAX_STAFF_ACCOUNTS,
-                                currentCount: limitCheck.currentCount,
-                                maxAllowed: limitCheck.maxAllowed,
-                                usagePercent,
-                                upgradeUrl: '/billing/plans'
-                            }
-                        }
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    limitCheck.upgradeMessage ?? 'Staff accounts limit reached',
+                    buildLimitReachedDetails({
+                        limitKey: LimitKey.MAX_STAFF_ACCOUNTS,
+                        currentCount: limitCheck.currentCount,
+                        maxAllowed: limitCheck.maxAllowed,
+                        usagePercent
                     })
-                });
+                );
             }
 
             // Limit OK - proceed
             await next();
         } catch (error) {
-            // Re-throw HTTPException
-            if (error instanceof HTTPException) {
+            // Re-throw expected errors (LIMIT_REACHED ServiceError or other HTTPExceptions)
+            if (error instanceof ServiceError || error instanceof HTTPException) {
                 throw error;
             }
 

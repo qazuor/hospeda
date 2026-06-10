@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "lib": ["ES2022"],
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "skipLibCheck": true,
+        "esModuleInterop": true,
+        "baseUrl": "..",
+        "paths": {
+            "@/*": ["./src/*"],
+            "@repo/schemas": ["../../packages/schemas/src/index.ts"],
+            "@repo/schemas/*": ["../../packages/schemas/src/*"]
+        }
+    },
+    "include": ["./**/*.ts", "../src/config/ia/**/*.ts"],
+    "exclude": ["../node_modules/**/*"]
+}

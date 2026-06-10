@@ -1,0 +1,79 @@
+---
+/**
+ * @file colaborar/reportar/index.astro
+ * @description Destination-info report page (SPEC-191 FR-3, BETA-69): mounts
+ * the contribution form locked to `report_destination_info`. The optional
+ * `?destino=<slug>` context is read client-side by the ContributionForm
+ * island (this page is SSG — the server cannot read query params); the island
+ * seeds the message with the destination and forwards the slug to analytics.
+ * @route /{lang}/colaborar/reportar/?destino=<slug>
+ * @rendering SSG (prerender)
+ */
+
+import ContributionBackLink from '@/components/contributions/ContributionBackLink.astro';
+import { ContributionForm } from '@/components/contributions/ContributionForm.client';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+---
+
+<DefaultLayout
+    locale={locale}
+    title={t('contributions.report.title', 'Reportar información incorrecta')}
+    description={t(
+        'contributions.report.description',
+        '¿Encontraste un dato incorrecto o desactualizado en un destino? Contanos y lo corregimos.'
+    )}
+>
+    <section class="reportar section">
+        <div class="reportar__container">
+            <ContributionBackLink locale={locale} />
+
+            <div data-reveal="up">
+                <SectionHeader
+                    tagline={t('contributions.report.tagline', 'Ayudanos a mejorar')}
+                    title={t('contributions.report.heading', 'Reportá información incorrecta')}
+                    subtitle={t(
+                        'contributions.report.subtitle',
+                        '¿Viste un dato que no cierra en un destino? Contanos qué encontraste y el equipo lo revisa. Si llegaste desde la página de un destino, ya lo dejamos indicado en el mensaje.'
+                    )}
+                />
+            </div>
+
+            <div
+                class="reportar__form"
+                data-reveal="up"
+            >
+                <ContributionForm
+                    presetType="report_destination_info"
+                    locale={locale}
+                    client:visible
+                />
+            </div>
+        </div>
+    </section>
+</DefaultLayout>
+
+<style>
+    .reportar__container {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 0 var(--space-container-x);
+    }
+
+    .reportar__form {
+        margin-top: var(--space-6, 1.5rem);
+    }
+</style>

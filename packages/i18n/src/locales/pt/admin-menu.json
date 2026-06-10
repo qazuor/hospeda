@@ -62,6 +62,7 @@
         "metrics": "Métricas",
         "settings": "Configurações",
         "cron": "Tarefas Agendadas",
+        "appLogs": "Logs de Aplicação",
         "notificationLogs": "Registros de Notificação",
         "webhookEvents": "Eventos de Webhook"
     },
@@ -79,6 +80,7 @@
         "title": "Análises",
         "usage": "De Uso",
         "debug": "Debug",
-        "business": "De Negócio"
+        "business": "De Negócio",
+        "views": "Visualizações"
     }
 }

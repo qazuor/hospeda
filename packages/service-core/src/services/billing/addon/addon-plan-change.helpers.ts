@@ -5,10 +5,14 @@
  * All functions here are pure (no side-effects) and have no dependency on service
  * state or DB connections.
  *
+ * SPEC-192 T-026: `resolvePlanBaseLimit` and `computeDirection` now accept
+ * pre-fetched `Record<string,number>` limits maps (the DB shape returned by
+ * `PlanService`) instead of plan slugs/IDs. This removes the `getPlanBySlug`
+ * config import and makes callers responsible for resolving plans via
+ * `PlanService` before calling these helpers.
+ *
  * @module services/addon-plan-change.helpers
  */
-
-import { getPlanBySlug } from '@repo/billing';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,19 +45,31 @@ export function hashCustomerId(customerId: string): number {
 // ─── Plan limit resolution ────────────────────────────────────────────────────
 
 /**
- * Resolves the base limit value for a given limit key from a plan definition.
- * Returns `0` when the key is not present in the plan's limits array.
+ * Resolves the base limit value for a given limit key from a pre-fetched plan
+ * limits map. Returns `0` when the key is not present in the map.
  *
- * @param planSlug - Billing plan slug (e.g. `'owner-basico'`)
- * @param limitKey - Limit key to look up (e.g. `'accommodations'`)
- * @returns Base limit value, or `0` if the plan or key is not found
+ * The `limits` map is the `Record<string, number>` shape returned by
+ * `PlanService.getById` / `PlanService.getBySlug` (DB storage format, where -1
+ * means unlimited). Callers are responsible for resolving the plan from the DB
+ * before calling this helper (SPEC-192 T-026 cutover from config-backed lookup).
+ *
+ * @param limits - Plan limits map (`Record<limitKey, value>`) from the DB plan response
+ * @param limitKey - Limit key to look up (e.g. `'max_accommodations'`)
+ * @returns Base limit value, or `0` if the key is not present in the map
+ *
+ * @example
+ * ```ts
+ * const plan = await planService.getBySlug('owner-basico');
+ * if (plan.success) {
+ *   const base = resolvePlanBaseLimit(plan.data.limits, 'max_accommodations');
+ * }
+ * ```
  */
-export function resolvePlanBaseLimit(planSlug: string, limitKey: string): number {
-    const planDef = getPlanBySlug(planSlug);
-    if (!planDef) {
-        return 0;
-    }
-    return planDef.limits.find((l) => l.key === limitKey)?.value ?? 0;
+export function resolvePlanBaseLimit(
+    limits: Readonly<Record<string, number>>,
+    limitKey: string
+): number {
+    return limits[limitKey] ?? 0;
 }
 
 // ─── Direction computation ────────────────────────────────────────────────────
@@ -63,22 +79,35 @@ export function resolvePlanBaseLimit(planSlug: string, limitKey: string): number
  * limits across all affected limit keys. Unlimited values (-1) are excluded
  * from the comparison sum to avoid misleading -1 dominating the result.
  *
+ * Accepts pre-fetched plan limits maps (the DB `Record<string,number>` shape
+ * from `PlanService`) instead of plan slugs/IDs. Callers must resolve both plans
+ * before calling this helper (SPEC-192 T-026 cutover from config-backed lookup).
+ *
  * @param limitKeys - Array of limit key strings affected by the plan change
- * @param oldPlanId - Slug of the plan the customer is leaving
- * @param newPlanId - Slug of the plan the customer is moving to
+ * @param oldPlanLimits - Limits map of the plan the customer is leaving
+ * @param newPlanLimits - Limits map of the plan the customer is moving to
  * @returns `'upgrade'` | `'downgrade'` | `'lateral'`
+ *
+ * @example
+ * ```ts
+ * const direction = computeDirection(
+ *   ['max_accommodations'],
+ *   { max_accommodations: 3 },
+ *   { max_accommodations: 10 }
+ * ); // 'upgrade'
+ * ```
  */
 export function computeDirection(
     limitKeys: readonly string[],
-    oldPlanId: string,
-    newPlanId: string
+    oldPlanLimits: Readonly<Record<string, number>>,
+    newPlanLimits: Readonly<Record<string, number>>
 ): PlanChangeDirection {
     let oldTotal = 0;
     let newTotal = 0;
 
     for (const key of limitKeys) {
-        const oldBase = resolvePlanBaseLimit(oldPlanId, key);
-        const newBase = resolvePlanBaseLimit(newPlanId, key);
+        const oldBase = resolvePlanBaseLimit(oldPlanLimits, key);
+        const newBase = resolvePlanBaseLimit(newPlanLimits, key);
 
         if (oldBase !== -1) {
             oldTotal += oldBase;

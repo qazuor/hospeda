@@ -539,6 +539,20 @@ export interface DetailFaq {
 }
 
 /**
+ * Type alias used by AmenitiesGrid.astro.
+ * Mirrors {@link DetailAmenity} — name has been pre-resolved to a plain string
+ * by the transform layer (SPEC-172 PR4: amenity.name is an i18n object in the API).
+ */
+export type AccommodationAmenityItem = DetailAmenity;
+
+/**
+ * Type alias used by FeaturesGrid.astro.
+ * Mirrors {@link DetailFeature} — name has been pre-resolved to a plain string
+ * by the transform layer (SPEC-172 PR4: feature.name is an i18n object in the API).
+ */
+export type AccommodationFeatureItem = DetailFeature;
+
+/**
  * Typed data shape for the accommodation detail page.
  * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
  */
@@ -548,6 +562,7 @@ export interface AccommodationDetailData {
     readonly name: string;
     readonly summary: string;
     readonly description: string;
+    readonly richDescription?: string | null;
     readonly type: string;
     readonly isFeatured: boolean;
     readonly createdAt: string;
@@ -558,16 +573,27 @@ export interface AccommodationDetailData {
         readonly images: readonly string[];
         /**
          * Gallery items carrying the image URL plus optional caption and
-         * description metadata preserved from the API response. Rendered by
-         * HeroGallery and the full photo page; kept alongside `images` for
-         * backward compatibility.
+         * description metadata preserved from the API response. Consumed by
+         * the full photo page and lightbox integrations; kept alongside
+         * `images` for backward compatibility.
          */
         readonly galleryItems: readonly {
             readonly url: string;
             readonly caption?: string;
             readonly description?: string;
         }[];
-        readonly videos: readonly string[];
+        /**
+         * Video entries carrying the URL plus optional caption and description.
+         * Aligned with `@repo/schemas` `VideoSchema` (drops `moderationState`,
+         * which is irrelevant for the public read). The transform also accepts
+         * a legacy `string[]` payload (a bare URL) and normalizes each entry
+         * to `{ url }` so older accommodation records keep rendering.
+         */
+        readonly videos: readonly {
+            readonly url: string;
+            readonly caption?: string;
+            readonly description?: string;
+        }[];
     };
     readonly location: {
         readonly lat: number | null;

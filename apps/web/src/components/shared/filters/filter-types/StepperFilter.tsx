@@ -26,6 +26,11 @@ export interface StepperFilterConfig {
      * survive across other filter changes.
      */
     readonly emitWhenAtDefault?: boolean;
+    /**
+     * Optional helper text rendered below the stepper. Useful to disambiguate
+     * the field (e.g. "(menores de 5 años)" next to a "Niños" stepper).
+     */
+    readonly description?: string;
 }
 
 interface StepperFilterProps {
@@ -53,35 +58,38 @@ export function StepperFilter({ config, value, onChange, locale }: StepperFilter
     };
 
     return (
-        <div className={styles.stepperRow}>
-            <button
-                type="button"
-                className={cn(styles.stepperBtn, value <= min && styles.stepperBtnDisabled)}
-                onClick={decrement}
-                disabled={value <= min}
-                aria-label={`${t('ui.filter.min', 'Disminuir')} ${config.label}`}
-            >
-                &minus;
-            </button>
-            <span
-                className={styles.stepperValue}
-                aria-live="polite"
-                aria-atomic="true"
-            >
-                {value}
-                {config.suffix && (
-                    <span className={styles.stepperSuffix}>&nbsp;{config.suffix}</span>
-                )}
-            </span>
-            <button
-                type="button"
-                className={cn(styles.stepperBtn, value >= max && styles.stepperBtnDisabled)}
-                onClick={increment}
-                disabled={value >= max}
-                aria-label={`${t('ui.filter.max', 'Aumentar')} ${config.label}`}
-            >
-                &#43;
-            </button>
-        </div>
+        <>
+            <div className={styles.stepperRow}>
+                <button
+                    type="button"
+                    className={cn(styles.stepperBtn, value <= min && styles.stepperBtnDisabled)}
+                    onClick={decrement}
+                    disabled={value <= min}
+                    aria-label={`${t('ui.filter.min', 'Disminuir')} ${config.label}`}
+                >
+                    &minus;
+                </button>
+                <span
+                    className={styles.stepperValue}
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    {value}
+                    {config.suffix && (
+                        <span className={styles.stepperSuffix}>&nbsp;{config.suffix}</span>
+                    )}
+                </span>
+                <button
+                    type="button"
+                    className={cn(styles.stepperBtn, value >= max && styles.stepperBtnDisabled)}
+                    onClick={increment}
+                    disabled={value >= max}
+                    aria-label={`${t('ui.filter.max', 'Aumentar')} ${config.label}`}
+                >
+                    &#43;
+                </button>
+            </div>
+            {config.description && <p className={styles.description}>{config.description}</p>}
+        </>
     );
 }

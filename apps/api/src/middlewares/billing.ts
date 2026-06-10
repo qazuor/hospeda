@@ -18,6 +18,7 @@ import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { createBillingAdapter, getDb } from '@repo/db';
 import type { MiddlewareHandler } from 'hono';
+import { qzpayLogger } from '../lib/qzpay-logger';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
@@ -85,14 +86,25 @@ function getBillingInstance(): QZPayBilling | null {
 
         // Create payment adapter — factory reads HOSPEDA_MERCADO_PAGO_SANDBOX
         // directly from the environment when no explicit override is passed.
-        const paymentAdapter = createMercadoPagoAdapter();
+        // The qzpayLogger routes all MercadoPago-side logs (webhook
+        // signature verification, HMAC mismatch diagnostics, IPN dispatch,
+        // event mapping) through hospeda's structured apiLogger.
+        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
 
-        // Create billing instance
+        // Create billing instance.
+        // `providerSyncErrorStrategy: 'throw'` is set explicitly so that
+        // QZPayProviderSyncError surfaces to our Hono error handler on every
+        // environment (including sandbox/test), where it is mapped to the
+        // correct ServiceErrorCode by billing-provider-error.ts (SPEC-149 T-002).
+        // Without this, qzpay-core defaults to 'log' in non-livemode and silently
+        // swallows provider errors — callers would receive a null/undefined result
+        // instead of a typed ServiceError.
         billingInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
-            livemode
+            livemode,
+            providerSyncErrorStrategy: 'throw'
         });
 
         apiLogger.info('✅ QZPay billing initialized successfully');

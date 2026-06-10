@@ -4,7 +4,7 @@
     "slug": "san-salvador",
     "name": "San Salvador",
     "summary": "Capital Nacional del Arroz en Entre Ríos, centro de la cuenca arrocera argentina, con la tradicional Fiesta Nacional del Arroz y un paisaje rural marcado por plantaciones, molinos y arroceras.",
-    "description": "San Salvador es la cabecera del Departamento San Salvador, en la provincia de Entre Ríos, y ostenta el título de Capital Nacional del Arroz desde 1953. Desde mediados del siglo XX se consolidó como el principal polo arrocero de Argentina, concentrando una porción mayoritaria de la industria nacional vinculada al cereal, con molinos, secaderos y empresas arroceras distribuidas en su zona urbana y rural. Su identidad gira en torno a la Fiesta Nacional del Arroz, que reúne expo agroindustrial, desfile de maquinaria, elección de la Reina Nacional del Arroz, espectáculos populares y muestras gastronómicas. El entorno ofrece paisajes de campo entrerriano, plantaciones, caminos rurales y una vida urbana tranquila con plazas, parques y propuestas culturales que invitan a conocer el interior productivo de la Mesopotamia argentina.",
+    "description": "## San Salvador, Capital Nacional del Arroz\n\n**San Salvador** es la cabecera del departamento homónimo, asentada sobre la **Cuchilla Grande** en el centro-este de Entre Ríos. Desde mediados del siglo XX se consolidó como el principal polo arrocero de la Argentina, en el corazón de la cuenca productora del cereal, y por eso ostenta el título de **Capital Nacional del Arroz**. Molinos, secaderos y empresas arroceras se distribuyen por su zona urbana y rural, definiendo el paisaje y la identidad de la ciudad.\n\n## La Fiesta Nacional del Arroz\n\nEl gran acontecimiento del año es la **Fiesta Nacional del Arroz**, que tradicionalmente se celebra durante un fin de semana largo de noviembre en el reacondicionado **predio del ferrocarril**. Conviven allí la **Expo Agro-Industrial y Comercial**, el desfile de maquinaria, las cantinas y parrillas con comidas regionales a base de arroz, los espectáculos musicales y la elección de la **Reina Nacional del Arroz**. Es una de las fiestas productivas más arraigadas de la provincia.\n\n## Qué conocer\n\nEntre sus atractivos se destaca el **Museo del Arroz**, único en su tipo en Argentina, que repasa la historia del cultivo y la industria local. Hay además un **circuito productivo** que permite visitar la primera cooperativa arrocera de América Latina y algunos de los molinos más modernos del país. El casco urbano, tranquilo y de aire pueblerino, suma plazas, parques y propuestas culturales que invitan a conocer el interior productivo de la Mesopotamia argentina.\n\nGracias a la Ruta Nacional 18 —que la une con Concordia y Villaguay y cuenta con tramos de autovía—, San Salvador es de fácil acceso y una buena base para recorrer el centro-este entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -299,6 +299,38 @@
         "062-attraction-parque_municipal",
         "056-attraction-museo_regional",
         "072-attraction-plaza_principal"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a San Salvador en Entre Ríos?",
+            "answer": "San Salvador está atravesada por la Ruta Nacional 18, que la conecta con Concordia (a unos 60 km, alrededor de 45 minutos en auto) y con Villaguay hacia el oeste. El tramo entre San Salvador y Concordia cuenta con autovía, lo que facilita el acceso desde el este de la provincia y desde la región del río Uruguay.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede visitar en San Salvador?",
+            "answer": "El imperdible es el Museo del Arroz, único en su tipo en Argentina, dedicado a la historia del cultivo y la industria arrocera. También se puede recorrer un circuito productivo que incluye la primera cooperativa arrocera de América Latina y molinos modernos, además de las plazas y parques del casco urbano.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Por qué San Salvador es la Capital Nacional del Arroz?",
+            "answer": "Desde mediados del siglo XX, San Salvador se consolidó como el principal centro productor e industrializador de arroz del país, en el corazón de la cuenca arrocera argentina. Esa importancia productiva le valió el título de Capital Nacional del Arroz, reflejado en sus molinos, arroceras y en su fiesta más importante.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo se realiza la Fiesta Nacional del Arroz?",
+            "answer": "La Fiesta Nacional del Arroz se celebra tradicionalmente en un fin de semana largo de noviembre, en el predio del ferrocarril. Es el mejor momento para visitar la ciudad: incluye la Expo Agro-Industrial y Comercial, desfile de maquinaria, espectáculos, gastronomía a base de arroz y la elección de la Reina Nacional del Arroz.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece la ciudad?",
+            "answer": "Al ser cabecera departamental, San Salvador cuenta con alojamientos, gastronomía, comercios, bancos, estaciones de servicio y atención médica. El Museo del Arroz se visita con horarios de miércoles a domingo y, para grupos, conviene coordinar la visita con anticipación.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué se puede ver en el Museo del Arroz?",
+            "answer": "El Museo del Arroz, ubicado en el centro de la ciudad, repasa la historia del cultivo del arroz y de la industria local que dio identidad a San Salvador. Abre de miércoles a sábado por la mañana y por la tarde, y los domingos por la tarde; las visitas de grupos suelen requerir reserva previa.",
+            "category": "Servicios"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

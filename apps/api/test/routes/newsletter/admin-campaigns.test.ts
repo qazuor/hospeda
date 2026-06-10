@@ -105,6 +105,7 @@ const draftCampaign: SelectNewsletterCampaign = {
     bodyJson: { type: 'doc', content: [] },
     status: 'draft',
     localeFilter: 'all',
+    contentType: null,
     totalRecipients: null,
     totalSoftcapped: 0,
     sentAt: null,

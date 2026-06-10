@@ -113,10 +113,10 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
         display: flex;
         flex-direction: column;
         border-radius: var(--radius-card);
-        border: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+        border: 1px solid var(--core-foreground-a08);
         background-color: var(--core-card);
         padding: var(--space-6, 1.5rem);
-        box-shadow: 0 1px 2px oklch(from var(--core-foreground) l c h / 0.04);
+        box-shadow: 0 1px 2px var(--core-foreground-a05);
         transition: transform var(--duration-normal) ease,
                     box-shadow var(--duration-normal) ease,
                     border-color var(--duration-normal) ease;
@@ -124,8 +124,8 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
 
     .account__stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 24px oklch(from var(--core-foreground) l c h / 0.08);
-        border-color: oklch(from var(--brand-primary) l c h / 0.3);
+        box-shadow: 0 10px 24px var(--core-foreground-a08);
+        border-color: var(--brand-primary-a30);
     }
 
     .account__stat-card-header {
@@ -156,7 +156,7 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
         height: 2.25rem;
         flex-shrink: 0;
         border-radius: var(--radius-pill);
-        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        background-color: var(--brand-primary-a10);
         color: var(--brand-primary);
     }
 

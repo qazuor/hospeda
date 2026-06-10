@@ -51,6 +51,20 @@ export function checkCanViewAccommodationReview(_actor: Actor): void {
 }
 
 /**
+ * Throws if the actor cannot moderate (approve / reject) an accommodation review.
+ * Requires {@link PermissionEnum.ACCOMMODATION_REVIEW_MODERATE}.
+ */
+export function checkCanModerateAccommodationReview(actor: Actor): void {
+    if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_REVIEW_MODERATE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: ACCOMMODATION_REVIEW_MODERATE required'
+        );
+    }
+}
+
+/**
  * Checks if an actor has permission to admin-list this entity type.
  * @throws {ServiceError} If the permission check fails.
  */

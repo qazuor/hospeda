@@ -2,7 +2,7 @@ import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { checkGenericPermission, hasPermission } from '../../utils';
+import { checkGenericPermission, getOwnershipDescriptor, hasPermission } from '../../utils';
 
 /**
  * Checks if a given actor is the owner of a resource.
@@ -48,6 +48,16 @@ export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
         isOwner(actor, entity),
         'Permission denied to update accommodation'
     );
+
+    // SPEC-143 #29: while the owner is service-suspended (full pause) their
+    // accommodations are edit-locked. Staff holding ACCOMMODATION_UPDATE_ANY are
+    // exempt (admin management); the owner editing via UPDATE_OWN is blocked.
+    if (entity.ownerSuspended && !hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Cannot edit this accommodation while the owner subscription is paused'
+        );
+    }
 }
 
 /**
@@ -113,6 +123,34 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, entity: Accommodation): void {
+    // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
+    // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
+    // so existence is not leaked). The owner themselves and staff holding
+    // ACCOMMODATION_VIEW_ALL are exempt so they can still see the listing while
+    // the subscription is paused.
+    if (
+        entity.ownerSuspended &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
+    // SPEC-167 T-004: plan-restricted accommodations behave identically to
+    // ownerSuspended for public reads — they do not exist (NOT_FOUND, not
+    // FORBIDDEN, so existence is not leaked).
+    // DIVERGENCE NOTE: for ownerSuspended, list queries use isOwnScope to let
+    // the owner see their suspended items; for planRestricted we do the same
+    // (owner is ALWAYS exempt). The host MUST see their own restricted
+    // accommodations to choose which to keep active / restore on re-upgrade.
+    if (
+        entity.planRestricted &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
     if (
         entity.visibility === 'PUBLIC' ||
         (entity.visibility === 'PRIVATE' &&
@@ -152,17 +190,89 @@ export function checkCanList(_actor: Actor): void {
 
 /**
  * Checks if the actor has permission to use admin list for accommodations.
- * Requires ACCOMMODATION_VIEW_ALL permission in addition to admin access
- * (admin access is verified by the base class default).
+ *
+ * SPEC-169 §5.2: accepts EITHER `ACCOMMODATION_VIEW_ALL` (staff — unscoped listing) OR
+ * `ACCOMMODATION_VIEW_OWN` (owner-scoped). The scoping decision (forcing `ownerId = actor.id`
+ * for a VIEW_OWN-only actor) lives in the service's `_executeAdminSearch`, not here — this
+ * gate only authorizes access to the admin list path. Admin access itself is verified by the
+ * base class default (`super._canAdminList`).
  *
  * @param actor - The user or system performing the action.
- * @throws {ServiceError} If the actor lacks ACCOMMODATION_VIEW_ALL permission.
+ * @throws {ServiceError} If the actor lacks both VIEW_ALL and VIEW_OWN.
  */
 export function checkCanAdminList(actor: Actor): void {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+    if (
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_OWN)
+    ) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied: ACCOMMODATION_VIEW_ALL required for admin list'
+            'Permission denied: ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin list'
         );
     }
+}
+
+/**
+ * Checks if an actor may use the lightweight relation-selector lookup (SPEC-169 §5.5 / D4).
+ *
+ * The `/options` endpoint exposes only public-grade identity fields (`id`, `label`, `slug`,
+ * plus `type` and `destination` for accommodation) and is therefore gated ONLY by admin-panel
+ * access — NOT by `ACCOMMODATION_VIEW_ALL` / `_VIEW_OWN`. This deliberately lets an EDITOR (or
+ * any admin-panel role) populate relation selectors without a broad view grant, which is the
+ * whole point of the lookup tier (it stops selectors from forcing `_VIEW_ALL`).
+ *
+ * This is defense-in-depth that mirrors the route-level admin-access gate: the HTTP route uses
+ * `createAdminRoute` with NO `requiredPermissions`, so the admin authorization middleware already
+ * requires `ACCESS_PANEL_ADMIN` OR `ACCESS_API_ADMIN`. Re-checking here keeps the service safe
+ * even if called outside the HTTP boundary.
+ *
+ * @param actor - The actor performing the lookup.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks admin-panel access.
+ */
+export function checkCanFindOptions(actor: Actor): void {
+    if (
+        !hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) &&
+        !hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: admin panel access required for options lookup'
+        );
+    }
+}
+
+/**
+ * Checks if an actor may view the ADMIN detail of an accommodation (SPEC-169 §2.1/§5.2).
+ *
+ * This is intentionally NOT the generic {@link checkCanView}: that one grants access to
+ * any `PUBLIC` record, which on the admin detail endpoint would leak admin-grade fields
+ * of another owner's public listing to a `VIEW_OWN`-only actor. The admin detail check is
+ * strictly:
+ * - `ACCOMMODATION_VIEW_ALL` → staff: any record.
+ * - `ACCOMMODATION_VIEW_OWN` → only the actor's own record; otherwise `NOT_FOUND`
+ *   (decision D2: do not leak the existence of other owners' records, including PUBLIC ones).
+ * - neither → `FORBIDDEN` (the admin route gate normally blocks this first).
+ *
+ * Ownership is resolved through the shared per-entity ownership descriptor (§5.6) so the
+ * "who owns it" rule stays defined exactly once and cannot drift from the list-scoping path.
+ *
+ * @param actor The actor performing the action.
+ * @param entity The accommodation being viewed.
+ * @throws {ServiceError} NOT_FOUND for a non-owned record under VIEW_OWN; FORBIDDEN otherwise.
+ */
+export function checkCanAdminView(actor: Actor, entity: Accommodation): void {
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+        return;
+    }
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_OWN)) {
+        const descriptor = getOwnershipDescriptor('accommodation');
+        if (descriptor?.isOwner(actor, entity)) {
+            return;
+        }
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+    throw new ServiceError(
+        ServiceErrorCode.FORBIDDEN,
+        'Permission denied: ACCOMMODATION_VIEW_ALL or ACCOMMODATION_VIEW_OWN required for admin view'
+    );
 }

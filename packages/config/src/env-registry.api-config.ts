@@ -217,6 +217,23 @@ export const API_CONFIG_ENV_VARS = [
         howToObtainEs:
             'Por defecto false. Ponelo en true si mandás los logs a un agregador que parsea JSON (Datadog, Logtail) y espera cada línea como un documento JSON.'
     },
+    {
+        name: 'API_LOG_FORMAT',
+        description: 'Logger output format: pretty (chalk-colored) or json (NDJSON)',
+        descriptionEs: 'Formato de salida del logger: pretty (con colores) o json (NDJSON)',
+        type: 'enum',
+        required: false,
+        secret: false,
+        defaultValue: 'pretty',
+        exampleValue: 'json',
+        enumValues: ['pretty', 'json'] as const,
+        apps: ['api'],
+        category: 'api-config',
+        howToObtain:
+            'Default "pretty" (chalk-colored, emoji, human-readable terminal output). Set "json" to emit newline-delimited JSON (one structured object per line, no colors) for log aggregators or Coolify log search. Pretty is fine for local dev; json is recommended when shipping stdout to an aggregator that parses each line.',
+        howToObtainEs:
+            'Por defecto "pretty" (con colores, emoji, legible en terminal). Poné "json" para emitir JSON delimitado por saltos de línea (un objeto estructurado por línea, sin colores) para agregadores de logs o la búsqueda de logs de Coolify. Pretty va bien para dev local; json se recomienda cuando mandás stdout a un agregador que parsea cada línea.'
+    },
 
     // -------------------------------------------------------------------------
     // CORS

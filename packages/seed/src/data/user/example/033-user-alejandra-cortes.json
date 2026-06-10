@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Colón",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "2820",
-        "street": "Entre Ríos",
-        "number": "486",
-        "coordinates": {
-            "lat": "-32.2167",
-            "long": "-58.1333"
-        }
+        "region": "Entre Ríos",
+        "city": "Colón",
+        "addressLine1": "Entre Ríos 486",
+        "postalCode": "2820"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Colón, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

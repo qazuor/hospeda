@@ -42,12 +42,36 @@ export const accommodations = pgTable(
         summary: text('summary').notNull(),
         type: AccommodationTypePgEnum('type').notNull(),
         description: text('description').notNull(),
+        /**
+         * SPEC-187 P2-T2: rich-text (markdown) variant of the description.
+         * Presence on the public payload is the ONLY signal the web client
+         * uses to pick rich vs. plain rendering (FR-3b, FR-4). Absent on the
+         * row = the owning host is not entitled, or the field has not been
+         * filled in. Nullable on purpose: never backfilled (PD-3 keeps the
+         * column add as a separate, additive migration from the P0 strip).
+         * Bounded to 5000 chars at the API layer by the Zod schema in
+         * `packages/schemas/src/entities/accommodation/accommodation.schema.ts`.
+         */
+        richDescription: text('rich_description'),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
         media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
+        // Denormalized flag (SPEC-143 #29): true when the owner's subscription is
+        // paused WITH service suspension. Public reads filter it out and the
+        // accommodation write path rejects edits while true. Canonical source is
+        // users.service_suspended; this column is the hot-path denormalization so
+        // public queries do not join users. Flipped in bulk on pause/resume.
+        ownerSuspended: boolean('owner_suspended').notNull().default(false),
+        // SPEC-167: true when this accommodation was restricted by the downgrade
+        // remediation flow (host exceeded their new plan's MAX_ACCOMMODATIONS cap).
+        // Separate from ownerSuspended — the pause-flow flips/restores ALL of an
+        // owner's accommodations in bulk; downgrade restriction is selective and
+        // the two states must NOT collide. Reversible: flipped back to false on
+        // re-upgrade or manual restore by the host once back under cap.
+        planRestricted: boolean('plan_restricted').notNull().default(false),
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
@@ -79,6 +103,12 @@ export const accommodations = pgTable(
     },
     (table) => ({
         accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
+        accommodations_ownerSuspended_idx: index('accommodations_ownerSuspended_idx').on(
+            table.ownerSuspended
+        ),
+        accommodations_planRestricted_idx: index('accommodations_planRestricted_idx').on(
+            table.planRestricted
+        ),
         accommodations_visibility_idx: index('accommodations_visibility_idx').on(table.visibility),
         accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
             table.lifecycleState

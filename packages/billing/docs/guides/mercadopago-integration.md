@@ -136,3 +136,4 @@ try {
 
 - [ADR-005: MercadoPago Payments](../../../../docs/decisions/ADR-005-mercadopago-payments.md)
 - [Billing API Endpoints](../../../../apps/api/docs/billing-api-endpoints.md)
+- [MP Sandbox Ops Runbook](../../../../docs/migration/mercadopago-sandbox-runbook.md) — dashboard config, test-user creation, webhook inspection, rollback

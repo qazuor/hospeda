@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getMediaUrl } from '../get-media-url.js';
+import { getMediaUrl, stripCloudinaryTransform } from '../get-media-url.js';
 
 describe('getMediaUrl', () => {
     const cloudinaryBase =
@@ -380,6 +380,183 @@ describe('getMediaUrl', () => {
 
             // Pure passthrough when no preset/raw is supplied.
             expect(result).toBe(httpCloudinaryUrl);
+        });
+    });
+});
+
+// ─── stripCloudinaryTransform ─────────────────────────────────────────────────
+// SPEC-186 T-009: strips an existing Cloudinary transform segment from a
+// delivery URL so the URL can be re-submitted to getMediaUrl with a different
+// preset (per-cell role matching the fixed aspect-ratio of each gallery cell).
+
+describe('stripCloudinaryTransform', () => {
+    const GALLERY_URL =
+        'https://res.cloudinary.com/hospeda/image/upload/w_800,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/gallery.jpg';
+    const BARE_URL =
+        'https://res.cloudinary.com/hospeda/image/upload/v1234/hospeda/prod/accommodations/abc/gallery.jpg';
+
+    describe('Cloudinary URL with a single-segment transform', () => {
+        it('removes the gallery preset transform segment and returns a bare URL', () => {
+            const result = stripCloudinaryTransform(GALLERY_URL);
+            expect(result).toBe(BARE_URL);
+        });
+
+        it('after stripping, getMediaUrl can apply a different preset', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryFeatured' });
+            expect(result).toContain(
+                '/upload/w_1000,ar_16:10,c_fill,g_auto,q_auto,f_auto,dpr_auto/'
+            );
+        });
+
+        it('works with the card preset already applied', () => {
+            const cardUrl =
+                'https://res.cloudinary.com/hospeda/image/upload/w_400,h_300,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/sample.jpg';
+            const result = stripCloudinaryTransform(cardUrl);
+            expect(result).toBe('https://res.cloudinary.com/hospeda/image/upload/v1234/sample.jpg');
+        });
+
+        it('allows re-applying galleryHalf preset after stripping the gallery preset', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryHalf' });
+            expect(result).toContain('ar_4:3');
+            expect(result).toContain('c_fill');
+        });
+
+        it('allows re-applying galleryQuarter preset after stripping', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryQuarter' });
+            expect(result).toContain('ar_1:1');
+            expect(result).toContain('c_fill');
+            expect(result).toContain('w_400');
+        });
+
+        it('allows re-applying the full preset after stripping (for lightbox)', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'full' });
+            expect(result).toContain('q_auto');
+            expect(result).not.toContain('c_fill');
+            expect(result).not.toContain('ar_');
+        });
+    });
+
+    describe('Cloudinary URL that is already bare (no transform segment)', () => {
+        it('returns the URL unchanged when no transform is present', () => {
+            const result = stripCloudinaryTransform(BARE_URL);
+            expect(result).toBe(BARE_URL);
+        });
+    });
+
+    describe('Cloudinary URL with named transform (t_ prefix)', () => {
+        it('strips a named transform (t_) segment', () => {
+            const namedUrl =
+                'https://res.cloudinary.com/hospeda/image/upload/t_media_lib_thumb/v1234/sample.jpg';
+            const result = stripCloudinaryTransform(namedUrl);
+            expect(result).toBe('https://res.cloudinary.com/hospeda/image/upload/v1234/sample.jpg');
+        });
+    });
+
+    describe('non-`/upload/` delivery types', () => {
+        it('returns /image/fetch/ URLs unchanged', () => {
+            const fetchUrl =
+                'https://res.cloudinary.com/hospeda/image/fetch/w_400/https://external.com/img.jpg';
+            expect(stripCloudinaryTransform(fetchUrl)).toBe(fetchUrl);
+        });
+
+        it('returns /image/private/ URLs unchanged', () => {
+            const privateUrl =
+                'https://res.cloudinary.com/hospeda/image/private/w_400/v1234/sample.jpg';
+            expect(stripCloudinaryTransform(privateUrl)).toBe(privateUrl);
+        });
+
+        it('returns /image/authenticated/ URLs unchanged', () => {
+            const authUrl =
+                'https://res.cloudinary.com/hospeda/image/authenticated/w_400/v1234/sample.jpg';
+            expect(stripCloudinaryTransform(authUrl)).toBe(authUrl);
+        });
+    });
+
+    describe('non-Cloudinary URLs — pass-through', () => {
+        it('returns a placeholder SVG unchanged', () => {
+            const placeholder = '/images/placeholder-accommodation.svg';
+            expect(stripCloudinaryTransform(placeholder)).toBe(placeholder);
+        });
+
+        it('returns an Unsplash URL unchanged', () => {
+            const unsplash = 'https://images.unsplash.com/photo-abc?w=800';
+            expect(stripCloudinaryTransform(unsplash)).toBe(unsplash);
+        });
+
+        it('returns an empty string unchanged', () => {
+            expect(stripCloudinaryTransform('')).toBe('');
+        });
+
+        // Regression: spoofed hostname — must NOT be treated as Cloudinary.
+        it('returns a spoofed Cloudinary hostname URL unchanged (hostname check, not substring)', () => {
+            // Arrange — the subdomain trick: the URL *contains* 'res.cloudinary.com'
+            // as a substring but the actual hostname is 'res.cloudinary.com.evil.com'.
+            const spoofedUrl =
+                'https://res.cloudinary.com.evil.com/upload/w_800,q_auto/v1/image.jpg';
+            // Act
+            const result = stripCloudinaryTransform(spoofedUrl);
+            // Assert — must be returned unchanged (not rewritten as if it were Cloudinary)
+            expect(result).toBe(spoofedUrl);
+        });
+
+        it('returns a relative URL unchanged (no scheme → URL parse fails → pass-through)', () => {
+            // Arrange
+            const relative = '/images/x.svg';
+            // Act / Assert
+            expect(stripCloudinaryTransform(relative)).toBe(relative);
+        });
+    });
+
+    describe('integration: buildCellUrl behavior simulation', () => {
+        /**
+         * Simulates what ImageGallery.client.tsx does:
+         * buildCellUrl(url, preset) = getMediaUrl(stripCloudinaryTransform(url), { preset })
+         *
+         * Verifies that a URL pre-baked with the 'gallery' preset produces the
+         * correct cell-specific Cloudinary URL after the two-step strip + apply.
+         */
+        it('gallery-preset URL → galleryFeatured produces correct transform', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryFeatured' });
+            expect(result).toBe(
+                'https://res.cloudinary.com/hospeda/image/upload/w_1000,ar_16:10,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/gallery.jpg'
+            );
+        });
+
+        it('gallery-preset URL → galleryHalf produces correct transform', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryHalf' });
+            expect(result).toBe(
+                'https://res.cloudinary.com/hospeda/image/upload/w_640,ar_4:3,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/gallery.jpg'
+            );
+        });
+
+        it('gallery-preset URL → galleryQuarter produces correct transform', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryQuarter' });
+            expect(result).toBe(
+                'https://res.cloudinary.com/hospeda/image/upload/w_400,ar_1:1,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/gallery.jpg'
+            );
+        });
+
+        it('gallery-preset URL → galleryThumb produces correct transform', () => {
+            const stripped = stripCloudinaryTransform(GALLERY_URL);
+            const result = getMediaUrl(stripped, { preset: 'galleryThumb' });
+            expect(result).toBe(
+                'https://res.cloudinary.com/hospeda/image/upload/w_120,ar_1:1,c_fill,g_auto,q_auto,f_auto,dpr_auto/v1234/hospeda/prod/accommodations/abc/gallery.jpg'
+            );
+        });
+
+        it('plain (non-Cloudinary) URL passes through unchanged regardless of preset', () => {
+            const placeholder = '/images/placeholder-accommodation.svg';
+            const stripped = stripCloudinaryTransform(placeholder);
+            // getMediaUrl passes non-Cloudinary through unchanged
+            const result = getMediaUrl(stripped, { preset: 'galleryFeatured' });
+            expect(result).toBe(placeholder);
         });
     });
 });

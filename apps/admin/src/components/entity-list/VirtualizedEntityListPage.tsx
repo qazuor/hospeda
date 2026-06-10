@@ -169,9 +169,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                     {pagesLoaded > 1 && (
                         <span className="text-muted-foreground">({pagesLoaded} pages loaded)</span>
                     )}
-                    {isStale && (
-                        <span className="text-yellow-600 dark:text-yellow-400">(stale)</span>
-                    )}
+                    {isStale && <span className="text-warning">(stale)</span>}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -200,7 +198,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                                     `items: ${items.length}, totalCount: ${totalCount}, pagesLoaded: ${pagesLoaded}, hasNextPage: ${hasNextPage}, isFetchingNextPage: ${isFetchingNextPage}, isStale: ${isStale}`
                                 );
                             }}
-                            className="rounded bg-blue-100 px-2 py-1 text-blue-700 text-xs hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
+                            className="rounded bg-info/15 px-2 py-1 text-info text-xs hover:bg-info/25"
                             title={t('ui.actions.debugInfo')}
                         >
                             Debug

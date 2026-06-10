@@ -4,7 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
-import { FullLocationFields } from '../../common/location.schema.js';
+import { UserLocationFields } from '../../common/location.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AuthProviderEnumSchema } from '../../enums/auth-provider.schema.js';
@@ -130,8 +130,12 @@ export const UserSchema = z.object({
     // Contact and location (using base objects)
     ...BaseContactFields,
 
-    // Location (using base object but making it optional for users)
-    ...FullLocationFields,
+    // Location: dedicated user-profile location shape (all fields optional).
+    // NOT FullLocationSchema — that requires street/number and uses
+    // state/zipCode names, which rejected valid profile-location edits (BETA-34).
+    // Field names match what onboarding stores + the edit form submits:
+    // { country, region, city, addressLine1, postalCode }.
+    ...UserLocationFields,
 
     // Social networks
     ...SocialNetworkFields,
@@ -146,6 +150,15 @@ export const UserSchema = z.object({
     // create/update inputs that don't mention them keep working.
     profileCompleted: z.boolean().default(false).optional(),
     setPasswordPrompted: z.boolean().default(false).optional(),
+
+    /**
+     * SPEC-143 #29 service-suspension flag. Canonical source for the pause
+     * "service suspension" dimension; denormalized to
+     * `accommodations.ownerSuspended` for the public hot path. Mirrors the
+     * `users.service_suspended` column. Optional with default `false` so
+     * existing fixtures and create/update inputs that omit it keep working.
+     */
+    serviceSuspended: z.boolean().default(false).optional(),
 
     // User-specific nested objects
     profile: UserProfileSchema.nullish(),

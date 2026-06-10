@@ -3,8 +3,8 @@
     "id": "007-event-workshop-taller-artesanias",
     "slug": "taller-artesanias",
     "name": "Taller de Artesanías",
-    "summary": "Encuentro abierto para artesanos locales con demostraciones de cesteria, ceramica y trabajo en cuero. Materiales incluidos.",
-    "description": "Descripción detallada del evento Taller de Artesanías. Este es un evento de categoría WORKSHOP que se desarrolla en Entre Ríos.",
+    "summary": "Encuentro abierto para artesanos locales y visitantes con demostraciones de cestería en junco, cerámica criolla y trabajo en cuero. Materiales incluidos, sin necesidad de experiencia previa.",
+    "description": "Una jornada para descubrir y practicar las técnicas artesanales más representativas del litoral entrerriano. El taller está abierto tanto a artesanos locales que quieran compartir su trabajo como a visitantes y aficionados que se animen a probar oficios tradicionales por primera vez.\n\n**Qué vas a aprender**\n\n- **Cestería con junco del delta:** una de las técnicas más antiguas de la región, con cosecha en luna menguante y trenzados que se transmiten desde hace generaciones.\n- **Cerámica criolla:** modelado a mano de piezas funcionales y decorativas, con tradiciones precolombinas adaptadas por las colonias.\n- **Trabajo en cuero:** elaboración de pequeños accesorios siguiendo técnicas de la talabartería gauchesca.\n\n**Cómo se desarrolla**\n\nEl taller funciona en formato circuito: vas pasando por las distintas estaciones a tu ritmo, con artesanos que demuestran su técnica en vivo y te invitan a probar. Cada estación incluye los materiales necesarios y un instructor que acompaña paso a paso. Te llevás una pieza terminada que hiciste con tus propias manos.\n\n**Información práctica**\n\n- **Cuándo:** sábado de abril, jornada completa.\n- **Dónde:** Corsódromo de Gualeguaychú (espacio cubierto).\n- **Entrada:** GRATUITA, con inscripción previa por cupo limitado.\n- **Edades:** apto desde 10 años con acompañante adulto.\n- **Llevar:** ropa cómoda que se pueda manchar.\n\nUna oportunidad ideal para conectar con la cultura local más allá del consumo turístico tradicional.",
     "category": "WORKSHOP",
     "authorId": "006-user-laura-vega",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Taller de Artesanías 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en el Taller de Artesanías 2025 en Entre Ríos. Aprende técnicas artesanales y comparte con expertos en un evento único de cultura y creatividad.",
-        "keywords": ["workshop", "entre rios", "evento", "cultura"]
+        "title": "Taller de Artesanías en Entre Ríos - Hospeda",
+        "description": "Aprendé cestería en junco, cerámica criolla y trabajo en cuero con artesanos locales. Materiales incluidos, gratuito. Una jornada para descubrir oficios.",
+        "keywords": [
+            "taller artesanías",
+            "cestería junco",
+            "cerámica criolla",
+            "trabajo en cuero",
+            "artesanos entre ríos",
+            "workshop gratuito",
+            "gualeguaychú",
+            "cultura litoral"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

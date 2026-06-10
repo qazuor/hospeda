@@ -32,6 +32,8 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     HOSPEDA_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
     HOSPEDA_SITE_URL: 'http://localhost:4321',
     HOSPEDA_LOCATION_SALT: 'test-location-salt-fixed-for-deterministic-tests-32+chars',
+    HOSPEDA_VIEWS_HASH_SECRET: 'test-views-hash-secret-fixed-for-deterministic-tests-32ch',
+    HOSPEDA_AI_VAULT_MASTER_KEY: 'test-vault-master-key-0123456789abcd',
     ...overrides
 });
 
@@ -100,7 +102,7 @@ describe('Environment Configuration', () => {
             // Rate Limiting Configuration
             expect(envModule.env.API_RATE_LIMIT_ENABLED).toBe(true); // Default value (middleware ignores in tests)
             expect(envModule.env.API_RATE_LIMIT_WINDOW_MS).toBe(900000);
-            expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(100);
+            expect(envModule.env.API_RATE_LIMIT_MAX_REQUESTS).toBe(500);
             expect(envModule.env.API_RATE_LIMIT_KEY_GENERATOR).toBe('user');
             expect(envModule.env.API_RATE_LIMIT_SKIP).toBe('none');
             expect(envModule.env.API_RATE_LIMIT_HEADERS).toBe('standard');
@@ -413,6 +415,56 @@ describe('Environment Configuration', () => {
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_REDIS_URL).toBeUndefined();
+        });
+
+        it('should require HOSPEDA_AI_VAULT_MASTER_KEY in production (FIX 5)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+                // Explicitly removed to prove production requires it.
+                HOSPEDA_AI_VAULT_MASTER_KEY: undefined
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_AI_VAULT_MASTER_KEY in production when provided (FIX 5)', async () => {
+            const masterKey = 'a'.repeat(32);
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar',
+                HOSPEDA_AI_VAULT_MASTER_KEY: masterKey
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBe(masterKey);
+        });
+
+        it('should NOT require HOSPEDA_AI_VAULT_MASTER_KEY in non-production environments (FIX 5)', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test',
+                // Explicitly removed to prove non-production does not require it.
+                HOSPEDA_AI_VAULT_MASTER_KEY: undefined
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_AI_VAULT_MASTER_KEY).toBeUndefined();
         });
     });
 
@@ -859,6 +911,68 @@ describe('Environment Configuration', () => {
             expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_SECRET).toBeUndefined();
             expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_ID).toBeUndefined();
             expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_SECRET).toBeUndefined();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-147 — HOSPEDA_USER_CANCEL_ENABLED (opt-in feature flag, default false)
+    // ---------------------------------------------------------------------------
+
+    describe('HOSPEDA_USER_CANCEL_ENABLED (SPEC-147)', () => {
+        it('defaults to false when not set', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: undefined
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
+        });
+
+        it('enables when set to the literal string "true"', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: 'true'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(true);
+        });
+
+        it('stays false when set to "false"', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: 'false'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
+        });
+
+        it('stays false when set to an arbitrary truthy string (opt-in, not opt-out)', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_USER_CANCEL_ENABLED: '1'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_USER_CANCEL_ENABLED).toBe(false);
         });
     });
 

@@ -20,9 +20,15 @@
  * @module services/subscription-checkout.service
  */
 
-import type { QZPayBilling, QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import type {
+    QZPayBilling,
+    QZPayPollingResourceType,
+    QZPaySubscriptionWithHelpers
+} from '@qazuor/qzpay-core';
 import { resolveFreeTrialExtensionPromo } from '@repo/billing';
 import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
+import { env } from '../utils/env.js';
+import { apiLogger } from '../utils/logger.js';
 
 /**
  * Time-to-live applied to a `pending_provider` subscription before the
@@ -31,6 +37,105 @@ import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
  * messages or schedules that should agree with the reaper.
  */
 export const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
+
+/**
+ * Inputs for {@link schedulePollingForSubscription}.
+ *
+ * Aggregates everything the polling-job storage needs plus a `sourceLabel`
+ * for log diagnostics (so an operator can tell which checkout flow
+ * enqueued the job from log lines alone). Kept internal because it
+ * only makes sense inside this module.
+ */
+interface SchedulePollingInput {
+    readonly billing: QZPayBilling;
+    readonly subscriptionId: string;
+    readonly providerResourceId: string;
+    readonly resourceType: QZPayPollingResourceType;
+    readonly planSlug: string;
+    readonly sourceLabel: string;
+}
+
+/**
+ * Shared helper to enqueue a subscription-polling job after a paid
+ * subscription is initiated. Both monthly (`subscription`) and annual
+ * (`one_time_payment`) flows call this so the env-flag check, error
+ * handling, and log shapes stay in one place.
+ *
+ * Skipped silently when:
+ *   - The {@link env.HOSPEDA_BILLING_POLLING_ENABLED} flag is off (test/legacy environments).
+ *   - The configured storage adapter does not expose `subscriptionPollingJobs`.
+ *   - The provider returned no resource id to poll (defensive guard for
+ *     callers that pass an empty string).
+ *
+ * Non-fatal: a polling-enqueue failure is logged but does not throw —
+ * the underlying subscription was created successfully and the webhook
+ * remains the primary activation path. This mirrors how the prior
+ * inline implementation behaved on the monthly flow.
+ */
+async function schedulePollingForSubscription(input: SchedulePollingInput): Promise<void> {
+    const { billing, subscriptionId, providerResourceId, resourceType, planSlug, sourceLabel } =
+        input;
+
+    if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
+        return;
+    }
+
+    if (!providerResourceId) {
+        apiLogger.warn(
+            { subscriptionId, resourceType, sourceLabel },
+            'Skipping polling enqueue — provider returned no resource id (cannot poll)'
+        );
+        return;
+    }
+
+    const pollingStorage = billing.getStorage().subscriptionPollingJobs;
+    if (!pollingStorage) {
+        return;
+    }
+
+    try {
+        const job = await pollingStorage.create({
+            subscriptionId,
+            providerResourceId,
+            resourceType,
+            provider: 'mercadopago',
+            metadata: {
+                source: sourceLabel,
+                planSlug
+            }
+        });
+        if (job) {
+            apiLogger.debug(
+                {
+                    jobId: job.id,
+                    subscriptionId,
+                    providerResourceId,
+                    resourceType,
+                    nextPollAt: job.nextPollAt.toISOString()
+                },
+                'Scheduled subscription polling fallback'
+            );
+        } else {
+            apiLogger.warn(
+                { subscriptionId, providerResourceId, resourceType },
+                'Active polling job already exists for subscription — skipping enqueue'
+            );
+        }
+    } catch (error) {
+        // Non-fatal: subscription was created successfully; failing to
+        // schedule polling means we rely entirely on the webhook for
+        // activation. Log so an operator can investigate.
+        apiLogger.error(
+            {
+                subscriptionId,
+                providerResourceId,
+                resourceType,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Failed to enqueue subscription polling job — webhook is the only path now'
+        );
+    }
+}
 
 /**
  * Error codes surfaced by {@link initiatePaidMonthlySubscription}. Each
@@ -72,6 +177,32 @@ export class SubscriptionCheckoutError extends Error {
 async function resolvePlanBySlug(billing: QZPayBilling, planSlug: string) {
     const plansResult = await billing.plans.list();
     return plansResult.data.find((p) => p.name === planSlug) ?? null;
+}
+
+/**
+ * Get the human-facing display name for a plan, falling back to the slug
+ * when no display name is configured.
+ *
+ * Hospeda stores the slug as `billing_plans.name` (the QZPay-facing lookup
+ * key) and the human label in `billing_plans.metadata.displayName` (set by
+ * the seed from `PlanDefinition.name`). MercadoPago shows whatever string we
+ * pass as the line-item title to the buyer, so this helper centralises the
+ * "prefer display name, fall back to slug" rule used by every checkout
+ * builder in this file. Slugs like `owner-basico` look bad in the MP
+ * checkout screen — display names like `Basic` are what we want.
+ */
+function getPlanDisplayName(plan: { readonly name: string; readonly metadata?: unknown }): string {
+    if (
+        typeof plan.metadata === 'object' &&
+        plan.metadata !== null &&
+        'displayName' in plan.metadata
+    ) {
+        const displayName = (plan.metadata as Record<string, unknown>).displayName;
+        if (typeof displayName === 'string' && displayName.length > 0) {
+            return displayName;
+        }
+    }
+    return plan.name;
 }
 
 interface PriceShape {
@@ -283,6 +414,21 @@ export async function initiatePaidMonthlySubscription(
         );
     }
 
+    // SPEC-143 Finding #17 fallback: enqueue a polling job that will flip
+    // the local subscription to `active` if the `subscription_preapproval.created`
+    // webhook fails to arrive in time. Webhook still wins the race when it
+    // does arrive — the poller treats an already-active subscription as a
+    // no-op. The helper handles the env-flag check, missing-storage guard,
+    // and error logging.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug,
+        sourceLabel: 'start-paid-monthly'
+    });
+
     return {
         checkoutUrl,
         localSubscriptionId: subscription.id,
@@ -428,7 +574,7 @@ export async function initiatePaidAnnualSubscription(
                 unitAmount: annualPrice.unitAmount,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${plan.name} (Annual)`,
+                title: `${getPlanDisplayName(plan)} (Annual)`,
                 categoryId: 'services'
             }
         ],
@@ -456,6 +602,26 @@ export async function initiatePaidAnnualSubscription(
             'Payment provider did not return a checkout URL'
         );
     }
+
+    // SPEC-143 Finding #21 fallback: enqueue a polling job that flips
+    // the local subscription to `active` if the `payment.created`/
+    // `payment.updated` webhook for the annual one-time charge fails
+    // to arrive (current production state: MP Preferences only deliver
+    // legacy IPN, which the marker filter drops as duplicate).
+    //
+    // `checkout.id` is the LOCAL checkout-session UUID assigned by the
+    // qzpay-core orchestrator and propagated to MP as `external_reference`
+    // — the cron searches MP payments by that field. The webhook still
+    // wins when it does arrive; both call sites go through the
+    // idempotent `confirmAnnualSubscription`.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: localSubscriptionId,
+        providerResourceId: checkout.id,
+        resourceType: 'one_time_payment',
+        planSlug,
+        sourceLabel: 'start-paid-annual'
+    });
 
     return {
         checkoutUrl,
@@ -568,8 +734,20 @@ export async function initiatePaidPlanUpgrade(
         );
     }
 
-    if (sub.planId === newPlanId) {
-        throw new SubscriptionCheckoutError('SAME_PLAN', 'Cannot upgrade to the same plan');
+    // SAME_PLAN is true ONLY when both the plan id AND the billing
+    // interval+count match the user's current subscription. Allowing the
+    // same plan with a different interval enables cycle change flows
+    // (monthly ↔ annual on the same tier) — see SPEC-143 T-143-61.
+    const currentInterval = sub.interval;
+    const currentIntervalCount = sub.intervalCount ?? 1;
+    const isSamePlan = sub.planId === newPlanId;
+    const isSameInterval =
+        currentInterval === billingInterval && currentIntervalCount === intervalCount;
+    if (isSamePlan && isSameInterval) {
+        throw new SubscriptionCheckoutError(
+            'SAME_PLAN',
+            'Cannot upgrade to the same plan with the same billing interval'
+        );
     }
 
     const [currentPlan, targetPlan] = await Promise.all([
@@ -590,22 +768,35 @@ export async function initiatePaidPlanUpgrade(
         );
     }
 
-    const matchesInterval = (p: {
+    const matchesInterval = (
+        wantedInterval: string,
+        wantedIntervalCount: number
+    ): ((p: {
         billingInterval: string;
         intervalCount?: number | null;
         active: boolean;
-    }) =>
-        p.active &&
-        p.billingInterval === billingInterval &&
-        (p.intervalCount ?? 1) === intervalCount;
+    }) => boolean) => {
+        return (p) =>
+            p.active &&
+            p.billingInterval === wantedInterval &&
+            (p.intervalCount ?? 1) === wantedIntervalCount;
+    };
 
-    const currentPrice = currentPlan.prices.find(matchesInterval);
-    const targetPrice = targetPlan.prices.find(matchesInterval);
+    // currentPrice MUST be resolved against the user's CURRENT
+    // subscription interval — otherwise cycle change flows compute a
+    // zero delta (same-plan annual current price === same-plan annual
+    // target price) and the upgrade flow rejects with NOT_AN_UPGRADE.
+    // The target price keeps using the REQUESTED interval since that
+    // is what the user will be billed for going forward.
+    const currentPrice = currentPlan.prices.find(
+        matchesInterval(currentInterval, currentIntervalCount)
+    );
+    const targetPrice = targetPlan.prices.find(matchesInterval(billingInterval, intervalCount));
 
     if (!currentPrice) {
         throw new SubscriptionCheckoutError(
             'NO_MATCHING_PRICE',
-            `Current plan has no active price for interval '${billingInterval}'/${intervalCount}`
+            `Current plan has no active price for the subscription's current interval '${currentInterval}'/${currentIntervalCount}`
         );
     }
     if (!targetPrice) {
@@ -653,7 +844,7 @@ export async function initiatePaidPlanUpgrade(
                 unitAmount: deltaCentavos,
                 currency: 'ARS',
                 quantity: 1,
-                title: `${targetPlan.name} (Upgrade prorated)`,
+                title: `${getPlanDisplayName(targetPlan)} (Upgrade prorated)`,
                 categoryId: 'services'
             }
         ],

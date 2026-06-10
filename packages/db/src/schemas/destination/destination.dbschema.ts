@@ -27,6 +27,7 @@ import {
 } from '../enums.dbschema.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { destinationFaqs } from './destination_faq.dbschema.ts';
 import { destinationReviews } from './destination_review.dbschema.ts';
 import { rDestinationAttraction } from './r_destination_attraction.dbschema.ts';
 
@@ -126,5 +127,6 @@ export const destinationsRelations = relations(destinations, ({ one, many }) => 
     accommodations: many(accommodations),
     reviews: many(destinationReviews),
     tags: many(rEntityTag),
-    attractions: many(rDestinationAttraction)
+    attractions: many(rDestinationAttraction),
+    faqs: many(destinationFaqs)
 }));

@@ -22,6 +22,7 @@ import { buildUrl } from '@/lib/urls';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
+const isAuthenticated = Boolean(Astro.locals.user);
 
 const VALID: Record<string, string> = {
 	events: 'EVENTS', culture: 'CULTURE', gastronomy: 'GASTRONOMY', nature: 'NATURE',
@@ -44,7 +45,7 @@ const catLabel = t(`blog.categories.${catSlug}`, catSlug ?? '');
 const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlug}` });
 ---
 
-<ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false}>
+<ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false} noindex={true}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: catLabel }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byCategory.tagline', 'Categoría')} title={catLabel} totalCount={total} />
 
@@ -52,7 +53,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlug}` })
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'publicaciones' })} />}
 	{!hasError && cards.length > 0 && (
 		<div class="grid">
-			{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><ArticleCard data={card} locale={locale} /></div>))}
+			{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><ArticleCard data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}
 		</div>
 	)}
 	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}

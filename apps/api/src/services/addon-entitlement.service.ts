@@ -14,9 +14,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { ALL_PLANS, type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
+import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
+import { AddonCatalogService, PlanService } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -34,6 +35,19 @@ interface AddonAdjustment {
     appliedAt: string;
 }
 
+// ─── Module-level singletons ───────────────────────────────────────────────────
+/** DB-backed catalog service used to resolve addon definitions by slug. */
+const catalogService = new AddonCatalogService();
+
+/**
+ * DB-backed plan service used to resolve base plan limits.
+ *
+ * Post-SPEC-168, `subscription.planId` may be a `billing_plans` UUID (new rows)
+ * or a legacy slug (older rows/seeds). Resolution order: `getById(planId)` first;
+ * on NOT_FOUND fall back to `getBySlug(planId)`.
+ */
+const planService = new PlanService();
+
 /**
  * Service for managing add-on entitlements and limits
  */
@@ -48,22 +62,18 @@ export class AddonEntitlementService {
      * 2. Gets the customer's active subscription
      * 3. For entitlement add-ons: calls `billing.entitlements.grant()` with source='addon' and
      *    optional `expiresAt` derived from `addon.durationDays`
-     * 4. For limit add-ons: reads the base plan limit from canonical config (`ALL_PLANS`),
-     *    computes `newMaxValue = basePlanLimit + addon.limitIncrease`, then calls
-     *    `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
-     * 5. Writes add-on adjustment to subscription metadata (backward compat, deprecated)
-     * 6. Clears the entitlement cache
+     * 4. For limit add-ons: resolves the base plan limit via `PlanService` (DB-backed,
+     *    SPEC-192 T-025). `getById(planId)` is tried first (handles UUID planIds); on
+     *    NOT_FOUND falls back to `getBySlug(planId)` (handles legacy slug planIds). The
+     *    DB `limits` field is `Record<string,number>`, so the key lookup is a plain
+     *    property access. Computes `newMaxValue = basePlanLimit + totalIncrement`, then
+     *    calls `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
+     * 5. Clears the entitlement cache
      *
      * Note: The billing_addon_purchases INSERT is owned by the checkout flow (caller).
-     *
-     * **KNOWN LIMITATION — metadata race condition**: Step 5 performs a read-modify-write on
-     * `subscription.metadata.addonAdjustments` without any distributed lock. Concurrent addon
-     * purchases for the same customer can cause one write to silently overwrite the other,
-     * resulting in a lost entry in the JSON array. This is a known, accepted limitation because
-     * this metadata path is **deprecated** — the authoritative record of active add-ons is stored
-     * in the `billing_addon_purchases` table (one row per purchase, no race). The metadata is
-     * retained only for backward compatibility with legacy readers. No fix is required unless
-     * the metadata path is reinstated as a primary source of truth.
+     * The authoritative record of active add-ons is `billing_addon_purchases` (one row per
+     * purchase). Writing to `subscription.metadata.addonAdjustments` was removed in
+     * SPEC-194 T-021 — legacy rows may still carry that field; readers fall back to it.
      *
      * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
@@ -84,10 +94,10 @@ export class AddonEntitlementService {
         }
 
         try {
-            // Get add-on definition
-            const addon = getAddonBySlug(input.addonSlug);
+            // Get add-on definition from the DB-backed catalog service (SPEC-192 T-012 cutover).
+            const addonResult = await catalogService.getBySlug(input.addonSlug);
 
-            if (!addon) {
+            if (!addonResult.success) {
                 return {
                     success: false,
                     error: {
@@ -96,6 +106,8 @@ export class AddonEntitlementService {
                     }
                 };
             }
+
+            const addon = addonResult.data;
 
             // Get customer's active subscription
             const subscriptions = await this.billing.subscriptions.getByCustomerId(
@@ -156,16 +168,38 @@ export class AddonEntitlementService {
                     'Granted add-on entitlement via QZPay'
                 );
             } else if (addon.affectsLimitKey !== null && addon.limitIncrease !== null) {
-                // Resolve base plan limit from canonical config
-                const canonicalPlan = ALL_PLANS.find(
-                    (plan) => plan.slug === activeSubscription.planId
-                );
+                // ── Resolve base plan limit via PlanService (DB-backed, SPEC-192 T-025) ──
+                //
+                // Post-SPEC-168, `subscription.planId` may be a `billing_plans` UUID (new
+                // rows) or a legacy slug (older rows/seeds). Strategy:
+                //   1. Try `getById(planId)` — succeeds for UUID planIds.
+                //   2. On NOT_FOUND, fall back to `getBySlug(planId)` — handles slug planIds.
+                //   3. If both fail, log a warning and treat base as 0 (safe minimal change).
+                //
+                // The DB response's `limits` is `Record<string, number>` (not LimitDefinition[]),
+                // so the key lookup is a direct property access.
+                let basePlanLimit = 0;
 
-                const baseLimitDef = canonicalPlan?.limits.find(
-                    (lim) => lim.key === addon.affectsLimitKey
-                );
+                const planId = activeSubscription.planId as string;
+                const planByIdResult = await planService.getById(planId);
+                const resolvedPlanResult = planByIdResult.success
+                    ? planByIdResult
+                    : await planService.getBySlug(planId);
 
-                const basePlanLimit = baseLimitDef?.value ?? 0;
+                if (resolvedPlanResult.success) {
+                    const planLimits = resolvedPlanResult.data.limits as Record<string, number>;
+                    basePlanLimit = planLimits[addon.affectsLimitKey] ?? 0;
+                } else {
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            planId,
+                            addonSlug: input.addonSlug,
+                            limitKey: addon.affectsLimitKey
+                        },
+                        'Could not resolve base plan limit via PlanService (getById + getBySlug both failed); using 0'
+                    );
+                }
 
                 if (basePlanLimit === -1) {
                     // Base plan already has unlimited for this limit; adding more is a no-op
@@ -196,10 +230,16 @@ export class AddonEntitlementService {
                             )
                         );
 
-                    // Sum increments from all active purchases that affect this limitKey
+                    // Sum increments from all active purchases that affect this limitKey.
+                    // Resolves each purchase addon from the DB-backed catalog service.
                     let totalIncrement = 0;
                     for (const purchase of allActivePurchases) {
-                        const purchaseAddon = getAddonBySlug(purchase.addonSlug);
+                        const purchaseAddonResult = await catalogService.getBySlug(
+                            purchase.addonSlug
+                        );
+                        const purchaseAddon = purchaseAddonResult.success
+                            ? purchaseAddonResult.data
+                            : null;
                         if (
                             purchaseAddon?.affectsLimitKey === addon.affectsLimitKey &&
                             purchaseAddon.limitIncrease !== null
@@ -232,23 +272,6 @@ export class AddonEntitlementService {
                     );
                 }
             }
-
-            // Track the adjustment in subscription metadata (backward compatibility, deprecated)
-            const adjustments = this.getAddonAdjustments(activeSubscription);
-            adjustments.push({
-                addonSlug: input.addonSlug,
-                entitlement: addon.grantsEntitlement || undefined,
-                limitKey: addon.affectsLimitKey || undefined,
-                limitIncrease: addon.limitIncrease || undefined,
-                appliedAt: now.toISOString()
-            });
-
-            await this.billing.subscriptions.update(activeSubscription.id, {
-                metadata: {
-                    ...activeSubscription.metadata,
-                    addonAdjustments: JSON.stringify(adjustments)
-                }
-            });
 
             // Clear entitlement cache to force refresh
             clearEntitlementCache(input.customerId);
@@ -295,8 +318,7 @@ export class AddonEntitlementService {
      * 1. Finds the add-on definition
      * 2. Gets the customer's active subscription
      * 3. Revokes QZPay entitlement or limit for the add-on (with source-based fallback for backward compat)
-     * 4. Removes the add-on adjustment from subscription metadata (deprecated, kept for backward compat)
-     * 5. Clears the entitlement cache
+     * 4. Clears the entitlement cache
      *
      * For entitlement add-ons: tries `revokeBySource('addon', purchaseId)` first, falls back to
      * `revoke(customerId, entitlementKey)` for pre-migration data without a sourceId.
@@ -307,12 +329,8 @@ export class AddonEntitlementService {
      * add-on cancellation resilient to billing service transient failures.
      *
      * Note: The billing_addon_purchases status update is owned by the caller.
-     *
-     * **KNOWN LIMITATION — metadata race condition**: The metadata cleanup step performs a
-     * read-modify-write on `subscription.metadata.addonAdjustments` without any distributed lock.
-     * Concurrent cancellations for the same customer can cause one write to overwrite the other.
-     * This is accepted because this metadata path is **deprecated** — see `applyAddonEntitlements`
-     * for the full explanation.
+     * Writing to `subscription.metadata.addonAdjustments` was removed in SPEC-194 T-021 —
+     * legacy rows may still carry that field; readers fall back to it.
      *
      * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
@@ -333,10 +351,10 @@ export class AddonEntitlementService {
         }
 
         try {
-            // Get add-on definition
-            const addon = getAddonBySlug(input.addonSlug);
+            // Get add-on definition from the DB-backed catalog service (SPEC-192 T-012 cutover).
+            const addonResult = await catalogService.getBySlug(input.addonSlug);
 
-            if (!addon) {
+            if (!addonResult.success) {
                 return {
                     success: false,
                     error: {
@@ -345,6 +363,8 @@ export class AddonEntitlementService {
                     }
                 };
             }
+
+            const addon = addonResult.data;
 
             // Get customer's active subscription
             const subscriptions = await this.billing.subscriptions.getByCustomerId(
@@ -452,18 +472,6 @@ export class AddonEntitlementService {
                     );
                 }
             }
-
-            // Remove the adjustment from subscription metadata (backward compatibility, deprecated)
-            const adjustments = this.getAddonAdjustments(activeSubscription).filter(
-                (adj) => adj.addonSlug !== input.addonSlug
-            );
-
-            await this.billing.subscriptions.update(activeSubscription.id, {
-                metadata: {
-                    ...activeSubscription.metadata,
-                    addonAdjustments: JSON.stringify(adjustments)
-                }
-            });
 
             // Clear entitlement cache to force refresh
             clearEntitlementCache(input.customerId);
@@ -576,8 +584,11 @@ export class AddonEntitlementService {
                         Array.isArray(purchase.entitlementAdjustments) &&
                         purchase.entitlementAdjustments.length > 0
                     ) {
-                        entitlement = purchase.entitlementAdjustments[0]
-                            ?.entitlementKey as EntitlementKey;
+                        // entitlementAdjustments is DB JSONB — the key is string.
+                        // Guard to known EntitlementKey; unknown keys produce undefined
+                        // (matching prior cast behaviour for valid values).
+                        const rawEntKey = purchase.entitlementAdjustments[0]?.entitlementKey;
+                        entitlement = isEntitlementKey(rawEntKey) ? rawEntKey : undefined;
                     }
 
                     // Extract limit from limitAdjustments
@@ -588,7 +599,10 @@ export class AddonEntitlementService {
                         Array.isArray(purchase.limitAdjustments) &&
                         purchase.limitAdjustments.length > 0
                     ) {
-                        limitKey = purchase.limitAdjustments[0]?.limitKey as LimitKey;
+                        // limitAdjustments is DB JSONB — the key is string.
+                        // Guard to known LimitKey; unknown keys produce undefined.
+                        const rawLimitKey = purchase.limitAdjustments[0]?.limitKey;
+                        limitKey = isLimitKey(rawLimitKey) ? rawLimitKey : undefined;
                         limitIncrease = purchase.limitAdjustments[0]?.increase;
                     }
 

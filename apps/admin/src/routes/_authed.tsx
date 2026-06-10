@@ -1,9 +1,12 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/contexts/auth-context';
+import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
 import { fetchAuthSession } from '@/lib/auth-session';
-import { PermissionEnum } from '@repo/schemas';
+import { decideAuthedGuard } from '@/lib/authed-guard';
+import { fetchPreferredLocale } from '@/lib/locale';
+import { adminLogger } from '@/utils/logger';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
@@ -56,35 +59,47 @@ function AuthedNotFoundComponent() {
  */
 export const Route = createFileRoute('/_authed')({
     beforeLoad: async ({ location }) => {
-        const authState = await fetchAuthSession();
+        // Resolve the session and the preferred locale in parallel: the locale
+        // is a pure Accept-Language read with no dependency on the auth state,
+        // so the two server functions need not run sequentially. Keeps
+        // `decideAuthedGuard` a pure function with no I/O. (BETA-71.)
+        const [authState, { locale: preferredLocale }] = await Promise.all([
+            fetchAuthSession(),
+            fetchPreferredLocale()
+        ]);
 
-        // If not authenticated, redirect to signin
-        if (!authState.isAuthenticated) {
-            throw redirect({
-                to: '/auth/signin',
-                search: {
-                    redirect: location.pathname
-                }
-            });
+        const decision = decideAuthedGuard({
+            authState,
+            pathname: location.pathname,
+            preferredLocale,
+            siteUrl: env.VITE_SITE_URL,
+            adminUrl: env.VITE_ADMIN_URL
+        });
+
+        switch (decision.kind) {
+            case 'redirect-signin':
+                // SPEC-182: admin no longer hosts its own signin. Send
+                // unauthenticated users to the unified web auth surface; the
+                // guard already built the absolute web URL with an allowlisted
+                // callbackUrl back into admin.
+                throw redirect({ href: decision.href });
+            case 'redirect-tourist-funnel':
+                // Telemetry: log the original path the tourist was trying to
+                // reach. We deliberately do NOT pass it to the funnel — the
+                // funnel doesn't need it, but we want to see it in logs.
+                adminLogger.info('tourist redirected to host funnel', {
+                    userId: authState.userId,
+                    originalPath: location.pathname,
+                    locale: preferredLocale
+                });
+                throw redirect({ href: decision.href });
+            case 'redirect-forbidden':
+                throw redirect({ to: '/auth/forbidden', search: decision.search });
+            case 'redirect-change-password':
+                throw redirect({ to: '/auth/change-password' });
+            case 'allow':
+                return decision.authState;
         }
-
-        // Verify admin panel access using permission-only check.
-        // Never check roles directly - use PermissionEnum exclusively.
-        const hasPanelAccess = authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
-
-        if (!hasPanelAccess) {
-            throw redirect({
-                to: '/auth/forbidden'
-            });
-        }
-
-        // Force password change redirect for admin users
-        // Redirects to standalone auth page (outside admin layout)
-        if (authState.passwordChangeRequired) {
-            throw redirect({ to: '/auth/change-password' });
-        }
-
-        return authState;
     },
     component: AuthedLayout,
     notFoundComponent: AuthedNotFoundComponent

@@ -116,7 +116,13 @@
     "properties": {
         "list": {
             "title": "[TODO]",
-            "subtitle": "[TODO]"
+            "subtitle": "[TODO]",
+            "publishAnother": "Publish another"
+        },
+        "usage": {
+            "label": "{{current}} of {{max}} properties",
+            "unlimited": "Unlimited properties",
+            "upgrade": "Upgrade plan"
         },
         "card": {
             "status": {
@@ -125,12 +131,115 @@
                 "SUSPENDED": "[TODO]"
             },
             "actions": {
-                "edit": "[TODO]",
+                "edit": "Edit",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
                 "viewOnSite": "[TODO]"
             },
             "pricePerNight": "[TODO]"
+        },
+        "editor": {
+            "section": {
+                "basicInfo": "Basic information",
+                "location": "Location",
+                "capacity": "Capacity",
+                "pricing": "Pricing",
+                "amenities": "Amenities and features",
+                "contact": "Contact",
+                "socialNetworks": "Social networks",
+                "photos": "Photos",
+                "photosDescription": "Upload photos of your property to attract more guests"
+            },
+            "field": {
+                "name": "Name",
+                "summary": "Summary",
+                "description": "Description",
+                "type": "Type",
+                "destination": "Destination",
+                "destinationPlaceholder": "Select destination...",
+                "latitude": "Latitude",
+                "longitude": "Longitude",
+                "locationHint": "Enter the exact coordinates of your property.",
+                "maxGuests": "Max guests",
+                "bedrooms": "Bedrooms",
+                "bathrooms": "Bathrooms",
+                "price": "Price per night",
+                "currency": "Currency",
+                "amenities": "Amenities",
+                "features": "Features",
+                "phone": "Phone",
+                "email": "Email",
+                "website": "Website",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Featured image",
+                "featuredAlt": "Featured image",
+                "gallery": "Photo gallery",
+                "galleryAlt": "Photo {{index}}",
+                "dropOrClick": "Drag an image or click to select",
+                "formats": "JPG, PNG or WebP — max 5MB",
+                "remove": "Remove",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "File cannot exceed 5MB",
+                "uploadFailed": "Failed to upload image",
+                "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
+                "galleryCapLabel": "Gallery full"
+            },
+            "action": {
+                "save": "Save",
+                "saving": "Saving...",
+                "cancel": "Cancel"
+            },
+            "validation": {
+                "nameRequired": "Name is required",
+                "nameMin": "Name must be at least 3 characters",
+                "summaryRequired": "Summary is required",
+                "summaryMin": "Summary must be at least 10 characters",
+                "pricePositive": "Price must be a positive number",
+                "currencyInvalid": "Currency must be ARS or USD"
+            },
+            "error": {
+                "saveFailed": "Failed to save",
+                "network": "Network error"
+            },
+            "toast": {
+                "saveSuccess": "Changes saved",
+                "saveError": "We couldn't save your changes. Please try again."
+            },
+            "entitlement": {
+                "premiumFeature": "Premium feature",
+                "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
+                "videoNudge": "Upgrade your plan to embed videos in your property.",
+                "genericNudge": "This feature is available on a higher plan.",
+                "upgradeLink": "Upgrade plan"
+            },
+            "richText": {
+                "placeholder": "Describe your property in detail...",
+                "toolbarBold": "Bold",
+                "toolbarItalic": "Italic",
+                "toolbarUnderline": "Underline",
+                "toolbarH2": "Heading 2",
+                "toolbarH3": "Heading 3",
+                "toolbarList": "List",
+                "toolbarOrderedList": "Ordered list",
+                "toolbarQuote": "Quote",
+                "toolbarLink": "Link"
+            },
+            "location": {
+                "searchAddress": "Search address",
+                "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
+                "useMyLocation": "Use my current location",
+                "mapHint": "Drag the pin to adjust the exact location.",
+                "geolocationUnavailable": "Geolocation is not available in this browser.",
+                "geolocationDenied": "Permission denied. You can type the address manually.",
+                "geolocationError": "Could not get location. Try typing the address."
+            }
         },
         "empty": {
             "title": "[TODO]",
@@ -142,5 +251,71 @@
         "heroSubheadline": "[TODO]",
         "primaryCta": "[TODO]",
         "secondaryCta": "[TODO]"
+    },
+    "fromAdminBanner": {
+        "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
+    },
+    "miniForm": {
+        "fields": {
+            "type": "Accommodation type",
+            "typePlaceholder": "Choose an option"
+        },
+        "types": {
+            "APARTMENT": "Apartment",
+            "HOUSE": "House",
+            "COUNTRY_HOUSE": "Country house",
+            "CABIN": "Cabin",
+            "HOTEL": "Hotel",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Room",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
+    },
+    "dashboard": {
+        "analytics": {
+            "views": {
+                "title": "Views",
+                "empty": "No view data yet",
+                "window": {
+                    "7d": "7d",
+                    "30d": "30d"
+                }
+            },
+            "favorites": {
+                "title": "Favorites",
+                "empty": "No favorites yet"
+            },
+            "responseRate": {
+                "title": "Response time",
+                "empty": "No response data yet",
+                "avgTime": "Average",
+                "minutes": "min",
+                "notAvailable": "N/A"
+            },
+            "inquiries": {
+                "title": "Inquiries",
+                "empty": "No inquiry data yet"
+            },
+            "marketComparison": {
+                "title": "Market comparison",
+                "empty": "No comparison data yet",
+                "headers": {
+                    "accommodation": "Accommodation",
+                    "yourRating": "Your rating",
+                    "avgRating": "Dest. avg",
+                    "yourPrice": "Your price",
+                    "avgPrice": "Avg. price"
+                }
+            },
+            "sectionTitle": "Statistics",
+            "locked": {
+                "title": "Statistics available on your next plan",
+                "description": "Upgrade your subscription to view detailed statistics for your properties."
+            },
+            "loading": "Loading statistics...",
+            "error": "Error loading statistics"
+        }
     }
 }

@@ -10,7 +10,7 @@ import {
     uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
-import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
+import { LifecycleStatusPgEnum, ModerationStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
 
@@ -38,7 +38,20 @@ export const accommodationReviews = pgTable(
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
-        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
+        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * Moderation state for the review. Defaults to APPROVED because accommodation
+         * reviews publish immediately (spec §3.1: no moderation gate for accommodations).
+         */
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('APPROVED'),
+        /** User who performed the last moderation action. Nullable (no action yet). */
+        moderatedById: uuid('moderated_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        /** Timestamp of the last moderation action. Nullable until first moderation. */
+        moderatedAt: timestamp('moderated_at', { withTimezone: true }),
+        /** Free-text reason for the moderation decision. Nullable. */
+        moderationReason: text('moderation_reason')
     },
     (table) => ({
         accommodation_reviews_accommodationId_idx: index(
@@ -60,7 +73,11 @@ export const accommodationReviews = pgTable(
         // T-002).
         accommodation_reviews_accommodationId_lifecycleState_idx: index(
             'accommodation_reviews_accommodationId_lifecycleState_idx'
-        ).on(table.accommodationId, table.lifecycleState)
+        ).on(table.accommodationId, table.lifecycleState),
+        // SPEC-166: moderation state index for admin moderation queue queries.
+        accommodation_reviews_moderationState_idx: index(
+            'accommodation_reviews_moderationState_idx'
+        ).on(table.moderationState)
     })
 );
 
@@ -72,5 +89,10 @@ export const accommodationReviewsRelations = relations(accommodationReviews, ({ 
     user: one(users, {
         fields: [accommodationReviews.userId],
         references: [users.id]
+    }),
+    moderatedBy: one(users, {
+        fields: [accommodationReviews.moderatedById],
+        references: [users.id],
+        relationName: 'accommodationReviewModerator'
     })
 }));

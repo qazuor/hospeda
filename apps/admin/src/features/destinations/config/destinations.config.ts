@@ -1,6 +1,6 @@
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
-import { EntityType } from '@/components/table/DataTable';
+import { BadgeColor, EntityType } from '@/components/table/DataTable';
 import type { z } from 'zod';
 import { type Destination, DestinationListItemSchema } from '../schemas/destinations.schemas';
 import { createDestinationsColumns } from './destinations.columns';
@@ -57,6 +57,14 @@ export const destinationsConfig: EntityConfig<Destination> = {
                 order: 3
             },
             {
+                paramKey: 'createdAt',
+                labelKey: 'admin-filters.createdAt.label',
+                type: 'date-range',
+                paramKeyFrom: 'createdAfter',
+                paramKeyTo: 'createdBefore',
+                order: 4
+            },
+            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
@@ -108,7 +116,96 @@ export const destinationsConfig: EntityConfig<Destination> = {
     },
 
     // Columns
-    createColumns: createDestinationsColumns
+    createColumns: createDestinationsColumns,
+
+    /**
+     * Curated peek drawer fields for destinations.
+     *
+     * Badge fields that match an existing badge column (visibility, lifecycleState,
+     * moderationState) rely on automatic badgeOptions lookup from the column config.
+     * `destinationType` has no badge column so its badgeOptions are declared inline.
+     *
+     * Only fields present on the DestinationListItemSchema (admin-extended) are used.
+     * Field order follows the product-owner specification exactly.
+     */
+    peekFields: [
+        { accessorKey: 'id', labelKey: 'admin-entities.columns.id', format: 'text' },
+        {
+            accessorKey: 'destinationType',
+            labelKey: 'admin-entities.columns.type',
+            format: 'badge',
+            badgeOptions: [
+                { value: 'COUNTRY', label: 'País', color: BadgeColor.BLUE },
+                { value: 'REGION', label: 'Región', color: BadgeColor.PURPLE },
+                { value: 'PROVINCE', label: 'Provincia', color: BadgeColor.INDIGO },
+                { value: 'DEPARTMENT', label: 'Departamento', color: BadgeColor.CYAN },
+                { value: 'CITY', label: 'Ciudad', color: BadgeColor.GREEN },
+                { value: 'TOWN', label: 'Localidad', color: BadgeColor.TEAL },
+                { value: 'NEIGHBORHOOD', label: 'Barrio', color: BadgeColor.ORANGE }
+            ]
+        },
+        {
+            accessorKey: 'visibility',
+            labelKey: 'admin-entities.columns.visibility',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'lifecycleState',
+            labelKey: 'admin-entities.columns.status',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'moderationState',
+            labelKey: 'admin-entities.columns.moderation',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'summary',
+            labelKey: 'admin-entities.columns.summary',
+            format: 'text',
+            maxLength: 300
+        },
+        {
+            accessorKey: 'description',
+            labelKey: 'admin-entities.columns.description',
+            format: 'text',
+            maxLength: 500
+        },
+        {
+            accessorKey: 'accommodationsCount',
+            labelKey: 'admin-entities.columns.accommodationsCount',
+            format: 'text'
+        },
+        {
+            accessorKey: 'averageRating',
+            labelKey: 'admin-entities.columns.averageRating',
+            format: 'text'
+        },
+        {
+            accessorKey: 'reviewsCount',
+            labelKey: 'admin-entities.columns.reviewsCount',
+            format: 'text'
+        },
+        {
+            accessorKey: 'media.featuredImage.url',
+            labelKey: 'admin-entities.columns.featuredImage',
+            format: 'image'
+        },
+        { accessorKey: 'tags', labelKey: 'admin-entities.columns.tags', format: 'list' },
+        {
+            accessorKey: 'createdAt',
+            labelKey: 'admin-entities.columns.createdAt',
+            format: 'date'
+        },
+        {
+            accessorKey: 'updatedAt',
+            labelKey: 'admin-entities.columns.updatedAt',
+            format: 'date'
+        }
+    ],
+    // Header extras: slug as subtitle, isFeatured as a chip next to the title.
+    peekSubtitleField: 'slug',
+    peekFeaturedField: 'isFeatured'
 };
 
 // Generate the component and route

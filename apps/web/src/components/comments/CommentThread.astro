@@ -1,0 +1,83 @@
+---
+/**
+ * @file CommentThread.astro
+ * @description SSR container for the comment thread section.
+ *
+ * Fetches the initial page of APPROVED comments server-side (oldest-first)
+ * and seeds the CommentThreadIsland with them. The island handles optimistic
+ * appends after a user posts a new comment without a page reload.
+ *
+ * Designed to be re-used for events (T-015) by changing `entityType` to
+ * 'EVENT' — the correct POST endpoint is selected inside the island.
+ *
+ * AC-27: SSR-fetched comments are approved and oldest-first.
+ * AC-28: 429 handling lives in the island (it only applies to POSTs).
+ * AC-29: `isAuthenticated` is passed from the parent SSR page.
+ */
+
+import { commentsApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { CommentThreadIsland } from './CommentThreadIsland.client';
+import type { CommentItem } from './CommentThreadIsland.client';
+
+interface Props {
+    /** Entity kind — drives the correct API endpoint inside the island. */
+    readonly entityType: 'POST' | 'EVENT';
+    /** UUID of the post or event whose comments are displayed. */
+    readonly entityId: string;
+    /** Active UI locale — forwarded to the island for i18n. */
+    readonly locale: SupportedLocale;
+    /** Whether the requesting user is authenticated. */
+    readonly isAuthenticated: boolean;
+    /** Full current URL (e.g. Astro.url.href) — used to build the returnUrl for sign-in. */
+    readonly currentUrl: string;
+    /** Display name of the current user — author of optimistically appended comments. */
+    readonly currentUserName?: string | null;
+}
+
+const {
+    entityType,
+    entityId,
+    locale,
+    isAuthenticated,
+    currentUrl,
+    currentUserName,
+} = Astro.props;
+
+// Build sign-in URL with returnUrl so unauthenticated users land back here after login.
+const signinUrl = `/${locale}/auth/signin/?returnUrl=${encodeURIComponent(currentUrl)}`;
+
+// Fetch the first page of approved comments server-side for fast initial render.
+let initialComments: readonly CommentItem[] = [];
+try {
+    const result = await commentsApi.listByEntity({
+        entityType,
+        entityId,
+    });
+    if (result.ok) {
+        initialComments = (result.data.items ?? []).map((c) => ({
+            id: c.id,
+            authorName: c.authorName,
+            content: c.content,
+            // createdAt: Date objects do NOT survive island serialization — convert to ISO string here.
+            createdAt: c.createdAt instanceof Date
+                ? c.createdAt.toISOString()
+                : String(c.createdAt),
+        }));
+    }
+} catch {
+    // Graceful degradation: if the fetch fails the island renders with an empty
+    // list. The comment form (if authenticated) still works.
+}
+---
+
+<CommentThreadIsland
+    entityType={entityType}
+    entityId={entityId}
+    initialComments={initialComments}
+    locale={locale}
+    isAuthenticated={isAuthenticated}
+    signinUrl={signinUrl}
+    currentUserName={currentUserName}
+    client:visible
+/>

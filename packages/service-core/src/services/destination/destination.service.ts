@@ -1,4 +1,11 @@
-import { AccommodationModel, DestinationModel, buildSearchCondition } from '@repo/db';
+import {
+    AccommodationModel,
+    DestinationFaqModel,
+    DestinationModel,
+    buildSearchCondition,
+    withTransaction
+} from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -7,12 +14,22 @@ import type {
     BreadcrumbItem,
     Destination,
     DestinationCreateInput,
+    DestinationFaq,
+    DestinationFaqAddInput,
+    DestinationFaqListInput,
+    DestinationFaqListOutput,
+    DestinationFaqRemoveInput,
+    DestinationFaqReorderInput,
+    DestinationFaqSingleOutput,
+    DestinationFaqUpdateInput,
+    DestinationIdType,
     DestinationRatingInput,
     DestinationSearchForListOutput,
     DestinationSearchInput,
     DestinationStats,
     DestinationSummaryType,
     DestinationUpdateInput,
+    EntityOptionsItem,
     GetDestinationAccommodationsInput,
     GetDestinationAncestorsInput,
     GetDestinationBreadcrumbInput,
@@ -20,11 +37,17 @@ import type {
     GetDestinationChildrenInput,
     GetDestinationDescendantsInput,
     GetDestinationStatsInput,
-    GetDestinationSummaryInput
+    GetDestinationSummaryInput,
+    Success
 } from '@repo/schemas';
 import {
     DestinationAdminSearchSchema,
     DestinationCreateInputSchema,
+    DestinationFaqAddInputSchema,
+    DestinationFaqListInputSchema,
+    DestinationFaqRemoveInputSchema,
+    DestinationFaqReorderInputSchema,
+    DestinationFaqUpdateInputSchema,
     DestinationSearchSchema,
     DestinationUpdateInputSchema,
     GetDestinationAccommodationsInputSchema,
@@ -37,6 +60,7 @@ import {
     GetDestinationSummaryInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
+import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -48,7 +72,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { serviceLogger } from '../../utils';
+import { checkCanFindOptions, serviceLogger } from '../../utils';
 import { generateDestinationSlug } from './destination.helpers';
 import {
     computeHierarchyLevel,
@@ -159,6 +183,63 @@ export class DestinationService extends BaseCrudService<
         this.mediaProvider = mediaProvider ?? null;
     }
 
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * WITHOUT requiring a broad `DESTINATION_VIEW_ALL`-style grant. Gating is admin-panel
+     * access only (see {@link checkCanFindOptions}); the route mirrors this with an
+     * `ACCESS_PANEL_ADMIN`-only middleware gate.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows,
+     * never publication state) so relations can target unpublished destinations.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of destination options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const searchCondition =
+                    trimmedQ && trimmedQ.length > 0
+                        ? buildSearchCondition(trimmedQ, ['name'], this.model.getTable())
+                        : undefined;
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    searchCondition ? [searchCondition] : undefined,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.name,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
+    }
+
     // --- Permissions Hooks ---
     protected _canCreate(actor: Actor, data: unknown): void {
         checkCanCreateDestination(actor, data);
@@ -212,6 +293,7 @@ export class DestinationService extends BaseCrudService<
         page: number;
         pageSize: number;
         q?: string;
+        searchScope?: 'all' | 'name';
         country?: string;
         state?: string;
         city?: string;
@@ -227,6 +309,7 @@ export class DestinationService extends BaseCrudService<
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q,
+            searchScope,
             country,
             state,
             city,
@@ -271,6 +354,7 @@ export class DestinationService extends BaseCrudService<
             page,
             pageSize,
             q,
+            searchScope,
             country,
             state,
             city,
@@ -295,6 +379,7 @@ export class DestinationService extends BaseCrudService<
     ) {
         const {
             q,
+            searchScope,
             country,
             state,
             city,
@@ -330,12 +415,17 @@ export class DestinationService extends BaseCrudService<
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
-        // Build optional ILIKE search condition over getSearchableColumns()
-        // (name + description). Used by the city autocomplete picker.
+        // Build optional ILIKE search condition. The columns it runs against
+        // depend on `searchScope`: 'name' restricts the match to the name
+        // column (used by the city autocomplete picker so descriptions that
+        // reference a nearby city don't pollute suggestions); 'all' (default)
+        // keeps the legacy behavior over `getSearchableColumns()` so generic
+        // browse pages can match descriptive text.
         const trimmedQ = q?.trim();
+        const searchColumns = searchScope === 'name' ? ['name'] : this.getSearchableColumns();
         const searchCondition =
             trimmedQ && trimmedQ.length > 0
-                ? buildSearchCondition(trimmedQ, this.getSearchableColumns(), this.model.getTable())
+                ? buildSearchCondition(trimmedQ, searchColumns, this.model.getTable())
                 : undefined;
         const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
@@ -354,11 +444,11 @@ export class DestinationService extends BaseCrudService<
             }
             if (trimmedQ && trimmedQ.length > 0) {
                 const needle = trimmedQ.toLowerCase();
-                filtered = filtered.filter(
-                    (d) =>
-                        d.name?.toLowerCase().includes(needle) ||
-                        d.description?.toLowerCase().includes(needle)
-                );
+                filtered = filtered.filter((d) => {
+                    if (d.name?.toLowerCase().includes(needle)) return true;
+                    if (searchScope === 'name') return false;
+                    return d.description?.toLowerCase().includes(needle) ?? false;
+                });
             }
             // Manual pagination
             const total = filtered.length;
@@ -1078,8 +1168,18 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Updates accommodationsCount for a destination by counting active accommodations.
-     * Internal system operation called from accommodation services during cascading updates.
+     * Updates accommodationsCount for a destination by counting publicly-visible
+     * accommodations (mirrors the public-list predicate: ACTIVE lifecycle,
+     * not owner-suspended, not plan-restricted).
+     *
+     * Pre-existing behaviour counted `deletedAt: null` only — that inflated
+     * the counter with restricted/suspended accommodations (SPEC-167 §1 fix).
+     *
+     * Internal system operation called from accommodation services during
+     * cascading updates (soft-delete, restore, restrict, unsuspend, etc.).
+     * Also called by the SPEC-167 remediation/restoration coordinators after
+     * bulk plan-restriction or plan-restoration runs.
+     *
      * @param destinationId - The ID of the destination to update
      * @param ctx - Optional service context. When provided with a transaction, the update runs within it.
      * @internal
@@ -1090,7 +1190,10 @@ export class DestinationService extends BaseCrudService<
     ): Promise<void> {
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
-            deletedAt: null
+            deletedAt: null,
+            lifecycleState: 'ACTIVE',
+            ownerSuspended: false,
+            planRestricted: false
         });
         await this.model.updateById(
             destinationId,
@@ -1326,5 +1429,299 @@ export class DestinationService extends BaseCrudService<
         const map = await this.model.getAttractionsMap([destination.id], ctx?.tx);
         const attractions = map.get(destination.id) ?? [];
         return { ...destination, attractions } as Destination;
+    }
+
+    /**
+     * Adds a FAQ to a destination.
+     *
+     * Assigns `displayOrder = max(current displayOrder) + 1` so new FAQs always
+     * appear at the end of the ordered list. When no FAQs exist yet, starts at 0.
+     *
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId and faq
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The created FAQ
+     */
+    public async addFaq(
+        actor: Actor,
+        data: DestinationFaqAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqAddInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
+                const existing = await faqModel.findAll(
+                    { destinationId: validated.destinationId, deletedAt: null },
+                    { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.displayOrder ?? -1;
+                const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+                const faqToCreate = {
+                    ...validated.faq,
+                    destinationId: validated.destinationId as DestinationIdType,
+                    displayOrder: nextOrder
+                };
+                const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
+                return { faq: createdFaq };
+            }
+        });
+    }
+
+    /**
+     * Gets all FAQs for a destination.
+     * Optimized to use a single query with relations, ordered by displayOrder ASC NULLS LAST,
+     * then createdAt ASC (SPEC-177 T-012).
+     * @param actor - The actor performing the action
+     * @param data - The input object containing destinationId
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The list of FAQs
+     */
+    public async getFaqs(
+        actor: Actor,
+        data: DestinationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqListInputSchema,
+            execute: async (validated, actorFromRun) => {
+                // Single query to load destination with FAQs
+                const destination = await this.model.findWithRelations(
+                    { id: validated.destinationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canView(actorFromRun, destination);
+                // FAQs are already loaded via the relation (ordered by the model — SPEC-177 T-012).
+                // TYPE-WORKAROUND: Drizzle relation result widens the entity type to include
+                // the joined `faqs` array which is not part of the base Destination type.
+                const faqs = (destination as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as DestinationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Updates a FAQ for a destination (SPEC-177 T-006).
+     *
+     * Gated with the destination's existing `_canUpdate` (requires `DESTINATION_UPDATE`).
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId, faqId, and the fields to update
+     * @param ctx - Optional service context for transaction propagation
+     * @returns The updated FAQ
+     */
+    public async updateFaq(
+        actor: Actor,
+        data: DestinationFaqUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqUpdateInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
+                if (!faq || faq.destinationId !== validated.destinationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this destination'
+                    );
+                }
+                const updatedFaq = await faqModel.update(
+                    { id: validated.faqId },
+                    {
+                        ...validated.faq,
+                        destinationId: validated.destinationId as DestinationIdType
+                    },
+                    ctx?.tx
+                );
+                if (!updatedFaq) {
+                    throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
+                }
+                return { faq: updatedFaq };
+            }
+        });
+    }
+
+    /**
+     * Removes a FAQ from a destination (SPEC-177 T-007).
+     *
+     * Hard-deletes the FAQ row (mirrors the accommodation pattern). Gated with
+     * `_canUpdate` (requires `DESTINATION_UPDATE`).
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId and faqId
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async removeFaq(
+        actor: Actor,
+        data: DestinationFaqRemoveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeFaq',
+            input: { ...data, actor },
+            schema: DestinationFaqRemoveInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+                const faqModel = new DestinationFaqModel();
+                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
+                if (!faq || faq.destinationId !== validated.destinationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'FAQ not found for this destination'
+                    );
+                }
+                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
+                return { success: true };
+            }
+        });
+    }
+
+    /**
+     * Retrieves a destination's FAQs for the ADMIN sub-tab (SPEC-177 T-008).
+     *
+     * Same data as {@link getFaqs} but gated with the destination `_canUpdate` check
+     * (requires `DESTINATION_UPDATE`) rather than the broad `_canView`. Destinations
+     * have no `_canAdminView`/`checkCanAdminView` helper (they have no host-owner
+     * scoping), so we use `_canUpdate` as the admin-write-level gate, consistent with
+     * how the mutation methods are secured.
+     *
+     * FAQs are returned ordered by `display_order ASC NULLS LAST, created_at ASC`
+     * (ordering applied at the model layer — SPEC-177 T-012).
+     *
+     * @param actor - The actor performing the action (must hold DESTINATION_UPDATE).
+     * @param data - The FAQ list input (destinationId).
+     * @param ctx - Optional service context.
+     * @returns A `ServiceOutput` with the FAQ list, or a `ServiceError`.
+     */
+    public async adminGetFaqs(
+        actor: Actor,
+        data: DestinationFaqListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<DestinationFaqListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqListInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findWithRelations(
+                    { id: validated.destinationId },
+                    { faqs: true },
+                    ctx?.tx
+                );
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                // Use _canUpdate as the admin gate (destinations have no host-owner scoping).
+                this._canUpdate(actor, destination);
+                // FAQs are loaded via the relation (ordered at the model layer — SPEC-177 T-012).
+                // TYPE-WORKAROUND: Drizzle relation result widens the entity type to include
+                // the joined `faqs` array which is not part of the base Destination type.
+                const faqs = (destination as unknown as { faqs?: unknown[] }).faqs ?? [];
+                return { faqs: faqs as DestinationFaq[] };
+            }
+        });
+    }
+
+    /**
+     * Reorders FAQs on a destination (SPEC-177 T-009).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (requires `DESTINATION_UPDATE`).
+     * 2. Load all active FAQs for the destination.
+     * 3. Validate that every `faqId` in `order` belongs to this destination
+     *    (unknown / foreign IDs are rejected with `VALIDATION_ERROR`).
+     * 4. Apply each `displayOrder` in a single transaction.
+     *
+     * @param actor - The actor performing the action
+     * @param data - Input containing destinationId and the ordered array of { faqId, displayOrder }
+     * @param ctx - Optional service context for transaction propagation
+     * @returns Success boolean
+     */
+    public async reorderFaqs(
+        actor: Actor,
+        data: DestinationFaqReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderFaqs',
+            input: { ...data, actor },
+            schema: DestinationFaqReorderInputSchema,
+            execute: async (validated) => {
+                const destination = await this.model.findById(validated.destinationId, ctx?.tx);
+                if (!destination) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Destination not found');
+                }
+                this._canUpdate(actor, destination);
+
+                const faqModel = new DestinationFaqModel();
+                // Load all active FAQs for this destination to validate ownership.
+                const { items: existingFaqs } = await faqModel.findAll(
+                    { destinationId: validated.destinationId, deletedAt: null },
+                    { pageSize: 200 },
+                    undefined,
+                    ctx?.tx
+                );
+                const existingIds = new Set(existingFaqs.map((f) => f.id));
+
+                // Reject any faqId that doesn't belong to this destination.
+                const unknownIds = validated.order
+                    .map((item) => item.faqId)
+                    .filter((id) => !existingIds.has(id));
+                if (unknownIds.length > 0) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Unknown or foreign faqId(s) for this destination: ${unknownIds.join(', ')}`
+                    );
+                }
+
+                // Apply all displayOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (const item of validated.order) {
+                        await faqModel.update(
+                            { id: item.faqId },
+                            { displayOrder: item.displayOrder },
+                            tx
+                        );
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                return { success: true };
+            }
+        });
     }
 }

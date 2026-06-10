@@ -1,6 +1,11 @@
 {
     "accommodations": "Accommodations",
     "apply": "Apply",
+    "window": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "ariaLabel": "Time period"
+    },
     "backHome": "Back to home",
     "backToHome": "Back to home",
     "clear": "Clear",
@@ -44,6 +49,22 @@
     "error": {
         "404": "Page not found.",
         "general": "Sorry, something went wrong."
+    },
+    "apiError": {
+        "GENERIC": "Something went wrong. Please try again in a moment.",
+        "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few seconds and try again.",
+        "VALIDATION_ERROR": "The data you sent is invalid. Check the highlighted fields.",
+        "UNAUTHORIZED": "You need to sign in to do this.",
+        "FORBIDDEN": "You don't have permission to do this.",
+        "NOT_FOUND": "We couldn't find what you were looking for.",
+        "ALREADY_EXISTS": "That resource already exists.",
+        "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
+        "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
+        "LIMIT_REACHED": "You've reached your plan's limit. Upgrade to continue.",
+        "BAD_REQUEST": "That request isn't valid.",
+        "CONFLICT": "The resource conflicts with the current state.",
+        "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
+        "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back."
     },
     "filters": "Filters",
     "goHome": "Back to home",

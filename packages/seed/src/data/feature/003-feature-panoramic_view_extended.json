@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "003-feature-panoramic_view_extended",
-    "name": "Vista panorámica",
+    "name": {
+        "es": "Vista panorámica",
+        "en": "Vista panorámica",
+        "pt": "Vista panorámica"
+    },
     "slug": "panoramic_view_extended",
-    "description": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
+    "description": {
+        "es": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
+        "en": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento",
+        "pt": "Vistas espectaculares de 360 grados o amplias perspectivas del paisaje circundante desde el alojamiento"
+    },
     "icon": "PanoramicViewIcon",
     "isBuiltin": true,
     "isFeatured": false,

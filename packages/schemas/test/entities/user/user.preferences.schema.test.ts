@@ -269,16 +269,19 @@ describe('UserSettingsSchema — legacy fields (backward compat)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// UserSettingsSchema — notifications (existing behaviour preserved)
+// UserSettingsSchema — notifications (BETA-36: now optional)
 // ---------------------------------------------------------------------------
 
-describe('UserSettingsSchema — notifications (existing)', () => {
-    it('should require notifications', () => {
+describe('UserSettingsSchema — notifications', () => {
+    it('should accept an empty object — notifications is now optional (BETA-36)', () => {
+        // Before BETA-36 this returned false because notifications was required.
+        // After the fix, an empty settings object is valid (legacy JSONB rows
+        // without a notifications key must parse successfully).
         const result = UserSettingsSchema.safeParse({});
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
-    it('should reject notifications with missing fields', () => {
+    it('should reject notifications with missing fields when the key IS present', () => {
         const result = UserSettingsSchema.safeParse({
             notifications: { enabled: true }
         });

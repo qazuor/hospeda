@@ -53,6 +53,7 @@ export interface AppBindings {
         billingEnabled?: boolean;
         billingCustomerId?: string | null;
         userEntitlements: Set<EntitlementKey>;
+        ownerEntitlements: Set<EntitlementKey>;
         userLimits: Map<LimitKey, number>;
         /**
          * True when the billing service failed to load entitlements.

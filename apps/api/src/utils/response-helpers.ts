@@ -194,7 +194,8 @@ export const createResponse = <T = unknown>(
 export const createErrorResponse = (
     error: { code: string; message: string; details?: unknown; reason?: string },
     c: Context,
-    statusCode = 400
+    statusCode = 400,
+    extraHeaders?: Record<string, string>
 ) => {
     const response: ErrorResponse = {
         success: false,
@@ -210,7 +211,7 @@ export const createErrorResponse = (
         }
     };
 
-    return c.json(response, statusCode as 400 | 500);
+    return c.json(response, statusCode as 400 | 500, extraHeaders);
 };
 
 /**
@@ -265,20 +266,38 @@ export const handleRouteError = (error: unknown, c: Context) => {
         // Map ServiceErrorCode to HTTP status codes
         let statusCode = 500;
 
+        // Keep this switch aligned with `ERROR_CODE_TO_HTTP` in
+        // `middlewares/response.ts` — that table is the source of truth for the
+        // global onError handler. Routes throwing ServiceError from inside
+        // `createCRUDRoute`'s try/catch land here, while routes that let the
+        // throw bubble up land in the global handler. Both paths MUST agree on
+        // status, otherwise the same error code yields different HTTP statuses
+        // depending on where in the stack the catch happens (the upload route's
+        // LIMIT_REACHED → 500 regression in SPEC-143 Block 1 smoke A.2 came
+        // from `LIMIT_REACHED`/`ENTITLEMENT_REQUIRED`/`QUOTA_EXCEEDED` falling
+        // through to the default 500 here while the global table mapped them
+        // to 403/403/429 correctly).
         switch (error.code) {
             case ServiceErrorCode.NOT_FOUND:
                 statusCode = 404;
                 break;
             case ServiceErrorCode.VALIDATION_ERROR:
             case ServiceErrorCode.INVALID_PAGINATION_PARAMS:
-            case ServiceErrorCode.ALREADY_EXISTS:
                 statusCode = 400;
+                break;
+            case ServiceErrorCode.ALREADY_EXISTS:
+                statusCode = 409;
                 break;
             case ServiceErrorCode.UNAUTHORIZED:
                 statusCode = 401;
                 break;
             case ServiceErrorCode.FORBIDDEN:
+            case ServiceErrorCode.LIMIT_REACHED:
+            case ServiceErrorCode.ENTITLEMENT_REQUIRED:
                 statusCode = 403;
+                break;
+            case ServiceErrorCode.QUOTA_EXCEEDED:
+                statusCode = 429;
                 break;
             case ServiceErrorCode.NOT_IMPLEMENTED:
                 statusCode = 501;
@@ -289,9 +308,40 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.SERVICE_UNAVAILABLE:
                 statusCode = 503;
                 break;
+            case ServiceErrorCode.PROVIDER_ERROR:
+                statusCode = 502;
+                break;
+            case ServiceErrorCode.PROVIDER_RATE_LIMITED:
+                statusCode = 503;
+                break;
+            case ServiceErrorCode.PROVIDER_TIMEOUT:
+                statusCode = 504;
+                break;
+            case ServiceErrorCode.PLAN_DISABLED:
+                statusCode = 410;
+                break;
             default:
                 statusCode = 500;
                 break;
+        }
+
+        // Emit Retry-After for rate-limited provider responses (SPEC-149 Part B).
+        // Mirrors the same logic in `createErrorHandler` (middlewares/response.ts).
+        // Routes whose handlers are wrapped by `createCRUDRoute` land here instead
+        // of in `onError`, so Retry-After must be set in both code paths.
+        let retryAfterHeaders: Record<string, string> | undefined;
+        if (error.code === ServiceErrorCode.PROVIDER_RATE_LIMITED) {
+            const det = error.details;
+            if (
+                det !== null &&
+                typeof det === 'object' &&
+                'retryAfter' in (det as Record<string, unknown>) &&
+                typeof (det as Record<string, unknown>).retryAfter === 'number'
+            ) {
+                retryAfterHeaders = {
+                    'Retry-After': String((det as Record<string, unknown>).retryAfter as number)
+                };
+            }
         }
 
         return createErrorResponse(
@@ -302,7 +352,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 reason: error.reason
             },
             c,
-            statusCode
+            statusCode,
+            retryAfterHeaders
         );
     }
 
@@ -379,7 +430,11 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
                 [ServiceErrorCode.INTERNAL_ERROR]: 500,
                 [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
-                [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503
+                [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503,
+                [ServiceErrorCode.PROVIDER_ERROR]: 502,
+                [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
+                [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
+                [ServiceErrorCode.PLAN_DISABLED]: 410
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

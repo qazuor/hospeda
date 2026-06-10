@@ -5,6 +5,17 @@
     width: 100%;
 }
 
+/* Helper text shown below the trigger(s). Used to flag limitations the user
+ * should know about (e.g. "this filter is informational only until we wire up
+ * real availability"). */
+.description {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    line-height: 1.35;
+}
+
 .trigger {
     display: inline-flex;
     align-items: center;
@@ -33,7 +44,7 @@
 
 .triggerActive {
     border-color: var(--brand-primary);
-    background-color: oklch(from var(--brand-primary) l c h / 0.05);
+    background-color: var(--brand-primary-a05);
 }
 
 .triggerIcon {
@@ -72,13 +83,13 @@
     background-color: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 12px;
-    box-shadow: 0 10px 32px oklch(from var(--core-foreground) l c h / 0.18);
+    box-shadow: 0 10px 32px var(--core-foreground-a20);
     padding: 12px;
 }
 
 .calendarRoot {
     --rdp-accent-color: var(--brand-primary);
-    --rdp-background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    --rdp-background-color: var(--brand-primary-a10);
     font-family: var(--font-sans);
     font-size: 13px;
     color: var(--core-foreground);
@@ -111,4 +122,54 @@
 .calendarDisabled {
     opacity: 0.35;
     cursor: not-allowed;
+}
+
+/* ============================================================
+   Bounds mode (two side-by-side independent pickers)
+   ============================================================ */
+
+.boundsRoot {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+}
+
+.boundCol {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+/* Tighten the trigger when rendered inside a bounds column so both fit
+   comfortably on a single row of the sidebar. */
+.triggerBound {
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
+/* Footer inside the popover for actions (Limpiar). */
+.popoverFooter {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 4px 0;
+    border-top: 1px solid var(--core-foreground-a08);
+    margin-top: 4px;
+}
+
+.popoverClearBtn {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--brand-primary);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 150ms ease;
+}
+
+.popoverClearBtn:hover {
+    background-color: var(--brand-primary-a08);
 }

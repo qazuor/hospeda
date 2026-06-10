@@ -876,3 +876,148 @@ describe('singleton management', () => {
         expect(service.getLogRetentionDays()).toBe(14);
     });
 });
+
+// ---------------------------------------------------------------------------
+// scheduleRevalidationBatch -- targeted batch helper
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService.scheduleRevalidationBatch', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: vi
+                .fn()
+                .mockImplementation((entityType: string) =>
+                    Promise.resolve(makeEnabledConfig(entityType, 1))
+                )
+        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: vi.fn().mockResolvedValue(undefined)
+        }));
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it('returns void immediately (fire-and-forget)', () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        const result = service.scheduleRevalidationBatch({ events: [{ entityType: 'tag' }] });
+
+        expect(result).toBeUndefined();
+    });
+
+    it('empty events array is a no-op -- adapter never called', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({ events: [] });
+        await vi.runAllTimersAsync();
+
+        expect(adapter.revalidate).not.toHaveBeenCalled();
+    });
+
+    it('schedules N independent events through the debounce path', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'hotel-a' },
+                { entityType: 'accommodation', slug: 'hotel-b' },
+                { entityType: 'accommodation', slug: 'hotel-c' }
+            ]
+        });
+
+        await vi.runAllTimersAsync();
+
+        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { path: string }).path
+        );
+
+        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-a/'))).toBe(true);
+        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-b/'))).toBe(true);
+        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-c/'))).toBe(true);
+    });
+
+    it('deduplicate within batch: same entity twice merges into single debounce entry', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Two identical accommodation events for the same slug
+        service.scheduleRevalidationBatch({
+            events: [
+                { entityType: 'accommodation', slug: 'hotel-x' },
+                { entityType: 'accommodation', slug: 'hotel-x' }
+            ]
+        });
+
+        await vi.runAllTimersAsync();
+
+        // Should produce the same paths as a single scheduleRevalidation call
+        const callCount = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.length;
+        expect(callCount).toBeGreaterThan(0);
+
+        // Verify no duplicate paths were revalidated
+        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { path: string }).path
+        );
+        const uniquePaths = new Set(paths);
+        expect(paths.length).toBe(uniquePaths.size);
+    });
+
+    it('reason is propagated to each scheduled event', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidationBatch({
+            events: [{ entityType: 'tag' }],
+            reason: 'downgrade-preflight'
+        });
+
+        await vi.runAllTimersAsync();
+
+        // Allow pending log writes
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalled();
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect((logArg.metadata as Record<string, unknown>)?.reason).toBe('downgrade-preflight');
+    });
+
+    it('debounce key preserved: two events for same entity use same debounce slot', async () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Call scheduleRevalidation individually first to fill a debounce slot
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-y' });
+        // Then schedule the same entity again via batch
+        service.scheduleRevalidationBatch({
+            events: [{ entityType: 'accommodation', slug: 'hotel-y' }]
+        });
+
+        await vi.runAllTimersAsync();
+
+        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { path: string }).path
+        );
+        const uniquePaths = new Set(paths);
+        // Paths for hotel-y should be deduplicated (no double revalidation)
+        expect(paths.length).toBe(uniquePaths.size);
+    });
+});

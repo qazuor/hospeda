@@ -10,7 +10,21 @@ export enum LimitKey {
     MAX_ACTIVE_PROMOTIONS = 'max_active_promotions',
     MAX_FAVORITES = 'max_favorites',
     MAX_PROPERTIES = 'max_properties',
-    MAX_STAFF_ACCOUNTS = 'max_staff_accounts'
+    MAX_STAFF_ACCOUNTS = 'max_staff_accounts',
+    /** Maximum number of active price-alert subscriptions (tourist plans) */
+    MAX_ACTIVE_ALERTS = 'max_active_alerts',
+    /** Maximum number of accommodations that can be compared simultaneously (tourist plans) */
+    MAX_COMPARE_ITEMS = 'max_compare_items',
+
+    /** AI usage limits per calendar month (SPEC-173) */
+    /** Maximum number of AI text improvement requests per month (-1 = unlimited) */
+    MAX_AI_TEXT_IMPROVE_PER_MONTH = 'max_ai_text_improve_per_month',
+    /** Maximum number of AI chat interactions per month (-1 = unlimited) */
+    MAX_AI_CHAT_PER_MONTH = 'max_ai_chat_per_month',
+    /** Maximum number of AI-powered search queries per month (-1 = unlimited) */
+    MAX_AI_SEARCH_PER_MONTH = 'max_ai_search_per_month',
+    /** Maximum number of AI support interactions per month (-1 = unlimited) */
+    MAX_AI_SUPPORT_PER_MONTH = 'max_ai_support_per_month'
 }
 
 /**

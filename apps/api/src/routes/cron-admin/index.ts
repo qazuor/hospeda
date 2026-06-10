@@ -12,36 +12,60 @@
  * @module routes/cron-admin
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import { type CronCategory, CronJobsAdminListSchema, PermissionEnum } from '@repo/schemas';
+import { CronRunService } from '@repo/service-core';
+import { CronExpressionParser } from 'cron-parser';
+import cronstrue from 'cronstrue/i18n.js';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
+import { CRON_SCHEDULES } from '../../cron/schedules.manifest';
 import type { CronJobContext, CronJobResult } from '../../cron/types';
 import type { AppBindings } from '../../types';
+import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
+import { cronRunSummaryRoute, getCronRunByIdRoute, listCronRunsRoute } from './runs';
 
 // ─── Response Schemas ────────────────────────────────────────────────────────
 
-/**
- * Schema for a single cron job in the list response
- */
-const cronJobSchema = z.object({
-    name: z.string(),
-    description: z.string(),
-    schedule: z.string(),
-    enabled: z.boolean()
-});
+/** Enriched cron jobs list response (name + displayName + category + last/next run). */
+const cronJobsListDataSchema = CronJobsAdminListSchema;
 
-/**
- * Schema for the cron jobs list response data
- */
-const cronJobsListDataSchema = z.object({
-    jobs: z.array(cronJobSchema),
-    totalJobs: z.number(),
-    enabledJobs: z.number()
-});
+/** Lazy singleton for the cron-run service (last-run lookups). */
+const cronRunService = (() => {
+    let instance: CronRunService | null = null;
+    return () => {
+        if (!instance) {
+            instance = new CronRunService({ logger: apiLogger });
+        }
+        return instance;
+    };
+})();
+
+/** Presentation metadata (displayName + category) keyed by job name. */
+const cronMetaByName = new Map(CRON_SCHEDULES.map((entry) => [entry.name, entry]));
+
+/** Renders a cron expression in human-readable Spanish; falls back to the raw expr. */
+const humanizeSchedule = (expr: string): string => {
+    try {
+        return cronstrue.toString(expr, { locale: 'es', use24HourTimeFormat: true });
+    } catch {
+        return expr;
+    }
+};
+
+/** Computes the next run for an enabled job; null when disabled or unparseable. */
+const computeNextRun = (expr: string, enabled: boolean): string | null => {
+    if (!enabled) return null;
+    try {
+        return CronExpressionParser.parse(expr).next().toDate().toISOString();
+    } catch {
+        return null;
+    }
+};
 
 /**
  * Schema for the cron job execution result response data
@@ -67,14 +91,41 @@ const cronJobExecutionDataSchema = z.object({
  * @returns Object containing all registered cron jobs with metadata
  */
 export const listCronJobsHandler = async (
-    _c: Context<AppBindings>
+    c: Context<AppBindings>
 ): Promise<z.infer<typeof cronJobsListDataSchema>> => {
-    const jobList = cronJobs.map((job) => ({
-        name: job.name,
-        description: job.description,
-        schedule: job.schedule,
-        enabled: job.enabled
-    }));
+    const actor = getActorFromContext(c);
+
+    // Last run per job (best-effort: a failure here must not break the listing).
+    let lastRunByJob = new Map<
+        string,
+        { status: 'success' | 'failed' | 'timeout'; finishedAt: Date }
+    >();
+    const summary = await cronRunService().getSummary({ actor });
+    if (summary.data) {
+        lastRunByJob = new Map(
+            summary.data.lastRuns.map((run) => [
+                run.jobName,
+                { status: run.status, finishedAt: run.finishedAt }
+            ])
+        );
+    }
+
+    const jobList = cronJobs.map((job) => {
+        const meta = cronMetaByName.get(job.name);
+        const lastRun = lastRunByJob.get(job.name);
+        const category: CronCategory = meta?.category ?? 'system';
+        return {
+            name: job.name,
+            displayName: meta?.displayName ?? job.name,
+            category,
+            description: job.description,
+            schedule: job.schedule,
+            scheduleHuman: humanizeSchedule(job.schedule),
+            enabled: job.enabled,
+            nextRunAt: computeNextRun(job.schedule, job.enabled),
+            lastRun: lastRun ?? null
+        };
+    });
 
     return {
         jobs: jobList,
@@ -147,7 +198,21 @@ export const triggerCronJobHandler = async (
         }, timeoutMs);
     });
 
-    const result: CronJobResult = await Promise.race([job.handler(jobContext), timeoutPromise]);
+    let result: CronJobResult;
+    try {
+        result = await Promise.race([job.handler(jobContext), timeoutPromise]);
+    } catch (error) {
+        // Fire-and-forget: record the failure/timeout, then preserve the HTTP error.
+        await recordCronRun({
+            jobName,
+            executionMode: 'manual',
+            dryRun,
+            startedAt,
+            finishedAt: new Date(),
+            error
+        });
+        throw error;
+    }
 
     const durationMs = Date.now() - startTime;
 
@@ -158,6 +223,16 @@ export const triggerCronJobHandler = async (
         errors: result.errors,
         durationMs,
         dryRun
+    });
+
+    // Fire-and-forget: record the successful (or success:false) outcome.
+    await recordCronRun({
+        jobName,
+        executionMode: 'manual',
+        dryRun,
+        startedAt,
+        finishedAt: new Date(),
+        result
     });
 
     return {
@@ -218,6 +293,11 @@ const triggerCronJobRoute = createAdminRoute({
 const app = createRouter();
 
 app.route('/', listCronJobsRoute);
+// Run-history reads (SPEC-161). `/runs/summary` is registered before `/runs/{id}`
+// so the literal segment is not captured as an id param.
+app.route('/', listCronRunsRoute);
+app.route('/', cronRunSummaryRoute);
+app.route('/', getCronRunByIdRoute);
 app.route('/', triggerCronJobRoute);
 
 export { app as adminCronRoutes };

@@ -29,11 +29,13 @@ import type {
 } from '@/features/exchange-rates';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { AddIcon, RefreshIcon, SettingsIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/exchange-rates')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: ExchangeRatesPage
 });
 
@@ -166,9 +168,9 @@ function ExchangeRatesPage() {
                         </div>
 
                         {/* Info Card */}
-                        <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                        <Card className="border-info/30 bg-info/10">
                             <CardContent className="py-4">
-                                <p className="text-blue-800 text-sm dark:text-blue-200">
+                                <p className="text-foreground text-sm">
                                     {t('admin-pages.exchangeRates.infoNote')}
                                 </p>
                             </CardContent>

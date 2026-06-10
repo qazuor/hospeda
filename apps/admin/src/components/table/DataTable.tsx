@@ -139,6 +139,7 @@ export type DataTableColumn<TData> = {
     readonly startVisibleOnTable?: boolean; // Controls initial visibility in table view (default: true)
     readonly startVisibleOnGrid?: boolean; // Controls initial visibility in grid view (default: true)
     readonly columnType?: ColumnType;
+    readonly align?: 'left' | 'right' | 'center';
     readonly badgeOptions?: readonly BadgeOption[];
     readonly linkHandler?: LinkHandler<TData>;
     readonly entityOptions?: EntityOption;
@@ -165,6 +166,13 @@ export type DataTableProps<TData> = {
 
     readonly columnVisibility: Record<string, boolean>;
     readonly onColumnVisibilityChange: (visibility: Record<string, boolean>) => void;
+
+    /**
+     * When provided, the row whose id matches this value will receive a subtle
+     * highlight (used by the peek drawer to visually indicate the selected row).
+     * Optional — when absent, all rows render with their default styles.
+     */
+    readonly highlightedRowId?: string;
 };
 
 /**
@@ -268,7 +276,8 @@ export const DataTable = <TData,>({
     sort,
     onSortChange,
     columnVisibility,
-    onColumnVisibilityChange
+    onColumnVisibilityChange,
+    highlightedRowId
 }: DataTableProps<TData>) => {
     const { t } = useTranslations();
 
@@ -336,6 +345,15 @@ export const DataTable = <TData,>({
 
     const memoizedData = useMemo(() => data as TData[], [data]);
 
+    const alignClassById = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const col of columns) {
+            if (col.align === 'right') map[col.id] = 'text-right';
+            else if (col.align === 'center') map[col.id] = 'text-center';
+        }
+        return map;
+    }, [columns]);
+
     const table = useReactTable<TData>({
         data: memoizedData,
         columns: internalColumns,
@@ -357,7 +375,7 @@ export const DataTable = <TData,>({
                 table forces its natural max-content width below `lg` so all
                 columns remain visible by scrolling instead of being
                 silently truncated (SPEC-135 F-021). */}
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded-md border bg-card">
                 <table className="w-full min-w-max table-auto text-left text-sm lg:min-w-0">
                     <thead className="bg-muted text-foreground">
                         {table.getHeaderGroups().map((hg) => (
@@ -369,7 +387,10 @@ export const DataTable = <TData,>({
                                         <th
                                             key={header.id}
                                             scope="col"
-                                            className="select-none px-3 py-2 font-medium"
+                                            className={cn(
+                                                'select-none px-3 py-2 font-medium',
+                                                alignClassById[header.column.id]
+                                            )}
                                         >
                                             {canSort ? (
                                                 <button
@@ -424,24 +445,32 @@ export const DataTable = <TData,>({
                                 </td>
                             </tr>
                         ) : (
-                            table.getRowModel().rows.map((row) => (
-                                <tr
-                                    key={rowId(row.original)}
-                                    className="border-t"
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <td
-                                            key={cell.id}
-                                            className="px-3 py-2"
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext()
-                                            )}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))
+                            table.getRowModel().rows.map((row) => {
+                                const id = rowId(row.original);
+                                const isHighlighted =
+                                    highlightedRowId !== undefined && id === highlightedRowId;
+                                return (
+                                    <tr
+                                        key={id}
+                                        className={cn('border-t', isHighlighted && 'bg-primary/5')}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <td
+                                                key={cell.id}
+                                                className={cn(
+                                                    'px-3 py-2',
+                                                    alignClassById[cell.column.id]
+                                                )}
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext()
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

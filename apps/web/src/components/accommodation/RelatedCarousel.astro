@@ -29,7 +29,7 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
 <section class="related-carousel" role="region" aria-label={ariaLabel} data-overflowing="false">
   <div class="related-carousel__header">
     <div class="related-carousel__title-wrap">
-      <h3 class="related-carousel__title">{title}</h3>
+      <h2 class="related-carousel__title">{title}</h2>
       {count !== undefined && count > 0 && (
         <span class="related-carousel__count" aria-label={`${count}`}>{count}</span>
       )}
@@ -160,7 +160,7 @@ const nextLabel = t('accommodations.detail.related.nextSlide');
     height: 1.5rem;
     padding: 0 var(--space-2, 8px);
     border-radius: var(--radius-pill, 9999px);
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--brand-primary-a12);
     color: var(--brand-primary);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.8125rem;

@@ -6,25 +6,22 @@
  */
 
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { IconProps } from '@repo/icons';
 import {
-    AccommodationIcon,
     BuildingIcon,
     CalendarDotsIcon,
     CloseIcon,
-    HomeIcon,
     LocationIcon,
     SearchIcon,
-    TentIcon,
-    TreeIcon,
+    StarIcon,
     UsersIcon
 } from '@repo/icons';
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import styles from './SearchBar.module.css';
 
@@ -44,6 +41,8 @@ interface DestinationOption {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
+    /** When true, the option is highlighted as a featured destination. */
+    readonly isFeatured?: boolean;
 }
 
 interface SearchBarProps {
@@ -76,20 +75,6 @@ const ACCOMMODATION_TYPES = [
 ] as const;
 
 type AccommodationType = (typeof ACCOMMODATION_TYPES)[number];
-
-/** Maps each accommodation type to a Phosphor icon component. */
-const TYPE_ICONS: Record<AccommodationType, React.ComponentType<IconProps>> = {
-    HOTEL: BuildingIcon,
-    APARTMENT: BuildingIcon,
-    HOUSE: HomeIcon,
-    COUNTRY_HOUSE: HomeIcon,
-    CABIN: TreeIcon,
-    HOSTEL: BuildingIcon,
-    CAMPING: TentIcon,
-    ROOM: AccommodationIcon,
-    MOTEL: BuildingIcon,
-    RESORT: BuildingIcon
-};
 
 // Component
 
@@ -177,6 +162,17 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [adults, setAdults] = useState(2);
     const [children, setChildren] = useState(0);
+    // Whether the user has interacted with the guests stepper. The default
+    // value (2 adults, 0 children) is indistinguishable from "untouched", so
+    // without this flag a user who deliberately sets 2 sees the placeholder
+    // again and assumes the value was not saved.
+    const [guestsTouched, setGuestsTouched] = useState(false);
+    // Search inputs inside the destination and type panels. Filtered locally
+    // against the pre-fetched lists — no extra API calls.
+    const [destinationQuery, setDestinationQuery] = useState('');
+    const [typeQuery, setTypeQuery] = useState('');
+    const destinationSearchInputRef = useRef<HTMLInputElement | null>(null);
+    const typeSearchInputRef = useRef<HTMLInputElement | null>(null);
 
     // Click outside / ESC to close
     const handleClickOutside = useCallback((event: MouseEvent) => {
@@ -229,6 +225,43 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
     /** Close the active panel (used by the mobile X button). */
     const closePanel = useCallback(() => setActivePanel(null), []);
 
+    // Reset the per-panel search query whenever the user closes or switches
+    // panels, and autofocus the input on the freshly opened panel so power
+    // users can start typing right away. On mobile the panels render as
+    // bottom-sheets; auto-focusing a text input there pops the virtual
+    // keyboard, which overlaps the option list and blocks selection, so we
+    // only autofocus on desktop popover sizes (>900px).
+    useEffect(() => {
+        const isMobileSheet = window.matchMedia('(max-width: 900px)').matches;
+        if (activePanel !== 'destination') {
+            setDestinationQuery('');
+        } else if (!isMobileSheet) {
+            destinationSearchInputRef.current?.focus();
+        }
+        if (activePanel !== 'type') {
+            setTypeQuery('');
+        } else if (!isMobileSheet) {
+            typeSearchInputRef.current?.focus();
+        }
+    }, [activePanel]);
+
+    /** Substring-filtered destinations driven by the panel search input. */
+    const filteredDestinations = useMemo(() => {
+        const needle = destinationQuery.trim().toLowerCase();
+        if (needle.length === 0) return destinations;
+        return destinations.filter((dest) => dest.name.toLowerCase().includes(needle));
+    }, [destinations, destinationQuery]);
+
+    /** Substring-filtered accommodation types driven by the panel search input. */
+    const filteredTypes = useMemo(() => {
+        const needle = typeQuery.trim().toLowerCase();
+        if (needle.length === 0) return ACCOMMODATION_TYPES;
+        return ACCOMMODATION_TYPES.filter((value) => {
+            const label = t(`home.searchBar.types.${value}`, value).toLowerCase();
+            return label.includes(needle);
+        });
+    }, [typeQuery, t]);
+
     // Panel toggle (measures viewport space to decide direction)
     const togglePanel = useCallback((panel: ActivePanel) => {
         setActivePanel((prev) => {
@@ -250,25 +283,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         setActivePanel(null);
     }, []);
 
-    // Type handlers
-    const handleToggleType = useCallback((type: AccommodationType) => {
-        setSelectedTypes((prev) => {
-            const next = new Set(prev);
-            if (next.has(type)) {
-                next.delete(type);
-            } else {
-                next.add(type);
-            }
-            return next;
-        });
-    }, []);
-
-    const handleSelectAllTypes = useCallback(() => {
-        setSelectedTypes(new Set(ACCOMMODATION_TYPES));
-    }, []);
-
-    const handleClearTypes = useCallback(() => {
-        setSelectedTypes(new Set());
+    // Type handlers (single-select: picking a type replaces the selection
+    // and closes the panel, mirroring the destination column UX).
+    const handleSelectType = useCallback((type: AccommodationType | null) => {
+        setSelectedTypes(type ? new Set([type]) : new Set());
+        setActivePanel(null);
     }, []);
 
     // Calendar chunk modulepreload (fires once on first hover/focus of dates column)
@@ -288,17 +307,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         return `${day}/${month}`;
     }, []);
 
-    // Type display value
+    // Type display value (single-select: at most one entry in the set).
     const getTypeDisplayValue = useCallback((): string | null => {
-        if (selectedTypes.size === 0) return null;
-        if (selectedTypes.size === ACCOMMODATION_TYPES.length) {
-            return t('home.searchBar.allTypes', 'Todos los tipos');
-        }
-        const typesArray = Array.from(selectedTypes);
-        const firstName = t(`home.searchBar.types.${typesArray[0]}`, typesArray[0] ?? '');
-        if (typesArray.length === 1) return firstName;
-        const remaining = typesArray.length - 1;
-        return `${firstName} & ${remaining} +`;
+        const [first] = selectedTypes;
+        if (!first) return null;
+        return t(`home.searchBar.types.${first}`, first);
     }, [selectedTypes, t]);
 
     // Guests display value
@@ -475,10 +488,11 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         <span
                             className={cn(
                                 styles.value,
-                                (adults !== 2 || children !== 0) && styles.valueSelected
+                                (guestsTouched || adults !== 2 || children !== 0) &&
+                                    styles.valueSelected
                             )}
                         >
-                            {adults === 2 && children === 0
+                            {!guestsTouched && adults === 2 && children === 0
                                 ? t('home.searchBar.guestsPlaceholder', '¿Cuántas personas son?')
                                 : guestsDisplay}
                         </span>
@@ -553,45 +567,94 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                         onClose={closePanel}
                     />
-                    <div className={styles.panelBody}>
+                    <div className={styles.panelSearch}>
+                        <input
+                            ref={destinationSearchInputRef}
+                            type="text"
+                            className="form-input"
+                            value={destinationQuery}
+                            onChange={(event) => setDestinationQuery(event.target.value)}
+                            placeholder={t(
+                                'home.searchBar.destinationSearchPlaceholder',
+                                'Buscá un destino'
+                            )}
+                            aria-label={t(
+                                'home.searchBar.destinationSearchLabel',
+                                'Buscar entre los destinos'
+                            )}
+                        />
+                    </div>
+                    <div className={cn(styles.panelBody, styles.panelOptionList)}>
                         {/* Clear option */}
                         {selectedDestination && (
                             <button
                                 type="button"
-                                className={cn(styles.dropdownItem, styles.dropdownItemClear)}
+                                className={cn('combobox__option', styles.optionClear)}
                                 onClick={() => handleSelectDestination(null)}
                                 // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                 role="option"
                                 aria-selected={false}
                             >
-                                {t('home.searchBar.clearTypes', 'Limpiar')}
+                                <span className="combobox__option-label">
+                                    {t('home.searchBar.clearTypes', 'Limpiar')}
+                                </span>
                             </button>
                         )}
-                        {destinations.map((dest) => (
-                            <button
-                                key={dest.id}
-                                type="button"
-                                className={cn(
-                                    styles.dropdownItem,
-                                    selectedDestination?.id === dest.id && styles.dropdownItemActive
-                                )}
-                                onClick={() => handleSelectDestination(dest)}
-                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
-                                role="option"
-                                aria-selected={selectedDestination?.id === dest.id}
-                            >
-                                {dest.name}
-                            </button>
-                        ))}
-                        {destinations.length === 0 && (
-                            <div
-                                className={styles.dropdownItem}
-                                style={{ cursor: 'default', opacity: 0.5 }}
-                            >
-                                {t(
-                                    'home.searchBar.noDestinationsText',
-                                    'No hay destinos disponibles'
-                                )}
+                        {filteredDestinations.map((dest) => {
+                            const isSelected = selectedDestination?.id === dest.id;
+                            return (
+                                <button
+                                    key={dest.id}
+                                    type="button"
+                                    className={cn(
+                                        'combobox__option',
+                                        isSelected && 'combobox__option--selected'
+                                    )}
+                                    onClick={() => handleSelectDestination(dest)}
+                                    // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                    role="option"
+                                    aria-selected={isSelected}
+                                >
+                                    <span
+                                        className="combobox__option-icon"
+                                        aria-hidden="true"
+                                    >
+                                        <LocationIcon
+                                            size={14}
+                                            weight="regular"
+                                            aria-hidden="true"
+                                        />
+                                    </span>
+                                    <span className="combobox__option-label">{dest.name}</span>
+                                    {dest.isFeatured && (
+                                        <span
+                                            className="featured-indicator"
+                                            aria-label={t(
+                                                'home.searchBar.featuredDestinationLabel',
+                                                'Destino destacado'
+                                            )}
+                                        >
+                                            <StarIcon
+                                                size={13}
+                                                weight="fill"
+                                                aria-hidden="true"
+                                            />
+                                        </span>
+                                    )}
+                                </button>
+                            );
+                        })}
+                        {filteredDestinations.length === 0 && (
+                            <div className="combobox__status">
+                                {destinations.length === 0
+                                    ? t(
+                                          'home.searchBar.noDestinationsText',
+                                          'No hay destinos disponibles'
+                                      )
+                                    : t(
+                                          'home.searchBar.noDestinationsMatch',
+                                          'No hay destinos que coincidan con tu búsqueda'
+                                      )}
                             </div>
                         )}
                     </div>
@@ -607,81 +670,83 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                         styles.typePanel,
                         openDirection === 'up' && styles.panelUp
                     )}
-                    // biome-ignore lint/a11y/useSemanticElements: custom multi-select dropdown cannot use native <select>
+                    // biome-ignore lint/a11y/useSemanticElements: custom single-select dropdown cannot use native <select>
                     role="listbox"
-                    aria-multiselectable="true"
                 >
                     <PanelCloseHeader
                         ariaLabel={t('home.searchBar.closePanel', 'Cerrar panel')}
                         onClose={closePanel}
                     />
-                    <div className={styles.typeActions}>
-                        <button
-                            type="button"
-                            className={styles.typeActionButton}
-                            onClick={handleSelectAllTypes}
-                        >
-                            {t('home.searchBar.allTypes', 'Todos los tipos')}
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.typeActionButton}
-                            onClick={handleClearTypes}
-                        >
-                            {t('home.searchBar.clearTypes', 'Limpiar')}
-                        </button>
+                    <div className={styles.panelSearch}>
+                        <input
+                            ref={typeSearchInputRef}
+                            type="text"
+                            className="form-input"
+                            value={typeQuery}
+                            onChange={(event) => setTypeQuery(event.target.value)}
+                            placeholder={t('home.searchBar.typeSearchPlaceholder', 'Buscá un tipo')}
+                            aria-label={t(
+                                'home.searchBar.typeSearchLabel',
+                                'Buscar entre los tipos de alojamiento'
+                            )}
+                        />
                     </div>
-                    <div className={styles.typeList}>
-                        {ACCOMMODATION_TYPES.map((type) => {
-                            const IconComponent = TYPE_ICONS[type];
-                            const isChecked = selectedTypes.has(type);
+                    <div className={cn(styles.typeList, styles.panelOptionList)}>
+                        {/* Clear option */}
+                        {selectedTypes.size > 0 && (
+                            <button
+                                type="button"
+                                className={cn('combobox__option', styles.optionClear)}
+                                onClick={() => handleSelectType(null)}
+                                // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
+                                role="option"
+                                aria-selected={false}
+                            >
+                                <span className="combobox__option-label">
+                                    {t('home.searchBar.clearTypes', 'Limpiar')}
+                                </span>
+                            </button>
+                        )}
+                        {filteredTypes.map((type) => {
+                            const IconComponent = getAccommodationTypeIcon({ type });
+                            const isSelected = selectedTypes.has(type);
                             return (
                                 <button
                                     key={type}
                                     type="button"
-                                    className={styles.typeItem}
-                                    onClick={() => handleToggleType(type)}
+                                    className={cn(
+                                        'combobox__option',
+                                        isSelected && 'combobox__option--selected'
+                                    )}
+                                    onClick={() => handleSelectType(type)}
                                     // biome-ignore lint/a11y/useSemanticElements: role=option on button is valid ARIA for custom listbox
                                     role="option"
-                                    aria-selected={isChecked}
+                                    aria-selected={isSelected}
                                 >
                                     <span
-                                        className={cn(
-                                            styles.checkbox,
-                                            isChecked && styles.checkboxChecked
-                                        )}
+                                        className="combobox__option-icon"
+                                        aria-hidden="true"
                                     >
-                                        {isChecked && (
-                                            <svg
-                                                width="12"
-                                                height="12"
-                                                viewBox="0 0 12 12"
-                                                fill="none"
-                                                aria-hidden="true"
-                                            >
-                                                <path
-                                                    d="M2.5 6L5 8.5L9.5 3.5"
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        )}
-                                    </span>
-                                    <span className={styles.typeItemIcon}>
                                         <IconComponent
-                                            size={16}
+                                            size={14}
                                             weight="regular"
                                             aria-hidden="true"
                                         />
                                     </span>
-                                    <span className={styles.typeItemLabel}>
+                                    <span className="combobox__option-label">
                                         {t(`home.searchBar.types.${type}`, type)}
                                     </span>
                                 </button>
                             );
                         })}
+                        {filteredTypes.length === 0 && (
+                            <div className="combobox__status">
+                                {t(
+                                    'home.searchBar.noTypesMatch',
+                                    'No hay tipos que coincidan con tu búsqueda'
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -740,7 +805,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setAdults((prev) => Math.max(1, prev - 1));
+                                    }}
                                     disabled={adults <= 1}
                                     aria-label={t('search.fewerAdults', 'Fewer adults')}
                                 >
@@ -750,7 +818,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setAdults((prev) => Math.min(10, prev + 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setAdults((prev) => Math.min(10, prev + 1));
+                                    }}
                                     disabled={adults >= 10}
                                     aria-label={t('search.moreAdults', 'More adults')}
                                 >
@@ -767,7 +838,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setChildren((prev) => Math.max(0, prev - 1));
+                                    }}
                                     disabled={children <= 0}
                                     aria-label={t('search.fewerChildren', 'Fewer children')}
                                 >
@@ -777,7 +851,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
                                 <button
                                     type="button"
                                     className={styles.stepperButton}
-                                    onClick={() => setChildren((prev) => Math.min(6, prev + 1))}
+                                    onClick={() => {
+                                        setGuestsTouched(true);
+                                        setChildren((prev) => Math.min(6, prev + 1));
+                                    }}
                                     disabled={children >= 6}
                                     aria-label={t('search.moreChildren', 'More children')}
                                 >

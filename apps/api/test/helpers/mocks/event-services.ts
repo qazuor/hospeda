@@ -14,6 +14,10 @@ const NOT_FOUND_UUID = '87654321-4321-4321-8765-876543218765';
  * Mock EventService - returns predictable happy-path data.
  */
 export class EventService {
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         return {
             data: {
@@ -182,6 +186,10 @@ export class EventService {
  * Mock EventLocationService - returns predictable happy-path data.
  */
 export class EventLocationService {
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         return {
             data: {
@@ -266,6 +274,10 @@ export class EventLocationService {
  * Mock EventOrganizerService - returns predictable happy-path data.
  */
 export class EventOrganizerService {
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         return {
             data: {

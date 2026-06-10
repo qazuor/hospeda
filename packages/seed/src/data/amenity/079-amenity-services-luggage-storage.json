@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "079-amenity-services-luggage-storage",
-    "name": "luggage_storage",
+    "name": {
+        "es": "luggage_storage",
+        "en": "luggage_storage",
+        "pt": "luggage_storage"
+    },
     "slug": "luggage_storage",
-    "description": "Servicio de guardado de equipaje",
+    "description": {
+        "es": "Servicio de guardado de equipaje",
+        "en": "Servicio de guardado de equipaje",
+        "pt": "Servicio de guardado de equipaje"
+    },
     "type": "SERVICES",
     "icon": "LuggageStorageIcon",
     "isBuiltin": false,

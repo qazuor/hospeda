@@ -49,6 +49,34 @@
         "confirm": "Are you sure you want to impersonate this user?",
         "error": "Failed to impersonate user. Please try again."
     },
+    "createHost": {
+        "trigger": "Create host",
+        "title": "Create host account",
+        "description": "Create an account with the HOST role. The new host signs in with the temporary password you set here.",
+        "nameLabel": "Name*",
+        "namePlaceholder": "Host name",
+        "emailLabel": "Email*",
+        "emailPlaceholder": "host@example.com",
+        "passwordLabel": "Temporary password*",
+        "passwordPlaceholder": "At least 8 characters",
+        "nameRequired": "Name is required",
+        "emailInvalid": "Enter a valid email",
+        "passwordTooShort": "Password must be at least 8 characters",
+        "successTitle": "Host account created",
+        "successMessage": "The account for {{email}} was created with the HOST role.",
+        "errorTitle": "Could not create the account",
+        "errorMessage": "An error occurred while creating the host account. Please try again.",
+        "cancel": "Cancel",
+        "submit": "Create host",
+        "submitting": "Creating..."
+    },
+    "browserGate": {
+        "title": "Your browser is not compatible with the admin panel.",
+        "message": "This tool requires Chrome 111, Firefox 128, Safari 16.4 or higher. Please update your browser to continue.",
+        "upgradeLink": "Download Chrome",
+        "contactSupport": "Contact support",
+        "dismiss": "Close notice"
+    },
     "bulk": {
         "itemCount_one": "{{count}} item",
         "itemCount_other": "{{count}} items"
@@ -261,6 +289,39 @@
             "edit": "Edit",
             "view": "View",
             "cancel": "Cancel"
+        }
+    },
+    "tour": {
+        "skip": "Skip",
+        "showMe": "Show me",
+        "next": "Next",
+        "prev": "Previous",
+        "done": "Done",
+        "replay": "View guide",
+        "replayPage": "View page guide"
+    },
+    "aiTextImprove": {
+        "trigger": "Improve with AI",
+        "triggerTooltip": "Get an AI-powered improvement suggestion",
+        "upgradeTooltip": "Your plan does not include AI text improvement. Upgrade your plan to access.",
+        "panelLabel": "AI Suggestion",
+        "loading": "Generating suggestion...",
+        "accept": "Accept",
+        "discard": "Discard",
+        "dismiss": "Close",
+        "error": {
+            "VALIDATION_ERROR": "Invalid request. Please refresh the page and try again.",
+            "ENTITLEMENT_REQUIRED": "Your plan does not include AI text improvement. Upgrade your plan to access.",
+            "LIMIT_REACHED": "Monthly AI improvement limit reached. Upgrade your plan or wait for next month.",
+            "MODERATION_BLOCKED": "Content policy violation — your original text is unchanged.",
+            "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a moment and try again.",
+            "ENGINE_EXHAUSTED": "AI providers are temporarily unavailable. Try again later.",
+            "FEATURE_DISABLED": "AI text improvement is currently disabled.",
+            "CEILING_HIT": "AI cost ceiling reached. Try again later.",
+            "SERVICE_UNAVAILABLE": "Service temporarily unavailable. Try again later.",
+            "INTERNAL_ERROR": "An unexpected error occurred. Your original text is unchanged.",
+            "NETWORK_INTERRUPTED": "Connection interrupted. Please try again.",
+            "default": "Error generating suggestion. Your original text is unchanged."
         }
     }
 }

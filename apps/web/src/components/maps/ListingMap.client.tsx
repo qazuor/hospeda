@@ -16,6 +16,7 @@
  */
 import 'leaflet/dist/leaflet.css';
 
+import { StarIcon } from '@repo/icons';
 import L from 'leaflet';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
@@ -482,7 +483,11 @@ export function ListingMap(props: ListingMapProps) {
                             className={styles.popup}
                             maxWidth={300}
                             minWidth={280}
-                            autoPanPadding={[40, 40]}
+                            // BETA-47: disable Leaflet's reactive autoPan — it panned the map on
+                            // every popup open, and after several markers the queued pans fought
+                            // the user's drag and locked the map. Popups still open in place.
+                            autoPan={false}
+                            keepInView={false}
                         >
                             <AccommodationPopupContent
                                 item={item}
@@ -537,7 +542,9 @@ export function ListingMap(props: ListingMapProps) {
                         className={styles.popup}
                         maxWidth={300}
                         minWidth={280}
-                        autoPanPadding={[40, 40]}
+                        // BETA-47: disable reactive autoPan (see accommodation popup above).
+                        autoPan={false}
+                        keepInView={false}
                     >
                         <DestinationPopupContent
                             item={item}
@@ -650,8 +657,13 @@ function AccommodationPopupContent({
                                 <span className={styles.popupTypeChip}>{item.typeLabel}</span>
                             ) : null}
                             {item.isFeatured && item.featuredLabel ? (
-                                <span className={styles.popupFeaturedBadge}>
-                                    {item.featuredLabel}
+                                <span className={`${styles.popupFeaturedBadge} featured-badge`}>
+                                    <StarIcon
+                                        size={12}
+                                        weight="fill"
+                                        aria-hidden="true"
+                                    />
+                                    <span>{item.featuredLabel}</span>
                                 </span>
                             ) : null}
                         </div>

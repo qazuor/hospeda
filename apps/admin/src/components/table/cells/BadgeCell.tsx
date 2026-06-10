@@ -44,21 +44,27 @@ export const BadgeCell = ({ value, options }: BadgeCellProps): ReactNode => {
 
 /**
  * Maps BadgeColor enum values to Tailwind CSS classes.
+ *
+ * Exported so inline-editable cells (e.g. the accommodations state-select cell)
+ * can reuse the exact same colored-pill look for their dropdown options without
+ * duplicating the color map.
  */
-function getBadgeColorClasses(color: BadgeColor): string {
+export function getBadgeColorClasses(color: BadgeColor): string {
     switch (color) {
         case BadgeColor.DEFAULT:
             return 'bg-muted text-muted-foreground ring-border';
+        // Semantic roles → brand tokens (auto-flip in dark via the token's
+        // own [data-theme=dark] scope; opacity modifiers give the tint).
         case BadgeColor.PRIMARY:
-            return 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30';
+            return 'bg-primary/10 text-primary ring-primary/20';
         case BadgeColor.SECONDARY:
             return 'bg-muted text-muted-foreground ring-border';
         case BadgeColor.SUCCESS:
-            return 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30';
+            return 'bg-success/10 text-success ring-success/20';
         case BadgeColor.WARNING:
-            return 'bg-yellow-50 text-yellow-800 ring-yellow-600/20 dark:bg-yellow-900/20 dark:text-yellow-400 dark:ring-yellow-400/30';
+            return 'bg-warning/10 text-warning ring-warning/20';
         case BadgeColor.ERROR:
-            return 'bg-red-50 text-red-700 ring-red-600/10 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-400/30';
+            return 'bg-destructive/10 text-destructive ring-destructive/20';
         case BadgeColor.BLUE:
             return 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30';
         case BadgeColor.RED:

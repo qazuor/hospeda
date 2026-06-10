@@ -32,14 +32,15 @@ import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
-import type { CreatePlanPayload, PlanDefinition } from '../types';
+import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
 
 import { ENTITLEMENT_GROUP_KEYS, getEntitlementName } from './plan-entitlement-groups';
 
 interface PlanDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    plan?: PlanDefinition | null;
+    /** The plan being edited (undefined/null for create mode). */
+    plan?: ParsedPlanRecord | null;
     onSubmit: (payload: CreatePlanPayload) => Promise<void>;
     isSubmitting?: boolean;
 }
@@ -415,7 +416,7 @@ export function PlanDialog({
 
                         <form.Field name="entitlements">
                             {(field) => (
-                                <div className="max-h-64 space-y-4 overflow-y-auto rounded-md border p-4">
+                                <div className="max-h-64 space-y-4 overflow-y-auto rounded-md border bg-card p-4">
                                     {ENTITLEMENT_GROUP_KEYS.map((group) => (
                                         <div key={group.labelKey}>
                                             <p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
@@ -467,9 +468,9 @@ export function PlanDialog({
 
                         <form.Field name="limits">
                             {(field) => (
-                                <div className="space-y-3 rounded-md border p-4">
+                                <div className="space-y-3 rounded-md border bg-card p-4">
                                     {field.state.value.map((limit, index) => {
-                                        const meta = LIMIT_METADATA[limit.key];
+                                        const meta = LIMIT_METADATA[limit.key as LimitKey];
                                         return (
                                             <div
                                                 key={limit.key}

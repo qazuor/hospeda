@@ -6,15 +6,23 @@
  * EventCard grid, and pagination.
  *
  * URL params:
- * - page        — pagination (default: 1)
- * - q           — full-text search
- * - category    — event category enum value
- * - sortBy      — sort field (startDate | name | mostSaved)
- * - sortOrder   — asc | desc
- * - when        — temporal quick-filter (today | week | month | next60 | past)
- * - isFree      — boolean toggle for free events only
- * - priceMin    — minimum event price
- * - priceMax    — maximum event price
+ * - page             — pagination (default: 1)
+ * - q                — full-text search
+ * - category         — event category enum value
+ * - sortBy           — encoded sort key, see SORT_OPTION_MAP below
+ *                      (upcoming | farthest | nameAsc | nameDesc | newest |
+ *                       oldest | featured | mostSaved). Direction lives inside
+ *                       the key, so no separate `sortOrder` param.
+ * - when             — temporal quick-filter (today | week | month | next60 | past)
+ * - isFree           — boolean toggle for free events only
+ * - includeUnpriced  — when `false`, exclude events without pricing data
+ *                      (default behavior is to INCLUDE them)
+ * - minPrice         — minimum event price
+ * - maxPrice         — maximum event price
+ * - isFeatured       — boolean: only featured events
+ * - destinationId    — filter by destination UUID
+ * - startDateAfter   — ISO yyyy-mm-dd lower bound on event start
+ * - startDateBefore  — ISO yyyy-mm-dd upper bound on event start
  *
  * @route /{lang}/eventos/
  * @rendering SSR + ISR 24h
@@ -23,15 +31,21 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import TagChips from '@/components/TagChips.astro';
 import EventDateFilterChips from '@/components/event/EventDateFilterChips.astro';
 import type { EventDateFilter } from '@/components/event/EventDateFilterChips.astro';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
-import { eventsApi } from '@/lib/api/endpoints';
+import {
+    buildEventListingSummary,
+    DEFAULT_EVENT_CATEGORIES
+} from '@/lib/event-listing-summary';
+import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
 import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -45,11 +59,27 @@ const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 9;
 const q = url.searchParams.get('q') ?? undefined;
 const category = url.searchParams.get('category') ?? undefined;
-const sortBy = url.searchParams.get('sortBy') ?? 'startDate';
-// SPEC-098 T-052a — `mostSaved` should default to descending so events with
-// the most active bookmarks appear first. Other fields keep their existing
-// asc default.
-const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
+/**
+ * Maps the URL's user-friendly sort key (e.g. `upcoming`, `newest`) to the
+ * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
+ * UI offer pre-baked options like "Más recientes" / "Más antiguos" without
+ * exposing a separate direction toggle.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    upcoming:    { sortBy: 'startDate',  sortOrder: 'asc'  },
+    farthest:    { sortBy: 'startDate',  sortOrder: 'desc' },
+    nameAsc:     { sortBy: 'name',       sortOrder: 'asc'  },
+    nameDesc:    { sortBy: 'name',       sortOrder: 'desc' },
+    newest:      { sortBy: 'createdAt',  sortOrder: 'desc' },
+    oldest:      { sortBy: 'createdAt',  sortOrder: 'asc'  },
+    featured:    { sortBy: 'isFeatured', sortOrder: 'desc' },
+    mostSaved:   { sortBy: 'mostSaved',  sortOrder: 'desc' },
+};
+/** Default sort key — used when the URL has no `sortBy`. */
+const DEFAULT_SORT_KEY = 'upcoming';
+
+const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
 /** Parse the temporal quick-filter from the `when` query param. */
 const rawWhen = url.searchParams.get('when');
@@ -68,6 +98,22 @@ const priceMinParam = url.searchParams.get('minPrice');
 const priceMaxParam = url.searchParams.get('maxPrice');
 const priceMin: number | undefined = priceMinParam ? Number(priceMinParam) : undefined;
 const priceMax: number | undefined = priceMaxParam ? Number(priceMaxParam) : undefined;
+/**
+ * `includeUnpriced` defaults to TRUE server-side. The UI's composite price
+ * filter only emits `?includeUnpriced=false` when the user explicitly turns
+ * the toggle OFF, otherwise the param is absent.
+ */
+const includeUnpricedParam = url.searchParams.get('includeUnpriced');
+const includeUnpriced: boolean | undefined =
+    includeUnpricedParam === 'false' ? false : undefined;
+
+/** New filters added in the eventos sidebar refactor. */
+const isFeaturedParam = url.searchParams.get('isFeatured');
+const isFeatured: boolean | undefined =
+    isFeaturedParam === 'true' ? true : undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const startDateAfterFilter = url.searchParams.get('startDateAfter') ?? undefined;
+const startDateBeforeFilter = url.searchParams.get('startDateBefore') ?? undefined;
 
 /** Compute date range from the `when` temporal filter. */
 const now = new Date();
@@ -102,51 +148,64 @@ function daysAhead(n: number): Date {
 
 let startDateAfter: string | undefined;
 let startDateBefore: string | undefined;
-let effectiveSortOrder: 'asc' | 'desc';
+
+/**
+ * Fetch destinations once for the sidebar's location filter. Filter to CITY
+ * type only — listings show events by city, not by country/region/department.
+ * Capped at 100 — sufficient for the current scope; revisit if the catalog
+ * grows past that.
+ */
+const destinationsResult = await destinationsApi.list({
+    destinationType: 'CITY',
+    pageSize: 100
+});
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 switch (when) {
     case 'today':
         startDateAfter = startOfToday().toISOString();
         startDateBefore = endOfToday().toISOString();
-        effectiveSortOrder = explicitSortOrder ?? 'asc';
         break;
     case 'week':
         startDateAfter = startOfToday().toISOString();
         startDateBefore = daysAhead(7).toISOString();
-        effectiveSortOrder = explicitSortOrder ?? 'asc';
         break;
     case 'month':
         startDateAfter = startOfToday().toISOString();
         startDateBefore = daysAhead(30).toISOString();
-        effectiveSortOrder = explicitSortOrder ?? 'asc';
         break;
     case 'next60':
         startDateAfter = startOfToday().toISOString();
         startDateBefore = daysAhead(60).toISOString();
-        effectiveSortOrder = explicitSortOrder ?? 'asc';
         break;
     case 'past':
         startDateBefore = startOfToday().toISOString();
-        // Past events default to descending so the most recent appear first
-        effectiveSortOrder = explicitSortOrder ?? 'desc';
-        break;
-    default:
-        effectiveSortOrder = explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : 'asc');
         break;
 }
+
+/**
+ * Sidebar date-range filter takes precedence over the temporal chips when
+ * present. The date-range emits ISO `YYYY-MM-DD` so widen the bounds to
+ * cover the full local day.
+ */
+if (startDateAfterFilter) startDateAfter = `${startDateAfterFilter}T00:00:00`;
+if (startDateBeforeFilter) startDateBefore = `${startDateBeforeFilter}T23:59:59`;
 
 const result = await eventsApi.list({
     page,
     pageSize,
     q,
     category,
-    sortBy,
-    sortOrder: effectiveSortOrder,
+    sortBy: sortResolved.sortBy,
+    sortOrder: sortResolved.sortOrder,
     startDateAfter,
     startDateBefore,
     isFree: isFree ?? undefined,
     minPrice: priceMin,
     maxPrice: priceMax,
+    includeUnpriced: includeUnpriced ?? undefined,
+    isFeatured: isFeatured ?? undefined,
+    destinationId,
 });
 
 const hasError = !result.ok;
@@ -155,6 +214,42 @@ const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+
+/**
+ * Build a human-readable summary like "Mostrando 3 de 4 eventos en Colón..."
+ * to replace the generic "N resultados encontrados" line in the wave header.
+ * Mirrors the accommodations pattern via the parallel `event-listing-summary`
+ * module — see SPEC-XXX (events-summary) for the architecture.
+ */
+const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;
+const destinationCatalog = destinations.map((d) => ({
+    key: d.id,
+    label: { es: d.name, en: d.name } as const
+}));
+const filterSummary = buildEventListingSummary({
+    locale: summaryLocale,
+    filters: {
+        text: q,
+        category,
+        destinationId,
+        startDateAfter: startDateAfterFilter,
+        startDateBefore: startDateBeforeFilter,
+        when,
+        isFree,
+        price:
+            priceMin !== undefined || priceMax !== undefined
+                ? { min: priceMin ?? null, max: priceMax ?? null }
+                : null,
+        includeUnpriced: includeUnpricedParam === 'false' ? false : null,
+        isFeatured
+    },
+    counts: { shown: cards.length, total },
+    sort: { sortKey },
+    catalogs: {
+        destinations: destinationCatalog,
+        categories: DEFAULT_EVENT_CATEGORIES
+    }
+});
 
 /**
  * Build the `filterGroups` config for FilterSidebar.
@@ -167,6 +262,11 @@ const filterGroups = [
         id: 'q',
         label: t('events.filters.search', 'Buscar'),
         type: 'search' as const,
+    },
+    {
+        id: 'isFeatured',
+        label: t('events.filters.featured', 'Solo destacados'),
+        type: 'toggle' as const,
     },
     {
         id: 'category',
@@ -185,30 +285,67 @@ const filterGroups = [
         ],
     },
     {
-        id: 'isFree',
-        label: t('events.dateFilters.freeToggle', 'Solo eventos gratuitos'),
-        type: 'toggle' as const,
+        id: 'date',
+        label: t('events.filters.date', 'Fecha'),
+        type: 'date-range' as const,
+        checkInPlaceholder: t('events.filters.dateFrom', 'Desde'),
+        checkOutPlaceholder: t('events.filters.dateTo', 'Hasta'),
+        fromParam: 'startDateAfter',
+        toParam: 'startDateBefore',
+        mode: 'bounds' as const,
+        allowPastDates: true,
+    },
+    {
+        id: 'destinationId',
+        label: t('events.filters.location', 'Lugar'),
+        type: 'select-search' as const,
+        options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
+        maxVisible: 8,
+        maxSelections: 1,
     },
     {
         id: 'price',
-        label: t('events.dateFilters.priceRange', 'Rango de precio'),
-        type: 'dual-range' as const,
+        label: t('events.filters.price', 'Precio'),
+        type: 'price-composite' as const,
         min: 0,
         max: 10000,
         step: 100,
         format: 'currency' as const,
+        includeUnpricedLabel: t(
+            'events.filters.includeUnpricedToggle',
+            'Incluir eventos sin información de precio'
+        ),
+        isFreeLabel: t('events.filters.onlyFree', 'Solo eventos gratuitos'),
+        rangeLabel: t('events.filters.priceRange', 'Rango de precio'),
     },
 ] as const;
 
+/**
+ * `mostSaved` is intentionally NOT exposed in the UI options here: the
+ * synthetic correlated-subquery sort does not compose with Drizzle's
+ * relational query API used by the public list endpoint, so it silently
+ * falls back to default ordering (see SPEC-098 T-052a note in the
+ * EventModel). The key remains in SORT_OPTION_MAP above so legacy URLs
+ * still resolve cleanly when fixed.
+ */
 const sortOptions = [
-    { value: 'startDate', label: t('events.sort.date',  'Fecha') },
-    { value: 'name',      label: t('events.sort.name',  'Nombre') },
-    // SPEC-098 T-052a — orders by total active bookmarks (descending) via the
-    // `mostSaved` synthetic sort field on the public event list endpoint.
-    { value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
+    { value: 'upcoming', label: t('events.sort.upcoming', 'Próximos primero') },
+    { value: 'farthest', label: t('events.sort.farthest', 'Última fecha primero') },
+    { value: 'newest',   label: t('events.sort.newest',   'Recién agregados') },
+    { value: 'oldest',   label: t('events.sort.oldest',   'Más antiguos') },
+    { value: 'featured', label: t('events.sort.featured', 'Destacados primero') },
+    { value: 'nameAsc',  label: t('events.sort.nameAsc',  'Nombre (A-Z)') },
+    { value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') },
 ] as const;
 
 const baseUrl = buildUrl({ locale, path: 'eventos' });
+
+// Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
+// at `/{locale}/eventos/page/{n}/` via an Astro.rewrite to this listing with
+// `?page=n`; the rewrite drops the `/page/n/` segment from Astro.url.pathname,
+// so we rebuild the crawlable URL from the page number to keep each paginated
+// page self-canonical and indexable (instead of canonicalizing to page 1).
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).
@@ -235,13 +372,21 @@ const categoryChips = [
 const sidebarInitialParams: Record<string, string> = {};
 if (q)              sidebarInitialParams['q']        = q;
 if (category)       sidebarInitialParams['category'] = category;
+if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
+if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
+if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
+if (startDateBeforeFilter) sidebarInitialParams['startDateBefore'] = startDateBeforeFilter;
+// Composite price filter (id='price') reads `isFree`, `includeUnpriced`,
+// `minPrice`, `maxPrice` from the URL. `includeUnpriced` only appears when
+// the user explicitly turned it OFF; otherwise the server defaults to TRUE.
 if (isFreeParam)    sidebarInitialParams['isFree']   = isFreeParam;
-// dual-range with id='price': reducer reads params['minPrice'] and params['maxPrice']
 if (priceMinParam)  sidebarInitialParams['minPrice'] = priceMinParam;
 if (priceMaxParam)  sidebarInitialParams['maxPrice'] = priceMaxParam;
-const explicitSortOrderParam = url.searchParams.get('sortOrder');
-if (sortBy)                 sidebarInitialParams['sortBy']    = sortBy;
-if (explicitSortOrderParam) sidebarInitialParams['sortOrder'] = explicitSortOrderParam;
+if (includeUnpricedParam === 'false') sidebarInitialParams['includeUnpriced'] = 'false';
+// Hydrate the SortPopover with the active sort key so the user sees their
+// previous selection on reload. `sortOrder` is no longer in the URL — the
+// direction is encoded inside the sort key (e.g. `nameDesc`, `newest`).
+sidebarInitialParams['sortBy'] = sortKey;
 
 /**
  * Build URLSearchParams to pass to Pagination so it preserves all active
@@ -250,15 +395,40 @@ if (explicitSortOrderParam) sidebarInitialParams['sortOrder'] = explicitSortOrde
  */
 const paginationParams = new URLSearchParams(url.searchParams);
 paginationParams.delete('page');
+
+// ItemList JSON-LD entries — the visible page of event cards, routed through
+// the reusable ItemListJsonLd component (SPEC-157 D-1 canonical JSON-LD path).
+const itemListEntries = cards.map((card) => ({
+	url: new URL(buildUrl({ locale, path: `eventos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
+	name: card.name,
+}));
 ---
 
 <ListingLayout
 	locale={locale}
 	title={t('events.title', 'Eventos')}
 	description={t('events.description', 'Descubrí eventos culturales, deportivos y gastronómicos del Litoral.')}
+	canonicalPath={canonicalPath}
 	showFilters={true}
-	filterPosition="top"
+	filterPosition="left"
 >
+	{/* RSS feed-discovery hints (SPEC-157 REQ-6) */}
+	<link
+		slot="head-extra"
+		rel="alternate"
+		type="application/rss+xml"
+		title={t('events.rss.title', 'Eventos RSS')}
+		href={buildUrl({ locale, path: 'eventos/rss.xml' })}
+	/>
+
+	<ItemListJsonLd
+		slot="head-extra"
+		name={t('events.title', 'Eventos')}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
+	/>
+
 	<Breadcrumbs
 		slot="breadcrumbs"
 		locale={locale}
@@ -271,6 +441,7 @@ paginationParams.delete('page');
 		tagline={t('events.tagline', 'No te pierdas nada')}
 		title={t('events.title', 'Eventos')}
 		totalCount={total}
+		filterSummary={filterSummary}
 	/>
 
 	<FilterSidebar
@@ -279,7 +450,7 @@ paginationParams.delete('page');
 		locale={locale}
 		filters={filterGroups}
 		sortOptions={sortOptions}
-		defaultSort="startDate"
+		defaultSort={DEFAULT_SORT_KEY}
 		initialParams={sidebarInitialParams}
 	/>
 
@@ -312,6 +483,20 @@ paginationParams.delete('page');
 			))}
 		</div>
 	)}
+
+	<!-- Editor-recruitment banner (SPEC-191 FR-8): after the grid, before
+	     pagination. page/[page].astro is a rewrite — single mount covers all pages. -->
+	<ContributionBanner
+		title={t('contributions.banner.editors.title', '¿Te gusta escribir?')}
+		description={t(
+			'contributions.banner.editorsEvents.description',
+			'Buscamos editores voluntarios para cargar y curar los eventos de la agenda.'
+		)}
+		ctaLabel={t('contributions.banner.editors.cta', 'Sumate como editor')}
+		ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+		source="events_listing"
+		variant="editors"
+	/>
 
 	{totalPages > 1 && (
 		<Pagination

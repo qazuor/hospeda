@@ -7,6 +7,7 @@ import { adminDeleteDestinationReviewRoute } from './delete';
 import { adminGetDestinationReviewByIdRoute } from './getById';
 import { adminHardDeleteDestinationReviewRoute } from './hardDelete';
 import { adminListDestinationReviewsRoute } from './list';
+import { adminModerateDestinationReviewRoute } from './moderate';
 import { adminRestoreDestinationReviewRoute } from './restore';
 import { adminUpdateDestinationReviewRoute } from './update';
 
@@ -29,5 +30,9 @@ app.route('/', adminRestoreDestinationReviewRoute);
 
 // DELETE /:id/hard - Permanently delete review
 app.route('/', adminHardDeleteDestinationReviewRoute);
+
+// POST /:id/moderate - Approve or reject review (SPEC-166 T-020)
+// Registered after /:id CRUD routes; the /moderate suffix makes it unambiguous.
+app.route('/', adminModerateDestinationReviewRoute);
 
 export { app as adminDestinationReviewRoutes };

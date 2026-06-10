@@ -109,4 +109,11 @@ export interface EnvVarDefinition {
      *   - 'https://www.mercadopago.com.ar/developers/panel/credentials'
      */
     readonly helpUrl?: string;
+
+    /**
+     * Marks the variable as deprecated. Tooling may surface a warning when
+     * the variable is set. The variable remains functional until a follow-up
+     * spec removes it.
+     */
+    readonly deprecated?: boolean;
 }

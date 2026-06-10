@@ -12,8 +12,10 @@ import { adminGetAccommodationByIdRoute } from './getById';
 import { adminGetFaqsRoute } from './getFaqs';
 import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
+import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminRemoveFaqRoute } from './removeFaq';
+import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
 import { adminRestoreAccommodationRoute } from './restore';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
@@ -34,6 +36,10 @@ app.route('/', adminBatchAccommodationsRoute);
 // Registered before /{id} routes to prevent "reviews" matching as a UUID param
 app.route('/reviews', adminAccommodationReviewRoutes);
 
+// GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
+// Registered before /{id} so Hono does not resolve "options" as a UUID param
+app.route('/', adminAccommodationOptionsRoute);
+
 // GET /:id - Get by ID
 app.route('/', adminGetAccommodationByIdRoute);
 
@@ -51,6 +57,10 @@ app.route('/', adminHardDeleteAccommodationRoute);
 
 // POST /:id/restore - Restore accommodation
 app.route('/', adminRestoreAccommodationRoute);
+
+// PATCH /:id/faqs/reorder - Reorder FAQs for an accommodation
+// Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param
+app.route('/', adminReorderAccommodationFaqsRoute);
 
 // GET /:id/faqs - Get accommodation FAQs
 app.route('/', adminGetFaqsRoute);

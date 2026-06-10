@@ -151,8 +151,9 @@ describe('Feature CRUD Schemas', () => {
 
     describe('FeaturePatchInputSchema', () => {
         it('should validate patch input', () => {
+            const nameEs = faker.lorem.words(2);
             const patchInput = {
-                name: faker.lorem.words(2)
+                name: { es: nameEs, en: nameEs, pt: nameEs }
             };
 
             expect(() => FeaturePatchInputSchema.parse(patchInput)).not.toThrow();
@@ -165,8 +166,9 @@ describe('Feature CRUD Schemas', () => {
         });
 
         it('should reject patch input with auto-generated fields', () => {
+            const nameEs = faker.lorem.words(2);
             const patchData = {
-                name: faker.lorem.words(2),
+                name: { es: nameEs, en: nameEs, pt: nameEs },
                 id: faker.string.uuid()
             };
 

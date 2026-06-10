@@ -1,8 +1,105 @@
 # E2E Testing Infrastructure
 
-## Overview
+> **Canonical reference**: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md`](../../../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md) is the authoritative description of the e2e infra as of SPEC-143 (factories, fixtures, vitest configs, sealed test patterns, Workstream A vs B). The sections below predate that doc and describe scenarios that no longer exist; the **Isolation contract** and **CI wiring** sections immediately below are current — the rest is being phased out.
 
-Complete E2E testing infrastructure for Hospeda API, focusing on subscription flow scenarios.
+## Isolation contract (SPEC-143 T-143-56)
+
+The billing e2e suite runs in a SINGLE forked Node process (`vitest.config.e2e.ts → singleFork: true`) and test files execute SEQUENTIALLY. **Do not flip `singleFork` to `false`** until every test file is migrated off `testDb.clean()`.
+
+Why this is mandatory today:
+
+- 48 of 50 e2e test files use `testDb.clean()` (TRUNCATE * CASCADE) between tests for per-file isolation.
+- If two files ran concurrently against the same Postgres database, one file's `clean()` would wipe the other file's in-flight rows mid-test.
+- The T-143-65 fix (`resetDb()` + `assertSchemaReady()`) made cross-FILE setup/teardown safe within a single fork — but it did NOT solve cross-fork concurrent writes.
+
+The two exceptions that use `withRollback` (`free-plan-signup.test.ts`, `smoke-plans.test.ts`) are the future-shape: data scoped to a rolled-back transaction never touches other tests, even across forks. New tests should default to that pattern when possible; reach for `clean()` only when the flow under test crosses the request boundary (the request handler's DB connection cannot see your test's open transaction).
+
+### Path to parallelism
+
+Two viable routes for a future SPEC follow-up, both out of scope here:
+
+1. **Schema-per-fork**: each parallel worker gets its own Postgres schema. Requires parametrizing `apply-postgres-extras.sh` to write to a schema other than `public`, teaching `testDb` to switch the search_path, and per-fork schema lifecycle (create/push/teardown). Estimated effort: 1-2 days of infra work + smoke validation.
+2. **Refactor 26 files off `clean()`**: migrate every file that uses `testDb.clean()` to `withRollback` or `cleanupAllTestData` semantics. Larger and riskier (some flows genuinely need cross-request visibility), but unlocks true cross-fork parallelism on a shared DB. Estimated effort: 3-5 days.
+
+Neither lands without a focused SPEC; do not attempt as a side-effect of another task.
+
+## CI wiring (SPEC-143 T-143-56)
+
+The billing e2e suite is NOT currently invoked from `.github/workflows/ci.yml`. SPEC-143 provides the tooling for a CI step but the workflow file edit must be applied manually (CLAUDE.md hook blocks agent edits to `.github/`).
+
+### Scripts available
+
+| Script | Purpose |
+|---|---|
+| `pnpm test:e2e` | Run the suite locally. Verbose reporter only. |
+| `pnpm test:e2e:watch` | Watch mode for local dev. |
+| `pnpm test:e2e:ci` | Run the suite + emit JSON report + assert wallclock budget. Exits non-zero on test failure OR budget overrun. |
+
+The `test:e2e:ci` script wraps the standard run so CI gets both human-readable verbose output and a machine-readable JSON report at `apps/api/test-results/e2e-results.json`. After the suite finishes (pass or fail), `scripts/check-e2e-budget.mjs` parses the JSON and asserts the total wallclock + per-file wallclock fall within budget. Both runtime checks are CI-only — locally `pnpm test:e2e` is unaffected.
+
+### Budget configuration
+
+Tunable via env:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `E2E_BUDGET_SECONDS` | `1800` (30 min) | Total suite wallclock cap. |
+| `E2E_FILE_BUDGET_SECONDS` | `300` (5 min) | Per-file wallclock cap. |
+| `E2E_REPORT_TOP_N` | `10` | How many slow files to print in the CI log. |
+
+Bump the defaults when the suite grows for a documented reason — do NOT bump them silently to make a regression go green.
+
+### How to wire into CI
+
+Add a job to `.github/workflows/ci.yml` (manual edit by a maintainer):
+
+```yaml
+billing-e2e:
+  name: Billing E2E (apps/api)
+  runs-on: ubuntu-latest
+  needs: [build]
+  services:
+    postgres:
+      image: postgres:16
+      env:
+        POSTGRES_USER: hospeda_user
+        POSTGRES_PASSWORD: hospeda_pass
+        POSTGRES_DB: hospeda_test
+      ports:
+        - 5436:5432
+      options: >-
+        --health-cmd pg_isready
+        --health-interval 10s
+        --health-timeout 5s
+        --health-retries 5
+  steps:
+    - uses: actions/checkout@v4
+    - uses: pnpm/action-setup@v3
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'pnpm'
+    - run: pnpm install --frozen-lockfile
+    - name: Push Drizzle schema to test DB
+      env:
+        HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_test
+      run: pnpm --filter @repo/db db:push
+    - name: Apply postgres extras (triggers, MVs, CHECKs)
+      run: bash packages/db/scripts/apply-postgres-extras.sh 'postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_test'
+    - name: Run billing E2E with budget check
+      run: pnpm --filter hospeda-api test:e2e:ci
+    - name: Upload e2e JSON report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-results-${{ github.run_id }}
+        path: apps/api/test-results/e2e-results.json
+        retention-days: 14
+```
+
+The `if: always()` on the artifact step preserves the JSON even when the suite fails so the failure can be triaged offline (slowest files, error messages per test).
+
+---
 
 ## Setup
 

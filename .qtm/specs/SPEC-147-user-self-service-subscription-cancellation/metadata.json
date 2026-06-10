@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-147",
+    "title": "User self-service subscription cancellation",
+    "type": "feat",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-19T00:00:00Z",
+    "discoveredDuring": "SPEC-143 T-143-27 — user-facing cancel endpoint blocked by billingAdminGuardMiddleware and no hospeda caller uses the soft-cancel branch of qzpay-core",
+    "tags": ["billing", "subscription", "user-facing", "lifecycle", "mp-preapproval", "cron"],
+    "effortEstimateHours": "8-16",
+    "firstAllocatedViaEngramProtocol": true,
+    "parent": "SPEC-193"
+}

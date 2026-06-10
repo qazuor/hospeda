@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Paisaje",
+        "attractions": "Atracciones",
+        "accessibility": "Accesibilidad",
+        "safety": "Seguridad",
+        "cleanliness": "Limpieza",
+        "hospitality": "Hospitalidad",
+        "culturalOffer": "Oferta cultural",
+        "gastronomy": "Gastronomía",
+        "affordability": "Precio accesible",
+        "nightlife": "Vida nocturna",
+        "infrastructure": "Infraestructura",
+        "environmentalCare": "Cuidado ambiental",
+        "wifiAvailability": "Disponibilidad de WiFi",
+        "shopping": "Compras",
+        "beaches": "Playas",
+        "greenSpaces": "Espacios verdes",
+        "localEvents": "Eventos locales",
+        "weatherSatisfaction": "Clima"
+    },
     "entities": {
         "accommodation": {
             "singular": "Alojamiento",
@@ -65,6 +85,11 @@
             "singular": "Reseña",
             "plural": "Reseñas",
             "description": "Gestiona reseñas y calificaciones"
+        },
+        "appLog": {
+            "singular": "Registro",
+            "plural": "Registros de aplicación",
+            "description": "Registros de eventos WARN y ERROR emitidos por los servicios del sistema"
         }
     },
     "columns": {
@@ -72,6 +97,8 @@
         "name": "Nombre",
         "slug": "URL Amigable",
         "description": "Descripción",
+        "summary": "Resumen",
+        "photo": "Foto",
         "shortDescription": "Descripción Corta",
         "type": "Tipo",
         "category": "Categoría",
@@ -135,9 +162,35 @@
         "eventsCount": "Eventos",
         "destinationsCount": "Destinos",
         "postsCount": "Publicaciones",
+        "relatedEntities": "Relacionados",
         "relatedAccommodation": "Rel. Alojamiento",
         "relatedDestination": "Rel. Destino",
-        "relatedEvent": "Rel. Evento"
+        "relatedEvent": "Rel. Evento",
+        "publishedAt": "Publicado el",
+        "expiresAt": "Expira el",
+        "isNews": "Es Noticia",
+        "featuredInWebsite": "Destacado en Web",
+        "likes": "Likes",
+        "comments": "Comentarios",
+        "shares": "Compartidos",
+        "firstName": "Nombre",
+        "lastName": "Apellido",
+        "locationCity": "Ciudad",
+        "emailVerified": "Email Verificado",
+        "banned": "Baneado",
+        "banReason": "Razón de Baneo",
+        "banExpires": "Baneo Expira",
+        "avatar": "Avatar",
+        "views30d": "Vistas (30d)",
+        "appLog": {
+            "loggedAt": "Fecha/Hora",
+            "level": "Nivel",
+            "category": "Categoría",
+            "label": "Etiqueta",
+            "request": "Solicitud",
+            "userId": "Usuario",
+            "message": "Mensaje"
+        }
     },
     "actions": {
         "view": "Ver",
@@ -181,6 +234,18 @@
             "confirm": "Sí, archivar",
             "cancel": "Cancelar"
         },
+        "reject": {
+            "title": "Rechazar {entity}",
+            "message": "¿Estás seguro de que deseas rechazar este {entity}?",
+            "confirm": "Sí, rechazar",
+            "cancel": "Cancelar"
+        },
+        "roleChange": {
+            "title": "Cambiar rol de {entity}",
+            "message": "¿Confirmás cambiar el rol de este {entity}? Es una acción sensible que afecta permisos críticos.",
+            "confirm": "Sí, cambiar rol",
+            "cancel": "Cancelar"
+        },
         "restore": {
             "title": "Restaurar {entity}",
             "message": "¿Deseas restaurar este {entity}?",
@@ -197,6 +262,11 @@
     "messages": {
         "created": "{entity} creado exitosamente",
         "updated": "{entity} actualizado exitosamente",
+        "featuredOn": "«{name}» marcado como destacado",
+        "featuredOff": "«{name}» quitado de destacados",
+        "visibilityChanged": "Visibilidad de «{name}» cambiada a {value}",
+        "stateChanged": "Estado de «{name}» cambiado a {value}",
+        "moderationChanged": "Moderación de «{name}» cambiada a {value}",
         "deleted": "{entity} eliminado exitosamente",
         "deletedFeminine": "{entity} eliminada exitosamente",
         "archived": "{entity} archivado exitosamente",
@@ -233,6 +303,15 @@
             "rowsPerPage": "Filas por página"
         }
     },
+    "grid": {
+        "statistics": "Estadísticas",
+        "moreFields": "campos más",
+        "actions": {
+            "peek": "Ver",
+            "edit": "Editar",
+            "delete": "Eliminar"
+        }
+    },
     "detail": {
         "title": "{entity} - Detalle",
         "sections": {
@@ -245,6 +324,15 @@
             "relations": "Relaciones",
             "metadata": "Metadatos",
             "audit": "Auditoría"
+        },
+        "viewStats": {
+            "sectionTitle": "Estadísticas de vistas",
+            "chips": {
+                "unique": "Únicos",
+                "total": "Totales",
+                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal": "{{window}}: {{count}} vistas totales"
+            }
         }
     },
     "form": {
@@ -308,12 +396,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Básica",
-            "comfort": "Confort",
-            "luxury": "Lujo",
-            "technology": "Tecnología",
-            "recreation": "Recreación",
-            "business": "Negocios"
+            "climateControl": "Climatización",
+            "connectivity": "Conectividad",
+            "entertainment": "Entretenimiento",
+            "kitchen": "Cocina",
+            "bedAndBath": "Dormitorio y baño",
+            "outdoors": "Exteriores",
+            "accessibility": "Accesibilidad",
+            "services": "Servicios",
+            "safety": "Seguridad",
+            "familyFriendly": "Apto familia",
+            "workFriendly": "Apto trabajo",
+            "generalAppliances": "Electrodomésticos"
         },
         "event": {
             "concert": "Concierto",
@@ -412,6 +506,9 @@
             "uploadedAlt": "Imagen subida",
             "altTextLabel": "Texto alternativo",
             "altTextPlaceholder": "Describe la imagen para accesibilidad",
+            "altTextRequiredHint": "Requerido para accesibilidad",
+            "replaceLabel": "Reemplazar imagen",
+            "lightboxOpenLabel": "Ver imagen en grande",
             "captionLabel": "Leyenda",
             "captionPlaceholder": "Leyenda de la imagen",
             "descriptionLabel": "Descripción",
@@ -443,10 +540,39 @@
             "invalidType": "Tipo de archivo no válido.",
             "fallbackAriaLabel": "Iniciales del usuario"
         },
+        "coordinates": {
+            "latLabel": "Latitud",
+            "lngLabel": "Longitud",
+            "privacyNotice": "Cargá la dirección exacta y marcá el punto preciso en el mapa. No te preocupes: en la web pública no se muestra la ubicación exacta, solo un área aproximada de unos 300 metros alrededor del punto que cargues.",
+            "mapLoading": "Cargando mapa...",
+            "emptyHint": "Hacé click en el mapa o ingresá las coordenadas para ubicar el alojamiento",
+            "activationHint": "Hacé click para activar el zoom",
+            "clearLabel": "Quitar coordenadas",
+            "geocodingForwardLabel": "Ubicar en el mapa",
+            "geocodingReverseLabel": "Obtener dirección",
+            "geocodingForwardFound": "Punto ubicado en: {address}",
+            "geocodingForwardStreetOnly": "Encontré la calle pero no la altura exacta. Arrastrá el pin para ajustarlo. ({address})",
+            "geocodingForwardNotFound": "No se encontró la dirección. Probá agregar más datos (ciudad, número).",
+            "geocodingReverseFilled": "Dirección obtenida: {address}",
+            "geocodingReverseKept": "La dirección coincide con la que ya cargaste ({address}).",
+            "geocodingReverseNotFound": "No se pudo obtener una dirección para este punto.",
+            "geocodingNetworkError": "No pudimos contactar al servicio de geocoding. Probá de nuevo.",
+            "reverseDialogTitle": "Cargar dirección",
+            "reverseDialogIntro": "Encontramos: {address}",
+            "reverseDialogChangesHeading": "Se va a cargar:",
+            "reverseDialogStreetLabel": "Calle",
+            "reverseDialogNumberLabel": "Número",
+            "reverseDialogNoChanges": "Ya tenés cargados los campos de calle y número. No se va a modificar nada.",
+            "reverseDialogEmptyValue": "(vaciar campo)",
+            "reverseDialogConfirm": "Cargar dirección",
+            "reverseDialogCancel": "Cancelar"
+        },
         "gallery": {
             "imageAlt": "Imagen de galería {index}",
             "captionPlaceholder": "Leyenda",
             "altTextPlaceholder": "Texto alternativo",
+            "descriptionPlaceholder": "Descripción detallada",
+            "altTextRequiredHint": "Requerido para accesibilidad",
             "uploadAriaLabel": "Subir imágenes",
             "uploading": "Subiendo...",
             "uploadingProgress": "Subiendo {size}...",
@@ -464,6 +590,18 @@
                 "onDragEnd": "Imagen soltada en posición {position}.",
                 "onDragCancel": "Movimiento cancelado. Imagen devuelta a posición {position}."
             }
+        },
+        "videoGallery": {
+            "add": "Agregar video",
+            "remove": "Quitar video",
+            "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+            "captionPlaceholder": "Título corto del video (opcional)",
+            "descriptionPlaceholder": "Descripción del contenido del video (opcional)",
+            "empty": "Todavía no hay videos. Pegá una URL de YouTube o Vimeo para agregar.",
+            "emptyView": "Sin videos cargados.",
+            "invalidUrl": "Pegá una URL completa (http o https).",
+            "duplicateUrl": "Ese video ya está en la galería.",
+            "externalProvider": "Externo"
         }
     },
     "entitlementGate": {
@@ -472,11 +610,19 @@
         "titleDefault": "Función Premium",
         "description": "Esta funcionalidad está disponible en planes superiores. Actualiza tu plan para acceder a esta sección.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores"
+        "fieldPremiumDescription": "Esta funcionalidad está disponible en planes superiores",
+        "richDescriptionNudge": "Tu plan no incluye descripciones enriquecidas. Podés editar la descripción como texto plano.",
+        "videoNudge": "La incorporación de videos está disponible en planes superiores.",
+        "upgradeLink": "Actualizar plan"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Límite alcanzado",
-        "description": "Has alcanzado el límite de tu plan actual"
+        "description": "Has alcanzado el límite de tu plan actual",
+        "titleDefault": "Llegaste al límite de tu plan",
+        "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
+        "upgradeLink": "Ver mi suscripción",
+        "belowLimit": "Te quedan {max} - {current} disponibles en tu plan.",
+        "atLimit": "Llegaste al máximo permitido por tu plan. Para sumar más, mejorá el plan."
     },
     "ownerPromotions": {
         "columns": {
@@ -512,6 +658,103 @@
         "owner": {
             "placeholder": "Seleccionar un propietario...",
             "unknown": "Usuario Desconocido"
+        }
+    },
+    "peek": {
+        "summary": "Resumen",
+        "viewFull": "Ver página completa",
+        "edit": "Editar",
+        "close": "Cerrar",
+        "booleanYes": "Sí",
+        "booleanNo": "No",
+        "emptyValue": "—"
+    },
+    "premiumBlock": {
+        "title": "Funciones disponibles en planes superiores",
+        "description": "Estas funciones se desbloquean al mejorar tu plan.",
+        "cta": "Mejorar plan"
+    },
+    "qualityScore": {
+        "triggerLabel": "Calidad",
+        "triggerAriaLabel": "Calidad del anuncio: {score} de 100. Abrir desglose.",
+        "popoverHeading": "Calidad de tu anuncio",
+        "popoverHint": "Mejorá estos puntos para que tu anuncio convierta más.",
+        "groups": {
+            "done": "Cumplido",
+            "pending": "Para mejorar",
+            "premium": "Llevalo más lejos"
+        },
+        "emptyDone": "Todavía no completaste ningún objetivo.",
+        "emptyPending": "¡Cumpliste todo lo que suma! Tu anuncio está al máximo.",
+        "premiumDescription": "Funciones del plan premium para potenciar tu anuncio.",
+        "premiumCta": "Mejorar plan",
+        "goToSection": "Ir a la sección",
+        "signals": {
+            "featuredImage": {
+                "label": "Imagen principal cargada"
+            },
+            "galleryPhotos": {
+                "label": "Al menos {target} fotos en la galería",
+                "hint": "{current} de {target} cargadas"
+            },
+            "photosAlt": {
+                "label": "Texto alternativo en todas las fotos",
+                "hint": "{missing} foto(s) sin texto alternativo"
+            },
+            "description": {
+                "label": "Descripción detallada",
+                "hint": "{current} de {target} caracteres"
+            },
+            "summary": {
+                "label": "Resumen corto"
+            },
+            "locationPin": {
+                "label": "Ubicación marcada en el mapa"
+            },
+            "contact": {
+                "label": "Al menos un canal de contacto"
+            },
+            "services": {
+                "label": "Servicios cargados",
+                "hint": "{current} de {target} marcados"
+            },
+            "price": {
+                "label": "Precio cargado"
+            },
+            "videoGallery": {
+                "label": "Galería con videos"
+            },
+            "virtualTour": {
+                "label": "Tour virtual 360°"
+            },
+            "dates": {
+                "label": "Fechas del evento"
+            },
+            "organizer": {
+                "label": "Organizador asignado"
+            },
+            "category": {
+                "label": "Categoría seleccionada"
+            },
+            "location": {
+                "label": "Lugar del evento"
+            },
+            "content": {
+                "label": "Cuerpo del artículo",
+                "hint": "{current} de {target} caracteres"
+            },
+            "readingTime": {
+                "label": "Tiempo de lectura cargado"
+            },
+            "author": {
+                "label": "Autor asignado"
+            },
+            "relatedEntity": {
+                "label": "Relacionado con otra entidad"
+            },
+            "publishedAt": {
+                "label": "Fecha de publicación"
+            }
         }
     }
 }

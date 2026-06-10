@@ -16,3 +16,11 @@ todos.json
 mcp-todos.json
 .vercel
 .env*.local
+
+# Playwright visual snapshots — local-only reference artifacts (SPEC-153).
+test-results/
+playwright-visual-report/
+tests/visual-snapshots/.auth/
+tests/visual-snapshots/baseline/
+tests/visual-snapshots/actual/
+tests/visual-snapshots/diff/

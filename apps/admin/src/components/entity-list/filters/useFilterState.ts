@@ -138,6 +138,26 @@ export const useFilterState = ({
     // Handle individual filter change - ALWAYS resets page to 1
     const handleFilterChange = useCallback(
         (paramKey: string, value: string | undefined) => {
+            // Check if this is a range bound param key (paramKeyMin/Max or paramKeyFrom/To)
+            const rangeFilter = filterBarConfig?.filters.find(
+                (f) =>
+                    (f.type === 'number-range' &&
+                        (f.paramKeyMin === paramKey || f.paramKeyMax === paramKey)) ||
+                    (f.type === 'date-range' &&
+                        (f.paramKeyFrom === paramKey || f.paramKeyTo === paramKey))
+            );
+
+            if (rangeFilter) {
+                // Range bounds have no defaultValue — clear by removing the param
+                onUpdateSearch((prev) => ({
+                    ...prev,
+                    [paramKey]: value,
+                    page: 1
+                }));
+                return;
+            }
+
+            // Select / Boolean: standard 3-state logic
             const filterConfig = filterBarConfig?.filters.find((f) => f.paramKey === paramKey);
             const hasDefault = filterConfig?.defaultValue !== undefined;
             const paramUpdate = buildFilterParamUpdate({ paramKey, value, hasDefault });
@@ -159,7 +179,14 @@ export const useFilterState = ({
             const updates: Record<string, string | number | undefined> = { page: 1 };
 
             for (const filter of filterBarConfig.filters) {
-                if (filter.defaultValue !== undefined) {
+                if (filter.type === 'number-range') {
+                    // Range bounds have no defaultValue — remove both params
+                    updates[filter.paramKeyMin] = undefined;
+                    updates[filter.paramKeyMax] = undefined;
+                } else if (filter.type === 'date-range') {
+                    updates[filter.paramKeyFrom] = undefined;
+                    updates[filter.paramKeyTo] = undefined;
+                } else if (filter.defaultValue !== undefined) {
                     updates[filter.paramKey] = FILTER_CLEARED_SENTINEL;
                 } else {
                     updates[filter.paramKey] = undefined;
@@ -178,7 +205,14 @@ export const useFilterState = ({
             const updates: Record<string, string | number | undefined> = { page: 1 };
 
             for (const filter of filterBarConfig.filters) {
-                if (filter.defaultValue !== undefined) {
+                if (filter.type === 'number-range') {
+                    // Range filters have no defaultValue — just remove both bounds
+                    updates[filter.paramKeyMin] = undefined;
+                    updates[filter.paramKeyMax] = undefined;
+                } else if (filter.type === 'date-range') {
+                    updates[filter.paramKeyFrom] = undefined;
+                    updates[filter.paramKeyTo] = undefined;
+                } else if (filter.defaultValue !== undefined) {
                     updates[filter.paramKey] = filter.defaultValue;
                 } else {
                     updates[filter.paramKey] = undefined;

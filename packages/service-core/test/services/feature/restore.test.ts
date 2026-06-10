@@ -13,7 +13,10 @@ describe('FeatureService.restore', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const feature = FeatureFactoryBuilder.create({ name: 'Test Feature', deletedAt: new Date() });
+    const feature = FeatureFactoryBuilder.create({
+        name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
+        deletedAt: new Date()
+    });
 
     beforeEach(() => {
         featureModelMock = createModelMock(['findById', 'restore']);

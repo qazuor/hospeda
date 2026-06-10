@@ -15,7 +15,14 @@ import {
 } from '@/features/billing-subscriptions/hooks';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
-import { CalendarIcon, CreditCardIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
+import {
+    CalendarIcon,
+    CreditCardIcon,
+    LoaderIcon,
+    PlayIcon,
+    PowerOffIcon,
+    XCircleIcon
+} from '@repo/icons';
 import { useState } from 'react';
 import type { PaymentHistory, Subscription, SubscriptionStatus } from './types';
 import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
@@ -30,6 +37,8 @@ export interface SubscriptionDetailsDialogProps {
     readonly onCancel: (sub: Subscription) => void;
     readonly onChangePlan: (sub: Subscription) => void;
     readonly onExtendTrial: (sub: Subscription) => void;
+    readonly onPause: (sub: Subscription) => void;
+    readonly onResume: (sub: Subscription) => void;
 }
 
 /**
@@ -43,7 +52,9 @@ export function SubscriptionDetailsDialog({
     onClose,
     onCancel,
     onChangePlan,
-    onExtendTrial
+    onExtendTrial,
+    onPause,
+    onResume
 }: SubscriptionDetailsDialogProps) {
     const { t, locale } = useTranslations();
     const [activeTab, setActiveTab] = useState('detalles');
@@ -114,7 +125,7 @@ export function SubscriptionDetailsDialog({
                                 <h3 className="mb-2 font-medium text-sm">
                                     {t('admin-billing.subscriptions.detailsDialog.userSection')}
                                 </h3>
-                                <div className="rounded-md border p-3">
+                                <div className="rounded-md border bg-card p-3">
                                     <p className="font-medium">{subscription.userName}</p>
                                     <p className="text-muted-foreground text-sm">
                                         {subscription.userEmail}
@@ -133,7 +144,7 @@ export function SubscriptionDetailsDialog({
                                         'admin-billing.subscriptions.detailsDialog.subscriptionSection'
                                     )}
                                 </h3>
-                                <div className="space-y-2 rounded-md border p-3">
+                                <div className="space-y-2 rounded-md border bg-card p-3">
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground text-sm">
                                             {t('admin-billing.subscriptions.detailsDialog.idLabel')}
@@ -195,7 +206,7 @@ export function SubscriptionDetailsDialog({
                                                     'admin-billing.subscriptions.detailsDialog.discountLabel'
                                                 )}
                                             </span>
-                                            <span className="text-green-600 text-sm dark:text-green-400">
+                                            <span className="text-sm text-success">
                                                 {subscription.discountPercent}%
                                             </span>
                                         </div>
@@ -223,7 +234,7 @@ export function SubscriptionDetailsDialog({
                                             'admin-billing.subscriptions.detailsDialog.entitlementsTitle'
                                         )}
                                     </h3>
-                                    <div className="rounded-md border p-3">
+                                    <div className="rounded-md border bg-card p-3">
                                         <ul className="space-y-1 text-sm">
                                             {plan.entitlements.slice(0, 5).map((entitlement) => (
                                                 <li key={entitlement}>
@@ -269,7 +280,7 @@ export function SubscriptionDetailsDialog({
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="overflow-hidden rounded-md border">
+                                    <div className="overflow-hidden rounded-md border bg-card">
                                         <table className="w-full text-sm">
                                             <thead className="bg-muted">
                                                 <tr>
@@ -358,6 +369,29 @@ export function SubscriptionDetailsDialog({
                                         )}
                                     </Button>
                                 )}
+                                {(subscription.status === 'active' ||
+                                    subscription.status === 'trialing') && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onPause(subscription)}
+                                    >
+                                        <PowerOffIcon className="mr-2 h-4 w-4" />
+                                        {t('admin-billing.subscriptions.detailsDialog.pauseButton')}
+                                    </Button>
+                                )}
+                                {subscription.status === 'paused' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => onResume(subscription)}
+                                    >
+                                        <PlayIcon className="mr-2 h-4 w-4" />
+                                        {t(
+                                            'admin-billing.subscriptions.detailsDialog.resumeButton'
+                                        )}
+                                    </Button>
+                                )}
                                 {subscription.status === 'active' &&
                                     !subscription.cancelAtPeriodEnd && (
                                         <Button
@@ -397,7 +431,7 @@ export function SubscriptionDetailsDialog({
                                 {eventsQuery.data.items.map((event) => (
                                     <div
                                         key={event.id}
-                                        className="flex items-start gap-3 rounded-lg border p-3"
+                                        className="flex items-start gap-3 rounded-lg border bg-card p-3"
                                     >
                                         <div className="flex-1 space-y-1">
                                             <div className="flex items-center gap-2">

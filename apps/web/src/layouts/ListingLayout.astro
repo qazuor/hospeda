@@ -20,6 +20,15 @@ interface Props {
 	readonly canonicalPath?: string;
 	readonly showFilters?: boolean;
 	readonly filterPosition?: 'left' | 'top';
+	/**
+	 * When true, emits a `noindex` robots meta tag (via SEOHead, which renders
+	 * `noindex,follow` — the page stays out of the index but links are still
+	 * followed). Used by facet/filter sub-pages that should not be indexed.
+	 * Defaults to false. Mirrors DefaultLayout.
+	 */
+	readonly noindex?: boolean;
+	/** Caveat tagline for the generated OG BRAND card. */
+	readonly ogTagline?: string;
 }
 
 const {
@@ -29,6 +38,8 @@ const {
 	canonicalPath = Astro.url.pathname,
 	showFilters = false,
 	filterPosition = 'left',
+	noindex = false,
+	ogTagline,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -39,6 +50,8 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 
 const hasLeftFilters = showFilters && filterPosition === 'left';
 const hasTopFilters = showFilters && filterPosition === 'top';
+
+const cspNonce = Astro.locals.cspNonce ?? '';
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
@@ -48,13 +61,17 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		description={resolvedDescription}
 		locale={locale}
 		canonical={canonicalUrl}
+		noindex={noindex}
+		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
 
 	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
 	<WaveHeader paddingTop="listing">
 		<slot name="breadcrumbs" slot="breadcrumbs" />
-		<slot name="page-header" slot="content" />
+		<div slot="content" data-listing-swap="header">
+			<slot name="page-header" />
+		</div>
 
 		<!-- Main content area (default slot of WaveHeader) -->
 		<div class="listing-body">
@@ -77,8 +94,11 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 					</aside>
 				)}
 
-				{/* Content area */}
-				<div class="listing-content">
+				{/* Content area — marked as a same-path swap target so filter
+				 * toggles re-fetch and re-render only this region, leaving the
+				 * wave header, navbar and FilterSidebar untouched. See the
+				 * inline script below. */}
+				<div class="listing-content" data-listing-swap="content">
 					<slot />
 
 					<div class="listing-pagination">
@@ -129,6 +149,17 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 	/* Content area */
 	.listing-content {
 		min-width: 0; /* Prevent grid blowout */
+		/* Keep the grid row at least viewport-tall so the sticky sidebar
+		 * always has enough containing-block height to remain at its
+		 * sticky top position. Without this, a restrictive filter (e.g.
+		 * empty result set) collapses the row below the sidebar's height,
+		 * which forces the sticky algorithm to push the sidebar up — the
+		 * "sidebar moved" papercut the partial-swap script was supposed
+		 * to avoid. */
+		min-height: calc(100vh - var(--navbar-height, 80px));
+		/* Used by the partial-swap script's `scrollIntoView` to land the
+		 * user just below the sticky navbar instead of under it. */
+		scroll-margin-top: calc(var(--navbar-height, 80px) + 24px);
 	}
 
 	/* Pagination */
@@ -160,3 +191,152 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 		}
 	}
 </style>
+
+<script is:inline nonce={cspNonce}>
+	/**
+	 * Same-path partial swap for listing pages.
+	 *
+	 * When a filter toggle navigates from `/alojamientos?type=hotel` to
+	 * `/alojamientos?type=apartment` (same pathname, different query),
+	 * ClientRouter's default behaviour is to swap the entire document.
+	 * That works, but it re-renders the wave header, re-hydrates every
+	 * island in the sidebar, runs the View Transition snapshot over the
+	 * whole viewport, and resets sidebar scroll positions. Visually it
+	 * looks like the page reloads even though only the grid changed.
+	 *
+	 * This handler intercepts `astro:before-preparation`, detects the
+	 * "same pathname, different query" case, cancels ClientRouter's
+	 * default flow, fetches the target URL with a plain `fetch()`, and
+	 * splices ONLY the regions tagged `data-listing-swap` from the
+	 * response into the live document. Everything else — wave header,
+	 * navbar, FilterSidebar's React tree, scroll positions — stays as
+	 * the user left it. Astro islands inside the spliced regions
+	 * re-hydrate automatically via their `<astro-island>` custom-element
+	 * `connectedCallback` once the new markup lands in the DOM.
+	 *
+	 * Cross-path navigations (menu links, list → detail, between listing
+	 * pages, pagination URLs that change the path segment) keep the
+	 * default ClientRouter flow untouched.
+	 *
+	 * DOM splicing uses `adoptNode` + `replaceChildren` instead of
+	 * `innerHTML` so the swap doesn't trip the codebase's XSS guard
+	 * (same-origin SSR response, so the content is trusted, but using
+	 * proper DOM APIs is the cheaper habit either way).
+	 */
+	(function () {
+		var currentAbort = null;
+		var root = document.documentElement;
+
+		function spliceSwapRegions(newDoc) {
+			var currentTargets = document.querySelectorAll('[data-listing-swap]');
+			currentTargets.forEach(function (currentEl) {
+				var key = currentEl.getAttribute('data-listing-swap');
+				var newEl = newDoc.querySelector('[data-listing-swap="' + key + '"]');
+				if (!newEl) return;
+				var adoptedChildren = [];
+				while (newEl.firstChild) {
+					adoptedChildren.push(document.adoptNode(newEl.firstChild));
+				}
+				currentEl.replaceChildren.apply(currentEl, adoptedChildren);
+			});
+		}
+
+		async function performPartialSwap(targetUrl, needsPushState, signal) {
+			var response = await fetch(targetUrl, {
+				headers: { Accept: 'text/html' },
+				credentials: 'same-origin',
+				signal: signal
+			});
+			if (!response.ok) throw new Error('http ' + response.status);
+			var html = await response.text();
+			var newDoc = new DOMParser().parseFromString(html, 'text/html');
+
+			// Kick off the "return to the top of the results" scroll BEFORE
+			// the splice runs, not after.
+			//
+			// Why pre-splice: when a restrictive filter shrinks the grid,
+			// the sidebar's sticky containing block (the grid row) shrinks
+			// too. If the user was scrolled past the new container's bottom,
+			// the post-splice sticky rules push the sidebar out of view —
+			// which is the "the sidebar jumped" effect the previous
+			// iteration was trying to avoid. By starting the smooth scroll
+			// while the OLD (longer) grid is still in place, the user
+			// travels entirely within the old sticky range; the sidebar
+			// stays glued to its sticky top throughout. The splice happens
+			// in parallel, so by the time the scroll lands the user at the
+			// top of the new content, the new (shorter) layout is already
+			// applied — and the user is also inside the NEW sticky range,
+			// so the sidebar still doesn't move.
+			//
+			// The result is one continuous motion: cards scroll up under a
+			// stationary sidebar, then morph into the filtered set, with
+			// no perceived shift on any other element.
+			var contentRegion = document.querySelector('[data-listing-swap="content"]');
+			if (contentRegion) {
+				var rect = contentRegion.getBoundingClientRect();
+				if (rect.top < 0) {
+					contentRegion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}
+
+			spliceSwapRegions(newDoc);
+
+			if (newDoc.title) document.title = newDoc.title;
+			if (needsPushState) window.history.pushState({}, '', targetUrl);
+
+			// Tell anything that initialises on a navigation (FilterSidebar
+			// clears its "loading" flag here, for instance) that we are done.
+			document.dispatchEvent(new Event('astro:after-swap'));
+			document.dispatchEvent(new Event('astro:page-load'));
+
+			// FilterSidebar's debounce hook sets this dataset flag right
+			// before it calls navigate(). With ClientRouter bypassed the
+			// flag would otherwise linger; clear it ourselves.
+			delete root.dataset.filtersLoading;
+		}
+
+		function handleListingNav(targetUrl, needsPushState) {
+			if (currentAbort) currentAbort.abort();
+			currentAbort = new AbortController();
+			var signal = currentAbort.signal;
+
+			performPartialSwap(targetUrl, needsPushState, signal).catch(function (err) {
+				if (err && err.name === 'AbortError') return;
+				// Anything else is unrecoverable from our side — fall back to
+				// a full navigation so the user still ends up on the right URL.
+				window.location.href = targetUrl;
+			});
+		}
+
+		// FilterSidebar's debounced nav dispatches this custom event before
+		// falling back to `astro:transitions/client navigate()`. We claim
+		// ownership of the navigation by calling `preventDefault()` and run
+		// our partial swap instead of letting ClientRouter swap the whole
+		// document. (Astro 5's `astro:before-preparation` event does not
+		// actually honour `preventDefault()` from user handlers, so the
+		// custom-event handshake is the only reliable way to intercept.)
+		window.addEventListener('hospeda:listing-nav', function (event) {
+			var detail = event && event.detail;
+			if (!detail || typeof detail.url !== 'string') return;
+			var nextUrl;
+			try {
+				nextUrl = new URL(detail.url, window.location.origin);
+			} catch (_err) {
+				return;
+			}
+			if (nextUrl.pathname !== window.location.pathname) return;
+			if (nextUrl.origin !== window.location.origin) return;
+
+			event.preventDefault();
+			handleListingNav(nextUrl.href, window.location.href !== nextUrl.href);
+		});
+
+		// Browser back/forward (popstate) intentionally falls through to
+		// `<ClientRouter />`'s default handling. ClientRouter listens on
+		// window first and competing with it for the popstate event is
+		// brittle; the marginal cost is that back/forward across filter
+		// states briefly re-renders the wave header, same as before. If
+		// that becomes a papercut we can revisit with a capture-phase
+		// stopImmediatePropagation trick.
+	})();
+</script>

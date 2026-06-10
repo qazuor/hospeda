@@ -1,13 +1,25 @@
 /**
  * Icon resolver utility.
- * Maps icon name strings (stored in DB) to actual icon components.
- * Single source of truth for string -> component resolution.
  *
- * Covers icons stored as strings in the database: amenities, features,
- * attractions, entities, booking states, social links, and communication.
- * Admin/system/action icons are imported statically and excluded here.
+ * Resolves DATA-DRIVEN icon name strings — values that come from the database —
+ * to their components. Use this ONLY for data icons: amenities, attractions,
+ * accommodation features, and accommodation categories.
+ *
+ * Do NOT route UI / navigation / admin icons through here. Those are static and
+ * known at build time, so import the component directly or use an app-local map
+ * (e.g. `apps/web/src/lib/icon-map.ts` `WEB_ICON_MAP`, or
+ * `apps/admin/src/lib/nav-icon-map.ts` `resolveNavIcon`). Putting UI/nav icons in
+ * this shared map bloats it and defeats tree-shaking in consumers.
  */
 import type { IconProps } from './types';
+
+// System icons routinely referenced by `icon` strings in declarative
+// configs (filter section headers, etc). Kept in this resolver so callers
+// can stay declarative instead of importing component refs per usage.
+import { CarIcon } from './icons/amenities/CarIcon';
+import { DogIcon } from './icons/amenities/DogIcon';
+import { MapIcon } from './icons/system/MapIcon';
+import { PriceIcon } from './icons/system/PriceIcon';
 
 // Amenity icons
 import { AirConditioningIcon } from './icons/amenities/AirConditioningIcon';
@@ -29,6 +41,7 @@ import { CoveredParkingIcon } from './icons/amenities/CoveredParkingIcon';
 import { CoworkingSpaceIcon } from './icons/amenities/CoworkingSpaceIcon';
 import { DailyCleaningIcon } from './icons/amenities/DailyCleaningIcon';
 import { DockAccessIcon } from './icons/amenities/DockAccessIcon';
+import { DoubleGlazingIcon } from './icons/amenities/DoubleGlazingIcon';
 import { ElectricBlanketIcon } from './icons/amenities/ElectricBlanketIcon';
 import { ElevatorIcon } from './icons/amenities/ElevatorIcon';
 import { FanIcon } from './icons/amenities/FanIcon';
@@ -74,6 +87,8 @@ import { SaunaIcon } from './icons/amenities/SaunaIcon';
 import { SecureParkingIcon } from './icons/amenities/SecureParkingIcon';
 import { SharedKitchenIcon } from './icons/amenities/SharedKitchenIcon';
 import { SharedPatioIcon } from './icons/amenities/SharedPatioIcon';
+import { ShirtIcon } from './icons/amenities/ShirtIcon';
+import { ShoppingServiceIcon } from './icons/amenities/ShoppingServiceIcon';
 import { SmartTvIcon } from './icons/amenities/SmartTvIcon';
 import { SmokeDetectorIcon } from './icons/amenities/SmokeDetectorIcon';
 import { SoapDispenserIcon } from './icons/amenities/SoapDispenserIcon';
@@ -103,7 +118,9 @@ import { CampingSectorIcon } from './icons/features/CampingSectorIcon';
 import { CentralAreaIcon } from './icons/features/CentralAreaIcon';
 import { CouplesFriendlyIcon } from './icons/features/CouplesFriendlyIcon';
 import { CoveredGalleryIcon } from './icons/features/CoveredGalleryIcon';
+import { DairyProductionIcon } from './icons/features/DairyProductionIcon';
 import { DigitalDetoxIcon } from './icons/features/DigitalDetoxIcon';
+import { EcoConstructionIcon } from './icons/features/EcoConstructionIcon';
 import { EcologicalIcon } from './icons/features/EcologicalIcon';
 import { EntirePropertyIcon } from './icons/features/EntirePropertyIcon';
 import { FamilySuitableIcon } from './icons/features/FamilySuitableIcon';
@@ -118,6 +135,7 @@ import { MinimalistStyleIcon } from './icons/features/MinimalistStyleIcon';
 import { MinimumStayIcon } from './icons/features/MinimumStayIcon';
 import { ModernStyleIcon } from './icons/features/ModernStyleIcon';
 import { NaturalEnvironmentIcon } from './icons/features/NaturalEnvironmentIcon';
+import { NoCellSignalIcon } from './icons/features/NoCellSignalIcon';
 import { OrganizedActivitiesIcon } from './icons/features/OrganizedActivitiesIcon';
 import { OwnProductionIcon } from './icons/features/OwnProductionIcon';
 import { PanoramicViewIcon } from './icons/features/PanoramicViewIcon';
@@ -126,10 +144,12 @@ import { PerimeterFenceIcon } from './icons/features/PerimeterFenceIcon';
 import { PerimeterLightingIcon } from './icons/features/PerimeterLightingIcon';
 import { PetAreaIcon } from './icons/features/PetAreaIcon';
 import { PetFriendlyIcon } from './icons/features/PetFriendlyIcon';
+import { PlasticFreeIcon } from './icons/features/PlasticFreeIcon';
 import { PrivateGrillIcon } from './icons/features/PrivateGrillIcon';
 import { ProfessionalStaffIcon } from './icons/features/ProfessionalStaffIcon';
 import { QuietEnvironmentIcon } from './icons/features/QuietEnvironmentIcon';
 import { QuietZoneIcon } from './icons/features/QuietZoneIcon';
+import { RainwaterHarvestingIcon } from './icons/features/RainwaterHarvestingIcon';
 import { RenewableEnergyIcon } from './icons/features/RenewableEnergyIcon';
 import { ResidentialAreaIcon } from './icons/features/ResidentialAreaIcon';
 import { RiverFrontIcon } from './icons/features/RiverFrontIcon';
@@ -248,14 +268,14 @@ import { WetlandsIcon } from './icons/attractions/WetlandsIcon';
 type IconComponent = React.ComponentType<IconProps>;
 
 /**
- * Map of icon name strings to their corresponding icon components.
- * Icon names match the component names exported from @repo/icons.
- * Used to resolve DB-stored icon strings to renderable components.
+ * Map of DATA-DRIVEN icon name strings to their components, for icon names that
+ * come from the database. Scope: amenities, attractions, accommodation features,
+ * and accommodation categories.
  *
- * Covers all icons that may be stored as strings in the database:
- * amenities, features, attractions, entities, booking states,
- * social links, and communication channels.
- * Admin/system/action icons are imported statically and excluded here.
+ * Icon names match the component names exported from @repo/icons.
+ *
+ * Do NOT add UI / navigation / admin icons here — import those directly or use
+ * an app-local map (see `resolveIcon` docs above).
  */
 export const ICON_MAP: Record<string, IconComponent> = {
     // Amenity icons
@@ -278,6 +298,7 @@ export const ICON_MAP: Record<string, IconComponent> = {
     CoworkingSpaceIcon,
     DailyCleaningIcon,
     DockAccessIcon,
+    DoubleGlazingIcon,
     ElectricBlanketIcon,
     ElevatorIcon,
     FanIcon,
@@ -323,6 +344,8 @@ export const ICON_MAP: Record<string, IconComponent> = {
     SecureParkingIcon,
     SharedKitchenIcon,
     SharedPatioIcon,
+    ShirtIcon,
+    ShoppingServiceIcon,
     SmartTvIcon,
     SmokeDetectorIcon,
     SoapDispenserIcon,
@@ -352,7 +375,9 @@ export const ICON_MAP: Record<string, IconComponent> = {
     CentralAreaIcon,
     CouplesFriendlyIcon,
     CoveredGalleryIcon,
+    DairyProductionIcon,
     DigitalDetoxIcon,
+    EcoConstructionIcon,
     EcologicalIcon,
     EntirePropertyIcon,
     FamilySuitableIcon,
@@ -367,6 +392,7 @@ export const ICON_MAP: Record<string, IconComponent> = {
     MinimumStayIcon,
     ModernStyleIcon,
     NaturalEnvironmentIcon,
+    NoCellSignalIcon,
     OrganizedActivitiesIcon,
     OwnProductionIcon,
     PanoramicViewIcon,
@@ -375,10 +401,12 @@ export const ICON_MAP: Record<string, IconComponent> = {
     PerimeterLightingIcon,
     PetAreaIcon,
     PetFriendlyIcon,
+    PlasticFreeIcon,
     PrivateGrillIcon,
     ProfessionalStaffIcon,
     QuietEnvironmentIcon,
     QuietZoneIcon,
+    RainwaterHarvestingIcon,
     RenewableEnergyIcon,
     ResidentialAreaIcon,
     RiverFrontIcon,
@@ -492,7 +520,13 @@ export const ICON_MAP: Record<string, IconComponent> = {
     TouristPierIcon,
     TouristRanchIcon,
     WellnessCenterIcon,
-    WetlandsIcon
+    WetlandsIcon,
+
+    // System / additional declarative icons (see top-of-file imports).
+    CarIcon,
+    DogIcon,
+    MapIcon,
+    PriceIcon
 };
 
 /**

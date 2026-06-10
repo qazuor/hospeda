@@ -21,6 +21,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { UserModel, billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
 import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
+import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import { BillingCustomerSyncService } from './billing-customer-sync';
 import { TrialService } from './trial.service';
@@ -120,6 +121,7 @@ export function buildAccommodationPublishDeps(
             if (!subscriptionId) {
                 throw new Error('Trial creation returned no subscription id');
             }
+            clearEntitlementCache(customerId);
             apiLogger.info(
                 { ownerId, customerId, subscriptionId },
                 '[publish] trial subscription created'

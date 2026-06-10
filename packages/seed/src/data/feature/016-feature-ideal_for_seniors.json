@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "016-feature-ideal_for_seniors",
-    "name": "Ideal para adultos mayores",
+    "name": {
+        "es": "Ideal para adultos mayores",
+        "en": "Ideal para adultos mayores",
+        "pt": "Ideal para adultos mayores"
+    },
     "slug": "ideal_for_seniors",
-    "description": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",
+    "description": {
+        "es": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",
+        "en": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo",
+        "pt": "Instalaciones adaptadas para personas mayores con accesibilidad, servicios de salud cercanos y ambiente tranquilo"
+    },
     "icon": "SeniorFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -40,6 +40,11 @@ export const EventFiltersSchema = z.object({
     price: z.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
     isFree: z.boolean().optional(),
+    /**
+     * When true and any price filter is active, also include events whose
+     * `pricing` JSONB column is NULL (events without an established price).
+     */
+    includeUnpriced: z.boolean().optional(),
 
     // Date filters
     startDateAfter: z.date().optional(),
@@ -112,6 +117,11 @@ export const EventSearchSchema = BaseSearchSchema.extend({
     price: z.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
     isFree: z.boolean().optional(),
+    /**
+     * When true and any price filter is active, also include events whose
+     * `pricing` JSONB column is NULL (events without an established price).
+     */
+    includeUnpriced: z.boolean().optional(),
 
     // Date filters
     startDateAfter: z.date().optional(),

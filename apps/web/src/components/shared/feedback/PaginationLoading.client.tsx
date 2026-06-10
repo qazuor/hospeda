@@ -24,7 +24,7 @@ export function PaginationLoading() {
                 'display:flex',
                 'align-items:center',
                 'justify-content:center',
-                'background:oklch(from var(--core-background,#fff) l c h / 0.7)',
+                'background:var(--core-background-a70)',
                 'backdrop-filter:blur(2px)',
                 '-webkit-backdrop-filter:blur(2px)'
             ].join(';');
@@ -33,7 +33,7 @@ export function PaginationLoading() {
             spinner.style.cssText = [
                 'width:40px',
                 'height:40px',
-                'border:3px solid oklch(from var(--brand-primary,#3b82f6) l c h / 0.25)',
+                'border:3px solid var(--brand-primary-a25)',
                 'border-top-color:var(--brand-primary,#3b82f6)',
                 'border-radius:50%',
                 'animation:pag-spin 0.7s linear infinite'

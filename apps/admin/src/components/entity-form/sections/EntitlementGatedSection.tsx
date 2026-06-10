@@ -4,8 +4,8 @@
  * Wrapper component that gates a section based on entitlement
  * Used for premium features that require specific plan entitlements
  */
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
-import { EntitlementGate } from '@qazuor/qzpay-react';
 import { ShieldAlertIcon } from '@repo/icons';
 
 export interface EntitlementGatedSectionProps {
@@ -28,23 +28,23 @@ function DefaultFallback({ sectionTitle }: { sectionTitle?: string }) {
     const { t } = useTranslations();
 
     return (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-6">
+        <div className="rounded-lg border border-warning/30 bg-warning/10 p-6">
             <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-warning/15">
                     <ShieldAlertIcon
-                        className="h-5 w-5 text-amber-600"
+                        className="h-5 w-5 text-warning"
                         aria-label={t('admin-entities.entitlementGate.premiumFeature')}
                     />
                 </div>
                 <div className="flex-1">
-                    <h3 className="font-semibold text-amber-900">
+                    <h3 className="font-semibold text-foreground">
                         {sectionTitle
                             ? t('admin-entities.entitlementGate.titleWithSection', {
                                   section: sectionTitle
                               })
                             : t('admin-entities.entitlementGate.titleDefault')}
                     </h3>
-                    <p className="mt-1 text-amber-800 text-sm">
+                    <p className="mt-1 text-muted-foreground text-sm">
                         {t('admin-entities.entitlementGate.description')}
                     </p>
                 </div>
@@ -66,11 +66,11 @@ export function EntitlementGatedSection({
     const fallbackComponent = fallback || <DefaultFallback sectionTitle={sectionTitle} />;
 
     return (
-        <EntitlementGate
+        <PlanEntitlementGate
             entitlementKey={entitlementKey}
             fallback={fallbackComponent}
         >
             {children}
-        </EntitlementGate>
+        </PlanEntitlementGate>
     );
 }

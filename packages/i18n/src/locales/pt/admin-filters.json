@@ -7,6 +7,7 @@
     "resetDefaults": "Restaurar padrões",
     "activeFilters": "Filtros ativos",
     "noResults": "Nenhum resultado com os filtros atuais",
+    "textPlaceholder": "Buscar…",
     "status": {
         "label": "Estado",
         "draft": "Rascunho",
@@ -88,5 +89,82 @@
     },
     "includeDeleted": {
         "label": "Mostrar excluídos"
+    },
+    "rangeMin": "Mín",
+    "rangeMax": "Máx",
+    "rangeFrom": "De",
+    "rangeTo": "Até",
+    "unit": {
+        "ars": "ARS"
+    },
+    "price": {
+        "label": "Preço"
+    },
+    "createdAt": {
+        "label": "Criação"
+    },
+    "startDate": {
+        "label": "Data de início"
+    },
+    "appLog": {
+        "level": {
+            "label": "Nível",
+            "warn": "WARN",
+            "error": "ERROR"
+        },
+        "method": {
+            "label": "Método HTTP",
+            "get": "GET",
+            "post": "POST",
+            "put": "PUT",
+            "patch": "PATCH",
+            "delete": "DELETE"
+        },
+        "category": {
+            "label": "Categoria",
+            "placeholder": "Ex: BILLING"
+        },
+        "requestId": {
+            "label": "Request ID",
+            "placeholder": "ID de correlação"
+        },
+        "userId": {
+            "label": "User ID",
+            "placeholder": "UUID do usuário"
+        },
+        "path": {
+            "label": "Caminho",
+            "placeholder": "Ex: /api/v1/admin"
+        },
+        "loggedAt": {
+            "label": "Data do registro"
+        }
+    },
+    "endDate": {
+        "label": "Data de fim"
+    },
+    "isBuiltin": {
+        "label": "Nativo"
+    },
+    "clientType": {
+        "label": "Tipo de cliente",
+        "postSponsor": "Patrocinador de post",
+        "advertiser": "Anunciante",
+        "host": "Anfitrião"
+    },
+    "amenityType": {
+        "label": "Tipo de comodidade",
+        "climateControl": "Climatização",
+        "connectivity": "Conectividade",
+        "entertainment": "Entretenimento",
+        "kitchen": "Cozinha",
+        "bedAndBath": "Cama e banho",
+        "outdoors": "Área externa",
+        "accessibility": "Acessibilidade",
+        "services": "Serviços",
+        "safety": "Segurança",
+        "familyFriendly": "Apto famílias",
+        "workFriendly": "Apto trabalho",
+        "generalAppliances": "Eletrodomésticos"
     }
 }

@@ -35,12 +35,19 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.VIEW_BASIC_STATS,
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.CAN_USE_CALENDAR,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 1),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50)
     ]
 };
 
@@ -71,12 +78,19 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200)
     ]
 };
 
@@ -112,12 +126,19 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        EntitlementKey.HAS_VERIFICATION_BADGE
+        EntitlementKey.HAS_VERIFICATION_BADGE,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_ACCOMMODATIONS, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1) // unlimited
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
     ]
 };
 
@@ -143,13 +164,20 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.RESPOND_REVIEWS,
         EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
         EntitlementKey.CAN_USE_CALENDAR,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 2),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 50)
     ]
 };
 
@@ -184,13 +212,20 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 20),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 5),
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5)
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5),
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 200)
     ]
 };
 
@@ -232,13 +267,20 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-        EntitlementKey.HAS_VERIFICATION_BADGE
+        EntitlementKey.HAS_VERIFICATION_BADGE,
+        EntitlementKey.AI_TEXT_IMPROVE,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
         limit(LimitKey.MAX_PROPERTIES, -1), // unlimited
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, -1), // unlimited
-        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1) // unlimited
+        limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
+        limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
     ]
 };
 
@@ -261,9 +303,16 @@ export const TOURIST_FREE_PLAN: PlanDefinition = {
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
         EntitlementKey.READ_REVIEWS,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS
+        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
-    limits: [limit(LimitKey.MAX_FAVORITES, 3)]
+    limits: [
+        limit(LimitKey.MAX_FAVORITES, 3),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 10),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 30)
+    ]
 };
 
 export const TOURIST_PLUS_PLAN: PlanDefinition = {
@@ -291,9 +340,18 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
         EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
         EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
-    limits: [limit(LimitKey.MAX_FAVORITES, 20)]
+    limits: [
+        limit(LimitKey.MAX_FAVORITES, 20),
+        limit(LimitKey.MAX_ACTIVE_ALERTS, 5),
+        limit(LimitKey.MAX_COMPARE_ITEMS, 4),
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 50),
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, 150)
+    ]
 };
 
 export const TOURIST_VIP_PLAN: PlanDefinition = {
@@ -326,10 +384,17 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
         EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
         EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_SEARCH
+        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ],
     limits: [
-        limit(LimitKey.MAX_FAVORITES, -1) // unlimited
+        limit(LimitKey.MAX_FAVORITES, -1), // unlimited
+        limit(LimitKey.MAX_ACTIVE_ALERTS, -1), // unlimited
+        limit(LimitKey.MAX_COMPARE_ITEMS, -1), // unlimited
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, -1), // unlimited
+        limit(LimitKey.MAX_AI_SEARCH_PER_MONTH, -1) // unlimited
     ]
 };
 
@@ -395,4 +460,70 @@ export function getDefaultPlan(category: PlanDefinition['category']): PlanDefini
         throw new Error(`No default plan found for category: ${category}`);
     }
     return plan;
+}
+
+/**
+ * Returns the entitlements and limits granted to authenticated users that do
+ * not have an active paid subscription (SPEC-143 T-143-58).
+ *
+ * The fallback resolves to {@link TOURIST_FREE_PLAN} unconditionally — owner
+ * and complex defaults are paid plans (with trials) so auto-granting their
+ * entitlements without a payment intent is incorrect; those flows go through
+ * an explicit checkout. Tourist-free is the only truly free default plan and
+ * it is what every authenticated user should receive by default.
+ *
+ * Returned as the raw plan shape (`EntitlementKey[]` + `LimitDefinition[]`).
+ * The caller is responsible for materializing to the runtime shape the
+ * entitlement middleware uses (`Set<EntitlementKey>` + `Map<LimitKey, number>`).
+ *
+ * Pure: reads only the in-memory plan config — safe to call on every request.
+ *
+ * @example
+ * ```ts
+ * const { entitlements, limits } = getDefaultEntitlements();
+ * const entitlementSet = new Set(entitlements);
+ * const limitMap = new Map(limits.map((l) => [l.key, l.value]));
+ * ```
+ */
+export function getDefaultEntitlements(): Pick<PlanDefinition, 'entitlements' | 'limits'> {
+    return {
+        entitlements: TOURIST_FREE_PLAN.entitlements,
+        limits: TOURIST_FREE_PLAN.limits
+    };
+}
+
+/**
+ * Returns an "unlimited" entitlement set: every {@link EntitlementKey} granted
+ * and every {@link LimitKey} set to the unlimited sentinel (`-1`) (SPEC-171).
+ *
+ * This is NOT a plan. It is the entitlement shape granted to platform staff
+ * (e.g. `SUPER_ADMIN`, `ADMIN`, `EDITOR`, `CLIENT_MANAGER`) who operate the
+ * admin panel without a billing customer/subscription. Treating "no plan" as
+ * "no entitlements" for staff is wrong — they manage content on behalf of the
+ * platform, so the resolver grants them everything instead of forcing the
+ * frontend to special-case roles. See {@link getDefaultEntitlements} for the
+ * regular no-subscription fallback.
+ *
+ * Derived from the enums via `Object.values`, so any new entitlement or limit
+ * key is included automatically (no drift). The caller decides WHO receives
+ * this set; this function is role-agnostic.
+ *
+ * Returned as the raw plan shape (`EntitlementKey[]` + `LimitDefinition[]`),
+ * matching {@link getDefaultEntitlements} so callers materialize both the same
+ * way.
+ *
+ * Pure: reads only the static enums + in-memory limit metadata.
+ *
+ * @example
+ * ```ts
+ * const { entitlements, limits } = getUnlimitedEntitlements();
+ * const entitlementSet = new Set(entitlements);
+ * const limitMap = new Map(limits.map((l) => [l.key, l.value]));
+ * ```
+ */
+export function getUnlimitedEntitlements(): Pick<PlanDefinition, 'entitlements' | 'limits'> {
+    return {
+        entitlements: Object.values(EntitlementKey),
+        limits: Object.values(LimitKey).map((key) => limit(key, -1))
+    };
 }

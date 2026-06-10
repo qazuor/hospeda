@@ -1,7 +1,7 @@
 import { UserModel, accounts, eq, getDb, safeIlike, users as userTable } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
-import type { EntityFilters, User } from '@repo/schemas';
+import type { EntityFilters, EntityOptionsItem, User, UserAdminStats } from '@repo/schemas';
 import {
     type CompleteProfileBody,
     CompleteProfileBodySchema,
@@ -30,7 +30,8 @@ import {
     UserUpdateAvatarInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
+import type { UserOnboarding, UserOnboardingWhatsNew } from '@repo/schemas';
+import { type SQL, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -46,7 +47,7 @@ import type {
 } from '../../types';
 import { ServiceError, listOptionsSchema } from '../../types';
 import { serviceLogger } from '../../utils';
-import { hasPermission } from '../../utils/permission';
+import { checkCanFindOptions, hasPermission } from '../../utils/permission';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -125,6 +126,69 @@ export class UserService extends BaseCrudService<
         this.model = model ?? new UserModel();
         this.adminSearchSchema = UserAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
+    }
+
+    /**
+     * Lightweight relation-selector lookup (SPEC-169 §5.5 / decision D4).
+     *
+     * Returns minimal `{ id, label, slug }` items for populating admin relation selectors
+     * (e.g. an accommodation owner picker) WITHOUT requiring the broad `USER_READ_ALL` grant
+     * normally needed to list users. Gating is admin-panel access only (see
+     * {@link checkCanFindOptions}); the route mirrors this with an `ACCESS_PANEL_ADMIN`-only
+     * middleware gate.
+     *
+     * `label` is the user's `displayName`, which is NULLABLE (SPEC-169 §12 flag: see T-018
+     * report). It falls back to the (always-present) `email` so the selector never shows an
+     * empty label. `slug` is the always-present unique user slug. The search term matches
+     * `displayName` and `email`.
+     *
+     * Results are DRAFT-inclusive (the model's `findAll` only excludes soft-deleted rows) so
+     * relations can target users in any lifecycle state.
+     *
+     * @param actor - The actor performing the lookup (must hold admin-panel access).
+     * @param params - `{ q?: string, limit?: number }` — optional search term + result cap.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with `{ items }` of user options.
+     */
+    public async findOptions(
+        actor: Actor,
+        params: { q?: string; limit?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: EntityOptionsItem[] }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOptions',
+            input: { actor, ...params },
+            schema: z.object({
+                q: z.string().trim().min(1).optional(),
+                limit: z.number().int().min(1).max(100).default(20)
+            }),
+            ctx: resolvedCtx,
+            execute: async (validatedInput, validatedActor, execCtx) => {
+                checkCanFindOptions(validatedActor);
+
+                const trimmedQ = validatedInput.q?.trim();
+                const additionalConditions: SQL[] =
+                    trimmedQ && trimmedQ.length > 0
+                        ? [safeIlike(userTable.displayName, trimmedQ)]
+                        : [];
+
+                const { items } = await this.model.findAll(
+                    {},
+                    { page: 1, pageSize: validatedInput.limit },
+                    additionalConditions,
+                    execCtx?.tx
+                );
+
+                const options: EntityOptionsItem[] = items.map((item) => ({
+                    id: item.id,
+                    label: item.displayName ?? item.email,
+                    slug: item.slug
+                }));
+
+                return { items: options };
+            }
+        });
     }
 
     /**
@@ -519,13 +583,19 @@ export class UserService extends BaseCrudService<
         params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
         const { entityFilters, extraConditions, ...rest } = params;
-        const { email, ...simpleFilters } = entityFilters;
+        const { email, roles, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
 
         // email partial match (ilike, not eq)
         if (email) {
             additionalConditions.push(safeIlike(userTable.email, email));
+        }
+
+        // roles multi-value filter (IN). Skipped when the parsed array is empty
+        // (e.g., `?roles=` or `?roles=,,`) so it never collapses to `WHERE FALSE`.
+        if (roles && roles.length > 0) {
+            additionalConditions.push(inArray(userTable.role, roles));
         }
 
         return super._executeAdminSearch({
@@ -984,6 +1054,290 @@ export class UserService extends BaseCrudService<
                 }
 
                 return { setPasswordPrompted: true as const, credentialCreated: true as const };
+            }
+        });
+    }
+
+    /**
+     * Returns aggregated admin dashboard statistics for the users entity.
+     *
+     * Gated on `USER_READ_ALL` — the same permission used by `adminList` and
+     * `getById`. Delegates the two DB aggregations to `UserModel.getAdminStats`.
+     *
+     * @param actor - The actor performing the action. Must have `USER_READ_ALL`.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ byRole, newUsersTrend }` shaped per `UserAdminStatsSchema`.
+     * @throws ServiceError (FORBIDDEN) when actor lacks permission.
+     * @throws ServiceError (INTERNAL_ERROR) on unexpected DB errors.
+     */
+    public async getAdminStats(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<UserAdminStats>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAdminStats',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!hasPermission(validatedActor, PermissionEnum.USER_READ_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: USER_READ_ALL required for user admin stats'
+                    );
+                }
+                return this.model.getAdminStats(execCtx?.tx);
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-175 — What's New seen-state methods
+    // -----------------------------------------------------------------------
+
+    /**
+     * Marks one or more What's New entry ids as seen for the authenticated user.
+     *
+     * Performs a **defensive read-modify-write** at the service level regardless
+     * of the underlying JSONB column's replace/merge behaviour. The `settings`
+     * column in `UserModel` does NOT declare `mergeableJsonbColumns` for
+     * `settings`, so `model.update` would REPLACE the whole column. This method
+     * therefore reads the current settings first, computes the union of existing
+     * and new seenIds via `Set`, and writes back only the merged object — keeping
+     * ALL sibling keys (`theme`, `language`, `notifications`, `newsletter`,
+     * `onboarding.adminTours`, `onboarding.whatsNew.baselineAt`) intact.
+     *
+     * Idempotent: calling twice with overlapping ids is safe — Set union never
+     * produces duplicates.
+     *
+     * @param actor - The authenticated actor performing the action (self-only).
+     * @param input - `{ ids }` — non-empty array of entry ids to mark as seen.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async markWhatsNewSeen(
+        actor: Actor,
+        input: { ids: string[] },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ success: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markWhatsNewSeen',
+            input: { ...input, actor },
+            schema: z.object({
+                ids: z.array(z.string().min(1)).min(1)
+            }),
+            ctx,
+            execute: async ({ ids }, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                // Shallow-cast JSONB to typed settings. settings may be null/undefined.
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+
+                // Safely navigate the onboarding.whatsNew namespace.
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentWhatsNew =
+                    (currentOnboarding.whatsNew as UserOnboardingWhatsNew) ?? {};
+                const currentSeenIds: string[] = currentWhatsNew.seenIds ?? [];
+
+                // Set-union: idempotent, no duplicates.
+                const newSeenIds = Array.from(new Set([...currentSeenIds, ...ids]));
+
+                // Deep-merge preserving ALL sibling keys.
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        whatsNew: {
+                            ...currentWhatsNew,
+                            seenIds: newSeenIds
+                        }
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update whats-new seenIds'
+                    );
+                }
+
+                return { success: true as const };
+            }
+        });
+    }
+
+    /**
+     * Lazily initialises the `onboarding.whatsNew` namespace in the actor's
+     * settings when it is absent.
+     *
+     * Sets `baselineAt = now().toISOString()` and `seenIds = []`, preserving
+     * all sibling keys. If the namespace already exists, this is a no-op and
+     * returns success without writing to the database.
+     *
+     * Used by `GET /api/v1/protected/whats-new` to ensure every user has a
+     * baseline timestamp after their first request — entries published before
+     * `baselineAt` are automatically treated as seen, preventing pre-existing
+     * users from being flooded on feature deploy.
+     *
+     * @param actor - The authenticated actor performing the action (self-only).
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ initialized: boolean }` — `true` when a write occurred, `false` when already present.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async initWhatsNewBaseline(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ initialized: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'initWhatsNewBaseline',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentWhatsNew = currentOnboarding.whatsNew as
+                    | UserOnboardingWhatsNew
+                    | undefined;
+
+                // No-op if already initialized.
+                if (currentWhatsNew !== undefined) {
+                    return { initialized: false };
+                }
+
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        whatsNew: {
+                            baselineAt: new Date().toISOString(),
+                            seenIds: [] as string[]
+                        } satisfies UserOnboardingWhatsNew
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to initialise whats-new baseline'
+                    );
+                }
+
+                return { initialized: true };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // SPEC-174 — Admin tour seen-state method
+    // -----------------------------------------------------------------------
+
+    /**
+     * Records that the authenticated user has seen (or skipped) a specific
+     * admin tour at the given config version.
+     *
+     * Performs a **defensive read-modify-write** at the service level, mirroring
+     * the approach used by {@link markWhatsNewSeen}. The `settings` column in
+     * `UserModel` is REPLACE-mode (no `mergeableJsonbColumns` declared for
+     * `settings`), so this method reads the current settings, sets
+     * `settings.onboarding.adminTours[tourId] = version`, and writes back the
+     * full merged object — keeping ALL sibling keys intact:
+     * - `theme*`, `language*`, `notifications`, `newsletter`
+     * - `onboarding.whatsNew` (baselineAt + seenIds untouched)
+     * - Any other `onboarding.adminTours` entries for other tour ids.
+     *
+     * Calling this method twice with the same `tourId` simply overwrites the
+     * stored version with the same value (idempotent).
+     *
+     * @param actor - The authenticated actor performing the action (self-only: `me` endpoint).
+     * @param input - `{ tourId, version }` — the catalog id and config version being acknowledged.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     * @throws ServiceError (NOT_FOUND) when the actor's user row is missing.
+     * @throws ServiceError (INTERNAL_ERROR) on update failure.
+     */
+    public async markAdminTourSeen(
+        actor: Actor,
+        input: { tourId: string; version: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ success: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markAdminTourSeen',
+            input: { ...input, actor },
+            schema: z.object({
+                tourId: z.string().min(1).max(100),
+                version: z.number().int().nonnegative()
+            }),
+            ctx,
+            execute: async ({ tourId, version }, validatedActor, execCtx) => {
+                // Read current user (defensive read-modify-write).
+                const existing = await this.model.findById(validatedActor.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
+                }
+
+                // Shallow-cast JSONB to typed settings. settings may be null/undefined.
+                const currentSettings = (existing.settings as Record<string, unknown>) ?? {};
+
+                // Safely navigate the onboarding namespace, preserving all sibling keys.
+                const currentOnboarding =
+                    (currentSettings.onboarding as Record<string, unknown>) ?? {};
+                const currentAdminTours =
+                    (currentOnboarding.adminTours as UserOnboarding['adminTours']) ?? {};
+
+                // Deep-merge: update only the specific tourId, keep all other keys.
+                const mergedSettings: Record<string, unknown> = {
+                    ...currentSettings,
+                    onboarding: {
+                        ...currentOnboarding,
+                        adminTours: {
+                            ...currentAdminTours,
+                            [tourId]: version
+                        }
+                    }
+                };
+
+                const updated = await this.model.update(
+                    { id: validatedActor.id },
+                    { settings: mergedSettings } as Partial<User>,
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update admin tour seen state'
+                    );
+                }
+
+                return { success: true as const };
             }
         });
     }

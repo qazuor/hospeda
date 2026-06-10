@@ -1,3 +1,4 @@
+import { moderateText } from '@repo/content-moderation';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
 import type { SelectMessage } from '@repo/db';
 import {
@@ -12,39 +13,8 @@ import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
+import { getThresholdForContext } from '../contentModeration/get-threshold-for-context.js';
 import { NotificationScheduleService } from './notification-schedule.service.js';
-
-// ---------------------------------------------------------------------------
-// Env-var blocklist — parsed ONCE at module load, never re-read per call
-// ---------------------------------------------------------------------------
-
-/**
- * Parses a comma-separated env var into a frozen lowercase string array.
- * Empty strings and surrounding whitespace are filtered out.
- * A trailing comma is tolerated (produces no extra empty entry after filter).
- *
- * @param raw - Raw string value from process.env (or undefined if absent).
- * @returns Readonly array of trimmed, lowercased, non-empty entries.
- */
-function parseBlocklist(raw: string | undefined): readonly string[] {
-    if (!raw) return Object.freeze([]);
-    return Object.freeze(
-        raw
-            .split(',')
-            .map((s) => s.trim().toLowerCase())
-            .filter((s) => s.length > 0)
-    );
-}
-
-/** Blocked word substrings from HOSPEDA_MESSAGING_BLOCKED_WORDS. */
-const BLOCKED_WORDS: readonly string[] = parseBlocklist(
-    process.env.HOSPEDA_MESSAGING_BLOCKED_WORDS
-);
-
-/** Blocked domain hostnames from HOSPEDA_MESSAGING_BLOCKED_DOMAINS. */
-const BLOCKED_DOMAINS: readonly string[] = parseBlocklist(
-    process.env.HOSPEDA_MESSAGING_BLOCKED_DOMAINS
-);
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -248,18 +218,31 @@ export class MessageService extends BaseService {
     // -------------------------------------------------------------------------
 
     /**
-     * Validates message body against length and configurable blocklist rules.
+     * Validates message body against length and configurable blocklist/score rules.
      *
-     * Blocked words are checked as case-insensitive substring matches against
-     * the body. Blocked domains are matched against hostnames extracted from
-     * any URL patterns found in the body.
+     * The length check is performed inline (not delegated to
+     * `@repo/content-moderation`) because it is a structural DB constraint,
+     * not a content-moderation concern. The word/domain scan and graded score
+     * evaluation are delegated to `moderateText` from `@repo/content-moderation`.
+     *
+     * Blocking criteria (either condition triggers rejection):
+     * - `moderationResult.matchedTerms.length > 0` — local/stub provider detected a
+     *   blocked word or domain (blocklist from `HOSPEDA_MESSAGING_BLOCKED_WORDS` /
+     *   `HOSPEDA_MESSAGING_BLOCKED_DOMAINS`).
+     * - `moderationResult.score >= thresholds.reject` — graded provider (e.g. OpenAI)
+     *   returned a score at or above the DB-backed reject threshold for the `message`
+     *   context. This path is necessary because OpenAI returns a graded `score` but
+     *   an empty `matchedTerms` array.
+     *
+     * The reject threshold is fetched from `getThresholdForContext({ context: 'message' })`
+     * and is backed by the admin-editable `content_moderation_thresholds` table (60 s cache).
      *
      * @param body - Message body to validate.
      * @throws {ServiceError} VALIDATION_ERROR with reason `MESSAGE_TOO_LONG` if body exceeds 5000 chars.
      * @throws {ServiceError} VALIDATION_ERROR with reason `MESSAGE_CONTENT_BLOCKED` if body contains
-     *   a blocked word or domain.
+     *   a blocked term or its score exceeds the reject threshold.
      */
-    private _validateMessageContent(body: string): void {
+    private async _validateMessageContent(body: string): Promise<void> {
         if (body.length > MAX_BODY_LENGTH) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
@@ -269,44 +252,20 @@ export class MessageService extends BaseService {
             );
         }
 
-        // Word-level blocklist (substring, case-insensitive)
-        if (BLOCKED_WORDS.length > 0) {
-            const lowerBody = body.toLowerCase();
-            for (const word of BLOCKED_WORDS) {
-                if (lowerBody.includes(word)) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Message body contains content that is not allowed',
-                        undefined,
-                        'MESSAGE_CONTENT_BLOCKED'
-                    );
-                }
-            }
-        }
-
-        // Domain-level blocklist (URL extraction)
-        if (BLOCKED_DOMAINS.length > 0) {
-            const urlPattern = /https?:\/\/[^\s]+/gi;
-            const matches = body.match(urlPattern) ?? [];
-            for (const match of matches) {
-                try {
-                    const hostname = new URL(match).hostname.toLowerCase();
-                    for (const domain of BLOCKED_DOMAINS) {
-                        // Match exact hostname or sub-domain suffix
-                        if (hostname === domain || hostname.endsWith(`.${domain}`)) {
-                            throw new ServiceError(
-                                ServiceErrorCode.VALIDATION_ERROR,
-                                'Message body contains a blocked domain',
-                                undefined,
-                                'MESSAGE_CONTENT_BLOCKED'
-                            );
-                        }
-                    }
-                } catch (err) {
-                    // If the matched string is not a valid URL, skip — don't block on parse errors.
-                    if (err instanceof ServiceError) throw err;
-                }
-            }
+        const [moderationResult, thresholds] = await Promise.all([
+            moderateText({ text: body, context: 'message' }),
+            getThresholdForContext({ context: 'message' })
+        ]);
+        if (
+            moderationResult.score >= thresholds.reject ||
+            moderationResult.matchedTerms.length > 0
+        ) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Message body contains content that is not allowed',
+                undefined,
+                'MESSAGE_CONTENT_BLOCKED'
+            );
         }
     }
 
@@ -412,7 +371,7 @@ export class MessageService extends BaseService {
                     }
 
                     // ---- Step 4: Content moderation ----------------------------------------------
-                    this._validateMessageContent(body);
+                    await this._validateMessageContent(body);
 
                     // ---- Step 5: Determine next conversation status ------------------------------
                     const currentStatus = conversation.status as ConversationStatusEnum;

@@ -20,6 +20,7 @@ import {
     NewsletterCampaignLocaleFilterEnum,
     NewsletterCampaignStatusEnum,
     NewsletterChannelEnum,
+    NewsletterContentTypeEnum,
     NewsletterDeliveryStatusEnum,
     NewsletterSourceEnum,
     NewsletterSubscriberStatusEnum,
@@ -27,6 +28,7 @@ import {
     OwnerPromotionDiscountTypeEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
+    PermissionEffectEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
@@ -95,6 +97,11 @@ export const LifecycleStatusPgEnum = pgEnum(
 
 export const PermissionPgEnum = pgEnum('permission_enum', enumToTuple(PermissionEnum));
 
+export const PermissionEffectPgEnum = pgEnum(
+    'permission_effect_enum',
+    enumToTuple(PermissionEffectEnum)
+);
+
 export const PermissionCategoryPgEnum = pgEnum(
     'permission_category_enum',
     enumToTuple(PermissionCategoryEnum)
@@ -124,6 +131,11 @@ export const NewsletterCampaignStatusPgEnum = pgEnum(
 export const NewsletterChannelPgEnum = pgEnum(
     'newsletter_channel_enum',
     enumToTuple(NewsletterChannelEnum)
+);
+
+export const NewsletterContentTypePgEnum = pgEnum(
+    'newsletter_content_type_enum',
+    enumToTuple(NewsletterContentTypeEnum)
 );
 
 export const NewsletterDeliveryStatusPgEnum = pgEnum(

@@ -1,0 +1,278 @@
+/**
+ * @file generators/generate-css.test.ts
+ * @description SPEC-153 T-153-16 — Unit tests for the CSS generator.
+ *
+ * These tests operate on the pure `buildCSS()` output (no filesystem IO).
+ * The validator in T-153-17 will perform the round-trip against the seed
+ * manifest; here we cover structural correctness, selector contracts, and
+ * a few byte-for-byte canonical values so drift between the token modules
+ * and the emitted CSS is caught early.
+ */
+
+import { describe, expect, it } from 'vitest';
+
+import { adminDark } from '../themes/admin-dark.ts';
+import { adminLight } from '../themes/admin-light.ts';
+import { webDark } from '../themes/web-dark.ts';
+import { webLight } from '../themes/web-light.ts';
+import { SHADES, formatOKLCH, palettes, river } from '../tokens/colors.ts';
+import { buildCSS } from './generate-css.ts';
+
+const CSS = buildCSS();
+
+/**
+ * Extract the substring between `selector {` and the matching closing brace.
+ * Naive matcher — works because the generator never nests blocks inside a
+ * top-level theme block (the @media block is the only nested case and we
+ * don't query into it via this helper).
+ */
+function blockOf(css: string, selector: string): string {
+    const open = `${selector} {`;
+    const start = css.indexOf(open);
+    if (start === -1) throw new Error(`Selector not found: ${selector}`);
+    const end = css.indexOf('\n}', start);
+    if (end === -1) throw new Error(`Unterminated block: ${selector}`);
+    return css.slice(start + open.length, end);
+}
+
+function countDeclarations(block: string): number {
+    return [...block.matchAll(/^\s*--/gm)].length;
+}
+
+describe('buildCSS — header', () => {
+    it('emits the auto-generated banner', () => {
+        expect(CSS).toContain('@repo/design-tokens — auto-generated');
+        expect(CSS).toContain('SPEC-153');
+    });
+
+    it('starts with the comment banner before any selector', () => {
+        const firstSelector = CSS.indexOf(':root {');
+        const headerClose = CSS.indexOf('*/');
+        expect(headerClose).toBeGreaterThan(-1);
+        expect(headerClose).toBeLessThan(firstSelector);
+    });
+});
+
+describe('buildCSS — palette primitives', () => {
+    const rootBlock = blockOf(CSS, ':root');
+
+    it('emits a declaration for every palette × shade (150 total)', () => {
+        const paletteCount = Object.keys(palettes).length;
+        const expected = paletteCount * SHADES.length;
+        // 5 brand + 4 semantic + 5 accommodation-type + 1 neutral = 15 palettes.
+        expect(paletteCount).toBe(15);
+        const matches = [...rootBlock.matchAll(/--palette-[a-z]+-\d+:/g)];
+        expect(matches).toHaveLength(expected);
+        expect(expected).toBe(150);
+    });
+
+    it('emits palettes in source order (brand → semantic → neutral)', () => {
+        const expectedOrder = Object.keys(palettes);
+        const seen: string[] = [];
+        for (const match of rootBlock.matchAll(/--palette-([a-z]+)-50:/g)) {
+            const [, name] = match;
+            if (name && !seen.includes(name)) seen.push(name);
+        }
+        expect(seen).toEqual(expectedOrder);
+    });
+
+    it('emits river-500 byte-for-byte from formatOKLCH(river[500])', () => {
+        const expected = `--palette-river-500: ${formatOKLCH(river[500])};`;
+        expect(rootBlock).toContain(expected);
+    });
+
+    it('emits neutral with zero chroma and zero hue across all shades', () => {
+        for (const shade of SHADES) {
+            const expected = `--palette-neutral-${shade}: ${formatOKLCH(palettes.neutral[shade])};`;
+            expect(rootBlock).toContain(expected);
+            expect(rootBlock).toContain(' 0 0);'); // both c and h are 0 → trailing ` 0 0);`
+        }
+    });
+});
+
+describe('buildCSS — :root web-light declarations', () => {
+    const rootBlock = blockOf(CSS, ':root');
+
+    it(`emits all ${Object.keys(webLight).length} web-light keys inside :root`, () => {
+        for (const key of Object.keys(webLight)) {
+            expect(rootBlock).toContain(`--${key}:`);
+        }
+    });
+
+    it('total :root declarations = 150 palettes + 208 webLight = 358', () => {
+        const total = countDeclarations(rootBlock);
+        expect(total).toBe(150 + Object.keys(webLight).length);
+        expect(total).toBe(358); // post-SSOT sponsors/amenities/auth/post-categories: 150 + 208
+    });
+
+    it('emits --core-background byte-for-byte from the seed value', () => {
+        expect(rootBlock).toContain('--core-background: oklch(0.985 0.002 210);');
+    });
+
+    it('emits relative-color expressions as raw strings (--primary-hover)', () => {
+        expect(rootBlock).toContain(
+            '--primary-hover: oklch(from var(--brand-primary) calc(l - 0.05) c h);'
+        );
+    });
+
+    it('emits z-index as a plain number (no oklch wrap)', () => {
+        expect(rootBlock).toContain('--z-modal: 100;');
+        expect(rootBlock).toContain('--z-content: 10;');
+    });
+
+    it('emits semantic typography clamp() expressions verbatim', () => {
+        expect(rootBlock).toMatch(/--text-hero: clamp\([^)]+\);/);
+    });
+
+    it('emits all 10 per-type accommodation tokens referencing their base palette primitive', () => {
+        const expectedRefs: ReadonlyArray<readonly [string, string]> = [
+            ['accommodation-type-hotel', 'var(--palette-accent-500)'],
+            ['accommodation-type-apartment', 'var(--palette-river-500)'],
+            ['accommodation-type-house', 'var(--palette-forest-500)'],
+            ['accommodation-type-country-house', 'var(--palette-teal-500)'],
+            ['accommodation-type-cabin', 'var(--palette-terracotta-500)'],
+            ['accommodation-type-camping', 'var(--palette-sand-500)'],
+            ['accommodation-type-hostel', 'var(--palette-cyan-500)'],
+            ['accommodation-type-room', 'var(--palette-rose-500)'],
+            ['accommodation-type-motel', 'var(--palette-danger-500)'],
+            ['accommodation-type-resort', 'var(--palette-purple-500)']
+        ];
+        for (const [key, ref] of expectedRefs) {
+            expect(rootBlock).toContain(`--${key}: ${ref};`);
+        }
+    });
+});
+
+describe('buildCSS — viewport media overrides', () => {
+    it('emits the (min-width: 1600px) :root override block', () => {
+        expect(CSS).toContain('@media (min-width: 1600px) {');
+        const idx = CSS.indexOf('@media (min-width: 1600px) {');
+        const close = CSS.indexOf('\n}', idx);
+        const block = CSS.slice(idx, close + 2);
+        expect(block).toContain('--container-max: 1500px;');
+        expect(block).toContain(':root {');
+    });
+
+    it('container-max appears twice total (default in :root + media override)', () => {
+        const occurrences = [...CSS.matchAll(/--container-max:/g)];
+        expect(occurrences).toHaveLength(2);
+    });
+});
+
+describe('buildCSS — web dark theme block', () => {
+    const block = blockOf(CSS, '[data-theme="dark"]:not([data-app="admin"])');
+
+    it(`emits all ${Object.keys(webDark).length} (=56) web dark overrides`, () => {
+        for (const key of Object.keys(webDark)) {
+            expect(block).toContain(`--${key}:`);
+        }
+        expect(countDeclarations(block)).toBe(Object.keys(webDark).length);
+        expect(countDeclarations(block)).toBe(56);
+    });
+
+    it('flips primary-hover direction (calc(l + 0.07) in dark)', () => {
+        expect(block).toContain(
+            '--primary-hover: oklch(from var(--brand-primary) calc(l + 0.07) c h);'
+        );
+    });
+
+    it('uses the dark-scoped selector twice: base overrides + T-009 variant fallback', () => {
+        // One occurrence is the top-level web-dark base-override block; the second
+        // is the SPEC-176 T-009 variant dark fallback nested under @supports not.
+        const matches = [...CSS.matchAll(/\[data-theme="dark"\]:not\(\[data-app="admin"\]\)/g)];
+        expect(matches).toHaveLength(2);
+        // The base-override block must be the FIRST occurrence (top-level, not
+        // inside @supports) so validate.ts + blockOf() resolve it correctly.
+        const firstIdx = CSS.indexOf('[data-theme="dark"]:not([data-app="admin"]) {');
+        const supportsNotIdx = CSS.indexOf('@supports not (color: oklch(from white l c h))');
+        expect(firstIdx).toBeLessThan(supportsNotIdx);
+    });
+});
+
+describe('buildCSS — admin light theme block', () => {
+    const block = blockOf(CSS, '[data-app="admin"]');
+
+    it(`emits all ${Object.keys(adminLight).length} (=92) admin light declarations`, () => {
+        for (const key of Object.keys(adminLight)) {
+            expect(block).toContain(`--${key}:`);
+        }
+        expect(countDeclarations(block)).toBe(Object.keys(adminLight).length);
+        expect(countDeclarations(block)).toBe(92); // post-SSOT sponsors/amenities/auth/post-categories
+    });
+
+    it('exposes the web brand tokens (cross-app badge support) in the admin scope', () => {
+        expect(block).toContain('--brand-accent:');
+        expect(block).toContain('--brand-primary:');
+        expect(block).toContain('--hospeda-forest:');
+        expect(block).toContain('--hospeda-sky:');
+        expect(block).toContain('--hospeda-river:');
+        expect(block).toContain('--hospeda-sand:');
+    });
+
+    it('exposes the per-type accommodation tokens in the admin scope (identical to web)', () => {
+        // Same references as :root/web — so a given type renders the SAME hue
+        // in admin as in web. Spot-check the 5 new-palette-backed types plus one
+        // brand-backed type.
+        expect(block).toContain('--accommodation-type-hotel: var(--palette-accent-500);');
+        expect(block).toContain('--accommodation-type-country-house: var(--palette-teal-500);');
+        expect(block).toContain('--accommodation-type-cabin: var(--palette-terracotta-500);');
+        expect(block).toContain('--accommodation-type-hostel: var(--palette-cyan-500);');
+        expect(block).toContain('--accommodation-type-room: var(--palette-rose-500);');
+        expect(block).toContain('--accommodation-type-resort: var(--palette-purple-500);');
+    });
+
+    it('color-primary references river[500] (brand-forward admin shade)', () => {
+        expect(block).toContain(`--color-primary: ${formatOKLCH(river[500])};`);
+    });
+
+    it('color-bg-elevated is pure white oklch(1 0 0)', () => {
+        expect(block).toContain('--color-bg-elevated: oklch(1 0 0);');
+    });
+});
+
+describe('buildCSS — admin dark theme block', () => {
+    const block = blockOf(CSS, '[data-app="admin"][data-theme="dark"]');
+
+    it(`emits all ${Object.keys(adminDark).length} (=22) admin dark overrides`, () => {
+        for (const key of Object.keys(adminDark)) {
+            expect(block).toContain(`--${key}:`);
+        }
+        expect(countDeclarations(block)).toBe(Object.keys(adminDark).length);
+        expect(countDeclarations(block)).toBe(22);
+    });
+
+    it('shifts color-primary one shade lighter to river[400] in dark', () => {
+        expect(block).toContain(`--color-primary: ${formatOKLCH(river[400])};`);
+    });
+
+    it('does NOT redeclare font-body or radius (those inherit from admin-light)', () => {
+        expect(block).not.toContain('--font-body:');
+        expect(block).not.toContain('--radius:');
+    });
+});
+
+describe('buildCSS — selector ordering invariants', () => {
+    it('emits blocks in the documented order: :root → @media → web-dark → admin-light → admin-dark', () => {
+        const order = [
+            ':root {',
+            '@media (min-width: 1600px) {',
+            '[data-theme="dark"]:not([data-app="admin"]) {',
+            '[data-app="admin"] {',
+            '[data-app="admin"][data-theme="dark"] {'
+        ];
+        const positions = order.map((needle) => CSS.indexOf(needle));
+        for (const pos of positions) expect(pos).toBeGreaterThan(-1);
+        const sorted = [...positions].sort((a, b) => a - b);
+        expect(positions).toEqual(sorted);
+    });
+
+    it('terminates with a trailing newline', () => {
+        expect(CSS.endsWith('\n')).toBe(true);
+    });
+});
+
+describe('buildCSS — snapshot', () => {
+    it('matches the recorded full output (regression gate)', () => {
+        expect(CSS).toMatchSnapshot();
+    });
+});

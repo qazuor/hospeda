@@ -25,6 +25,7 @@ import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
+import { resolveCookieDomain } from './auth-cookie-domain';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 
 const logger = createLogger('auth');
@@ -272,6 +273,25 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                     try {
                         const apiKey = env.HOSPEDA_EMAIL_API_KEY;
                         if (!apiKey) {
+                            // Dev/test convenience: when no mailer is configured
+                            // there is no realistic way for the user to verify
+                            // their email via UI. Auto-flip emailVerified=true
+                            // so the rest of the flow (sign-in, profile guard,
+                            // protected routes) stays exercisable locally.
+                            // Production environments MUST set the env var and
+                            // never reach this branch.
+                            if (env.NODE_ENV !== 'production') {
+                                const db = getDb();
+                                await db
+                                    .update(users)
+                                    .set({ emailVerified: true })
+                                    .where(eq(users.id, user.id));
+                                logger.warn(
+                                    { userId: user.id, env: env.NODE_ENV },
+                                    'HOSPEDA_EMAIL_API_KEY not set - auto-verified user in non-prod env'
+                                );
+                                return;
+                            }
                             logger.warn(
                                 { userId: user.id },
                                 'HOSPEDA_EMAIL_API_KEY not set - skipping verification email'
@@ -389,7 +409,19 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         plugins: [
             admin({
-                defaultRole: RoleEnum.HOST,
+                // Default role for new sign-ups. Tourist (USER) is the safer
+                // assumption because the public web is where the vast majority
+                // of organic sign-ups happen, and permissions are gated by
+                // `access.panelAdmin` (only HOST/ADMIN/SUPER_ADMIN have it).
+                // Hosts who sign up from the admin form do NOT auto-promote
+                // here — they go through the host-onboarding funnel on first
+                // publish, which atomically flips them to HOST + grants admin
+                // panel access. Investigating an Origin-based discriminator
+                // turned out to be more invasive than expected (Better Auth's
+                // databaseHooks do not fire under this setup; the input
+                // validator rejects `role` on the sign-up body), so we keep
+                // the default explicit and document the trade-off here.
+                defaultRole: RoleEnum.USER,
                 adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
                 roles: {
                     SUPER_ADMIN: fullAdminRole,
@@ -417,12 +449,18 @@ export function getAuth(): ReturnType<typeof betterAuth> {
              * SSO across subdomains (web, admin, api). In production the cookie is
              * scoped to the apex `hospeda.com.ar` so a session minted on
              * `hospeda.com.ar` is also valid on `admin.hospeda.com.ar` and
-             * `api.hospeda.com.ar`. In dev `domain` stays undefined so cookies
-             * fall back to per-host scoping (localhost:3000 vs localhost:4321).
+             * `api.hospeda.com.ar`. In dev `domain` defaults to undefined
+             * (per-host cookies) unless HOSPEDA_DEV_COOKIE_DOMAIN is set —
+             * the `*.hospeda.local` recipe in docs/guides/auth-local-dev.md
+             * (SPEC-182 T-018). Production deliberately ignores the dev var;
+             * see resolveCookieDomain.
              */
             crossSubDomainCookies: {
                 enabled: true,
-                domain: env.NODE_ENV === 'production' ? 'hospeda.com.ar' : undefined
+                domain: resolveCookieDomain({
+                    nodeEnv: env.NODE_ENV,
+                    devCookieDomain: env.HOSPEDA_DEV_COOKIE_DOMAIN
+                })
             }
         },
 
@@ -491,15 +529,12 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             data: {
                                 ...user,
                                 slug,
-                                // Sign up as USER. Promotion to HOST happens
-                                // atomically when the user publishes their first
-                                // accommodation through the host-onboarding flow
-                                // (AccommodationService.publish). Creating users
-                                // as HOST here would short-circuit the
-                                // permission check on createForOnboarding and
-                                // also break the first-publish trial
-                                // detection because billing_subscriptions stays
-                                // empty until publish.
+                                // Sign up as USER. Self-serve users are promoted
+                                // to HOST when they create or resume the host
+                                // onboarding draft, while the owner trial still
+                                // starts on first publish. Creating users as HOST
+                                // here would skip the intended onboarding funnel
+                                // state transition.
                                 role: RoleEnum.USER,
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
@@ -519,8 +554,8 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                         // when it queries eligibility. We DO NOT auto-start a
                         // trial here anymore: the trial is created atomically
                         // by AccommodationService.publish() on the user's first
-                        // publish, alongside the lifecycleState flip and the
-                        // USER -> HOST role promotion.
+                        // publish. Role promotion to HOST already happened in
+                        // the onboarding draft flow.
                         try {
                             const billing = getQZPayBilling();
                             const syncService = new BillingCustomerSyncService(billing);
@@ -586,6 +621,64 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                     userId: user.id
                                 },
                                 'Failed to link anonymous conversations on user registration'
+                            );
+                        }
+
+                        // Anonymous newsletter linking (non-blocking).
+                        // Attaches every anonymous `newsletter_subscribers` row whose
+                        // `email` matches the new user's email — and, when the
+                        // account email is verified at signup time (typical for
+                        // OAuth providers), promotes any pending row to active
+                        // with a transactional welcome email. Mirrors the
+                        // anonymous-conversations link above; same constraint
+                        // applies: registration MUST NOT fail because of this.
+                        //
+                        // The newsletter service singleton may throw on access
+                        // when HOSPEDA_NEWSLETTER_HMAC_SECRET is unset (e.g. local
+                        // dev without a mailer config). We swallow that path so
+                        // the registration finishes cleanly — the eventually-set
+                        // secret will let the user trigger the link via a
+                        // subsequent subscribe / resend.
+                        try {
+                            const { getDefaultNewsletterService } = await import(
+                                '../routes/newsletter/protected/_singletons'
+                            );
+                            const newsletterSvc = getDefaultNewsletterService();
+                            const result = await newsletterSvc.linkAnonymousSubscribersToUser({
+                                userId: user.id,
+                                email: user.email,
+                                accountEmailVerified: user.emailVerified === true
+                            });
+                            if (result.error) {
+                                logger.warn(
+                                    {
+                                        userId: user.id,
+                                        code: result.error.code,
+                                        reason: (result.error as { reason?: string }).reason
+                                    },
+                                    'linkAnonymousSubscribersToUser returned an error result'
+                                );
+                            } else if (
+                                result.data &&
+                                (result.data.linkedCount > 0 ||
+                                    result.data.promotedToActiveCount > 0)
+                            ) {
+                                logger.info(
+                                    {
+                                        userId: user.id,
+                                        linkedCount: result.data.linkedCount,
+                                        promotedToActiveCount: result.data.promotedToActiveCount
+                                    },
+                                    'Linked anonymous newsletter subscribers to new user'
+                                );
+                            }
+                        } catch (err) {
+                            logger.error(
+                                {
+                                    err,
+                                    userId: user.id
+                                },
+                                'Failed to link anonymous newsletter subscribers on user registration'
                             );
                         }
                     }

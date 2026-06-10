@@ -8,7 +8,12 @@
  */
 
 import { z } from '@hono/zod-openapi';
-import { NewsletterSubscriberStatusEnum, type ServiceErrorCode } from '@repo/schemas';
+import {
+    NewsletterContentPreferencesSchema,
+    NewsletterSubscriberStatusEnum,
+    type ServiceErrorCode
+} from '@repo/schemas';
+import type { NewsletterContentPreferences } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -19,7 +24,13 @@ const StatusResponseSchema = z.object({
     subscribed: z.boolean(),
     status: z.nativeEnum(NewsletterSubscriberStatusEnum).nullable(),
     subscribedAt: z.string().nullable(),
-    verifiedAt: z.string().nullable()
+    verifiedAt: z.string().nullable(),
+    /**
+     * Per-content-type opt-in flags. `null` when no subscriber row exists for
+     * the user yet — clients default to the canonical all-true preset (see
+     * DEFAULT_NEWSLETTER_PREFERENCES in @repo/schemas) on null.
+     */
+    preferences: NewsletterContentPreferencesSchema.nullable()
 });
 
 /**
@@ -36,6 +47,7 @@ export interface StatusNewsletterService {
             status: NewsletterSubscriberStatusEnum | null;
             subscribedAt: Date | null;
             verifiedAt: Date | null;
+            preferences: NewsletterContentPreferences | null;
         } | null;
         error: { code: ServiceErrorCode; message: string } | null;
     }>;
@@ -52,6 +64,7 @@ export const statusHandler = async (
     status: NewsletterSubscriberStatusEnum | null;
     subscribedAt: string | null;
     verifiedAt: string | null;
+    preferences: NewsletterContentPreferences | null;
 }> => {
     const actor = getActorFromContext(ctx);
     const newsletterSvc =
@@ -70,14 +83,16 @@ export const statusHandler = async (
             subscribed: false,
             status: null,
             subscribedAt: null,
-            verifiedAt: null
+            verifiedAt: null,
+            preferences: null
         };
     }
     return {
         subscribed: data.subscribed,
         status: data.status,
         subscribedAt: data.subscribedAt?.toISOString() ?? null,
-        verifiedAt: data.verifiedAt?.toISOString() ?? null
+        verifiedAt: data.verifiedAt?.toISOString() ?? null,
+        preferences: data.preferences
     };
 };
 

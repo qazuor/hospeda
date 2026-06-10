@@ -1,0 +1,182 @@
+---
+/**
+ * @file editar.astro
+ * @description SSR edit page for accommodation owners.
+ *
+ * Fetches the accommodation by ID via the protected API (with cookie
+ * forwarding), fetches amenities/features/destinations lists, and passes
+ * the transformed data to the AccommodationEditor React island.
+ *
+ * @route    /[lang]/mi-cuenta/propiedades/[id]/editar
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { getApiUrl } from '@/lib/env';
+import { webLogger as logger } from '@/lib/logger';
+import type { MediaImage } from '@/lib/api/types';
+import { transformAccommodationEdit, transformAccommodationMedia, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
+
+export const prerender = false;
+
+// ---------------------------------------------------------------------------
+// Locale — injected by middleware, always a valid SupportedLocale.
+// ---------------------------------------------------------------------------
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// ---------------------------------------------------------------------------
+// Auth guard
+// ---------------------------------------------------------------------------
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+// ---------------------------------------------------------------------------
+// Extract accommodation ID from route params
+// ---------------------------------------------------------------------------
+
+const accommodationId = Astro.params.id;
+if (!accommodationId) {
+    return Astro.redirect(`/${locale}/mi-cuenta/propiedades/`);
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: accommodation + amenities + destinations
+// ---------------------------------------------------------------------------
+
+let accommodationData = null;
+let destinations: Awaited<ReturnType<typeof transformDestinationList>> = [];
+let amenities: Awaited<ReturnType<typeof transformAmenityList>> = [];
+let features: Awaited<ReturnType<typeof transformAmenityList>> = [];
+let initialFeaturedImage: MediaImage | null = null;
+let initialGallery: readonly MediaImage[] = [];
+let fetchError = false;
+
+try {
+    const apiUrl = getApiUrl();
+    const cookieHeader = Astro.request.headers.get('cookie');
+
+    if (cookieHeader) {
+        const headers = {
+            cookie: cookieHeader,
+            Accept: 'application/json'
+        };
+
+        // Parallel fetch: accommodation detail + amenities + destinations
+        const [accomResponse, amenitiesResponse, destinationsResponse] = await Promise.all([
+            fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
+            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=200`, { headers }),
+            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=200`, { headers })
+        ]);
+
+        if (accomResponse.ok) {
+            const body = (await accomResponse.json()) as { data?: Record<string, unknown> };
+            const rawAccom = body.data ?? body;
+            accommodationData = transformAccommodationEdit({ item: rawAccom as Record<string, unknown> });
+            // SPEC-208: extract media for the photo section (never pass raw API data)
+            const mediaResult = transformAccommodationMedia({ item: rawAccom as Record<string, unknown> });
+            initialFeaturedImage = mediaResult.featuredImage;
+            initialGallery = mediaResult.gallery;
+
+            // Separate amenities from features based on the nested relation
+            const allAmenities = rawAccom.amenities as Record<string, unknown>[] | undefined;
+            const allFeatures = rawAccom.features as Record<string, unknown>[] | undefined;
+
+            if (Array.isArray(allAmenities)) {
+                amenities = transformAmenityList({
+                    items: allAmenities.map((a) => (a.amenity ?? a) as Record<string, unknown>)
+                });
+            }
+            if (Array.isArray(allFeatures)) {
+                features = transformAmenityList({
+                    items: allFeatures.map((f) => (f.feature ?? f) as Record<string, unknown>)
+                });
+            }
+        } else if (accomResponse.status === 404 || accomResponse.status === 403) {
+            return Astro.redirect(`/${locale}/mi-cuenta/propiedades/`);
+        } else {
+            logger.warn('editar.astro: accommodation fetch failed', {
+                status: accomResponse.status,
+                accommodationId
+            });
+            fetchError = true;
+        }
+
+        // Destinations for the select (independent of accommodation fetch)
+        if (destinationsResponse.ok) {
+            const destBody = (await destinationsResponse.json()) as {
+                data?: { items?: Record<string, unknown>[] };
+            };
+            destinations = transformDestinationList({
+                items: destBody.data?.items ?? []
+            });
+        }
+
+        // Amenities catalog for the checkbox group (merge with accommodation's selected amenities)
+        if (amenitiesResponse.ok) {
+            const amenBody = (await amenitiesResponse.json()) as {
+                data?: { items?: Record<string, unknown>[] };
+            };
+            const catalogAmenities = transformAmenityList({
+                items: amenBody.data?.items ?? []
+            });
+            // Merge: prefer catalog items, fall back to accommodation's selected items
+            if (amenities.length === 0) {
+                amenities = catalogAmenities;
+            }
+        }
+    }
+} catch (err) {
+    logger.error('editar.astro: unexpected error', { error: err, accommodationId });
+    fetchError = true;
+}
+
+// If fetch failed or no data, redirect to listing
+if (!accommodationData || fetchError) {
+    return Astro.redirect(`/${locale}/mi-cuenta/propiedades/`);
+}
+---
+
+<AccountLayout
+    title={t('host.properties.editor.pageTitle', 'Editar propiedad') + ' | Hospeda'}
+    description={t('host.properties.editor.pageDescription', 'Editar información de tu propiedad')}
+    locale={locale}
+>
+    <main class="section">
+        <div class="section__container">
+            <h1 class="editor-page__title">
+                {t('host.properties.editor.pageTitle', 'Editar propiedad')}
+            </h1>
+
+            <AccommodationEditor
+                client:load
+                locale={locale}
+                accommodationId={accommodationId}
+                initialData={accommodationData}
+                destinations={destinations}
+                amenities={amenities}
+                features={features}
+                initialFeaturedImage={initialFeaturedImage}
+                initialGallery={initialGallery}
+            />
+        </div>
+    </main>
+</AccountLayout>
+
+<style>
+    .editor-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 0.5vw + 1.25rem, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1.5rem);
+    }
+</style>

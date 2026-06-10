@@ -1,18 +1,25 @@
 /**
  * Tests for addon.checkout services:
  *
- * - `createAddonCheckout` — SPEC-109 Phase 1: verifies the MercadoPago preference
- *   payload includes the quality-checklist fields (`payer.email`, `payer.first_name`,
- *   `payer.last_name`, `items[].category_id`) required for production approval.
+ * - `createAddonCheckout` — SPEC-127 T-007: verifies the billing.checkout.create()
+ *   call includes all required fields (customerEmail, customerName, lineItems,
+ *   idempotencyKey, statementDescriptor, metadata, expiresInMinutes) after
+ *   migration from raw MercadoPago SDK to QZPay billing adapter.
  *
  * - `confirmAddonPurchase` — T-013: verifies purchaseId propagation, unique
  *   constraint handling, subscription re-check, and pre-condition guards.
  *
+ * - Provider error wiring (SPEC-149 T-005): QZPayProviderSyncError from
+ *   billing.checkout.create → mapped ServiceError + captureBillingError.
+ *
  * @module test/services/addon.checkout.test
  */
 
+import { QZPayProviderSyncError } from '@qazuor/qzpay-core';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { ServiceErrorCode } from '@repo/schemas';
 import type { ConfirmPurchaseInput, PurchaseAddonInput } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase, createAddonCheckout } from '../../src/services/addon.checkout';
@@ -108,49 +115,8 @@ vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: mockBillingAddonPurchasesTable
 }));
 
-// Mock @repo/billing to provide a known addon definition and an empty plan list.
-// ALL_PLANS is imported at the top level of addon.checkout.ts and must be present
-// in the mock to avoid a TypeError when confirmAddonPurchase calls ALL_PLANS.find().
-// An empty array is sufficient because the code uses optional chaining when
-// accessing plan limits (canonicalPlan?.limits.find(...)).
-vi.mock('@repo/billing', () => ({
-    ALL_PLANS: [],
-    getAddonBySlug: vi.fn((slug: string) => {
-        if (slug === 'extra-photos-20') {
-            return {
-                slug: 'extra-photos-20',
-                name: 'Extra Photos 20',
-                description: 'Add 20 extra photos',
-                billingType: 'recurring' as const,
-                priceArs: 5000,
-                durationDays: null,
-                isActive: true,
-                targetCategories: ['owner'] as const,
-                sortOrder: 1,
-                affectsLimitKey: 'max_photos_per_accommodation',
-                limitIncrease: 20,
-                grantsEntitlement: null
-            };
-        }
-        if (slug === 'visibility-boost-7d') {
-            return {
-                slug: 'visibility-boost-7d',
-                name: 'Visibility Boost 7d',
-                description: 'Boost visibility for 7 days',
-                billingType: 'one_time' as const,
-                priceArs: 3000,
-                durationDays: 7,
-                isActive: true,
-                targetCategories: ['owner', 'complex'] as const,
-                sortOrder: 2,
-                affectsLimitKey: null,
-                limitIncrease: null,
-                grantsEntitlement: 'featured_listing'
-            };
-        }
-        return null;
-    })
-}));
+// @repo/billing import has been fully removed from addon.checkout.ts (SPEC-127 T-003).
+// The mock below is intentionally absent.
 
 // Mock logger to suppress output in tests
 vi.mock('../../src/utils/logger', () => ({
@@ -162,27 +128,51 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-// SPEC-109 Phase 1: capture the MercadoPago preference body to assert on the
-// quality-checklist fields (`payer`, `items[].category_id`) without making a
-// real HTTP call.
-const { mockPreferenceCreate } = vi.hoisted(() => ({
-    mockPreferenceCreate: vi.fn().mockResolvedValue({
-        id: 'pref_test_123',
-        init_point: 'https://www.mercadopago.com.ar/checkout/test',
-        sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/test'
+// SPEC-149 T-005: mock captureBillingError so tests can assert on Sentry calls
+// without initialising the real Sentry SDK (which requires a DSN).
+vi.mock('../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
+    return {
+        ...actual,
+        captureBillingError: vi.fn()
+    };
+});
+
+// SPEC-149 T-005: pass-through so isBillingProviderError + mapProviderErrorToServiceError
+// use their real implementations (no stubbing needed — the logic is unit-tested separately).
+vi.mock('../../src/lib/billing-provider-error', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/billing-provider-error')>();
+    return { ...actual };
+});
+
+// SPEC-127 T-007: capture the billing.checkout.create() call to assert on the
+// required fields (customerEmail, customerName, lineItems, idempotencyKey, etc.)
+// without hitting the real QZPay adapter or MercadoPago API.
+//
+// The mock resolves a minimal QZPayCheckoutWithHelpers-shaped object.
+// expiresAt must be a Date (non-optional) because the source uses
+// `result.expiresAt ?? new Date(...)` then `.toISOString()`.
+const { mockBillingCheckoutCreate } = vi.hoisted(() => ({
+    mockBillingCheckoutCreate: vi.fn().mockResolvedValue({
+        id: 'session_test_123',
+        providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+        providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+        expiresAt: new Date('2030-01-01T00:30:00Z')
     })
 }));
 
-vi.mock('mercadopago', () => ({
-    MercadoPagoConfig: vi.fn().mockImplementation((opts: { accessToken: string }) => ({
-        accessToken: opts.accessToken
-    })),
-    Preference: vi.fn().mockImplementation(() => ({
-        create: mockPreferenceCreate
-    }))
+// SPEC-127 T-010: polling job storage mock.
+// `billing.getStorage().subscriptionPollingJobs.create()` is called after a
+// successful checkout. Default resolves with a minimal job so existing tests
+// don't break — scheduleAddonCheckoutPolling is non-fatal and logs on failure.
+const { mockPollingJobsCreate } = vi.hoisted(() => ({
+    mockPollingJobsCreate: vi.fn().mockResolvedValue({
+        id: 'poll_job_001',
+        nextPollAt: new Date('2030-01-01T00:00:30Z')
+    })
 }));
 
-// SPEC-109 Phase 1: deterministic UUID for external_reference / idempotency key
+// SPEC-127 T-007: deterministic UUID for orderId / idempotency key
 // assertions. The default returns a stable value; individual tests can override
 // via `mockRandomUUID.mockReturnValueOnce(...)`.
 const { mockRandomUUID } = vi.hoisted(() => ({
@@ -197,15 +187,17 @@ vi.mock('node:crypto', async () => {
     };
 });
 
-// SPEC-109 Phase 1: env values consumed by createAddonCheckout for the MP call,
+// SPEC-127 T-007: env values consumed by createAddonCheckout for the QZPay call,
 // the checkout return URLs, the webhook notification URL, and the statement
 // descriptor shown on the cardholder's bank statement.
+// SPEC-127 T-010: HOSPEDA_BILLING_POLLING_ENABLED=true so polling code runs.
 vi.mock('../../src/utils/env', () => ({
     env: {
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'APP_USR-test-token',
         HOSPEDA_SITE_URL: 'https://hospeda.test',
         HOSPEDA_API_URL: 'https://api.hospeda.test',
-        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA'
+        HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: 'HOSPEDA',
+        HOSPEDA_BILLING_POLLING_ENABLED: true
     }
 }));
 
@@ -217,6 +209,32 @@ vi.mock('../../src/services/promo-code.service', () => ({
         getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
     }))
 }));
+
+// SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
+// Both are instantiated at module level in addon.checkout.ts and must be mocked
+// here via the importOriginal-spread style to preserve RoleEnum and other
+// transitively-used symbols from the real @repo/service-core module.
+const { mockPlanServiceGetById, mockPlanServiceGetBySlug, mockAddonCatalogGetBySlug } = vi.hoisted(
+    () => ({
+        mockPlanServiceGetById: vi.fn(),
+        mockPlanServiceGetBySlug: vi.fn(),
+        mockAddonCatalogGetBySlug: vi.fn()
+    })
+);
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        PlanService: vi.fn().mockImplementation(() => ({
+            getById: mockPlanServiceGetById,
+            getBySlug: mockPlanServiceGetBySlug
+        })),
+        AddonCatalogService: vi.fn().mockImplementation(() => ({
+            getBySlug: mockAddonCatalogGetBySlug
+        }))
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -274,6 +292,61 @@ describe('confirmAddonPurchase', () => {
         vi.clearAllMocks();
         mockBilling = createMockBilling(activeSubscriptions);
         mockEntitlementService = createMockEntitlementService();
+
+        // Default AddonCatalogService mock: returns known addon definitions by slug.
+        // Tests that need a different addon or a NOT_FOUND override individually.
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            if (slug === 'visibility-boost-7d') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'visibility-boost-7d',
+                        name: 'Visibility Boost 7d',
+                        description: 'Boost visibility for 7 days',
+                        billingType: 'one_time' as const,
+                        priceArs: 3000,
+                        durationDays: 7,
+                        isActive: true,
+                        targetCategories: ['owner', 'complex'] as const,
+                        sortOrder: 2,
+                        affectsLimitKey: null,
+                        limitIncrease: null,
+                        grantsEntitlement: 'featured_listing'
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
+
+        // Default PlanService mocks: NOT_FOUND for both lookups → soft-skip with previousValue = 0.
+        // Tests that need a resolved plan override these individually.
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
 
         // Reset default: successful insert returning a known purchaseId
         mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_abc' }]);
@@ -535,13 +608,23 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).not.toHaveBeenCalled();
         });
 
-        it('should still succeed when the subscription planId is not found in ALL_PLANS', async () => {
-            // G-025: confirmAddonPurchase now resolves plan limits from the static ALL_PLANS
-            // array (not billing.plans.get). When the planId is not in ALL_PLANS the code
-            // falls back to previousValue = 0 via optional chaining and continues normally.
-            // This is intentional: an unknown planId is not a fatal error.
+        it('should still succeed when the subscription planId cannot be resolved by PlanService', async () => {
+            // G-025 (updated for SPEC-127 T-002): confirmAddonPurchase resolves plan limits via
+            // PlanService (DB-backed, dual-resolve). When both getById and getBySlug fail for the
+            // planId, the code falls back to previousValue = 0 via optional chaining and continues
+            // normally. An unresolvable planId is not a fatal error — purchase proceeds.
 
-            // Act - activeSubscription has planId: 'plan_basico' which is not in ALL_PLANS: []
+            // Arrange - make both PlanService lookups return failure
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            // Act - activeSubscription has planId: 'plan_basico' which PlanService cannot resolve
             const result = await confirmAddonPurchase(
                 mockBilling,
                 mockEntitlementService,
@@ -569,6 +652,69 @@ describe('confirmAddonPurchase', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+
+        // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+        it('should record limitAdjustments with plan baseline when planId is a UUID (not a slug)', async () => {
+            // Arrange
+            // Post-SPEC-168: subscriptions may carry a billing_plans UUID as planId.
+            // The owner-basico plan has max_photos_per_accommodation = 5 baseline.
+            // extra-photos-20 has limitIncrease = 20, so expectedNewValue = 5 + 20 = 25.
+            // Bug: ALL_PLANS.find(p => p.slug === uuid) returns undefined →
+            //   previousValue falls back to 0 → newValue = 0 + 20 = 20 (WRONG).
+            // Fix will use PlanService.getById(uuid) → correct baseline.
+            const planUuid = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+            mockBilling = createMockBilling([
+                { id: 'sub_uuid', status: 'active', planId: planUuid }
+            ]);
+
+            // PlanService.getById will return the plan with the correct baseline limit.
+            // BillingPlanResponse.limits is Record<string, number> (DB shape, not LimitDefinition[]).
+            mockPlanServiceGetById.mockResolvedValue({
+                success: true,
+                data: {
+                    id: planUuid,
+                    slug: 'owner-basico',
+                    category: 'owner',
+                    limits: { max_photos_per_accommodation: 5 }
+                }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_limit_test' }]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert — purchase must succeed
+            expect(result.success).toBe(true);
+
+            // The values passed to the DB insert must reflect the real plan baseline (5),
+            // not the fallback-to-zero that happens when the UUID planId is unresolved.
+            expect(mockDbInsertValues).toHaveBeenCalledOnce();
+            const calls = mockDbInsertValues.mock.calls as unknown as Array<[unknown]>;
+            const insertedValues = calls[0]![0] as {
+                limitAdjustments: Array<{
+                    limitKey: string;
+                    increase: number;
+                    previousValue: number;
+                    newValue: number;
+                }>;
+            };
+            expect(insertedValues.limitAdjustments).toHaveLength(1);
+            expect(insertedValues.limitAdjustments[0]).toMatchObject({
+                limitKey: 'max_photos_per_accommodation',
+                increase: 20,
+                previousValue: 5,
+                newValue: 25
+            });
         });
     });
 
@@ -766,7 +912,9 @@ describe('confirmAddonPurchase', () => {
 
 /**
  * Builds a billing mock that returns a configurable customer and an active
- * subscription. Used to exercise `createAddonCheckout` without hitting QZPay.
+ * subscription. Includes a checkout mock wired to `mockBillingCheckoutCreate`
+ * and a getStorage mock wired to `mockPollingJobsCreate` (SPEC-127 T-010)
+ * so `createAddonCheckout` can be tested without hitting the real QZPay adapter.
  */
 function createBillingForCheckout({
     customer,
@@ -785,11 +933,19 @@ function createBillingForCheckout({
         },
         subscriptions: {
             getByCustomerId: vi.fn().mockResolvedValue([subscription])
-        }
+        },
+        checkout: {
+            create: mockBillingCheckoutCreate
+        },
+        getStorage: vi.fn().mockReturnValue({
+            subscriptionPollingJobs: {
+                create: mockPollingJobsCreate
+            }
+        })
     } as unknown as QZPayBilling;
 }
 
-describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
+describe('createAddonCheckout (SPEC-127 T-007)', () => {
     const defaultInput: PurchaseAddonInput = {
         customerId: 'cust_abc',
         addonSlug: 'extra-photos-20',
@@ -798,62 +954,134 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockPreferenceCreate.mockResolvedValue({
-            id: 'pref_test_123',
-            init_point: 'https://www.mercadopago.com.ar/checkout/test',
-            sandbox_init_point: 'https://sandbox.mercadopago.com.ar/checkout/test'
+        // Re-set default after clearAllMocks wipes implementations.
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
         });
         // Restore the default deterministic UUID after clearAllMocks.
         mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+        // SPEC-127 T-010: restore default polling job create mock after clearAllMocks.
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Default AddonCatalogService mock: returns known addon definitions by slug.
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            if (slug === 'visibility-boost-7d') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'visibility-boost-7d',
+                        name: 'Visibility Boost 7d',
+                        description: 'Boost visibility for 7 days',
+                        billingType: 'one_time' as const,
+                        priceArs: 3000,
+                        durationDays: 7,
+                        isActive: true,
+                        targetCategories: ['owner', 'complex'] as const,
+                        sortOrder: 2,
+                        affectsLimitKey: null,
+                        limitIncrease: null,
+                        grantsEntitlement: 'featured_listing'
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
+
+        // Default PlanService mocks: NOT_FOUND for both lookups → resolvePlanByIdOrSlug
+        // returns null → targetCategories gate short-circuits (allows checkout).
+        // Tests that need a specific plan category override these individually.
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
     });
 
     afterEach(() => {
         vi.clearAllMocks();
     });
 
-    /** Shape of the preference body asserted on by SPEC-109 Phase 1 tests. */
-    interface AssertablePreferenceBody {
-        readonly items: ReadonlyArray<{
-            readonly category_id?: string;
+    /**
+     * Shape of the input argument forwarded to `billing.checkout.create()`.
+     * Only the fields asserted on in these tests are listed.
+     */
+    interface AssertableCheckoutInput {
+        readonly customerEmail: string;
+        readonly customerName?: string;
+        readonly lineItems: ReadonlyArray<{
+            readonly categoryId?: string;
             readonly title: string;
             readonly quantity: number;
+            readonly unitAmount?: number;
         }>;
-        readonly payer: {
-            readonly email: string;
-            readonly first_name: string;
-            readonly last_name: string;
-        };
-        readonly external_reference: string;
-        readonly statement_descriptor: string;
-    }
-
-    /** Top-level shape of the argument forwarded to `Preference.create()`. */
-    interface AssertableCreateArg {
-        readonly body: AssertablePreferenceBody;
-        readonly requestOptions?: { readonly idempotencyKey?: string };
+        readonly idempotencyKey: string;
+        readonly statementDescriptor?: string;
+        readonly expiresInMinutes?: number;
+        readonly metadata?: Record<string, unknown>;
     }
 
     /**
-     * Reads the full argument that the SDK was called with (body +
-     * requestOptions). Individual tests assert on the sub-field they care
-     * about.
+     * Reads the full argument that `billing.checkout.create()` was called with.
+     * Individual tests assert on the sub-field they care about.
      */
-    function getCreatedPreferenceArg(callIndex = 0): AssertableCreateArg {
-        expect(mockPreferenceCreate.mock.calls.length).toBeGreaterThan(callIndex);
-        return mockPreferenceCreate.mock.calls[callIndex]?.[0] as AssertableCreateArg;
+    function getCheckoutCreateArg(callIndex = 0): AssertableCheckoutInput {
+        expect(mockBillingCheckoutCreate.mock.calls.length).toBeGreaterThan(callIndex);
+        return mockBillingCheckoutCreate.mock.calls[callIndex]?.[0] as AssertableCheckoutInput;
     }
 
     /**
-     * Reads only the preference body that the SDK was called with so
-     * individual tests can assert on `payer`, `items[].category_id`, etc.
+     * Reads the argument from the single `billing.checkout.create()` call.
+     * Fails the test if the mock was not called exactly once.
      */
-    function getCreatedPreferenceBody(): AssertablePreferenceBody {
-        expect(mockPreferenceCreate).toHaveBeenCalledOnce();
-        return getCreatedPreferenceArg().body;
+    function getCheckoutCreateArgOnce(): AssertableCheckoutInput {
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
+        return getCheckoutCreateArg();
     }
 
-    describe('payer fields (gaps #1, #2, #3)', () => {
-        it('populates payer.email from customer.email', async () => {
+    describe('payer fields (customerEmail / customerName)', () => {
+        // The adapter owns payer.first_name / payer.last_name splitting internally.
+        // Hospeda's side of the contract:
+        //   - customerEmail: always set to customer.email (no fallback needed here)
+        //   - customerName:  set to customer.metadata.name (trimmed) when non-empty;
+        //                    ABSENT (key not present) when name is missing or blank.
+        //
+        // Mapping from old MP-payer split tests → new billing.checkout.create tests:
+        //   "email from customer.email"          → customerEmail = customer.email (unchanged)
+        //   "split metadata.name first/last"     → customerName = trimmed name when present
+        //   "multiple spaces surname"             → customerName = full trimmed name when present
+        //   "fallback to email local-part"        → customerName key ABSENT when name null/missing
+        //   "single-space last_name for no-space" → collapsed: same "name present" path
+        //   "fallback for empty string name"      → customerName key ABSENT when name blank
+
+        it('passes customerEmail = customer.email to billing.checkout.create', async () => {
             const billing = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
@@ -865,27 +1093,12 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             const result = await createAddonCheckout(billing, defaultInput);
 
             expect(result.success).toBe(true);
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.email).toBe('guest@example.com');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.customerEmail).toBe('guest@example.com');
         });
 
-        it('splits metadata.name on the first space into first_name / last_name', async () => {
-            const billing = createBillingForCheckout({
-                customer: {
-                    id: 'cust_abc',
-                    email: 'juan@example.com',
-                    metadata: { name: 'Juan Perez' }
-                }
-            });
-
-            await createAddonCheckout(billing, defaultInput);
-
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.first_name).toBe('Juan');
-            expect(body.payer.last_name).toBe('Perez');
-        });
-
-        it('keeps the full surname when metadata.name has multiple spaces', async () => {
+        it('passes customerName = trimmed metadata.name when name is present and non-empty', async () => {
+            // Covers both "single-word name" (Cher) and "multi-word name" (Maria de los Angeles).
             const billing = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
@@ -896,13 +1109,15 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
 
             await createAddonCheckout(billing, defaultInput);
 
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.first_name).toBe('Maria');
-            expect(body.payer.last_name).toBe('de los Angeles Gonzalez');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.customerName).toBe('Maria de los Angeles Gonzalez');
         });
 
-        it('falls back to the email local-part when metadata.name is missing', async () => {
-            const billing = createBillingForCheckout({
+        it('omits customerName entirely when metadata.name is missing or blank', async () => {
+            // The qzpay adapter handles the payer.first_name / payer.last_name
+            // derivation locally — hospeda simply does not send customerName when
+            // the customer has no name on record. The key must be absent (not undefined).
+            const billingNoName = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
                     email: 'anon.user@example.com',
@@ -910,32 +1125,54 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
                 }
             });
 
-            await createAddonCheckout(billing, defaultInput);
+            await createAddonCheckout(billingNoName, defaultInput);
 
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.first_name).toBe('anon.user');
-            // MercadoPago rejects empty last_name; fallback is a single space.
-            expect(body.payer.last_name).toBe(' ');
-        });
+            const argNoName = getCheckoutCreateArgOnce();
+            expect('customerName' in argNoName).toBe(false);
 
-        it('uses a single-space last_name when metadata.name has no space', async () => {
-            const billing = createBillingForCheckout({
-                customer: {
-                    id: 'cust_abc',
-                    email: 'cher@example.com',
-                    metadata: { name: 'Cher' }
-                }
+            vi.clearAllMocks();
+            mockBillingCheckoutCreate.mockResolvedValue({
+                id: 'session_test_123',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
             });
+            // Reset addon mock since clearAllMocks wipes it
+            mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+                if (slug === 'extra-photos-20') {
+                    return {
+                        success: true,
+                        data: {
+                            slug: 'extra-photos-20',
+                            name: 'Extra Photos 20',
+                            description: 'Add 20 extra photos',
+                            billingType: 'recurring' as const,
+                            priceArs: 5000,
+                            durationDays: null,
+                            isActive: true,
+                            targetCategories: ['owner'] as const,
+                            sortOrder: 1,
+                            affectsLimitKey: 'max_photos_per_accommodation',
+                            limitIncrease: 20,
+                            grantsEntitlement: null
+                        }
+                    };
+                }
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+                };
+            });
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
 
-            await createAddonCheckout(billing, defaultInput);
-
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.first_name).toBe('Cher');
-            expect(body.payer.last_name).toBe(' ');
-        });
-
-        it('falls back to email local-part when metadata.name is an empty string', async () => {
-            const billing = createBillingForCheckout({
+            const billingBlankName = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
                     email: 'blank@example.com',
@@ -943,16 +1180,15 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
                 }
             });
 
-            await createAddonCheckout(billing, defaultInput);
+            await createAddonCheckout(billingBlankName, defaultInput);
 
-            const body = getCreatedPreferenceBody();
-            expect(body.payer.first_name).toBe('blank');
-            expect(body.payer.last_name).toBe(' ');
+            const argBlankName = getCheckoutCreateArgOnce();
+            expect('customerName' in argBlankName).toBe(false);
         });
     });
 
-    describe('items.category_id (gap #4)', () => {
-        it("sets every item's category_id to 'services'", async () => {
+    describe('lineItems fields', () => {
+        it("sets lineItems[0].categoryId to 'services'", async () => {
             const billing = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
@@ -963,79 +1199,111 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
 
             await createAddonCheckout(billing, defaultInput);
 
-            const body = getCreatedPreferenceBody();
-            expect(body.items).toHaveLength(1);
-            expect(body.items[0]?.category_id).toBe('services');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.lineItems).toHaveLength(1);
+            expect(arg.lineItems[0]?.categoryId).toBe('services');
+        });
+
+        it('sets lineItems[0].unitAmount to addon.priceArs in centavos (raw, not /100)', async () => {
+            // IMPORTANT: the old MP path called `unit_price: addon.priceArs / 100`
+            // (MP expects ARS pesos). The qzpay adapter now handles the /100 conversion
+            // internally — hospeda passes raw centavos (priceArs = 5000 → unitAmount = 5000).
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const arg = getCheckoutCreateArgOnce();
+            // addon.priceArs = 5000 → unitAmount must be 5000 (not 50)
+            expect(arg.lineItems[0]?.unitAmount).toBe(5000);
+        });
+
+        it('sets lineItems[0].title to addon.name', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.lineItems[0]?.title).toBe('Extra Photos 20');
         });
     });
 
-    describe('UUID external_reference + X-Idempotency-Key (gaps #5, #6)', () => {
+    describe('orderId prefix + idempotencyKey', () => {
+        // SPEC-127: qzpay sets external_reference internally (= session.id).
+        // Hospeda's orderId is the `addon_<slug>_<uuid>` string returned in
+        // result.data.orderId. The SAME uuid is the idempotencyKey passed to
+        // billing.checkout.create(), and metadata.order_id === orderId.
+
         const customer = {
             id: 'cust_abc',
             email: 'guest@example.com',
             metadata: { name: 'Juan Perez' }
         };
 
-        it('embeds the generated UUID into external_reference with the addon_<slug>_ prefix', async () => {
+        it('embeds the generated UUID into result.data.orderId with the addon_<slug>_ prefix', async () => {
             mockRandomUUID.mockReturnValue('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
             const billing = createBillingForCheckout({ customer });
 
             const result = await createAddonCheckout(billing, defaultInput);
 
             expect(result.success).toBe(true);
-            const body = getCreatedPreferenceBody();
-            expect(body.external_reference).toBe(
-                'addon_extra-photos-20_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
-            );
+            if (result.success) {
+                expect(result.data.orderId).toBe(
+                    'addon_extra-photos-20_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
+                );
+            }
         });
 
-        it('does NOT use Date.now() in external_reference (no all-digits suffix)', async () => {
-            // Regression guard for SPEC-109 gap #5. Date.now() returns a 13-digit
-            // integer; randomUUID() returns a 36-char hex+dash string. If the code
-            // ever reverts to Date.now() this assertion catches it.
-            const billing = createBillingForCheckout({ customer });
-
-            await createAddonCheckout(billing, defaultInput);
-
-            const body = getCreatedPreferenceBody();
-            const suffix = body.external_reference.replace(/^addon_extra-photos-20_/, '');
-            expect(suffix).not.toMatch(/^\d+$/);
-            expect(suffix).toMatch(
-                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-            );
-        });
-
-        it('forwards the same UUID as the MP X-Idempotency-Key', async () => {
+        it('passes the same UUID as idempotencyKey to billing.checkout.create', async () => {
             mockRandomUUID.mockReturnValue('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
             const billing = createBillingForCheckout({ customer });
 
             await createAddonCheckout(billing, defaultInput);
 
-            const arg = getCreatedPreferenceArg();
-            expect(arg.requestOptions?.idempotencyKey).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.idempotencyKey).toBe('aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
         });
 
-        it('uses the SAME UUID for external_reference and idempotencyKey', async () => {
+        it('uses the SAME UUID for orderId and idempotencyKey (and metadata.order_id)', async () => {
             mockRandomUUID.mockReturnValue('99999999-8888-7777-6666-555555555555');
             const billing = createBillingForCheckout({ customer });
 
-            await createAddonCheckout(billing, defaultInput);
+            const result = await createAddonCheckout(billing, defaultInput);
 
-            const arg = getCreatedPreferenceArg();
-            const refSuffix = arg.body.external_reference.replace(/^addon_extra-photos-20_/, '');
-            expect(refSuffix).toBe(arg.requestOptions?.idempotencyKey);
+            expect(result.success).toBe(true);
+            const arg = getCheckoutCreateArgOnce();
+            const expectedOrderId = 'addon_extra-photos-20_99999999-8888-7777-6666-555555555555';
+
+            // orderId in result matches
+            if (result.success) {
+                expect(result.data.orderId).toBe(expectedOrderId);
+            }
+            // idempotencyKey = the uuid portion
+            expect(arg.idempotencyKey).toBe('99999999-8888-7777-6666-555555555555');
+            // metadata.order_id = full orderId
+            expect(arg.metadata?.order_id).toBe(expectedOrderId);
         });
 
-        it('uses the env-configured statement_descriptor (gap #7)', async () => {
+        it('uses the env-configured statementDescriptor when set', async () => {
+            // The mocked env returns 'HOSPEDA'. The source passes statementDescriptor
+            // only when env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR is set.
             const billing = createBillingForCheckout({ customer });
 
             await createAddonCheckout(billing, defaultInput);
 
-            const body = getCreatedPreferenceBody();
-            // The mocked env returns 'HOSPEDA' — the production default. If this
-            // changes via env override, the value on the bank statement updates
-            // without a code deploy.
-            expect(body.statement_descriptor).toBe('HOSPEDA');
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.statementDescriptor).toBe('HOSPEDA');
         });
 
         it('generates a fresh UUID on each call (no shared state across checkouts)', async () => {
@@ -1047,18 +1315,641 @@ describe('createAddonCheckout (SPEC-109 Phase 1)', () => {
             await createAddonCheckout(billing, defaultInput);
             await createAddonCheckout(billing, defaultInput);
 
-            const first = getCreatedPreferenceArg(0);
-            const second = getCreatedPreferenceArg(1);
+            const first = getCheckoutCreateArg(0);
+            const second = getCheckoutCreateArg(1);
 
-            expect(first.requestOptions?.idempotencyKey).toBe(
-                'first-uuid-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+            expect(first.idempotencyKey).toBe('first-uuid-aaaa-aaaa-aaaa-aaaaaaaaaaaa');
+            expect(second.idempotencyKey).toBe('second-uuid-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+            expect(first.idempotencyKey).not.toBe(second.idempotencyKey);
+        });
+
+        it('sets expiresInMinutes to 30', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            await createAddonCheckout(billing, defaultInput);
+
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.expiresInMinutes).toBe(30);
+        });
+
+        it('prefers providerInitPoint over providerSandboxInitPoint for checkoutUrl', async () => {
+            // Both present → providerInitPoint wins (prod-first convention)
+            const billing = createBillingForCheckout({ customer });
+            // Default mock already has both set — verify prod URL is in result
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.checkoutUrl).toBe(
+                    'https://www.mercadopago.com.ar/checkout/test'
+                );
+            }
+        });
+
+        it('returns CHECKOUT_ERROR when neither providerInitPoint nor providerSandboxInitPoint is present', async () => {
+            mockBillingCheckoutCreate.mockResolvedValueOnce({
+                id: 'session_no_url',
+                providerInitPoint: undefined,
+                providerSandboxInitPoint: undefined,
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('CHECKOUT_ERROR');
+        });
+    });
+
+    // =========================================================================
+    // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+    // =========================================================================
+
+    describe('targetCategories gate with UUID planId (SPEC-127 dual-resolve regression)', () => {
+        // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
+        it('should reject checkout when UUID planId resolves to an excluded plan category', async () => {
+            // Arrange
+            // Post-SPEC-168: subscriptions may carry a billing_plans UUID as planId.
+            // The addon extra-photos-20 has targetCategories: ['owner'].
+            // This subscription's planId is a UUID that maps to category 'complex' —
+            // which is excluded from the addon's targetCategories.
+            //
+            // Bug: ALL_PLANS.find(p => p.slug === uuid) returns undefined because
+            // UUIDs never match slugs. So customerPlan is undefined, the guard
+            //   if (customerPlan && !addon.targetCategories.includes(customerPlan.category))
+            // evaluates to false (short-circuit on undefined), and the checkout
+            // proceeds silently — INCORRECTLY allowing the restricted addon.
+            //
+            // Fix (T-002) will replace the ALL_PLANS.find with PlanService dual-resolve:
+            // getById(uuid) → real plan with category 'complex' → gate fires → rejected.
+            const planUuid = 'f1e2d3c4-b5a6-7890-fedc-ba9876543210';
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'complex@example.com',
+                    metadata: { name: 'Complex Owner' }
+                },
+                subscription: { id: 'sub_complex', status: 'active', planId: planUuid }
+            });
+
+            // PlanService.getById will return a 'complex' category plan.
+            // BillingPlanResponse.limits is Record<string, number> (DB shape, not LimitDefinition[]).
+            mockPlanServiceGetById.mockResolvedValue({
+                success: true,
+                data: {
+                    id: planUuid,
+                    slug: 'complex-basico',
+                    category: 'complex',
+                    limits: { max_photos_per_accommodation: 10 }
+                }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            // Act
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            // Assert — extra-photos-20 is owner-only; a 'complex' plan should be rejected.
+            // Currently FAILS: current code silently allows it (customerPlan = undefined).
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('ADDON_NOT_AVAILABLE_FOR_PLAN');
+        });
+    });
+
+    // =========================================================================
+    // SPEC-127 T-010: polling fallback scheduling
+    // =========================================================================
+
+    // =========================================================================
+    // Zero-amount checkout (promo discount >= priceArs)
+    // =========================================================================
+
+    describe('zero-amount checkout (full promo discount)', () => {
+        // When a promo discount equals or exceeds the addon price, finalPrice = 0.
+        // The billing adapter receives unitAmount === 0. MP-side rejection of a
+        // zero-amount preference would surface as CHECKOUT_ERROR and is covered by
+        // the staging smoke; from Hospeda's side the call should proceed normally.
+        //
+        // PromoCodeService is mocked at module level (vi.mock) so each `new
+        // PromoCodeService()` returns a stub; we override `validate` on the
+        // constructor mock for this specific test.
+
+        const customer = {
+            id: 'cust_abc',
+            email: 'zero@example.com',
+            metadata: { name: 'Zero Amount Test' }
+        };
+
+        it('calls billing.checkout.create with lineItems[0].unitAmount === 0 when promo discount equals priceArs', async () => {
+            // Arrange: promo discount = full addon price (5000 ARS cents).
+            // Override the module-level PromoCodeService mock constructor so the
+            // validate stub returns discountAmount = 5000 (= priceArs → finalPrice = 0).
+            const { PromoCodeService: MockedPromoCodeService } = await import(
+                '../../src/services/promo-code.service'
             );
-            expect(second.requestOptions?.idempotencyKey).toBe(
-                'second-uuid-bbbb-bbbb-bbbb-bbbbbbbbbbbb'
+            vi.mocked(MockedPromoCodeService).mockImplementationOnce(
+                () =>
+                    ({
+                        validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 5000 }),
+                        getByCode: vi.fn().mockResolvedValue({
+                            success: true,
+                            data: { id: 'promo_full' }
+                        })
+                    }) as unknown as InstanceType<typeof MockedPromoCodeService>
             );
-            expect(first.requestOptions?.idempotencyKey).not.toBe(
-                second.requestOptions?.idempotencyKey
+
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                ...defaultInput,
+                promoCode: 'FULL_DISCOUNT'
+            });
+
+            // Assert — checkout proceeds; unitAmount = 5000 - 5000 = 0
+            expect(result.success).toBe(true);
+            expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
+            const arg = mockBillingCheckoutCreate.mock.calls[0]?.[0] as {
+                lineItems: Array<{ unitAmount?: number }>;
+            };
+            expect(arg.lineItems[0]?.unitAmount).toBe(0);
+        });
+    });
+
+    describe('polling fallback (SPEC-127 T-010)', () => {
+        const customer = {
+            id: 'cust_abc',
+            email: 'guest@example.com',
+            metadata: { name: 'Juan Perez' }
+        };
+
+        it('schedules a polling job with the correct shape after a successful checkout', async () => {
+            // Arrange
+            mockRandomUUID.mockReturnValue('dddddddd-eeee-ffff-0000-111111111111');
+            mockBillingCheckoutCreate.mockResolvedValue({
+                id: 'session_poll_test_456',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz'
+            });
+
+            // Assert — checkout succeeded and polling job was enqueued
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            expect(mockPollingJobsCreate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    resourceType: 'one_time_payment',
+                    providerResourceId: 'session_poll_test_456',
+                    subscriptionId: 'sub_001',
+                    metadata: expect.objectContaining({
+                        type: 'addon_purchase',
+                        addonSlug: 'extra-photos-20',
+                        customerId: 'cust_abc',
+                        userId: 'user_xyz',
+                        orderId: 'addon_extra-photos-20_dddddddd-eeee-ffff-0000-111111111111'
+                    })
+                })
             );
         });
+
+        it('still returns success when the polling job scheduling fails', async () => {
+            // Arrange — polling storage rejects; checkout should still succeed (non-fatal)
+            mockPollingJobsCreate.mockRejectedValue(new Error('storage unavailable'));
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            // Assert — checkout result is unaffected by polling failure
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.checkoutUrl).toBeDefined();
+            }
+            // Polling was attempted
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+        });
+
+        it('does NOT schedule a polling job when checkout fails before billing.checkout.create', async () => {
+            // Arrange — addon NOT_FOUND triggers early return before checkout
+            const billing = createBillingForCheckout({ customer });
+
+            // Act
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'non-existent-addon-slug',
+                userId: 'user_xyz'
+            });
+
+            // Assert — early return, polling never attempted
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(mockPollingJobsCreate).not.toHaveBeenCalled();
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-149 T-005 — provider error wiring for createAddonCheckout
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a "stub shape" cause with a numeric `status` field, mirroring
+ * `buildHttpLikeError` in `test/e2e/helpers/mp-stub.ts` (same helper
+ * pattern as start-paid.test.ts T-004 tests).
+ */
+function buildStubCause(status: number, code?: string): Error {
+    const err = new Error(`Stub MP error ${status}`) as Error & {
+        status: number;
+        code?: string;
+    };
+    err.name = 'MpStubHttpError';
+    err.status = status;
+    if (code !== undefined) {
+        err.code = code;
+    }
+    return err;
+}
+
+/**
+ * Wrap a cause in a `QZPayProviderSyncError` (thrown when
+ * `providerSyncErrorStrategy: 'throw'`, which T-003 made the default).
+ */
+function buildProviderSyncError(
+    cause?: Error,
+    operation = 'checkout_create'
+): QZPayProviderSyncError {
+    return new QZPayProviderSyncError(
+        'Failed in mercadopago',
+        'mercadopago',
+        operation,
+        { customerId: 'cust_test' },
+        cause
+    );
+}
+
+describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    const defaultCustomer = {
+        id: 'cust_abc',
+        email: 'owner@example.com',
+        metadata: { name: 'Test Owner' }
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+
+        // Re-set checkout create mock after clearAllMocks
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
+        });
+
+        // Re-set UUID mock
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        // Re-set polling mock (non-fatal — don't throw by default)
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Re-set addon catalog mock — extra-photos-20 is active
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+            };
+        });
+
+        // Default plan lookups: NOT_FOUND (allows checkout through targetCategories gate)
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
+
+        // Re-establish captureBillingError mock so assertions are clean
+        const { captureBillingError } = await import('../../src/lib/sentry');
+        vi.mocked(captureBillingError).mockReturnValue('sentry-event-id');
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // ── MP 429 → PROVIDER_RATE_LIMITED ───────────────────────────────────────
+
+    it('MP 429 → throws ServiceError with PROVIDER_RATE_LIMITED (not a ServiceResult)', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert — must throw ServiceError, not return a ServiceResult
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_RATE_LIMITED);
+    });
+
+    // ── MP 408 timeout → PROVIDER_TIMEOUT ────────────────────────────────────
+
+    it('MP 408 timeout → throws ServiceError with PROVIDER_TIMEOUT', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_TIMEOUT);
+    });
+
+    // ── MP 500 → PROVIDER_ERROR ───────────────────────────────────────────────
+
+    it('MP 500 → throws ServiceError with PROVIDER_ERROR (not a generic CHECKOUT_ERROR)', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(500, 'SERVER_ERROR'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.PROVIDER_ERROR);
+    });
+
+    // ── MP 422 validation → VALIDATION_ERROR ─────────────────────────────────
+
+    it('MP 422 validation → throws ServiceError with VALIDATION_ERROR', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(422, 'INVALID_CARD'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act
+        let thrown: unknown;
+        try {
+            await createAddonCheckout(billing, defaultInput);
+        } catch (err) {
+            thrown = err;
+        }
+
+        // Assert
+        expect(thrown).toBeInstanceOf(ServiceError);
+        expect((thrown as ServiceError).code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    // ── captureBillingError called with correct tags ───────────────────────────
+
+    it('captureBillingError called with operation=addon_checkout and providerStatus on MP 429', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act — swallow throw so we can assert on the mock
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [capturedErr, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedErr).toBeInstanceOf(ServiceError);
+        expect(capturedCtx).toMatchObject({
+            operation: 'addon_checkout',
+            providerStatus: 429
+        });
+        // Must not include email or PII
+        expect(capturedCtx).not.toHaveProperty('email');
+        expect(capturedCtx).not.toHaveProperty('customerEmail');
+    });
+
+    it('captureBillingError called with addonIds and providerStatus=500 on MP 500', async () => {
+        // Arrange
+        const providerErr = buildProviderSyncError(buildStubCause(500));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).toHaveBeenCalledTimes(1);
+        const [, capturedCtx] = vi.mocked(captureBillingError).mock.calls[0] ?? [];
+        expect(capturedCtx).toMatchObject({ providerStatus: 500 });
+    });
+
+    // ── Polling NOT scheduled on provider error ───────────────────────────────
+
+    it('polling NOT scheduled when billing.checkout.create throws a provider error', async () => {
+        // Arrange — provider error fires before polling call
+        const providerErr = buildProviderSyncError(buildStubCause(500));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act — swallow throw
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Assert — polling must NOT have been attempted
+        expect(mockPollingJobsCreate).not.toHaveBeenCalled();
+    });
+
+    // ── Non-provider errors keep old behavior (regression guard) ──────────────
+
+    it('regression: plain Error (non-provider) still returns { success: false, error.code: CHECKOUT_ERROR }', async () => {
+        // Arrange — a generic Error (not QZPayProviderSyncError) thrown by checkout
+        mockBillingCheckoutCreate.mockRejectedValue(new Error('unexpected DB blowup'));
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        // Act — must NOT throw; must return a ServiceResult
+        const result = await createAddonCheckout(billing, defaultInput);
+
+        // Assert — old path still returns CHECKOUT_ERROR ServiceResult (not throws)
+        expect(result.success).toBe(false);
+        expect(result.error?.code).toBe('CHECKOUT_ERROR');
+    });
+
+    it('regression: captureBillingError NOT called for plain non-provider errors', async () => {
+        // Arrange
+        mockBillingCheckoutCreate.mockRejectedValue(new Error('network timeout'));
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        const { captureBillingError } = await import('../../src/lib/sentry');
+
+        // Act
+        await createAddonCheckout(billing, defaultInput);
+
+        // Assert
+        expect(vi.mocked(captureBillingError)).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// No server-side retry pinning (SPEC-149 descope pin)
+//
+// Part D of SPEC-149 (server-side retry on transient provider errors) was
+// DESCOPED during the spec realign.  Reason: the idempotency middleware does
+// not cache in-flight requests, so a naive server-side retry would hit the
+// provider a second time before the first request is known to have failed —
+// creating a double-charge risk.
+//
+// The replacement deliverable is this pinning suite: assert that on a
+// retryable provider error (429 / timeout / 5xx) the server performs EXACTLY
+// ONE provider call per request.  If anyone later adds retries, these tests
+// fail and force them to confront the idempotency problem before merging.
+// ---------------------------------------------------------------------------
+
+describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', () => {
+    const defaultInput: PurchaseAddonInput = {
+        customerId: 'cust_abc',
+        addonSlug: 'extra-photos-20',
+        userId: 'user_xyz'
+    };
+
+    const defaultCustomer = {
+        id: 'cust_abc',
+        email: 'owner@example.com',
+        metadata: { name: 'Test Owner' }
+    };
+
+    beforeEach(async () => {
+        vi.clearAllMocks();
+
+        // Re-set checkout create mock (happy path by default; individual tests override)
+        mockBillingCheckoutCreate.mockResolvedValue({
+            id: 'session_test_123',
+            providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+            providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+            expiresAt: new Date('2030-01-01T00:30:00Z')
+        });
+
+        mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+
+        mockPollingJobsCreate.mockResolvedValue({
+            id: 'poll_job_001',
+            nextPollAt: new Date('2030-01-01T00:00:30Z')
+        });
+
+        // Default addon catalog mock
+        mockAddonCatalogGetBySlug.mockImplementation(async (slug: string) => {
+            if (slug === 'extra-photos-20') {
+                return {
+                    success: true,
+                    data: {
+                        slug: 'extra-photos-20',
+                        name: 'Extra Photos 20',
+                        description: 'Add 20 extra photos',
+                        billingType: 'recurring' as const,
+                        priceArs: 5000,
+                        durationDays: null,
+                        isActive: true,
+                        targetCategories: ['owner'] as const,
+                        sortOrder: 1,
+                        affectsLimitKey: 'max_photos_per_accommodation',
+                        limitIncrease: 20,
+                        grantsEntitlement: null
+                    }
+                };
+            }
+            return { success: false, error: { code: 'NOT_FOUND', message: `Not found: ${slug}` } };
+        });
+
+        mockPlanServiceGetById.mockResolvedValue({ success: false, error: { code: 'NOT_FOUND' } });
+        mockPlanServiceGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND' }
+        });
+    });
+
+    it('billing.checkout.create called exactly once on MP 429 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(429, 'RATE_LIMITED'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        // Exactly one provider call — no retry loop.
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 503 (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(503, 'SERVICE_UNAVAILABLE'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it('billing.checkout.create called exactly once on MP 408 timeout (no retry)', async () => {
+        const providerErr = buildProviderSyncError(buildStubCause(408, 'TIMEOUT'));
+        mockBillingCheckoutCreate.mockRejectedValue(providerErr);
+        const billing = createBillingForCheckout({ customer: defaultCustomer });
+
+        await createAddonCheckout(billing, defaultInput).catch(() => undefined);
+
+        expect(mockBillingCheckoutCreate).toHaveBeenCalledTimes(1);
     });
 });

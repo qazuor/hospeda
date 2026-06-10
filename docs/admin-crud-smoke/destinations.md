@@ -39,8 +39,8 @@ The form cannot be submitted because `País*` and `Provincia/Estado*` are requir
 empty. Result: **destinations cannot be created from the admin UI**.
 
 - **Suspected root cause**: the Location field group is wrapped in a custom controller (likely
-  a coordinate / geocoding component, or a `useFieldArray` from React Hook Form that uses
-  `Controller` with explicit `value`/`onChange`). The wrapper either:
+  a coordinate / geocoding component, or a TanStack Form `Field` subscriber pattern with
+  explicit `value`/`onChange` from `@tanstack/react-form`). The wrapper either:
   1. Ignores DOM input events and only updates from a programmatic source (e.g. a map picker,
      a geocoding autocomplete callback).
   2. Resets the value on every render via stale-state binding.

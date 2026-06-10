@@ -1,8 +1,8 @@
 import type {
     AdminInfoType,
     ContactInfo,
-    FullLocationType,
     SocialNetwork,
+    UserLocationType,
     UserProfile,
     UserSettings
 } from '@repo/schemas';
@@ -92,7 +92,7 @@ export const users = pgTable(
         lastName: text('last_name'),
         birthDate: timestamp('birth_date', { withTimezone: true }),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
-        location: jsonb('location').$type<FullLocationType>(),
+        location: jsonb('location').$type<UserLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         role: RolePgEnum('role').notNull().default('USER'),
         profile: jsonb('profile').$type<UserProfile>(),
@@ -124,6 +124,16 @@ export const users = pgTable(
          * TRUE for any user that already has a `credential` account row.
          */
         setPasswordPrompted: boolean('set_password_prompted').notNull().default(false),
+        /**
+         * SPEC-143 #29: canonical service-suspension flag. True when the host's
+         * subscription is paused WITH service suspension (host self-pause or an
+         * admin "full" pause). While true, the host's accommodations are hidden
+         * from public reads and locked from edits/creates. Cleared on resume.
+         * Denormalized to accommodations.owner_suspended for the public hot path;
+         * this column is the source of truth and is used for the create-guard
+         * (where no accommodation row exists yet to read).
+         */
+        serviceSuspended: boolean('service_suspended').notNull().default(false),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references((): AnyPgColumn => users.id, {

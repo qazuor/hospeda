@@ -140,9 +140,12 @@ describe('buildBadgeInlineStyle', () => {
             size: 'sm',
             hasHref: false
         });
-        expect(style).toContain('background-color: oklch(from var(--core-muted-foreground)');
+        // SPEC-176 commit cd468c2cb replaced oklch(from var(--core-muted-foreground) ...)
+        // with pre-built alpha tokens (var(--core-muted-foreground-a08 / -a15)) for
+        // Chrome <119 compatibility. Assert the new alpha-variant form.
+        expect(style).toContain('background-color: var(--core-muted-foreground-a08)');
         expect(style).toContain('color: var(--core-foreground)');
-        expect(style).toContain('border: 1px solid oklch(from var(--core-muted-foreground)');
+        expect(style).toContain('border: 1px solid var(--core-muted-foreground-a15)');
     });
 
     it('applies 44px min-height when hasHref and size >= sm', () => {

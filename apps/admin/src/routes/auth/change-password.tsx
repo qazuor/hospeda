@@ -35,9 +35,11 @@ export const Route = createFileRoute('/auth/change-password')({
     beforeLoad: async () => {
         const authState = await fetchAuthSession();
 
-        // Must be authenticated to access this page
+        // Must be authenticated to access this page. SPEC-182: the admin no
+        // longer hosts its own signin — bounce through the admin root so the
+        // _authed guard sends unauthenticated users to the web signin.
         if (!authState.isAuthenticated) {
-            throw redirect({ to: '/auth/signin' });
+            throw redirect({ to: '/' });
         }
 
         // If password change is not required, go to dashboard
@@ -229,8 +231,8 @@ function ForcedChangePasswordPage() {
                                     className="h-16 w-auto"
                                 />
                             </div>
-                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950">
-                                <ShieldIcon className="h-8 w-8 text-amber-600 dark:text-amber-400" />
+                            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
+                                <ShieldIcon className="h-8 w-8 text-warning" />
                             </div>
                             <h1 className="font-bold text-2xl text-foreground">
                                 {t('admin-pages.me.changePassword.title' as TranslationKey)}
@@ -243,15 +245,15 @@ function ForcedChangePasswordPage() {
                         </div>
 
                         {/* Warning banner */}
-                        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
-                            <AlertTriangleIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4">
+                            <AlertTriangleIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-warning" />
                             <div>
-                                <p className="font-semibold text-amber-900 text-sm dark:text-amber-100">
+                                <p className="font-semibold text-foreground text-sm">
                                     {t(
                                         'admin-pages.me.changePassword.forced.title' as TranslationKey
                                     )}
                                 </p>
-                                <p className="mt-1 text-amber-800 text-xs dark:text-amber-200">
+                                <p className="mt-1 text-muted-foreground text-xs">
                                     {t(
                                         'admin-pages.me.changePassword.forced.description' as TranslationKey
                                     )}

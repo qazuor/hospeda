@@ -422,6 +422,18 @@ API_RATE_LIMIT_MAX_REQUESTS=100
 
 Always use `HOSPEDA_*` names for all environment variables.
 
+### AI moderation fail-loud (SPEC-198)
+
+`HOSPEDA_AI_MODERATION_REQUIRED` (boolean, default `false`) gates a startup
+healthcheck: when `true`, the API refuses to start (`process.exit(1)`) if no
+resolvable OpenAI credential exists in the AI vault. It requires both
+`HOSPEDA_AI_VAULT_MASTER_KEY` and a stored OpenAI credential (admin credentials
+API). At runtime, a missing moderation credential now fails CLOSED (the request
+is blocked via `AiProviderUnconfiguredError` → HTTP 503 `PROVIDER_UNCONFIGURED`)
+while transient provider failures (timeout/rate-limit/5xx) still fail OPEN. Set
+`HOSPEDA_AI_MODERATION_REQUIRED=true` in production once the vault credential is
+provisioned.
+
 ## Testing
 
 ```ts
@@ -540,12 +552,129 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
 
+## Entitlement & Limit Enforcement (SPEC-145)
+
+### Middleware chain order
+
+Every protected route runs middleware in this order:
+
+```
+auth → actor → billing → billingCustomer → trial → [options.middlewares]
+```
+
+`options.middlewares` is where entitlement and limit gates live. Gate the
+route there — never inside the handler body.
+
+### Ordering invariants
+
+- `trialMiddleware` fires **before** `requireEntitlement`. An expired-trial
+  user gets HTTP 402 before the 403 entitlement gate (T-019 learning).
+- Entitlement gate always precedes limit check. Gate the feature first so
+  the usage counter is never queried for users who lack the feature.
+
+### Unified ServiceError contract
+
+Gates MUST throw `ServiceError`, never `HTTPException(403)` directly:
+
+- Missing entitlement: `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED)` →
+  HTTP 403 `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`
+- Limit reached: `ServiceError(ServiceErrorCode.LIMIT_REACHED)` →
+  HTTP 403 `{ error: { code: 'LIMIT_REACHED', ... } }`
+
+The global `createErrorHandler()` performs the mapping. Direct
+`HTTPException(403)` bypasses that mapping and breaks API consumers.
+
+### Staff bypass (INV-6)
+
+`SUPER_ADMIN`, `ADMIN`, `EDITOR`, and `CLIENT_MANAGER` bypass entitlement
+checks. `entitlementMiddleware` grants them the full unlimited set (all
+`EntitlementKey` values, all `LimitKey` values at `-1`) before
+`options.middlewares` runs. By the time `requireEntitlement` executes, the
+key is already in their set — no 403 is ever thrown. The bypass is policy
+of the loader, not the checker.
+
+### `clearEntitlementCache` invariant (INV-1)
+
+Every money-mutating lifecycle event (subscription activated / upgraded /
+downgraded / cancelled / paused / resumed; addon purchased / expired) MUST
+call `clearEntitlementCache(customerId)`. Failure to do so leaves stale
+plan entitlements in the 5-minute in-memory FIFO cache, causing the user
+to see the old plan's gates until TTL expires.
+
+The transversal guard test (`apps/api/test/services/inv1-cache-invalidation.guard.test.ts`,
+SPEC-145 T-021) statically scans ~24 handler files and fails CI if any one
+drops the call.
+
+### Phantom gates / reserved limit stubs
+
+`// PHANTOM-GATE (SPEC-145)`: a gate function exists in
+`middlewares/tourist-entitlements.ts` or `middlewares/accommodation-entitlements.ts`
+but the route it protects has not been built yet. Do not delete these;
+do not build the route without a spec. The snapshot guard excepts them.
+
+`// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
+`currentCount` implementation is a hardcoded `0` stub (the counter service
+does not exist yet). See the "Reserved — Limit Stubs" section in
+`docs/billing/endpoint-gate-matrix.md`.
+
+### Gate matrix + snapshot guard
+
+`docs/billing/endpoint-gate-matrix.md` is the single source of truth for
+gate decisions on every protected and admin route. The snapshot guard
+(`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`, T-145-22)
+parses the table on every CI run:
+
+- A new handler file without a matrix row → CI fails.
+- A matrix row pointing at a deleted file → CI fails.
+
+When adding a new protected/admin route:
+
+1. Add a matrix row with the correct Decision and Status.
+2. If Decision = `none`, write a clear Reason.
+3. If gating an existing previously-ungated route, document the behavior
+   change in `docs/billing/spec-145-behavior-changes.md`.
+
+See `docs/billing/adding-an-entitlement.md` for the full end-to-end workflow.
+
+### DELETE-body factory gotcha
+
+Hono's DELETE handlers do **not** receive a request body. Route factories
+that need to pass resource identifiers on a deletion-like action (e.g.,
+cancel a subscription addon) must use an action-POST pattern:
+
+```
+POST /api/v1/protected/billing/addons/{id}/cancel
+```
+
+Never `DELETE` with a body expecting it to be parsed — the body is silently
+discarded.
+
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
 - Billing endpoints from qzpay-hono (`/api/v1/protected/billing/plans`, `/api/v1/protected/billing/addons`) DO accept `limit` natively
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
+
+## Billing: key files and operational pointers
+
+Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
+`subscription-cancel.ts`, `subscription-pause.ts`, `addons.ts`, `promo-codes.ts`,
+`trial.ts`, `settings.ts`, `usage.ts`, `metrics.ts`, `notifications.ts`.
+
+Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
+`finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
+`apply-scheduled-plan-changes.ts`, `subscription-poll.job.ts`,
+`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`.
+
+For MP sandbox setup and operator procedures:
+[`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)
+
+For incident response:
+[`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
+
+For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
+[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
 
 ## Related Documentation
 

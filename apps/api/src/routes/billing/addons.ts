@@ -28,6 +28,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
+import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import { AddonService } from '../../services/addon.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
@@ -401,6 +402,17 @@ export const cancelAddonRoute = createProtectedRoute({
  * Combines all add-on routes
  */
 export const addonsRouter = createRouter();
+
+// Enforce X-Idempotency-Key on the mutating purchase + cancel endpoints
+// (SPEC-143 T-143-60). Mount BEFORE the route definitions so the
+// middleware short-circuits missing-key requests before the handler
+// touches MP. Read endpoints (list / getOne / getUserAddons) do not need
+// idempotency; the wildcard targets the addon-id parameterized subpaths.
+addonsRouter.use(
+    '/:slug/purchase',
+    idempotencyKeyMiddleware({ operation: 'hospeda.addons.purchase' })
+);
+addonsRouter.use('/:id/cancel', idempotencyKeyMiddleware({ operation: 'hospeda.addons.cancel' }));
 
 // Mount all routes (literal paths before parameterized to prevent matching conflicts)
 addonsRouter.route('/', listAddonsRoute);

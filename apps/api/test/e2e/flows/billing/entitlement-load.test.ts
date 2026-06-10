@@ -294,12 +294,15 @@ describe('SPEC-143 T-143-19 — entitlement load pipeline post-activation', () =
         );
     });
 
-    it('returns empty entitlements when the customer has only cancelled subscriptions', async () => {
+    it('falls back to tourist-free entitlements when the customer has only cancelled subscriptions', async () => {
         // ARRANGE: a single subscription in `cancelled` status. The
         // middleware's active-sub filter (entitlement.ts:167-169) accepts
         // only `active` or `trialing`, so the `find()` returns undefined
-        // and the loader takes the "no active subscription" branch
-        // (entitlement.ts:171-178), returning an empty set.
+        // and the loader takes the "no active subscription" branch.
+        //
+        // Per SPEC-143 T-143-58 that branch now falls back to the default
+        // tourist-free entitlements instead of returning an empty set —
+        // every authenticated user is entitled to the free baseline.
         //
         // Distinct from the sub-commits 4 pre-webhook probes: those
         // exercised `pending_provider` (subscription exists but is not
@@ -314,16 +317,20 @@ describe('SPEC-143 T-143-19 — entitlement load pipeline post-activation', () =
         // ACT
         const body = await probe(buildProbeApp(customerId));
 
-        // ASSERT: empty entitlements + empty limits + billing did not
-        // fail (this is the documented healthy-no-active-sub path).
-        expect(body.entitlements).toEqual([]);
-        expect(body.limits).toEqual({});
+        // ASSERT: tourist-free entitlements + limits + billing did not
+        // fail. Expected set matches TOURIST_FREE_PLAN at
+        // packages/billing/src/config/plans.config.ts:247-267 — keep the
+        // assertion shape in sync if that plan's definition moves.
+        expect(new Set(body.entitlements)).toEqual(
+            new Set(['save_favorites', 'write_reviews', 'read_reviews', 'can_view_recommendations'])
+        );
+        expect(body.limits).toEqual({ max_favorites: 3 });
         expect(body.billingLoadFailed).toBe(false);
 
-        // Cache MUST be populated for this customer with the empty set
-        // (shouldCache=true on the no-active-sub branch). Future probes
-        // should hit cache until the customer's lifecycle changes and a
-        // webhook handler evicts the entry.
+        // Cache MUST be populated for this customer with the free-tier
+        // set. shouldCache=true on the fallback branch because the
+        // result derives from static config — nothing customer-level to
+        // invalidate.
         const stats = getEntitlementCacheStats();
         expect(stats.size).toBeGreaterThanOrEqual(1);
     });

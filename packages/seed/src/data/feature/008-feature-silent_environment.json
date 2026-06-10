@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "008-feature-silent_environment",
-    "name": "Entorno silencioso",
+    "name": {
+        "es": "Entorno silencioso",
+        "en": "Entorno silencioso",
+        "pt": "Entorno silencioso"
+    },
     "slug": "silent_environment",
-    "description": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
+    "description": {
+        "es": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
+        "en": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas",
+        "pt": "Ambiente de completa tranquilidad sonora, alejado de ruidos urbanos, tráfico o actividades ruidosas"
+    },
     "icon": "QuietEnvironmentIcon",
     "isBuiltin": true,
     "isFeatured": false,

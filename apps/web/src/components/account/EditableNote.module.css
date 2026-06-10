@@ -24,8 +24,8 @@
 }
 
 .noteDisplay:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
-    border-color: oklch(from var(--brand-primary) l c h / 0.2);
+    background-color: var(--brand-primary-a05);
+    border-color: var(--brand-primary-a20);
 }
 
 .noteDisplay:focus-visible {
@@ -54,7 +54,7 @@
 }
 
 .notePlaceholder:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.04);
+    background-color: var(--brand-primary-a05);
     border-color: var(--brand-primary);
     color: var(--core-foreground);
 }
@@ -86,7 +86,7 @@
     color: var(--core-foreground);
     background-color: var(--core-card);
     outline: none;
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
     transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
         var(--duration-normal, 0.4s) ease;
     box-sizing: border-box;

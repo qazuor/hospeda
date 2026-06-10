@@ -47,6 +47,11 @@ describe('Footer.astro', () => {
             expect(src).toContain('companyLinks');
         });
 
+        it('links to the contribution hub in the Hospeda column (SPEC-191)', () => {
+            expect(src).toContain('path: "/colaborar/"');
+            expect(src).toContain('footer.collaborate');
+        });
+
         it('renders exactly 3 nav column <details> elements', () => {
             const matches = src.match(/<details class="footer__nav-col"/g);
             expect(matches).not.toBeNull();
@@ -195,11 +200,13 @@ describe('Footer.astro', () => {
             expect(src).toContain('footer.trustSignals.noCommissions');
         });
 
-        it('renders the payment methods row from simpleicons CDN', () => {
-            expect(src).toContain('cdn.simpleicons.org');
-            expect(src).toContain('mercadopago');
-            expect(src).toContain('visa');
-            expect(src).toContain('mastercard');
+        it('renders the payment methods row from @repo/icons (commit ce807e5e1 replaced simpleicons CDN)', () => {
+            // Commit ce807e5e1 (feat: render footer payment marks from @repo/icons instead of CDN)
+            // replaced the simpleicons.org <img> tags with inline SVG icon components for
+            // theming and performance — no extra CDN round-trip.
+            expect(src).toContain('MercadoPagoIcon');
+            expect(src).toContain('VisaIcon');
+            expect(src).toContain('MasterCardIcon');
         });
     });
 

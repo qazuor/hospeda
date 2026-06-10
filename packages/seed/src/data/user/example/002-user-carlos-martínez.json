@@ -15,22 +15,17 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Entre Ríos",
-        "city": "Concepción del Uruguay",
         "country": "Argentina",
-        "zipCode": "3260",
-        "street": "San Martín",
-        "number": "850",
-        "coordinates": {
-            "lat": "-32.4833",
-            "long": "-58.2333"
-        }
+        "region": "Entre Ríos",
+        "city": "Concepción del Uruguay",
+        "addressLine1": "San Martín 850",
+        "postalCode": "3260"
     },
     "socialNetworks": {
         "facebook": "https://facebook.com/carlos.martinez.editor",
         "instagram": "https://instagram.com/carlos_editor",
         "twitter": "https://twitter.com/carlos_editor",
-        "linkedin": "https://linkedin.com/in/carlos-martinez-editor"
+        "linkedIn": "https://linkedin.com/in/carlos-martinez-editor"
     },
     "profile": {
         "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",

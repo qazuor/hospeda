@@ -6,3 +6,12 @@ coverage/
 logs/
 .vercel
 .env*.local
+
+# Playwright visual snapshots — local-only artifacts (per SPEC-153 V1).
+# Baselines are NOT committed to keep the repo lean; re-generate with
+# `pnpm test:visual:baseline` against your local dev server.
+test-results/
+playwright-visual-report/
+tests/visual-snapshots/baseline/
+tests/visual-snapshots/actual/
+tests/visual-snapshots/diff/

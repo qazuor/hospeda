@@ -1,0 +1,233 @@
+/**
+ * @file CommentThreadIsland.module.css
+ * @description Styles for the CommentThreadIsland React island.
+ * Uses CSS custom properties for all values (no hardcoded colors/spacing).
+ */
+
+/* ─── Section wrapper ─────────────────────────────────────────────────────── */
+
+.thread {
+    margin-top: var(--space-8, 2rem);
+    padding-top: var(--space-6, 1.5rem);
+    border-top: 1px solid var(--border, oklch(0.9 0 0));
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+.header {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-5, 1.25rem);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 0 0.4rem;
+    height: 1.4rem;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary-a12);
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* ─── Empty state ─────────────────────────────────────────────────────────── */
+
+.empty {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-5, 1.25rem);
+}
+
+/* ─── Comment list ────────────────────────────────────────────────────────── */
+
+.list {
+    list-style: none;
+    margin: 0 0 var(--space-5, 1.25rem);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.item {
+    background-color: var(--core-card, var(--surface-warm));
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+    border: 1px solid var(--border, oklch(0.9 0 0));
+}
+
+.itemMeta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+.author {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.date {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.content {
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    line-height: 1.65;
+    color: var(--core-foreground);
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ─── Divider ─────────────────────────────────────────────────────────────── */
+
+.divider {
+    height: 1px;
+    background-color: var(--border, oklch(0.9 0 0));
+    margin: var(--space-5, 1.25rem) 0;
+}
+
+/* ─── Form ────────────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.textarea {
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    line-height: 1.6;
+    color: var(--core-foreground);
+    background-color: var(--core-card, var(--core-background));
+    border: 1px solid var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    min-height: 6rem;
+    transition: border-color 0.2s ease;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 2px var(--brand-primary-a15);
+}
+
+.textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.textareaError {
+    border-color: var(--destructive);
+}
+
+/* ─── Char counter ────────────────────────────────────────────────────────── */
+
+.charCount {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    text-align: right;
+}
+
+.charCountError {
+    color: var(--destructive);
+    font-weight: 600;
+}
+
+/* ─── Inline error ────────────────────────────────────────────────────────── */
+
+.errorMsg {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--destructive);
+    margin: 0;
+    background-color: var(--destructive-a08);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+}
+
+/* ─── Submit button ───────────────────────────────────────────────────────── */
+
+.submit {
+    align-self: flex-end;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--primary-foreground, #fff);
+    background-color: var(--brand-primary);
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.submit:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ─── Guest login CTA ─────────────────────────────────────────────────────── */
+
+.loginCta {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+    margin: 0;
+    text-align: center;
+    padding: var(--space-4, 1rem);
+    border: 1px dashed var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-md, 10px);
+}
+
+.loginLink {
+    color: var(--brand-primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.loginLink:hover {
+    text-decoration: underline;
+}

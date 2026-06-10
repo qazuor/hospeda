@@ -163,7 +163,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
                             )}
 
                             {/* ignoreSoftCap toggle */}
-                            <div className="flex items-center justify-between rounded-md border border-border p-3">
+                            <div className="flex items-center justify-between rounded-md border border-border bg-card p-3">
                                 <div>
                                     <p className="font-medium text-sm">
                                         {t('admin-newsletter.campaigns.ignoreSoftCap')}
@@ -182,7 +182,7 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
 
                             {/* Warning when ignoreSoftCap is on */}
                             {ignoreSoftCap && (
-                                <div className="rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200">
+                                <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-foreground text-sm">
                                     Todos los suscriptores elegibles recibirán esta campaña,
                                     ignorando el límite de frecuencia de 7 días.
                                 </div>

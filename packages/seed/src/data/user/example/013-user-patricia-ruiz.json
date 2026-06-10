@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Federación",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3230",
-        "street": "San Martín",
-        "number": "456",
-        "coordinates": {
-            "lat": "-30.9833",
-            "long": "-57.9000"
-        }
+        "region": "Entre Ríos",
+        "city": "Federación",
+        "addressLine1": "San Martín 456",
+        "postalCode": "3230"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Federación, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

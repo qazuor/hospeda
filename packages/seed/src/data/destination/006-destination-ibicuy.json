@@ -4,7 +4,7 @@
     "slug": "ibicuy",
     "name": "Ibicuy",
     "summary": "Pueblo del delta entrerriano en el Departamento Islas del Ibicuy, rodeado de humedales, canales y naturaleza preservada.",
-    "description": "Ibicuy es una localidad ubicada en el sureste de Entre Ríos, cabecera del Departamento Islas del Ibicuy, a orillas del brazo Ibicuy del río Paraná. Es un conglomerado de islas, arroyos y ríos donde el gran Paraná comienza a prepararse para su desembocadura en el Delta. Sus humedales y bañados, como los célebres Bañados de Las Lechiguanas, conforman uno de los ecosistemas más ricos en biodiversidad del Litoral argentino. Es un destino ideal para amantes de la naturaleza, el silencio y la aventura tranquila: pesca deportiva de tarariras, patíes, surubíes, sábalos, bogas, bagres y carpas; navegación recreativa por canales; safaris fotográficos; avistaje de aves autóctonas y migratorias; trekking, kayak y paseos en lancha. El acceso fluvial es protagonista, con embarcaderos y muelles que conectan la localidad con las islas circundantes.",
+    "description": "## Ibicuy, naturaleza pura en el delta entrerriano\n\nIbicuy es una localidad del sureste de Entre Ríos, en el corazón del Departamento Islas del Ibicuy, donde el gran Paraná se abre en un laberinto de islas, arroyos y bañados antes de internarse en el Delta. Su nombre proviene del guaraní y significa **arena**, una pista del paisaje fluvial que la rodea. Es un destino para quienes buscan la belleza autóctona, el silencio y una aventura tranquila, lejos del turismo masivo.\n\nEl entorno natural está conformado por humedales, vegetación selvática y bosques en galería. Las **Islas Lechiguanas**, con sus arroyos y bañados, cubren buena parte de este sector y son uno de los ambientes más ricos en biodiversidad del Litoral argentino. Es zona ideal para el avistaje de aves y fauna autóctona, y los parajes rurales de Mazaruca, La Argentina y La Arenera funcionan como puntos clásicos de pesca y camping.\n\n## Qué ofrece\n\n- **Pesca deportiva**: tarariras, patíes, surubíes, sábalos, bogas, bagres amarillos y blancos, rayas y carpas.\n- **Navegación** en lancha y kayak por el río Paraná y sus brazos deltaicos.\n- **Caminatas, cicloturismo y fotografía** de naturaleza por senderos entre humedales.\n- **Safaris fotográficos** y observación de flora y fauna.\n\nEl acceso fluvial es protagonista, con embarcaderos y muelles que conectan la localidad con las islas circundantes. La oferta de alojamiento se apoya sobre todo en campings preparados para pescadores, bungalows y cabañas, ideales para una estadía sencilla en plena naturaleza.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -177,6 +177,33 @@
         "065-attraction-pesca_deportiva",
         "035-attraction-embarcadero_turistico",
         "053-attraction-muelle_pesquero"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Ibicuy?",
+            "answer": "Por vía terrestre se accede a través de la Ruta Provincial 45, que conecta con la zona de Brazo Largo y el desvío de la Ruta Nacional 14. Viniendo desde Buenos Aires se ingresa a la provincia por el complejo Zárate-Brazo Largo y la Ruta Nacional 12. Existe además servicio de transporte en colectivo que une Zárate con Ibicuy. La localidad conserva su histórica estación ferroviaria (Holt), vinculada al ramal que llegaba hasta el puerto de Ibicuy.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué actividades se pueden hacer en Ibicuy?",
+            "answer": "Las actividades principales son la pesca deportiva, la navegación en lancha y kayak por el Paraná y sus brazos deltaicos, las caminatas y el cicloturismo por senderos entre humedales, el avistaje de aves y fauna autóctona, la fotografía de naturaleza y los safaris fotográficos. Los parajes Mazaruca, La Argentina y La Arenera son puntos clásicos de pesca y camping rural.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Qué especies se pescan en Ibicuy?",
+            "answer": "La fauna íctica es muy variada. Entre las especies más buscadas están las tarariras, patíes, surubíes, sábalos, bogas, bagres amarillos y blancos, rayas y carpas. Los ambientes de islas, arroyos y bañados ofrecen muy buenas capturas para la pesca embarcada y de costa.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Ibicuy?",
+            "answer": "Se puede visitar y pescar durante todo el año. La temporada cálida (primavera y verano) es la más cómoda para la navegación y las actividades al aire libre. Para la pesca, las primeras horas de la mañana y la noche suelen dar mejores resultados; el ingreso del pejerrey al Paraná varía según el año, en general entre fines de abril y junio. Conviene consultar el estado de los caminos y el nivel del río antes de viajar.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios y alojamiento ofrece Ibicuy?",
+            "answer": "La oferta se apoya principalmente en campings con instalaciones adecuadas para pescadores, además de bungalows y cabañas. Hay embarcaderos y muelles para acceder a las islas. Por tratarse de una localidad pequeña conviene prever con anticipación combustible, provisiones y reservas de alojamiento, especialmente en temporada alta y fines de semana largos.",
+            "category": "Servicios"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

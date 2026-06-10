@@ -24,6 +24,8 @@ import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { getDefaultNewsletterService } from '../protected/_singletons';
+import { newsletterGuestResendRoute } from './resend';
+import { newsletterGuestSubscribeRoute } from './subscribe';
 
 const SUPPORTED_LOCALES = new Set(['es', 'en', 'pt']);
 
@@ -139,12 +141,17 @@ async function unsubscribeHandler(c: Context): Promise<Response> {
 }
 
 /**
- * Public newsletter router — mounted at `/api/v1/public/newsletter` so both
- * handlers live under predictable paths the email templates can hardcode.
+ * Public newsletter router — mounted at `/api/v1/public/newsletter` so the
+ * GET redirect handlers live under predictable paths the email templates can
+ * hardcode, alongside the POST JSON endpoints for guest subscribe / resend.
  */
 export const newsletterPublicRoutes = createRouter()
     .get('/verify', verifyRateLimiter, verifyHandler)
-    .get('/unsubscribe', unsubscribeRateLimiter, unsubscribeHandler);
+    .get('/unsubscribe', unsubscribeRateLimiter, unsubscribeHandler)
+    .route('/', newsletterGuestSubscribeRoute)
+    .route('/', newsletterGuestResendRoute);
 
 // Re-exports for tests.
 export { verifyHandler as _verifyHandler, unsubscribeHandler as _unsubscribeHandler };
+export { guestSubscribeHandler } from './subscribe';
+export { guestResendHandler } from './resend';

@@ -12,7 +12,8 @@ export const InternationalPhoneRegex = /^\+[1-9]\d{1,14}(?:\s\d{1,15})*$/;
 // Regex for social network URLs
 export const FacebookUrlRegex = /^https?:\/\/(www\.)?facebook\.com\//;
 export const InstagramUrlRegex = /^https?:\/\/(www\.)?instagram\.com\//;
-export const TwitterUrlRegex = /^https?:\/\/(www\.)?twitter\.com\//;
+// Accepts both the legacy twitter.com domain and x.com (post-rebrand).
+export const TwitterUrlRegex = /^https?:\/\/(www\.)?(twitter|x)\.com\//;
 export const LinkedInUrlRegex = /^https?:\/\/(www\.)?linkedin\.com\//;
 export const TikTokUrlRegex = /^https?:\/\/(www\.)?tiktok\.com\//;
 export const YouTubeUrlRegex = /^https?:\/\/(www\.)?youtube\.com\//;

@@ -1,5 +1,7 @@
 import { z } from 'zod';
+import { i18nText } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
+import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
@@ -51,9 +53,31 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Tags (public)
     tags: true,
 
+    // Social networks (public)
+    socialNetworks: true,
+
     // Extra Info (public)
     extraInfo: true
 }).extend({
+    /**
+     * Rich-text (markdown) variant of the description for entitled hosts.
+     * Must survive serialization so the web client can switch between rich
+     * and plain rendering (FR-3b / FR-4 in SPEC-187). The entitlement-by-omission
+     * gate (strips the field server-side for non-entitled owners) runs BEFORE
+     * stripWithSchema, so schema presence is safe — omission is the protection.
+     * Accepts null (DB default for un-filled rows) and undefined (entitlement gate
+     * strips to undefined), matching the base schema's .nullish() declaration.
+     */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.accommodation.richDescription.max' })
+        .nullish(),
+    /**
+     * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
+     * for server-side use (restore on re-upgrade), but it must never be exposed
+     * to public consumers. Override the picked field with the input-safe shape.
+     */
+    media: BaseMediaObjectSchema.nullish(),
     /** ISO 8601 creation date (for "Nuevo" badge: < 30 days). Accepts Date for raw service output. */
     createdAt: z.union([z.string(), z.date()]).nullish(),
     /** Public owner data from users table JOIN. No sensitive fields. */
@@ -73,7 +97,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 amenityId: z.string().uuid(),
-                name: z.string(),
+                name: i18nText({ min: 2, max: 100 }),
                 icon: z.string().nullable(),
                 isOptional: z.boolean(),
                 additionalCost: z.number().nullable()
@@ -85,7 +109,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .array(
             z.object({
                 featureId: z.string().uuid(),
-                name: z.string(),
+                name: i18nText({ min: 2, max: 100 }),
                 icon: z.string().nullable(),
                 hostReWriteName: z.string().nullable(),
                 comments: z.string().nullable()
@@ -156,6 +180,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // Contact info (nested object with email, phone, website)
     contactInfo: true,
 
+    // Social networks
+    socialNetworks: true,
+
     // Lifecycle (for owners)
     lifecycleState: true,
 
@@ -166,6 +193,22 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /**
+     * Description — relaxed on the read side so DRAFT accommodations with
+     * short descriptions (legacy data, or drafts created via the onboarding
+     * "publicar" flow where description is initially placeholder-filled) can
+     * still be fetched without tripping the `min(30)` constraint enforced on
+     * the base/write schemas. See SPEC-143 Finding #9: read schemas must
+     * tolerate what the DB legitimately contains; the write path is where
+     * the min(30) gate is meaningful.
+     */
+    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
+    /**
+     * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
+     * for server-side use, but it must never be exposed to authenticated (non-admin)
+     * consumers either. Override the picked field with the input-safe shape.
+     */
+    media: BaseMediaObjectSchema.nullish(),
     /** Owner data from users table JOIN (protected tier). */
     owner: UserProtectedSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */
@@ -189,6 +232,13 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
  * This is essentially the full schema.
  */
 export const AccommodationAdminSchema = AccommodationSchema.extend({
+    /**
+     * Description — relaxed on the read side so DRAFT accommodations with
+     * short descriptions (legacy data, or drafts created via the onboarding
+     * "publicar" flow) can still be fetched by the admin panel. See
+     * SPEC-143 Finding #9.
+     */
+    description: z.string().max(2000, { message: 'zodError.accommodation.description.max' }),
     /** Owner data from users table JOIN (admin tier). */
     owner: UserAdminSchema.optional(),
     /** City projection of the linked destination (SPEC-095). */

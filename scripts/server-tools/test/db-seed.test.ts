@@ -62,6 +62,10 @@ describe('parseArgs(argv)', () => {
         it('does not skip confirm by default', () => {
             expect(parseArgs([]).skipConfirm).toBe(false);
         });
+
+        it('build is OFF by default (seed resolves from src/ via tsconfig paths)', () => {
+            expect(parseArgs([]).build).toBe(false);
+        });
     });
 
     describe('feature toggles', () => {
@@ -85,21 +89,32 @@ describe('parseArgs(argv)', () => {
             expect(parseArgs([]).cleanImages).toBe(false);
         });
 
-        it('build is ON by default', () => {
-            expect(parseArgs([]).build).toBe(true);
+        it('--build enables build (escape hatch)', () => {
+            expect(parseArgs(['--build']).build).toBe(true);
         });
 
-        it('--no-build disables build', () => {
-            expect(parseArgs(['--no-build']).build).toBe(false);
+        it('applyExtras is ON by default', () => {
+            expect(parseArgs([]).applyExtras).toBe(true);
+        });
+
+        it('--no-apply-extras disables applyExtras', () => {
+            expect(parseArgs(['--no-apply-extras']).applyExtras).toBe(false);
         });
 
         it('combines multiple flags', () => {
-            const parsed = parseArgs(['--no-reset', '--no-example', '--clean-images', '--no-build']);
+            const parsed = parseArgs([
+                '--no-reset',
+                '--no-example',
+                '--clean-images',
+                '--build',
+                '--no-apply-extras'
+            ]);
             expect(parsed.reset).toBe(false);
             expect(parsed.required).toBe(true);
             expect(parsed.example).toBe(false);
             expect(parsed.cleanImages).toBe(true);
-            expect(parsed.build).toBe(false);
+            expect(parsed.build).toBe(true);
+            expect(parsed.applyExtras).toBe(false);
         });
     });
 
@@ -139,11 +154,18 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: true,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
-        expect(args).toEqual(['--filter', '@repo/seed', 'seed', '--reset', '--required', '--example']);
+        expect(args).toEqual([
+            '--filter',
+            '@repo/seed',
+            'seed',
+            '--reset',
+            '--required',
+            '--example'
+        ]);
     });
 
     it('drops --reset when reset is false', () => {
@@ -152,7 +174,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: true,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
@@ -165,7 +187,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: false,
             example: true,
             cleanImages: true,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
@@ -178,7 +200,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: false,
             cleanImages: true,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
@@ -191,15 +213,18 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: true,
             cleanImages: false,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
-        // Same output regardless of cleanImages — the seed's own --reset
-        // implies --clean-images internally; hops only controls whether
-        // the Cloudinary creds are forwarded to make the cleanup do
-        // anything remote.
-        expect(args).toEqual(['--filter', '@repo/seed', 'seed', '--reset', '--required', '--example']);
+        expect(args).toEqual([
+            '--filter',
+            '@repo/seed',
+            'seed',
+            '--reset',
+            '--required',
+            '--example'
+        ]);
     });
 
     it('required-only run (--no-reset --no-example)', () => {
@@ -208,7 +233,7 @@ describe('buildSeedArgs(parsed)', () => {
             required: true,
             example: false,
             cleanImages: true,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
@@ -216,14 +241,12 @@ describe('buildSeedArgs(parsed)', () => {
     });
 
     it('keeps the --filter @repo/seed prefix even when nothing else is enabled', () => {
-        // The dbSeed entry point rejects the all-off case before this
-        // runs, but the helper itself must not silently drop the prefix.
         const args = buildSeedArgs({
             reset: false,
             required: false,
             example: false,
             cleanImages: false,
-            build: true,
+            build: false,
             pull: 'ask',
             skipConfirm: false
         });
@@ -232,18 +255,20 @@ describe('buildSeedArgs(parsed)', () => {
 });
 
 describe('formatFlagSummary(parsed)', () => {
-    it('renders the full default as "+reset +required +example +clean-images +build"', () => {
+    it('renders the full default as "+reset +required +example -build -migrate"', () => {
         expect(
             formatFlagSummary({
                 reset: true,
                 required: true,
                 example: true,
                 cleanImages: true,
-                build: true,
+                build: false,
+                migrate: false,
+                applyExtras: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +example +clean-images +build');
+        ).toBe('+reset +required +example +clean-images -build -migrate');
     });
 
     it('mixes on / off when some flags are disabled', () => {
@@ -254,13 +279,15 @@ describe('formatFlagSummary(parsed)', () => {
                 example: false,
                 cleanImages: true,
                 build: true,
+                migrate: false,
+                applyExtras: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +clean-images +build -example');
+        ).toBe('+reset +required +clean-images +build -example -migrate');
     });
 
-    it('renders all-off as "-reset -required -example -clean-images -build"', () => {
+    it('renders all-off as "-reset -required -example -clean-images -build -migrate"', () => {
         expect(
             formatFlagSummary({
                 reset: false,
@@ -268,10 +295,12 @@ describe('formatFlagSummary(parsed)', () => {
                 example: false,
                 cleanImages: false,
                 build: false,
+                migrate: false,
+                applyExtras: false,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('-reset -required -example -clean-images -build');
+        ).toBe('-reset -required -example -clean-images -build -migrate');
     });
 
     it('renders all-on as a single "+..." chunk (no leading "-" segment)', () => {
@@ -281,14 +310,13 @@ describe('formatFlagSummary(parsed)', () => {
             example: true,
             cleanImages: true,
             build: true,
+            migrate: true,
+            applyExtras: true,
             pull: 'ask',
             skipConfirm: false
         });
         expect(summary.startsWith('+')).toBe(true);
-        // The hyphen in "clean-images" is fine; what we are ruling out is
-        // a `-foo` off-segment, which is always preceded by a space (or
-        // start-of-string when on-list is empty).
-        expect(/ -|^-/.test(summary)).toBe(false);
+        expect(/ -[a-z]+( |$)/.test(summary)).toBe(false);
     });
 
     it('shows -clean-images on its own when only that flag is off', () => {
@@ -299,13 +327,15 @@ describe('formatFlagSummary(parsed)', () => {
                 example: true,
                 cleanImages: false,
                 build: true,
+                migrate: false,
+                applyExtras: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +example +build -clean-images');
+        ).toBe('+reset +required +example +build -clean-images -migrate');
     });
 
-    it('shows -build when --no-build is passed', () => {
+    it('shows -build when --build is not passed (default)', () => {
         expect(
             formatFlagSummary({
                 reset: true,
@@ -313,10 +343,44 @@ describe('formatFlagSummary(parsed)', () => {
                 example: true,
                 cleanImages: true,
                 build: false,
+                migrate: false,
+                applyExtras: true,
                 pull: 'ask',
                 skipConfirm: false
             })
-        ).toBe('+reset +required +example +clean-images -build');
+        ).toBe('+reset +required +example +clean-images -build -migrate');
+    });
+
+    it('shows +build when --build is passed', () => {
+        expect(
+            formatFlagSummary({
+                reset: true,
+                required: true,
+                example: true,
+                cleanImages: true,
+                build: true,
+                migrate: false,
+                applyExtras: true,
+                pull: 'ask',
+                skipConfirm: false
+            })
+        ).toBe('+reset +required +example +clean-images +build -migrate');
+    });
+
+    it('shows -apply-extras only when --migrate is also enabled', () => {
+        expect(
+            formatFlagSummary({
+                reset: true,
+                required: true,
+                example: true,
+                cleanImages: true,
+                build: true,
+                migrate: true,
+                applyExtras: false,
+                pull: 'ask',
+                skipConfirm: false
+            })
+        ).toBe('+reset +required +example +clean-images +build +migrate -apply-extras');
     });
 });
 
@@ -341,7 +405,6 @@ describe('collectCloudinaryEnv(cleanImages)', () => {
 
     it('forwards only what is set (partial credentials)', () => {
         process.env.HOSPEDA_CLOUDINARY_CLOUD_NAME = 'cloud';
-        // _API_KEY and _API_SECRET deliberately not set
         const env = collectCloudinaryEnv(true);
         expect(env).toEqual({ HOSPEDA_CLOUDINARY_CLOUD_NAME: 'cloud' });
     });

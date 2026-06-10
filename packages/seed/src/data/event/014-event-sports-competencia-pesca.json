@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "014-event-sports-competencia-pesca",
     "slug": "competencia-pesca",
-    "name": "Competencia de Pesca",
-    "summary": "Evento sports - Competencia de Pesca",
-    "description": "Descripción detallada del evento Competencia de Pesca. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
+    "name": "Competencia de Pesca Deportiva del Dorado",
+    "summary": "Jornada de pesca deportiva con captura y devolución, modalidad embarcado en el río Paraná. Pesca del dorado, surubí y boga, con premios para los mejores ejemplares. Apto para pescadores con experiencia.",
+    "description": "Una jornada dedicada a la pesca deportiva en una de las regiones más productivas del país. La competencia se desarrolla en aguas del río Paraná, en modalidad embarcado y con sistema de captura y devolución (catch & release) para asegurar la sostenibilidad de la actividad y el respeto por las especies.\n\n**Especies en competencia**\n\n- **Dorado:** el 'tigre del Paraná', objetivo principal de la jornada y trofeo más valorado.\n- **Surubí:** captura premiada por tamaño, con tope máximo y mínimo según reglamento.\n- **Boga:** especie complementaria, premiada por cantidad.\n- **Pacú y patí:** captura abierta, sin puntuación pero documentada para fines estadísticos.\n\n**Reglas de la competencia**\n\n- Sistema captura y devolución (C&R) obligatorio.\n- Anzuelos sin rebaba para minimizar daño a los peces.\n- Cada captura debe ser fotografiada con elemento de referencia (medidor incorporado).\n- Tiempo máximo entre captura y devolución: 60 segundos.\n- Veedores oficiales en cada embarcación.\n- Reglamento completo entregado en la acreditación.\n\n**Modalidad y categorías**\n\n- **Equipos de 2 pescadores por embarcación.**\n- **Categorías individuales:** mejor dorado, mejor surubí, mayor cantidad de capturas válidas.\n- **Premio mayor:** equipo con mejor sumatoria total.\n- **Premio Fair Play:** equipo con mejor conducta y compromiso con la conservación.\n\n**Información práctica**\n\n- **Cuándo:** un domingo de agosto, jornada de 7 a 17.\n- **Dónde:** embarcadero en el río Paraná (sede a confirmar según condiciones).\n- **Inscripción:** GRATUITA, con cupo limitado por capacidad de embarcaciones.\n- **Incluye:** desayuno, almuerzo en embarcadero, premio para todos los participantes, certificación de C&R.\n- **Llevá:** caña y equipo propio (no se prestan), ropa para todo el día al aire libre, protector solar resistente al agua, gorra, gafas polarizadas, repelente.\n- **Requisito:** carné de pescador deportivo vigente.\n\nUna oportunidad para pescadores experimentados de competir en uno de los ríos más codiciados del continente, en un evento que combina deporte con compromiso ambiental.",
     "category": "SPORTS",
     "authorId": "admin-user",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Competencia de Pesca 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en la Competencia de Pesca 2025 en Entre Ríos. Una jornada de pesca deportiva con premios y actividades para toda la familia.",
-        "keywords": ["sports", "entre rios", "evento", "cultura"]
+        "title": "Competencia de Pesca Deportiva del Dorado - Hospeda",
+        "description": "Jornada de pesca deportiva del dorado en el Paraná, modalidad captura y devolución. Equipos de 2, premios por especies y por equipo. Inscripción gratuita.",
+        "keywords": [
+            "competencia pesca",
+            "pesca dorado paraná",
+            "pesca deportiva",
+            "captura y devolución",
+            "torneo pesca",
+            "surubí entre ríos",
+            "pesca embarcado",
+            "evento deportivo"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

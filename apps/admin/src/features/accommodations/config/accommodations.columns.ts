@@ -1,228 +1,307 @@
-import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
+import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
+import {
+    type InlineStateOption,
+    InlineStateSelectCell
+} from '@/components/entity-list/InlineStateSelectCell';
+import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
+import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
+import { Views30dCell } from '@/components/entity-list/Views30dCell';
+import type {
+    ColumnConfig,
+    ColumnTFunction,
+    CreateColumnsOptions
+} from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import type { TranslationKey } from '@repo/i18n';
+import { PermissionEnum } from '@repo/schemas';
+import { createElement } from 'react';
+import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
+import {
+    useAccommodationQuery,
+    useUpdateAccommodationMutation
+} from '../hooks/useAccommodationQuery';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
+/** Accommodation rating breakdown dimensions (6), in display order. */
+const ACCOMMODATION_RATING_DIMENSIONS: ReadonlyArray<RatingDimension> = [
+    { key: 'cleanliness', label: 'review.form.ratingAspects.cleanliness' },
+    { key: 'hospitality', label: 'review.form.ratingAspects.hospitality' },
+    { key: 'services', label: 'review.form.ratingAspects.services' },
+    { key: 'accuracy', label: 'review.form.ratingAspects.accuracy' },
+    { key: 'communication', label: 'review.form.ratingAspects.communication' },
+    { key: 'location', label: 'review.form.ratingAspects.location' }
+];
+
 /**
- * Column configuration for accommodations list
+ * Visibility options (value + localized label + badge color). Single source for
+ * both the read-only badge fallback and the inline-edit dropdown.
  */
-export const createAccommodationsColumns = (
-    t: ColumnTFunction
-): readonly ColumnConfig<Accommodation>[] => [
+const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
     {
-        id: 'name',
-        header: t('admin-entities.columns.name'),
-        accessorKey: 'name',
-        enableSorting: true,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.ACCOMMODATION,
-            color: BadgeColor.BLUE
-        },
-        linkHandler: (row) => ({
-            to: '/accommodations/$id',
-            params: { id: row.id }
-        })
+        value: 'PUBLIC',
+        label: t('admin-entities.states.visibility.public'),
+        color: BadgeColor.PURPLE
     },
     {
-        id: 'type',
-        header: t('admin-entities.columns.type'),
-        accessorKey: 'type',
-        enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'HOTEL',
-                label: t('admin-entities.types.accommodation.hotel'),
-                color: BadgeColor.BLUE
-            },
-            {
-                value: 'HOSTEL',
-                label: t('admin-entities.types.accommodation.hostel'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'APARTMENT',
-                label: t('admin-entities.types.accommodation.apartment'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'HOUSE',
-                label: t('admin-entities.types.accommodation.house'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'COUNTRY_HOUSE',
-                label: t('admin-entities.types.accommodation.countryHouse'),
-                color: BadgeColor.TEAL
-            },
-            {
-                value: 'CABIN',
-                label: t('admin-entities.types.accommodation.cabin'),
-                color: BadgeColor.ORANGE
-            },
-            {
-                value: 'CAMPING',
-                label: t('admin-entities.types.accommodation.camping'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'ROOM',
-                label: t('admin-entities.types.accommodation.room'),
-                color: BadgeColor.PINK
-            },
-            {
-                value: 'MOTEL',
-                label: t('admin-entities.types.accommodation.motel'),
-                color: BadgeColor.INDIGO
-            },
-            {
-                value: 'RESORT',
-                label: t('admin-entities.types.accommodation.resort'),
-                color: BadgeColor.RED
-            }
-        ]
+        value: 'PRIVATE',
+        label: t('admin-entities.states.visibility.private'),
+        color: BadgeColor.CYAN
     },
     {
-        id: 'destination',
-        header: t('admin-entities.columns.destination'),
-        accessorKey: 'destination.name',
-        enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.DESTINATION,
-            color: BadgeColor.GREEN
-        },
-        linkHandler: (row) =>
-            row.destination?.id
-                ? {
-                      to: '/destinations/$id',
-                      params: { id: row.destination.id }
-                  }
-                : undefined
-    },
-    {
-        id: 'owner',
-        header: t('admin-entities.columns.owner'),
-        accessorKey: 'owner.displayName',
-        enableSorting: false,
-        columnType: ColumnType.ENTITY,
-        entityOptions: {
-            entityType: EntityType.USER,
-            color: BadgeColor.PINK
-        },
-        linkHandler: (row) =>
-            row.owner?.id
-                ? {
-                      to: '/users/$id',
-                      params: { id: row.owner.id }
-                  }
-                : undefined
-    },
-    {
-        id: 'price',
-        header: t('admin-entities.columns.price'),
-        accessorKey: 'price.price',
-        enableSorting: true,
-        columnType: ColumnType.NUMBER
-    },
-    {
-        id: 'averageRating',
-        header: t('admin-entities.columns.rating'),
-        accessorKey: 'averageRating',
-        enableSorting: true,
-        columnType: ColumnType.NUMBER
-    },
-    {
-        id: 'reviewsCount',
-        header: t('admin-entities.columns.reviewsCount'),
-        accessorKey: 'reviewsCount',
-        enableSorting: true,
-        columnType: ColumnType.NUMBER
-    },
-    {
-        id: 'isFeatured',
-        header: t('admin-entities.columns.featured'),
-        accessorKey: 'isFeatured',
-        enableSorting: true,
-        columnType: ColumnType.BOOLEAN
-    },
-    {
-        id: 'visibility',
-        header: t('admin-entities.columns.visibility'),
-        accessorKey: 'visibility',
-        enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'PUBLIC',
-                label: t('admin-entities.states.visibility.public'),
-                color: BadgeColor.PURPLE
-            },
-            {
-                value: 'PRIVATE',
-                label: t('admin-entities.states.visibility.private'),
-                color: BadgeColor.CYAN
-            },
-            {
-                value: 'RESTRICTED',
-                label: t('admin-entities.states.visibility.restricted'),
-                color: BadgeColor.PINK
-            }
-        ]
-    },
-    {
-        id: 'lifecycleState',
-        header: t('admin-entities.columns.status'),
-        accessorKey: 'lifecycleState',
-        enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'DRAFT',
-                label: t('admin-entities.states.lifecycle.draft'),
-                color: BadgeColor.GRAY
-            },
-            {
-                value: 'ACTIVE',
-                label: t('admin-entities.states.lifecycle.active'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'ARCHIVED',
-                label: t('admin-entities.states.lifecycle.archived'),
-                color: BadgeColor.ORANGE
-            }
-        ]
-    },
-    {
-        id: 'moderationState',
-        header: t('admin-entities.columns.moderation'),
-        accessorKey: 'moderationState',
-        enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: [
-            {
-                value: 'PENDING',
-                label: t('admin-entities.states.moderation.pending'),
-                color: BadgeColor.YELLOW
-            },
-            {
-                value: 'APPROVED',
-                label: t('admin-entities.states.moderation.approved'),
-                color: BadgeColor.GREEN
-            },
-            {
-                value: 'REJECTED',
-                label: t('admin-entities.states.moderation.rejected'),
-                color: BadgeColor.RED
-            }
-        ]
-    },
-    {
-        id: 'createdAt',
-        header: t('admin-entities.columns.createdAt'),
-        accessorKey: 'createdAt',
-        enableSorting: true,
-        columnType: ColumnType.TIME_AGO
+        value: 'RESTRICTED',
+        label: t('admin-entities.states.visibility.restricted'),
+        color: BadgeColor.PINK
     }
 ];
+
+/** Lifecycle-state options. ARCHIVED is the destructive transition. */
+const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'DRAFT',
+        label: t('admin-entities.states.lifecycle.draft'),
+        color: BadgeColor.GRAY
+    },
+    {
+        value: 'ACTIVE',
+        label: t('admin-entities.states.lifecycle.active'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'ARCHIVED',
+        label: t('admin-entities.states.lifecycle.archived'),
+        color: BadgeColor.ORANGE
+    }
+];
+
+/** Moderation-state options. REJECTED is the destructive transition. */
+const MODERATION_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
+    {
+        value: 'PENDING',
+        label: t('admin-entities.states.moderation.pending'),
+        color: BadgeColor.YELLOW
+    },
+    {
+        value: 'APPROVED',
+        label: t('admin-entities.states.moderation.approved'),
+        color: BadgeColor.GREEN
+    },
+    {
+        value: 'REJECTED',
+        label: t('admin-entities.states.moderation.rejected'),
+        color: BadgeColor.RED
+    }
+];
+
+/**
+ * Column configuration for accommodations list.
+ *
+ * The optional `options.hasAnalyticsView` flag controls whether the
+ * display-only "Vistas (30d)" derived column is included. When absent or
+ * false, the column is omitted entirely and no API call is made.
+ */
+export const createAccommodationsColumns = (
+    t: ColumnTFunction,
+    options?: CreateColumnsOptions
+): readonly ColumnConfig<Accommodation>[] => {
+    /** Display-only "Vistas (30d)" column — only included with ANALYTICS_VIEW. */
+    const views30dColumn: ColumnConfig<Accommodation> = {
+        id: 'views30d',
+        header: t('admin-entities.columns.views30d' as TranslationKey),
+        accessorKey: 'id',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) =>
+            createElement(Views30dCell, {
+                entityId: row.id,
+                entityType: 'ACCOMMODATION'
+            })
+    };
+
+    const baseColumns: ReadonlyArray<ColumnConfig<Accommodation>> = [
+        {
+            id: 'name',
+            header: t('admin-entities.columns.name'),
+            accessorKey: 'name',
+            enableSorting: true,
+            columnType: ColumnType.ENTITY,
+            entityOptions: {
+                entityType: EntityType.ACCOMMODATION,
+                color: BadgeColor.BLUE
+            },
+            linkHandler: (row) => ({
+                to: '/accommodations/$id',
+                params: { id: row.id }
+            })
+        },
+        {
+            id: 'type',
+            header: t('admin-entities.columns.type'),
+            accessorKey: 'type',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) => createElement(AccommodationTypeBadge, { row })
+        },
+        {
+            id: 'destination',
+            header: t('admin-entities.columns.destination'),
+            accessorKey: 'cityDestination.name',
+            enableSorting: false,
+            columnType: ColumnType.ENTITY,
+            entityOptions: {
+                entityType: EntityType.DESTINATION,
+                color: BadgeColor.GREEN
+            },
+            linkHandler: (row) =>
+                row.cityDestination?.id
+                    ? {
+                          to: '/destinations/$id',
+                          params: { id: row.cityDestination.id }
+                      }
+                    : undefined
+        },
+        {
+            id: 'owner',
+            header: t('admin-entities.columns.owner'),
+            accessorKey: 'owner.displayName',
+            enableSorting: false,
+            columnType: ColumnType.ENTITY,
+            entityOptions: {
+                entityType: EntityType.USER,
+                color: BadgeColor.PINK
+            },
+            linkHandler: (row) =>
+                row.owner?.id
+                    ? {
+                          to: '/access/users/$id',
+                          params: { id: row.owner.id }
+                      }
+                    : undefined
+        },
+        {
+            id: 'price',
+            header: t('admin-entities.columns.price'),
+            accessorKey: 'price',
+            enableSorting: true,
+            columnType: ColumnType.PRICE,
+            align: 'right'
+        },
+        {
+            id: 'averageRating',
+            header: t('admin-entities.columns.rating'),
+            accessorKey: 'averageRating',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(RatingCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    averageRating: typeof row.averageRating === 'number' ? row.averageRating : 0,
+                    reviewsCount: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                    dimensions: ACCOMMODATION_RATING_DIMENSIONS,
+                    useDetailQuery: useAccommodationQuery
+                })
+        },
+        {
+            id: 'reviewsCount',
+            header: t('admin-entities.columns.reviewsCount'),
+            accessorKey: 'reviewsCount',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(ReviewsCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    count: typeof row.reviewsCount === 'number' ? row.reviewsCount : 0,
+                    reviewsPath: '/api/v1/admin/accommodations/reviews',
+                    idParamName: 'accommodationId',
+                    queryKeyPrefix: 'accommodation-reviews'
+                })
+        },
+        {
+            id: 'isFeatured',
+            header: t('admin-entities.columns.featured'),
+            accessorKey: 'isFeatured',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineFeaturedCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                    checked: Boolean(row.isFeatured),
+                    permission: PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
+                    useUpdateMutation: useUpdateAccommodationMutation
+                })
+        },
+        {
+            id: 'visibility',
+            header: t('admin-entities.columns.visibility'),
+            accessorKey: 'visibility',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                    field: 'visibility',
+                    currentValue: row.visibility,
+                    successMessageKey: 'admin-entities.messages.visibilityChanged',
+                    options: VISIBILITY_OPTIONS(t),
+                    permission: PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
+                    useUpdateMutation: useUpdateAccommodationMutation
+                })
+        },
+        {
+            id: 'lifecycleState',
+            header: t('admin-entities.columns.status'),
+            accessorKey: 'lifecycleState',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                    field: 'lifecycleState',
+                    currentValue: row.lifecycleState,
+                    successMessageKey: 'admin-entities.messages.stateChanged',
+                    options: LIFECYCLE_OPTIONS(t),
+                    permission: PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
+                    useUpdateMutation: useUpdateAccommodationMutation,
+                    confirmValues: ['ARCHIVED'],
+                    confirmCopyKey: 'archive'
+                })
+        },
+        {
+            id: 'moderationState',
+            header: t('admin-entities.columns.moderation'),
+            accessorKey: 'moderationState',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                    field: 'moderationState',
+                    currentValue: row.moderationState,
+                    successMessageKey: 'admin-entities.messages.moderationChanged',
+                    options: MODERATION_OPTIONS(t),
+                    permission: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
+                    useUpdateMutation: useUpdateAccommodationMutation,
+                    confirmValues: ['REJECTED'],
+                    confirmCopyKey: 'reject'
+                })
+        },
+        {
+            id: 'createdAt',
+            header: t('admin-entities.columns.createdAt'),
+            accessorKey: 'createdAt',
+            enableSorting: true,
+            columnType: ColumnType.TIME_AGO
+        }
+    ];
+
+    return options?.hasAnalyticsView ? [...baseColumns, views30dColumn] : baseColumns;
+};

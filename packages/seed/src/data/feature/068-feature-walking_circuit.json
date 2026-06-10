@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "068-feature-walking_circuit",
-    "name": "Circuito de caminatas",
+    "name": {
+        "es": "Circuito de caminatas",
+        "en": "Circuito de caminatas",
+        "pt": "Circuito de caminatas"
+    },
     "slug": "walking_circuit",
-    "description": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza",
+    "description": {
+        "es": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza",
+        "en": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza",
+        "pt": "Senderos señalizados y mantenidos para caminatas recreativas y contacto con la naturaleza"
+    },
     "icon": "WalkingTrailIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -37,6 +37,10 @@ const { locale } = Astro.props;
 
 const { t } = createTranslations(locale);
 
+// Forwarded to the event cards so the FavoriteButton picks the toggle-favorite
+// flow instead of the guest auth-required popover when the user is logged in.
+const isAuthenticated = Boolean(Astro.locals.user);
+
 // Fetch from API - empty array if unavailable
 let eventItems: EventCardData[] = [];
 try {
@@ -89,11 +93,11 @@ const bottomEvents = remainingEvents.slice(2, 5);
           <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
           <div class="events__grid-top">
             <div class="events__grid-featured" data-reveal="left">
-              <EventCardFeatured data={featuredEvent} locale={locale} />
+              <EventCardFeatured data={featuredEvent} locale={locale} isAuthenticated={isAuthenticated} />
             </div>
             {topEvents.map((event, i) => (
               <div data-reveal="right" {...revealStagger({ index: i + 1 })}>
-                <EventCardHorizontal data={event} locale={locale} />
+                <EventCardHorizontal data={event} locale={locale} isAuthenticated={isAuthenticated} />
               </div>
             ))}
           </div>
@@ -103,7 +107,7 @@ const bottomEvents = remainingEvents.slice(2, 5);
             <div class="events__grid-bottom">
               {bottomEvents.map((event, i) => (
                 <div data-reveal="up" {...revealStagger({ index: i + 3 })}>
-                  <EventCardHorizontal data={event} locale={locale} />
+                  <EventCardHorizontal data={event} locale={locale} isAuthenticated={isAuthenticated} />
                 </div>
               ))}
             </div>
@@ -146,7 +150,11 @@ const bottomEvents = remainingEvents.slice(2, 5);
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--space-card-gap);
-    overflow: hidden;
+    /* `clip` (not `hidden`) so the section still contains the cards' horizontal
+       reveal travel without creating a scroll container that swallows the
+       IntersectionObserver hit-test — `overflow: hidden` left the
+       `[data-reveal="left"|"right"]` cards stuck at opacity:0 (BETA-35). */
+    overflow: clip;
   }
 
   .events__grid-top > *,

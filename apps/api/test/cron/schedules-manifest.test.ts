@@ -59,4 +59,33 @@ describe('cron schedule manifest', () => {
             ).toBe(job.schedule);
         }
     });
+
+    // SPEC-161 UX: every job must carry presentation metadata so the admin card
+    // and the platform crons page can show a friendly name + category grouping.
+    const VALID_CATEGORIES = new Set([
+        'billing',
+        'notifications',
+        'content',
+        'media',
+        'search-cache',
+        'system'
+    ]);
+
+    it('gives every entry a non-empty friendly displayName', () => {
+        for (const entry of CRON_SCHEDULES) {
+            expect(
+                typeof entry.displayName === 'string' && entry.displayName.trim().length > 0,
+                `Manifest entry "${entry.name}" is missing a displayName`
+            ).toBe(true);
+        }
+    });
+
+    it('assigns every entry a valid category', () => {
+        for (const entry of CRON_SCHEDULES) {
+            expect(
+                VALID_CATEGORIES.has(entry.category),
+                `Manifest entry "${entry.name}" has invalid category "${entry.category}"`
+            ).toBe(true);
+        }
+    });
 });

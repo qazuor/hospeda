@@ -1,28 +1,30 @@
 /**
- * Tests for Sidebar Component
+ * Tests for Sidebar Component (SPEC-154 T-024 migration)
  *
- * Tests the contextual sidebar navigation (Level 2):
- * 1. Does not render when no config available
- * 2. Renders items from config
- * 3. Filters items by permissions
- * 4. Handles mobile open/close
- * 5. Renders groups correctly
+ * Tests the contextual sidebar navigation (Level 2) driven by the NEW
+ * config-driven IA system:
+ * 1. Does not render when no sidebar is configured for the current route
+ * 2. Renders visible items from useVisibleSidebarItems
+ * 3. Renders disabled items (greyed-out, no navigation) for items with no access
+ * 4. Handles mobile open/close via sidebar context
+ * 5. Injects the unread-badge into the conversations-inbox item by ID
+ * 6. Renders groups correctly (uses I18nLabel + resolveIcon)
  */
 
-import type { SidebarConfig } from '@/lib/sections/types';
+import type { VisibleGroupItem, VisibleLinkItem } from '@/hooks/use-visible-sidebar-items';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock TanStack Router
+// ── TanStack Router mock ──────────────────────────────────────────────────────
 vi.mock('@tanstack/react-router', () => ({
     Link: ({
         to,
         children,
         className,
         ...props
-    }: { to: string; children: ReactNode; className?: string }) => (
+    }: { to: string; children: ReactNode; className?: string; [k: string]: unknown }) => (
         <a
             href={to}
             className={className}
@@ -35,59 +37,88 @@ vi.mock('@tanstack/react-router', () => ({
     useParams: () => ({})
 }));
 
-// Mock translations
+// ── Translations mock ─────────────────────────────────────────────────────────
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
-        t: (key: string) => key
+        t: (key: string) => key,
+        locale: 'es'
     })
 }));
 
-// Mock the unread-count hook (uses TanStack Query, no QueryClient in test).
+// ── Unread count mock ─────────────────────────────────────────────────────────
 vi.mock('@/features/conversations/hooks/useUnreadCount', () => ({
-    useUnreadCount: () => ({ data: { count: 0 } })
+    useUnreadCount: () => ({ data: { count: 3 } })
 }));
 
-// Controllable sidebar config for useCurrentSidebarConfig
-let mockSidebarConfig: SidebarConfig | undefined = undefined;
-
-// Sidebar context mock state (only mobile/collapse state used by Sidebar now)
+// ── Sidebar context mock ──────────────────────────────────────────────────────
 let mockIsMobileOpen = false;
 const mockCloseMobile = vi.fn();
+const mockOpenMobile = vi.fn();
 
 vi.mock('@/contexts/sidebar-context', () => ({
     useSidebarContext: () => ({
         isMobileOpen: mockIsMobileOpen,
         closeMobile: mockCloseMobile,
+        openMobile: mockOpenMobile,
         isCollapsed: false
     })
 }));
 
-// Mock useCurrentSidebarConfig from sections
-vi.mock('@/lib/sections', () => ({
-    useCurrentSidebarConfig: () => mockSidebarConfig,
-    isGroupActive: () => false,
-    findActiveItem: () => undefined,
-    filterByPermissions: (items: unknown[], permissions?: string[]) => {
-        if (!permissions || permissions.length === 0) {
-            // Filter out items that require permissions when none provided
-            return (items as Array<{ permissions?: string[] }>).filter(
-                (item) => !item.permissions || item.permissions.length === 0
-            );
-        }
-        return (items as Array<{ permissions?: string[] }>).filter(
-            (item) =>
-                !item.permissions ||
-                item.permissions.length === 0 ||
-                item.permissions.some((p: string) => permissions.includes(p))
-        );
-    }
+// ── New hook mocks ────────────────────────────────────────────────────────────
+// useCurrentSidebar — returns the raw Sidebar or undefined.
+type MockSidebar = { items: readonly object[] } | undefined;
+let mockCurrentSidebar: MockSidebar = undefined;
+
+vi.mock('@/hooks/use-current-sidebar', () => ({
+    useCurrentSidebar: () => mockCurrentSidebar
 }));
 
-// Mock icons - must include all icons used by Sidebar and its children
+// useVisibleSidebarItems — returns the pre-annotated items (with disabled flag).
+type MockVisibleItem =
+    | VisibleLinkItem
+    | VisibleGroupItem
+    | { type: 'separator'; id: string; disabled: false };
+let mockVisibleItems: readonly MockVisibleItem[] = [];
+
+vi.mock('@/hooks/use-visible-sidebar-items', () => ({
+    useVisibleSidebarItems: () => mockVisibleItems
+}));
+
+// ── useLocalizedLabel mock ────────────────────────────────────────────────────
+vi.mock('@/hooks/use-localized-label', () => ({
+    useLocalizedLabel: (label: { es: string; en: string; pt: string }) => label.es
+}));
+
+// ── Icons mock ────────────────────────────────────────────────────────────────
 vi.mock('@repo/icons', () => ({
-    CloseIcon: () => <span data-testid="close-icon">Close</span>,
-    ChevronIcon: () => <span data-testid="chevron-icon">Chevron</span>,
-    DropdownIcon: () => <span data-testid="dropdown-icon">Dropdown</span>
+    CloseIcon: ({ className }: { className?: string }) => (
+        <span
+            data-testid="close-icon"
+            className={className}
+        >
+            Close
+        </span>
+    ),
+    DropdownIcon: ({ className }: { className?: string }) => (
+        <span
+            data-testid="dropdown-icon"
+            className={className}
+        >
+            Dropdown
+        </span>
+    )
+}));
+
+// ── nav-icon-map mock (admin nav resolves icons locally, not via @repo/icons) ──
+vi.mock('@/lib/nav-icon-map', () => ({
+    resolveNavIcon:
+        () =>
+        ({ size: _size, ...props }: { size?: string; [k: string]: unknown }) => (
+            <span
+                data-testid="resolved-icon"
+                {...props}
+            />
+        )
 }));
 
 // Import after mocks
@@ -96,21 +127,23 @@ import { Sidebar } from '@/components/layout/sidebar/Sidebar';
 describe('Sidebar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockSidebarConfig = undefined;
+        mockCurrentSidebar = undefined;
+        mockVisibleItems = [];
         mockIsMobileOpen = false;
     });
 
+    // ── visibility ────────────────────────────────────────────────────────────
+
     describe('visibility', () => {
-        it('should not render when config is undefined (no route match)', () => {
-            mockSidebarConfig = undefined;
-
+        it('should not render when no sidebar configured for the current route', () => {
+            mockCurrentSidebar = undefined;
             const { container } = render(<Sidebar />);
-
             expect(container.firstChild).toBeNull();
         });
 
-        it('should render when config exists for current route', () => {
-            mockSidebarConfig = { title: 'Test Sidebar', items: [] };
+        it('should render when a sidebar is configured for the current route', () => {
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [];
 
             render(<Sidebar />);
 
@@ -120,142 +153,171 @@ describe('Sidebar', () => {
         });
     });
 
-    describe('title rendering', () => {
-        it('should render sidebar title', () => {
-            mockSidebarConfig = { title: 'Dashboard', items: [] };
-
-            render(<Sidebar />);
-
-            expect(screen.getAllByText('Dashboard')).toHaveLength(2); // Mobile and desktop
-        });
-
-        it('should use titleKey if provided', () => {
-            mockSidebarConfig = { title: 'Fallback', titleKey: 'admin-menu.dashboard', items: [] };
-
-            render(<Sidebar />);
-
-            expect(screen.getAllByText('admin-menu.dashboard')).toHaveLength(2);
-        });
-    });
+    // ── item rendering ────────────────────────────────────────────────────────
 
     describe('items rendering', () => {
-        it('should render link items', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    { type: 'link', id: 'home', label: 'Home', href: '/home' },
-                    { type: 'link', id: 'about', label: 'About', href: '/about' }
-                ]
-            };
+        it('should render visible link items with localized label', () => {
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'link',
+                    id: 'home',
+                    label: { es: 'Inicio', en: 'Home', pt: 'Início' },
+                    route: '/dashboard',
+                    exact: true,
+                    onMissing: 'disable',
+                    disabled: false
+                },
+                {
+                    type: 'link',
+                    id: 'about',
+                    label: { es: 'Acerca', en: 'About', pt: 'Sobre' },
+                    route: '/about',
+                    exact: false,
+                    onMissing: 'disable',
+                    disabled: false
+                }
+            ];
 
             render(<Sidebar />);
 
-            expect(screen.getByText('Home')).toBeInTheDocument();
-            expect(screen.getByText('About')).toBeInTheDocument();
+            expect(screen.getByText('Inicio')).toBeInTheDocument();
+            expect(screen.getByText('Acerca')).toBeInTheDocument();
         });
 
         it('should render separator items', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    { type: 'link', id: 'home', label: 'Home', href: '/home' },
-                    { type: 'separator', id: 'sep-1' },
-                    { type: 'link', id: 'about', label: 'About', href: '/about' }
-                ]
-            };
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'link',
+                    id: 'home',
+                    label: { es: 'Inicio', en: 'Home', pt: 'Início' },
+                    route: '/dashboard',
+                    exact: true,
+                    onMissing: 'disable',
+                    disabled: false
+                },
+                { type: 'separator', id: 'sep-1', disabled: false },
+                {
+                    type: 'link',
+                    id: 'about',
+                    label: { es: 'Acerca', en: 'About', pt: 'Sobre' },
+                    route: '/about',
+                    exact: false,
+                    onMissing: 'disable',
+                    disabled: false
+                }
+            ];
 
             render(<Sidebar />);
 
-            expect(screen.getByRole('separator')).toBeInTheDocument();
+            expect(document.querySelector('hr')).toBeInTheDocument();
         });
 
         it('should render group items', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    {
-                        type: 'group',
-                        id: 'content',
-                        label: 'Content',
-                        items: [
-                            { type: 'link', id: 'posts', label: 'Posts', href: '/posts' },
-                            { type: 'link', id: 'pages', label: 'Pages', href: '/pages' }
-                        ]
-                    }
-                ]
-            };
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'group',
+                    id: 'content',
+                    label: { es: 'Contenido', en: 'Content', pt: 'Conteúdo' },
+                    defaultOpen: false,
+                    onMissing: 'disable',
+                    disabled: false,
+                    items: [
+                        {
+                            type: 'link',
+                            id: 'posts',
+                            label: { es: 'Posts', en: 'Posts', pt: 'Posts' },
+                            route: '/posts',
+                            exact: false,
+                            onMissing: 'disable',
+                            disabled: false
+                        }
+                    ]
+                }
+            ];
 
             render(<Sidebar />);
 
-            expect(screen.getByText('Content')).toBeInTheDocument();
+            expect(screen.getByText('Contenido')).toBeInTheDocument();
+        });
+
+        it('should render disabled link items greyed-out with tooltip', () => {
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'link',
+                    id: 'admin',
+                    label: { es: 'Admin', en: 'Admin', pt: 'Admin' },
+                    route: '/admin',
+                    exact: false,
+                    onMissing: 'disable',
+                    disabled: true
+                }
+            ];
+
+            render(<Sidebar />);
+
+            const disabledItem = screen.getByTitle('Requiere permiso');
+            expect(disabledItem).toBeInTheDocument();
+            // Should be a span (not a link) when disabled
+            expect(disabledItem.tagName).toBe('SPAN');
         });
     });
 
-    describe('permissions filtering', () => {
-        it('should show all items when no permissions required', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    { type: 'link', id: 'public', label: 'Public', href: '/public' },
-                    { type: 'link', id: 'admin', label: 'Admin', href: '/admin' }
-                ]
-            };
+    // ── unread badge ──────────────────────────────────────────────────────────
 
-            render(<Sidebar userPermissions={[]} />);
+    describe('unread badge injection', () => {
+        it('should inject unread badge on conversations-inbox item', () => {
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'link',
+                    id: 'conversations-inbox',
+                    label: { es: 'Inbox', en: 'Inbox', pt: 'Inbox' },
+                    route: '/conversations',
+                    exact: false,
+                    onMissing: 'disable',
+                    disabled: false
+                }
+            ];
 
-            expect(screen.getByText('Public')).toBeInTheDocument();
-            expect(screen.getByText('Admin')).toBeInTheDocument();
+            render(<Sidebar />);
+
+            // useUnreadCount mock returns count: 3
+            expect(screen.getByLabelText('3 unread messages')).toBeInTheDocument();
         });
 
-        it('should filter items by permissions', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    { type: 'link', id: 'public', label: 'Public', href: '/public' },
-                    {
-                        type: 'link',
-                        id: 'admin',
-                        label: 'Admin Only',
-                        href: '/admin',
-                        permissions: ['admin:read']
-                    }
-                ]
-            };
+        it('should NOT show badge on items other than conversations-inbox', () => {
+            mockCurrentSidebar = { items: [] };
+            mockVisibleItems = [
+                {
+                    type: 'link',
+                    id: 'dashboard',
+                    label: { es: 'Dashboard', en: 'Dashboard', pt: 'Dashboard' },
+                    route: '/dashboard',
+                    exact: true,
+                    onMissing: 'disable',
+                    disabled: false
+                }
+            ];
 
-            render(<Sidebar userPermissions={[]} />);
+            render(<Sidebar />);
 
-            expect(screen.getByText('Public')).toBeInTheDocument();
-            expect(screen.queryByText('Admin Only')).not.toBeInTheDocument();
-        });
-
-        it('should show items when user has matching permissions', () => {
-            mockSidebarConfig = {
-                title: 'Test',
-                items: [
-                    {
-                        type: 'link',
-                        id: 'admin',
-                        label: 'Admin',
-                        href: '/admin',
-                        permissions: ['admin:read']
-                    }
-                ]
-            };
-
-            render(<Sidebar userPermissions={['admin:read']} />);
-
-            expect(screen.getByText('Admin')).toBeInTheDocument();
+            expect(screen.queryByLabelText('3 unread messages')).not.toBeInTheDocument();
         });
     });
+
+    // ── mobile behavior ───────────────────────────────────────────────────────
 
     describe('mobile behavior', () => {
         it('should show overlay when mobile is open', () => {
             mockIsMobileOpen = true;
-            mockSidebarConfig = { title: 'Test', items: [] };
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 
-            // Overlay should be visible (not have pointer-events-none)
             const overlay = screen.getByLabelText('admin-common.aria.closeSidebarOverlay');
             expect(overlay).not.toHaveClass('pointer-events-none');
         });
@@ -263,7 +325,7 @@ describe('Sidebar', () => {
         it('should call closeMobile when overlay clicked', async () => {
             const user = userEvent.setup();
             mockIsMobileOpen = true;
-            mockSidebarConfig = { title: 'Test', items: [] };
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 
@@ -275,7 +337,7 @@ describe('Sidebar', () => {
 
         it('should render close button in mobile header', () => {
             mockIsMobileOpen = true;
-            mockSidebarConfig = { title: 'Test', items: [] };
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 
@@ -286,7 +348,7 @@ describe('Sidebar', () => {
         it('should call closeMobile when close button clicked', async () => {
             const user = userEvent.setup();
             mockIsMobileOpen = true;
-            mockSidebarConfig = { title: 'Test', items: [] };
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 
@@ -297,9 +359,11 @@ describe('Sidebar', () => {
         });
     });
 
+    // ── accessibility ─────────────────────────────────────────────────────────
+
     describe('accessibility', () => {
-        it('should have navigation role', () => {
-            mockSidebarConfig = { title: 'Test', items: [] };
+        it('should have navigation role with label', () => {
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 
@@ -310,7 +374,7 @@ describe('Sidebar', () => {
 
         it('should have proper aria-label on overlay', () => {
             mockIsMobileOpen = true;
-            mockSidebarConfig = { title: 'Test', items: [] };
+            mockCurrentSidebar = { items: [] };
 
             render(<Sidebar />);
 

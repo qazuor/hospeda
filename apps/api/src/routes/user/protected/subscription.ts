@@ -4,13 +4,17 @@
  * @route GET /api/v1/protected/users/me/subscription
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
-import { PAYMENT_GRACE_PERIOD_DAYS, getPlanBySlug } from '@repo/billing';
+import { PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { PlanService } from '../../../services/plan.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+
+/** Module-level PlanService singleton for plan slug resolution */
+const planService = new PlanService();
 
 /** Allowed subscription status values */
 const SUBSCRIPTION_STATUSES = [
@@ -19,7 +23,8 @@ const SUBSCRIPTION_STATUSES = [
     'cancelled',
     'expired',
     'past_due',
-    'pending'
+    'pending',
+    'paused'
 ] as const;
 
 /** Maps QZPay subscription status values to our API status enum */
@@ -33,8 +38,12 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
     past_due: 'past_due',
     unpaid: 'expired',
     incomplete: 'pending',
+    // Pre-migration-010 legacy window: rows that held 'incomplete_expired' before
+    // the 010-abandoned-status extras migration normalised them to 'abandoned'.
+    // This entry must remain to handle any SDK responses that still use the old key
+    // during the transition window (item 9b / SPEC-194 adversarial review).
     incomplete_expired: 'expired',
-    paused: 'pending',
+    paused: 'paused',
     pending: 'pending'
 };
 
@@ -46,8 +55,22 @@ const SubscriptionResponseSchema = z.object({
             planName: z.string(),
             status: z.enum(SUBSCRIPTION_STATUSES),
             currentPeriodStart: z.string().nullable(),
+            /**
+             * The end of the current billing period. For a soft-cancelled
+             * subscription (`cancelAtPeriodEnd = true`) this is also the
+             * "access until" date — the user retains full entitlements until
+             * this timestamp. The UI (SPEC-203) should use this field to render
+             * "your access ends on <currentPeriodEnd>" without needing a
+             * separate `accessUntil` field.
+             */
             currentPeriodEnd: z.string().nullable(),
             cancelAtPeriodEnd: z.boolean(),
+            /**
+             * When the soft-cancel was recorded. Null for subscriptions that
+             * have not been soft-cancelled. Set by qzpay-core when the user
+             * calls the cancel endpoint (SPEC-147).
+             */
+            canceledAt: z.string().nullable(),
             trialEndsAt: z.string().nullable(),
             monthlyPriceArs: z.number(),
             paymentMethod: z
@@ -146,16 +169,22 @@ export const userSubscriptionRoute = createProtectedRoute({
             return { subscription: null };
         }
 
-        // Find the most recent active, trial, or past_due subscription
+        // Find the current subscription. Includes `paused` so the account UI can
+        // render the paused state + a "Reanudar" action (SPEC-143 #29 self-serve
+        // pause/resume); excluding it made a paused sub look like "no subscription"
+        // and stranded the user with no way to resume (SPEC-143 smoke F-UI-RESUME).
         const activeSubscription = subscriptions.find(
             (sub) =>
-                sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
+                sub.status === 'active' ||
+                sub.status === 'trialing' ||
+                sub.status === 'past_due' ||
+                sub.status === 'paused'
         );
 
         if (!activeSubscription) {
             apiLogger.debug(
                 { userId: actor.id, customerId: customer.id },
-                'No active or trial subscription found for billing customer'
+                'No active, trial, past_due, or paused subscription found for billing customer'
             );
             return { subscription: null };
         }
@@ -176,10 +205,21 @@ export const userSubscriptionRoute = createProtectedRoute({
             );
         }
 
-        // Resolve plan display name and price from @repo/billing ALL_PLANS
-        const planDefinition = getPlanBySlug(resolvedPlanSlug);
-        const planName = planDefinition?.name ?? resolvedPlanSlug;
-        const monthlyPriceArs = planDefinition?.monthlyPriceArs ?? 0;
+        // Resolve plan display name and price from DB via PlanService (SPEC-192 FR-4).
+        // Falls back gracefully: name → resolvedPlanSlug, price → 0 when NOT_FOUND.
+        let planName = resolvedPlanSlug;
+        let monthlyPriceArs = 0;
+
+        const planResult = await planService.getBySlug(resolvedPlanSlug);
+        if (planResult.success) {
+            planName = planResult.data.name;
+            monthlyPriceArs = planResult.data.monthlyPriceArs;
+        } else {
+            apiLogger.warn(
+                { planSlug: resolvedPlanSlug, errorCode: planResult.error.code },
+                'Plan not found in DB for subscription display — using slug as name'
+            );
+        }
 
         // Map QZPay status to our API status enum
         const mappedStatus: (typeof SUBSCRIPTION_STATUSES)[number] =
@@ -235,6 +275,7 @@ export const userSubscriptionRoute = createProtectedRoute({
                 currentPeriodStart: toIsoString(activeSubscription.currentPeriodStart),
                 currentPeriodEnd: toIsoString(activeSubscription.currentPeriodEnd),
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
+                canceledAt: toIsoString(activeSubscription.canceledAt),
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
                 monthlyPriceArs,
                 paymentMethod: null,

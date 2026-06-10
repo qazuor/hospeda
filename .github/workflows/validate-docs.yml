@@ -18,6 +18,10 @@ on:
       - 'CLAUDE.md'
       - '.github/workflows/validate-docs.yml'
 
+# Least-privilege default token: the job only reads the repo.
+permissions:
+  contents: read
+
 jobs:
   validate-documentation:
     name: Validate Documentation
@@ -31,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4

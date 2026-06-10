@@ -8,7 +8,7 @@ import type {
     WidgetRenderer
 } from '@/components/table/DataTable';
 import type { TranslationKey } from '@repo/i18n';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { z } from 'zod';
 import type { FilterBarConfig } from './filters/filter-types';
 
@@ -29,9 +29,32 @@ export type SearchConfig = {
 };
 
 /**
- * Configuration for view settings (table/grid)
+ * Props passed to a per-entity custom grid card renderer.
+ *
+ * A config can supply `gridConfig.renderCard` to replace the polished generic
+ * `GridCard` for its entity. The custom renderer receives the row data and the
+ * three standard action callbacks so it has full parity with the generic card.
+ *
+ * @typeParam TData - The entity row type.
  */
-export type ViewConfig = {
+export interface GridCardRenderProps<TData> {
+    /** The entity row being rendered. */
+    readonly row: TData;
+    /** Open the peek drawer for this row. */
+    readonly onPeek: (row: TData) => void;
+    /** Navigate to the edit page for this row. */
+    readonly onEdit: (row: TData) => void;
+    /** Trigger the delete action for this row. */
+    readonly onDelete: (row: TData) => void;
+}
+
+/**
+ * Configuration for view settings (table/grid).
+ *
+ * @typeParam TData - The entity row type. Defaults to `unknown` so that all
+ * existing usages of `ViewConfig` without a type parameter remain compatible.
+ */
+export type ViewConfig<TData = unknown> = {
     readonly defaultView: 'table' | 'grid';
     readonly allowViewToggle: boolean;
     readonly gridConfig?: {
@@ -41,6 +64,19 @@ export type ViewConfig = {
             readonly tablet: number;
             readonly desktop: number;
         };
+        /**
+         * Per-entity custom card renderer (opt-in, backward-compatible).
+         *
+         * When present, the grid renderer calls this function instead of the
+         * polished generic `GridCard` for every row. The function receives
+         * `GridCardRenderProps<TData>` which exposes the row data plus the
+         * three standard action callbacks (peek / edit / delete), ensuring full
+         * parity with the generic card.
+         *
+         * When absent (the default), the generic `GridCard` is used — all
+         * existing configs that do not set this field are unaffected.
+         */
+        readonly renderCard?: (props: GridCardRenderProps<TData>) => ReactNode;
     };
 };
 
@@ -67,6 +103,13 @@ export type LayoutConfig = {
      */
     readonly createButtonText?: string;
     readonly createButtonPath?: string;
+    /**
+     * SPEC-182: optional component rendered in the list header, before the
+     * standard create button. Used for entity-specific header actions such as
+     * the "Create host account" modal trigger on the users list. Opt-in — when
+     * unset, the header renders exactly as before (create button only).
+     */
+    readonly headerActionsComponent?: ComponentType;
 };
 
 /**
@@ -81,6 +124,46 @@ export type LinkHandler<TData = unknown> = (row: TData) =>
     | undefined;
 
 /**
+ * Configuration for a single field shown in the peek drawer.
+ *
+ * When `peekFields` is set on `EntityConfig`, the drawer renders exactly these
+ * fields instead of the generic column list. Each entry maps an accessor path
+ * (supports dot-notation, e.g. `"destination.name"`) to a translated label key
+ * and an optional display format.
+ */
+export type PeekFieldConfig = {
+    /** Dot-notation accessor path on the row object (e.g. `"name"`, `"price.price"`). */
+    readonly accessorKey: string;
+    /** Translation key for the field label (passed through `t()`). */
+    readonly labelKey: string;
+    /**
+     * How to render the value:
+     * - `'text'` / omitted — String coercion (default inference behaviour).
+     * - `'boolean'` — renders as Sí/No.
+     * - `'date'` — formats an ISO string or Date as a short localised date.
+     * - `'list'` — comma-joins an array value.
+     * - `'badge'` — renders a colored badge using `badgeOptions` to map the raw value.
+     * - `'image'` — resolves the accessor to a URL and renders a preview image.
+     * - `'address'` — assembles a human-readable address from the `location` object.
+     */
+    readonly format?: 'text' | 'boolean' | 'date' | 'list' | 'badge' | 'image' | 'address';
+    /**
+     * Maximum length for text truncation (only applies when `format` is `'text'`
+     * or omitted). When set, values longer than this are truncated with `…`.
+     */
+    readonly maxLength?: number;
+    /**
+     * Badge options used when `format === 'badge'`. Maps raw enum values to
+     * human-readable labels + colors. When absent, the raw value is displayed
+     * as plain text inside a default badge shell.
+     *
+     * Prefer leaving this empty in the config and letting `EntityListPage` look
+     * up the matching column's `badgeOptions` automatically (avoids duplication).
+     */
+    readonly badgeOptions?: readonly BadgeOption[];
+};
+
+/**
  * Column configuration for entity lists
  */
 export type ColumnConfig<TData = unknown> = {
@@ -91,6 +174,8 @@ export type ColumnConfig<TData = unknown> = {
     readonly startVisibleOnTable?: boolean;
     readonly startVisibleOnGrid?: boolean;
     readonly columnType?: ColumnType;
+    /** Horizontal alignment of the column header and cells. Defaults to left. */
+    readonly align?: 'left' | 'right' | 'center';
     readonly badgeOptions?: readonly BadgeOption[];
     readonly linkHandler?: LinkHandler<TData>;
     readonly entityOptions?: EntityOption;
@@ -174,6 +259,21 @@ export type EntityQueryResponse<TData> = {
 };
 
 /**
+ * Runtime options passed to `EntityConfig.createColumns` by the list page.
+ *
+ * All fields are optional and boolean so that existing column factories that
+ * ignore the second parameter continue to work without modification.
+ */
+export type CreateColumnsOptions = {
+    /**
+     * When `true`, permission-gated derived columns (e.g. "Vistas (30d)")
+     * are included in the returned array. When `false` or omitted, those
+     * columns are excluded and no API calls for them are made.
+     */
+    readonly hasAnalyticsView?: boolean;
+};
+
+/**
  * Main entity configuration
  */
 export type EntityConfig<TData = unknown> = {
@@ -210,12 +310,51 @@ export type EntityConfig<TData = unknown> = {
 
     // Configuration
     readonly searchConfig?: SearchConfig;
-    readonly viewConfig?: ViewConfig;
+    readonly viewConfig?: ViewConfig<TData>;
     readonly paginationConfig?: PaginationConfig;
     readonly layoutConfig: LayoutConfig;
+    /**
+     * Default sort applied when the URL carries no explicit sort.
+     * It is sent to the API (so data and header agree) and rendered as the
+     * active sort indicator on the matching column header.
+     */
+    readonly defaultSort?: SortConfig;
 
     // Columns
-    readonly createColumns: (t: ColumnTFunction) => readonly ColumnConfig<TData>[];
+    /**
+     * Factory function that returns the column definitions for this entity list.
+     *
+     * The optional second parameter `options` allows callers (e.g. EntityListPage)
+     * to inject runtime context such as permission flags that affect which columns
+     * are included. All existing configs that do not use the second parameter remain
+     * fully compatible — the parameter is optional and typed narrowly so no cast is
+     * required at call sites.
+     */
+    readonly createColumns: (
+        t: ColumnTFunction,
+        options?: CreateColumnsOptions
+    ) => readonly ColumnConfig<TData>[];
+
+    /**
+     * Curated list of fields to display in the peek drawer.
+     *
+     * When provided, the drawer renders only these fields (in order) instead of
+     * the generic column list derived from `createColumns`. Omit to keep the
+     * default fallback behaviour (all visible columns).
+     */
+    readonly peekFields?: ReadonlyArray<PeekFieldConfig>;
+
+    /**
+     * Accessor for a value shown as the peek drawer subtitle (under the title),
+     * e.g. the entity slug. Resolved against the row; dot-notation supported.
+     */
+    readonly peekSubtitleField?: string;
+
+    /**
+     * Accessor for a boolean field shown as a "featured" chip next to the peek
+     * drawer title when truthy (e.g. `isFeatured`).
+     */
+    readonly peekFeaturedField?: string;
 };
 
 /**

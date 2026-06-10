@@ -16,6 +16,8 @@
  * - On save error an `addToast` is called and the previous value is kept.
  */
 
+import { translateApiError } from '@/lib/api-errors';
+import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './EditableNote.module.css';
@@ -36,8 +38,12 @@ export interface EditableNoteProps {
     /**
      * Called after a successful save with the new description string.
      * The parent should update its local copy of the bookmark.
+     * Optional: when omitted, the component still updates its own read view
+     * via the local `persistedValue` mirror. SSR hosts (e.g. the collection
+     * detail Astro page) cannot pass functions across the island boundary,
+     * so they omit it and rely on the local mirror instead.
      */
-    readonly onSaved: (newValue: string) => void;
+    readonly onSaved?: (newValue: string) => void;
     /** Full base API URL (e.g. `http://localhost:3001`) without trailing slash. */
     readonly apiBase: string;
     /** Placeholder shown when the note is empty and not editing. */
@@ -52,6 +58,12 @@ export interface EditableNoteProps {
     readonly editButtonLabel: string;
     /** i18n fallback message for save errors. */
     readonly saveErrorMessage: string;
+    /**
+     * Current locale, used to translate API error responses by `code`.
+     * Optional for backwards-compat; without it the component falls back to
+     * the API's English `message` (the current behavior pre-fix).
+     */
+    readonly locale?: SupportedLocale;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -73,19 +85,25 @@ export function EditableNote({
     cancelLabel,
     textareaLabel,
     editButtonLabel,
-    saveErrorMessage
+    saveErrorMessage,
+    locale
 }: EditableNoteProps) {
     const [isEditing, setIsEditing] = useState(false);
     const [draft, setDraft] = useState(initialValue ?? '');
     const [isSaving, setIsSaving] = useState(false);
+    // Tracks the last persisted value. Lets the read view stay up-to-date even
+    // when the host page is SSR-rendered and never re-passes a new initialValue
+    // (collection detail page is the main consumer of this fallback).
+    const [persistedValue, setPersistedValue] = useState(initialValue ?? '');
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
 
-    // Reset draft whenever the persisted value changes (e.g. after a successful
-    // save the parent passes the new value back in).
+    // Reset draft + mirror whenever the persisted value changes (e.g. after a
+    // successful save the parent passes the new value back in).
     useEffect(() => {
         if (!isEditing) {
             setDraft(initialValue ?? '');
+            setPersistedValue(initialValue ?? '');
         }
     }, [initialValue, isEditing]);
 
@@ -135,17 +153,22 @@ export function EditableNote({
             });
 
             if (!res.ok) {
-                let msg = saveErrorMessage;
+                let apiError: { code?: string; message?: string } | undefined;
                 try {
-                    const body = (await res.json()) as { error?: { message?: string } };
-                    if (body.error?.message) msg = body.error.message;
+                    const body = (await res.json()) as {
+                        error?: { code?: string; message?: string };
+                    };
+                    if (body.error) apiError = body.error;
                 } catch {
                     // ignore JSON parse errors
                 }
-                throw new Error(msg);
+                throw new Error(
+                    translateApiError({ error: apiError, locale, fallback: saveErrorMessage })
+                );
             }
 
-            onSaved(draft);
+            setPersistedValue(draft);
+            onSaved?.(draft);
             setIsEditing(false);
         } catch (err) {
             const msg = err instanceof Error ? err.message : saveErrorMessage;
@@ -154,11 +177,13 @@ export function EditableNote({
         } finally {
             setIsSaving(false);
         }
-    }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage]);
+    }, [apiBase, bookmarkId, draft, isSaving, onSaved, saveErrorMessage, locale]);
 
     const currentLength = draft.length;
     const isOverLimit = currentLength > NOTE_MAX_LENGTH;
-    const displayValue = initialValue?.trim() ?? '';
+    // Use the locally-tracked persisted value so the read view reflects the
+    // last save even when the host page never re-renders (SSR collection page).
+    const displayValue = persistedValue.trim();
     const hasNote = displayValue.length > 0;
 
     // ── Editing view ──────────────────────────────────────────────────────────

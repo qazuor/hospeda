@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "015-event-education-charla-turismo",
     "slug": "charla-turismo",
-    "name": "Charla de Turismo",
-    "summary": "Evento education - Charla de Turismo",
-    "description": "Descripción detallada del evento Charla de Turismo. Este es un evento de categoría EDUCATION que se desarrolla en Entre Ríos.",
+    "name": "Charla: 'Turismo Sostenible en el Litoral'",
+    "summary": "Charla abierta sobre el desarrollo del turismo sostenible en Entre Ríos: experiencias de pequeños prestadores, casos de éxito en agroturismo y ecoturismo, y herramientas concretas para emprender en el sector.",
+    "description": "Una charla abierta al público sobre el desarrollo del turismo sostenible en Entre Ríos, organizada por la Fundación Cultural Entre Ríos. La propuesta reúne a especialistas del sector, prestadores locales y representantes de organismos públicos para discutir el rumbo del turismo provincial y compartir herramientas concretas para quienes quieran emprender.\n\n**Programa**\n\n- **Introducción:** panorama del turismo en Entre Ríos y tendencias regionales.\n- **Casos de éxito:** historias de pequeños prestadores que apostaron al ecoturismo, agroturismo y turismo cultural.\n- **Herramientas y financiamiento:** créditos disponibles, programas provinciales, certificaciones de calidad.\n- **Marketing y posicionamiento:** cómo armar una propuesta diferenciada en un mercado competitivo.\n- **Panel abierto:** preguntas, networking y conexión entre participantes.\n\n**Quién dicta**\n\nReferentes del sector turístico provincial, con experiencia en gestión pública y privada, complementados por prestadores que comparten sus historias concretas de éxito y fracaso. Sin teorías abstractas: experiencias reales del territorio.\n\n**Información práctica**\n\n- **Cuándo:** un sábado de abril, de 10 a 13 horas.\n- **Dónde:** auditorio en Paraná (sede a confirmar).\n- **Entrada:** GRATUITA, con inscripción previa.\n- **Para quién es:** emprendedores turísticos actuales y potenciales, estudiantes de turismo, gestores culturales y cualquier persona interesada en el desarrollo regional.",
     "category": "OTHER",
     "authorId": "006-user-laura-vega",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Charla de Turismo 2026 - Entre Ríos - Hospeda",
-        "description": "Asiste a la Charla de Turismo 2026 en Entre Ríos. Conoce los destinos turísticos y las mejores prácticas del sector turístico local.",
-        "keywords": ["education", "entre rios", "evento", "cultura"]
+        "title": "Charla: Turismo Sostenible en el Litoral - Hospeda",
+        "description": "Charla gratuita sobre turismo sostenible en Entre Ríos: casos de éxito, herramientas para emprender, financiamiento y marketing del sector.",
+        "keywords": [
+            "turismo sostenible",
+            "charla turismo",
+            "agroturismo",
+            "ecoturismo entre ríos",
+            "emprender turismo",
+            "capacitación turismo",
+            "evento educativo",
+            "fundación cultural entre ríos"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "organizerId": "003-eventOrganizer-cultural-entre-rios",

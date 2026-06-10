@@ -14,17 +14,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "state": "Buenos Aires",
-        "city": "Buenos Aires",
         "country": "Argentina",
-        "zipCode": "1425",
-        "street": "Av. Corrientes",
-        "number": "3456",
-        "neighborhood": "Almagro",
-        "coordinates": {
-            "lat": "-34.6037",
-            "long": "-58.3816"
-        }
+        "region": "Buenos Aires",
+        "city": "Buenos Aires",
+        "addressLine1": "Av. Corrientes 3456",
+        "postalCode": "1425"
     },
     "socialNetworks": {
         "instagram": "https://instagram.com/lucas_viajero",

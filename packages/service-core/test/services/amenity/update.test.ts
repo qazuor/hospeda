@@ -20,10 +20,12 @@ describe('AmenityService.update', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: 'Test Amenity',
+        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES
     });
-    const updateInput = { name: 'Updated Amenity' };
+    const updateInput = {
+        name: { es: 'Updated Amenity', en: 'Updated Amenity', pt: 'Updated Amenity' }
+    };
 
     beforeEach(() => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'update']);
@@ -48,8 +50,11 @@ describe('AmenityService.update', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // name empty
-        const result = await service.update(actor, amenity.id, { ...updateInput, name: '' });
+        // empty es locale violates min:2
+        const result = await service.update(actor, amenity.id, {
+            ...updateInput,
+            name: { es: '', en: '', pt: '' }
+        });
         expectValidationError(result);
     });
 
@@ -67,17 +72,22 @@ describe('AmenityService.update', () => {
     });
 
     it('should allow partial update (only description)', async () => {
+        const newDescription = {
+            es: 'Nueva descripción suficientemente larga',
+            en: 'New description with enough characters',
+            pt: 'Nova descrição com caracteres suficientes'
+        };
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
         asMock(amenityModelMock.update).mockResolvedValue({
             ...amenity,
-            description: 'New description with enough characters'
+            description: newDescription
         });
         const result = await service.update(actor, amenity.id, {
-            description: 'New description with enough characters'
+            description: newDescription
         });
         expectSuccess(result);
-        expect(result.data?.description).toBe('New description with enough characters');
-        expect(result.data?.name).toBe(amenity.name);
+        expect(result.data?.description).toEqual(newDescription);
+        expect(result.data?.name).toEqual(amenity.name);
     });
 
     it('should reject null for required fields', async () => {
@@ -92,7 +102,7 @@ describe('AmenityService.update', () => {
         asMock(amenityModelMock.update).mockResolvedValue({ ...amenity });
         const result = await service.update(actor, amenity.id, {});
         expectSuccess(result);
-        expect(result.data?.name).toBe(amenity.name);
+        expect(result.data?.name).toEqual(amenity.name);
     });
 
     it('should update isFeatured only', async () => {

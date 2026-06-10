@@ -1,0 +1,604 @@
+/* ──────────────────────────────────────────────────────────────────────────
+ * Destination review sidebar card + dialog
+ * Mirrors ReviewSidebarCard.module.css from the accommodation flow.
+ * Visual rhythm matches the other destination sidebar blocks
+ * (DestinationStatsCard, DestinationSidebarCtas).
+ * ────────────────────────────────────────────────────────────────────────── */
+
+/* ── Sidebar card ──────────────────────────────────────────────────────── */
+
+.card {
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-5, 20px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    box-shadow: var(--shadow-card);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+}
+
+.cardBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: var(--brand-accent-a12);
+    color: var(--brand-accent);
+}
+
+.cardTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.cardText {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.45;
+}
+
+.cardCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--brand-primary);
+    background: var(--brand-primary-a08);
+    border: 1px solid var(--brand-primary-a20);
+    border-radius: var(--radius-button, 10px);
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease, transform var(--duration-fast, 0.15s) ease;
+}
+
+.cardCta:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    transform: translateY(-1px);
+}
+
+.cardCta:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.cardCta svg {
+    transition: transform var(--duration-fast, 0.15s) ease;
+}
+
+.cardCta:hover svg {
+    transform: translateX(2px);
+}
+
+/* ── Dialog ────────────────────────────────────────────────────────────── */
+
+.dialog {
+    width: min(600px, calc(100vw - 32px));
+    max-height: 90vh;
+    /* Restore native <dialog> centering — a global reset zeroes margins,
+       which would otherwise pin the dialog to the top-left corner. */
+    margin: auto;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-card, 20px);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.dialog::backdrop {
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+}
+
+.dialog[open] {
+    animation: dest-review-dialog-pop 0.18s ease-out;
+}
+
+@keyframes dest-review-dialog-pop {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dialogInner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+    padding: var(--space-5, 20px);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* ── Dialog header ─────────────────────────────────────────────────────── */
+
+.dialogHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+}
+
+.dialogTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0 0 2px 0;
+    line-height: 1.25;
+}
+
+.dialogSubtitle {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.closeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md, 10px);
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
+}
+
+.closeButton:hover {
+    background-color: var(--core-foreground-a05);
+    color: var(--core-foreground);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.ratingList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: var(--space-3, 12px) var(--space-3, 12px) var(--space-2, 8px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    background-color: var(--core-background);
+}
+
+.ratingRow {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: 3px var(--space-2, 8px);
+    border-radius: var(--radius-md, 8px);
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.ratingRow:hover,
+.ratingRow:focus-within {
+    background-color: var(--brand-primary-a05);
+}
+
+.ratingLabel {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+}
+
+.starGroup {
+    display: inline-flex;
+    gap: 2px;
+}
+
+.starButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 2px;
+    background: transparent;
+    border: none;
+    color: var(--core-muted-foreground-a40);
+    cursor: pointer;
+    border-radius: var(--radius-md, 8px);
+    transition: color var(--duration-fast, 0.15s) ease, transform var(--duration-fast, 0.15s) ease;
+}
+
+.starButton:hover {
+    transform: scale(1.15);
+    color: var(--brand-accent);
+}
+
+.starButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.starButtonOn {
+    color: var(--brand-accent);
+}
+
+/* ── Fields ────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.fieldLabel {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+}
+
+.fieldOptional {
+    font-weight: 400;
+    font-size: 0.6875rem;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.input,
+.textarea {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: 10px var(--space-3, 12px);
+    width: 100%;
+    box-sizing: border-box;
+    transition: border-color var(--duration-fast, 0.15s) ease, box-shadow
+        var(--duration-fast, 0.15s) ease;
+}
+
+.input:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 88px;
+    line-height: 1.45;
+}
+
+.charCounter {
+    align-self: flex-end;
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2, 8px);
+    flex-wrap: wrap;
+}
+
+.secondaryButton {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 10px);
+    padding: 10px var(--space-4, 16px);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.secondaryButton:hover:not(:disabled) {
+    background-color: var(--core-foreground-a05);
+}
+
+.secondaryButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.submitButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--accent-foreground, #fff);
+    background-color: var(--brand-accent);
+    border: none;
+    border-radius: var(--radius-button, 10px);
+    padding: 10px var(--space-5, 20px);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease, transform
+        var(--duration-fast, 0.15s) ease, filter var(--duration-fast, 0.15s) ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    transform: translateY(-1px);
+    filter: brightness(1.05);
+}
+
+.submitButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.submitButton:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent-foreground-a35);
+    border-top-color: var(--accent-foreground, #fff);
+    border-radius: 50%;
+    animation: dest-review-dialog-spin 0.7s linear infinite;
+}
+
+@keyframes dest-review-dialog-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.helpText {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    text-align: right;
+}
+
+.errorMessage {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--brand-accent);
+    background-color: var(--brand-accent-a08);
+    border: 1px solid var(--brand-accent-a25);
+    border-radius: var(--radius-md, 10px);
+    padding: 10px var(--space-3, 12px);
+    margin: 0;
+}
+
+/* ── Success state in dialog ───────────────────────────────────────────── */
+
+.successState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: var(--space-6, 24px) 0;
+    text-align: center;
+}
+
+.successBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
+    color: var(--accent-foreground, #fff);
+    animation: dest-review-dialog-pop 0.3s ease-out;
+}
+
+.successMessage {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    margin: 0;
+    max-width: 360px;
+}
+
+/* ── Inline CTA variant (mounted in the reviews section actions row) ──── */
+/* Mirrors .dest-reviews__view-all in DestinationReviewsSection.astro so
+   both buttons share the same pill-outline language on a single row. */
+
+.inlineCta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--brand-primary);
+    background-color: transparent;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
+}
+
+.inlineCta:hover {
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+}
+
+.inlineCta:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Collapsible rating categories ─────────────────────────────────────── */
+
+.categoryHint {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+}
+
+.categoryBlock {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+}
+
+.categoryBlock:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.categoryHeader {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    padding: 3px var(--space-2, 8px);
+    border-radius: var(--radius-md, 8px);
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.categoryHeader:hover,
+.categoryHeader:focus-within {
+    background-color: var(--brand-primary-a05);
+}
+
+.categoryToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 0;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--core-foreground);
+}
+
+.categoryToggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 8px);
+}
+
+.categoryChevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--core-muted-foreground);
+    transition: transform var(--duration-fast, 0.15s) ease;
+}
+
+.categoryChevronOpen {
+    transform: rotate(180deg);
+}
+
+.categoryLabel {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+.categoryCount {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--core-muted-foreground);
+    background-color: var(--core-foreground-a05);
+    border-radius: 999px;
+    padding: 1px 6px;
+}
+
+.categoryDims {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px 0 4px var(--space-5, 20px);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .ratingRow,
+    .categoryHeader {
+        grid-template-columns: 1fr;
+        gap: 4px;
+    }
+    .categoryDims {
+        padding-left: var(--space-3, 12px);
+    }
+    .actions {
+        justify-content: stretch;
+    }
+    .secondaryButton,
+    .submitButton {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dialog[open],
+    .starButton,
+    .submitButton,
+    .successBadge,
+    .spinner {
+        animation: none !important;
+        transition: none !important;
+    }
+}

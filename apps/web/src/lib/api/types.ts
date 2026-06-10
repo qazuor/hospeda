@@ -66,3 +66,171 @@ export interface ListParams {
     readonly order?: 'asc' | 'desc';
     readonly [key: string]: string | number | boolean | undefined;
 }
+
+/**
+ * Host dashboard data for the HostDashboard React island.
+ * Transformed from the API response by `transformHostDashboard`.
+ */
+export interface HostDashboardData {
+    readonly propertySummary: {
+        readonly total: number;
+        readonly published: number;
+        readonly draft: number;
+    };
+    readonly planInfo: {
+        readonly name: string;
+        readonly status: string;
+        readonly isTrial: boolean;
+    } | null;
+    readonly unreadCount: number;
+    readonly quickActions: ReadonlyArray<{
+        readonly label: string;
+        readonly href: string;
+        readonly icon: string;
+    }>;
+}
+
+// ---------------------------------------------------------------------------
+// Host Analytics Types (SPEC-207)
+// ---------------------------------------------------------------------------
+
+/** Single data point for accommodation views over time */
+export interface AccommodationViewsItem {
+    readonly date: string;
+    readonly count: number;
+}
+
+/** Accommodation views data returned by the analytics API */
+export interface AccommodationViewsData {
+    readonly window: '7d' | '30d';
+    readonly items: readonly AccommodationViewsItem[];
+}
+
+/** A single collection's bookmark count */
+export interface FavoritesBreakdownItem {
+    readonly collection: string;
+    readonly count: number;
+}
+
+/** Favorites breakdown across all collections */
+export interface FavoritesBreakdownData {
+    readonly collections: readonly FavoritesBreakdownItem[];
+}
+
+/** Response rate KPI data */
+export interface ResponseRateData {
+    readonly responseRatePct: number;
+    readonly avgResponseTimeMinutes: number | null;
+}
+
+/** Single month's inquiry count */
+export interface InquiryTrendMonth {
+    readonly month: string;
+    readonly count: number;
+}
+
+/** Monthly inquiry trend data for the InquiryTrendWidget */
+export interface InquiryTrendData {
+    readonly months: readonly InquiryTrendMonth[];
+}
+
+/** Market comparison item per accommodation */
+export interface MarketComparisonItem {
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly accommodationType: string;
+    readonly destinationName: string | null;
+    readonly yourRating: number | null;
+    readonly yourReviews: number;
+    readonly destinationAvgRating: number | null;
+    readonly yourPrice: number | null;
+    readonly destinationAvgPrice: number | null;
+}
+
+/** Market comparison data for the MarketComparisonWidget */
+export interface MarketComparisonData {
+    readonly items: readonly MarketComparisonItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Accommodation Editor Types (SPEC-208)
+// ---------------------------------------------------------------------------
+
+/**
+ * Editable accommodation data for the web editor form.
+ *
+ * Includes all fields the host can edit via the protected PATCH endpoint.
+ * The PATCH schema (`AccommodationUpdateHttpSchema`) is a `.partial()` of the
+ * create schema, so every field is optional in the payload.
+ *
+ * NOTE: `summary` is in the domain schema but NOT in the HTTP PATCH schema.
+ * The SSR page reads it from the GET response (full domain object); the form
+ * displays it but the PATCH cannot persist it yet. This will be resolved when
+ * the HTTP schema is extended (Phase B). For now, the field is editable in
+ * the UI but excluded from the PATCH payload.
+ */
+export interface AccommodationEditData {
+    readonly id: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    readonly type: string;
+    readonly destinationId: string;
+    readonly latitude: number | null;
+    readonly longitude: number | null;
+    readonly maxGuests: number | null;
+    readonly bedrooms: number | null;
+    readonly bathrooms: number | null;
+    readonly beds: number | null;
+    readonly basePrice: number | null;
+    readonly currency: string | null;
+    readonly isAvailable: boolean;
+    readonly isFeatured: boolean;
+    readonly amenityIds: readonly string[];
+    readonly featureIds: readonly string[];
+    // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
+    readonly phone: string;
+    readonly email: string;
+    readonly website: string;
+    // Phase B: social networks (flat HTTP fields mapped to SocialNetworkSchema)
+    readonly facebookUrl: string;
+    readonly instagramUrl: string;
+    readonly twitterUrl: string;
+    readonly linkedinUrl: string;
+    readonly tiktokUrl: string;
+    readonly youtubeUrl: string;
+}
+
+/**
+ * Image stored in an accommodation's media field.
+ *
+ * Shared between the photo section component and the API transform layer.
+ * Only `url` is required — publicId/width/height come from Cloudinary upload
+ * responses and are preserved for display/dedup purposes.
+ */
+export interface MediaImage {
+    readonly url: string;
+    readonly publicId: string;
+    readonly width: number;
+    readonly height: number;
+}
+
+/**
+ * Amenity item for the editor's multi-checkbox group.
+ * Fetched from the public amenities endpoint.
+ */
+export interface AmenityData {
+    readonly id: string;
+    readonly name: string;
+    readonly category: string | null;
+}
+
+/**
+ * Destination item for the editor's destination select.
+ * Fetched from the public destinations endpoint.
+ */
+export interface DestinationData {
+    readonly id: string;
+    readonly name: string;
+    readonly path: string;
+}

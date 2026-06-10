@@ -23,13 +23,21 @@
  */
 
 import {
+    ServiceErrorCode,
     StartPaidSubscriptionRequestSchema,
     StartPaidSubscriptionResponseSchema
 } from '@repo/schemas';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import {
+    isBillingProviderError,
+    mapProviderErrorToServiceError
+} from '../../lib/billing-provider-error';
+import { captureBillingError } from '../../lib/sentry';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
     SubscriptionCheckoutError,
     initiatePaidAnnualSubscription,
@@ -41,15 +49,64 @@ import { apiLogger } from '../../utils/logger';
 import { createCRUDRoute } from '../../utils/route-factory';
 
 /**
- * MercadoPago `back_url` for the preapproval. MP requires a non-empty
- * `back_url` at create time; the actual checkout URL the user is
- * redirected to is `providerInitPoint` so this placeholder is harmless.
- * A follow-up could rewrite it post-create to embed the local sub UUID,
- * but the front already gets the UUID from the response and uses
- * `?ref=<localId>` on its own return page.
+ * Supported locale values for the user-facing return URLs.
+ *
+ * Must stay in sync with `apps/web/src/lib/i18n.ts` SUPPORTED_LOCALES.
+ * The checkout pages (`[lang]/suscriptores/checkout/{success,failure,pending}`)
+ * exist for all three locales via Astro's `[lang]` routing.
  */
-function buildPaymentMethodReturnUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return`;
+const SUPPORTED_RETURN_URL_LOCALES = ['es', 'en', 'pt'] as const;
+type ReturnUrlLocale = (typeof SUPPORTED_RETURN_URL_LOCALES)[number];
+
+/** Fallback locale when the user has no preference or the preference is unknown. */
+const DEFAULT_RETURN_URL_LOCALE: ReturnUrlLocale = 'es';
+
+/**
+ * Resolves the locale to embed in MP return URLs from the authenticated user's
+ * web language preference (`user.settings.languageWeb`).
+ *
+ * Falls back to `'es'` when:
+ * - There is no authenticated user on the context.
+ * - The user has no `settings.languageWeb` value.
+ * - The stored value is not one of the three supported locales.
+ *
+ * @param c - Hono context carrying the Better Auth session user.
+ * @returns A supported locale string for use in URL path prefixes.
+ */
+function resolveReturnUrlLocale(c: Context): ReturnUrlLocale {
+    const user = c.get('user') as { settings?: Record<string, unknown> } | null | undefined;
+    const rawLocale = user?.settings?.languageWeb;
+
+    if (
+        typeof rawLocale === 'string' &&
+        (SUPPORTED_RETURN_URL_LOCALES as readonly string[]).includes(rawLocale)
+    ) {
+        return rawLocale as ReturnUrlLocale;
+    }
+
+    return DEFAULT_RETURN_URL_LOCALE;
+}
+
+/**
+ * MercadoPago `back_url` for the preapproval (monthly subscriptions).
+ *
+ * MP requires a non-empty `back_url` at preapproval-create time and
+ * redirects the user there after they authorise the recurring charge.
+ * The URL MUST land on an existing route — Astro's locale middleware
+ * rewrites unknown segments (e.g. `/billing/return`) into a 404 surface,
+ * so we point directly at the checkout success page which already exists
+ * at `apps/web/src/pages/[lang]/suscriptores/checkout/success.astro` and
+ * is set up to read `?status=` / `?preapproval_id=` query parameters MP
+ * appends post-authorise.
+ *
+ * History: until 2026-05-21 this returned
+ * `${HOSPEDA_SITE_URL}/billing/return`, which Astro's middleware rewrote
+ * to `/es/return/` (404). Surfaced during staging smoke as Finding #8.
+ *
+ * @param locale - User's preferred return-URL locale (e.g. `'es'`, `'en'`, `'pt'`).
+ */
+function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
 }
 
 /**
@@ -64,19 +121,38 @@ function buildNotificationUrl(): string {
 /**
  * MP Checkout return URLs for the annual one-time flow.
  *
- * The front-end receives `localSubscriptionId` in the response body
- * and persists it in sessionStorage BEFORE redirecting to MP, so the
- * URLs themselves don't need to carry the id. `cancelled=1` lets the
- * UI render an "abandoned checkout" message instead of the
- * success-pending spinner.
+ * Checkout preferences accept three back_urls (success / failure / pending)
+ * and MP redirects to the matching one based on payment outcome. The pages
+ * already exist at:
+ *
+ *   - `[lang]/suscriptores/checkout/success.astro`
+ *   - `[lang]/suscriptores/checkout/failure.astro`
+ *   - `[lang]/suscriptores/checkout/pending.astro`
+ *
+ * Pointing the URLs there directly avoids the locale-middleware rewrite
+ * that bit the monthly flow (Finding #8).
+ *
+ * @param locale - User's preferred return-URL locale.
+ *
+ * The front-end receives `localSubscriptionId` in the response body and
+ * persists it in sessionStorage BEFORE redirecting to MP, so the URLs do
+ * not need to carry the id. MP appends `?status=approved` /
+ * `?payment_id=...` / `?preference_id=...` on its own at redirect time.
  */
-function buildAnnualSuccessUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return`;
+function buildAnnualSuccessUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/success/`;
 }
 
-function buildAnnualCancelUrl(): string {
-    return `${env.HOSPEDA_SITE_URL}/billing/return?cancelled=1`;
+function buildAnnualCancelUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/suscriptores/checkout/failure/`;
 }
+
+// NOTE: a `pending` outcome URL would point at
+// `${HOSPEDA_SITE_URL}/${RETURN_URL_LOCALE}/suscriptores/checkout/pending/`
+// but the current subscription-checkout service only accepts success +
+// cancel. Pending payments today fall back to the cancel URL until the
+// service is extended to thread the pending URL through to MP's
+// `back_urls.pending`. Tracked as a follow-up.
 
 /**
  * Map a `SubscriptionCheckoutError` from the service layer to an HTTP
@@ -117,10 +193,16 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
  * - 404 when the plan slug is unknown, has no active price for the
  *   requested interval, or (annual only) the resolved customer cannot
  *   be loaded.
- * - 422 when the promo code is not a valid `free_trial_extension` (D9).
+ * - 422 when the promo code is not a valid `free_trial_extension` (D9),
+ *   or when the payment provider rejects the request as a validation error
+ *   (e.g. invalid card — maps to `VALIDATION_ERROR` / HTTP 400 via global handler).
  * - 500 when the qzpay create call returns no init point (adapter bug),
  *   or when any other unexpected error bubbles out.
- * - 503 when billing is not configured.
+ * - 502 when the payment provider returns a 5xx or unrecognised error
+ *   (`PROVIDER_ERROR` via global error handler, SPEC-149).
+ * - 503 when billing is not configured, or the payment provider is
+ *   rate-limiting us (`PROVIDER_RATE_LIMITED`, SPEC-149).
+ * - 504 when the payment provider times out (`PROVIDER_TIMEOUT`, SPEC-149).
  */
 export const handleStartPaidSubscription = async (
     c: Context,
@@ -154,7 +236,48 @@ export const handleStartPaidSubscription = async (
         });
     }
 
+    const locale = resolveReturnUrlLocale(c);
+
     try {
+        // SPEC-147 T-008 / Q7 guard: the cancel wins.
+        // If the customer has an existing subscription with cancelAtPeriodEnd=true,
+        // block re-subscription until the cancellation finalises. Creating a second
+        // subscription while a soft-cancel is winding down causes an ambiguous
+        // overlap (two concurrent subs for the same customer). The user must wait
+        // for the finalization cron to flip the soft-cancelled sub to 'cancelled'.
+        const existingSubscriptions =
+            await billing.subscriptions.getByCustomerId(billingCustomerId);
+        const hasSoftCancelledSub = existingSubscriptions.some(
+            (sub) =>
+                (sub.status === 'active' || sub.status === 'trialing') &&
+                sub.cancelAtPeriodEnd === true
+        );
+        if (hasSoftCancelledSub) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'An existing subscription is scheduled to cancel at period end. Cannot start a new subscription while a cancellation is pending. Please wait for the current period to end.',
+                undefined,
+                'SUBSCRIPTION_CANCEL_PENDING'
+            );
+        }
+
+        // SPEC-148 T-006 guard: reject checkout onto a disabled plan.
+        // Resolve the plan by slug before invoking the service so that a
+        // disabled (retired) plan is rejected with 410 PLAN_DISABLED instead
+        // of falling through to PLAN_NOT_FOUND or a provider error. The check
+        // mirrors `resolvePlanBySlug` in subscription-checkout.service.ts —
+        // QZPayPlan.active is the canonical active flag.
+        const plansResult = await billing.plans.list();
+        const targetPlan = plansResult.data.find((p) => p.name === body.planSlug) ?? null;
+        if (targetPlan !== null && targetPlan.active === false) {
+            throw new ServiceError(
+                ServiceErrorCode.PLAN_DISABLED,
+                'This plan is no longer available. Please choose an active plan.',
+                undefined,
+                'PLAN_DISABLED'
+            );
+        }
+
         const result =
             body.billingInterval === 'annual'
                 ? await initiatePaidAnnualSubscription({
@@ -162,8 +285,8 @@ export const handleStartPaidSubscription = async (
                       planSlug: body.planSlug,
                       billing,
                       urls: {
-                          successUrl: buildAnnualSuccessUrl(),
-                          cancelUrl: buildAnnualCancelUrl(),
+                          successUrl: buildAnnualSuccessUrl(locale),
+                          cancelUrl: buildAnnualCancelUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
                       statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
@@ -173,7 +296,7 @@ export const handleStartPaidSubscription = async (
                       planSlug: body.planSlug,
                       billing,
                       urls: {
-                          paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                          paymentMethodReturnUrl: buildPaymentMethodReturnUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
                       promoCode: body.promoCode
@@ -206,6 +329,38 @@ export const handleStartPaidSubscription = async (
 
         if (error instanceof HTTPException) {
             throw error;
+        }
+
+        // Re-throw ServiceErrors as-is so the global error handler maps them
+        // to their correct HTTP status codes (e.g. ALREADY_EXISTS → 409).
+        // Must come BEFORE isBillingProviderError so domain-level ServiceErrors
+        // (e.g. SPEC-147 cancel-pending gate) are not misidentified as provider errors.
+        if (error instanceof ServiceError) {
+            throw error;
+        }
+
+        // SPEC-149 Part B+C: detect QZPayProviderSyncError, map to typed
+        // ServiceError (so the global handler returns 502/503/504/400 instead of
+        // the generic 500), and capture to Sentry with billing tags.
+        if (isBillingProviderError(error)) {
+            const serviceError = mapProviderErrorToServiceError({
+                error,
+                operation: 'subscription_create'
+            });
+
+            // Extract providerStatus from the mapped ServiceError details
+            // (ProviderErrorDetails shape from billing-provider-error.ts).
+            const details = serviceError.details as
+                | { providerStatus?: number; operation?: string }
+                | undefined;
+
+            captureBillingError(serviceError, {
+                operation: 'start_paid_checkout',
+                planId: body.planSlug,
+                providerStatus: details?.providerStatus
+            });
+
+            throw serviceError;
         }
 
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -260,6 +415,23 @@ export const startPaidSubscriptionRoute = createCRUDRoute({
  */
 const startPaidRouter = createRouter();
 
+// Enforce X-Idempotency-Key on the mutating POST /start-paid endpoint
+// (SPEC-143 T-143-60). Mount BEFORE the route handler so the middleware
+// short-circuits missing-key requests with a 400 before the handler
+// touches MP. Scoped to /start-paid only — the polling status endpoint
+// (subscriptionStatusRouter) is a GET and does not need idempotency.
+startPaidRouter.use('/start-paid', idempotencyKeyMiddleware({ operation: 'hospeda.start_paid' }));
+
 startPaidRouter.route('/', startPaidSubscriptionRoute);
 
 export { startPaidRouter };
+
+/**
+ * Exported helpers for unit testing locale resolution without spinning up
+ * the full handler.
+ */
+export const _internals = {
+    resolveReturnUrlLocale,
+    SUPPORTED_RETURN_URL_LOCALES,
+    DEFAULT_RETURN_URL_LOCALE
+};

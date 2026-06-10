@@ -15,8 +15,7 @@ import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridS
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import SearchContextBanner from '@/components/shared/feedback/SearchContextBanner.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import ScrollableNav from '@/components/shared/ui/ScrollableNav.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
@@ -32,6 +31,7 @@ import { buildUrl } from '@/lib/urls';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -47,36 +47,105 @@ const types = url.searchParams.get('types') ?? undefined;
 const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
-const sortBy = url.searchParams.get('sortBy') ?? undefined;
-// SPEC-098 T-052 — `mostSaved` should default to descending so accommodations
-// with the most active bookmarks appear first. Other fields keep their existing
-// behavior (server-side fallback to `asc`).
-const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
-const sortOrder: 'asc' | 'desc' | undefined =
-    explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
+/**
+ * Maps the URL's user-friendly sort key (e.g. `featured`, `priceAsc`) to the
+ * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
+ * UI offer pre-baked options like "Mejor valorados" / "Precio menor a mayor"
+ * without exposing a separate direction toggle.
+ *
+ * All sortBy fields here MUST be whitelisted in
+ * `apps/api/src/routes/accommodation/public/list.ts > ALLOWED_SORT_FIELDS`.
+ * `price` and `mostSaved` are synthetic fields handled by the model.
+ */
+const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured:     { sortBy: 'isFeatured',    sortOrder: 'desc' },
+    mostSaved:    { sortBy: 'mostSaved',     sortOrder: 'desc' },
+    ratingDesc:   { sortBy: 'averageRating', sortOrder: 'desc' },
+    mostReviewed: { sortBy: 'reviewsCount',  sortOrder: 'desc' },
+    newest:       { sortBy: 'createdAt',     sortOrder: 'desc' },
+    nameAsc:      { sortBy: 'name',          sortOrder: 'asc'  },
+    nameDesc:     { sortBy: 'name',          sortOrder: 'desc' },
+    priceAsc:     { sortBy: 'price',         sortOrder: 'asc'  },
+    priceDesc:    { sortBy: 'price',         sortOrder: 'desc' },
+    // Synthetic — backend orders by haversine distance from the geo center
+    // when `latitude`/`longitude` are present, otherwise drops the field and
+    // falls through to the id tiebreaker.
+    distance:     { sortBy: 'distance',      sortOrder: 'asc'  }
+};
+/** Default sort key when the URL has no `sortBy`. */
+const DEFAULT_SORT_KEY = 'featured';
+
+const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
+
+// Public quick-amenity boolean shortcuts. The backend resolves these to
+// canonical amenity IDs server-side (PR fix/accommodation-backend-filters-sort).
+const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
+const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
+const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
+const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
-const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
+// `minGuests` is no longer exposed as its own field — it's derived from
+// `adults + children` further down so a couple looking for "2 adultos +
+// 0 niños" actually filters out 1-person studios. The variable is computed
+// below once `adults` / `childrenCount` are parsed.
 const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const maxBedrooms = url.searchParams.get('maxBedrooms') ? Number(url.searchParams.get('maxBedrooms')) : undefined;
 const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const maxBathrooms = url.searchParams.get('maxBathrooms') ? Number(url.searchParams.get('maxBathrooms')) : undefined;
 const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
-const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
-const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
+// `includeNoPrice` / `includeNoReviews` are default-ON now: the corresponding
+// sidebar checkboxes start checked, so the URL only carries the param when the
+// user explicitly opts OUT. Only forward the explicit-OFF case to the API
+// (passing `true` always would push an unknown param the listing endpoint
+// rejects with INVALID_PAGINATION_PARAMS).
+const includeNoPrice =
+    url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
+const includeNoReviews =
+    url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
 
-// --- Hero search context (NOT sent to API; used for disclaimer + handoff to detail) ---
-// These params arrive from the home hero search bar. The listing does not
-// filter by them; they are surfaced in the disclaimer banner and forwarded
-// to the detail page so the contact form can pre-fill the message.
+// Geo radius (composite filter) — the backend haversine clause needs the
+// full triplet; missing or non-numeric values are silently ignored, matching
+// the model-layer guard.
+const latitudeRaw = url.searchParams.get('latitude');
+const longitudeRaw = url.searchParams.get('longitude');
+const radiusRaw = url.searchParams.get('radius');
+const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
+const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
+const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
+const hasGeoRadius =
+	Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
+
+// Resolve the encoded sort key. `distance` is only meaningful when the geo
+// filter is active, so degrade it to the default if the URL still carries
+// `?sortBy=distance` but the user removed the geo center. The backend would
+// silently drop it too, but cleaning it up here keeps the SortPopover label
+// matching what's actually being applied.
+const sortKey =
+	rawSortKey === 'distance' && !hasGeoRadius ? DEFAULT_SORT_KEY : rawSortKey;
+const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
+const sortBy = sortResolved.sortBy;
+const sortOrder = sortResolved.sortOrder;
+
+// --- Hero search context ---
+// `checkIn` / `checkOut` arrive from the home hero search bar; the listing
+// surfaces them in the sidebar but doesn't filter by them yet (no real-time
+// availability) — they're forwarded to the detail page so the contact form
+// can pre-fill the message.
+//
+// `adults` / `children` DO filter — their sum is sent to the API as
+// `minGuests` further down so a 3+2 party doesn't see 1-bedroom studios.
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
 const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adults = adultsParam ? Number(adultsParam) : undefined;
 const childrenCount = childrenParam ? Number(childrenParam) : undefined;
+
+// Derived guest-capacity filter: sum of adults + children. Used to filter
+// accommodations that fit the party size. Falls back to defaults (2 + 0)
+// when the URL hasn't been touched.
+const guestCount = (adults ?? 2) + (childrenCount ?? 0);
+const minGuests = guestCount > 0 ? guestCount : undefined;
 
 // Build a query suffix to forward search context to each accommodation detail link.
 const contextQueryParams = new URLSearchParams();
@@ -86,8 +155,9 @@ if (adults !== undefined && !Number.isNaN(adults)) contextQueryParams.set('adult
 if (childrenCount !== undefined && !Number.isNaN(childrenCount)) contextQueryParams.set('children', String(childrenCount));
 const contextQuery = contextQueryParams.toString() || undefined;
 
-// Fetch destinations for filter dropdown
-const destinationsResult = await destinationsApi.list({ pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+// Fetch destinations for filter dropdown (CITY only — accommodations are
+// browsed by city, not by parent administrative regions).
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
@@ -111,17 +181,21 @@ const result = await accommodationsApi.list({
 	sortOrder,
 	isFeatured,
 	minGuests,
-	maxGuests,
 	minBedrooms,
-	maxBedrooms,
 	minBathrooms,
-	maxBathrooms,
 	minRating,
 	amenities: amenitiesParam,
 	features: featuresParam,
 	includeAmenities: true,
 	includeNoPrice,
 	includeNoReviews,
+	hasWifi,
+	hasPool,
+	hasParking,
+	allowsPets,
+	latitude: hasGeoRadius ? latitude : undefined,
+	longitude: hasGeoRadius ? longitude : undefined,
+	radius: hasGeoRadius ? radius : undefined,
 });
 
 const hasError = !result.ok;
@@ -187,11 +261,11 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 }));
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
-	label: { es: a.name, en: a.name }
+	label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') }
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 	key: f.id,
-	label: { es: f.name, en: f.name }
+	label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') }
 }));
 
 // When types are active the API already filters by type, so `total` is the
@@ -232,42 +306,72 @@ const filterSummary = buildAccommodationListingSummary({
 	},
 });
 
-// Filter configuration for sidebar
-// Order: dates/guests context → search → featured (toggle, inline) → type → destination → amenities → features → price → rest
+// Filter configuration for sidebar.
+// Sectioned layout: 5 themed groups (Ubicación / Tipo y Características /
+// Fechas / Capacidad / Precio y Calidad). `section-header` entries divide
+// the panel with small-caps headers; the FilterSidebar switches to
+// declaration-order rendering when any section-header is declared, so inline
+// toggles (`isFeatured`) land under their intended section.
+//
+// `dates`, `adults`, and `children` live inside the sidebar even though they
+// don't narrow the result set today (no availability system) — they're
+// forwarded to the accommodation detail link so the contact form can
+// pre-fill the message. `emitWhenAtDefault: true` on the steppers keeps the
+// URL carrying the values even at their defaults so the context survives
+// pagination.
 const filterGroups: FilterGroup[] = [
-	{
-		id: 'dates',
-		label: t('accommodations.sidebar.dates', 'Fechas'),
-		type: 'date-range',
-		checkInPlaceholder: t('accommodations.sidebar.checkInPlaceholder', 'Llegada'),
-		checkOutPlaceholder: t('accommodations.sidebar.checkOutPlaceholder', 'Salida'),
-	},
-	{
-		id: 'adults',
-		label: t('accommodations.sidebar.adults', 'Adultos'),
-		type: 'stepper',
-		min: 1,
-		max: 10,
-		defaultValue: 2,
-		// Hero search context: keep the value in URL even when at default,
-		// so it survives across other filter changes and keeps the banner
-		// + detail-page prefill in sync.
-		emitWhenAtDefault: true,
-	},
-	{
-		id: 'children',
-		label: t('accommodations.sidebar.children', 'Niños'),
-		type: 'stepper',
-		min: 0,
-		max: 6,
-		defaultValue: 0,
-		emitWhenAtDefault: true,
-	},
+	// Free-text search lives at the very top, OUTSIDE any section, so it reads
+	// as a global filter independent of the themed categories below.
 	{
 		id: 'q',
 		label: t('accommodations.sidebar.search', 'Búsqueda por texto'),
 		type: 'search',
 		placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...'),
+	},
+	{
+		id: 'section-location',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.location', 'Ubicación'),
+		icon: 'MapIcon',
+	},
+	{
+		id: 'destinationIds',
+		label: t('accommodations.sidebar.destination', 'Destino'),
+		type: 'select-search',
+		options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
+		maxVisible: 8,
+	},
+	{
+		id: 'location',
+		label: t('accommodations.sidebar.geoRadius', 'Cerca de'),
+		type: 'geo-radius',
+		// Build the anchor list from destinations that ship explicit lat/long
+		// coordinates. Strings are parsed once here (the schema stores them as
+		// strings) so the runtime payload is plain numbers.
+		destinationOptions: destinations
+			.map((d) => {
+				const coords = d.location?.coordinates;
+				const lat = coords ? Number.parseFloat(coords.lat) : Number.NaN;
+				const long = coords ? Number.parseFloat(coords.long) : Number.NaN;
+				if (!Number.isFinite(lat) || !Number.isFinite(long)) return null;
+				return { value: d.id, label: d.name, lat, long, featured: Boolean(d.isFeatured) };
+			})
+			.filter((opt): opt is { value: string; label: string; lat: number; long: number; featured: boolean } => opt !== null),
+		radiusPresets: [5, 10, 25, 50, 100],
+		defaultCollapsed: true,
+		destinationModeLabel: t('accommodations.sidebar.geoRadius.destinationMode', 'Un destino'),
+		browserModeLabel: t('accommodations.sidebar.geoRadius.browserMode', 'Mi ubicación'),
+		destinationPlaceholder: t('accommodations.sidebar.geoRadius.destinationPlaceholder', 'Elegí un destino'),
+		browserCtaLabel: t('accommodations.sidebar.geoRadius.browserCta', 'Usar mi ubicación'),
+		browserPendingLabel: t('accommodations.sidebar.geoRadius.browserPending', 'Detectando…'),
+		browserErrorLabel: t('accommodations.sidebar.geoRadius.browserError', 'No pudimos detectar tu ubicación. Revisá los permisos del navegador.'),
+		radiusUnitLabel: t('accommodations.sidebar.geoRadius.radiusUnit', 'km'),
+	},
+	{
+		id: 'section-type',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.type', 'Tipo y características'),
+		icon: 'AccommodationIcon',
 	},
 	{
 		id: 'isFeatured',
@@ -291,52 +395,71 @@ const filterGroups: FilterGroup[] = [
 		],
 	},
 	{
-		id: 'destinationIds',
-		label: t('accommodations.sidebar.destination', 'Destino'),
-		type: 'select-search',
-		options: destinations.map((d) => ({ value: d.id, label: d.name })),
-		maxVisible: 8,
-	},
-	{
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: a.name, icon: a.icon ?? undefined })),
+		options: amenities.map((a) => ({ value: a.id, label: resolveI18nText(a.name, locale), icon: a.icon ?? undefined })),
 		maxVisible: 10,
+		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
+		// Each `value` is the URL boolean param name that the backend resolves
+		// to canonical amenity IDs server-side (with slug variants — e.g.
+		// `hasPool` matches both `pool` and `heated_pool`).
+		priorityOptions: [
+			{ value: 'hasWifi', label: t('accommodations.quickAmenity.wifi', 'WiFi'), icon: 'WifiIcon' },
+			{ value: 'hasPool', label: t('accommodations.quickAmenity.pool', 'Pileta'), icon: 'PoolIcon' },
+			{ value: 'hasParking', label: t('accommodations.quickAmenity.parking', 'Estacionamiento'), icon: 'CarIcon' },
+			{ value: 'allowsPets', label: t('accommodations.quickAmenity.pets', 'Acepta mascotas'), icon: 'DogIcon' },
+		],
 	},
 	{
 		id: 'features',
 		label: t('accommodations.sidebar.features', 'Características'),
 		type: 'icon-chips',
-		options: features.map((f) => ({ value: f.id, label: f.name, icon: f.icon ?? undefined })),
+		options: features.map((f) => ({ value: f.id, label: resolveI18nText(f.name, locale), icon: f.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
-		id: 'price',
-		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
-		type: 'dual-range',
-		min: 5000,
-		max: 150000,
-		step: 1000,
-		format: 'currency',
-		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
-		includeNullParam: 'includeNoPrice',
+		id: 'section-dates',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.dates', 'Fechas'),
+		icon: 'CalendarDotsIcon',
 	},
 	{
-		id: 'minGuests',
-		label: t('accommodations.sidebar.minCapacity', 'Capacidad mínima'),
+		id: 'dates',
+		label: t('accommodations.sidebar.dates', 'Llegada y salida'),
+		type: 'date-range',
+		mode: 'bounds',
+		checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
+		checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
+		description: t(
+			'accommodations.sidebar.dates.helper',
+			'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
+		),
+	},
+	{
+		id: 'section-capacity',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.capacity', 'Capacidad'),
+		icon: 'UsersIcon',
+	},
+	{
+		id: 'adults',
+		label: t('accommodations.sidebar.adults', 'Adultos'),
+		type: 'stepper',
+		min: 1,
+		max: 10,
+		defaultValue: 2,
+		emitWhenAtDefault: true,
+	},
+	{
+		id: 'children',
+		label: t('accommodations.sidebar.children', 'Niños'),
 		type: 'stepper',
 		min: 0,
-		max: 20,
+		max: 6,
 		defaultValue: 0,
-		suffix: t('accommodations.chips.guests', 'huéspedes'),
-	},
-	{
-		id: 'minRating',
-		label: t('accommodations.sidebar.rating', 'Calificación'),
-		type: 'stars',
-		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
-		includeNullParam: 'includeNoReviews',
+		emitWhenAtDefault: true,
+		description: t('accommodations.sidebar.children.helper', '(menores de 5 años)'),
 	},
 	{
 		id: 'minBedrooms',
@@ -354,34 +477,77 @@ const filterGroups: FilterGroup[] = [
 		max: 10,
 		defaultValue: 0,
 	},
+	{
+		id: 'section-price-quality',
+		type: 'section-header',
+		label: t('accommodations.sidebar.section.priceAndQuality', 'Precio y calidad'),
+		icon: 'PriceIcon',
+	},
+	{
+		id: 'price',
+		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
+		type: 'dual-range',
+		min: 5000,
+		max: 150000,
+		step: 1000,
+		format: 'currency',
+		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
+		includeNullParam: 'includeNoPrice',
+		defaultIncludeNull: true,
+	},
+	{
+		id: 'minRating',
+		label: t('accommodations.sidebar.rating', 'Calificación mínima'),
+		type: 'stars',
+		includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'),
+		includeNullParam: 'includeNoReviews',
+		defaultIncludeNull: true,
+	},
 ];
 
+// Sort options expose 9 encoded keys, each resolved to a concrete
+// `(sortBy, sortOrder)` pair via the SORT_OPTION_MAP at the top of this
+// file. Default = `featured` so paid / promoted accommodations land at the
+// top of the first page. All sortBy values are whitelisted in the API
+// route's ALLOWED_SORT_FIELDS — see PR fix/accommodation-backend-filters-sort.
 const sortOptions = [
-	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
-	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
-	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
-	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
-	{ value: 'recent', label: t('accommodations.sort.recent', 'Más recientes') },
-	// SPEC-098 T-052 — orders by total active bookmarks (descending) via the
-	// `mostSaved` synthetic sort field on the public accommodation list endpoint.
-	{ value: 'mostSaved', label: t('ui.sort.most_bookmarked', 'Más guardados') },
+	{ value: 'featured',     label: t('accommodations.sort.featured',     'Destacados primero') },
+	{ value: 'mostSaved',    label: t('accommodations.sort.mostSaved',    'Más guardados') },
+	{ value: 'ratingDesc',   label: t('accommodations.sort.ratingDesc',   'Mejor valorados') },
+	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
+	{ value: 'newest',       label: t('accommodations.sort.newest',       'Recién agregados') },
+	{ value: 'nameAsc',      label: t('accommodations.sort.nameAsc',      'Nombre (A-Z)') },
+	{ value: 'nameDesc',     label: t('accommodations.sort.nameDesc',     'Nombre (Z-A)') },
+	{ value: 'priceAsc',     label: t('accommodations.sort.priceAsc',     'Precio: menor a mayor') },
+	{ value: 'priceDesc',    label: t('accommodations.sort.priceDesc',    'Precio: mayor a menor') },
+	// Distance sort is only meaningful while the geo-radius filter is active
+	// (otherwise the backend has no center to measure from and silently
+	// drops the field). Surface it as an option only when the user already
+	// picked a destination / "Mi ubicación" so the menu stays uncluttered
+	// for the common case.
+	...(hasGeoRadius
+		? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }]
+		: []),
 ];
 
-// ItemList JSON-LD
-const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'ItemList',
-	name: t('accommodations.title', 'Alojamientos'),
-	numberOfItems: total,
-	itemListElement: cards.map((card, i) => ({
-		'@type': 'ListItem',
-		position: (page - 1) * pageSize + i + 1,
-		url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
-		name: card.name,
-	})),
-};
+// ItemList JSON-LD — built from the visible page of cards. Routed through the
+// reusable ItemListJsonLd component (which wraps JsonLd) so escaping stays on
+// the single canonical JSON-LD path (SPEC-157 D-1).
+const itemListEntries = cards.map((card) => ({
+	url: new URL(buildUrl({ locale, path: `alojamientos/${card.slug}` }), Astro.site ?? Astro.url.origin).href,
+	name: card.name,
+}));
 
 const baseUrl = buildUrl({ locale, path: 'alojamientos' });
+
+// Self-canonical for paginated pages (SPEC-157 follow-up). Pages 2+ are served
+// at `/{locale}/alojamientos/page/{n}/` via an Astro.rewrite to this listing
+// with `?page=n`. Because the rewrite makes `Astro.url.pathname` the base path
+// (dropping the `/page/n/` segment), ListingLayout's default
+// `canonicalPath = Astro.url.pathname` would canonicalize every paginated page
+// back to page 1. We rebuild the real crawlable URL from the page number so
+// each paginated page self-canonicalizes and stays indexable.
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 
 /**
  * Quick-filter type badges shown above the listing grid. Uses the canonical
@@ -398,28 +564,43 @@ const typeBadges = Object.values(AccommodationTypeEnum).map((value) => {
     };
 });
 
-// Build initial filter params for the sidebar (avoids hydration flash)
+// Build initial filter params for the sidebar (avoids hydration flash).
+// The encoded `sortKey` is what the SortPopover reads — NOT the resolved
+// backend sortBy column, which is internal to this page.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
 if (types) initialParams.types = types;
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
-if (sortBy) initialParams.sortBy = sortBy;
+initialParams.sortBy = sortKey;
 if (isFeatured) initialParams.isFeatured = 'true';
-if (minGuests !== undefined) initialParams.minGuests = String(minGuests);
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
-if (includeNoPrice) initialParams.includeNoPrice = 'true';
-if (includeNoReviews) initialParams.includeNoReviews = 'true';
-// Hero search context, also exposed as editable filters in the sidebar.
+// Default-checked include-null toggles only emit `=false` when the user opts
+// out. Anything else (absent, 'true') means checked — see reducer comments.
+if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
+if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
+// Trip-context fields: always seed defaults so the sidebar steppers /
+// date inputs render with their last-known values (or 2 adults / 0 kids /
+// no dates on a fresh visit).
 if (checkIn) initialParams.checkIn = checkIn;
 if (checkOut) initialParams.checkOut = checkOut;
-if (adults !== undefined && !Number.isNaN(adults)) initialParams.adults = String(adults);
-if (childrenCount !== undefined && !Number.isNaN(childrenCount)) initialParams.children = String(childrenCount);
+initialParams.adults = String(adults ?? 2);
+initialParams.children = String(childrenCount ?? 0);
+// Quick-amenity boolean shortcuts (priority chips inside the Comodidades group).
+if (hasWifi) initialParams.hasWifi = 'true';
+if (hasPool) initialParams.hasPool = 'true';
+if (hasParking) initialParams.hasParking = 'true';
+if (allowsPets) initialParams.allowsPets = 'true';
+if (hasGeoRadius) {
+	initialParams.latitude = String(latitude);
+	initialParams.longitude = String(longitude);
+	initialParams.radius = String(radius);
+}
 
 // ---------------------------------------------------------------------------
 // Empty state recovery: removable filter chips + secondary suggestions.
@@ -473,7 +654,7 @@ if (amenitiesParam) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
 			activeFilterChips.push({
-				label: a.name,
+				label: resolveI18nText(a.name, locale),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
@@ -484,7 +665,7 @@ if (featuresParam) {
 		const f = features.find((x) => x.id === id);
 		if (f) {
 			activeFilterChips.push({
-				label: f.name,
+				label: resolveI18nText(f.name, locale),
 				removeUrl: urlWithoutListValue('features', id),
 			});
 		}
@@ -509,12 +690,8 @@ if (minRating !== undefined) {
 		removeUrl: urlWithoutKeys(['minRating', 'includeNoReviews']),
 	});
 }
-if (minGuests !== undefined && minGuests > 0) {
-	activeFilterChips.push({
-		label: `${minGuests}+ ${t('accommodations.chips.guests', 'huéspedes')}`,
-		removeUrl: urlWithoutKeys(['minGuests']),
-	});
-}
+// `minGuests` is derived from adults + children — no standalone chip; the
+// user adjusts party size from the sidebar steppers instead.
 if (minBedrooms !== undefined && minBedrooms > 0) {
 	activeFilterChips.push({
 		label: `${minBedrooms}+ ${t('accommodations.sidebar.bedrooms', 'Dormitorios')}`,
@@ -549,10 +726,18 @@ const emptyStateSuggestions = [
 	locale={locale}
 	title={t('accommodations.title', 'Alojamientos')}
 	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
+	canonicalPath={canonicalPath}
 	showFilters={true}
 	filterPosition="left"
+	ogTagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	<ItemListJsonLd
+		slot="head-extra"
+		name={t('accommodations.title', 'Alojamientos')}
+		items={itemListEntries}
+		numberOfItems={total}
+		startPosition={(page - 1) * pageSize + 1}
+	/>
 
 	<Breadcrumbs
 		slot="breadcrumbs"
@@ -627,24 +812,20 @@ const emptyStateSuggestions = [
 		/>
 	)}
 
-	<SearchContextBanner
-		locale={locale}
-		checkIn={checkIn}
-		checkOut={checkOut}
-		adults={adults}
-		children={childrenCount}
-	/>
-
 	{!hasError && cards.length > 0 && (
 		<>
 			<div class="acc-grid">
 				{cards.map((card, i) => (
 					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+						{/* First row of the listing grid (auto-fill minmax(260px)) fits
+						    3 cards at 1024–1280px viewport with the filter sidebar open.
+						    Marking them eager prioritises LCP image loading above the fold. */}
 						<AccommodationCard
 							data={card}
 							locale={locale}
 							isAuthenticated={isAuthenticated}
 							linkQuery={contextQuery}
+							eager={i < 3}
 						/>
 					</div>
 				))}
@@ -668,27 +849,11 @@ const emptyStateSuggestions = [
 			baseUrl={baseUrl.slice(0, -1)}
 			locale={locale}
 			searchParams={(() => {
-				const sp = new URLSearchParams();
-				if (q) sp.set('q', q);
-				if (types) sp.set('types', types);
-				if (destinationIds) sp.set('destinationIds', destinationIds);
-				if (minPrice !== undefined) sp.set('minPrice', String(minPrice));
-				if (maxPrice !== undefined) sp.set('maxPrice', String(maxPrice));
-				if (sortBy) sp.set('sortBy', sortBy);
-				if (sortOrder) sp.set('sortOrder', sortOrder);
-				if (isFeatured) sp.set('isFeatured', 'true');
-				if (minGuests !== undefined) sp.set('minGuests', String(minGuests));
-				if (minBedrooms !== undefined) sp.set('minBedrooms', String(minBedrooms));
-				if (minBathrooms !== undefined) sp.set('minBathrooms', String(minBathrooms));
-				if (minRating !== undefined) sp.set('minRating', String(minRating));
-				if (amenitiesParam) sp.set('amenities', amenitiesParam);
-				if (featuresParam) sp.set('features', featuresParam);
-				if (includeNoPrice) sp.set('includeNoPrice', 'true');
-				if (includeNoReviews) sp.set('includeNoReviews', 'true');
-				if (checkIn) sp.set('checkIn', checkIn);
-				if (checkOut) sp.set('checkOut', checkOut);
-				if (adults !== undefined && !Number.isNaN(adults)) sp.set('adults', String(adults));
-				if (childrenCount !== undefined && !Number.isNaN(childrenCount)) sp.set('children', String(childrenCount));
+				// Forward every URL param except `page` so pagination links
+				// preserve the full filter/sort/context set. Cheaper and more
+				// future-proof than re-listing every supported field.
+				const sp = new URLSearchParams(url.searchParams);
+				sp.delete('page');
 				return sp;
 			})()}
 		/>

@@ -34,9 +34,9 @@ Consistency across a monorepo with 15+ packages requires strict dependency gover
 
 ### Forms
 
-- **Use (Admin)**: React Hook Form + Zod resolver
+- **Use (Admin)**: TanStack Form (`@tanstack/react-form`) + Zod schemas from `@repo/schemas` (validation via `schema.safeParse()` inside form handlers — NOT `zodResolver`, RHF is not installed)
 - **Use (Web)**: Native HTML forms with Astro
-- **Never**: Formik, final-form, custom form state management
+- **Never**: React Hook Form, Formik, final-form, custom form state management
 - **Reason**: Type-safe, performant, integrates with Zod schemas
 
 ### Tables

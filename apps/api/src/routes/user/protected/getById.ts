@@ -2,7 +2,7 @@
  * Protected get user by ID endpoint
  * Allows users to view their own full profile or public info of others
  */
-import { UserIdSchema, UserProtectedSchema } from '@repo/schemas';
+import { UserIdSchema, UserSelfSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -25,7 +25,10 @@ export const protectedGetUserByIdRoute = createProtectedRoute({
     requestParams: {
         id: UserIdSchema
     },
-    responseSchema: UserProtectedSchema.nullable(),
+    // UserSelfSchema (not UserProtectedSchema): this route is self-scoped, so the
+    // response must include the contactInfo/location/socialNetworks JSONB blobs
+    // the edit-profile form rehydrates from. See UserSelfSchema JSDoc.
+    responseSchema: UserSelfSchema.nullable(),
     // Ownership is enforced by UserService._canView() which checks actor.id === entity.id
     // No ownership middleware needed here (the user entity has no 'userId' field to match on)
     handler: async (ctx: Context, params: Record<string, unknown>) => {

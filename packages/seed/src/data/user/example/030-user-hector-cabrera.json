@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Ubajay",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "3260",
-        "street": "Entre Ríos",
-        "number": "369",
-        "coordinates": {
-            "lat": "-31.7833",
-            "long": "-58.3167"
-        }
+        "region": "Entre Ríos",
+        "city": "Ubajay",
+        "addressLine1": "Entre Ríos 369",
+        "postalCode": "3260"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Ubajay, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

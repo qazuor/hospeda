@@ -17,6 +17,8 @@
             "communication": "Comunicação",
             "location": "Localização"
         },
+        "subheading": "Compartilhe sua experiência em {{name}} para ajudar outros viajantes.",
+        "ratingHelp": "Toque nas estrelas para avaliar cada aspecto",
         "titleLabel": "Título",
         "titlePlaceholder": "Resumo da sua experiência",
         "contentLabel": "Comentário",
@@ -33,7 +35,32 @@
             "contentMinLength": "O comentário deve ter pelo menos 10 caracteres",
             "submitFailed": "Erro ao enviar a avaliação. Por favor, tente novamente.",
             "alreadyReviewed": "Você já enviou uma avaliação para esta hospedagem."
+        },
+        "destination": {
+            "pendingNotice": "Sua avaliação está pendente de aprovação e ficará visível após a revisão.",
+            "alreadyReviewed": "Você já enviou uma avaliação para este destino.",
+            "categoryHint": "Avalie cada categoria ou expanda para ajustar cada aspecto."
         }
+    },
+    "locked": {
+        "title": "Fale primeiro com o anfitrião",
+        "description": "Para manter as avaliações honestas, apenas viajantes que já contataram o anfitrião podem deixar uma. Envie uma consulta pelo botão de contato e volte quando quiser compartilhar sua opinião."
+    },
+    "sidebar": {
+        "title": "Sua avaliação",
+        "canLeaveReview": "Você falou com o anfitrião. Compartilhe sua experiência para ajudar outros viajantes.",
+        "cta": "Deixar avaliação",
+        "locked": "Para deixar uma avaliação, primeiro fale com o anfitrião pelo botão de contato."
+    },
+    "destinationSidebar": {
+        "title": "Sua opinião",
+        "canLeaveReview": "Compartilhe sua experiência neste destino para ajudar outros viajantes.",
+        "cta": "Deixar avaliação",
+        "signInCta": "Entre para opinar",
+        "signInCtaHint": "Você precisa de uma conta para deixar sua avaliação."
+    },
+    "dialog": {
+        "close": "Fechar"
     },
     "list": {
         "title": "Avaliações",

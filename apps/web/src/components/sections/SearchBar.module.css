@@ -32,7 +32,7 @@
 }
 
 .col:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.05);
+    background: var(--brand-primary-a05);
 }
 
 .col:focus-visible {
@@ -45,7 +45,7 @@
 }
 
 .colActive {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
+    background: var(--brand-primary-a08);
 }
 
 .icon {
@@ -105,7 +105,7 @@
 }
 
 .button:hover {
-    background: oklch(from var(--brand-primary) calc(l * 0.9) c h);
+    background: var(--brand-primary-l90);
 }
 
 .button:focus-visible {
@@ -128,8 +128,7 @@
     background: var(--core-card);
     border: 1px solid var(--border);
     border-radius: 16px;
-    box-shadow: 0 8px 30px oklch(from var(--core-foreground) l c h / 0.1), 0 2px 8px
-        oklch(from var(--core-foreground) l c h / 0.06);
+    box-shadow: 0 8px 30px var(--core-foreground-a10), 0 2px 8px var(--core-foreground-a05);
     padding: 8px 0;
     min-width: 260px;
     max-height: 360px;
@@ -179,144 +178,58 @@
 
 /* === Destination dropdown === */
 .destinationPanel {
-    min-width: 280px;
+    min-width: 320px;
 }
 
-.dropdownItem {
+/*
+ * Search input strip rendered at the top of the destination and type panels.
+ * The panels themselves remain `panel-style` (large dropdowns with a close
+ * header on mobile sheets); the items below switch to the shared
+ * `.combobox__option` styling from `components.css`.
+ */
+.panelSearch {
+    padding: 8px 12px 0;
+}
+
+/*
+ * Container that holds the rendered `.combobox__option` items inside a
+ * panel. Adds vertical breathing room and a max-height + scroll so long
+ * lists don't push the close button off-screen on mobile.
+ */
+.panelOptionList {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-size: var(--text-body-sm, 0.875rem);
-    font-family: var(--font-sans);
-    color: var(--core-foreground);
-    transition: background 0.15s ease;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-}
-
-.dropdownItem:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.06);
-}
-
-.dropdownItem:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
-    border-radius: 4px;
-}
-
-.dropdownItemActive {
-    background: oklch(from var(--brand-primary) l c h / 0.1);
-    color: var(--brand-primary);
-    font-weight: 600;
-}
-
-.dropdownItemClear {
-    color: var(--core-muted-foreground);
-    font-size: var(--text-meta, 0.8125rem);
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 4px;
-    padding-bottom: 10px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 8px 12px;
+    max-height: 360px;
+    overflow-y: auto;
 }
 
 /* === Type multi-select dropdown === */
 .typePanel {
-    min-width: 300px;
+    min-width: 340px;
     padding: 0;
 }
 
-.typeActions {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.typeActionButton {
-    font-size: var(--text-meta, 0.8125rem);
-    font-family: var(--font-sans);
-    font-weight: 500;
-    color: var(--brand-primary);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: background 0.15s ease;
-}
-
-.typeActionButton:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
-}
-
-.typeActionButton:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: 2px;
-}
-
+/*
+ * Wrapper around the per-type buttons. Only owns layout (`max-height +
+ * overflow`); the items themselves use `.combobox__option` from the
+ * shared form primitives in `components.css`.
+ */
 .typeList {
-    padding: 6px 0;
-    max-height: 300px;
+    padding: 0;
+    max-height: 360px;
     overflow-y: auto;
 }
 
-.typeItem {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font-size: var(--text-body-sm, 0.875rem);
-    font-family: var(--font-sans);
-    color: var(--core-foreground);
-    transition: background 0.15s ease;
-    border: none;
-    background: none;
-    width: 100%;
-    text-align: left;
-}
-
-.typeItem:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.06);
-}
-
-.typeItem:focus-visible {
-    outline: 2px solid var(--ring);
-    outline-offset: -2px;
-    border-radius: 4px;
-}
-
-.checkbox {
-    width: 18px;
-    height: 18px;
-    border-radius: 4px;
-    border: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    transition: all 0.15s ease;
-}
-
-.checkboxChecked {
-    background: var(--brand-primary);
-    border-color: var(--brand-primary);
-    color: var(--primary-foreground);
-}
-
-.typeItemIcon {
+/* Lightweight modifier for the destination "Limpiar" row — visually
+ * separated from the regular options. */
+.optionClear {
     color: var(--core-muted-foreground);
-    display: flex;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.typeItemLabel {
-    flex: 1;
+    font-size: var(--text-meta, 0.8125rem);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    border-radius: 0;
 }
 
 /* === Calendar panel === */
@@ -334,8 +247,8 @@
 /* react-day-picker v9 overrides via classNames prop */
 .calendarRoot {
     --rdp-accent-color: var(--brand-primary);
-    --rdp-accent-background-color: oklch(from var(--brand-primary) l c h / 0.12);
-    --rdp-range_middle-background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    --rdp-accent-background-color: var(--brand-primary-a12);
+    --rdp-range_middle-background-color: var(--brand-primary-a08);
     --rdp-range_start-color: var(--primary-foreground);
     --rdp-range_end-color: var(--primary-foreground);
     --rdp-range_start-background: var(--brand-primary);
@@ -382,7 +295,7 @@
 }
 
 .calendarNav button:hover {
-    background: oklch(from var(--brand-primary) l c h / 0.08);
+    background: var(--brand-primary-a08);
     color: var(--brand-primary);
 }
 
@@ -457,7 +370,7 @@
 .stepperButton:hover:not(:disabled) {
     border-color: var(--brand-primary);
     color: var(--brand-primary);
-    background: oklch(from var(--brand-primary) l c h / 0.05);
+    background: var(--brand-primary-a05);
 }
 
 .stepperButton:disabled {
@@ -551,7 +464,7 @@
         inset: 0;
         /* Above the sticky header (--z-nav: 50) and below the panel (100). */
         z-index: 95;
-        background: oklch(from var(--core-foreground) l c h / 0.5);
+        background: var(--core-foreground-a50);
         backdrop-filter: blur(2px);
         -webkit-backdrop-filter: blur(2px);
         border: none;
@@ -629,7 +542,7 @@
         min-height: 36px;
         border-radius: 50%;
         border: none;
-        background: oklch(from var(--core-foreground) l c h / 0.06);
+        background: var(--core-foreground-a05);
         color: var(--core-foreground);
         cursor: pointer;
         transition: background 0.15s ease;
@@ -637,7 +550,7 @@
     }
 
     .panelClose:hover {
-        background: oklch(from var(--core-foreground) l c h / 0.12);
+        background: var(--core-foreground-a12);
     }
 
     .panelClose:focus-visible {

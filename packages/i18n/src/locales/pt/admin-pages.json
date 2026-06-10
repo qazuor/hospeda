@@ -33,7 +33,8 @@
         "settingsCritical": "Configurações - Portal (Crítico)",
         "analyticsUsage": "Análises - Uso",
         "analyticsDebug": "Análises - Debug",
-        "analyticsBusiness": "Análises - Negócio"
+        "analyticsBusiness": "Análises - Negócio",
+        "analyticsViews": "Análises - Visualizações"
     },
     "auth": {
         "signin": {
@@ -79,9 +80,25 @@
         "forbidden": {
             "title": "Acesso negado",
             "message": "Você não tem as permissões necessárias para acessar o painel de administração. Entre em contato com seu administrador se acredita que isso é um erro.",
+            "greeting": "Olá {{name}},",
+            "email": "Você está autenticado como {{email}}",
             "switchAccount": "Entrar com outra conta",
             "goToSite": "Ir para o site",
-            "contactAdmin": "Contatar administrador"
+            "contactAdmin": "Contatar suporte",
+            "reason": {
+                "host-missing-permission": {
+                    "title": "Há um problema com sua conta",
+                    "message": "Detectamos que você é anfitrião mas o acesso ao painel está desabilitado. Provavelmente é uma configuração faltando na sua conta. Nos escreva e resolvemos."
+                },
+                "generic": {
+                    "title": "Área restrita",
+                    "message": "Esta área é para administradores e anfitriões da Hospeda. Sua conta não tem acesso. Se acredita que é um erro, entre em contato ou entre com outra conta."
+                }
+            },
+            "mailto": {
+                "subject": "Solicitação de acesso ao painel de administração",
+                "body": "Olá, preciso de ajuda para acessar o painel da Hospeda.\n\n— Detalhes da minha conta —\nEmail: {email}\nID do usuário: {userId}\nMotivo: {reason}\nRota original: {originalPath}\n\n— Minha mensagem —\n"
+            }
         },
         "callback": {
             "completing": "Concluindo autenticação..."
@@ -358,6 +375,27 @@
             "colP99": "P99 (ms)",
             "rawData": "Dados Brutos de Métricas",
             "loading": "Carregando..."
+        },
+        "views": {
+            "title": "Visualizações de Entidades",
+            "subtitle": "Estatísticas de visualizações por acomodação, publicação e evento",
+            "summaryTitle": "Resumo de Visualizações",
+            "top10Title": "Top 10 por Tipo",
+            "labelAccommodation": "Acomodações",
+            "labelPost": "Publicações",
+            "labelEvent": "Eventos",
+            "labelUnique": "Únicos",
+            "labelTotal": "Totais",
+            "colRank": "#",
+            "colUnique": "Únicos",
+            "colTotal": "Totais",
+            "empty": "Sem visualizações neste período",
+            "chart": {
+                "title": "Série diária (últimos 30 dias)",
+                "accommodation": "Acomodações",
+                "post": "Publicações",
+                "event": "Eventos"
+            }
         }
     },
     "access": {
@@ -573,12 +611,29 @@
                 "viewRoleDetails": "Ver detalhes da função:",
                 "viewRoleDetailsDesc": "Para ver a lista completa de permissões da função",
                 "rolesPageLink": "página de Funções",
-                "directOverrides": "Exceções de Permissões Diretas",
-                "directOverridesDesc": "Exceções de permissões específicas do usuário",
-                "noDirectOverrides": "Sem exceções de permissões diretas",
-                "noDirectOverridesDesc": "Este usuário tem apenas permissões herdadas de sua função",
+                "directOverrides": "Permissões Diretas",
+                "directOverridesDesc": "Permissões atribuídas diretamente a este usuário (além do seu papel)",
+                "noDirectOverrides": "Sem exceções diretas",
+                "noDirectOverridesDesc": "Este usuário usa apenas as permissões do seu papel",
                 "futureFeature": "Recurso Futuro:",
-                "futureFeatureDesc": "A funcionalidade de gerenciamento de permissões estará disponível em uma atualização futura. Isso permitirá que administradores concedam ou revoguem permissões específicas no nível do usuário, substituindo os padrões de função."
+                "futureFeatureDesc": "A funcionalidade de gerenciamento de permissões estará disponível em uma atualização futura. Isso permitirá que administradores concedam ou revoguem permissões específicas no nível do usuário, substituindo os padrões de função.",
+                "grantOverrides": "Permissões Concedidas",
+                "denyOverrides": "Permissões Negadas",
+                "addOverride": "Adicionar exceção",
+                "removeOverride": "Remover exceção",
+                "confirmRemove": "Remover esta exceção?",
+                "confirmRemoveDesc": "O usuário voltará às permissões do seu papel",
+                "effectGrant": "Concedido",
+                "effectDeny": "Negado",
+                "inheritedFromRole": "Herdado",
+                "sensitivePermissionWarning": "Esta permissão tem amplo alcance. Verifique se o usuário deve tê-la.",
+                "changesTakeEffectNextRequest": "As alterações entram em vigor na próxima solicitação do usuário",
+                "searchPermissions": "Buscar permissões...",
+                "selectEffect": "Selecionar efeito",
+                "grantPermission": "Conceder",
+                "denyPermission": "Negar",
+                "cancel": "Cancelar",
+                "error": "Ocorreu um erro"
             }
         }
     },
@@ -887,6 +942,178 @@
                 "number": "Pelo menos um número",
                 "special": "Pelo menos um caractere especial (!@#$%^&*...)"
             }
+        }
+    },
+    "security": {
+        "title": "Segurança",
+        "available": {
+            "title": "Ações disponíveis",
+            "subtitle": "O que você pode gerenciar hoje"
+        },
+        "changePassword": {
+            "title": "Alterar senha",
+            "subtitle": "Atualize sua senha para manter sua conta segura"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Autenticação em dois fatores",
+                "subtitle": "Uma camada extra de segurança no login"
+            },
+            "activeSessions": {
+                "title": "Sessões ativas",
+                "subtitle": "Veja e feche sessões abertas em outros dispositivos"
+            },
+            "loginHistory": {
+                "title": "Histórico de logins",
+                "subtitle": "Registro de acessos recentes à sua conta"
+            },
+            "changeEmail": {
+                "title": "Alterar email",
+                "subtitle": "Atualize o endereço associado à sua conta"
+            }
+        }
+    },
+    "data": {
+        "title": "Meus dados",
+        "comingSoon": {
+            "title": "Em breve você vai poder gerenciar seus dados por aqui",
+            "description": "Estamos preparando a seção para exportar suas informações, pausar sua conta e solicitar a exclusão dos seus dados conforme as normas vigentes."
+        },
+        "supportContact": {
+            "label": "Por enquanto, escreva-nos para:",
+            "email": "soporte@hospeda.com.ar"
+        }
+    },
+    "announcements": {
+        "title": "Comunicados globais",
+        "subtitle": "Mensagens exibidas no site para todos os visitantes",
+        "list": {
+            "loading": "Carregando comunicados…",
+            "error": "Não foi possível carregar os comunicados. Tente novamente.",
+            "empty": {
+                "title": "Ainda não há comunicados",
+                "description": "Quando você publicar um ele aparecerá aqui e no site."
+            },
+            "newAnnouncement": "Novo comunicado",
+            "editAction": "Editar",
+            "deleteAction": "Excluir",
+            "deleteConfirm": "Excluir este comunicado? Esta ação não pode ser desfeita.",
+            "deleteError": "Não foi possível excluir o comunicado. Tente novamente.",
+            "deleteSuccess": "Comunicado excluído"
+        },
+        "variant": {
+            "info": "Informativo",
+            "warning": "Aviso",
+            "danger": "Crítico"
+        },
+        "dismissible": {
+            "yes": "O visitante pode fechá-lo",
+            "no": "Sempre visível"
+        },
+        "window": {
+            "alwaysOn": "Sempre ativo",
+            "startsAt": "A partir de {{date}}",
+            "endsAt": "Até {{date}}",
+            "between": "De {{from}} a {{to}}"
+        },
+        "form": {
+            "createTitle": "Criar comunicado",
+            "createSubtitle": "Defina a mensagem, sua variante e a janela de publicação",
+            "editTitle": "Editar comunicado",
+            "editSubtitle": "Atualize os dados do comunicado",
+            "textLabel": {
+                "es": "Texto (Espanhol)",
+                "en": "Texto (Inglês)",
+                "pt": "Texto (Português)"
+            },
+            "textPlaceholder": "Escreva a mensagem do comunicado…",
+            "variantLabel": "Variante",
+            "dismissibleLabel": "Permitir fechar",
+            "dismissibleHint": "O visitante poderá ocultá-lo após a leitura.",
+            "startsAtLabel": "Começa em (opcional)",
+            "endsAtLabel": "Termina em (opcional)",
+            "submitCreate": "Criar comunicado",
+            "submitEdit": "Salvar alterações",
+            "saving": "Salvando…",
+            "cancel": "Cancelar",
+            "errorGeneric": "Não foi possível salvar o comunicado. Revise os campos e tente novamente.",
+            "errorRequiredText": "O texto é obrigatório nos 3 idiomas",
+            "errorEndBeforeStart": "A data de término deve ser posterior à de início"
+        }
+    },
+    "billing": {
+        "title": "Meu faturamento",
+        "subtitle": "Revise seu plano, uso e opções de pagamento",
+        "subscription": {
+            "title": "Meu plano",
+            "subtitle": "Status e validade da sua assinatura",
+            "status": {
+                "active": "Ativa",
+                "trialing": "Período de teste",
+                "past_due": "Pagamento atrasado",
+                "canceled": "Cancelada",
+                "incomplete": "Incompleta",
+                "incomplete_expired": "Incompleta (expirada)",
+                "abandoned": "Abandonada",
+                "unknown": "Sem status"
+            },
+            "currentPeriodEnd": "Vence em {{date}}",
+            "noActive": {
+                "title": "Você não tem uma assinatura ativa",
+                "description": "Os detalhes aparecerão aqui assim que você contratar um plano."
+            },
+            "errorLoading": "Não foi possível carregar sua assinatura. Tente novamente em alguns minutos."
+        },
+        "usage": {
+            "title": "Uso do meu plano",
+            "subtitle": "Quanto você consumiu dos limites do seu plano atual",
+            "accommodations": "Acomodações publicadas",
+            "unitOfLimit": "{{used}} de {{limit}}",
+            "unlimited": "Sem limite",
+            "noActive": "Contrate um plano para visualizar seu uso.",
+            "errorLoading": "Não foi possível carregar o uso. Tente novamente em alguns minutos."
+        },
+        "actions": {
+            "title": "Ações",
+            "subtitle": "Gerencie sua assinatura e baixe suas faturas",
+            "manageSubscription": "Gerenciar minha assinatura",
+            "manageSubscriptionHint": "Vamos te levar para hospeda.com.ar para alterar seu plano ou método de pagamento.",
+            "downloadLatestInvoice": "Baixar última fatura",
+            "noLatestInvoice": "Você ainda não tem faturas disponíveis para baixar."
+        }
+    },
+    "faqs": {
+        "title": "Perguntas frequentes",
+        "addTitle": "Nova pergunta frequente",
+        "empty": "Nenhuma pergunta frequente ainda. Adicione a primeira.",
+        "fields": {
+            "question": "Pergunta",
+            "answer": "Resposta",
+            "category": "Categoria",
+            "categoryPlaceholder": "Ex: Como chegar, O que fazer…"
+        },
+        "actions": {
+            "add": "Adicionar FAQ",
+            "edit": "Editar",
+            "save": "Salvar",
+            "cancel": "Cancelar",
+            "delete": "Excluir",
+            "confirmDelete": "Confirmar?"
+        },
+        "errors": {
+            "loadFailed": "Não foi possível carregar as perguntas frequentes.",
+            "createFailed": "Não foi possível criar a pergunta. Tente novamente.",
+            "updateFailed": "Não foi possível atualizar a pergunta. Tente novamente.",
+            "deleteFailed": "Não foi possível excluir a pergunta. Tente novamente.",
+            "reorderFailed": "Não foi possível salvar a nova ordem. Tente novamente."
+        },
+        "dnd": {
+            "dragHandle": "Arrastar para reordenar",
+            "instructions": "Para reordenar com teclado: Espaço para pegar, Setas para mover, Espaço/Enter para soltar, Escape para cancelar.",
+            "onDragStart": "Você pegou a pergunta número {{position}}.",
+            "onDragOver": "Pergunta movida da posição {{from}} para {{to}}.",
+            "onDragEnd": "Pergunta solta na posição {{position}}.",
+            "onDragCancel": "Reordenação cancelada. Pergunta voltou à posição {{position}}."
         }
     }
 }

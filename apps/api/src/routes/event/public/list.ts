@@ -30,7 +30,15 @@ const eventService = new EventService({ logger: apiLogger });
  * excluded — `events.date` is a JSONB column and would not order correctly
  * without a dedicated extractor; if/when needed, add it as a synthetic sort.
  */
-const ALLOWED_SORT_FIELDS = new Set(['name', 'createdAt', 'isFeatured', 'mostSaved']);
+const ALLOWED_SORT_FIELDS = new Set([
+    'name',
+    'createdAt',
+    'isFeatured',
+    'mostSaved',
+    // Synthetic sort: orders by `events.date->>'start'` (JSONB extraction)
+    // via the EventModel.findAllWithRelations override. NULL dates land last.
+    'startDate'
+]);
 
 /**
  * Validates the sortBy field against the allowed public sort columns.

@@ -2,6 +2,7 @@ export * from './identifier';
 export * from './location-obfuscation';
 export * from './logging';
 export * from './normalizer';
+export * from './ownership';
 export * from './permission';
 export * from './relations';
 export * from './service-logger';

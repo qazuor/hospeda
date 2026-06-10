@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -49,7 +49,8 @@ export const DestinationPublicSchema = DestinationSchema.pick({
 
     // Nested public data
     attractions: true,
-    rating: true
+    rating: true,
+    faqs: true
 });
 
 export type DestinationPublic = z.infer<typeof DestinationPublicSchema>;
@@ -80,6 +81,7 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
     tags: true,
     attractions: true,
     rating: true,
+    faqs: true,
 
     // Full hierarchy (authenticated users)
     parentDestinationId: true,
@@ -116,3 +118,25 @@ export type DestinationProtected = z.infer<typeof DestinationProtectedSchema>;
 export const DestinationAdminSchema = DestinationSchema;
 
 export type DestinationAdmin = z.infer<typeof DestinationAdminSchema>;
+
+/**
+ * ADMIN LIST ITEM SCHEMA
+ *
+ * Admin schema variant for list endpoints: the `attractions` relation is
+ * projected as a compact `{ name, icon }[]` array for list display (icon is
+ * the Material Symbols slug), instead of the full AttractionSummary objects.
+ */
+export const DestinationAdminListItemSchema = DestinationAdminSchema.omit({
+    attractions: true
+}).extend({
+    attractions: z
+        .array(
+            z.object({
+                name: z.string(),
+                icon: z.string().nullable().optional()
+            })
+        )
+        .optional()
+});
+
+export type DestinationAdminListItem = z.infer<typeof DestinationAdminListItemSchema>;

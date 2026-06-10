@@ -24,5 +24,43 @@ export enum ServiceErrorCode {
     /** Service method called without required configuration */
     CONFIGURATION_ERROR = 'CONFIGURATION_ERROR',
     /** Per-user quota limit exceeded (e.g. USER tag quota) */
-    QUOTA_EXCEEDED = 'QUOTA_EXCEEDED'
+    QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
+    /**
+     * Plan-based usage limit reached (e.g. MAX_ACCOMMODATIONS, MAX_PHOTOS_PER_ACCOMMODATION).
+     * Used by the API-layer limit enforcement middlewares (`enforce*Limit`) when the
+     * user has hit the cap defined by their current plan. Distinct from QUOTA_EXCEEDED
+     * which models a per-user soft cap unrelated to a billing plan.
+     */
+    LIMIT_REACHED = 'LIMIT_REACHED',
+    /**
+     * Plan-based entitlement not granted (e.g. CAN_USE_RICH_DESCRIPTION).
+     * Used by the API-layer entitlement enforcement middlewares (`gate*`) when the
+     * user's current plan does not include the entitlement required by the action.
+     */
+    ENTITLEMENT_REQUIRED = 'ENTITLEMENT_REQUIRED',
+    /**
+     * Upstream payment-provider returned an unexpected error response.
+     * Maps to HTTP 502 Bad Gateway. The `details` field may carry a `retryAfter`
+     * hint (seconds) when the provider includes one in its error response.
+     */
+    PROVIDER_ERROR = 'PROVIDER_ERROR',
+    /**
+     * Upstream payment-provider is throttling requests (rate-limit hit on our
+     * side against the provider). Maps to HTTP 503 Service Unavailable. The
+     * `details` field may carry a `retryAfter` hint (seconds).
+     */
+    PROVIDER_RATE_LIMITED = 'PROVIDER_RATE_LIMITED',
+    /**
+     * Upstream payment-provider did not respond within the configured timeout.
+     * Maps to HTTP 504 Gateway Timeout. The `details` field may carry a
+     * `retryAfter` hint (seconds) for client-side back-off.
+     */
+    PROVIDER_TIMEOUT = 'PROVIDER_TIMEOUT',
+    /**
+     * The billing plan targeted by the operation has been disabled (retired).
+     * Maps to HTTP 410 Gone — the resource existed but is no longer available.
+     * Clients should treat this as a permanent condition and not retry without
+     * selecting a different plan.
+     */
+    PLAN_DISABLED = 'PLAN_DISABLED'
 }

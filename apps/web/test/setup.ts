@@ -48,3 +48,53 @@ if (typeof window !== 'undefined' && typeof window.matchMedia === 'undefined') {
         })
     });
 }
+
+// recharts ResponsiveContainer uses ResizeObserver which jsdom does not provide.
+if (typeof globalThis.ResizeObserver === 'undefined') {
+    class MockResizeObserver {
+        readonly root: Element | null = null;
+        readonly rootMargin: string = '';
+        readonly thresholds: ReadonlyArray<number> = [];
+        observe(): void {}
+        unobserve(): void {}
+        disconnect(): void {}
+        takeRecords(): ResizeObserverEntry[] {
+            return [];
+        }
+    }
+    (globalThis as unknown as { ResizeObserver: typeof MockResizeObserver }).ResizeObserver =
+        MockResizeObserver;
+}
+
+// Prosemirror-view (used by TipTap) calls getClientRects() on DOM elements
+// during selection rendering. jsdom does not implement this method.
+if (typeof Element !== 'undefined' && !Element.prototype.getClientRects) {
+    Element.prototype.getClientRects = () => [] as DOMRectList;
+}
+if (typeof Range !== 'undefined' && !Range.prototype.getClientRects) {
+    Range.prototype.getClientRects = () => [] as DOMRectList;
+}
+
+// Leaflet and Prosemirror call elementFromPoint() and getBoundingClientRect()
+// on DOM elements. jsdom does not implement these methods properly.
+if (typeof document !== 'undefined') {
+    if (!document.elementFromPoint) {
+        document.elementFromPoint = () => document.createElement('div');
+    }
+}
+// Mock getBoundingClientRect on Element.prototype — prosemirror-view calls it
+// on arbitrary DOM targets during selection rendering and scroll-to-selection.
+if (typeof Element !== 'undefined') {
+    Element.prototype.getBoundingClientRect = () =>
+        ({
+            top: 0,
+            left: 0,
+            bottom: 0,
+            right: 0,
+            width: 0,
+            height: 0,
+            x: 0,
+            y: 0,
+            toJSON: () => ({})
+        }) as DOMRect;
+}

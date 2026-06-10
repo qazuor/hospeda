@@ -38,7 +38,9 @@
         "blackout_curtains": "Cortinas blackout",
         "baby_crib": "Cuna",
         "wheelchair_accessible": "Accesible para silla de ruedas",
-        "pet_friendly": "Se aceptan mascotas"
+        "pet_friendly": "Se aceptan mascotas",
+        "electric_kettle": "Pava eléctrica",
+        "kitchen_utensils": "Utensilios de cocina"
     },
     "title": "Alojamientos",
     "description": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura.",
@@ -173,7 +175,7 @@
         "dates": "Fechas",
         "checkInPlaceholder": "Llegada",
         "checkOutPlaceholder": "Salida",
-        "minCapacity": "Capacidad mínima"
+        "minCapacity": "Huéspedes"
     },
     "faqs": "Preguntas frecuentes",
     "contactTitle": "Contacto",
@@ -285,6 +287,7 @@
         },
         "gallery": {
             "viewAll": "Ver todas las fotos",
+            "moreOverlay": "+{{count}} más",
             "viewFullscreen": "Ver foto {n} en pantalla completa",
             "backToAccommodation": "← Volver al alojamiento",
             "photosSubpage": "Fotos"
@@ -365,6 +368,7 @@
         },
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
+        "bookmark_count_other": "Guardado por {{count}} personas",
         "bookmark_count_zero": "Sé el primero en guardarlo"
     },
     "list": {
@@ -387,5 +391,20 @@
         "viewMap": "Ver en mapa",
         "popular": "Ver más reservados",
         "allDestinations": "Explorar destinos"
+    },
+    "aiChat": {
+        "fabLabel": "Preguntarle a la IA sobre este alojamiento",
+        "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
+        "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
+        "priceDisclaimer": "Los precios y disponibilidad pueden haber cambiado. Contactá al alojamiento para confirmar.",
+        "placeholder": "Escribí tu pregunta aquí…",
+        "send": "Enviar",
+        "sending": "Enviando…",
+        "errorDefault": "No se pudo mostrar la respuesta. Por favor intentá de nuevo.",
+        "atCapMessage": "Alcanzaste el límite de esta conversación.",
+        "newConversation": "Nueva conversación",
+        "close": "Cerrar chat",
+        "expand": "Expandir panel",
+        "collapse": "Reducir panel"
     }
 }

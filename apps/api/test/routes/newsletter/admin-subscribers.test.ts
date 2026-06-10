@@ -80,6 +80,7 @@ const subscriberRow = {
     status: 'active',
     locale: 'es',
     source: 'web_footer',
+    preferences: { offers: true, events: true, guides: true, productNews: true },
     consentIp: '203.0.113.1',
     consentUa: 'Mozilla/5.0',
     consentVersion: 'spec-101-v1',

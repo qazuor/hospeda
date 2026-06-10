@@ -1,31 +1,65 @@
+/**
+ * Destination entity select utilities.
+ *
+ * SPEC-169 T-021: All list-based functions migrated from /api/v1/admin/destinations
+ * (requires DESTINATION_VIEW_ALL) to /api/v1/admin/destinations/options (requires
+ * ACCESS_PANEL_ADMIN only).
+ *
+ * /options response shape: { items: [{ id, label, slug }] }
+ *
+ * loadDestinationsByIds is NOT migrated — it calls /api/v1/admin/destinations/batch
+ * which is a targeted POST for specific known IDs. Unchanged by SPEC-169.
+ */
+
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 
 /**
- * Search destinations by query string
+ * Minimal destination item returned by the /options endpoint.
+ */
+interface DestinationOptionItem {
+    readonly id: string;
+    readonly label: string;
+    readonly slug: string;
+}
+
+/**
+ * Standard response envelope from the /options endpoint.
+ */
+interface OptionsResponse {
+    readonly data: {
+        readonly items: DestinationOptionItem[];
+    };
+}
+
+/**
+ * Map a /options item to a SelectOption.
+ */
+const toSelectOption = (item: DestinationOptionItem): SelectOption => ({
+    value: item.id,
+    label: item.label,
+    description: item.slug || undefined
+});
+
+/**
+ * Search destinations by query string via the /options lightweight endpoint.
+ * Requires ACCESS_PANEL_ADMIN (no DESTINATION_VIEW_ALL needed).
  */
 export const searchDestinations = async (query: string): Promise<SelectOption[]> => {
     if (!query.trim()) return [];
 
     try {
-        const response = await fetchApi<{
-            data: { items: Array<{ id: string; name: string; description?: string }> };
-        }>({
-            path: `/api/v1/admin/destinations?search=${encodeURIComponent(query)}&pageSize=20`,
+        const response = await fetchApi<OptionsResponse>({
+            path: `/api/v1/admin/destinations/options?q=${encodeURIComponent(query)}&limit=20`,
             method: 'GET'
         });
 
-        if (!response.data.data?.items) return [];
-
-        return response.data.data.items.map((destination) => ({
-            value: destination.id,
-            label: destination.name,
-            description: destination.description
-        }));
+        const items = response.data?.data?.items ?? [];
+        return items.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error searching destinations:',
+            'Error searching destinations (options):',
             error instanceof Error ? error.message : String(error)
         );
         return [];
@@ -33,7 +67,10 @@ export const searchDestinations = async (query: string): Promise<SelectOption[]>
 };
 
 /**
- * Load destinations by IDs
+ * Load destinations by IDs.
+ *
+ * Uses /api/v1/admin/destinations/batch (POST { ids, fields }) — targeted lookup
+ * of specific known IDs. Unchanged by SPEC-169.
  */
 export const loadDestinationsByIds = async (ids: string[]): Promise<SelectOption[]> => {
     if (ids.length === 0) return [];
@@ -68,27 +105,21 @@ export const loadDestinationsByIds = async (ids: string[]): Promise<SelectOption
 };
 
 /**
- * Load all destinations (for client-side search)
+ * Load all destinations via the /options endpoint.
+ * Requires ACCESS_PANEL_ADMIN (no DESTINATION_VIEW_ALL needed).
  */
 export const loadAllDestinations = async (): Promise<SelectOption[]> => {
     try {
-        const response = await fetchApi<{
-            data: { items: Array<{ id: string; name: string; description?: string }> };
-        }>({
-            path: '/api/v1/admin/destinations?pageSize=100',
+        const response = await fetchApi<OptionsResponse>({
+            path: '/api/v1/admin/destinations/options?limit=100',
             method: 'GET'
         });
 
-        if (!response.data.data?.items) return [];
-
-        return response.data.data.items.map((destination) => ({
-            value: destination.id,
-            label: destination.name,
-            description: destination.description
-        }));
+        const items = response.data?.data?.items ?? [];
+        return items.map(toSelectOption);
     } catch (error) {
         adminLogger.error(
-            'Error loading all destinations:',
+            'Error loading all destinations (options):',
             error instanceof Error ? error.message : String(error)
         );
         return [];

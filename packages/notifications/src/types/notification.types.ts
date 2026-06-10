@@ -28,7 +28,45 @@ export enum NotificationType {
     /** SPEC-101 — welcome email sent after the user clicks the verification link. */
     NEWSLETTER_WELCOME = 'newsletter_welcome',
     /** SPEC-101 — campaign delivery payload routed through the dispatch worker. */
-    NEWSLETTER_CAMPAIGN = 'newsletter_campaign'
+    NEWSLETTER_CAMPAIGN = 'newsletter_campaign',
+    /**
+     * SPEC-173 T-025 — alert sent to SUPER_ADMIN when AI spend crosses a cost
+     * threshold (50 / 80 / 100 %) within the current calendar month.
+     *
+     * Decision (owner-approved 2026-06-04): dedicated type instead of reusing
+     * ADMIN_SYSTEM_EVENT so the alert can be de-duplicated by type in
+     * `billing_notification_log` without colliding with other system events.
+     */
+    AI_COST_THRESHOLD_ALERT = 'ai_cost_threshold_alert',
+    /**
+     * SPEC-147 — confirmation sent to the user immediately after a soft-cancel
+     * is accepted (user-initiated, end-of-period cancellation).
+     *
+     * Distinct from SUBSCRIPTION_CANCELLED (hard-cancel fired by the
+     * MercadoPago webhook on subscription.authorized → cancelled).
+     * Key difference: soft-cancel preserves access until `accessUntil`
+     * (the current billing period_end), so the email explicitly shows that date.
+     */
+    SUBSCRIPTION_CANCEL_CONFIRMED = 'subscription_cancel_confirmed',
+    /**
+     * SPEC-147 T-010 — D3 "access ending soon" reminder sent ~3 days before
+     * a soft-cancelled subscription's `current_period_end`.
+     *
+     * Fired once per subscription by the `finalize-cancelled-subs` cron when
+     * the period_end falls inside the [now+2d, now+4d] window. A per-sub
+     * `SUBSCRIPTION_ACCESS_ENDING_NOTIF` billing event prevents re-sends.
+     */
+    SUBSCRIPTION_ACCESS_ENDING_SOON = 'subscription_access_ending_soon',
+    /**
+     * SPEC-148 — notification sent to each active subscriber when their plan
+     * is retired by an admin (PLAN_DISABLED_BY_ADMIN admin action).
+     *
+     * Unlike SUBSCRIPTION_CANCEL_CONFIRMED (user-initiated soft-cancel), this
+     * is admin-triggered. The email informs the user the plan is being retired,
+     * confirms they keep access until `accessUntil` (current period_end), and
+     * prompts them to resubscribe to another plan.
+     */
+    PLAN_BEING_RETIRED = 'plan_being_retired'
 }
 
 /**
@@ -228,6 +266,74 @@ export interface SubscriptionLifecyclePayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for soft-cancel confirmation notifications (SPEC-147).
+ *
+ * Sent immediately when a user initiates a soft-cancel (end-of-period
+ * cancellation). Unlike the hard-cancel webhook event, the subscription
+ * remains active until `accessUntil` (the current billing period_end).
+ *
+ * @example
+ * ```ts
+ * const payload: SubscriptionCancelConfirmedPayload = {
+ *   type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   accessUntil: '2026-07-15T23:59:59.000Z',
+ * };
+ * ```
+ */
+export interface SubscriptionCancelConfirmedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED;
+    /** Human-readable plan name shown in the email body */
+    readonly planName: string;
+    /**
+     * ISO 8601 date-time string for the billing period_end — the date until
+     * which the user retains full access despite the cancellation.
+     */
+    readonly accessUntil: string;
+}
+
+/**
+ * Payload for the D3 "access ending soon" reminder notification (SPEC-147 T-010).
+ *
+ * Sent ~3 days before a soft-cancelled subscription's `current_period_end` by
+ * the `finalize-cancelled-subs` cron. The subscription is still active at this
+ * point; the email nudges the user to reactivate before access is lost.
+ *
+ * @example
+ * ```ts
+ * const payload: SubscriptionAccessEndingSoonPayload = {
+ *   type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   accessUntil: '2026-07-18T23:59:59.000Z',
+ *   daysRemaining: 3,
+ * };
+ * ```
+ */
+export interface SubscriptionAccessEndingSoonPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON;
+    /** Human-readable plan name shown in the email body */
+    readonly planName: string;
+    /**
+     * ISO 8601 date-time string for the billing period_end — the date on which
+     * access will be revoked if the subscription is not reactivated.
+     */
+    readonly accessUntil: string;
+    /**
+     * Number of days remaining until access is lost (computed from the cron
+     * run time vs `current_period_end`, ceiling-rounded).
+     */
+    readonly daysRemaining: number;
+}
+
+/**
  * Payload for plan downgrade limit warning notifications.
  *
  * Sent when a plan downgrade causes a specific resource limit to decrease
@@ -329,6 +435,55 @@ export interface AdminNotificationPayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for AI cost threshold alert notifications (SPEC-173 T-025).
+ *
+ * Sent to each SUPER_ADMIN email address when accumulated AI spend for the
+ * current calendar month crosses 50 %, 80 %, or 100 % of the configured
+ * cost ceiling.  De-duplication (once per threshold × period) is handled by
+ * the `apps/api` factory before this payload is constructed.
+ *
+ * @example
+ * ```ts
+ * const payload: AiCostThresholdAlertPayload = {
+ *   type: NotificationType.AI_COST_THRESHOLD_ALERT,
+ *   recipientEmail: 'admin@hospeda.com.ar',
+ *   recipientName: 'Admin',
+ *   userId: null,
+ *   scope: 'global',
+ *   thresholdPct: 80,
+ *   spentMicroUsd: 160_000_000,
+ *   ceilingMicroUsd: 200_000_000,
+ *   period: '2026-06',
+ * };
+ * ```
+ */
+export interface AiCostThresholdAlertPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.AI_COST_THRESHOLD_ALERT;
+    /** Whether the threshold was crossed for the global budget or a specific feature. */
+    readonly scope: 'global' | 'feature';
+    /**
+     * The AI feature whose spend crossed the threshold.
+     * Only present when `scope === 'feature'`.
+     */
+    readonly feature?: string;
+    /** The cost band that was crossed (50 %, 80 %, or 100 %). */
+    readonly thresholdPct: 50 | 80 | 100;
+    /** Accumulated spend for the current calendar month in micro-USD (µUSD). */
+    readonly spentMicroUsd: number;
+    /** Configured ceiling value in micro-USD (µUSD). */
+    readonly ceilingMicroUsd: number;
+    /**
+     * Calendar month in `YYYY-MM` format (UTC).
+     *
+     * Used as part of the idempotency key to ensure at-most-one alert per
+     * threshold per calendar month.
+     *
+     * @example `'2026-06'`
+     */
+    readonly period: string;
+}
+
+/**
  * Options for controlling notification send behavior.
  *
  * These flags allow callers to bypass specific side-effects of the send
@@ -357,6 +512,43 @@ export interface SendNotificationOptions {
     }>;
 }
 
+/**
+ * Payload for plan-being-retired notifications (SPEC-148).
+ *
+ * Sent to each active subscriber when an admin retires a billing plan. The
+ * subscriber keeps access until `accessUntil` (their current billing period_end)
+ * and is prompted to resubscribe to another plan before that date.
+ *
+ * @example
+ * ```ts
+ * const payload: PlanBeingRetiredPayload = {
+ *   type: NotificationType.PLAN_BEING_RETIRED,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   planName: 'Plan Standard',
+ *   accessUntil: '2026-08-15T23:59:59.000Z',
+ *   migrationHint: 'Re-subscribe to another plan to keep premium features',
+ * };
+ * ```
+ */
+export interface PlanBeingRetiredPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PLAN_BEING_RETIRED;
+    /** Human-readable plan name shown in the email body */
+    readonly planName: string;
+    /**
+     * ISO 8601 date-time string for the billing period_end — the date until
+     * which the user retains full access despite the plan retirement.
+     */
+    readonly accessUntil: string;
+    /**
+     * Short plain-text prompt shown in the email encouraging the user to
+     * resubscribe (e.g. "Re-subscribe to another plan to keep premium features").
+     */
+    readonly migrationHint: string;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -370,4 +562,8 @@ export type NotificationPayload =
     | ContactSubmissionPayload
     | PlanDowngradeLimitWarningPayload
     | PaymentRetryWarningPayload
-    | AddonCancellationPayload;
+    | AddonCancellationPayload
+    | AiCostThresholdAlertPayload
+    | SubscriptionCancelConfirmedPayload
+    | SubscriptionAccessEndingSoonPayload
+    | PlanBeingRetiredPayload;

@@ -2,6 +2,7 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { seedAiPrompts } from './aiPrompts.seed.js';
 import { seedAmenities } from './amenities.seed.js';
 import { seedAttractions } from './attractions.seed.js';
 import { seedBillingAddons } from './billingAddons.seed.js';
@@ -9,6 +10,7 @@ import { seedBillingEntitlements } from './billingEntitlements.seed.js';
 import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
+import { seedContentModerationData } from './contentModeration.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
@@ -106,6 +108,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 3. Load role permissions (after users to have the actor)
         await seedRolePermissions();
 
+        // 3.1 Seed moderation bootstrap data (SPEC-195)
+        await seedContentModerationData();
+
         // 4. Load amenities (before attractions to have ID mapping)
         await seedAmenities(context);
 
@@ -147,6 +152,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 17. Load revalidation config (per-entity-type ISR configuration)
         await seedRevalidationConfig(context);
+
+        // 18. Load AI prompt defaults (system prompts for all AI features)
+        await seedAiPrompts();
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output

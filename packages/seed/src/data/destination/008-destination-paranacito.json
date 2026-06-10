@@ -4,7 +4,7 @@
     "slug": "paranacito",
     "name": "Villa Paranacito",
     "summary": "Cabecera del Departamento Islas del Ibicuy, en el Delta del Paraná entrerriano. Naturaleza, humedales, pesca y navegación.",
-    "description": "Villa Paranacito es la cabecera del Departamento Islas del Ibicuy, ubicada en el extremo sudeste de Entre Ríos, en la tercera sección del Delta del Paraná. Bañada por el río Paranacito y rodeada de arroyos, islas y humedales de gran diversidad biológica, es uno de los destinos más atractivos del bajo delta entrerriano. Su entorno natural permite paseos en lancha, yate o catamarán, recorridos por canales navegables, kayak, remo, esquí acuático y observación de aves autóctonas y migratorias. La pesca deportiva es una actividad central, con especies como pejerrey, dorado, surubí, bagre y sábalo, y cuenta con guías de pesca, marinas y embarcaderos. Cada año se celebra el Festival del Pejerrey Entrerriano. El distrito abarca cerca de 197.000 hectáreas de islas, arroyos y humedales del complejo deltaico.",
+    "description": "## Villa Paranacito, capital del bajo delta entrerriano\n\nVilla Paranacito es la cabecera del Departamento Islas del Ibicuy, en el extremo sudeste de Entre Ríos, dentro del Delta del Paraná. Bañada por el río Paranacito y rodeada de un laberinto de arroyos, islas y humedales de gran diversidad biológica, es uno de los destinos más atractivos del bajo delta. De origen forestal, supo aprovechar las posibilidades del entorno deltaico para desarrollar una propuesta turística centrada en la naturaleza y el agua.\n\nInternarse en el Delta a través de paseos en lancha, yate o catamarán es la experiencia más representativa de la zona. A eso se suman los recorridos por canales navegables, el kayak, el remo y la observación de aves autóctonas y migratorias en un ambiente prácticamente virgen.\n\n## Pesca y eventos\n\nLa **pesca deportiva** es una actividad central, tanto embarcada como de costa, con salidas al Río Uruguay, el Paraná Bravo y el Paraná Guazú y a los numerosos ríos y arroyos del Delta. La localidad cuenta con guías de pesca, guarderías náuticas y servicio de bajada de embarcaciones. Cada año, en junio, se celebra la **Fiesta del Pejerrey Entrerriano**, un concurso de pesca embarcada con premios a la pieza mayor.\n\nEl distrito abarca una extensa superficie de islas, arroyos y humedales del complejo deltaico, lo que la convierte en un punto de partida ideal para quienes buscan turismo de naturaleza, descanso y vida al aire libre.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -257,6 +257,33 @@
         "058-attraction-observacion_aves",
         "007-attraction-canal_navegable",
         "046-attraction-kayak_rio"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Villa Paranacito?",
+            "answer": "Desde Buenos Aires, a unos 170 km, se ingresa a la provincia por el puente Zárate-Brazo Largo y la Ruta Nacional 12, que luego conecta con la Ruta Provincial 46 hasta la localidad. Desde Rosario se cruza por el puente Rosario-Victoria, se toma la Ruta Provincial 11 en dirección sudeste pasando por Gualeguay y Ceibas, se conecta con la Ruta Nacional 12 y finalmente con la Ruta Provincial 46.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué actividades se pueden hacer en Villa Paranacito?",
+            "answer": "La propuesta central son los paseos en lancha, yate o catamarán para internarse en el Delta. También se practica kayak, remo, recorridos por canales navegables, observación de aves autóctonas y migratorias, safaris fotográficos y caminatas. La pesca deportiva, embarcada y de costa, es una de las actividades más convocantes.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Qué se puede pescar en Villa Paranacito?",
+            "answer": "Las salidas se hacen al Río Uruguay, el Paraná Bravo y el Paraná Guazú y a los numerosos ríos y arroyos del Delta. Entre las especies buscadas figuran el pejerrey, el dorado, el surubí, el bagre y el sábalo. La localidad ofrece guías de pesca, guarderías náuticas y servicio de bajada de embarcaciones.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo es la mejor época para visitar Villa Paranacito?",
+            "answer": "La primavera y el verano son las temporadas más cómodas para la navegación y las actividades al aire libre. En junio se celebra la Fiesta del Pejerrey Entrerriano, un concurso de pesca embarcada que atrae a muchos visitantes. Como en todo el Delta, conviene consultar el nivel del río y el pronóstico antes de viajar.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos ofrece Villa Paranacito?",
+            "answer": "Cuenta con alojamiento en cabañas, bungalows, hoteles y campings, además de servicios náuticos como guías de pesca, guarderías y bajada de embarcaciones. Hay oferta gastronómica y comercios para abastecerse. Al ser un destino isleño y de naturaleza, conviene reservar con anticipación, sobre todo en temporada alta y durante la fiesta del pejerrey.",
+            "category": "Servicios"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

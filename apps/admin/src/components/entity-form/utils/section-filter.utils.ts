@@ -93,7 +93,11 @@ export const filterSectionsByMode = (
             } as SectionConfig;
         })
         .filter((section) => {
-            // Exclude sections that have no fields after filtering
+            // Keep sections with a customRender function even when they have no fields.
+            // Standard sections without fields are excluded (no visible content).
+            if ('customRender' in section && typeof section.customRender === 'function') {
+                return true;
+            }
             return section.fields.length > 0;
         });
 };
@@ -133,8 +137,11 @@ export const validateConsolidatedConfig = (
             errors.push(`Section at index ${sectionIndex} (${section.id}) has no modes defined`);
         }
 
-        // Validate that the section has fields
-        if (!section.fields || section.fields.length === 0) {
+        // Validate that the section has fields — skip for custom-render sections
+        // which intentionally have an empty fields array (SPEC-197 T-016).
+        const hasCustomRender =
+            'customRender' in section && typeof section.customRender === 'function';
+        if (!hasCustomRender && (!section.fields || section.fields.length === 0)) {
             errors.push(`Section at index ${sectionIndex} (${section.id}) has no fields defined`);
         }
 

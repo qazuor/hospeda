@@ -100,11 +100,11 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
         <div className="flex min-h-[200px] items-center justify-center p-4">
             <div className="w-full max-w-sm text-center">
                 {/* Error Icon */}
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-warning/15">
                     <AlertTriangleIcon
                         size={24}
                         weight="bold"
-                        className="text-orange-600 dark:text-orange-400"
+                        className="text-warning"
                         aria-label="Query error icon"
                     />
                 </div>

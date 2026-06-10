@@ -3,21 +3,28 @@
  * Requires authentication
  */
 import type { z } from '@hono/zod-openapi';
+import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
-    AccommodationReviewCreateInputSchema,
+    AccommodationReviewCreateBodySchema,
     AccommodationReviewProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { requireEntitlement } from '../../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
 
 /**
  * POST /api/v1/protected/accommodations/:accommodationId/reviews
- * Create accommodation review - Protected endpoint
+ * Create accommodation review - Protected endpoint.
+ *
+ * The route validates ONLY the review payload (rating + optional title +
+ * optional content). `accommodationId` and `userId` are supplied by the
+ * URL path and the authenticated actor respectively, so the client never
+ * needs to echo them in the body.
  */
 export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
     method: 'post',
@@ -30,11 +37,11 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
     requestParams: {
         accommodationId: AccommodationIdSchema
     },
-    requestBody: AccommodationReviewCreateInputSchema,
+    requestBody: AccommodationReviewCreateBodySchema,
     responseSchema: AccommodationReviewProtectedSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
-        const input = body as z.infer<typeof AccommodationReviewCreateInputSchema>;
+        const input = body as z.infer<typeof AccommodationReviewCreateBodySchema>;
         const payload = {
             ...input,
             accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,
@@ -44,5 +51,12 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         const result = await service.create(actor, payload);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
+    },
+    options: {
+        // SPEC-145 T-005: WRITE_REVIEWS gate — granted on all tourist plans
+        // (tourist-free, tourist-plus, tourist-vip) and NOT on owner/complex plans.
+        // Free tourists can write reviews; unauthenticated access is blocked by
+        // the existing auth middleware upstream.
+        middlewares: [requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
     }
 });

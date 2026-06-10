@@ -1,0 +1,118 @@
+{
+    "terms": {
+        "title": "Términos de Moderación",
+        "description": "Gestionar términos y dominios bloqueados para moderación de contenido",
+        "singular": "término",
+        "plural": "términos",
+        "create": "Crear término",
+        "edit": "Editar término",
+        "view": "Ver término",
+        "fields": {
+            "term": "Término",
+            "kind": "Tipo",
+            "category": "Categoría",
+            "severity": "Severidad",
+            "enabled": "Habilitado",
+            "createdAt": "Creado",
+            "updatedAt": "Actualizado",
+            "deletedAt": "Eliminado",
+            "createdById": "Creado por",
+            "updatedById": "Actualizado por"
+        },
+        "kinds": {
+            "word": "Palabra",
+            "domain": "Dominio"
+        },
+        "columns": {
+            "term": "Término",
+            "kind": "Tipo",
+            "category": "Categoría",
+            "severity": "Severidad",
+            "enabled": "Estado",
+            "createdAt": "Creado"
+        },
+        "messages": {
+            "created": "Término creado exitosamente",
+            "updated": "Término actualizado exitosamente",
+            "deleted": "Término eliminado exitosamente",
+            "restored": "Término restaurado exitosamente",
+            "createError": "No se pudo crear el término",
+            "updateError": "No se pudo actualizar el término",
+            "deleteError": "No se pudo eliminar el término",
+            "restoreError": "No se pudo restaurar el término",
+            "confirmDelete": "¿Estás seguro de que quieres eliminar este término?",
+            "confirmHardDelete": "¿Estás seguro de que quieres eliminar permanentemente este término?"
+        },
+        "form": {
+            "termLabel": "Término",
+            "termPlaceholder": "Ej: spam, dominio-malicioso.com",
+            "kindLabel": "Tipo",
+            "categoryLabel": "Categoría",
+            "severityLabel": "Severidad (0-1)",
+            "enabledLabel": "Habilitado"
+        }
+    },
+    "thresholds": {
+        "title": "Umbrales de Moderación",
+        "description": "Configurar umbrales para decisiones de moderación automática",
+        "singular": "umbral",
+        "plural": "umbrales",
+        "fields": {
+            "context": "Contexto",
+            "pending": "Umbral PENDIENTE",
+            "reject": "Umbral RECHAZADO",
+            "createdAt": "Creado",
+            "updatedAt": "Actualizado"
+        },
+        "columns": {
+            "context": "Contexto",
+            "pending": "Pendiente",
+            "reject": "Rechazar",
+            "source": "Fuente"
+        },
+        "sources": {
+            "row": "Fila específica",
+            "default-row": "Fila por defecto",
+            "code-constants": "Constantes de código"
+        },
+        "resolved": {
+            "title": "Barra efectiva por contexto",
+            "description": "Umbrales efectivos aplicando la cadena: fila específica → fila por defecto → constantes de código",
+            "contextLabel": "Contexto",
+            "pendingLabel": "Pendiente",
+            "rejectLabel": "Rechazar",
+            "sourceLabel": "Fuente",
+            "contexts": {
+                "message": "Mensaje",
+                "review": "Reseña",
+                "accommodation_review": "Reseña de alojamiento",
+                "destination_review": "Reseña de destino"
+            }
+        },
+        "messages": {
+            "updated": "Umbral actualizado exitosamente",
+            "updateError": "No se pudo actualizar el umbral",
+            "pendingGteReject": "El umbral pendiente debe ser menor que el umbral de rechazo"
+        },
+        "form": {
+            "pendingLabel": "Umbral PENDIENTE (0-1)",
+            "rejectLabel": "Umbral RECHAZADO (0-1)",
+            "pendingHelp": "Puntuación a partir de la cual el contenido va a revisión",
+            "rejectHelp": "Puntuación a partir de la cual el contenido es rechazado automáticamente"
+        }
+    },
+    "categories": {
+        "hate": "Odio",
+        "sexual": "Sexual",
+        "violence": "Violencia",
+        "harassment": "Acoso",
+        "self_harm": "Autolesión",
+        "spam": "Spam",
+        "other": "Otro"
+    },
+    "nav": {
+        "contentModeration": "Moderación de Contenido",
+        "terms": "Términos",
+        "thresholds": "Umbrales"
+    }
+}

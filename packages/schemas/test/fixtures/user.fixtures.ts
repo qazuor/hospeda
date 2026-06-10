@@ -44,18 +44,13 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
             occupation: 'Software Developer'
         },
 
-        // Location
+        // Location (UserLocationSchema shape: country/region/city/addressLine1/postalCode)
         location: {
             country: 'United States',
-            state: 'California',
+            region: 'California',
             city: 'San Francisco',
-            zipCode: '94102',
-            street: 'Market Street',
-            number: '123',
-            coordinates: {
-                lat: '37.7749',
-                long: '-122.4194'
-            }
+            addressLine1: 'Market Street 123',
+            postalCode: '94102'
         },
 
         // Settings
@@ -216,18 +211,10 @@ export const createUserWithComplexProfile = (overrides: Partial<UserType> = {}):
         },
         location: {
             country: 'Argentina',
-            state: 'Buenos Aires',
+            region: 'Buenos Aires',
             city: 'Buenos Aires',
-            zipCode: 'C1001',
-            street: 'Av. Corrientes',
-            number: '1234',
-            floor: '5',
-            apartment: 'B',
-            neighborhood: 'San Nicolás',
-            coordinates: {
-                lat: '-34.6037',
-                long: '-58.3816'
-            }
+            addressLine1: 'Av. Corrientes 1234, 5° B',
+            postalCode: 'C1001'
         },
         ...overrides
     });

@@ -222,7 +222,7 @@ describe('SPEC-143 T-143-17 — failed payment webhook handler', () => {
             outerEventId,
             mpSubId: mpSubscriptionId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -288,7 +288,7 @@ describe('SPEC-143 T-143-17 — failed payment webhook handler', () => {
             outerEventId,
             mpSubId: mpSubscriptionId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

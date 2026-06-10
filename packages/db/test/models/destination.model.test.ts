@@ -88,6 +88,35 @@ describe('DestinationModel', () => {
             expect.any(Error)
         );
     });
+
+    // SPEC-158 regression: 'faqs' must be included in the with-builder loop so
+    // that getFaqs() (which calls findWithRelations({ faqs: true })) actually
+    // loads the FAQ relation. Previously 'faqs' was registered in
+    // validRelationKeys but omitted from the hardcoded with-builder loop, so
+    // { faqs: true } was silently dropped, findWithRelations fell back to
+    // findOne (which loads no relations), and FAQs never reached the API.
+    it('findWithRelations loads the faqs relation (SPEC-158 regression)', async () => {
+        const faqs = [{ id: 'faq-1', destinationId: '1', question: 'Q?', answer: 'A' }];
+        const findFirst = vi.fn().mockResolvedValue({ id: '1', faqs });
+        const db = { query: { destinations: { findFirst } } };
+        getDb.mockReturnValue(db);
+
+        const where = { id: '1' };
+        const relations = { faqs: true };
+        const result = await model.findWithRelations(where, relations);
+
+        // The faqs relation must reach Drizzle's `with` clause carrying the
+        // SPEC-177 config (display_order ordering + soft-delete filter), not a
+        // bare `true` — that config is what makes the relation load correctly.
+        const withArg = (findFirst.mock.calls[0]?.[0] as { with?: Record<string, unknown> })?.with;
+        expect(withArg).toHaveProperty('faqs');
+        expect(withArg?.faqs).toEqual(
+            expect.objectContaining({ where: expect.any(Function), orderBy: expect.any(Function) })
+        );
+        // It must NOT fall back to findOne, which drops relations entirely.
+        expect(mockFindOne).not.toHaveBeenCalled();
+        expect(result).toEqual({ id: '1', faqs });
+    });
 });
 
 // ============================================================================

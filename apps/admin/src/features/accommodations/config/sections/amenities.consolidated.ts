@@ -4,154 +4,94 @@ import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
- * Configuración consolidada para la sección Amenities de accommodation
+ * Configuración consolidada para la sección Amenities de accommodation.
  *
- * @param _t - Función de traducción (no usada por ahora)
- * @returns Configuración consolidada de la sección amenities
+ * SPEC-172 PR3:
+ * - Removed vestigial boolean SWITCH fields (hasWifi, hasAirConditioning, etc.)
+ *   These fields have NO corresponding columns in the accommodation DB table;
+ *   they are virtual search-filter shortcuts computed from the amenity
+ *   junction table. They never persisted. Verified: no match in
+ *   packages/schemas/src/entities/accommodation/accommodation.schema.ts.
+ * - Added amenityIds (AMENITY_SELECT, multiple) — syncs r_accommodation_amenity.
+ * - Added featureIds (FEATURE_SELECT, multiple) — syncs r_accommodation_feature.
+ * - Kept additionalAmenities and amenityRestrictions text fields.
+ *
+ * Pre-population note: the read API returns `amenities[].id` / `features[].id`
+ * objects but the form fields are keyed `amenityIds` / `featureIds`. The
+ * accommodation edit page performs the mapping in its initialValues transform
+ * before EntityPageBase receives the entity data.
+ *
+ * @param _t - Translation function (labels are hardcoded Spanish for now,
+ *             matching the sibling convention in this file).
  */
 export const createAmenitiesConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => {
-    // TODO: Opciones para las categorías de amenities (para uso futuro)
-    // const amenityCategoryOptions: SelectOption[] = [
-    //     { value: AmenitiesTypeEnum.CLIMATE_CONTROL, label: 'Control de Clima' },
-    //     { value: AmenitiesTypeEnum.CONNECTIVITY, label: 'Conectividad' },
-    //     { value: AmenitiesTypeEnum.ENTERTAINMENT, label: 'Entretenimiento' },
-    //     { value: AmenitiesTypeEnum.KITCHEN, label: 'Cocina' },
-    //     { value: AmenitiesTypeEnum.BED_AND_BATH, label: 'Cama y Baño' },
-    //     { value: AmenitiesTypeEnum.OUTDOORS, label: 'Exteriores' },
-    //     { value: AmenitiesTypeEnum.ACCESSIBILITY, label: 'Accesibilidad' },
-    //     { value: AmenitiesTypeEnum.SERVICES, label: 'Servicios' },
-    //     { value: AmenitiesTypeEnum.SAFETY, label: 'Seguridad' },
-    //     { value: AmenitiesTypeEnum.FAMILY_FRIENDLY, label: 'Familiar' },
-    //     { value: AmenitiesTypeEnum.WORK_FRIENDLY, label: 'Trabajo' },
-    //     { value: AmenitiesTypeEnum.GENERAL_APPLIANCES, label: 'Electrodomésticos' }
-    // ];
-
     return {
         id: 'amenities',
         title: 'Servicios y Comodidades',
-        description: 'Amenities y servicios disponibles en el alojamiento',
+        description: 'Amenities y características disponibles en el alojamiento',
         layout: LayoutTypeEnum.GRID,
-        modes: ['view', 'edit', 'create'], // Visible en todos los modos
+        modes: ['view', 'edit', 'create'],
         permissions: {
             view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
             edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
         },
         fields: [
-            // Amenities básicos más comunes
+            // ----------------------------------------------------------------
+            // Amenities multi-select chips (full width, client-side search)
+            // ----------------------------------------------------------------
             {
-                id: 'hasWifi',
-                type: FieldTypeEnum.SWITCH,
+                id: 'amenityIds',
+                type: FieldTypeEnum.AMENITY_SELECT,
                 required: false,
                 modes: ['view', 'edit', 'create'],
-                label: 'WiFi',
-                description: 'Conexión a internet inalámbrica',
+                label: 'Amenities',
+                description:
+                    'Servicios y comodidades disponibles. Buscá y seleccioná del catálogo.',
+                placeholder: 'Buscar amenities...',
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
                 },
-                typeConfig: {}
+                typeConfig: {
+                    multiple: true,
+                    searchMode: 'client',
+                    clearable: true
+                }
             },
+            // ----------------------------------------------------------------
+            // Features multi-select chips (full width, client-side search)
+            // ----------------------------------------------------------------
             {
-                id: 'hasAirConditioning',
-                type: FieldTypeEnum.SWITCH,
+                id: 'featureIds',
+                type: FieldTypeEnum.FEATURE_SELECT,
                 required: false,
                 modes: ['view', 'edit', 'create'],
-                label: 'Aire Acondicionado',
-                description: 'Sistema de climatización',
+                label: 'Características',
+                description:
+                    'Características especiales del alojamiento. Buscá y seleccioná del catálogo.',
+                placeholder: 'Buscar características...',
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                     edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
                 },
-                typeConfig: {}
+                typeConfig: {
+                    multiple: true,
+                    searchMode: 'client',
+                    clearable: true
+                }
             },
-            {
-                id: 'hasParking',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Estacionamiento',
-                description: 'Espacio para estacionar vehículos',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'hasPool',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Piscina',
-                description: 'Piscina disponible para huéspedes',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'hasKitchen',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Cocina',
-                description: 'Cocina equipada disponible',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'hasPetFriendly',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Pet Friendly',
-                description: 'Acepta mascotas',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'hasGym',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Gimnasio',
-                description: 'Gimnasio o área de ejercicios',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            {
-                id: 'hasBreakfast',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit', 'create'],
-                label: 'Desayuno Incluido',
-                description: 'Desayuno incluido en la estadía',
-                permissions: {
-                    view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                    edit: [PermissionEnum.ACCOMMODATION_AMENITIES_EDIT]
-                },
-                typeConfig: {}
-            },
-            // Campo para amenities adicionales
+            // ----------------------------------------------------------------
+            // Free-text description of additional amenities not in catalog
+            // ----------------------------------------------------------------
             {
                 id: 'additionalAmenities',
                 type: FieldTypeEnum.TEXTAREA,
                 required: false,
                 modes: ['view', 'edit', 'create'],
                 label: 'Amenities Adicionales',
-                description: 'Otros servicios y comodidades disponibles',
+                description: 'Otros servicios y comodidades no listados en el catálogo',
                 placeholder: 'Describa otros servicios disponibles...',
                 permissions: {
                     view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
@@ -162,14 +102,16 @@ export const createAmenitiesConsolidatedSection = (
                     maxLength: 1000
                 }
             },
-            // Campo para restricciones
+            // ----------------------------------------------------------------
+            // Restrictions / special conditions
+            // ----------------------------------------------------------------
             {
                 id: 'amenityRestrictions',
                 type: FieldTypeEnum.TEXTAREA,
                 required: false,
                 modes: ['view', 'edit', 'create'],
                 label: 'Restricciones',
-                description: 'Restricciones o condiciones especiales',
+                description: 'Restricciones o condiciones especiales sobre los servicios',
                 placeholder:
                     'Ej: Piscina disponible solo en verano, estacionamiento con costo adicional...',
                 permissions: {

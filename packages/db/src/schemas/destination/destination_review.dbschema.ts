@@ -1,7 +1,16 @@
 import type { DestinationRatingInput } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, jsonb, numeric, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
-import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
+import {
+    index,
+    jsonb,
+    numeric,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid
+} from 'drizzle-orm/pg-core';
+import { LifecycleStatusPgEnum, ModerationStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { destinations } from './destination.dbschema.ts';
 
@@ -28,7 +37,20 @@ export const destinationReviews = pgTable(
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
-        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
+        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * Moderation state for the review. Defaults to PENDING because destination
+         * reviews must be approved before becoming publicly visible (spec §3.1).
+         */
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
+        /** User who performed the last moderation action. Nullable (no action yet). */
+        moderatedById: uuid('moderated_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        /** Timestamp of the last moderation action. Nullable until first moderation. */
+        moderatedAt: timestamp('moderated_at', { withTimezone: true }),
+        /** Free-text reason for the moderation decision. Nullable. */
+        moderationReason: text('moderation_reason')
     },
     (table) => ({
         destination_reviews_destinationId_idx: index('destination_reviews_destinationId_idx').on(
@@ -42,7 +64,15 @@ export const destinationReviews = pgTable(
         // query (destinationId + lifecycleState filter after T-003).
         destination_reviews_destinationId_lifecycleState_idx: index(
             'destination_reviews_destinationId_lifecycleState_idx'
-        ).on(table.destinationId, table.lifecycleState)
+        ).on(table.destinationId, table.lifecycleState),
+        // SPEC-166: moderation state index for admin moderation queue queries.
+        destination_reviews_moderationState_idx: index(
+            'destination_reviews_moderationState_idx'
+        ).on(table.moderationState),
+        // SPEC-202: enforce one review per user per destination at the DB level.
+        destination_reviews_user_destination_uniq: uniqueIndex(
+            'destination_reviews_user_destination_uniq'
+        ).on(table.userId, table.destinationId)
     })
 );
 
@@ -54,5 +84,10 @@ export const destinationReviewsRelations = relations(destinationReviews, ({ one 
     user: one(users, {
         fields: [destinationReviews.userId],
         references: [users.id]
+    }),
+    moderatedBy: one(users, {
+        fields: [destinationReviews.moderatedById],
+        references: [users.id],
+        relationName: 'destinationReviewModerator'
     })
 }));

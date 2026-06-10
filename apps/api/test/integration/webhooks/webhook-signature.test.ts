@@ -42,23 +42,26 @@ const WEBHOOK_PATH = '/api/v1/webhooks/mercadopago';
 /**
  * Create a well-formed MercadoPago `x-signature` header value.
  *
- * The signed payload follows the QZPay convention:
- * `id:<dataId>;request-id:<ts>;ts:<ts>;`
+ * The signed payload follows the MP docs format:
+ * `id:<dataId>;request-id:<requestId>;ts:<ts>;`
  *
  * @param params - Signature input parameters
- * @param params.dataId - The `data.id` field from the webhook payload
+ * @param params.dataId - The `data.id` field from the webhook (lowercased before HMAC)
+ * @param params.requestId - The value of the `x-request-id` HTTP header
  * @param params.timestamp - Unix seconds; defaults to `now`
  * @returns A string in the form `ts=<ts>,v1=<hmac-hex>`
  */
 function createWebhookSignature({
     dataId,
+    requestId,
     timestamp
 }: {
     readonly dataId: string;
+    readonly requestId: string;
     readonly timestamp?: number;
 }): string {
     const ts = timestamp ?? Math.floor(Date.now() / 1000);
-    const signedPayload = `id:${dataId};request-id:${ts};ts:${ts};`;
+    const signedPayload = `id:${dataId.toLowerCase()};request-id:${requestId};ts:${ts};`;
     const hmac = createHmac('sha256', WEBHOOK_SECRET).update(signedPayload).digest('hex');
     return `ts=${ts},v1=${hmac}`;
 }
@@ -119,15 +122,17 @@ describe('Webhook Signature Verification', () => {
     it('should return 200 for a valid webhook request with correct signature', async () => {
         // Arrange
         const dataId = `test-sig-valid-${Date.now()}`;
+        const requestId = `req-${Date.now()}-valid`;
         const payload = createWebhookPayload(dataId);
-        const signature = createWebhookSignature({ dataId });
+        const signature = createWebhookSignature({ dataId, requestId });
 
         // Act
-        const response = await app.request(WEBHOOK_PATH, {
+        const response = await app.request(`${WEBHOOK_PATH}?data.id=${dataId}`, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
                 'x-signature': signature,
+                'x-request-id': requestId,
                 'user-agent': 'vitest'
             },
             body: JSON.stringify(payload)
@@ -191,18 +196,24 @@ describe('Webhook Signature Verification', () => {
     it('should reject a request with stale timestamp', async () => {
         // Arrange
         const dataId = `test-sig-stale-${Date.now()}`;
+        const requestId = `req-${Date.now()}-stale`;
         const payload = createWebhookPayload(dataId);
 
         // 10 minutes ago; replay window is 300 s (5 min)
         const staleTimestamp = Math.floor(Date.now() / 1000) - 600;
-        const signature = createWebhookSignature({ dataId, timestamp: staleTimestamp });
+        const signature = createWebhookSignature({
+            dataId,
+            requestId,
+            timestamp: staleTimestamp
+        });
 
         // Act
-        const response = await app.request(WEBHOOK_PATH, {
+        const response = await app.request(`${WEBHOOK_PATH}?data.id=${dataId}`, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
                 'x-signature': signature,
+                'x-request-id': requestId,
                 'user-agent': 'vitest'
             },
             body: JSON.stringify(payload)

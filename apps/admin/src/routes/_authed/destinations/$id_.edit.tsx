@@ -82,6 +82,7 @@ function DestinationEditPage() {
                     <EntityEditContent
                         entityType="destination"
                         fieldHandlers={galleryFieldHandlers}
+                        flat
                     />
                 </EntityPageBase>
             </div>

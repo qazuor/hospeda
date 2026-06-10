@@ -42,6 +42,7 @@ import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
 import { get } from '../lib/env.ts';
 import { die, log } from '../lib/log.ts';
+import { runMigrateSequence } from '../lib/migrate-core.ts';
 import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
 import { runner } from '../lib/runner.ts';
@@ -52,22 +53,23 @@ hops db-seed [--target=prod|staging]
              [--pull | --no-pull]
              [--no-reset] [--no-required] [--no-example]
              [--clean-images]
-             [--no-build]
+             [--build]
+             [--migrate] [--no-apply-extras]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
-Default behaviour:
-  --reset, --required, --example, --build are ON. --clean-images is
-  OFF. The default invocation:
+Default behaviour (schema-sync is NOT included by default — run \`hops
+db-migrate\` separately first, or pass \`--migrate\` to include it):
+  --reset, --required, --example are ON. --build, --clean-images,
+  --migrate are OFF. The default invocation:
     1. (optional) git pull \$HOPS_REPO_ROOT
-    2. pnpm turbo run build --filter=@repo/seed^...   (turbo-cached)
-    3. pnpm --filter @repo/seed seed --reset --required --example
+    2. pnpm --filter @repo/seed seed --reset --required --example
 
-  Step 2 is required because the seed's workspace deps (@repo/db,
-  @repo/billing, etc.) export from \`./dist/index.js\`. Without it,
-  the seed crashes with ERR_MODULE_NOT_FOUND on the first import.
-  Turbo caches outputs, so subsequent runs are ~1-2s.
+  The seed runs via tsx with tsconfig path resolution, so workspace
+  deps resolve from their src/ directories without a build step.
+  Pass --build to force a turbo build first (escape hatch for deps
+  that need dist/ artifacts, or for CI parity).
 
   NODE_ENV is set to 'production' for --target=prod (billing seeds
   use livemode: true) and 'development' for --target=staging.
@@ -75,7 +77,21 @@ Default behaviour:
   Cloudinary assets under hospeda/<env>/seed/ are preserved by
   default. Pass \`--clean-images\` to opt into remote deletion.
 
+With --migrate:
+  Before seeding, runs the full migration sequence:
+    a. pnpm --filter @repo/db db:migrate   (drizzle-kit migrate, NOT push)
+    b. pnpm db:apply-extras                (triggers / extras)
+  This is equivalent to running \`hops db-migrate --no-backup --no-pull\`
+  before seeding. Use this when you want schema + data in one step.
+  The schema sync uses the VERSIONED migration carril — never push.
+
 Flags:
+  --migrate           Run drizzle-kit migrate + apply-extras before seeding.
+                      Off by default — assumes the schema is already in sync
+                      (e.g. \`hops db-migrate\` was run first).
+  --no-apply-extras   When used with --migrate: skip the Postgres extras after
+                      migrate. Without --migrate, this flag has no effect.
+                      The default ON behaviour is idempotent.
   --no-reset          Skip the database reset step (population only).
                       May fail on UNIQUE violations if rows already exist.
   --no-required       Skip the --required step (rare; tests / partial seeds).
@@ -86,10 +102,10 @@ Flags:
                       before reseeding. Slow but produces a fully
                       consistent state (no orphan assets pointing at
                       rows that no longer exist).
-  --no-build          Skip the turbo build step. Only use when the
-                      workspace deps' dist/ outputs are already up to
-                      date (e.g. CI just built them). Without it, the
-                      seed will likely crash with ERR_MODULE_NOT_FOUND.
+  --build             Force a turbo build of workspace deps before seeding.
+                      Off by default — the seed resolves deps from src/ via
+                      tsconfig paths. Use this escape hatch when a dep needs
+                      a dist/ artifact, or for CI parity.
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -105,6 +121,7 @@ Unattended examples:
   hops db-seed --target=staging --no-pull --yes
   hops db-seed --target=prod --pull --yes
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
+  hops db-seed --target=staging --migrate --no-pull --yes      # migrate + seed
 
 Required environment variables (in scripts/server-tools/.env.local):
   HOPS_<TARGET>_POSTGRES_UUID         Coolify Postgres service UUID for the target.
@@ -128,6 +145,13 @@ Notes:
   --example pass loads Faker-generated content with the well-known
   admin@hospeda.com credentials. Read packages/seed/CLAUDE.md before
   using against any environment that holds real data.
+
+  Schema sync is intentionally NOT included by default. The recommended
+  workflow is:
+    hops db-migrate --target=<env> [options]
+    hops db-seed    --target=<env> [options]
+  Or combined with --migrate:
+    hops db-seed    --target=<env> --migrate [options]
 `.trim();
 
 export interface ParsedArgs {
@@ -136,6 +160,13 @@ export interface ParsedArgs {
     readonly example: boolean;
     readonly cleanImages: boolean;
     readonly build: boolean;
+    /**
+     * When true, run drizzle-kit migrate + apply-extras before seeding.
+     * Replaces the old `push` flag which used `drizzle-kit push` (DEV-ONLY).
+     * Default: false — assumes the schema is already in sync.
+     */
+    readonly migrate: boolean;
+    readonly applyExtras: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
 }
@@ -154,7 +185,9 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
-        build: !args.includes('--no-build'),
+        build: args.includes('--build'),
+        migrate: args.includes('--migrate'),
+        applyExtras: !args.includes('--no-apply-extras'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
         skipConfirm: args.includes('--yes')
     };
@@ -182,6 +215,10 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     (parsed.example ? on : off).push('example');
     (parsed.cleanImages ? on : off).push('clean-images');
     (parsed.build ? on : off).push('build');
+    (parsed.migrate ? on : off).push('migrate');
+    if (parsed.migrate) {
+        (parsed.applyExtras ? on : off).push('apply-extras');
+    }
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
@@ -230,20 +267,11 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
 }
 
 /**
- * Build the workspace dependencies of `@repo/seed` via turbo so the
- * tsx-driven seed can resolve them at runtime.
+ * Build the workspace dependencies of `@repo/seed` via turbo (opt-in via --build).
  *
- * Why this is needed: every `@repo/*` workspace dep of the seed
- * (billing, config, db, logger, media, schemas, service-core, utils)
- * declares its `exports."."` as `./dist/index.js`. The seed itself
- * runs from `./src/index.ts` via `tsx`, but Node still resolves the
- * deps through their declared exports — pointing at `dist/`. Without
- * a build those files don't exist and the seed crashes with
- * `ERR_MODULE_NOT_FOUND`.
- *
- * Turbo handles the dependency order (`^build`) and caches outputs,
- * so subsequent runs are ~1-2s (just hash checks). The first run on
- * a fresh VPS host takes ~30-60s.
+ * By default the seed resolves deps from their src/ directories via tsconfig
+ * paths, so no build is needed. This function is an escape hatch for when a
+ * dep needs a real dist/ artifact, or for CI parity.
  *
  * Filter syntax: `@repo/seed^...` builds every dependency of `@repo/seed`
  * but NOT `@repo/seed` itself (the seed has no build script — its
@@ -251,13 +279,10 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
  */
 async function buildSeedDependencies(repoRoot: string): Promise<void> {
     log.info('Building workspace dependencies of @repo/seed (turbo, cached)...');
-    const result = await runner.run(
-        ['pnpm', 'turbo', 'run', 'build', '--filter=@repo/seed^...'],
-        {
-            cwd: repoRoot,
-            inherit: true
-        }
-    );
+    const result = await runner.run(['pnpm', 'turbo', 'run', 'build', '--filter=@repo/seed^...'], {
+        cwd: repoRoot,
+        inherit: true
+    });
     if (result.exitCode !== 0) {
         die(
             `Build failed (exit ${result.exitCode}). The seed cannot run without dist/ files for its workspace deps. Inspect the output above; if the issue is transient, pass --no-build to skip.`
@@ -265,6 +290,10 @@ async function buildSeedDependencies(repoRoot: string): Promise<void> {
     }
     log.ok('Dependencies built.');
 }
+
+// runApplyExtras and runDbMigrate are imported from migrate-core.ts.
+// runDbPush (drizzle-kit push) has been removed — push is DEV-ONLY and must
+// never run on staging or prod. Use `hops db-migrate` or `--migrate` instead.
 
 async function runSeed(params: {
     readonly repoRoot: string;
@@ -345,15 +374,15 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         log.hint('Skipping git pull.');
     }
 
-    // ── Build workspace deps ─────────────────────────────────────────
-    // The seed runs from `./src/index.ts` via tsx, but its workspace
-    // deps (`@repo/billing`, `@repo/db`, …) declare their exports as
-    // `./dist/index.js` — they must be built first. Turbo caches the
-    // output, so subsequent runs are essentially free.
+    // ── Build workspace deps (opt-in, not default) ──────────────────
+    // The seed runs from `./src/index.ts` via tsx with tsconfig path
+    // resolution, so workspace deps resolve from their src/ directories
+    // without a build step. Pass --build to force a turbo build first
+    // (escape hatch for deps that need dist/ artifacts, or CI parity).
     if (parsed.build) {
         await buildSeedDependencies(repoRoot);
     } else {
-        log.hint('Skipping build (--no-build).');
+        log.hint('Skipping build (default). Seed resolves deps from src/ via tsconfig paths.');
     }
 
     // ── Destructive confirmation (prod only by default) ──────────────
@@ -373,7 +402,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
                 '--clean-images deletes Cloudinary assets under hospeda/<env>/seed/ before reseeding.'
             );
         }
-        const ok = await confirm(`Type yes to PROCEED with db-seed against PRODUCTION`, {
+        const ok = await confirm('Type yes to PROCEED with db-seed against PRODUCTION', {
             defaultValue: false
         });
         if (!ok) {
@@ -382,7 +411,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         }
     } else if (target === 'prod' && !parsed.reset && !parsed.skipConfirm) {
         // Non-reset prod run is non-destructive but still worth a heads-up.
-        const ok = await confirm(`Run db-seed (no --reset) against PRODUCTION?`, {
+        const ok = await confirm('Run db-seed (no --reset) against PRODUCTION?', {
             defaultValue: false
         });
         if (!ok) {
@@ -391,15 +420,37 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
+    // ── Optional migrate step ────────────────────────────────────────
+    // When --migrate is passed, run drizzle-kit migrate (VERSIONED carril,
+    // NOT push) + apply-extras before seeding. This is the correct schema
+    // sync path for staging/prod. Without --migrate, db-seed assumes the
+    // schema is already in sync (run `hops db-migrate` first if needed).
+    if (parsed.migrate) {
+        log.info('Running migrate sequence before seed (--migrate)...');
+        await runMigrateSequence({
+            repoRoot,
+            databaseUrl,
+            target,
+            reset: false, // db-seed --migrate never resets; use db-migrate --reset for that
+            applyExtras: parsed.applyExtras,
+            backup: undefined // no pre-migrate backup from within db-seed
+        });
+    } else {
+        log.hint(
+            'Skipping schema migration (--migrate not passed). Run `hops db-migrate` first if the schema is out of sync.'
+        );
+    }
+
     // ── Seed ─────────────────────────────────────────────────────────
     // NODE_ENV controls billing seeds' `livemode`. For prod target we
     // want livemode: true (real MercadoPago plans); for staging we
     // want livemode: false (test mode plans the sandbox accepts).
     const cloudinaryEnv = collectCloudinaryEnv(parsed.cleanImages);
-    const nodeEnv: 'production' | 'development' =
-        target === 'prod' ? 'production' : 'development';
+    const nodeEnv: 'production' | 'development' = target === 'prod' ? 'production' : 'development';
     await runSeed({ repoRoot, databaseUrl, seedArgs, cloudinaryEnv, nodeEnv });
 
     log.ok(`db-seed completed against ${target}.`);
-    log.hint('Verify with `hops db-counts`.');
+    log.hint(
+        'Verify with `hops db-counts`. If schema was not migrated, run `hops db-migrate` first.'
+    );
 }

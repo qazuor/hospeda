@@ -15,6 +15,7 @@ import {
     useVoidInvoiceMutation
 } from '@/features/billing-invoices/hooks';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { formatArs, formatShortDate } from '@/lib/format-helpers';
 import { CalendarIcon, DownloadIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
@@ -29,6 +30,7 @@ import {
 } from '@/features/billing-invoices/components/InvoiceDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/invoices')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingInvoicesPage
 });
 

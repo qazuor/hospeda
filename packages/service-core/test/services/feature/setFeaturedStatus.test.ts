@@ -18,7 +18,10 @@ describe('FeatureService.setFeaturedStatus', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const feature = FeatureFactoryBuilder.create({ name: 'Test Feature', isFeatured: false });
+    const feature = FeatureFactoryBuilder.create({
+        name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
+        isFeatured: false
+    });
     const featuredFeature = { ...feature, isFeatured: true };
 
     beforeEach(() => {

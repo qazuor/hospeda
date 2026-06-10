@@ -66,7 +66,13 @@ vi.mock('react-leaflet-cluster', () => ({
 }));
 
 vi.mock('leaflet', () => ({
-    default: { Icon: { Default: { mergeOptions: vi.fn() } } }
+    default: {
+        Icon: { Default: { mergeOptions: vi.fn() } },
+        // divIcon was added in commit 9690b6a25 ("show Airbnb-style pill on each
+        // map accommodation") — the mock must include it so the component can
+        // call L.divIcon() without throwing.
+        divIcon: vi.fn().mockReturnValue({})
+    }
 }));
 
 vi.mock('leaflet/dist/leaflet.css', () => ({}));
@@ -126,8 +132,10 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
             />
         );
 
-        // The FavoriteIcon stub should be present inside the popup.
-        expect(screen.getByTestId('favorite-icon')).toBeInTheDocument();
+        // The FavoriteButton renders an icon stack (commit 35b93bca1): one
+        // visible icon plus one hidden fill icon for the CSS hover preview.
+        // Use getAllByTestId and assert at least one icon is present.
+        expect(screen.getAllByTestId('favorite-icon').length).toBeGreaterThanOrEqual(1);
     });
 
     it('uses compact icon size (18) for FavoriteButton in popup', () => {
@@ -143,7 +151,9 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
             />
         );
 
-        expect(screen.getByTestId('favorite-icon')).toHaveAttribute('data-size', '18');
+        // Both icons in the stack use the compact size (18) — check the first one.
+        const icons = screen.getAllByTestId('favorite-icon');
+        expect(icons[0]).toHaveAttribute('data-size', '18');
     });
 
     it('FavoriteButton is not rendered for destination-list mode', () => {

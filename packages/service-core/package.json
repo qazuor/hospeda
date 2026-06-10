@@ -29,7 +29,7 @@
         "test:integration:watch": "vitest --config vitest.integration.config.ts"
     },
     "devDependencies": {
-        "@qazuor/qzpay-core": "^1.6.4",
+        "@qazuor/qzpay-core": "^1.8.0",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^20.11.19",
         "@types/pg": "^8.15.1",
@@ -43,12 +43,13 @@
     },
     "dependencies": {
         "@repo/billing": "workspace:*",
+        "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
-        "drizzle-orm": "^0.44.7",
+        "drizzle-orm": "^0.45.2",
         "jose": "^6.1.0",
         "zod": "^4.0.8"
     }

@@ -8,8 +8,10 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
+import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import type { ReactNode } from 'react';
+import { EMPTY_SURFACE_CLASS } from './empty-surface';
 
 export interface ComingSoonProps {
     /** i18n key for the feature title */
@@ -47,11 +49,9 @@ export function ComingSoon({
         : (description ?? t('admin-common.comingSoon.description' as TranslationKey));
 
     return (
-        <div
-            className={`flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center ${className ?? ''}`}
-        >
-            {icon && <div className="mb-3 text-muted-foreground">{icon}</div>}
-            <h2 className="mb-1 font-semibold text-sm">{displayTitle}</h2>
+        <div className={cn(EMPTY_SURFACE_CLASS, 'p-8', className)}>
+            {icon && <div className="mb-3 text-primary">{icon}</div>}
+            <h2 className="mb-1 font-heading font-semibold text-base">{displayTitle}</h2>
             <p className="max-w-sm text-muted-foreground text-xs">{displayDescription}</p>
         </div>
     );

@@ -60,7 +60,7 @@ export const createRolePermissionsConsolidatedSection = (): ConsolidatedSectionC
 /**
  * Get human-readable label for role
  */
-function getRoleLabel(role: RoleEnum): string {
+export function getRoleLabel(role: RoleEnum): string {
     const labels: Record<RoleEnum, string> = {
         [RoleEnum.SUPER_ADMIN]: 'Super Administrador',
         [RoleEnum.ADMIN]: 'Administrador',

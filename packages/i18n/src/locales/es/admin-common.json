@@ -49,6 +49,34 @@
         "confirm": "¿Estás seguro de que quieres suplantar a este usuario?",
         "error": "Error al suplantar usuario. Intenta de nuevo."
     },
+    "createHost": {
+        "trigger": "Crear host",
+        "title": "Crear cuenta de host",
+        "description": "Creá una cuenta con rol HOST. El nuevo host inicia sesión con la contraseña temporal que definas acá.",
+        "nameLabel": "Nombre*",
+        "namePlaceholder": "Nombre del host",
+        "emailLabel": "Email*",
+        "emailPlaceholder": "host@ejemplo.com",
+        "passwordLabel": "Contraseña temporal*",
+        "passwordPlaceholder": "Mínimo 8 caracteres",
+        "nameRequired": "El nombre es obligatorio",
+        "emailInvalid": "Ingresá un email válido",
+        "passwordTooShort": "La contraseña debe tener al menos 8 caracteres",
+        "successTitle": "Cuenta de host creada",
+        "successMessage": "Se creó la cuenta de {{email}} con rol HOST.",
+        "errorTitle": "No se pudo crear la cuenta",
+        "errorMessage": "Ocurrió un error al crear la cuenta de host. Probá de nuevo.",
+        "cancel": "Cancelar",
+        "submit": "Crear host",
+        "submitting": "Creando..."
+    },
+    "browserGate": {
+        "title": "Tu navegador no es compatible con el panel de administración.",
+        "message": "Esta herramienta requiere Chrome 111, Firefox 128, Safari 16.4 o superior. Por favor, actualizá tu navegador para continuar.",
+        "upgradeLink": "Descargar Chrome",
+        "contactSupport": "Contactar soporte",
+        "dismiss": "Cerrar aviso"
+    },
     "bulk": {
         "itemCount_one": "{{count}} elemento",
         "itemCount_other": "{{count}} elementos"
@@ -261,6 +289,39 @@
             "edit": "Editar",
             "view": "Ver",
             "cancel": "Cancelar"
+        }
+    },
+    "tour": {
+        "skip": "Saltar",
+        "showMe": "Mostrame",
+        "next": "Siguiente",
+        "prev": "Anterior",
+        "done": "Listo",
+        "replay": "Ver guía",
+        "replayPage": "Ver guía de esta página"
+    },
+    "aiTextImprove": {
+        "trigger": "Mejorar con IA",
+        "triggerTooltip": "Obtener una sugerencia de mejora con inteligencia artificial",
+        "upgradeTooltip": "Tu plan no incluye mejora de texto con IA. Actualizá tu plan para acceder.",
+        "panelLabel": "Sugerencia de IA",
+        "loading": "Generando sugerencia...",
+        "accept": "Aceptar",
+        "discard": "Descartar",
+        "dismiss": "Cerrar",
+        "error": {
+            "VALIDATION_ERROR": "Solicitud inválida. Por favor recargá la página e intentá de nuevo.",
+            "ENTITLEMENT_REQUIRED": "Tu plan no incluye mejora de texto con IA. Actualizá tu plan para acceder.",
+            "LIMIT_REACHED": "Alcanzaste el límite mensual de mejoras con IA. Actualizá tu plan o esperá el próximo mes.",
+            "MODERATION_BLOCKED": "El contenido no pasa las políticas de uso. Tu texto original no fue modificado.",
+            "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá un momento e intentá de nuevo.",
+            "ENGINE_EXHAUSTED": "Los proveedores de IA no están disponibles temporalmente. Intentá más tarde.",
+            "FEATURE_DISABLED": "La mejora de texto con IA está deshabilitada temporalmente.",
+            "CEILING_HIT": "Se alcanzó el límite de costo de IA. Intentá más tarde.",
+            "SERVICE_UNAVAILABLE": "Servicio temporalmente no disponible. Intentá más tarde.",
+            "INTERNAL_ERROR": "Ocurrió un error inesperado. Tu texto original no fue modificado.",
+            "NETWORK_INTERRUPTED": "Se cortó la conexión. Reintentá.",
+            "default": "Error al generar la sugerencia. Tu texto original no fue modificado."
         }
     }
 }

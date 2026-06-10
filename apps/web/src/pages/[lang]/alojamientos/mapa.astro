@@ -52,20 +52,37 @@ const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | 
 const sortOrder: 'asc' | 'desc' | undefined =
     explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
 const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-const minGuests = url.searchParams.get('minGuests') ? Number(url.searchParams.get('minGuests')) : undefined;
-const maxGuests = url.searchParams.get('maxGuests') ? Number(url.searchParams.get('maxGuests')) : undefined;
+// `minGuests` is now derived from adults + children (see further down). The
+// raw URL param is no longer surfaced as its own filter to keep the UI in
+// sync with the list view.
 const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const maxBedrooms = url.searchParams.get('maxBedrooms') ? Number(url.searchParams.get('maxBedrooms')) : undefined;
 const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const maxBathrooms = url.searchParams.get('maxBathrooms') ? Number(url.searchParams.get('maxBathrooms')) : undefined;
 const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
 const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
 const featuresParam = url.searchParams.get('features') ?? undefined;
-const includeNoPrice = url.searchParams.get('includeNoPrice') === 'true' ? true : undefined;
-const includeNoReviews = url.searchParams.get('includeNoReviews') === 'true' ? true : undefined;
+// Same default-ON semantics as the list view: absent param = checked. Only
+// forward the explicit-OFF case to the API (the listing endpoint rejects an
+// unknown `?includeNoPrice=true` with INVALID_PAGINATION_PARAMS, so we keep
+// the param absent when the toggle is at its default-on state).
+const includeNoPrice =
+    url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
+const includeNoReviews =
+    url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
+// Trip-context (forwarded to detail link, not filtered server-side).
+const checkIn = url.searchParams.get('checkIn') ?? undefined;
+const checkOut = url.searchParams.get('checkOut') ?? undefined;
+const adultsParam = url.searchParams.get('adults');
+const childrenParam = url.searchParams.get('children');
+const adultsContext = adultsParam ? Number(adultsParam) : undefined;
+const childrenContext = childrenParam ? Number(childrenParam) : undefined;
+// Derived guest-capacity filter — sum of adults + children. See list view
+// for the rationale.
+const guestCount = (adultsContext ?? 2) + (childrenContext ?? 0);
+const minGuests = guestCount > 0 ? guestCount : undefined;
 
-// Fetch destinations for filter dropdown
-const destinationsResult = await destinationsApi.list({ pageSize: 100, sortBy: 'name', sortOrder: 'asc' });
+// Fetch destinations for filter dropdown (CITY only — accommodations are
+// browsed by city, not by parent administrative regions).
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 
 // Fetch amenities for filter chips
@@ -90,11 +107,8 @@ const result = await accommodationsApi.list({
 	sortOrder,
 	isFeatured,
 	minGuests,
-	maxGuests,
 	minBedrooms,
-	maxBedrooms,
 	minBathrooms,
-	maxBathrooms,
 	minRating,
 	amenities: amenitiesParam,
 	features: featuresParam,
@@ -198,6 +212,39 @@ const filterGroups: FilterGroup[] = [
 		maxVisible: 10,
 	},
 	{
+		id: 'dates',
+		label: t('accommodations.sidebar.dates', 'Llegada y salida'),
+		type: 'date-range',
+		mode: 'bounds',
+		checkInPlaceholder: t('accommodations.contextBar.checkIn', 'Llegada'),
+		checkOutPlaceholder: t('accommodations.contextBar.checkOut', 'Salida'),
+		description: t(
+			'accommodations.sidebar.dates.helper',
+			'Por ahora informativo: la disponibilidad en tiempo real está en desarrollo y todavía no afecta los resultados.'
+		),
+	},
+	{
+		id: 'adults',
+		label: t('accommodations.sidebar.adults', 'Adultos'),
+		type: 'stepper',
+		min: 1,
+		max: 10,
+		defaultValue: 2,
+		emitWhenAtDefault: true,
+	},
+	{
+		id: 'children',
+		label: t('accommodations.sidebar.children', 'Niños'),
+		type: 'stepper',
+		min: 0,
+		max: 6,
+		defaultValue: 0,
+		emitWhenAtDefault: true,
+		description: t('accommodations.sidebar.children.helper', '(menores de 5 años)'),
+	},
+	{ id: 'minBedrooms', label: t('accommodations.sidebar.bedrooms', 'Dormitorios'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
+	{ id: 'minBathrooms', label: t('accommodations.sidebar.bathrooms', 'Baños'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
+	{
 		id: 'price',
 		label: t('accommodations.sidebar.priceRange', 'Precio por noche'),
 		type: 'dual-range',
@@ -207,11 +254,9 @@ const filterGroups: FilterGroup[] = [
 		format: 'currency',
 		includeNullLabel: t('accommodations.sidebar.includeNoPrice', 'Incluir sin precio'),
 		includeNullParam: 'includeNoPrice',
+		defaultIncludeNull: true,
 	},
-	{ id: 'minGuests', label: t('accommodations.sidebar.adults', 'Adultos'), type: 'stepper', min: 0, max: 20, defaultValue: 0, suffix: t('accommodations.chips.guests', 'huéspedes') },
-	{ id: 'minRating', label: t('accommodations.sidebar.rating', 'Calificación'), type: 'stars', includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'), includeNullParam: 'includeNoReviews' },
-	{ id: 'minBedrooms', label: t('accommodations.sidebar.bedrooms', 'Dormitorios'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
-	{ id: 'minBathrooms', label: t('accommodations.sidebar.bathrooms', 'Baños'), type: 'stepper', min: 0, max: 10, defaultValue: 0 },
+	{ id: 'minRating', label: t('accommodations.sidebar.rating', 'Calificación'), type: 'stars', includeNullLabel: t('accommodations.sidebar.includeNoReviews', 'Incluir sin calificación'), includeNullParam: 'includeNoReviews', defaultIncludeNull: true },
 ];
 
 const sortOptions = [
@@ -234,14 +279,19 @@ if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
 if (sortBy) initialParams.sortBy = sortBy;
 if (isFeatured) initialParams.isFeatured = 'true';
-if (minGuests !== undefined) initialParams.minGuests = String(minGuests);
+// `minGuests` is derived (adults + children), not a user-facing filter.
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 if (amenitiesParam) initialParams.amenities = amenitiesParam;
 if (featuresParam) initialParams.features = featuresParam;
-if (includeNoPrice) initialParams.includeNoPrice = 'true';
-if (includeNoReviews) initialParams.includeNoReviews = 'true';
+// Default-checked include-null toggles: only carry the param when OFF.
+if (includeNoPrice === false) initialParams.includeNoPrice = 'false';
+if (includeNoReviews === false) initialParams.includeNoReviews = 'false';
+if (checkIn) initialParams.checkIn = checkIn;
+if (checkOut) initialParams.checkOut = checkOut;
+initialParams.adults = String(adultsContext ?? 2);
+initialParams.children = String(childrenContext ?? 0);
 
 // Build the URL pointing back to the list view, preserving every active filter.
 const listHref = (() => {
@@ -283,7 +333,6 @@ for (const card of cards) {
 // visually. The page resolves all the locale-aware copy + status colors once
 // here so the island can stay i18n-agnostic.
 const newColors = getBadgeStatusColor({ status: 'new' });
-const featuredColors = getBadgeStatusColor({ status: 'featured' });
 ---
 
 <ListingLayout
@@ -369,8 +418,6 @@ const featuredColors = getBadgeStatusColor({ status: 'featured' });
 				newLabel={t('home.accommodations.badge.new', 'Nuevo')}
 				newBg={newColors.bg}
 				newText={newColors.text}
-				featuredBg={featuredColors.bg}
-				featuredText={featuredColors.text}
 				priceFromLabel={t('home.accommodations.price.from', 'Desde')}
 				pricePerNightLabel={t('home.accommodations.price.perNight', '/noche')}
 				priceConsultLabel={t('home.accommodations.price.consult', 'Consultar')}
@@ -527,7 +574,7 @@ const featuredColors = getBadgeStatusColor({ status: 'featured' });
 			line-height: 1.3;
 			border-radius: var(--radius-button, 8px);
 			border: none;
-			background-color: oklch(from var(--core-card) l c h / 0.92);
+			background-color: var(--core-card-a90);
 			backdrop-filter: blur(4px);
 			-webkit-backdrop-filter: blur(4px);
 			z-index: 500;

@@ -1,4 +1,4 @@
-import { PostModel } from '@repo/db';
+import { PostModel, buildSearchCondition } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
@@ -17,6 +17,7 @@ import type {
     PostCreateInput,
     PostEngagementStats,
     PostListInput,
+    PostMonthlyTrendItem,
     PostSummary,
     PostTag,
     PostUpdateInput,
@@ -50,7 +51,8 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { generatePostSlug } from './post.helpers';
+import { hasPermission } from '../../utils/permission';
+import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
     checkCanAdminList,
@@ -700,7 +702,7 @@ export class PostService extends BaseCrudService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            q: _q,
+            q,
             ...filterParams
         } = params;
 
@@ -710,12 +712,38 @@ export class PostService extends BaseCrudService<
         // caller-provided pagination + sort, including the synthetic
         // `mostSaved` sort field handled by PostModel.findAll override
         // (SPEC-098 T-052b).
-        return this.model.findAll(filterParams, {
-            page: ctx.pagination?.page ?? 1,
-            pageSize: ctx.pagination?.pageSize ?? 10,
-            sortBy: ctx.pagination?.sortBy,
-            sortOrder: ctx.pagination?.sortOrder
-        });
+        //
+        // `q` is the free-text search term. Unlike `list` and `adminList`, the
+        // base `search` flow does NOT build a search SQL condition for us — it
+        // expects the concrete service to wire it. We translate `q` into an
+        // ILIKE OR clause across `getSearchableColumns()` (title + content for
+        // posts) and pass it as `additionalConditions`.
+        const searchCondition =
+            q && q.trim().length > 0
+                ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
+                : undefined;
+        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+
+        // Eager-load the relations declared in getDefaultListRelations() (author,
+        // related entities, sponsorship, postTags) so the public search response
+        // includes the author byline and avatar instead of just `authorId`.
+        // Mirrors the base BaseCrudRead._executeAdminSearch pattern.
+        const relations = this.getDefaultListRelations() as Record<
+            string,
+            boolean | Record<string, unknown>
+        >;
+
+        return this.model.findAllWithRelations(
+            relations,
+            mapPostFilterKeysToColumns(filterParams),
+            {
+                page: ctx.pagination?.page ?? 1,
+                pageSize: ctx.pagination?.pageSize ?? 10,
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
+            additionalConditions
+        );
     }
 
     /**
@@ -730,10 +758,20 @@ export class PostService extends BaseCrudService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
-            q: _q,
+            q,
             ...filterParams
         } = params;
-        const count = await this.model.count(filterParams);
+        // Mirror the `_executeSearch` flow so the count reflects the same
+        // filters AND the same `q` ILIKE clause. Without this, `total` would
+        // not match `items.length` when `q` is in play.
+        const searchCondition =
+            q && q.trim().length > 0
+                ? buildSearchCondition(q, this.getSearchableColumns(), this.model.getTable())
+                : undefined;
+        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+        const count = await this.model.count(mapPostFilterKeysToColumns(filterParams), {
+            additionalConditions
+        });
         return { count };
     }
 
@@ -1216,5 +1254,38 @@ export class PostService extends BaseCrudService<
                 resolvedCtx.hookState.updateId = undefined;
             }
         }
+    }
+
+    /**
+     * Returns a 12-month posts-per-month trend series for the admin dashboard.
+     *
+     * Gated on `POST_VIEW_ALL` — the same permission used by `adminList` and
+     * `getById`. Delegates the DB aggregation to `PostModel.getMonthlyTrend`.
+     *
+     * @param actor - The actor performing the action. Must have `POST_VIEW_ALL`.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns Array of 12 `{ month: YYYY-MM, count: number }` items, oldest first.
+     * @throws ServiceError (FORBIDDEN) when actor lacks permission.
+     * @throws ServiceError (INTERNAL_ERROR) on unexpected DB errors.
+     */
+    public async getMonthlyTrend(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PostMonthlyTrendItem[]>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getMonthlyTrend',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!hasPermission(validatedActor, PermissionEnum.POST_VIEW_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: POST_VIEW_ALL required for post monthly trend'
+                    );
+                }
+                return this.model.getMonthlyTrend(execCtx?.tx);
+            }
+        });
     }
 }

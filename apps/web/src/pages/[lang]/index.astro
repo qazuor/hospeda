@@ -6,6 +6,8 @@
  */
 import AboutUsSection from "@/components/sections/AboutUsSection.astro";
 import CategoryTiles from "@/components/CategoryTiles.astro";
+import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd.astro";
+import WebSiteJsonLd from "@/components/seo/WebSiteJsonLd.astro";
 import countryHousesImg from "@/assets/images/categories/country-houses.jpg";
 import hotelsImg from "@/assets/images/categories/hotels.jpg";
 import apartmentsImg from "@/assets/images/categories/apartments.jpg";
@@ -26,6 +28,8 @@ import TestimonialsSection from "@/components/sections/TestimonialsSection.astro
 import type { StatItemData } from "@/data/types";
 import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import { BRAND_NAME, ORGANIZATION_INFO, SOCIAL_PROFILE_URLS } from "@/lib/constants";
+import { getSiteUrl } from "@/lib/env";
 import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
@@ -41,6 +45,12 @@ export const getStaticPaths = (() => {
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
+// Site-level structured data (SPEC-157 REQ-5)
+// Logo: android-chrome-512x512.png is a 512×512 square PNG — the recommended
+// format for schema.org Organization logo (Google requires min 112×112, 1:1).
+const siteUrl = getSiteUrl().replace(/\/$/, '');
+const logoUrl = `${siteUrl}/android-chrome-512x512.png`;
+
 // Fetch city destinations for the search bar (SSG — fetched at build time)
 const destinationsResult = await destinationsApi.list({
     destinationType: "CITY",
@@ -51,6 +61,7 @@ const destinations = destinationsResult.ok
           id: String(d.id),
           slug: String(d.slug),
           name: String(d.name),
+          isFeatured: Boolean(d.isFeatured),
       }))
     : [];
 
@@ -100,44 +111,44 @@ function formatSocialProofCount(value: number): string {
 /** Category tiles for the "Explorá por categoría" section. */
 const categoryTiles = [
     {
-        title: t("home.categoryTiles.countryHouses.title", "Casas quintas"),
-        description: t("home.categoryTiles.countryHouses.description", "Espacio, parque y quincho para escapadas en familia"),
+        title: t("home.categoryTiles.tiles.countryHouses.title", "Casas quintas"),
+        description: t("home.categoryTiles.tiles.countryHouses.description", "Espacio, parque y quincho para escapadas en familia"),
         href: buildUrl({ locale, path: "/alojamientos/tipo/country-house/" }),
         image: countryHousesImg,
     },
     {
-        title: t("home.categoryTiles.hotels.title", "Hoteles"),
-        description: t("home.categoryTiles.hotels.description", "Comodidad y servicio premium en el corazón de la ciudad"),
+        title: t("home.categoryTiles.tiles.hotels.title", "Hoteles"),
+        description: t("home.categoryTiles.tiles.hotels.description", "Comodidad y servicio premium en el corazón de la ciudad"),
         href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }),
         image: hotelsImg,
     },
     {
-        title: t("home.categoryTiles.apartments.title", "Departamentos"),
-        description: t("home.categoryTiles.apartments.description", "Comodidad urbana cerca de todo, ideales para parejas y escapadas cortas"),
+        title: t("home.categoryTiles.tiles.apartments.title", "Departamentos"),
+        description: t("home.categoryTiles.tiles.apartments.description", "Comodidad urbana cerca de todo, ideales para parejas y escapadas cortas"),
         href: buildUrl({ locale, path: "/alojamientos/tipo/apartment/" }),
         image: apartmentsImg,
     },
     {
-        title: t("home.categoryTiles.music.title", "Música"),
-        description: t("home.categoryTiles.music.description", "Festivales y shows en vivo para todos los gustos"),
+        title: t("home.categoryTiles.tiles.music.title", "Música"),
+        description: t("home.categoryTiles.tiles.music.description", "Festivales y shows en vivo para todos los gustos"),
         href: buildUrl({ locale, path: "/eventos/categoria/music/" }),
         image: musicImg,
     },
     {
-        title: t("home.categoryTiles.culture.title", "Cultura"),
-        description: t("home.categoryTiles.culture.description", "Arte, historia y patrimonio del Litoral Entrerriano"),
+        title: t("home.categoryTiles.tiles.culture.title", "Cultura"),
+        description: t("home.categoryTiles.tiles.culture.description", "Arte, historia y patrimonio del Litoral Entrerriano"),
         href: buildUrl({ locale, path: "/eventos/categoria/culture/" }),
         image: cultureImg,
     },
     {
-        title: t("home.categoryTiles.gastronomy.title", "Gastronomía"),
-        description: t("home.categoryTiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
+        title: t("home.categoryTiles.tiles.gastronomy.title", "Gastronomía"),
+        description: t("home.categoryTiles.tiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
         href: buildUrl({ locale, path: "/eventos/categoria/gastronomy/" }),
         image: gastronomyImg,
     },
     {
-        title: t("home.categoryTiles.posts.title", "Artículos"),
-        description: t("home.categoryTiles.posts.description", "Historias, consejos e inspiración para tu próximo viaje"),
+        title: t("home.categoryTiles.tiles.posts.title", "Artículos"),
+        description: t("home.categoryTiles.tiles.posts.description", "Historias, consejos e inspiración para tu próximo viaje"),
         href: buildUrl({ locale, path: "/publicaciones/" }),
         image: postsImg,
     },
@@ -149,7 +160,24 @@ const categoryTiles = [
     title={t("home.title")}
     description={t("home.description")}
     canonicalPath={`/${locale}/`}
+    ogTagline={t("home.hero.tagline", "Descubrí el Litoral")}
 >
+    <!-- Site-level structured data (SPEC-157 REQ-5) -->
+    <WebSiteJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} locale={locale} />
+    <OrganizationJsonLd
+        slot="head-extra"
+        name={BRAND_NAME}
+        url={siteUrl}
+        logo={logoUrl}
+        sameAs={SOCIAL_PROFILE_URLS}
+        description={ORGANIZATION_INFO.description}
+        telephone={ORGANIZATION_INFO.telephone}
+        email={ORGANIZATION_INFO.email}
+        address={ORGANIZATION_INFO.address}
+        areaServed={ORGANIZATION_INFO.areaServed}
+        foundingDate={ORGANIZATION_INFO.foundingDate}
+    />
+
     <!-- 1. Hero -->
     <HeroSection locale={locale} socialProof={socialProof} destinations={destinations} />
 

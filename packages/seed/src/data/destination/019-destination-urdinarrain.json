@@ -4,7 +4,7 @@
     "slug": "urdinarrain",
     "name": "Urdinarrain",
     "summary": "Pueblo rural del sur de Gualeguaychu, fundado en 1890 junto al ferrocarril, destacado por sus queserias artesanales, tradicion agricola inmigrante y un complejo museologico en la antigua estacion.",
-    "description": "Urdinarrain es una localidad del sur del departamento Gualeguaychu, Entre Rios, fundada en 1890 al amparo del ferrocarril y poblada por inmigrantes europeos que dieron forma a su identidad agropecuaria. Hoy es reconocida por su produccion de quesos artesanales y dulce de leche (premiado a nivel nacional como mejor dulce de leche repostero), por su tradicion en la elaboracion de productos lacteos y por la calidez de su gente. El predio del Museo Regional La Estacion, emplazado en la antigua estacion ferroviaria, reune varios museos que recorren la historia local, las tradiciones rurales y el trabajo del campo, incluyendo el Museo del Caballo y el Museo Agricola al aire libre con maquinaria historica. La Plaza Central concentra la vida comunitaria, mientras que los alrededores ofrecen estancias, turismo rural y paisajes de la pampa entrerriana. Urdinarrain fue postulada por Argentina al programa Best Tourism Villages de ONU Turismo, reconocimiento al modelo de turismo comunitario y conservacion del patrimonio rural.",
+    "description": "## Urdinarrain, pueblo de campo y tradición inmigrante\n\nUrdinarrain es una localidad del sur del departamento Gualeguaychú, en Entre Ríos, nacida en 1890 al amparo del ferrocarril y poblada por inmigrantes europeos que dieron forma a su fuerte identidad agropecuaria. Es un destino ideal para el **turismo rural** y para recorrer en bicicleta, con calles tranquilas, una plaza central que concentra la vida comunitaria y un entorno de chacras y estancias.\n\nLa zona está vinculada a la **colonización de los alemanes del Volga**, que se asentaron en la región a fines del siglo XIX. La cercana Aldea San Antonio, a unos 25 km, fue fundada por estos inmigrantes y conserva vivas sus tradiciones, una herencia cultural que se siente en toda la microrregión.\n\n## Sabores artesanales y patrimonio\n\nUrdinarrain es reconocida por su producción de **quesos artesanales y dulce de leche**, este último premiado a nivel nacional. Sobre la zona rural, a unos kilómetros del centro por la Ruta Provincial 20, varios establecimientos elaboran productos lácteos de manera tradicional, además de una bodega y propuestas gastronómicas locales. El pueblo cuenta también con varios museos, iglesias de distintos credos, un club de planeadores y una playa de río de arena blanca apta para la pesca.\n\nGracias a su modelo de turismo comunitario y a la conservación de su patrimonio rural, Urdinarrain fue postulada por Argentina al programa **Best Tourism Villages** de ONU Turismo, que distingue a los mejores pueblos turísticos del mundo. Ubicada a unos 265 km de Buenos Aires, ofrece una escapada de descanso, paisaje y sabores auténticos de la pampa entrerriana.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -327,6 +327,33 @@
         "013-attraction-centro_agropecuario",
         "037-attraction-estancia_turistica",
         "043-attraction-granja_educativa"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Urdinarrain desde Buenos Aires?",
+            "answer": "Urdinarrain está a unos 265 km de Buenos Aires, aproximadamente a 3 horas de viaje en auto. Se accede por la Ruta Nacional 12 tras cruzar el Complejo Ferrovial Zárate-Brazo Largo, conectando luego con las rutas provinciales que llevan al sur del departamento Gualeguaychú. También forma parte de circuitos que enlazan las aldeas alemanas de la región.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Urdinarrain?",
+            "answer": "Es un pueblo ideal para el turismo rural: se puede recorrer en bicicleta, visitar queserías y establecimientos que elaboran dulce de leche premiado, conocer sus museos e iglesias, disfrutar de la plaza central y acercarse a la playa de río. En los alrededores se ofrecen estancias y la cercana Aldea San Antonio, ligada a los alemanes del Volga.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Urdinarrain?",
+            "answer": "La primavera y el otoño ofrecen un clima agradable para recorrer el pueblo y la zona rural en bicicleta o a pie. El verano es bueno para la playa de río. Si interesa la cultura inmigrante, en febrero la cercana Aldea San Antonio celebra la Fiesta Provincial del Inmigrante Alemán, una de las más representativas de la región.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios turísticos hay en Urdinarrain?",
+            "answer": "Al ser un pueblo pequeño, cuenta con una oferta acotada pero suficiente de alojamientos rurales, estancias, comercios y propuestas gastronómicas locales centradas en productos artesanales. Dispone de servicios básicos como estación de servicio y centro de salud. Conviene consultar disponibilidad de alojamiento con anticipación, sobre todo en fechas de fiestas regionales.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Qué relación tiene Urdinarrain con los alemanes del Volga?",
+            "answer": "La microrregión donde se ubica Urdinarrain fue parte del área de asentamiento de los alemanes del Volga, inmigrantes que llegaron a Entre Ríos a fines del siglo XIX. La cercana Aldea San Antonio, a unos 25 km, fue fundada por estos colonos en 1889 y mantiene vivas sus tradiciones, su gastronomía y sus fiestas, que se celebran cada verano.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

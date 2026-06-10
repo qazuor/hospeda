@@ -1,0 +1,369 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-147",
+    "title": "User self-service subscription cancellation",
+    "created": "2026-06-09T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Bump qzpay-core@1.12.0 + qzpay-mercadopago@2.2.0 (qzpay PR #42)",
+            "description": "BLOCKED until qzpay PR #42 publishes to npm (owner handles merge+publish). Bump @qazuor/qzpay-core to ^1.12.0 and @qazuor/qzpay-mercadopago to ^2.2.0 in apps/api/package.json + packages/billing/package.json; pnpm install; verify the new cancel() provider-propagation is present (billing.subscriptions.cancel({cancelAtPeriodEnd}) now pauses/cancels the MP preapproval). Until this lands, the rest of the spec's code is identical but cancel does NOT pause MP (old behavior). Run a targeted build/typecheck to confirm the bump resolves.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [],
+            "tags": ["deps", "qzpay", "blocked"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": "pass",
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add USER_CANCELED + FINALIZE_CANCELLED_SUB billing event types",
+            "description": "packages/service-core/src/services/billing/constants.ts: add BILLING_EVENT_TYPES.USER_CANCELED and FINALIZE_CANCELLED_SUB (16 types today, none for user-cancel — realign finding 6). Events are written inline via db.insert(billingSubscriptionEvents) — no helper. Unit test: constants exported, values stable (the values are persisted in DB rows — treat as a contract).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-009"],
+            "subtasks": [],
+            "tags": ["service-core", "constants"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add HOSPEDA_USER_CANCEL_ENABLED feature flag (opt-in, default false)",
+            "description": "Realign finding 8: mirror HOSPEDA_ADDON_LIFECYCLE_ENABLED but OPT-IN default false: z.string().optional().transform(v => v === 'true'). Add to apps/api/src/utils/env.ts (ApiEnvBaseSchema), packages/config/src/env-registry.hospeda.ts (full metadata), apps/api/.env.example. Per the env-var workflow: STOP and tell owner to set it in Coolify after. Tests: env parse defaults false, 'true' enables; registry parity (pnpm env:check:registry).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["config", "env", "feature-flag"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": null,
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add SUBSCRIPTION_CANCEL_CONFIRMED notification type + template",
+            "description": "Q5 (owner): new NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED (TRANSACTIONAL) + template in packages/notifications/src/templates/subscription/ (follow subscription-cancelled.tsx structure; English copy; i18n per package conventions). Distinct from existing SUBSCRIPTION_CANCELLED (hard-cancel, webhook). Props: recipientName, planName, accessUntil (period_end date), baseUrl. Template render test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["notifications", "template"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "subscription-cancel.service.ts — soft-cancel (red-first)",
+            "description": "New service. softCancelSubscription({ subscriptionId, customerId, reason? }): lookup sub, call billing.subscriptions.cancel(id, {cancelAtPeriodEnd:true, reason}) (provider pause via the qzpay bump T-001 — automatic), WRITE cancelAtPeriodEnd=true LOCALLY (realign: qzpay-core cancel() does NOT touch that column, only canceledAt), status stays ACTIVE (no state-machine transition — INV-4: soft-cancel is a flag, not a status change), write USER_CANCELED event (triggerSource='user-cancel', metadata.reason + metadata.preapprovalPaused), clearEntitlementCache (INV-1), queue SUBSCRIPTION_CANCEL_CONFIRMED notification (fire-and-forget, void Promise.resolve(...).catch). Idempotent: second call on already-soft-cancelled sub = no-op. Concurrency: FOR UPDATE guard (mirror subscription-logic.ts:481-485). Red-first unit tests: happy path, idempotent no-op, cache cleared, event written, notification queued, provider error soft-handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-004"],
+            "blocks": ["T-006", "T-012"],
+            "subtasks": [],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T03:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire POST /subscriptions/:id/cancel for users (behind flag)",
+            "description": "Realign finding 9: use the :id route shape so billing-ownership.middleware applies. Open 'cancel' in billing-admin-guard.middleware.ts allowedSubPaths (currently only start-paid + change-plan) so non-admin actors reach it — BUT gate behind HOSPEDA_USER_CANCEL_ENABLED (flag off → 404/disabled). Wire to softCancelSubscription. Ownership verified by middleware (it does billing.subscriptions.get + customerId match for the :id shape). Response: 200 soft-cancel confirmed (status active, cancelAtPeriodEnd true, canceledAt set, accessUntil). Tests: 200 happy, 403 non-owner, flag-off disabled, admin still hard-cancels via its own hook path (unchanged).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["api", "routes", "middleware"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Patch webhook PAUSED collision (keep ACTIVE when cancelAtPeriodEnd=true)",
+            "description": "Realign finding (critical): pausing the MP preapproval makes MP emit subscription_preapproval.updated status='paused' → subscription-logic.ts:79 maps to local PAUSED, killing the grace period. Patch the webhook handler: when the local row already has cancelAtPeriodEnd=true (intentional soft-cancel pause), SKIP the PAUSED transition — leave status ACTIVE. Red-first regression: incoming paused webhook + local cancelAtPeriodEnd=true → stays ACTIVE; paused webhook + cancelAtPeriodEnd=false (real admin pause) → goes PAUSED (unchanged). Mind the FOR UPDATE lock already there.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["api", "webhook", "bugfix"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Gate change-plan + start-paid when soft-cancel pending (Q7)",
+            "description": "Q7 (owner): the cancel wins. When the sub has cancelAtPeriodEnd=true, reject change-plan and re-subscribe (start-paid) with a clear error (e.g. SUBSCRIPTION_CANCEL_PENDING) — the user must wait for finalize (uncancel not in V1). Find the plan-change route + start-paid route entry; add the guard early. Tests: change-plan on soft-cancelled sub → rejected with the code; normal sub → unaffected; provider-error mapping (SPEC-149) still intact on those routes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["api", "routes", "guard"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "finalize-cancelled-subs cron job (red-first)",
+            "description": "Realign findings 5+7: new cron apps/api/src/cron/jobs/finalize-cancelled-subs.ts. Slot 30 4 * * * (3 AM is occupied by 3 jobs). Query: billing_subscriptions WHERE status='active' AND cancelAtPeriodEnd=true AND current_period_end <= now(). Per sub: validateSubscriptionStatusTransition(active→cancelled) then flip (UK spelling 'cancelled'), revoke addons via handleSubscriptionCancellationAddons (webhook batch helper, NOT the strict admin one — realign 7), clearEntitlementCache, write FINALIZE_CANCELLED_SUB event. Idempotent per-sub dedup (TRIAL_BLOCKED pattern). Register in BOTH schedules.manifest.ts AND the cron registry (a parity test enforces it). result.success=false on per-sub failure → SPEC-149 bootstrap Sentry capture (automatic). Red-first unit tests: due sub finalized + addons revoked + cache cleared + event; not-yet-due skipped; idempotent re-run; manifest/registry parity.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["cron", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-09T04:53:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "D3 access-ending reminder notification + scheduling",
+            "description": "Q5 (owner): new NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON (TRANSACTIONAL) + template. Schedule it ~3 days before current_period_end for soft-cancelled subs. Mirror the TRIAL_PRE_END_NOTIF_D3 pattern (find how trial-expiry schedules/dedups D3). Decide home: a scan in the finalize cron (window query period_end in [now+3d, now+3d+1tick]) with per-sub dedup, OR extend an existing daily notification scan. Fire-and-forget soft send. Tests: D3 sent once per sub in window, dedup on re-run, NOT sent for non-cancelled subs.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-013"],
+            "subtasks": [],
+            "tags": ["notifications", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T05:00:00.000Z",
+                "completed": "2026-06-09T05:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "GET subscription response surfaces soft-cancel state",
+            "description": "user/protected/subscription.ts already reads cancelAtPeriodEnd (~:263). Ensure the GET response cleanly surfaces { cancelAtPeriodEnd, canceledAt, accessUntil } for the UI (SPEC-203) to render the cancel state + 'access ends' date. Minimal: verify the existing read returns the now-populated values; add canceledAt/accessUntil to the response schema if missing. Tests: soft-cancelled sub GET returns the flags; active sub returns false/null.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["api", "routes", "schemas"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "e2e: soft-cancel happy path + collision + gate",
+            "description": "New e2e apps/api/test/e2e/flows/billing/. Active sub → POST /cancel → status='active' + cancelAtPeriodEnd=true + canceledAt set + USER_CANCELED event + entitlements STILL load (no immediate access loss); mp-stub records the preapproval pause call (verify payload); the paused webhook arriving keeps status ACTIVE (T-007 collision); change-plan on the soft-cancelled sub is rejected (T-008); confirmation notification queued. Use billing-factories + mp-stub (SPEC-143). Needs T-001 bump for the real pause call shape.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-006", "T-007", "T-008", "T-011"],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["e2e", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "e2e: finalize cron + idempotency + D3",
+            "description": "Advance period_end → run finalize-cancelled-subs handler → status='cancelled' + addons revoked + entitlements gone + FINALIZE_CANCELLED_SUB event; second run is a no-op (idempotent); D3 reminder fires for a sub whose period_end is in the 3-day window. Mirror plan-downgrade-cron.test.ts harness (direct handler.handler(ctx) + makeCronCtx). Needs T-001 bump.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-009", "T-010"],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["e2e", "tests"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": null,
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Verification sweep (typecheck, biome, touched + consumer tests, e2e)",
+            "description": "Re-run everything touched + consumers of changed @repo/schemas/@repo/notifications/constants exports (lesson SPEC-145/149/167: 'green' files break on export changes). Per-package typecheck (api, schemas, service-core, notifications, config). biome on the diff. Every touched unit file sequentially. e2e: the 2 new files + plan-downgrade + monthly/annual checkout (only known pre-existing failures allowed). Rebuild stale dists before trusting typecheck (post-bump lesson). Confirm env:check:registry green.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [],
+            "tags": ["sweep", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": "2026-06-09T00:00:00.000Z",
+                "completed": "2026-06-09T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Adversarial fresh-context review + apply fixes",
+            "description": "Fresh-context review (opus) of the full diff. Hunt: webhook PAUSED collision holes (a paused webhook racing the cancel before cancelAtPeriodEnd is written → wrong PAUSED), idempotency (double cancel, finalize re-run, double webhook), the change-plan/start-paid gate bypass, entitlement cache not cleared on a path, notification PII, soft-cancel + past_due collision (sub goes past_due before period_end — what wins?), reactivation reset interplay (user pays again → cancelAtPeriodEnd cleared), addon revocation correctness in finalize, feature-flag leak (flag off but route reachable), SPEC-149 provider-error catch coherence on the new cancel call. Apply confirmed fixes via fix agent; re-run affected tests.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "tags": ["review", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Smoke entry #7 + PR to staging + CI + merge + closeout",
+            "description": "Billing CORE (cancel flow + cron + webhook) → register deferred smoke entry #7 in SPEC-193 pending-staging-smoke.md (PR number): real MP sandbox soft-cancel → preapproval paused (verify in MP) → access until period_end → finalize cron → cancelled + addons revoked → confirmation + D3 emails. ALSO note feature flag HOSPEDA_USER_CANCEL_ENABLED must be set in Coolify (owner). Resync origin/staging (keep-both index conflicts; rebuild dists). PR to staging, CI Pass SUCCESS gate, /usr/bin/git push + verify, gh pr merge --merge. Closeout: spec.md + both indexes completed+archived (sync rules), engram, ask owner OK for worktree cleanup. NOTE: feature flag stays OFF until SPEC-203 UI ships (Phase 3, separate spec) — backend ships dark.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["pr", "closeout", "smoke"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-09T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 16,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    },
+    "status": "completed"
+}

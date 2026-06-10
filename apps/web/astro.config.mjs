@@ -7,6 +7,7 @@ import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
+import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const appDir = resolve(new URL('.', import.meta.url).pathname);
@@ -111,45 +112,31 @@ export default defineConfig({
             : []),
         react(),
         sitemap({
-            filter: (page) => {
-                const excludePatterns = [
-                    '/auth/',
-                    '/mi-cuenta/',
-                    '/busqueda/',
-                    '/feedback/',
-                    '/beta/'
-                ];
-                return !excludePatterns.some((pattern) => page.includes(pattern));
-            },
+            // Exclude private/redirecting pages. The bare root `/` 301-redirects
+            // to `/es/` (listed separately), so it is excluded here too — keeping
+            // redirecting URLs out of the sitemap preserves crawl budget/trust
+            // (same rationale as the dynamic sitemap, SPEC-157 REQ-2).
+            filter: (page) => !isExcludedSitemapPage(new URL(page).pathname),
             // Inject hreflang alternates for each entry so search engines know
             // the three locales (es/en/pt) are translations of the same page.
             // Improves international SEO for the Argentina-Litoral market.
             // Skips XML paths (e.g. customPages-injected sitemap-of-sitemaps)
-            // since hreflang on a sitemap file is not meaningful.
+            // since hreflang on a sitemap file is not meaningful. The alternate
+            // set is built by a tested pure helper that mirrors the dynamic
+            // sitemap strategy (es carries /es, x-default -> /es, no doubled
+            // prefixes). SPEC-157 REQ-2/REQ-12.
             serialize(item) {
-                const siteUrl = HOSPEDA_SITE_URL.replace(/\/$/, '');
                 const url = new URL(item.url);
                 if (url.pathname.endsWith('.xml')) {
                     return item;
                 }
-                const localeMatch = url.pathname.match(/^\/(en|pt)(\/|$)/);
-                const pathWithoutLocale = localeMatch
-                    ? url.pathname.replace(/^\/(en|pt)/, '')
-                    : url.pathname;
-                const normalizedPath = pathWithoutLocale === '' ? '/' : pathWithoutLocale;
-                const links = [
-                    { lang: 'es', url: `${siteUrl}${normalizedPath}` },
-                    {
-                        lang: 'en',
-                        url: `${siteUrl}/en${normalizedPath === '/' ? '/' : normalizedPath}`
-                    },
-                    {
-                        lang: 'pt',
-                        url: `${siteUrl}/pt${normalizedPath === '/' ? '/' : normalizedPath}`
-                    },
-                    { lang: 'x-default', url: `${siteUrl}${normalizedPath}` }
-                ];
-                return { ...item, links };
+                return {
+                    ...item,
+                    links: buildSitemapAlternateLinks({
+                        pathname: url.pathname,
+                        siteUrl: HOSPEDA_SITE_URL
+                    })
+                };
             },
             // Include the dynamic sitemap (published entities × 3 locales) so
             // sitemap-index.xml lists it alongside the statically-generated sitemap.

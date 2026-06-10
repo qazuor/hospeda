@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-177",
+    "title": "Admin FAQ Management UI (Phase 2 of SPEC-158)",
+    "type": "feature",
+    "complexity": "high",
+    "status": "completed",
+    "created": "2026-06-01T00:00:00Z",
+    "approved": "2026-06-01T00:00:00Z",
+    "completed": "2026-06-02T07:22:56Z",
+    "planFileRef": null,
+    "tags": [
+        "faq",
+        "admin",
+        "destinations",
+        "accommodations",
+        "reorder",
+        "dnd",
+        "service-core",
+        "api",
+        "schemas",
+        "db-migration",
+        "phase-2",
+        "spec-158"
+    ]
+}

@@ -6,10 +6,11 @@
  *
  * API wiring implemented in T-048b.
  *
- * Trade-off (MVP scope): after creating a new collection via the sub-modal, the move modal
- * closes and the user must reopen it to see the new collection listed. Adding the new
- * collection inline to the radio list would require the parent to pass a refetch callback,
- * which adds coordination complexity outside this component's responsibility.
+ * Inline-create flow: when the user taps "+ Crear nueva colección" and saves the
+ * sub-modal, the bookmark is moved into the freshly created collection in the
+ * same gesture (see `handleCreateModalSaved`). The parent receives the new
+ * collection via `onSaved` and is expected to refetch its collections list so
+ * the next opening of the modal includes the new entry.
  *
  * Hydration: caller must use `client:load`.
  */
@@ -20,6 +21,7 @@ import {
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
+import { translateApiError } from '@/lib/api-errors';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
@@ -140,6 +142,82 @@ export function MoveToCollectionModal({
 
     // ── Save handler ──────────────────────────────────────────────────────
 
+    /**
+     * Persist the move from `currentCollectionId` to `targetCollectionId`.
+     * Handles the four transitions: no-op, add, remove, move. Returns true on
+     * success so callers can decide what to do next (toast, close, refresh).
+     *
+     * Extracted so both the "Save" button and the inline "create + auto-move"
+     * flow can share the API sequencing.
+     */
+    const moveBookmarkTo = useCallback(
+        async (targetCollectionId: string | null): Promise<boolean> => {
+            if (targetCollectionId === currentCollectionId) {
+                return true;
+            }
+
+            if (currentCollectionId === null && targetCollectionId !== null) {
+                const result = await userBookmarkCollectionsApi.addBookmark({
+                    collectionId: targetCollectionId,
+                    bookmarkId
+                });
+                if (!result.ok) {
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: result.error, t })
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            if (currentCollectionId !== null && targetCollectionId === null) {
+                const result = await userBookmarkCollectionsApi.removeBookmark({
+                    collectionId: currentCollectionId,
+                    bookmarkId
+                });
+                if (!result.ok) {
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: result.error, t })
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            if (currentCollectionId !== null && targetCollectionId !== null) {
+                // Move: remove from old, add to new (sequential — no atomic endpoint)
+                const removeResult = await userBookmarkCollectionsApi.removeBookmark({
+                    collectionId: currentCollectionId,
+                    bookmarkId
+                });
+                if (!removeResult.ok) {
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: removeResult.error, t })
+                    });
+                    return false;
+                }
+                const addResult = await userBookmarkCollectionsApi.addBookmark({
+                    collectionId: targetCollectionId,
+                    bookmarkId
+                });
+                if (!addResult.ok) {
+                    addToast({
+                        type: 'error',
+                        message: translateApiError({ error: addResult.error, t })
+                    });
+                    return false;
+                }
+                return true;
+            }
+
+            return true;
+        },
+        [currentCollectionId, bookmarkId, t]
+    );
+
     const handleSave = useCallback(async (): Promise<void> => {
         // Derive the selected collection id: __none__ maps to null
         const newCollectionId = selectedValue === NO_COLLECTION_VALUE ? null : selectedValue;
@@ -153,45 +231,8 @@ export function MoveToCollectionModal({
         setIsSubmitting(true);
 
         try {
-            if (currentCollectionId === null && newCollectionId !== null) {
-                // Add only
-                const result = await userBookmarkCollectionsApi.addBookmark({
-                    collectionId: newCollectionId,
-                    bookmarkId
-                });
-                if (!result.ok) {
-                    addToast({ type: 'error', message: result.error.message });
-                    return;
-                }
-            } else if (currentCollectionId !== null && newCollectionId === null) {
-                // Remove only
-                const result = await userBookmarkCollectionsApi.removeBookmark({
-                    collectionId: currentCollectionId,
-                    bookmarkId
-                });
-                if (!result.ok) {
-                    addToast({ type: 'error', message: result.error.message });
-                    return;
-                }
-            } else if (currentCollectionId !== null && newCollectionId !== null) {
-                // Move: remove from old, add to new (sequential — no atomic endpoint)
-                const removeResult = await userBookmarkCollectionsApi.removeBookmark({
-                    collectionId: currentCollectionId,
-                    bookmarkId
-                });
-                if (!removeResult.ok) {
-                    addToast({ type: 'error', message: removeResult.error.message });
-                    return;
-                }
-                const addResult = await userBookmarkCollectionsApi.addBookmark({
-                    collectionId: newCollectionId,
-                    bookmarkId
-                });
-                if (!addResult.ok) {
-                    addToast({ type: 'error', message: addResult.error.message });
-                    return;
-                }
-            }
+            const ok = await moveBookmarkTo(newCollectionId);
+            if (!ok) return;
 
             const newCollectionName =
                 newCollectionId === null
@@ -202,7 +243,7 @@ export function MoveToCollectionModal({
         } finally {
             setIsSubmitting(false);
         }
-    }, [selectedValue, currentCollectionId, bookmarkId, onSaved, onClose, collections]);
+    }, [selectedValue, currentCollectionId, moveBookmarkTo, onSaved, onClose, collections]);
 
     // ESC, focus trap, scroll lock, click outside, focus management — all
     // owned by the shared <Dialog> wrapper. Nothing to wire here.
@@ -219,13 +260,30 @@ export function MoveToCollectionModal({
         setIsCreateModalOpen(false);
     }
 
-    function handleCreateModalSaved(collection: { id: string; name: string }): void {
-        // Pre-select the newly created collection and close the sub-modal.
-        // The parent must reopen the move modal to see the new collection listed
-        // (see trade-off note in the file JSDoc).
-        setSelectedValue(collection.id);
-        setIsCreateModalOpen(false);
-    }
+    /**
+     * Called after the inline "+ Crear nueva colección" sub-modal saves a new
+     * collection. We auto-complete the move flow into that collection so the
+     * user does not have to reopen the parent modal and re-select.
+     */
+    const handleCreateModalSaved = useCallback(
+        async (collection: { id: string; name: string }): Promise<void> => {
+            // Close the create sub-modal first so the user sees the move land.
+            setIsCreateModalOpen(false);
+            setSelectedValue(collection.id);
+
+            setIsSubmitting(true);
+            try {
+                const ok = await moveBookmarkTo(collection.id);
+                if (!ok) return;
+
+                onSaved?.({ newCollectionId: collection.id, newCollectionName: collection.name });
+                onClose();
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [moveBookmarkTo, onSaved, onClose]
+    );
 
     // ── Derived labels ─────────────────────────────────────────────────────
 

@@ -17,6 +17,8 @@ import { getApiUrl } from '@/lib/env';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { CollectionBookmarkRemoveBtn } from '@/components/account/CollectionBookmarkRemoveBtn.client';
 import { CollectionDetailActions } from '@/components/account/CollectionDetailActions.client';
+import { EditableNote } from '@/components/account/EditableNote';
+import { ICON_OPTIONS } from '@/components/account/collection-picker-config';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -76,30 +78,42 @@ const { t, tPlural } = createTranslations(locale);
 // Server-side fetch: collection + paginated bookmarks
 // ---------------------------------------------------------------------------
 
+// Forward the user's session cookie to the protected API endpoint. Without
+// this, the SSR fetch carries no credentials and the API responds with 401,
+// which the page surfaces as the generic "no se pudo cargar" error.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
 const result = await userBookmarkCollectionsApi.getById({
 	id,
 	bookmarksPage: currentPage,
 	bookmarksPageSize: PAGE_SIZE,
-	entityType: activeEntityType
+	entityType: activeEntityType,
+	cookieHeader
 });
 
+// Treat 404 (collection doesn't exist) and 400 (id is not a valid UUID, i.e.
+// someone hit a manually-typed URL) the same way: redirect to the favorites
+// listing. We only render the error state below for 5xx or other unexpected
+// failures the user can actually retry.
 if (!result.ok) {
-	if (result.error.status === 404) {
-		webLogger.warn('[coleccion-detail] collection not found, redirecting', { id });
+	const status = result.error.status;
+	if (status === 404 || status === 400) {
+		webLogger.warn('[coleccion-detail] collection unavailable, redirecting', { id, status });
 		return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
 	}
 	webLogger.error('[coleccion-detail] failed to fetch collection', result.error);
 }
 
-const collectionData = result.ok ? result.data : null;
-const collection = collectionData?.collection ?? null;
-const bookmarksData = collectionData?.bookmarks ?? null;
+// The API inlines collection fields at the top level (no `collection` wrapper)
+// and exposes bookmarks via the standard `{ data, pagination }` envelope.
+const collection = result.ok ? result.data : null;
+const bookmarksData = collection?.bookmarks ?? null;
 
 // ---------------------------------------------------------------------------
 // Pagination helpers
 // ---------------------------------------------------------------------------
 
-const totalPages = bookmarksData ? Math.ceil(bookmarksData.total / PAGE_SIZE) : 0;
+const totalPages = bookmarksData?.pagination.totalPages ?? 0;
 
 /**
  * Build a URL for a specific page preserving the active entityType filter.
@@ -138,9 +152,20 @@ const pageTitle = collection
 	? t('account.favorites.collections.title', 'Colección') + ' · ' + collection.name
 	: t('account.favorites.collections.title', 'Colección');
 
+// Resolve the stored icon key (e.g. "star") back to its Phosphor component so
+// we render an SVG instead of the raw key text. Falls back to null when the
+// collection has no icon or the key is not in the curated set.
+const HeaderIcon = collection?.icon
+	? (ICON_OPTIONS.find((opt) => opt.key === collection.icon)?.Component ?? null)
+	: null;
+
+// The endpoint returns `bookmarkCount` only when `includeBookmarkCount` is set,
+// but it always returns `bookmarks.pagination.total` when we pass `includeBookmarks: true`.
+const totalBookmarks =
+	bookmarksData?.pagination.total ?? collection?.bookmarkCount ?? 0;
 const bookmarkCountLabel = collection
-	? tPlural('account.favorites.bookmarks.count', collection.bookmarkCount, {
-			count: collection.bookmarkCount
+	? tPlural('account.favorites.bookmarks.count', totalBookmarks, {
+			count: totalBookmarks
 		})
 	: null;
 
@@ -212,21 +237,25 @@ const apiBase = getApiUrl();
 	</nav>
 
 	<!-- ------------------------------------------------------------------ -->
-	<!-- Error state                                                          -->
+	<!-- Error state — only reached on 5xx or other unexpected failures.    -->
+	<!-- 404 / 400 are handled by the early redirect above.                  -->
 	<!-- ------------------------------------------------------------------ -->
 	{
-		!result.ok && result.error.status !== 404 && (
-			<div class="coleccion-error" role="alert">
-				<p class="coleccion-error__message">
+		!result.ok && (
+			<section class="coleccion-error" aria-labelledby="coleccion-error-title">
+				<h1 id="coleccion-error-title" class="coleccion-error__title">
+					{t('account.favorites.collections.errorTitle', 'No pudimos cargar la colección')}
+				</h1>
+				<p class="coleccion-error__message" role="alert">
 					{t(
 						'account.favorites.collections.fetchError',
-						'No se pudo cargar la colección. Intentá de nuevo más tarde.'
+						'Hubo un problema temporal al cargar esta colección. Probá de nuevo en unos minutos.'
 					)}
 				</p>
 				<a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="coleccion-error__back">
-					{t('common.back', 'Volver')}
+					{t('account.favorites.collections.backToList', 'Volver a mis favoritos')}
 				</a>
-			</div>
+			</section>
 		)
 	}
 
@@ -245,9 +274,9 @@ const apiBase = getApiUrl();
 							aria-hidden="true"
 						/>
 					)}
-					{collection.icon && (
+					{HeaderIcon && (
 						<span class="coleccion-header__icon" aria-hidden="true">
-							{collection.icon}
+							<HeaderIcon size={28} weight="duotone" />
 						</span>
 					)}
 				</div>
@@ -322,7 +351,7 @@ const apiBase = getApiUrl();
 				</nav>
 
 				<!-- Empty state when no bookmarks match the current filter -->
-				{bookmarksData && bookmarksData.rows.length === 0 && (
+				{bookmarksData && bookmarksData.data.length === 0 && (
 					<div class="coleccion-empty" role="status">
 						<p class="coleccion-empty__message">
 							{t(
@@ -334,35 +363,73 @@ const apiBase = getApiUrl();
 				)}
 
 				<!-- Bookmark grid -->
-				{bookmarksData && bookmarksData.rows.length > 0 && (
+				{bookmarksData && bookmarksData.data.length > 0 && (
 					<ul
 						class="coleccion-grid"
 						aria-label={t('account.favorites.listLabel', 'Mis favoritos')}
 					>
-						{bookmarksData.rows.map((bookmark) => {
-							const href = resolveEntityHref(bookmark.entityType, bookmark.entityId);
+						{bookmarksData.data.map((bookmark) => {
+							// Prefer the server-resolved slug for the entity detail link; fall
+							// back to entityId when enrichment couldn't resolve the entity.
+							const identifier = bookmark.entitySlug ?? bookmark.entityId;
+							const href = resolveEntityHref(bookmark.entityType, identifier);
 							const typeLabel =
 								entityTypeTabs.find((tab) => tab.key === bookmark.entityType)?.label ??
 								bookmark.entityType;
+							const displayTitle =
+								bookmark.name ??
+								bookmark.entityName ??
+								t('account.favorites.collections.no_collection', 'Sin título');
 							return (
 								<li class="coleccion-card">
-									<!-- Image placeholder (collection detail API does not return imageUrl) -->
-									<div class="coleccion-card__image" aria-hidden="true">
-										<div class="coleccion-card__image-placeholder">{typeLabel}</div>
+									<!-- Image: server-enriched featured image with type label fallback -->
+									<div class="coleccion-card__image">
+										{bookmark.entityImage ? (
+											<img
+												src={bookmark.entityImage}
+												alt={displayTitle}
+												class="coleccion-card__img"
+												loading="lazy"
+											/>
+										) : (
+											<div class="coleccion-card__image-placeholder" aria-hidden="true">
+												{typeLabel}
+											</div>
+										)}
 									</div>
 
-									<!-- Card body: name + type + optional note -->
+									<!-- Card body: name + type + inline note editor -->
 									<div class="coleccion-card__body">
 										<h3 class="coleccion-card__title">
 											<a href={href} class="coleccion-card__link">
-												{bookmark.name ??
-													t('account.favorites.collections.no_collection', 'Sin título')}
+												{displayTitle}
 											</a>
 										</h3>
 										<p class="coleccion-card__meta">{typeLabel}</p>
-										{bookmark.description && (
-											<p class="coleccion-card__note">{bookmark.description}</p>
-										)}
+										<EditableNote
+											client:visible
+											bookmarkId={bookmark.id}
+											initialValue={bookmark.description ?? null}
+											apiBase={apiBase}
+											placeholder={t(
+												'account.favorites.notes.placeholder',
+												'Agregá una nota personal...'
+											)}
+											saveLabel={t('account.favorites.notes.save', 'Guardar nota')}
+											cancelLabel={t('account.favorites.notes.cancel', 'Cancelar')}
+											textareaLabel={t(
+												'account.favorites.notes.placeholder',
+												'Agregá una nota personal...'
+											)}
+											editButtonLabel={t(
+												'account.favorites.notes.placeholder',
+												'Agregá una nota personal...'
+											)}
+											saveErrorMessage={t(
+												'account.favorites.errors.saveFailed',
+												'No se pudo guardar la nota'
+											)}
+										/>
 									</div>
 
 									<!-- Footer: remove from collection (React island) -->
@@ -373,7 +440,7 @@ const apiBase = getApiUrl();
 											bookmarkId={bookmark.id}
 											apiBase={apiBase}
 											locale={locale}
-											ariaLabel={`${t('account.favorites.collections.removeFromCollection', 'Quitar de colección')}: ${bookmark.name ?? ''}`}
+											ariaLabel={`${t('account.favorites.collections.removeFromCollection', 'Quitar de colección')}: ${displayTitle}`}
 										/>
 									</div>
 								</li>
@@ -499,10 +566,19 @@ const apiBase = getApiUrl();
 		text-align: center;
 	}
 
+	.coleccion-error__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+		color: var(--core-foreground);
+		margin: 0 0 var(--space-2) 0;
+		line-height: 1.2;
+	}
+
 	.coleccion-error__message {
 		font-family: var(--font-sans);
 		color: var(--core-muted-foreground);
-		margin-bottom: var(--space-4);
+		margin: 0 0 var(--space-4) 0;
 	}
 
 	.coleccion-error__back {
@@ -595,7 +671,7 @@ const apiBase = getApiUrl();
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* Filter tabs                                                          */
+	/* Filter tabs — matches UserFavoritesList underline style             */
 	/* ------------------------------------------------------------------ */
 	.coleccion-tabs {
 		overflow-x: auto;
@@ -604,43 +680,47 @@ const apiBase = getApiUrl();
 
 	.coleccion-tabs__list {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: var(--space-1);
+		gap: var(--space-2, 8px);
 		list-style: none;
 		padding: 0;
 		margin: 0;
+		border-bottom: 2px solid var(--border);
 		min-width: max-content;
 	}
 
 	.coleccion-tabs__btn {
 		display: inline-flex;
 		align-items: center;
-		padding: var(--space-2) var(--space-4);
+		gap: var(--space-2, 8px);
+		padding: var(--space-2, 8px) var(--space-4, 16px);
 		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		font-weight: 400;
+		font-size: 0.9375rem;
+		font-weight: 500;
 		color: var(--core-muted-foreground);
 		background-color: transparent;
-		border: 1px solid var(--border);
-		border-radius: var(--radius-pill);
+		border: none;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -2px;
 		text-decoration: none;
 		white-space: nowrap;
 		transition:
-			background-color var(--duration-fast) ease,
-			color var(--duration-fast) ease,
-			border-color var(--duration-fast) ease;
+			color var(--duration-normal, 0.4s) ease,
+			border-color var(--duration-normal, 0.4s) ease;
 	}
 
-	.coleccion-tabs__btn:hover {
-		background-color: var(--muted);
+	.coleccion-tabs__btn:hover:not(.coleccion-tabs__btn--active) {
+		background-color: transparent;
 		color: var(--core-foreground);
+		border-bottom-color: var(--border);
 	}
 
 	.coleccion-tabs__btn--active {
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: transparent;
 		color: var(--brand-primary);
-		border-color: oklch(from var(--brand-primary) l c h / 0.3);
-		font-weight: 500;
+		border-bottom-color: var(--brand-primary);
+		font-weight: 600;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -707,6 +787,12 @@ const apiBase = getApiUrl();
 	.coleccion-card__image {
 		aspect-ratio: 16 / 9;
 		overflow: hidden;
+	}
+
+	.coleccion-card__img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
 	}
 
 	.coleccion-card__image-placeholder {

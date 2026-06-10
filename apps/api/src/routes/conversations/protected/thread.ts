@@ -8,8 +8,13 @@
  * different user to avoid ID enumeration attacks.
  */
 
+import { AccommodationModel, ConversationModel, UserModel } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
+
+const accommodationModel = new AccommodationModel();
+const userModel = new UserModel();
+const conversationModel = new ConversationModel();
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -64,6 +69,28 @@ router.get('/:id', async (c) => {
 
         const query = parseResult.data;
         const actor = getActorFromContext(c);
+
+        // SECURITY (write-IDOR): validate ownership BEFORE getThread runs its
+        // read-receipt + notification-cancel side effects. Unlike the owner
+        // route, the guest route CANNOT pass the real actor to getThread,
+        // because the USER role does NOT hold CONVERSATION_VIEW_OWN (see
+        // rolePermissions.seed.ts) — checkCanViewConversation would reject the
+        // legitimate owner. So we gate explicitly on conversation.userId here
+        // and keep SYSTEM_ACTOR for the read. A foreign/non-existent
+        // conversationId collapses to 404 (anti-enumeration) with no side
+        // effect run.
+        const existing = await conversationModel.findById(conversationId);
+        if (!existing || existing.userId !== actor.id) {
+            return createErrorResponse(
+                {
+                    code: ServiceErrorCode.NOT_FOUND,
+                    message: 'Conversation not found',
+                    reason: 'CONVERSATION_NOT_FOUND'
+                },
+                c,
+                404
+            );
+        }
 
         const conversationSvc = new ConversationService(
             { logger: apiLogger },
@@ -126,11 +153,35 @@ router.get('/:id', async (c) => {
             );
         }
 
+        // Enrich the conversation with the accommodation's display name + slug
+        // and the property owner's display name. The web thread page renders
+        // them in the header ("Conversación con {ownerName}", breadcrumb to
+        // the accommodation), and surfacing them here keeps that page free
+        // of an extra round trip.
+        const accommodation = (conversation as { accommodationId: string }).accommodationId
+            ? await accommodationModel.findById(
+                  (conversation as { accommodationId: string }).accommodationId
+              )
+            : null;
+        const owner =
+            accommodation && (accommodation as { ownerId?: string }).ownerId
+                ? await userModel.findById((accommodation as { ownerId: string }).ownerId)
+                : null;
+        const enrichedConversation = {
+            ...conversation,
+            accommodationName: (accommodation as { name?: string } | null)?.name ?? null,
+            accommodationSlug: (accommodation as { slug?: string } | null)?.slug ?? null,
+            ownerName:
+                (owner as { displayName?: string } | null)?.displayName ??
+                (owner as { firstName?: string } | null)?.firstName ??
+                null
+        };
+
         // Build nextCursor from the oldest message's createdAt when there are older pages
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
-        return createResponse({ conversation, messages, nextCursor }, c, 200);
+        return createResponse({ conversation: enrichedConversation, messages, nextCursor }, c, 200);
     } catch (error) {
         return handleRouteError(error, c);
     }

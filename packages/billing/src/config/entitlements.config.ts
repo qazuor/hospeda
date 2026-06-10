@@ -1,7 +1,40 @@
+/**
+ * Structural entitlement definitions for the Hospeda billing system.
+ *
+ * ---
+ * STRUCTURAL DEFINITION — CODE-LEVEL ONLY (SPEC-192 T-030 / ADR-030)
+ *
+ * `ENTITLEMENT_DEFINITIONS` is NOT DB-backed and is intentionally NOT part of
+ * the billing catalog that was migrated to the database in SPEC-168 / SPEC-192.
+ *
+ * It is tightly coupled to the `EntitlementKey` TypeScript enum. Adding or
+ * removing an entitlement requires a code change, a PR, and a deploy — the
+ * enum is the source of truth, and this array is its human-readable companion.
+ *
+ * Rationale:
+ *   - Entitlement keys appear in TypeScript generics, permission checks, and
+ *     middleware type signatures. A DB-only registry would lose compile-time
+ *     exhaustiveness guarantees.
+ *   - The seeder (`packages/seed/src/required/billingEntitlements.seed.ts`)
+ *     reads this array to populate the `billing_entitlements` lookup table, but
+ *     that table is a reflection of this file — not an independent source.
+ *
+ * Consumers:
+ *   - Seed package (divergence-respecting, never overwrites runtime edits)
+ *   - Admin UI (display-only, plan editor entitlement picker)
+ *   - Web app i18n helper (`@repo/billing` import in `billing-i18n.ts`)
+ * ---
+ *
+ * @module config/entitlements
+ */
+
 import { type EntitlementDefinition, EntitlementKey } from '../types/entitlement.types.js';
 
 /**
- * All entitlement definitions for the Hospeda billing system
+ * All structural entitlement definitions for the Hospeda billing system.
+ *
+ * This is a code-level structural definition coupled to `EntitlementKey`.
+ * See module JSDoc banner above for scope constraints.
  */
 export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
     // Owner entitlements
@@ -207,5 +240,30 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
         name: 'Personalized recommendations',
         description: 'Access to personalized accommodation recommendations based on preferences'
+    },
+    // AI feature entitlements (SPEC-173)
+    {
+        key: EntitlementKey.AI_TEXT_IMPROVE,
+        name: 'AI text improvement',
+        description:
+            'Access to the AI-powered text improvement tool for enhancing accommodation descriptions and other content'
+    },
+    {
+        key: EntitlementKey.AI_CHAT,
+        name: 'AI chat assistant',
+        description:
+            'Access to the AI chat assistant for travel planning, accommodation recommendations, and general queries'
+    },
+    {
+        key: EntitlementKey.AI_SEARCH,
+        name: 'AI-powered search',
+        description:
+            'Access to AI-powered semantic search for finding the most relevant accommodations'
+    },
+    {
+        key: EntitlementKey.AI_SUPPORT,
+        name: 'AI support assistant',
+        description:
+            'Access to the AI-powered support assistant for platform help and troubleshooting'
     }
 ];

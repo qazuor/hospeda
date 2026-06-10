@@ -32,19 +32,18 @@ ARG PUBLIC_API_URL=https://api.placeholder.local
 ARG PUBLIC_SITE_URL=https://placeholder.local
 ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
 # HOSPEDA_GIT_SHA + PUBLIC_SENTRY_RELEASE drive the Sentry release tag baked
-# into the client bundle. The build-time resolution chain is:
-#   1. Explicit --build-arg from Coolify (manual override, if set).
-#   2. Fallback: read .git/HEAD from the build context. Coolify clones in
-#      detached HEAD via `git checkout <sha>`, so HEAD contains a literal
-#      40-char SHA. The repo's .dockerignore whitelists `.git/HEAD`
-#      specifically so this file reaches the builder.
-#   3. Last resort: empty string. The downstream `|| 'development'` chain
-#      in apps/web/sentry.client.config.ts absorbs that case.
-# We resolve in a single RUN so the resulting env vars are visible to
-# `astro build` (Astro reads `import.meta.env.PUBLIC_*` from the process
-# environment at build time). Exporting in a prior RUN would not persist.
-ARG HOSPEDA_GIT_SHA
-ARG PUBLIC_SENTRY_RELEASE
+# into the client bundle. The default-value chain points back to SOURCE_COMMIT,
+# which Coolify auto-injects as a build-arg ONLY when the application has
+# "Include Source Commit in Build" enabled in its General settings. With that
+# toggle on, every deploy gets a unique Sentry release; with it off, all of
+# these resolve to empty and the downstream `|| 'development'` chain in
+# apps/web/sentry.client.config.ts takes over.
+# See https://coolify.io/docs/applications/build-packs/dockerfile (SOURCE_COMMIT
+# section) for the rationale on why the toggle is off by default (Docker build
+# cache invalidation on every commit).
+ARG SOURCE_COMMIT
+ARG HOSPEDA_GIT_SHA=${SOURCE_COMMIT}
+ARG PUBLIC_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ARG PUBLIC_SENTRY_ENVIRONMENT
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
@@ -52,14 +51,14 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_API_URL=$PUBLIC_API_URL \
     PUBLIC_SITE_URL=$PUBLIC_SITE_URL \
     PUBLIC_ADMIN_URL=$PUBLIC_ADMIN_URL \
-    PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT
+    PUBLIC_SENTRY_RELEASE=$PUBLIC_SENTRY_RELEASE \
+    PUBLIC_SENTRY_ENVIRONMENT=$PUBLIC_SENTRY_ENVIRONMENT \
+    HOSPEDA_GIT_SHA=$HOSPEDA_GIT_SHA
 COPY --from=deps /repo /repo
-COPY .git/HEAD /tmp/git-head
-RUN HOSPEDA_GIT_SHA="${HOSPEDA_GIT_SHA:-$(tr -d '[:space:]' < /tmp/git-head 2>/dev/null || true)}" && \
-    PUBLIC_SENTRY_RELEASE="${PUBLIC_SENTRY_RELEASE:-$HOSPEDA_GIT_SHA}" && \
-    export HOSPEDA_GIT_SHA PUBLIC_SENTRY_RELEASE && \
-    echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
-    pnpm turbo run build --filter=hospeda-web
+# --concurrency=1: sequential package builds to cap memory peak on the 3.8 GB
+# Coolify VPS (see apps/admin/Dockerfile for the 2026-06-06 incident rationale).
+RUN echo "[build] Sentry release: ${PUBLIC_SENTRY_RELEASE:-(empty, falling back to 'development' in code)}" && \
+    pnpm turbo run build --filter=hospeda-web --concurrency=1
 
 # ----- prune stage -----------------------------------------------------------
 # `pnpm deploy` resolves workspace deps as real packages and ships only prod
@@ -85,6 +84,7 @@ ENV HOST=0.0.0.0
 ENV PORT=4321
 # curl is required for Coolify/Traefik healthcheck probes inside the container.
 RUN apk add --no-cache curl
-COPY --from=pruned /prod/web ./
+COPY --chown=node:node --from=pruned /prod/web ./
+USER node
 EXPOSE 4321
 CMD ["node", "dist/server/entry.mjs"]

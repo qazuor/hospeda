@@ -8,12 +8,13 @@
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, StarIcon } from '@repo/icons';
+import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, SparkleIcon, StarIcon } from '@repo/icons';
 import type { GetStaticPaths } from 'astro';
 
 interface BenefitDefinition {
@@ -100,62 +101,24 @@ const faqJsonLd = {
 	<JsonLd slot="head-extra" data={faqJsonLd} />
 
 	<!-- Hero -->
-	<section class="owners-hero section section--warm">
-		<div class="owners-hero__container">
-			<div class="owners-hero__text" data-reveal="up">
-				<p class="owners-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
-				<h1 class="owners-hero__title">
-					{heroHeadingMain && <>{heroHeadingMain}{' '}</>}
-					<span class="owners-hero__title-accent">
-						{heroHeadingAccent}
-						<svg
-							class="owners-hero__title-underline"
-							viewBox="0 0 200 18"
-							preserveAspectRatio="none"
-							aria-hidden="true"
-						>
-							<path
-								d="M 4 12 Q 50 2, 100 10 T 196 8"
-								stroke="currentColor"
-								stroke-width="4"
-								stroke-linecap="round"
-								fill="none"
-							/>
-						</svg>
-					</span>
-				</h1>
-				<p class="owners-hero__desc">
-					{t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
-				</p>
-				<GradientButton
-					href={buildUrl({ locale, path: 'auth/signup' })}
-					label={t('owners.hero.cta', 'Empezar ahora')}
-					variant="primary"
-					icon="true"
-				/>
-			</div>
-			<div class="owners-hero__image" data-reveal="scale" aria-hidden="true">
-				<div class="owners-hero__image-blob"></div>
-				<img
-					src="/assets/images/shapes/hero-icon-hotel.svg"
-					alt=""
-					class="owners-hero__image-illustration"
-					loading="eager"
-					width="520"
-					height="420"
-				/>
-				<span class="owners-hero__shape owners-hero__shape--star">
-					<StarIcon size={88} weight="duotone" />
-				</span>
-				<span class="owners-hero__badge owners-hero__badge--home">
-					<HomeIcon size="sm" weight="duotone" />
-				</span>
-				<span class="owners-hero__dot owners-hero__dot--1"></span>
-				<span class="owners-hero__dot owners-hero__dot--2"></span>
-				<span class="owners-hero__dot owners-hero__dot--3"></span>
-			</div>
-		</div>
-	</section>
+	<MarketingHero
+		tagline={t('owners.hero.tagline', 'Para propietarios')}
+		titleMain={heroHeadingMain}
+		titleAccent={heroHeadingAccent}
+		subtitle={t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
+	>
+		<Fragment slot="icon-1"><HomeIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><SparkleIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="cta">
+			<GradientButton
+				href={buildUrl({ locale, path: 'auth/signup' })}
+				label={t('owners.hero.cta', 'Empezar ahora')}
+				variant="primary"
+				icon="true"
+			/>
+		</Fragment>
+	</MarketingHero>
 
 	<!-- Benefits -->
 	<section class="owners-benefits section">
@@ -289,190 +252,6 @@ const faqJsonLd = {
 </MarketingLayout>
 
 <style>
-	/* Hero */
-	.owners-hero__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: var(--space-8);
-		align-items: center;
-	}
-
-	.owners-hero__tagline {
-		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-		color: var(--brand-accent);
-		font-style: italic;
-		margin: 0 0 var(--space-2);
-	}
-
-	.owners-hero__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.75rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
-		line-height: 1.2;
-	}
-
-	.owners-hero__desc {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		line-height: 1.6;
-		margin: 0 0 var(--space-6);
-	}
-
-	.owners-hero__title-accent {
-		position: relative;
-		display: inline-block;
-	}
-
-	.owners-hero__title-underline {
-		position: absolute;
-		left: -3%;
-		right: -3%;
-		bottom: -0.08em;
-		width: 106%;
-		height: 0.32em;
-		color: var(--brand-accent);
-		opacity: 0.75;
-		pointer-events: none;
-	}
-
-	.owners-hero__image {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.owners-hero__image-blob {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: clamp(280px, 38vw, 520px);
-		height: clamp(280px, 38vw, 520px);
-		border-radius: 50%;
-		background: radial-gradient(
-			circle at 40% 40%,
-			oklch(from var(--brand-primary) l c h / 0.18),
-			oklch(from var(--brand-accent) l c h / 0.08) 55%,
-			transparent 75%
-		);
-		filter: blur(2px);
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.owners-hero__image-illustration {
-		position: relative;
-		z-index: 1;
-		width: 100%;
-		max-width: 520px;
-		height: auto;
-		filter: drop-shadow(0 12px 32px oklch(from var(--brand-primary) l c h / 0.15));
-	}
-
-	/* Shape: large decorative icon, no pill, low opacity. Acts as ambient art. */
-	.owners-hero__shape {
-		position: absolute;
-		z-index: 2;
-		display: inline-flex;
-		pointer-events: none;
-		animation: owners-hero-float-slow 8s ease-in-out infinite;
-	}
-
-	.owners-hero__shape--star {
-		top: 4%;
-		left: -2%;
-		color: var(--brand-accent);
-		opacity: 0.4;
-		transform: rotate(-15deg);
-		animation-delay: 0s;
-	}
-
-	/* Badge: small icon inside a card-style pill with shadow. Acts as a featured spotlight. */
-	.owners-hero__badge {
-		position: absolute;
-		z-index: 3;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 48px;
-		height: 48px;
-		border-radius: 50%;
-		background-color: var(--core-card);
-		box-shadow: var(--shadow-card);
-		animation: owners-hero-float 6s ease-in-out infinite;
-	}
-
-	.owners-hero__badge--home {
-		bottom: 12%;
-		right: 4%;
-		color: var(--brand-primary);
-		animation-delay: 1.5s;
-	}
-
-	/* Dots: tiny ambient circles distributed around the hero. */
-	.owners-hero__dot {
-		position: absolute;
-		z-index: 2;
-		border-radius: 50%;
-		background-color: oklch(from var(--brand-primary) l c h / 0.25);
-		pointer-events: none;
-	}
-
-	.owners-hero__dot--1 {
-		top: 30%;
-		right: 12%;
-		width: 10px;
-		height: 10px;
-	}
-
-	.owners-hero__dot--2 {
-		bottom: 28%;
-		left: 8%;
-		width: 14px;
-		height: 14px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
-	}
-
-	.owners-hero__dot--3 {
-		top: 60%;
-		right: 28%;
-		width: 8px;
-		height: 8px;
-	}
-
-	@keyframes owners-hero-float {
-		0%, 100% {
-			transform: translateY(0);
-		}
-		50% {
-			transform: translateY(-10px);
-		}
-	}
-
-	@keyframes owners-hero-float-slow {
-		0%, 100% {
-			transform: rotate(-15deg) translateY(0);
-		}
-		50% {
-			transform: rotate(-15deg) translateY(-14px);
-		}
-	}
-
-	@media (max-width: 900px) {
-		.owners-hero__shape,
-		.owners-hero__badge,
-		.owners-hero__dot {
-			display: none;
-		}
-	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.owners-hero__shape,
@@ -542,7 +321,7 @@ const faqJsonLd = {
 		width: 56px;
 		height: 56px;
 		border-radius: var(--radius-md);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		margin-bottom: var(--space-4);
 	}
@@ -574,7 +353,7 @@ const faqJsonLd = {
 		font-family: var(--font-heading);
 		font-size: clamp(2rem, 4vw, 3rem);
 		font-weight: 700;
-		color: oklch(from var(--brand-primary) l c h / 0.2);
+		color: var(--brand-primary-a20);
 		display: block;
 		margin-bottom: var(--space-3);
 	}
@@ -658,7 +437,7 @@ const faqJsonLd = {
 		padding: 0 var(--space-container-x);
 	}
 
-	.owners-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+	.owners-cta__tagline { color: var(--brand-accent-a80); }
 
 	.owners-cta__title {
 		color: var(--surface-dark-foreground);
@@ -668,7 +447,7 @@ const faqJsonLd = {
 	.owners-cta__desc {
 		font-family: var(--font-sans);
 		font-size: var(--text-body-lg);
-		color: oklch(from var(--surface-dark-foreground) l c h / 0.75);
+		color: var(--surface-dark-foreground-a75);
 		max-width: 55ch;
 		margin: 0 auto var(--space-6);
 		line-height: 1.6;
@@ -717,7 +496,7 @@ const faqJsonLd = {
 		left: 8%;
 		width: 10px;
 		height: 10px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.25);
+		background-color: var(--brand-primary-a25);
 	}
 
 	.owners-benefits__dot--2 {
@@ -725,7 +504,7 @@ const faqJsonLd = {
 		right: 12%;
 		width: 14px;
 		height: 14px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 
 	.owners-benefits__dot--3 {
@@ -733,7 +512,7 @@ const faqJsonLd = {
 		left: 18%;
 		width: 8px;
 		height: 8px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.3);
+		background-color: var(--brand-primary-a30);
 	}
 
 	.owners-benefits__dot--4 {
@@ -741,7 +520,7 @@ const faqJsonLd = {
 		right: 22%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+		background-color: var(--brand-accent-a20);
 	}
 
 	.owners-benefits__container {
@@ -825,8 +604,8 @@ const faqJsonLd = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 50% 50%,
-			oklch(from var(--brand-accent) l c h / 0.22),
-			oklch(from var(--brand-primary) l c h / 0.12) 55%,
+			var(--brand-accent-a20),
+			var(--brand-primary-a12) 55%,
 			transparent 75%
 		);
 		filter: blur(4px);

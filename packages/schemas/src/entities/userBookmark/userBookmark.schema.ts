@@ -38,16 +38,11 @@ export const UserBookmarkSchema = z.object({
         .uuid({ message: 'zodError.userBookmark.collectionId.invalidUuid' })
         .nullable()
         .optional(),
-    name: z
-        .string()
-        .min(3, { message: 'zodError.userBookmark.name.min' })
-        .max(100, { message: 'zodError.userBookmark.name.max' })
-        .nullish(),
-    description: z
-        .string()
-        .min(10, { message: 'zodError.userBookmark.description.min' })
-        .max(300, { message: 'zodError.userBookmark.description.max' })
-        .nullish()
+    // Note: min length removed to match UserBookmarkUpdateNotesSchema (request side).
+    // Without this, short notes saved via the inline editor pass request validation
+    // but fail response validation, leaving a poison pill that breaks subsequent reads.
+    name: z.string().max(100, { message: 'zodError.userBookmark.name.max' }).nullish(),
+    description: z.string().max(300, { message: 'zodError.userBookmark.description.max' }).nullish()
 });
 
 /**

@@ -3,7 +3,6 @@
  * Returns aggregated statistics for the authenticated user.
  * @route GET /api/v1/protected/users/me/stats
  */
-import { getPlanBySlug } from '@repo/billing';
 import { and, billingCustomers, billingSubscriptions, desc, eq, getDb, or } from '@repo/db';
 import {
     AccommodationReviewService,
@@ -13,9 +12,13 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { PlanService } from '../../../services/plan.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+
+/** Module-level PlanService singleton for plan name resolution */
+const planService = new PlanService();
 
 const bookmarkService = new UserBookmarkService({ logger: apiLogger });
 const accommodationReviewService = new AccommodationReviewService({ logger: apiLogger });
@@ -118,9 +121,12 @@ export const userStatsRoute = createProtectedRoute({
                     .limit(1);
 
                 if (subscription) {
-                    /** Resolve plan name from billing config using planId as slug */
-                    const planDefinition = getPlanBySlug(subscription.planId);
-                    const planName = planDefinition?.name ?? subscription.planId;
+                    /** Resolve plan name from DB via PlanService (SPEC-192 FR-4).
+                     *  Falls back to planId when NOT_FOUND — same behavior as before. */
+                    const planResult = await planService.getBySlug(subscription.planId);
+                    const planName = planResult.success
+                        ? planResult.data.name
+                        : subscription.planId;
 
                     plan = { name: planName, status: subscription.status };
                 }

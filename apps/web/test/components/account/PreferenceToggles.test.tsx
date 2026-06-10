@@ -141,7 +141,7 @@ describe('PreferenceToggles', () => {
         globalThis.fetch = buildGetMock();
         renderToggles();
         await waitFor(() => {
-            const checkbox = screen.getByRole('checkbox', { name: /newsletter de hospeda/i });
+            const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
             expect(checkbox).not.toBeChecked();
         });
     });
@@ -179,9 +179,9 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /newsletter de hospeda/i }));
+        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
 
-        const checkbox = screen.getByRole('checkbox', { name: /newsletter de hospeda/i });
+        const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
         fireEvent.click(checkbox);
 
         await waitFor(() => {
@@ -211,9 +211,9 @@ describe('PreferenceToggles', () => {
         });
 
         renderToggles();
-        await waitFor(() => screen.getByRole('checkbox', { name: /newsletter de hospeda/i }));
+        await waitFor(() => screen.getByRole('checkbox', { name: /recibir el bolet.n/i }));
 
-        const checkbox = screen.getByRole('checkbox', { name: /newsletter de hospeda/i });
+        const checkbox = screen.getByRole('checkbox', { name: /recibir el bolet.n/i });
         fireEvent.click(checkbox);
 
         await waitFor(() => {

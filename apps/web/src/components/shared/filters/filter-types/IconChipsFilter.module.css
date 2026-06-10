@@ -8,9 +8,9 @@
     align-items: center;
     gap: 0.375rem;
     padding: 0.375rem 0.625rem;
-    background-color: oklch(from var(--core-foreground) l c h / 0.04);
+    background-color: var(--core-foreground-a05);
     color: var(--core-muted-foreground);
-    border: 1px solid oklch(from var(--border) l c h / 0.6);
+    border: 1px solid var(--border-a60);
     border-radius: var(--radius-pill);
     font-family: var(--font-sans);
     font-size: 0.6875rem;
@@ -22,21 +22,21 @@
 }
 
 .iconChip:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
-    border-color: oklch(from var(--brand-primary) l c h / 0.2);
+    background-color: var(--brand-primary-a05);
+    border-color: var(--brand-primary-a20);
     color: var(--brand-primary);
 }
 
 .iconChipActive {
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    background-color: var(--brand-primary-a10);
     color: var(--brand-primary);
-    border-color: oklch(from var(--brand-primary) l c h / 0.25);
+    border-color: var(--brand-primary-a25);
     font-weight: 600;
 }
 
 .iconChipActive:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.15);
-    border-color: oklch(from var(--brand-primary) l c h / 0.35);
+    background-color: var(--brand-primary-a15);
+    border-color: var(--brand-primary-a35);
 }
 
 .iconChipIcon {
@@ -59,7 +59,7 @@
     gap: 0.25rem;
     padding: 0.375rem 0.625rem;
     background: none;
-    border: 1px dashed oklch(from var(--border) l c h / 0.6);
+    border: 1px dashed var(--border-a60);
     border-radius: var(--radius-pill);
     font-family: var(--font-sans);
     font-size: 0.6875rem;
@@ -70,8 +70,8 @@
 }
 
 .showMoreBtn:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.04);
-    border-color: oklch(from var(--brand-primary) l c h / 0.3);
+    background-color: var(--brand-primary-a05);
+    border-color: var(--brand-primary-a30);
 }
 
 /* Search input rendered inside the dialog header. */
@@ -93,7 +93,7 @@
 
 .searchInput:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+    box-shadow: 0 0 0 3px var(--brand-primary-a10);
     outline: none;
 }
 
@@ -139,7 +139,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
+    border-bottom: 1px solid var(--border-a50);
     flex-shrink: 0;
 }
 
@@ -175,7 +175,7 @@
 
 .iconChipsDialogSearch {
     padding: 0.75rem 1.25rem;
-    border-bottom: 1px solid oklch(from var(--border) l c h / 0.3);
+    border-bottom: 1px solid var(--border-a30);
     flex-shrink: 0;
 }
 

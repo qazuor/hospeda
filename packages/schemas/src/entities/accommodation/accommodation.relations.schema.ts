@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { createAverageRatingField } from '../../common/helpers.schema.js';
+import { i18nText } from '../../common/i18n.schema.js';
 import { DestinationSummarySchema } from '../destination/destination.query.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
@@ -68,7 +69,7 @@ const ReviewSummarySchema = z.object({
 const FeatureSummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.string(),
+    name: i18nText({ min: 2, max: 100 }),
     description: z.string().optional(),
     icon: z.string().optional(),
     category: z.string().optional()
@@ -81,7 +82,7 @@ const FeatureSummarySchema = z.object({
 const AmenitySummarySchema = z.object({
     id: z.string().uuid(),
     slug: z.string(),
-    name: z.string(),
+    name: i18nText({ min: 2, max: 100 }),
     description: z.string().optional(),
     icon: z.string().optional(),
     category: z.string().optional()
@@ -122,24 +123,16 @@ export type AccommodationWithReviews = z.infer<typeof AccommodationWithReviewsSc
 
 /**
  * Accommodation with features
- * Includes an array of related features with additional info
+ * Includes an array of related features with junction data.
+ *
+ * NOTE: r_accommodation_feature only carries hostReWriteName and comments.
+ * There are NO isOptional / additionalCost / additionalCostPercent columns on
+ * this junction (those exist only on r_accommodation_amenity). Do not add
+ * phantom junction fields here — hostReWriteName/comments are intentionally
+ * not exposed in the read schema yet (pending SPEC-172 Phase 3).
  */
 export const AccommodationWithFeaturesSchema = AccommodationSchema.extend({
-    features: z
-        .array(
-            FeatureSummarySchema.extend({
-                // Additional fields specific to accommodation-feature relation
-                isOptional: z.boolean().optional(),
-                additionalCost: z
-                    .object({
-                        amount: z.number().min(0),
-                        currency: z.string()
-                    })
-                    .optional(),
-                additionalCostPercent: z.number().min(0).max(100).optional()
-            })
-        )
-        .optional()
+    features: z.array(FeatureSummarySchema).optional()
 });
 export type AccommodationWithFeatures = z.infer<typeof AccommodationWithFeaturesSchema>;
 
@@ -178,23 +171,15 @@ export type AccommodationWithBasicRelations = z.infer<typeof AccommodationWithBa
 
 /**
  * Accommodation with content relations
- * Includes features, amenities, and reviews
+ * Includes features, amenities, and reviews.
+ *
+ * NOTE: r_accommodation_feature carries only hostReWriteName/comments (no
+ * isOptional / additionalCost / additionalCostPercent). Those three fields
+ * only exist on r_accommodation_amenity and are kept there intentionally.
  */
 export const AccommodationWithContentRelationsSchema = AccommodationSchema.extend({
-    features: z
-        .array(
-            FeatureSummarySchema.extend({
-                isOptional: z.boolean().optional(),
-                additionalCost: z
-                    .object({
-                        amount: z.number().min(0),
-                        currency: z.string()
-                    })
-                    .optional(),
-                additionalCostPercent: z.number().min(0).max(100).optional()
-            })
-        )
-        .optional(),
+    // r_accommodation_feature: no pricing phantom fields — see NOTE above
+    features: z.array(FeatureSummarySchema).optional(),
     amenities: z
         .array(
             AmenitySummarySchema.extend({
@@ -219,28 +204,19 @@ export type AccommodationWithContentRelations = z.infer<
 
 /**
  * Accommodation with all relations
- * Includes all possible related entities
+ * Includes all possible related entities.
+ *
+ * NOTE: r_accommodation_feature carries only hostReWriteName/comments (no
+ * isOptional / additionalCost / additionalCostPercent). Those three fields
+ * only exist on r_accommodation_amenity and are kept there intentionally.
  */
 export const AccommodationWithFullRelationsSchema = AccommodationSchema.extend({
     // Basic relations
     destination: DestinationSummarySchema.optional(),
     owner: UserSummarySchema.optional(),
 
-    // Content relations
-    features: z
-        .array(
-            FeatureSummarySchema.extend({
-                isOptional: z.boolean().optional(),
-                additionalCost: z
-                    .object({
-                        amount: z.number().min(0),
-                        currency: z.string()
-                    })
-                    .optional(),
-                additionalCostPercent: z.number().min(0).max(100).optional()
-            })
-        )
-        .optional(),
+    // Content relations — r_accommodation_feature: no pricing phantom fields
+    features: z.array(FeatureSummarySchema).optional(),
     amenities: z
         .array(
             AmenitySummarySchema.extend({

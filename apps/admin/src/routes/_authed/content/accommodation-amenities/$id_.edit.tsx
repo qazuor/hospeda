@@ -33,7 +33,10 @@ function AmenityEditPage() {
                 entityData={entityData}
                 zodSchema={AmenityUpdateInputSchema}
             >
-                <EntityEditContent entityType="amenity" />
+                <EntityEditContent
+                    entityType="amenity"
+                    flat
+                />
             </EntityPageBase>
         </RoutePermissionGuard>
     );

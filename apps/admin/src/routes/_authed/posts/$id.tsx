@@ -7,6 +7,7 @@
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, postTabs } from '@/components/layout/PageTabs';
+import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { createFileRoute } from '@tanstack/react-router';
@@ -35,6 +36,7 @@ function PostViewPage() {
                 entityId={id}
                 initialMode="view"
                 entityData={entityData}
+                qualityScore={({ isReduced }) => <PostQualityScore compact={isReduced} />}
             >
                 <EntityViewContent
                     entityType="post"

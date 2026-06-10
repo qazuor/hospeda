@@ -63,7 +63,7 @@ describe('StepBasic', () => {
     });
 
     it('should expose the correct button labels from FEEDBACK_STRINGS', () => {
-        expect(FEEDBACK_STRINGS.buttons.addDetails).toBe('Agregar mas detalles');
+        expect(FEEDBACK_STRINGS.buttons.addDetails).toBe('Agregar más detalles');
         expect(FEEDBACK_STRINGS.buttons.submit).toBe('Enviar');
     });
 

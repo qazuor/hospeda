@@ -19,6 +19,9 @@ export {
 // Admin search
 export * from './admin-search.schema.js';
 
+// Relation-selector lookup options (SPEC-169 §5.5)
+export * from './entity-options.schema.js';
+
 // Schemas
 export * from './admin.schema.js';
 export * from './audit.schema.js';
@@ -47,5 +50,8 @@ export * from './visibility.schema.js';
 
 // Query helpers
 export { queryBooleanParam, queryDateParam, queryNumberParam } from './query-helpers.js';
+
+// Shared i18n text schema (I18nTextSchema, i18nText factory, I18nText type)
+export * from './i18n.schema.js';
 
 // Migration completed ✅

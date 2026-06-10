@@ -34,6 +34,7 @@ Cross-cutting development guides. App-specific guides (adding pages, deployment,
 - [Error Handling](guides/error-handling.md)
 - [Local Development Setup](guides/local-development-setup.md)
 - [Markdown Formatting](guides/markdown-formatting.md)
+- [Review Moderation](guides/review-moderation.md)
 
 ## Contributing
 
@@ -197,6 +198,7 @@ Each package has a `CLAUDE.md` with development instructions. Packages with a `d
 |---------|-----------|------|
 | auth-ui | [packages/auth-ui/CLAUDE.md](../packages/auth-ui/CLAUDE.md) | [docs/](../packages/auth-ui/docs/README.md) |
 | billing | [packages/billing/CLAUDE.md](../packages/billing/CLAUDE.md) | [docs/](../packages/billing/docs/README.md) |
+| content-moderation | -- | [README](../packages/content-moderation/README.md) |
 | biome-config | [packages/biome-config/CLAUDE.md](../packages/biome-config/CLAUDE.md) | -- |
 | config | [packages/config/CLAUDE.md](../packages/config/CLAUDE.md) | [docs/](../packages/config/docs/README.md) |
 | db | [packages/db/CLAUDE.md](../packages/db/CLAUDE.md) | [docs/](../packages/db/docs/README.md) |

@@ -6,6 +6,14 @@
  * a consistent source of truth and avoid drift between the two apps.
  */
 import { z } from 'zod';
+import {
+    FacebookUrlRegex,
+    InstagramUrlRegex,
+    InternationalPhoneRegex,
+    LinkedInUrlRegex,
+    TwitterUrlRegex,
+    YouTubeUrlRegex
+} from '../utils/utils.js';
 
 // ============================================================================
 // SCHEMA
@@ -90,10 +98,14 @@ export const ProfileEditSchema = z.strictObject({
     /**
      * Contact phone number in E.164 format (`+<country><number>`).
      * Accepts an empty string `''` to allow clearing the phone field.
-     * The regex enforces: `+` followed by 1-3 country-code digits and 4-14
-     * subscriber digits (total 5-17 digits after the `+`).
+     *
+     * Uses the shared {@link InternationalPhoneRegex} — the SAME constant the
+     * server validates `contactInfo.mobilePhone` against — so client-side and
+     * server-side validation can never diverge (BETA-34). The regex enforces a
+     * leading `+`, a first digit 1-9, up to 15 total digits, with optional
+     * space-separated groups.
      */
-    phone: z.union([z.literal(''), z.string().regex(/^\+\d{1,3}\d{4,14}$/)]).optional(),
+    phone: z.union([z.literal(''), z.string().regex(InternationalPhoneRegex)]).optional(),
 
     // ─── SPEC-113 polish: extended profile fields ───────────────────────────
     //
@@ -134,11 +146,18 @@ export const ProfileEditSchema = z.strictObject({
         .optional(),
 
     // Social networks — each accepts a full URL or `''` to clear.
-    facebookUrl: z.union([z.literal(''), z.string().url()]).optional(),
-    instagramUrl: z.union([z.literal(''), z.string().url()]).optional(),
-    twitterUrl: z.union([z.literal(''), z.string().url()]).optional(),
-    linkedinUrl: z.union([z.literal(''), z.string().url()]).optional(),
-    youtubeUrl: z.union([z.literal(''), z.string().url()]).optional(),
+    //
+    // Each URL is constrained to the SAME domain-specific regex the server
+    // enforces via `SocialNetworkSchema` (e.g. `FacebookUrlRegex`). Previously
+    // these were a permissive `z.string().url()`, so a user could enter a valid
+    // but off-domain URL (e.g. `https://fb.com/me`) that passed client
+    // validation and was then rejected by the server with a confusing 400.
+    // Aligning the regexes keeps client and server in lockstep (BETA-34).
+    facebookUrl: z.union([z.literal(''), z.string().url().regex(FacebookUrlRegex)]).optional(),
+    instagramUrl: z.union([z.literal(''), z.string().url().regex(InstagramUrlRegex)]).optional(),
+    twitterUrl: z.union([z.literal(''), z.string().url().regex(TwitterUrlRegex)]).optional(),
+    linkedinUrl: z.union([z.literal(''), z.string().url().regex(LinkedInUrlRegex)]).optional(),
+    youtubeUrl: z.union([z.literal(''), z.string().url().regex(YouTubeUrlRegex)]).optional(),
 
     // Postal address fields — all strings; `''` clears.
     addressLine1: z.string().max(200).optional(),

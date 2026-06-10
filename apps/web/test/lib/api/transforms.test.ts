@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     toAccommodationCardProps,
+    toAccommodationDetailPageProps,
     toArticleCardProps,
     toDestinationCardProps,
     toEventCardProps,
@@ -96,6 +97,44 @@ describe('toAccommodationCardProps', () => {
         const item = { destination: { name: 'Colón' } };
         const result = toAccommodationCardProps({ item });
         expect(result.location.city).toBe('Colón');
+    });
+});
+
+describe('toAccommodationDetailPageProps — SPEC-187 P2-T7', () => {
+    it('passes richDescription through when present on the public API payload', () => {
+        const item = {
+            id: 'acc-001',
+            slug: 'casa-premium',
+            name: 'Casa Premium',
+            summary: 'Resumen',
+            description: 'Descripción simple',
+            richDescription: '## Premium\n\n**luxury**',
+            type: 'HOTEL',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            owner: { id: 'owner-1', name: 'Owner', createdAt: '2026-01-01T00:00:00.000Z' }
+        };
+
+        const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+        expect(result.richDescription).toBe('## Premium\n\n**luxury**');
+    });
+
+    it('leaves richDescription undefined when the public payload omits it', () => {
+        const item = {
+            id: 'acc-001',
+            slug: 'casa-free',
+            name: 'Casa Free',
+            summary: 'Resumen',
+            description: 'Descripción simple',
+            type: 'HOTEL',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            owner: { id: 'owner-1', name: 'Owner', createdAt: '2026-01-01T00:00:00.000Z' }
+        };
+
+        const result = toAccommodationDetailPageProps({ item, locale: 'es' });
+
+        expect(result.richDescription).toBeUndefined();
+        expect(result.description).toBe('Descripción simple');
     });
 });
 
@@ -271,8 +310,11 @@ describe('toArticleCardProps', () => {
     });
 
     it('should handle missing author', () => {
+        // Commit 7cf5dc1f8 ("fix(web): blog meta icons, sand badge, and author
+        // fallback") deliberately changed the empty-author fallback from '' to
+        // 'Equipo Hospeda' so the byline is never blank in the UI.
         const result = toArticleCardProps({ item: {} });
-        expect(result.authorName).toBe('');
+        expect(result.authorName).toBe('Equipo Hospeda');
     });
 
     it('featuredImage should carry caption from API media', () => {
@@ -371,8 +413,6 @@ describe('toTestimonialCardProps', () => {
 // toAccommodationDetailPageProps
 // ---------------------------------------------------------------------------
 
-import { toAccommodationDetailPageProps } from '../../../src/lib/api/transforms';
-
 describe('toAccommodationDetailPageProps', () => {
     /** Builds a full API item with all fields populated. */
     function makeFullItem(): Record<string, unknown> {
@@ -450,10 +490,55 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.reviewsCount).toBe(23);
         });
 
-        it('should map media images and videos', () => {
+        it('should map media images and normalize videos from legacy string array', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
             expect(result.media.images).toEqual(['/img/a.jpg', '/img/b.jpg']);
-            expect(result.media.videos).toEqual(['/vid/c.mp4']);
+            // Legacy payload (bare strings) normalizes to `{ url }` objects so
+            // consumers can read `entry.url` uniformly.
+            expect(result.media.videos).toEqual([{ url: '/vid/c.mp4' }]);
+        });
+
+        it('should map videos from the new object payload preserving caption + description', () => {
+            const item = {
+                ...makeFullItem(),
+                media: {
+                    images: [],
+                    videos: [
+                        {
+                            url: 'https://www.youtube.com/watch?v=abc',
+                            caption: 'Tour 360',
+                            description: 'Walk-through of the cabin',
+                            moderationState: 'APPROVED'
+                        }
+                    ]
+                }
+            };
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.videos).toEqual([
+                {
+                    url: 'https://www.youtube.com/watch?v=abc',
+                    caption: 'Tour 360',
+                    description: 'Walk-through of the cabin'
+                }
+            ]);
+        });
+
+        it('should drop entries without a URL when normalizing videos', () => {
+            const item = {
+                ...makeFullItem(),
+                media: {
+                    images: [],
+                    videos: [
+                        'https://www.youtube.com/watch?v=ok',
+                        '',
+                        { caption: 'no url here' },
+                        { url: 123 },
+                        null
+                    ]
+                }
+            };
+            const result = toAccommodationDetailPageProps({ item });
+            expect(result.media.videos).toEqual([{ url: 'https://www.youtube.com/watch?v=ok' }]);
         });
 
         it('should preserve caption and description in media.galleryItems (GAP-078-136)', () => {

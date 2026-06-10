@@ -13,7 +13,9 @@
  * /suscriptores/propietarios/ via shared i18n keys (owners.*) — no copy duplication.
  *
  * @route /{lang}/publicar/
- * @rendering SSG (prerender = true) — no auth required at page level
+ * @rendering SSR — the page reads `?from=admin` at request time to render an
+ * eyebrow line inside the hero for tourists redirected from the admin. SSG
+ * is not viable because `Astro.url.searchParams` is unavailable at build time.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -23,26 +25,79 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import type { GetStaticPaths } from 'astro';
+import { getAdminUrl, getApiUrl } from '@/lib/env';
+import { webLogger as logger } from '@/lib/logger';
+import {
+	InfoIcon,
+	BuildingsIcon,
+	TrendingUpIcon,
+	ChatIcon,
+	StarIcon,
+	EyeIcon,
+	SettingsIcon,
+	ReceiptIcon,
+	AlertCircleIcon
+} from '@repo/icons';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
-
-const { lang } = Astro.params;
-const locale = lang as SupportedLocale;
+const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
+
+// F3: determine if the user is authenticated server-side so auth-aware
+// CTAs can be rendered statically without shipping JavaScript for the
+// simple "logged in → /publicar/nueva/" swap on the final CTA banner.
+const isAuthenticated = Boolean(Astro.locals.user);
+
+// F1-UI: For authenticated HOST users, check trial status.
+// If isExpired is true, the trial callout is replaced with the expired banner.
+type TrialStatusData = {
+    readonly isOnTrial: boolean;
+    readonly isExpired: boolean;
+    readonly daysRemaining: number | null;
+    readonly startedAt: string | null;
+    readonly expiresAt: string | null;
+    readonly planSlug: string | null;
+};
+
+let trialStatus: TrialStatusData | null = null;
+if (isAuthenticated) {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie');
+        if (cookieHeader) {
+            const trialResponse = await fetch(
+                `${getApiUrl()}/api/v1/protected/billing/trial/status`,
+                { headers: { cookie: cookieHeader } }
+            );
+            if (trialResponse.ok) {
+                const trialJson = (await trialResponse.json()) as {
+                    data?: TrialStatusData;
+                };
+                trialStatus = trialJson.data ?? null;
+            }
+        }
+    } catch (error) {
+        logger.warn({ error }, 'publicar/index: failed to fetch trial status');
+        // Non-fatal: keep the default trial callout on error.
+    }
+}
+
+const isTrialExpired = trialStatus?.isExpired === true;
+
+// Format expiresAt as a readable date string (YYYY-MM-DD substring is sufficient).
+const expiredAtDisplay = trialStatus?.expiresAt
+    ? trialStatus.expiresAt.substring(0, 10)
+    : '';
+const expiredPlanSlug = trialStatus?.planSlug ?? '';
 
 // ---------------------------------------------------------------------------
 // Reuse marketing content from /suscriptores/propietarios/ via shared keys
 // ---------------------------------------------------------------------------
 
 const benefits = [
-	{ titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
-	{ titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
-	{ titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
+	{ Icon: EyeIcon, titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
+	{ Icon: SettingsIcon, titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
+	{ Icon: ReceiptIcon, titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
 ] as const;
 
 const steps = [
@@ -82,13 +137,68 @@ const faqJsonLd = {
 
 	<!-- Hero -->
 	<section class="publicar-hero section section--warm">
+		<div class="publicar-hero__decoratives" aria-hidden="true">
+			<img
+				src="/assets/images/shapes/deco-arrow-1.svg"
+				alt=""
+				class="publicar-hero__deco publicar-hero__deco--arrow"
+				loading="eager"
+			/>
+		</div>
+
 		<div class="publicar-hero__container">
 			<div class="publicar-hero__text" data-reveal="up">
+				{cameFromAdmin && (
+					<p
+						class="publicar-hero__from-admin"
+						role="status"
+						aria-live="polite"
+						data-testid="from-admin-eyebrow"
+					>
+						<InfoIcon size={16} weight="regular" aria-hidden="true" />
+						<span>{t('host.fromAdminBanner.eyebrow', 'Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos.')}</span>
+					</p>
+				)}
 				<p class="publicar-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
 				<h1 class="publicar-hero__title">{t('host.landing.heroHeadline', 'Convertí tu propiedad en un ingreso')}</h1>
 				<p class="publicar-hero__desc">
 					{t('host.landing.heroSubheadline', 'Publicá en minutos y empezá a recibir huéspedes')}
 				</p>
+
+				<!-- F1-UI: Trial callout — shows expired banner for users whose trial ended,
+				     normal trial promo for guests + active-trial users. -->
+				{isTrialExpired ? (
+					<div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
+						<span class="publicar-hero__trial-expired-icon" aria-hidden="true">
+							<AlertCircleIcon size={20} weight="duotone" />
+						</span>
+						<div class="publicar-hero__trial-expired-body">
+							<p class="publicar-hero__trial-expired-title">
+								{t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
+							</p>
+							<p class="publicar-hero__trial-expired-text">
+								{t(
+									'billing.subscription.trial.expiredBanner.body',
+									'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
+									{ planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
+								)}
+							</p>
+							<a
+								href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
+								class="publicar-hero__trial-expired-cta"
+							>
+								{t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
+							</a>
+						</div>
+					</div>
+				) : (
+					<div class="publicar-hero__trial-callout" role="note">
+						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
+						<p class="publicar-hero__trial-callout-text">
+							{t('host.landing.trialCallout', 'Probá Hospeda gratis por 14 días. Tu trial empieza cuando publicás tu primera propiedad. Sin tarjeta, sin compromiso.')}
+						</p>
+					</div>
+				)}
 
 				<!-- Auth-aware CTA island: authenticated → /publicar/nueva/, else → sign in -->
 				<!--
@@ -100,11 +210,23 @@ const faqJsonLd = {
 					auth-aware CTA anyway (the unauth fallback href is the safe SSG
 					default, and useSession only needs to resolve client-side).
 				-->
-				<HostLandingCta client:only="react" locale={locale} />
+				<HostLandingCta client:only="react" locale={locale} adminUrl={getAdminUrl()} />
 			</div>
-			<div class="publicar-hero__image" data-reveal="scale" aria-hidden="true">
-				<div class="publicar-hero__image-placeholder"></div>
-			</div>
+			<aside class="publicar-hero__visual" aria-hidden="true" data-reveal="right">
+				<div class="publicar-hero__blob"></div>
+				<div class="publicar-hero__icon-wrap">
+					<BuildingsIcon size={96} weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--trend">
+					<TrendingUpIcon size="md" weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--chat">
+					<ChatIcon size="md" weight="duotone" />
+				</div>
+				<div class="publicar-hero__floating publicar-hero__floating--star">
+					<StarIcon size="md" weight="duotone" />
+				</div>
+			</aside>
 		</div>
 	</section>
 
@@ -114,23 +236,32 @@ const faqJsonLd = {
 			<p class="publicar-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline', '¿Por qué Hospeda?')}</p>
 			<h2 class="publicar-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
 			<div class="publicar-benefits__grid">
-				{benefits.map((b, i) => (
-					<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<div class="publicar-benefit-card__icon" aria-hidden="true">
-							<svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
-							</svg>
+				{benefits.map((b, i) => {
+					const Icon = b.Icon;
+					return (
+						<div class="publicar-benefit-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+							<span class="publicar-benefit-card__icon" aria-hidden="true">
+								<Icon size="lg" weight="duotone" />
+							</span>
+							<h3 class="publicar-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
+							<p class="publicar-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
 						</div>
-						<h3 class="publicar-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
-						<p class="publicar-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
-					</div>
-				))}
+					);
+				})}
 			</div>
 		</div>
 	</section>
 
 	<!-- How it works — reuses owners.steps.* keys -->
 	<section class="publicar-steps section section--warm">
+		<div class="publicar-steps__decoratives" aria-hidden="true">
+			<img
+				src="/assets/images/shapes/deco-arrow-2.svg"
+				alt=""
+				class="publicar-steps__deco publicar-steps__deco--arrow"
+				loading="lazy"
+			/>
+		</div>
 		<div class="publicar-steps__container">
 			<p class="publicar-steps__tagline" data-reveal="up">{t('owners.steps.tagline', 'Es así de fácil')}</p>
 			<h2 class="publicar-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
@@ -163,6 +294,8 @@ const faqJsonLd = {
 	</section>
 
 	<!-- Final CTA banner -->
+	<!-- F3: CTA is auth-aware. Authenticated users go to /publicar/nueva/,
+	     unauthenticated users go to /auth/signup. -->
 	<section class="publicar-cta">
 		<div class="publicar-cta__container" data-reveal="up">
 			<p class="publicar-cta__tagline">{t('owners.cta.tagline', '¿Listo para empezar?')}</p>
@@ -171,8 +304,12 @@ const faqJsonLd = {
 				{t('owners.cta.desc', 'Unite a los cientos de propietarios que ya confían en Hospeda para mostrar sus alojamientos al mundo.')}
 			</p>
 			<GradientButton
-				href={buildUrl({ locale, path: 'auth/signup' })}
-				label={t('owners.cta.button', 'Empezar ahora')}
+				href={isAuthenticated
+					? buildUrl({ locale, path: 'publicar/nueva' })
+					: buildUrl({ locale, path: 'auth/signup' })}
+				label={isAuthenticated
+					? t('host.landing.primaryCta', 'Publicar tu propiedad')
+					: t('owners.cta.button', 'Empezar ahora')}
 				variant="accent"
 				icon="true"
 			/>
@@ -181,8 +318,66 @@ const faqJsonLd = {
 </MarketingLayout>
 
 <style>
+	/* ── From-admin eyebrow line ───────────────────────────────────────── */
+	.publicar-hero__from-admin {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-3);
+		padding: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		line-height: 1.4;
+	}
+
+	.publicar-hero__from-admin svg {
+		flex-shrink: 0;
+		color: var(--brand-primary);
+		opacity: 0.7;
+	}
+
+	.publicar-hero__from-admin span {
+		max-width: 52ch;
+	}
+
 	/* ── Hero ──────────────────────────────────────────────────────────── */
+	.publicar-hero {
+		position: relative;
+		overflow: hidden;
+		/*
+		 * Override .section's `var(--space-section)` (clamp 48px-120px) with a
+		 * smaller window so the hero feels close in height to the
+		 * `/publicar/nueva/` hero — without that, navigating between the two
+		 * showed a ~190px jump in vertical rhythm.
+		 */
+		padding-block: clamp(2.5rem, 6.5vw, 5rem);
+	}
+
+	.publicar-hero__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.publicar-hero__deco--arrow {
+		position: absolute;
+		top: clamp(18%, 22%, 28%);
+		right: clamp(2%, 4vw, 6%);
+		width: clamp(60px, 8vw, 110px);
+		height: auto;
+		opacity: 0.5;
+		transform: rotate(15deg);
+	}
+
+	@media (max-width: 900px) {
+		.publicar-hero__deco--arrow { display: none; }
+	}
+
 	.publicar-hero__container {
+		position: relative;
+		z-index: 1;
 		max-width: var(--container-max);
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
@@ -194,19 +389,20 @@ const faqJsonLd = {
 
 	.publicar-hero__tagline {
 		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		font-weight: 700;
+		font-size: var(--text-tagline);
 		color: var(--brand-accent);
-		font-style: italic;
 		margin: 0 0 var(--space-2);
 	}
 
 	.publicar-hero__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.75rem);
+		font-size: var(--text-h2);
 		color: var(--core-foreground);
 		margin: 0 0 var(--space-4);
-		line-height: 1.2;
+		line-height: 1.15;
+		text-wrap: balance;
 	}
 
 	.publicar-hero__desc {
@@ -214,14 +410,178 @@ const faqJsonLd = {
 		font-size: var(--text-body-lg);
 		color: var(--core-muted-foreground);
 		line-height: 1.6;
-		margin: 0 0 var(--space-6);
+		margin: 0 0 var(--space-3);
 	}
 
-	.publicar-hero__image-placeholder {
-		width: 100%;
-		aspect-ratio: 4/3;
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
-		border-radius: var(--radius-card);
+	.publicar-hero__trial-callout {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+		font-family: var(--font-sans);
+		line-height: 1.5;
+		margin: 0 0 var(--space-6);
+		padding: var(--space-4) var(--space-5);
+		background-color: var(--brand-accent-a15);
+		border: 1px solid var(--brand-accent-a35);
+		border-left: 4px solid var(--brand-accent);
+		border-radius: var(--radius-button);
+		max-width: 56ch;
+	}
+
+	.publicar-hero__trial-callout-icon {
+		font-size: 1.5rem;
+		line-height: 1;
+		flex-shrink: 0;
+	}
+
+	.publicar-hero__trial-callout-text {
+		margin: 0;
+		font-size: var(--text-body-md);
+		color: var(--brand-accent);
+		font-weight: 500;
+	}
+
+	/* ── Trial-expired banner (F1-UI) ──────────────────────────────────── */
+	.publicar-hero__trial-expired {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+		font-family: var(--font-sans);
+		line-height: 1.5;
+		margin: 0 0 var(--space-6);
+		padding: var(--space-4) var(--space-5);
+		background-color: var(--core-foreground-a05);
+		border: 1px solid var(--core-foreground-a20);
+		border-left: 4px solid var(--core-muted-foreground);
+		border-radius: var(--radius-button);
+		max-width: 56ch;
+	}
+
+	.publicar-hero__trial-expired-icon {
+		flex-shrink: 0;
+		color: var(--core-muted-foreground);
+		opacity: 0.8;
+		line-height: 1;
+		padding-top: 2px;
+	}
+
+	.publicar-hero__trial-expired-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.publicar-hero__trial-expired-title {
+		margin: 0;
+		font-size: var(--text-body-md);
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.publicar-hero__trial-expired-text {
+		margin: 0;
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+	}
+
+	.publicar-hero__trial-expired-cta {
+		display: inline-flex;
+		font-size: var(--text-body-sm);
+		font-weight: 600;
+		color: var(--brand-primary);
+		text-decoration: none;
+		text-underline-offset: 2px;
+		margin-top: var(--space-1);
+		transition: color var(--duration-fast) ease;
+	}
+
+	.publicar-hero__trial-expired-cta:hover {
+		color: var(--brand-accent);
+		text-decoration: underline;
+	}
+
+	/* ── Hero visual aside (blob + central icon + floating icons) ───────── */
+	.publicar-hero__visual {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 320px;
+	}
+
+	.publicar-hero__blob {
+		position: absolute;
+		inset: 0;
+		margin: auto;
+		width: clamp(260px, 28vw, 400px);
+		height: clamp(260px, 28vw, 400px);
+		border-radius: 50%;
+		background: radial-gradient(
+			circle at 30% 30%,
+			var(--brand-primary-a20),
+			var(--brand-accent-a08) 60%,
+			transparent 75%
+		);
+		filter: blur(2px);
+	}
+
+	.publicar-hero__icon-wrap {
+		position: relative;
+		z-index: 2;
+		width: clamp(140px, 16vw, 200px);
+		height: clamp(140px, 16vw, 200px);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background-color: var(--core-card);
+		border-radius: 50%;
+		box-shadow: var(--shadow-card);
+		color: var(--brand-primary);
+	}
+
+	.publicar-hero__floating {
+		position: absolute;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: 50%;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+		color: var(--brand-accent);
+		animation: publicar-float 6s ease-in-out infinite;
+	}
+
+	.publicar-hero__floating--trend {
+		top: 10%;
+		left: 6%;
+		color: oklch(0.65 0.18 145);
+		animation-delay: 0s;
+	}
+
+	.publicar-hero__floating--chat {
+		bottom: 16%;
+		left: 2%;
+		color: var(--brand-primary);
+		animation-delay: 1.5s;
+	}
+
+	.publicar-hero__floating--star {
+		top: 18%;
+		right: 4%;
+		color: var(--brand-accent);
+		animation-delay: 3s;
+	}
+
+	@keyframes publicar-float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-10px); }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.publicar-hero__floating { animation: none; }
 	}
 
 	/* ── Benefits ──────────────────────────────────────────────────────── */
@@ -239,9 +599,9 @@ const faqJsonLd = {
 	.publicar-faq__tagline,
 	.publicar-cta__tagline {
 		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		font-weight: 700;
+		font-size: var(--text-tagline);
 		color: var(--brand-accent);
-		font-style: italic;
 		margin: 0 0 var(--space-2);
 	}
 
@@ -251,8 +611,10 @@ const faqJsonLd = {
 	.publicar-cta__title {
 		font-family: var(--font-heading);
 		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		font-size: var(--text-h2);
 		color: var(--core-foreground);
+		text-wrap: balance;
+		line-height: 1.1;
 		margin: 0 0 var(--space-8);
 	}
 
@@ -270,7 +632,27 @@ const faqJsonLd = {
 		box-shadow: var(--shadow-card);
 	}
 
-	.publicar-benefit-card__icon { margin-bottom: var(--space-4); }
+	.publicar-benefit-card__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 56px;
+		height: 56px;
+		border-radius: var(--radius-md);
+		background-color: var(--brand-primary-a10);
+		color: var(--brand-primary);
+		margin-bottom: var(--space-4);
+	}
+
+	.publicar-benefit-card:nth-child(2) .publicar-benefit-card__icon {
+		background-color: var(--brand-accent-a12);
+		color: var(--brand-accent);
+	}
+
+	.publicar-benefit-card:nth-child(3) .publicar-benefit-card__icon {
+		background-color: oklch(0.65 0.18 145 / 0.12);
+		color: oklch(0.55 0.18 145);
+	}
 
 	.publicar-benefit-card__title {
 		font-family: var(--font-heading);
@@ -289,6 +671,37 @@ const faqJsonLd = {
 	}
 
 	/* ── Steps ─────────────────────────────────────────────────────────── */
+	.publicar-steps {
+		position: relative;
+		overflow: hidden;
+	}
+
+	.publicar-steps__decoratives {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.publicar-steps__deco--arrow {
+		position: absolute;
+		bottom: clamp(10%, 14%, 18%);
+		left: clamp(2%, 4vw, 6%);
+		width: clamp(50px, 7vw, 90px);
+		height: auto;
+		opacity: 0.35;
+		transform: rotate(-25deg) scaleX(-1);
+	}
+
+	@media (max-width: 900px) {
+		.publicar-steps__deco--arrow { display: none; }
+	}
+
+	.publicar-steps__container {
+		position: relative;
+		z-index: 1;
+	}
+
 	.publicar-steps__grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
@@ -299,7 +712,7 @@ const faqJsonLd = {
 		font-family: var(--font-heading);
 		font-size: clamp(2rem, 4vw, 3rem);
 		font-weight: 700;
-		color: oklch(from var(--brand-primary) l c h / 0.2);
+		color: var(--brand-primary-a20);
 		display: block;
 		margin-bottom: var(--space-3);
 	}
@@ -366,7 +779,7 @@ const faqJsonLd = {
 		padding: 0 var(--space-container-x);
 	}
 
-	.publicar-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+	.publicar-cta__tagline { color: var(--brand-accent-a80); }
 
 	.publicar-cta__title {
 		color: #fff;
@@ -385,7 +798,7 @@ const faqJsonLd = {
 	/* ── Responsive ────────────────────────────────────────────────────── */
 	@media (max-width: 768px) {
 		.publicar-hero__container { grid-template-columns: 1fr; }
-		.publicar-hero__image { order: -1; }
+		.publicar-hero__visual { order: -1; min-height: 280px; }
 		.publicar-benefits__grid { grid-template-columns: 1fr; }
 		.publicar-steps__grid { grid-template-columns: repeat(2, 1fr); }
 	}

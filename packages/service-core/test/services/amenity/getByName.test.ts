@@ -15,7 +15,7 @@ describe('AmenityService.getByName', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: 'Test Amenity',
+        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES
     });
 
@@ -28,20 +28,21 @@ describe('AmenityService.getByName', () => {
 
     it('should return an amenity by name (success)', async () => {
         asMock(amenityModelMock.findOne).mockResolvedValue(amenity);
-        const result = await service.getByName(actor, amenity.name);
+        // getByName expects a string — pass the canonical es locale
+        const result = await service.getByName(actor, amenity.name.es);
         expectSuccess(result);
         expect(result.data).toEqual(amenity);
     });
 
     it('should return NOT_FOUND error if amenity does not exist', async () => {
         asMock(amenityModelMock.findOne).mockResolvedValue(null);
-        const result = await service.getByName(actor, amenity.name);
+        const result = await service.getByName(actor, amenity.name.es);
         expectNotFoundError(result);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(amenityModelMock.findOne).mockRejectedValue(new Error('DB error'));
-        const result = await service.getByName(actor, amenity.name);
+        const result = await service.getByName(actor, amenity.name.es);
         expectInternalError(result);
     });
 });

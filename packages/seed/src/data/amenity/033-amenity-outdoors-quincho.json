@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "033-amenity-outdoors-quincho",
-    "name": "quincho",
+    "name": {
+        "es": "quincho",
+        "en": "quincho",
+        "pt": "quincho"
+    },
     "slug": "quincho",
-    "description": "Quincho para asados",
+    "description": {
+        "es": "Quincho para asados",
+        "en": "Quincho para asados",
+        "pt": "Quincho para asados"
+    },
     "type": "OUTDOORS",
     "icon": "CoveredGrillAreaIcon",
     "isBuiltin": false,

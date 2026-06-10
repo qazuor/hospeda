@@ -28,6 +28,7 @@ const {
     mockDbInsert,
     mockLoadBillingSettings,
     mockWithTransaction,
+    mockClearEntitlementCache,
     _mockTx
 } = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
@@ -49,6 +50,7 @@ const {
             sendPaymentFailedNotification: true
         }),
         mockWithTransaction: withTx,
+        mockClearEntitlementCache: vi.fn(),
         _mockTx: tx
     };
 });
@@ -104,6 +106,11 @@ vi.mock('../../src/utils/billing-settings', () => ({
 // Service layer mock: notification sender
 vi.mock('../../src/routes/webhooks/mercadopago/notifications', () => ({
     sendSubscriptionCancelledNotification: vi.fn().mockResolvedValue(undefined)
+}));
+
+// Entitlement cache mock: needed to assert INV-1 cache clear on cancellation
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: mockClearEntitlementCache
 }));
 
 // ---------------------------------------------------------------------------
@@ -587,6 +594,52 @@ describe('dunningJob', () => {
 
             // Assert
             expect(mockDbInsert).toHaveBeenCalledOnce();
+        });
+
+        // INV-1: canceled_nonpayment must clear the entitlement cache so the
+        // cancelled customer stops seeing paid-plan entitlements immediately.
+        it('should clear entitlement cache on canceled_nonpayment event', async () => {
+            // Arrange
+            const billing = makeBillingMock();
+            // Provide a minimal customer stub so the notification path resolves
+            const billingWithCustomer = {
+                ...billing,
+                customers: {
+                    get: vi.fn().mockResolvedValue({
+                        id: 'cust_456',
+                        email: 'user@example.com',
+                        metadata: { name: 'Test User', userId: 'user_789' }
+                    })
+                }
+            };
+            mockGetQZPayBilling.mockReturnValue(billingWithCustomer);
+
+            let capturedOnEvent: ((event: unknown) => Promise<void>) | undefined;
+            mockCreateSubscriptionLifecycle.mockImplementation(
+                (
+                    _b: unknown,
+                    _s: unknown,
+                    config: { onEvent?: (event: unknown) => Promise<void> }
+                ) => {
+                    capturedOnEvent = config.onEvent;
+                    return makeLifecycleMock();
+                }
+            );
+
+            const ctx = makeCronContext();
+            await dunningJob.handler(ctx);
+
+            // Act
+            await capturedOnEvent!({
+                type: 'subscription.canceled_nonpayment',
+                subscriptionId: 'sub_123',
+                customerId: 'cust_456',
+                timestamp: new Date(),
+                data: { planName: 'owner-basico', reason: 'grace period expired' }
+            });
+
+            // Assert — cache must be invalidated with the event's customerId
+            expect(mockClearEntitlementCache).toHaveBeenCalledWith('cust_456');
         });
 
         it('should NOT record non-retry events (e.g. canceled_nonpayment)', async () => {

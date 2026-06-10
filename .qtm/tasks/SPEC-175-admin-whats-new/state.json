@@ -1,0 +1,456 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-175-admin-whats-new",
+    "title": "Admin What's New / Release Notes Dialog",
+    "created": "2026-06-03T23:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add WhatsNew entity schemas to @repo/schemas",
+            "description": "Create packages/schemas/src/entities/whats-new/ with whats-new.schema.ts (WhatsNewEntryI18nSchema with es required + en/pt optional; WhatsNewEntrySchema per spec §6.2: kebab-case id regex, publishedAt ISO datetime, optional roles enum array, highlight default false, title/body i18n, optional image URL) and whats-new.http.schema.ts (WhatsNewSeenBodySchema { ids: string[].min(1) }, WhatsNewGetResponseSchema with items[] + unseenCount). Export inferred types and wire into packages/schemas/src/index.ts. Tests (whats-new.schema.test.ts): valid entry parses; missing es title rejects; non-ISO publishedAt rejects; unknown role rejects; empty ids array rejects; non-kebab-case id rejects.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005", "T-007", "T-008", "T-009", "T-016"],
+            "subtasks": [],
+            "tags": ["schemas", "zod", "phase-schemas"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-03T23:06:10.000Z",
+                "completed": "2026-06-04T01:16:58.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add onboarding namespace to UserSettingsSchema (whatsNew + adminTours)",
+            "description": "Update packages/schemas/src/entities/user/user.settings.schema.ts: add optional onboarding object with adminTours (record string->nonnegative int, SPEC-174's key — include per spec §6.1 but do not change its semantics) and whatsNew ({ baselineAt: ISO datetime optional, seenIds: string[] optional }). CRITICAL: NO .default({}) anywhere in the new subtree (would rewrite stored JSONB on parse — spec §6.1). Export UserOnboardingWhatsNew inferred type. Tests: historic stored-JSONB fixture WITHOUT onboarding still parses (compat test per schema compat policy); new shape parses; partial whatsNew parses.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-006", "T-007"],
+            "subtasks": [],
+            "tags": ["schemas", "zod", "user-settings", "phase-schemas"],
+            "phase": "schemas",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-03T23:06:10.000Z",
+                "completed": "2026-06-04T01:16:58.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add markWhatsNewSeen service method with server-side merge",
+            "description": "Add markWhatsNewSeen({ actor, ids }) to the user service in @repo/service-core (read-modify-write: read current settings, Set-union seenIds, write back preserving ALL sibling keys — theme/language/notifications/newsletter/adminTours/baselineAt). Also expose an initWhatsNewBaseline (or equivalent) used by lazy-init in T-006. FIRST confirm whether UserService.update replaces or merges the JSONB column (spec Q2 — treat as replace-only defensively regardless). Returns Result<T>. Tests per spec §12.2: sibling keys preserved; idempotent on overlapping ids; missing onboarding initializes cleanly; adminTours untouched when writing seenIds.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [],
+            "tags": ["service-core", "phase-service"],
+            "phase": "service",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T01:21:18.000Z",
+                "completed": "2026-06-04T05:07:53.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create curated whats-new data file with boot validation",
+            "description": "Create apps/api/src/data/whats-new/whats-new.ts (NEW data/ dir) exporting whatsNewEntries = WhatsNewCatalogSchema.parse([...]) per spec §6.3 — empty array v1, example entry in comments, header documenting the 6-month archival policy (spec §15). Parse at module import time so a content typo fails API startup. Test: importing the module in vitest does not throw; a fixture with an invalid entry fails parse (AC-16).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-018"],
+            "subtasks": [],
+            "tags": ["api", "data", "phase-api"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T01:21:18.000Z",
+                "completed": "2026-06-04T05:07:53.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement pure server helpers: role filter, seen computation, locale resolution",
+            "description": "Pure, unit-testable functions (no Hono/DB) colocated near the whats-new route (e.g. apps/api/src/routes/whats-new/helpers.ts or lib): filterEntriesByRole({ entries, role }) (absent/empty roles = all); computeSeen({ entry, seenIds, baselineAt }) (seen = seenIds.includes(id) || publishedAt <= baselineAt — spec §6.5 step 5); resolveEntryLocale({ field, locale }) (requested -> es fallback, server-side per §6.7). RO-RO, named exports. Unit tests: role filter matrix; baseline boundary (publishedAt === baselineAt is seen); seenIds union; locale fallback es/en/pt per §12.5.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [],
+            "tags": ["api", "pure-logic", "phase-api"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T01:21:18.000Z",
+                "completed": "2026-06-04T05:07:53.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement GET /api/v1/protected/whats-new with lazy-init",
+            "description": "Route apps/api/src/routes/whats-new/protected/getWhatsNew.ts + index.ts registration + wire into apps/api/src/routes/index.ts. createProtectedRoute, NO requiredPermissions (any authenticated session — D4). Logic per spec §6.5: read actor settings; lazy-init baselineAt=now/seenIds=[] when onboarding.whatsNew absent (persist via T-003 service; init failure = non-fatal, log warn, proceed with empty state per §15); filter by role (T-005); compute seen per entry; resolve locale server-side from settings.languageAdmin ?? 'es'; sort newest-first; return { items, unseenCount }. Route tests per §12.3: 401 unauthenticated/guest; lazy-init fires once; role filter; seen computation; unseenCount; locale resolution + es fallback.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-004", "T-005"],
+            "blocks": ["T-016", "T-019"],
+            "subtasks": [],
+            "tags": ["api", "route", "phase-api"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T05:07:53.000Z",
+                "completed": "2026-06-04T05:32:14.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement PATCH /api/v1/protected/users/me/whats-new-seen",
+            "description": "Route apps/api/src/routes/user/protected/whatsNewSeen.ts + registration in routes/user/protected/index.ts. createProtectedRoute, body WhatsNewSeenBodySchema, rate limit { requests: 30, windowMs: 60000 } (spec §6.6). Delegates to T-003 markWhatsNewSeen. Permission guard: resolve spec Q1 FIRST — check packages/seed/src/required/rolePermissions.seed.ts for the self-scope permission HOST/EDITOR hold (USER_SETTINGS_UPDATE vs USER_UPDATE_SELF); if genuinely ambiguous, consult owner per decision protocol. Returns { success: true }. Tests per §12.3: empty ids -> 400; valid ids -> 200 + seenIds updated + siblings preserved; idempotent double-call; 401 unauthenticated.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-003"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["api", "route", "phase-api"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T05:07:53.000Z",
+                "completed": "2026-06-04T05:32:14.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement admin pure lib: has-unseen-highlights, resolve-entry-locale",
+            "description": "apps/admin/src/lib/whats-new/{has-unseen-highlights,resolve-entry-locale}.ts per spec §7.7 — pure functions, no React/DOM. hasUnseenHighlights(items) -> boolean; resolveEntryLocale(field, locale) -> string with es fallback (client-side counterpart; may reuse logic shape from use-localized-label.ts). Unit tests: empty items; mixed seen/unseen non-highlight; locale fallback matrix per §12.5.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["admin", "pure-logic", "phase-admin-core"],
+            "phase": "admin-core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T05:32:14.000Z",
+                "completed": "2026-06-04T06:17:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement useWhatsNew() shared hook",
+            "description": "apps/admin/src/hooks/use-whats-new.ts per spec §7.1 — THE single source of truth for all four surfaces (independent fetches forbidden). useQuery key ['whats-new', userId] -> GET endpoint; useMutation -> PATCH whats-new-seen with optimistic update on unseenCount + items[*].seen, then invalidate. Expose { items, unseenCount, isLoading, error, markSeen(ids), markAllSeen() }. MUST NOT reuse useUserProfile/useUpdateUserSettings (dead admin-tier hooks, §2.3). Tests per §12.4: load lifecycle; markSeen optimistic decrement + correct body; markAllSeen derives all applicable unseen ids; rollback on mutation failure.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-011", "T-012", "T-013", "T-014"],
+            "subtasks": [],
+            "tags": ["admin", "hook", "tanstack-query", "phase-admin-core"],
+            "phase": "admin-core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T05:32:14.000Z",
+                "completed": "2026-06-04T06:17:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add admin-whats-new i18n namespace (es/en/pt)",
+            "description": "Create packages/i18n/src/locales/{es,en,pt}/admin-whats-new.json with all keys from spec §8.1 (badge.label/labelNone, modal.title/close, panel.title/markAllRead/empty/seeEntry, card.seeAll, status.new/seen). Wire into the package exports if namespaces are registered explicitly. GOTCHA: after adding JSON files the dev server Node process must restart (admin CLAUDE.md Vite + @repo/i18n SSR cache). Test: keys resolve in all three locales (existing i18n test pattern).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012", "T-013"],
+            "subtasks": [],
+            "tags": ["i18n", "phase-admin-core"],
+            "phase": "admin-core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T05:32:14.000Z",
+                "completed": "2026-06-04T06:17:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement WhatsNewModal (highlight list + single-entry mode)",
+            "description": "apps/admin/src/components/whats-new/WhatsNewModal.tsx per spec §7.2: shadcn Dialog (sm:max-w-lg desktop, full-screen mobile); scrollable list of unseen highlight entries (title + markdown body + optional image); optional entryId prop for single-entry mode (card/panel click); 'Entendido' primary action; close (button or ESC) -> markSeen(shownIds). Markdown rendering: resolve TBD-1 (TipTap read-only generateHTML with restricted schema vs react-markdown) — consult owner if not already decided. PostHog: admin.whats_new.modal.shown/closed. A11y: Radix focus trap, aria-labelledby. Tests per §12.4: renders entries; Entendido calls markSeen; ESC closes + marks; entryId single mode; does not render when no unseen highlights.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-012", "T-014", "T-017", "T-020"],
+            "subtasks": [],
+            "tags": ["admin", "ui", "phase-admin-ui"],
+            "phase": "admin-ui",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:17:00.000Z",
+                "completed": "2026-06-04T06:47:59.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Implement WhatsNewPanel (Sheet with list + mark-all-read)",
+            "description": "apps/admin/src/components/whats-new/WhatsNewPanel.tsx per spec §7.4: shadcn Sheet right side (modality = spec Q3 — consult owner if undecided); header 'Últimas novedades' + 'Marcar todo como leído' (disabled when unseenCount === 0, calls markAllSeen); entry list newest-first, unseen = bold + accent dot, seen = muted; row click opens WhatsNewModal with entryId; empty state from i18n. PostHog: admin.whats_new.panel.opened. Tests per §12.4: mark-all wiring + disabled state; empty state; row click opens modal.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010", "T-011"],
+            "blocks": ["T-013", "T-017", "T-020"],
+            "subtasks": [],
+            "tags": ["admin", "ui", "phase-admin-ui"],
+            "phase": "admin-ui",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:17:00.000Z",
+                "completed": "2026-06-04T06:47:59.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement WhatsNewBadge + Header wiring",
+            "description": "apps/admin/src/components/whats-new/WhatsNewBadge.tsx per spec §7.3: icon button from @repo/icons (spec Q2 — verify GiftIcon/SparkleIcon exists in @repo/icons exports; consult owner on final pick if both available), count pill when unseenCount > 0 (min-width 1.25rem), aria-label with count interpolation, icon-river-header class, click opens WhatsNewPanel. Insert in Header.tsx between Notifications and Profile. Tests per §12.4: count shown/hidden; click opens panel; aria-label.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010", "T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [],
+            "tags": ["admin", "ui", "header", "phase-admin-ui"],
+            "phase": "admin-ui",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:17:00.000Z",
+                "completed": "2026-06-04T06:47:59.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Implement WhatsNewAutoTrigger + AppLayout mount",
+            "description": "apps/admin/src/components/whats-new/WhatsNewAutoTrigger.tsx (headless, renders null) per spec §7.2/§7.6: mounted in AppLayout.tsx inside _authed guard; useEffect keyed [isLoaded, userId]; bail while loading; open WhatsNewModal once when hasUnseenHighlights (T-008); useRef latch for strict-mode double-mount. NOTE D17 (cross-spec, owner-locked): when SPEC-174 lands, this trigger must defer to an unseen welcome tour — leave a documented seam (e.g. a suppress condition param) but do NOT implement tour awareness now. Tests per §12.4: no fire while loading; fires once; latch prevents double-fire.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009", "T-011"],
+            "blocks": ["T-020"],
+            "subtasks": [],
+            "tags": ["admin", "ui", "phase-admin-ui"],
+            "phase": "admin-ui",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:17:00.000Z",
+                "completed": "2026-06-04T06:47:59.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Extend ListWidget config: footerLink + onItemClick",
+            "description": "Per spec Q4/Q5 (recommended option 1 in both — confirm with owner before starting per decision protocol): add optional footerLink ({ label: I18nLabel, action }) and optional onItemClick callback to ListWidgetConfig in the dashboard widget system (apps/admin). Keep both strictly optional and backward-compatible — existing dashboards unchanged. Tests: footerLink renders + fires action; onItemClick fires with item; absent config renders exactly as before (regression).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["admin", "dashboard", "list-widget", "phase-dashboard"],
+            "phase": "dashboard",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:47:59.000Z",
+                "completed": "2026-06-04T07:16:11.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Register whats-new.recent dashboard source (4 role files)",
+            "description": "Add whats-new.recent source to apps/admin/src/lib/dashboard-sources/{host,editor,admin,super}.ts per spec §7.5: queryFn calls GET /api/v1/protected/whats-new via fetchApi, maps to ListItem[] (title as label, publishedAt as meta, unseen -> statusBadge { label: 'Nuevo', variant: 'success' }, seen -> none). Query key ['dashboard', 'whats-new', userId] per existing convention. Tests: mapping seen/unseen -> badge; maxItems respected.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-006"],
+            "blocks": ["T-017"],
+            "subtasks": [],
+            "tags": ["admin", "dashboard", "phase-dashboard"],
+            "phase": "dashboard",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:47:59.000Z",
+                "completed": "2026-06-04T07:16:11.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add whats-new widget to all four role dashboards",
+            "description": "Add the 'whats-new' list widget to HOST/EDITOR/ADMIN/SUPER dashboards in apps/admin/src/config/ia/dashboards.ts per spec §7.5 (gridSpan cols 2, scope protected, source whats-new.recent, maxItems 4, accent sky, icon per Q2 resolution, empty states). Wire footerLink 'Ver todas' -> opens WhatsNewPanel and onItemClick -> opens WhatsNewModal(entryId) using T-015 extensions. Config boot validation stays green. Tests: widget present for the four roles; click + footer wiring.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-012", "T-015", "T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [],
+            "tags": ["admin", "dashboard", "config-ia", "phase-dashboard"],
+            "phase": "dashboard",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:47:59.000Z",
+                "completed": "2026-06-04T07:16:11.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add CSP image-origin allowlist test (TBD-2 guard)",
+            "description": "Vitest test per spec §9/T-016-orig: every image URL in apps/api/src/data/whats-new/whats-new.ts must match an approved-origin allowlist (initially empty array colocated with the test or data file — any image URL fails until an origin is approved and added to the admin CSP img-src). Document in the data file header: do NOT publish an image-bearing entry before the CSP origin is added (TBD-2 is an owner/ops decision). Test: entry with unapproved origin fails; entries without image pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "csp", "ops", "phase-ops"],
+            "phase": "ops",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T06:47:59.000Z",
+                "completed": "2026-06-04T07:16:11.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "API integration tests: GET + PATCH with real DB",
+            "description": "Full integration tests for GET /protected/whats-new and PATCH /protected/users/me/whats-new-seen following the vitest e2e suite pattern from SPEC-143 (real DB): lazy-init persists baselineAt/seenIds; AC-17 SPEC-174 coexistence (pre-seeded adminTours preserved after seenIds write); role filtering with real seeded users; locale resolution via languageAdmin; idempotent PATCH; baseline semantics for pre-existing user (entries before baselineAt seen).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "integration-tests", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T07:16:11.000Z",
+                "completed": "2026-06-04T07:35:09.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Admin component integration tests (Testing Library + MSW)",
+            "description": "Cross-surface integration per spec §12.4/T-018-orig with MSW mocks: full flow modal auto-open -> close -> badge decrements (shared useWhatsNew state across surfaces, no independent fetches); panel mark-all -> badge 0 -> card badges update; card item click -> modal single-entry -> seen propagates. Verifies D10 (single shared hook) end-to-end in the component tree.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012", "T-013", "T-014", "T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "integration-tests", "phase-testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-03T23:30:00.000Z",
+                "started": "2026-06-04T07:16:11.000Z",
+                "completed": "2026-06-04T07:35:09.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 20,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 20,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

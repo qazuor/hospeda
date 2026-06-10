@@ -7,8 +7,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
 import { useTranslations } from '@/hooks/use-translations';
-import { EntitlementGate } from '@qazuor/qzpay-react';
+import { EntitlementKey } from '@repo/billing';
 import { formatNumber } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -148,8 +149,8 @@ function AccommodationReviewsPage() {
                         </Card>
 
                         {/* Note about detailed reviews */}
-                        <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
-                            <p className="text-blue-900 text-sm dark:text-blue-200">
+                        <div className="rounded-md border border-info/30 bg-info/10 p-4">
+                            <p className="text-foreground text-sm">
                                 <strong>
                                     {t('admin-pages.accommodations.reviews.detailedNoteLabel')}
                                 </strong>{' '}
@@ -165,16 +166,16 @@ function AccommodationReviewsPage() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <EntitlementGate
-                                    entitlementKey="respond-reviews"
+                                <PlanEntitlementGate
+                                    entitlementKey={EntitlementKey.RESPOND_REVIEWS}
                                     fallback={
-                                        <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
-                                            <p className="font-medium text-amber-900">
+                                        <div className="rounded-md border border-warning/30 bg-warning/10 p-4">
+                                            <p className="font-medium text-foreground">
                                                 {t(
                                                     'admin-pages.accommodations.reviews.respondProPremium'
                                                 )}
                                             </p>
-                                            <p className="mt-2 text-amber-800 text-sm">
+                                            <p className="mt-2 text-muted-foreground text-sm">
                                                 {t(
                                                     'admin-pages.accommodations.reviews.respondUpgrade'
                                                 )}
@@ -185,7 +186,7 @@ function AccommodationReviewsPage() {
                                     <p className="text-muted-foreground text-sm">
                                         {t('admin-pages.accommodations.reviews.respondComingSoon')}
                                     </p>
-                                </EntitlementGate>
+                                </PlanEntitlementGate>
                             </CardContent>
                         </Card>
                     </div>

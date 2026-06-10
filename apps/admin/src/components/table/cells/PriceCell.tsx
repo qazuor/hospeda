@@ -27,9 +27,9 @@ export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps)
 
     const priceData = value as PriceType;
 
-    // Handle missing price
+    // Handle missing price — render the same dash as other "no data" cells.
     if (priceData.price === null || priceData.price === undefined) {
-        return <span className="text-muted-foreground">{t('admin-common.states.noPrice')}</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const price = Number(priceData.price);
@@ -46,11 +46,11 @@ export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps)
     const formattedPrice = formatPrice(price, currency, locale);
 
     return (
-        <div className="flex items-center gap-1">
-            <span className="font-medium text-foreground">{formattedPrice}</span>
+        <div className="inline-flex items-baseline gap-1">
             {currency && (
-                <span className="text-muted-foreground text-xs uppercase">{currency}</span>
+                <span className="text-muted-foreground text-xs uppercase">${currency}</span>
             )}
+            <span className="font-medium text-foreground">{formattedPrice}</span>
         </div>
     );
 };

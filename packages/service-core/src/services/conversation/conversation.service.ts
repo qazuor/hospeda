@@ -38,6 +38,7 @@ import type {
     SelectConversation,
     SelectMessage
 } from '@repo/db';
+import type { HostConversationResponseRate } from '@repo/schemas';
 import {
     ConversationStatusEnum,
     MessageSenderTypeEnum,
@@ -146,7 +147,8 @@ const ListForGuestInputSchema = z.object({
     userId: z.string().uuid(),
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(DEFAULT_INBOX_PAGE_SIZE),
-    archivedByGuest: z.boolean().optional()
+    archivedByGuest: z.boolean().optional(),
+    accommodationId: z.string().uuid().optional()
 });
 
 const ListForOwnerInputSchema = z.object({
@@ -841,6 +843,12 @@ export class ConversationService extends BaseService {
             page?: number;
             pageSize?: number;
             archivedByGuest?: boolean;
+            /**
+             * Optional filter — when set, only return conversations attached
+             * to this accommodation. Powers the "has the visitor contacted
+             * the host?" check used by the accommodation detail page.
+             */
+            accommodationId?: string;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<ConversationListResult>> {
@@ -855,7 +863,8 @@ export class ConversationService extends BaseService {
                     {
                         page: validated.page,
                         pageSize: validated.pageSize,
-                        archivedByGuest: validated.archivedByGuest
+                        archivedByGuest: validated.archivedByGuest,
+                        accommodationId: validated.accommodationId
                     }
                 );
                 return {
@@ -1632,6 +1641,124 @@ export class ConversationService extends BaseService {
                 });
 
                 return { conversationId, rawToken };
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // SPEC-155 T-006: Host conversation response-rate KPIs
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns aggregated conversation response-rate KPIs for the authenticated
+     * host.
+     *
+     * Scoped strictly to the host's own conversations by resolving the actor's
+     * accommodation IDs first (via `AccommodationModel.findByOwnerId`) and
+     * delegating the aggregation to `ConversationModel.getResponseRateByOwnerId`.
+     *
+     * Permission gating: requires `CONVERSATION_VIEW_OWN` — the same permission
+     * used by the host inbox (list route).  The ownerId is always derived from
+     * `actor.id`; callers cannot override the scope via a query param.
+     *
+     * @param actor - Authenticated host performing the request.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `{ responseRatePct, avgResponseTimeMinutes }`.
+     * @throws {ServiceError} FORBIDDEN when actor lacks `CONVERSATION_VIEW_OWN`.
+     * @throws {ServiceError} INTERNAL_ERROR on unexpected DB errors.
+     */
+    public async getHostResponseRate(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostConversationResponseRate>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getHostResponseRate',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor, execCtx) => {
+                if (!validatedActor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: CONVERSATION_VIEW_OWN required for host response rate'
+                    );
+                }
+
+                // Resolve the host's accommodation IDs (may be empty for a
+                // brand-new host who has not yet created any accommodations).
+                const ownerAccommodationIds = await this.accommodationModel.findIdsByOwnerId(
+                    validatedActor.id,
+                    execCtx?.tx
+                );
+
+                return this.conversationModel.getResponseRateByOwnerId(
+                    ownerAccommodationIds,
+                    execCtx?.tx
+                );
+            }
+        });
+    }
+
+    /**
+     * Monthly inquiry counts for the authenticated host (HOST card I —
+     * conversations-monthly trend). Fills missing months with zero so the
+     * chart always reads as a continuous time-series.
+     *
+     * Permission gating: requires `CONVERSATION_VIEW_OWN` — same as the
+     * response-rate KPI.
+     */
+    public async getHostMonthlyInquiries(
+        actor: Actor,
+        input: { readonly months?: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<ReadonlyArray<{ readonly month: string; readonly count: number }>>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getHostMonthlyInquiries',
+            input: { actor, ...input },
+            schema: z.object({
+                months: z.number().int().min(1).max(24).optional()
+            }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                if (!validatedActor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: CONVERSATION_VIEW_OWN required for monthly inquiries'
+                    );
+                }
+
+                const months = validated.months ?? 6;
+                const ownerAccommodationIds = await this.accommodationModel.findIdsByOwnerId(
+                    validatedActor.id,
+                    execCtx?.tx
+                );
+
+                const raw = await this.conversationModel.getMonthlyInquiriesByOwnerId(
+                    ownerAccommodationIds,
+                    months,
+                    execCtx?.tx
+                );
+
+                // Build a continuous series — months with zero conversations
+                // are absent from the SQL result and must be filled here so
+                // the chart never skips a bucket.
+                const seriesMap = new Map<string, number>();
+                for (const row of raw) seriesMap.set(row.month, row.count);
+
+                const series: Array<{ month: string; count: number }> = [];
+                const cursor = new Date();
+                cursor.setUTCDate(1);
+                cursor.setUTCHours(0, 0, 0, 0);
+                cursor.setUTCMonth(cursor.getUTCMonth() - (months - 1));
+                for (let i = 0; i < months; i++) {
+                    const year = cursor.getUTCFullYear();
+                    const m = String(cursor.getUTCMonth() + 1).padStart(2, '0');
+                    const key = `${year}-${m}`;
+                    series.push({ month: key, count: seriesMap.get(key) ?? 0 });
+                    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+                }
+
+                return series;
             }
         });
     }

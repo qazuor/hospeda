@@ -18,6 +18,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import { ImageField, type ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,7 +38,8 @@ const buildConfig = (overrides: Partial<FieldConfig> = {}): FieldConfig => ({
 
 const buildImage = (): ImageValue => ({
     url: 'https://example.com/cover.jpg',
-    alt: 'Existing cover'
+    alt: 'Existing cover',
+    moderationState: ModerationStatusEnum.APPROVED
 });
 
 // ---------------------------------------------------------------------------

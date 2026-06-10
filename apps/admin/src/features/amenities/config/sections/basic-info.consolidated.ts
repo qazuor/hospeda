@@ -18,12 +18,12 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
     fields: [
         {
             id: 'name',
-            type: FieldTypeEnum.TEXT,
+            type: FieldTypeEnum.I18N_TEXT,
             required: true,
             modes: ['view', 'edit', 'create'],
             label: 'Nombre',
-            description: 'Nombre de la amenidad',
-            placeholder: 'Ej: Wi-Fi, Piscina, Aire Acondicionado',
+            description: 'Nombre de la amenidad en cada idioma (ES / EN / PT)',
+            placeholder: 'Ej: Wi-Fi',
             permissions: {
                 view: [PermissionEnum.AMENITY_CREATE],
                 edit: [PermissionEnum.AMENITY_UPDATE]
@@ -53,11 +53,11 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         },
         {
             id: 'description',
-            type: FieldTypeEnum.TEXTAREA,
+            type: FieldTypeEnum.I18N_TEXTAREA,
             required: false,
             modes: ['view', 'edit', 'create'],
             label: 'Descripción',
-            description: 'Descripción detallada de la amenidad',
+            description: 'Descripción de la amenidad en cada idioma (ES / EN / PT)',
             placeholder: 'Descripción de lo que incluye esta amenidad',
             permissions: {
                 view: [PermissionEnum.AMENITY_CREATE],

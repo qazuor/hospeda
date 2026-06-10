@@ -59,6 +59,25 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
                 order: 3
             },
             {
+                paramKey: 'price',
+                labelKey: 'admin-filters.price.label',
+                type: 'number-range',
+                paramKeyMin: 'minPrice',
+                paramKeyMax: 'maxPrice',
+                min: 0,
+                step: 100,
+                unitLabelKey: 'admin-filters.unit.ars',
+                order: 4
+            },
+            {
+                paramKey: 'createdAt',
+                labelKey: 'admin-filters.createdAt.label',
+                type: 'date-range',
+                paramKeyFrom: 'createdAfter',
+                paramKeyTo: 'createdBefore',
+                order: 5
+            },
+            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
@@ -102,6 +121,9 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
         allowedPageSizes: [10, 20, 30, 50]
     },
 
+    // Default sort: alphabetical by name (overrides the global newest-first default).
+    defaultSort: { id: 'name', desc: false },
+
     // Layout configuration
     layoutConfig: {
         showBreadcrumbs: true,
@@ -110,7 +132,56 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
     },
 
     // Columns
-    createColumns: createAccommodationsColumns
+    createColumns: createAccommodationsColumns,
+
+    /**
+     * Curated peek drawer fields for accommodations.
+     *
+     * Only the most relevant fields are shown (not all columns) so the drawer
+     * stays scannable. accessorKeys match the column definitions; labelKeys
+     * reuse the i18n keys used in the column headers.
+     *
+     * Badge fields do NOT declare `badgeOptions` here — `EntityListPage` looks up
+     * the matching column definition and attaches its `badgeOptions` automatically,
+     * avoiding duplication between the column config and the peek config.
+     */
+    peekFields: [
+        { accessorKey: 'id', labelKey: 'admin-entities.columns.id', format: 'text' },
+        { accessorKey: 'type', labelKey: 'admin-entities.columns.type', format: 'badge' },
+        {
+            accessorKey: 'visibility',
+            labelKey: 'admin-entities.columns.visibility',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'lifecycleState',
+            labelKey: 'admin-entities.columns.status',
+            format: 'badge'
+        },
+        {
+            accessorKey: 'moderationState',
+            labelKey: 'admin-entities.columns.moderation',
+            format: 'badge'
+        },
+        { accessorKey: 'summary', labelKey: 'admin-entities.columns.summary', format: 'text' },
+        {
+            accessorKey: 'description',
+            labelKey: 'admin-entities.columns.description',
+            format: 'text',
+            maxLength: 500
+        },
+        { accessorKey: 'createdAt', labelKey: 'admin-entities.columns.createdAt', format: 'date' },
+        { accessorKey: 'updatedAt', labelKey: 'admin-entities.columns.updatedAt', format: 'date' },
+        { accessorKey: 'location', labelKey: 'admin-entities.columns.address', format: 'address' },
+        {
+            accessorKey: 'media.featuredImage.url',
+            labelKey: 'admin-entities.columns.photo',
+            format: 'image'
+        }
+    ],
+    // Header extras: slug as subtitle, isFeatured as a chip next to the title.
+    peekSubtitleField: 'slug',
+    peekFeaturedField: 'isFeatured'
 };
 
 // Generate the component and route

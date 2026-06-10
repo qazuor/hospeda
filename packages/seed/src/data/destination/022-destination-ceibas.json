@@ -4,7 +4,7 @@
     "slug": "ceibas",
     "name": "Ceibas",
     "summary": "Pueblito del sur entrerriano sobre la RN12, célebre parada gastronómica camino a Buenos Aires y puerta de acceso al delta del Ibicuy.",
-    "description": "Ceibas es una pequeña localidad del Departamento Islas del Ibicuy, en el sur de Entre Ríos, atravesada por la Ruta Nacional 12 y punto donde nace la Ruta Nacional 14. Su ubicación estratégica, a unos 150 km de Buenos Aires por el puente Zárate-Brazo Largo, la convirtió en una clásica parada gastronómica para viajeros que recorren el corredor mesopotámico, con parrillas, casas de comidas y panaderías tradicionales junto a la ruta. Más allá de la mesa, Ceibas funciona como puerta de acceso al delta entrerriano y a humedales de gran riqueza, con su reserva natural que registra cerca de 300 especies de aves. Pesca deportiva, observación de fauna, paseos en lancha y kayak por canales del Paraná, safaris fotográficos y turismo rural completan la propuesta de un destino tranquilo y autentico, ideal para una escapada corta o una pausa prolongada en el viaje.",
+    "description": "## Ceibas, parada clásica y puerta al delta\n\nCeibas es una pequeña localidad del Departamento Islas del Ibicuy, en el sur de Entre Ríos, atravesada por la Ruta Nacional 12 y punto donde se conecta con la Ruta Nacional 14. Su ubicación estratégica, a unos 150 km de Buenos Aires por el complejo Zárate-Brazo Largo, la convirtió en una **clásica parada gastronómica** para quienes recorren el corredor mesopotámico, con parrillas y casas de comidas que ofrecen asados, guisos, empanadas y platos típicos de la región junto a la ruta.\n\n## Naturaleza y observación de aves\n\nMás allá de la mesa, Ceibas funciona como **puerta de acceso al delta entrerriano** y a humedales de gran riqueza. Es un punto muy valorado para el avistaje de aves, con cerca de **300 especies** registradas, entre ellas pajonaleras de pico recto y curvo y el federal. En los caminos rurales que se extienden entre Ceibas y Gualeguay, a la vera de la Ruta 12, se accede a lagunas y arroyos, y en los montes y bañados pueden verse zorros, tortugas, coipos y carpinchos.\n\n## Qué hacer\n\nLa propuesta se completa con pesca deportiva, paseos en lancha y kayak por canales del Paraná, caminatas, cicloturismo, safaris fotográficos y turismo rural. Es un destino tranquilo y auténtico, ideal tanto para una escapada corta como para una pausa prolongada en el viaje hacia el Litoral.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -175,6 +175,33 @@
         "044-attraction-humedales",
         "077-attraction-reserva_natural",
         "065-attraction-pesca_deportiva"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Ceibas?",
+            "answer": "Ceibas está sobre la Ruta Nacional 12, a unos 150 km de Buenos Aires por el complejo Zárate-Brazo Largo. Es además el punto donde la Ruta Nacional 12 se conecta con la Ruta Nacional 14, por lo que funciona como cruce de paso obligado para quienes viajan hacia el resto de la Mesopotamia y el Litoral.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Por qué es famosa la gastronomía de Ceibas?",
+            "answer": "Por su ubicación sobre la ruta, Ceibas se consolidó como una clásica parada gastronómica del corredor mesopotámico. Sus parrillas y casas de comidas ofrecen una experiencia auténtica con platos típicos entrerrianos como asados, guisos y empanadas, elaborados con ingredientes frescos y locales.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Qué actividades de naturaleza se pueden hacer en Ceibas?",
+            "answer": "Ceibas es un punto destacado para la observación de aves, con cerca de 300 especies registradas. También se practica pesca deportiva, paseos en lancha y kayak por canales del Paraná, caminatas, cicloturismo, safaris fotográficos y turismo rural. En los montes y bañados de la zona pueden avistarse zorros, tortugas, coipos y carpinchos.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo conviene visitar Ceibas?",
+            "answer": "La primavera y el verano son las épocas más agradables para recorrer humedales, navegar y hacer actividades al aire libre. Por ser un cruce de rutas, Ceibas recibe muchos viajeros durante los fines de semana largos y la temporada de verano camino a la costa. Para el avistaje de aves, las primeras horas de la mañana suelen ser las más propicias.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios ofrece Ceibas al viajero?",
+            "answer": "Ceibas cuenta con paradores, parrillas y casas de comidas junto a la ruta, ideales para una pausa en el viaje. En materia de alojamiento hay posadas y estancias turísticas en la zona, y opciones complementarias de cabañas, bungalows y campings en localidades cercanas como Villa Paranacito y Gualeguay. Al ser un pueblo pequeño, conviene prever combustible y provisiones.",
+            "category": "Servicios"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

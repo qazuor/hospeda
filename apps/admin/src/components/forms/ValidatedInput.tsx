@@ -171,7 +171,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
         if (isValid) {
             return cn(
                 baseClasses,
-                'border-green-300 bg-green-50 focus:border-green-500 focus:ring-green-500 dark:bg-green-950',
+                'border-success/30 bg-success/5 focus:border-success focus:ring-success',
                 inputClassName,
                 className
             );
@@ -225,7 +225,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
                         )}
                         {isValid && !isValidating && (
                             <CheckIcon
-                                className="h-4 w-4 text-green-500"
+                                className="h-4 w-4 text-success"
                                 aria-label="Valid"
                             />
                         )}

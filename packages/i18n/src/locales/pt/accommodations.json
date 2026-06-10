@@ -244,6 +244,7 @@
         },
         "gallery": {
             "viewAll": "Ver todas as fotos",
+            "moreOverlay": "+{{count}} mais",
             "viewFullscreen": "Ver foto {n} em tela cheia",
             "backToAccommodation": "← Voltar ao alojamento",
             "photosSubpage": "Fotos"
@@ -324,6 +325,7 @@
         },
         "bookmark_count": "Salvo por {{count}} pessoas",
         "bookmark_count_one": "Salvo por {{count}} pessoa",
+        "bookmark_count_other": "Salvo por {{count}} pessoas",
         "bookmark_count_zero": "Seja o primeiro a salvar"
     },
     "amenityNames": {
@@ -365,7 +367,9 @@
         "blackout_curtains": "Cortinas blackout",
         "baby_crib": "Berço",
         "wheelchair_accessible": "Acessível para cadeirantes",
-        "pet_friendly": "Aceita pets"
+        "pet_friendly": "Aceita pets",
+        "electric_kettle": "Chaleira elétrica",
+        "kitchen_utensils": "Utensílios de cozinha"
     },
     "list": {
         "searchContext": {
@@ -387,5 +391,20 @@
         "viewMap": "Ver no mapa",
         "popular": "Mais salvos",
         "allDestinations": "Explorar destinos"
+    },
+    "aiChat": {
+        "fabLabel": "Perguntar à IA sobre esta acomodação",
+        "panelLabel": "Chat com IA — Perguntas sobre a acomodação",
+        "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Sempre verifique as informações com a acomodação.",
+        "priceDisclaimer": "Os preços e disponibilidade podem ter mudado. Entre em contato com a acomodação para confirmar.",
+        "placeholder": "Digite sua pergunta aqui…",
+        "send": "Enviar",
+        "sending": "Enviando…",
+        "errorDefault": "Não foi possível exibir a resposta. Por favor, tente novamente.",
+        "atCapMessage": "Você atingiu o limite desta conversa.",
+        "newConversation": "Nova conversa",
+        "close": "Fechar chat",
+        "expand": "Expandir painel",
+        "collapse": "Recolher painel"
     }
 }

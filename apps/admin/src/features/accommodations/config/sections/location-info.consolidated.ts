@@ -4,128 +4,129 @@ import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
- * Configuración consolidada para la sección Location Info de accommodation
+ * Location section — aligned to the real backend shape
+ * (`@repo/schemas#AccommodationLocationSchema`):
  *
- * @param _t - Función de traducción (no usada por ahora)
- * @returns Configuración consolidada de la sección location-info
+ *   location: {
+ *     coordinates?: { lat: string, long: string },
+ *     street?: string (2-50),
+ *     number?: string (1-10),
+ *     floor?: string (1-10),
+ *     apartment?: string (1-10)
+ *   }
+ *
+ * The geographic context (city, state, country, postal code) lives on the
+ * `destinationId` FK and is projected as `cityDestination` (SPEC-095) — those
+ * fields are intentionally absent here.
+ *
+ * Earlier this config declared `address`, `city`, `state`, `country` and
+ * `postalCode` flat TEXT fields plus flat `latitude` / `longitude` NUMBER
+ * fields. None of those matched the backend shape, so the PATCH bodies were
+ * silently stripped on save and the page never persisted changes. Replaced
+ * during the view/edit redesign.
  */
 export const createLocationInfoConsolidatedSection = (
     _t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => ({
     id: 'location-info',
-    title: 'Información de Ubicación',
-    description: 'Datos de ubicación y dirección del alojamiento',
+    title: 'Ubicación y contacto',
+    description: 'Dónde está el alojamiento',
     layout: LayoutTypeEnum.GRID,
-    modes: ['view', 'edit', 'create'], // Visible en todos los modos
+    modes: ['view', 'edit', 'create'],
     permissions: {
         view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
         edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
     },
     fields: [
         {
-            id: 'address',
-            type: FieldTypeEnum.TEXT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'Dirección',
-            description: 'Dirección completa del alojamiento',
-            placeholder: 'Av. Corrientes 1234, CABA, Argentina',
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
-            },
-            typeConfig: {}
-        },
-        {
-            id: 'city',
-            type: FieldTypeEnum.TEXT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'Ciudad',
-            description: 'Ciudad donde se encuentra el alojamiento',
-            placeholder: 'Buenos Aires',
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
-            },
-            typeConfig: {}
-        },
-        {
-            id: 'state',
+            id: 'location.street',
             type: FieldTypeEnum.TEXT,
             required: false,
             modes: ['view', 'edit', 'create'],
-            label: 'Provincia/Estado',
-            description: 'Provincia o estado del alojamiento',
-            placeholder: 'Buenos Aires',
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
-            },
-            typeConfig: {}
-        },
-        {
-            id: 'country',
-            type: FieldTypeEnum.TEXT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'País',
-            description: 'País donde se encuentra el alojamiento',
-            placeholder: 'Argentina',
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
-            },
-            typeConfig: {}
-        },
-        {
-            id: 'postalCode',
-            type: FieldTypeEnum.TEXT,
-            required: false,
-            modes: ['view', 'edit', 'create'],
-            label: 'Código Postal',
-            description: 'Código postal del alojamiento',
-            placeholder: '1043',
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
-            },
-            typeConfig: {}
-        },
-        {
-            id: 'latitude',
-            type: FieldTypeEnum.NUMBER,
-            required: false,
-            modes: ['view', 'edit', 'create'],
-            label: 'Latitud',
-            description: 'Coordenada de latitud (decimal)',
-            placeholder: '-34.6037',
+            label: 'Calle',
+            description: 'Nombre de la calle',
+            placeholder: 'Av. Costanera',
             permissions: {
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
             },
             typeConfig: {
-                step: 0.000001,
-                min: -90,
-                max: 90
+                minLength: 2,
+                maxLength: 50
             }
         },
         {
-            id: 'longitude',
-            type: FieldTypeEnum.NUMBER,
+            id: 'location.number',
+            type: FieldTypeEnum.TEXT,
             required: false,
             modes: ['view', 'edit', 'create'],
-            label: 'Longitud',
-            description: 'Coordenada de longitud (decimal)',
-            placeholder: '-58.3816',
+            label: 'Número',
+            description: 'Altura',
+            placeholder: '1234',
             permissions: {
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
             },
             typeConfig: {
-                step: 0.000001,
-                min: -180,
-                max: 180
+                minLength: 1,
+                maxLength: 10
+            }
+        },
+        {
+            id: 'location.floor',
+            type: FieldTypeEnum.TEXT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Piso',
+            description: 'Piso del edificio (opcional)',
+            placeholder: '3',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
+            },
+            typeConfig: {
+                minLength: 1,
+                maxLength: 10
+            }
+        },
+        {
+            id: 'location.apartment',
+            type: FieldTypeEnum.TEXT,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Departamento',
+            description: 'Unidad / departamento (opcional)',
+            placeholder: 'B',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
+            },
+            typeConfig: {
+                minLength: 1,
+                maxLength: 10
+            }
+        },
+        {
+            id: 'location.coordinates',
+            type: FieldTypeEnum.COORDINATES,
+            required: false,
+            modes: ['view', 'edit', 'create'],
+            label: 'Coordenadas',
+            description:
+                'Punto en el mapa. Arrastrá el marcador o hacé click para ubicarlo. También podés ingresar latitud y longitud manualmente.',
+            permissions: {
+                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
+                edit: [PermissionEnum.ACCOMMODATION_LOCATION_EDIT]
+            },
+            typeConfig: {
+                type: 'COORDINATES',
+                addressFields: {
+                    street: 'location.street',
+                    number: 'location.number',
+                    // SPEC-095 projection: city name lives at cityDestination.name.
+                    cityContext: 'cityDestination.name'
+                },
+                geocodingCountryCodes: ['ar']
             }
         }
     ]

@@ -1,61 +1,194 @@
 /**
  * @file og.ts
- * @description Dynamic OG image generation endpoint.
- * Returns a 1200x630 SVG with Hospeda branding for social media previews.
+ * @description Dynamic Open Graph image endpoint.
  *
- * Usage: GET /api/og?title=Page+Title&description=Optional+description
+ * SPEC-157 REQ-1: social platforms (Facebook, X, LinkedIn, WhatsApp) reject SVG
+ * for OG image previews, so this endpoint renders a real 1200x630 PNG via
+ * `@vercel/og` (satori + resvg). The element tree is built with plain satori
+ * objects (no JSX) — see `src/lib/og-template.ts` for the two card builders
+ * (PHOTO mode for entity detail pages, BRAND mode for home/listings/etc).
+ *
+ * Fonts: satori needs binary fonts (it cannot read a CSS @font-face). Roboto
+ * (400/700), Geologica 700 and Caveat 700 are fetched at runtime from the
+ * fontsource CDN and cached in module scope — the standalone Node server is
+ * long-lived, so each face downloads at most once per process. On failure the
+ * cache resets so the next request retries instead of caching a rejected promise.
+ *
+ * Static assets: the logo isotipo and the three hero images are read from disk
+ * once at module load and inlined as base64 data URIs. The path resolver probes
+ * the dev/test source layout (`public/`, `src/assets/`) and the production build
+ * layout (`dist/client/`) so the same code works in every runtime.
+ *
+ * Usage:
+ *   GET /api/og?title=...&description=...                      → BRAND card
+ *   GET /api/og?title=...&type=Alojamiento&image=...&rating=.. → PHOTO card
+ *   Optional: subtitle, tagline, seed (brand hero hashing; defaults to title).
+ *   Mode = photo when `image` is provided, else brand.
  *
  * @route GET /api/og
  */
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import {
+    HERO_KEYS,
+    type HeroKey,
+    OG_FONT_URLS,
+    type OgAssets,
+    type SatoriNode,
+    buildOgElement,
+    parseOgParams
+} from '@/lib/og-template';
+import { ImageResponse } from '@vercel/og';
 import type { APIRoute } from 'astro';
 
+export const prerender = false;
+
+interface OgFonts {
+    readonly roboto: ArrayBuffer;
+    readonly robotoBold: ArrayBuffer;
+    readonly geologica: ArrayBuffer;
+    readonly caveat: ArrayBuffer;
+}
+
 /**
- * OG image generation endpoint.
- * Returns a branded 1200x630 PNG with the page title and optional description.
+ * Module-scope font cache. The promise is memoised so concurrent cold requests
+ * share a single in-flight download; reset on failure so the next request retries.
  */
-export const GET: APIRoute = async ({ url }) => {
-    const title = url.searchParams.get('title') || 'Hospeda';
-    const description = url.searchParams.get('description') || '';
+let fontsCache: Promise<OgFonts> | null = null;
 
-    const svg = `
-    <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-            <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
-                <stop offset="100%" style="stop-color:#0284c7;stop-opacity:1" />
-            </linearGradient>
-        </defs>
-        <rect width="1200" height="630" fill="url(#bg)" />
-        <rect x="60" y="60" width="1080" height="510" rx="24" fill="white" fill-opacity="0.1" />
-        <text x="100" y="480" font-family="system-ui, sans-serif" font-size="36" fill="white" fill-opacity="0.8">hospeda.com.ar</text>
-        <text x="100" y="280" font-family="system-ui, sans-serif" font-size="56" font-weight="700" fill="white">
-            ${escapeXml(title.length > 40 ? `${title.slice(0, 40)}...` : title)}
-        </text>
-        ${
-            description
-                ? `<text x="100" y="340" font-family="system-ui, sans-serif" font-size="28" fill="white" fill-opacity="0.85">
-            ${escapeXml(description.length > 80 ? `${description.slice(0, 80)}...` : description)}
-        </text>`
-                : ''
+async function fetchFont(url: string): Promise<ArrayBuffer> {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) {
+        throw new Error(`OG font fetch failed (HTTP ${response.status}): ${url}`);
+    }
+    return response.arrayBuffer();
+}
+
+function loadFonts(): Promise<OgFonts> {
+    if (!fontsCache) {
+        fontsCache = Promise.all([
+            fetchFont(OG_FONT_URLS.robotoRegular),
+            fetchFont(OG_FONT_URLS.robotoBold),
+            fetchFont(OG_FONT_URLS.geologica),
+            fetchFont(OG_FONT_URLS.caveat)
+        ])
+            .then(([roboto, robotoBold, geologica, caveat]) => ({
+                roboto,
+                robotoBold,
+                geologica,
+                caveat
+            }))
+            .catch((error) => {
+                fontsCache = null;
+                throw error;
+            });
+    }
+    return fontsCache;
+}
+
+/**
+ * Read a static asset by trying a list of candidate paths relative to this
+ * module, returning the first that resolves. Returns null if none exist (the
+ * endpoint then degrades gracefully — satori renders the card without the asset
+ * rather than 500ing).
+ *
+ * Candidates cover:
+ *  - dev/test: this file is `src/pages/api/og.ts`, assets live under `public/`
+ *    and `src/assets/`.
+ *  - production: this file is bundled into `dist/server/`, public assets are
+ *    copied to `dist/client/`.
+ */
+function readAssetDataUri(relativeCandidates: readonly string[], mime: string): string | null {
+    for (const candidate of relativeCandidates) {
+        try {
+            const path = fileURLToPath(new URL(candidate, import.meta.url));
+            const buffer = readFileSync(path);
+            return `data:${mime};base64,${buffer.toString('base64')}`;
+        } catch {
+            // Try the next candidate.
         }
-        <text x="100" y="160" font-family="system-ui, sans-serif" font-size="72" font-weight="700" fill="white" fill-opacity="0.3">Hospeda</text>
-    </svg>`.trim();
+    }
+    return null;
+}
 
-    return new Response(svg, {
+const HERO_FILENAMES: Readonly<Record<HeroKey, string>> = {
+    atardecer: 'hero-atardecer.jpg',
+    isla: 'hero-isla.jpg',
+    playa: 'hero-playa.jpg'
+};
+
+/**
+ * Module-scope asset cache (logo + hero data URIs). Synchronous + memoised:
+ * resolved once on first request, reused for the process lifetime.
+ */
+let assetsCache: OgAssets | null = null;
+
+function loadStaticAssets(): OgAssets {
+    if (assetsCache) return assetsCache;
+
+    const logo =
+        readAssetDataUri(
+            [
+                // dev/test (src/pages/api → public)
+                '../../../public/android-chrome-512x512.png',
+                // production (dist/server/pages/api or similar → dist/client)
+                '../../client/android-chrome-512x512.png',
+                '../../../client/android-chrome-512x512.png'
+            ],
+            'image/png'
+        ) ?? '';
+
+    const heroes = Object.fromEntries(
+        HERO_KEYS.map((key) => {
+            const file = HERO_FILENAMES[key];
+            const uri =
+                readAssetDataUri(
+                    [
+                        `../../../public/og/${file}`,
+                        `../../../assets/images/hero/${file}`,
+                        `../../client/og/${file}`,
+                        `../../../client/og/${file}`
+                    ],
+                    'image/jpeg'
+                ) ?? '';
+            return [key, uri] as const;
+        })
+    ) as Record<HeroKey, string>;
+
+    assetsCache = { logo, heroes };
+    return assetsCache;
+}
+
+export const GET: APIRoute = async ({ url }) => {
+    let fonts: OgFonts;
+    try {
+        fonts = await loadFonts();
+    } catch {
+        return new Response('OG image unavailable: font could not be loaded', {
+            status: 500,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        });
+    }
+
+    const params = parseOgParams(url.searchParams);
+    const assets = loadStaticAssets();
+    const element = buildOgElement(params, assets) as SatoriNode;
+
+    // TYPE-WORKAROUND: `@vercel/og` ImageResponse expects its own internal `ReactNode`-like
+    // type for the first argument; `SatoriNode` (from the satori package) is structurally
+    // identical at runtime but TypeScript treats them as unrelated nominal types.
+    return new ImageResponse(element as unknown as ConstructorParameters<typeof ImageResponse>[0], {
+        width: 1200,
+        height: 630,
+        fonts: [
+            { name: 'Roboto', data: fonts.roboto, weight: 400, style: 'normal' },
+            { name: 'Roboto', data: fonts.robotoBold, weight: 700, style: 'normal' },
+            { name: 'Geologica', data: fonts.geologica, weight: 700, style: 'normal' },
+            { name: 'Caveat', data: fonts.caveat, weight: 700, style: 'normal' }
+        ],
         headers: {
-            'Content-Type': 'image/svg+xml',
             'Cache-Control': 'public, max-age=86400, s-maxage=604800'
         }
     });
 };
-
-/** Escape special XML characters to prevent injection in SVG */
-function escapeXml(str: string): string {
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&apos;');
-}

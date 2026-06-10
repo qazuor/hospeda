@@ -1,4 +1,4 @@
-import type { AdminInfoType } from '@repo/schemas';
+import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
@@ -8,8 +8,8 @@ import { rAccommodationFeature } from './r_accommodation_feature.dbschema.ts';
 export const features = pgTable('features', {
     id: uuid('id').primaryKey().defaultRandom(),
     slug: text('slug').notNull().unique(),
-    name: text('name').notNull(),
-    description: text('description'),
+    name: jsonb('name').$type<I18nText>().notNull(),
+    description: jsonb('description').$type<I18nText>(),
     icon: text('icon'),
     isBuiltin: boolean('is_builtin').notNull().default(false),
     isFeatured: boolean('is_featured').notNull().default(false),

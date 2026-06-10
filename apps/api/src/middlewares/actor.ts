@@ -14,11 +14,12 @@ import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { setRequestContextActor } from '../lib/request-context';
 import { createGuestActor } from '../utils/actor';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { getPermissionsForRole } from '../utils/role-permissions-cache';
-import { getUserPermissions } from '../utils/user-permissions-cache';
+import { getUserPermissionsWithEffect } from '../utils/user-permissions-cache';
 
 /**
  * Schema for validating mock actor permissions.
@@ -141,6 +142,13 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 const userName = typeof user.name === 'string' ? user.name : undefined;
                 const userEmail = typeof user.email === 'string' ? user.email : undefined;
                 const userImage = typeof user.image === 'string' ? user.image : undefined;
+                // Better Auth's session.user mirrors `users.email_verified` here.
+                // We forward the flag onto Actor so NewsletterSubscriberService.subscribe
+                // can branch between direct-to-active (verified) and the
+                // NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED block (unverified) without a
+                // second DB read on every call.
+                const userEmailVerified =
+                    typeof user.emailVerified === 'boolean' ? user.emailVerified : undefined;
 
                 // SUPER_ADMIN gets all permissions without a DB lookup
                 if (userRole === RoleEnum.SUPER_ADMIN) {
@@ -150,19 +158,28 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions: Object.values(PermissionEnum),
                         name: userName,
                         email: userEmail,
+                        emailVerified: userEmailVerified,
                         image: userImage
                     };
                 } else {
                     // Resolve permissions from role_permission table (cached)
                     const rolePermissions = await getPermissionsForRole(userRole);
 
-                    // Also merge any user-specific permissions from user_permission table (cached)
-                    const userPermissions = await getUserPermissions({ userId: user.id });
+                    // Merge per-user overrides from user_permission (cached), split by
+                    // effect. Effective set = (role ∪ grants) \ denies, with deny winning
+                    // over grant (SPEC-170). SUPER_ADMIN never reaches this branch, so
+                    // denies can never strip a super (handled by the short-circuit above).
+                    const userOverrides = await getUserPermissionsWithEffect({ userId: user.id });
 
-                    // Combine role-based and user-specific permissions (deduplicated)
-                    const allPermissions = [
-                        ...new Set([...rolePermissions, ...userPermissions])
-                    ] as PermissionEnum[];
+                    const effectivePermissions = new Set<PermissionEnum>([
+                        ...rolePermissions,
+                        ...userOverrides.grants
+                    ]);
+                    for (const deniedPermission of userOverrides.denies) {
+                        effectivePermissions.delete(deniedPermission);
+                    }
+
+                    const allPermissions = Array.from(effectivePermissions);
 
                     actor = {
                         id: user.id,
@@ -170,6 +187,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         permissions: allPermissions,
                         name: userName,
                         email: userEmail,
+                        emailVerified: userEmailVerified,
                         image: userImage
                     };
                 }
@@ -197,6 +215,14 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
         // Inject actor into context
         c.set('actor', actor);
+
+        // Enrich the AsyncLocalStorage request context with the resolved actor
+        // so logs emitted by packages that don't have access to Hono's Context
+        // can still be attributed to the actor. Guest actors have no meaningful
+        // identity, so we only set when a real user id is present.
+        if (actor.id && actor.role && actor.role !== 'GUEST') {
+            setRequestContextActor({ userId: actor.id, role: actor.role });
+        }
 
         await next();
     };

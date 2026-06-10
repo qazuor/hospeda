@@ -130,11 +130,28 @@ vi.mock('@sentry/node', () => ({
     captureException: vi.fn()
 }));
 
+// AddonCatalogService added for SPEC-192 T-011 cutover: addon.user-addons.ts
+// now resolves addon definitions via the DB-backed catalog instead of @repo/billing.
+// mockGetAddonBySlug is wired through the catalog mock so existing test assertions work.
 vi.mock('@repo/service-core', () => ({
     BILLING_EVENT_TYPES: { ADDON_REVOCATIONS_PENDING: 'addon_revocations_pending' },
     cancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1),
     queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
-    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false })
+    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        // Wire through mockGetAddonBySlug so tests that configure it continue to work.
+        // Returns { success: true, data: addonDef } when mockGetAddonBySlug returns a value,
+        // or { success: false, NOT_FOUND } when it returns null/undefined.
+        getBySlug: async (slug: string) => {
+            const def = mockGetAddonBySlug(slug);
+            if (def) return { success: true, data: def };
+            return {
+                success: false,
+                error: { code: 'NOT_FOUND', message: `Add-on not found: ${slug}` }
+            };
+        },
+        list: vi.fn().mockResolvedValue({ success: true, data: [] })
+    }))
 }));
 
 vi.mock('@repo/db/schemas/billing', () => ({

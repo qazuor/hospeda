@@ -4,7 +4,7 @@
     "slug": "liebig",
     "name": "Pueblo Liebig",
     "summary": "Pueblo histórico de origen industrial inglés a orillas del río Uruguay, en el Departamento Colón, declarado Patrimonio Histórico Provincial y Bien Industrial de la Nación.",
-    "description": "Pueblo Liebig es una pequeña localidad del Departamento Colón, en Entre Ríos, ubicada a unos 10 km al norte de la ciudad de Colón sobre la costa del río Uruguay. Nació a comienzos del siglo XX en torno al frigorífico de la Liebig's Extract of Meat Company Limited, instalado en 1903 sobre un antiguo saladero, que llegó a ser conocido como la cocina más grande del mundo por su producción de extracto de carne y corned beef exportado a Europa durante las guerras mundiales. La compañía construyó alrededor de 250 viviendas de estilo inglés para sus obreros y directivos, calles empedradas, hidrantes rojos y un trazado urbano que aún conserva cerca del 87% de sus fachadas originales protegidas por ordenanza. Hoy el pueblo combina su patrimonio industrial con la tranquilidad del entorno fluvial: se pueden recorrer las casas obreras, la antigua fábrica, el museo dedicado a la historia del frigorífico y disfrutar de paseos por la costa del río Uruguay. Fue declarado Patrimonio Histórico Provincial en 2014 y Bien Industrial de la Nación en 2017.",
+    "description": "## Pueblo Liebig, memoria industrial sobre el río Uruguay\n\nPueblo Liebig es una pequeña y apacible localidad del Departamento Colón, en Entre Ríos, ubicada a unos 10 a 15 km al norte de la ciudad de Colón, sobre la costa del **río Uruguay**. Nació a comienzos del siglo XX en torno al frigorífico de la **Liebig's Extract of Meat Company**, cuya fábrica fue inaugurada en 1904 sobre un antiguo saladero. Llegó a emplear a miles de trabajadores y fue conocida como \"la cocina más grande del mundo\": su extracto de carne y su corned beef alimentaron a los soldados aliados durante las dos guerras mundiales.\n\n## Un pueblo-fábrica de estilo inglés\n\nLa compañía construyó viviendas de estilo inglés para obreros y directivos, calles empedradas, plazas y muelles. El casco urbano conserva cerca del **87% de sus fachadas originales**, protegidas por ordenanza, con sus característicos hidrantes rojos, techos a dos aguas y colores ocres y verde inglés. El trazado refleja todavía la antigua división social entre los barrios obreros y el sector donde residían los directivos, separados por \"la manga\", la estructura de madera que conducía el ganado hacia el frigorífico.\n\n## Patrimonio y naturaleza\n\nFue declarado **Bien de Interés Histórico Nacional** por su valor como patrimonio industrial. Hoy se pueden recorrer los galpones de la antigua fábrica, los chalets históricos, el museo dedicado a la historia del frigorífico y la costa del río. La playa municipal, el club de pesca y la reserva natural de los Bancos del Caraballo —con extensos bancos de arena sobre el río— completan una propuesta que conjuga historia y naturaleza en un entorno tranquilo y de pocos habitantes.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -228,6 +228,38 @@
         "056-attraction-museo_regional",
         "031-attraction-costanera",
         "081-attraction-sendero_ecologico"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a Pueblo Liebig?",
+            "answer": "Pueblo Liebig está a unos 10 a 15 kilómetros al norte de la ciudad de Colón, en el Departamento Colón. La mayoría de los visitantes llega primero a Colón —por la Ruta Nacional 14 desde Buenos Aires u otros puntos del país— y desde allí se acerca a Liebig en pocos minutos en auto. Es una visita habitual de medio día combinada con San José y la zona del río Uruguay.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer en Pueblo Liebig?",
+            "answer": "El gran atractivo es recorrer su patrimonio industrial: los galpones de la antigua fábrica de la Liebig's, los chalets de estilo inglés, las calles empedradas con sus hidrantes rojos y el museo dedicado a la historia del frigorífico. También se puede disfrutar de la costa del río Uruguay, la playa municipal y la reserva natural de los Bancos del Caraballo.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuándo es mejor visitar Pueblo Liebig?",
+            "answer": "El verano es la temporada más concurrida por las playas y los bancos de arena sobre el río Uruguay. Para recorrer el patrimonio histórico y hacer las visitas guiadas, la primavera y el otoño ofrecen un clima muy agradable y menos afluencia. Por ser un pueblo pequeño, conviene consultar previamente los horarios del museo y los circuitos guiados.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios para turistas hay en Liebig?",
+            "answer": "Al ser una localidad pequeña, Liebig cuenta con una oferta acotada de alojamiento y gastronomía, además de su playa municipal y club de pesca. La cercana ciudad de Colón aporta la infraestructura turística completa —hoteles, cabañas, restaurantes, termas y prestadores de excursiones—, por lo que muchos visitantes se alojan allí y visitan Liebig en el día.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Por qué Pueblo Liebig es patrimonio histórico?",
+            "answer": "Porque conserva, casi intacto, un conjunto industrial y urbano único: la antigua fábrica de la Liebig's Extract of Meat Company, las viviendas de estilo inglés, las plazas y los muelles. Por ese valor fue reconocido como Bien de Interés Histórico Nacional, junto a su condición de pueblo nacido y organizado alrededor de un frigorífico de proyección mundial.",
+            "category": "Historia"
+        },
+        {
+            "question": "¿Qué fue el frigorífico Liebig's?",
+            "answer": "Fue una planta inaugurada en 1904 por la Liebig's Extract of Meat Company, que producía extracto de carne y corned beef exportados a Europa. Conocida como \"la cocina más grande del mundo\", alimentó a los soldados aliados durante las dos guerras mundiales y dio origen al pueblo, que creció en torno a sus instalaciones y a las viviendas construidas para sus trabajadores.",
+            "category": "Historia"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

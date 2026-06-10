@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "048-feature-luggage_storage",
-    "name": "Guardaequipaje",
+    "name": {
+        "es": "Guardaequipaje",
+        "en": "Guardaequipaje",
+        "pt": "Guardaequipaje"
+    },
     "slug": "luggage_storage",
-    "description": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",
+    "description": {
+        "es": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",
+        "en": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out",
+        "pt": "Servicio seguro de almacenamiento de equipaje antes del check-in o después del check-out"
+    },
     "icon": "LuggageStorageIcon",
     "isBuiltin": true,
     "isFeatured": false,

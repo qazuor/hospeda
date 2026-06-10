@@ -7,12 +7,14 @@ export {
     desc,
     asc,
     count,
+    max,
     gt,
     gte,
     lt,
     lte,
     isNull,
-    isNotNull
+    isNotNull,
+    inArray
 } from 'drizzle-orm';
 
 export * from './base/base.model.ts';

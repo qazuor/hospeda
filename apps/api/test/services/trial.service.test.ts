@@ -33,7 +33,13 @@ const { mockWithServiceTransaction, mockDbForTrial } = vi.hoisted(() => {
         where: vi.fn().mockReturnThis(),
         limit: vi.fn().mockResolvedValue([]),
         insert: vi.fn().mockReturnThis(),
-        values: vi.fn().mockResolvedValue(undefined)
+        values: vi.fn().mockResolvedValue(undefined),
+        // db.update(billingSubscriptions).set({ trialConvertedAt }).where(...) since
+        // ddc12e085 (stamp trial_converted_at when the cron cancels a trial). Without
+        // these, db.update() throws, the per-subscription catch swallows it, and
+        // blockedCount stays 0.
+        update: vi.fn().mockReturnThis(),
+        set: vi.fn().mockReturnThis()
     };
     return { mockWithServiceTransaction: withSvcTx, mockDbForTrial: dbMock };
 });
@@ -313,6 +319,106 @@ describe('TrialService', () => {
             expect(result.daysRemaining).toBe(0);
             expect(result.planSlug).toBeNull();
         });
+
+        it('should return safe defaults when no subscription exists (never had a trial)', async () => {
+            // Arrange
+            const customerId = 'customer-never-trial';
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — never-had-trial path
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(false);
+            expect(result.startedAt).toBeNull();
+            expect(result.expiresAt).toBeNull();
+            expect(result.daysRemaining).toBe(0);
+            expect(result.planSlug).toBeNull();
+        });
+
+        it('should return isExpired:true with timestamps when trial was canceled without converting', async () => {
+            // Arrange — canceled sub with trial_end set: trial expired without conversion.
+            const customerId = 'customer-expired-canceled';
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - 20); // started 20 days ago
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 6); // ended 6 days ago
+
+            const canceledTrialSub = {
+                id: 'sub-canceled-trial',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'canceled' as const,
+                trialStart: trialStart.toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+
+            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                canceledTrialSub
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+            // Act
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — expired-canceled path
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(true);
+            expect(result.daysRemaining).toBe(0);
+            expect(result.startedAt).toBe(trialStart.toISOString());
+            expect(result.expiresAt).toBe(trialEnd.toISOString());
+            expect(result.planSlug).toBe('owner-basico');
+        });
+
+        it('should NOT surface isExpired:true when trial converted to active paid plan', async () => {
+            // Arrange — user converted trial to paid: canceled trialing sub + new active sub.
+            // The new active sub has no trialEnd (it is a paid plan, not a trial).
+            const customerId = 'customer-converted';
+            const now = new Date();
+            const trialStart = new Date(now);
+            trialStart.setDate(trialStart.getDate() - 10);
+            const trialEnd = new Date(now);
+            trialEnd.setDate(trialEnd.getDate() - 2);
+
+            const canceledTrialSub = {
+                id: 'sub-old-trial',
+                customerId,
+                planId: 'plan-owner-basico',
+                status: 'canceled',
+                trialStart: trialStart.toISOString(),
+                trialEnd: trialEnd.toISOString()
+            };
+
+            const activePayingSub = {
+                id: 'sub-active-paid',
+                customerId,
+                planId: 'plan-owner-pro',
+                status: 'active',
+                trialStart: null,
+                trialEnd: null
+            };
+
+            const mockPlan = { id: 'plan-owner-pro', name: 'owner-pro' };
+
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
+                canceledTrialSub,
+                activePayingSub
+            ] as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue(mockPlan as never);
+
+            // Act — active paid sub should be found first; expired fallback must NOT trigger.
+            const result = await trialService.getTrialStatus({ customerId });
+
+            // Assert — current active plan is returned, not the old expired trial
+            expect(result.isOnTrial).toBe(false);
+            expect(result.isExpired).toBe(false);
+            expect(result.planSlug).toBe('owner-pro');
+        });
     });
 
     describe('checkTrialExpiry', () => {
@@ -494,6 +600,275 @@ describe('TrialService', () => {
 
             // Assert
             expect(result).toBe(1); // Only one succeeded
+        });
+
+        // ── T-004 Regression: advisory lock must guard the claim, not just signal ──
+        //
+        // BUG (SPEC-194 T-194-02): The current code acquires the advisory xact lock
+        // inside a withServiceTransaction that COMMITS before the processing loop
+        // runs. Because pg_try_advisory_xact_lock releases on transaction commit, a
+        // second concurrent invocation can also acquire the lock in its own separate
+        // transaction, and both instances end up processing the same expired
+        // subscriptions (double-cancel + double-notification).
+        //
+        // CORRECT behavior: only ONE of two concurrent invocations should process
+        // expired subscriptions. The second must be skipped (returns 0, no cancels).
+        //
+        // The fix (per ADR-019): lock + fetch must happen inside the SAME transaction.
+        // When the second invocation attempts to acquire the lock, the first instance's
+        // transaction is still open (holding the lock + fetch), so pg_try_advisory_xact_lock
+        // returns false and the second invocation skips without processing any subs.
+
+        it('[T-004] subscriptions.list() must be called INSIDE the lock-holding transaction callback (not after it returns)', async () => {
+            // ── Structural regression for SPEC-194 T-194-02 ──────────────────────────
+            // BUG: the current implementation calls withServiceTransaction ONLY to acquire
+            // the advisory lock, then lets the tx COMMIT (releasing the lock) before
+            // calling subscriptions.list(). This means the lock is gone by the time the
+            // fetch + processing loop runs, and two concurrent instances can both acquire
+            // the lock in separate sequential transactions and both process the same subs.
+            //
+            // FIX (ADR-019): lock + fetch must be in the SAME transaction.
+            // subscriptions.list() must be called INSIDE the withServiceTransaction
+            // callback — if the lock is not acquired, list() must not be called at all.
+            //
+            // This test verifies the structural invariant:
+            //   - withServiceTransaction is called exactly ONCE per blockExpiredTrials run
+            //   - subscriptions.list() is called while that callback is executing
+            //     (not after the transaction commits)
+            //
+            // Against BUG: list() is called AFTER the tx returns (separate code paths)
+            //   → the mock can detect this: list is called 0 times inside the callback
+            //   → but 1 time outside → failing the assertion that list is called inside.
+            // Against FIX: list() is called inside the callback → assertion passes.
+
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            let listCalledInsideTx = false;
+            let txCallbackActive = false;
+
+            // Track whether list() is called while the tx callback is executing
+            vi.spyOn(mockBilling.subscriptions, 'list').mockImplementation(async () => {
+                listCalledInsideTx = txCallbackActive;
+                return {
+                    data: [
+                        {
+                            id: 'sub-structural-1',
+                            customerId: 'customer-structural-1',
+                            planId: 'plan-1',
+                            status: 'trialing',
+                            trialEnd: expiredEnd.toISOString(),
+                            metadata: {}
+                        }
+                    ]
+                } as never;
+            });
+
+            mockWithServiceTransaction.mockImplementationOnce(
+                async <T>(
+                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                ) => {
+                    txCallbackActive = true;
+                    const result = await callback({
+                        tx: {
+                            execute: vi.fn().mockResolvedValue({
+                                rows: [{ pg_try_advisory_xact_lock: true }]
+                            })
+                        }
+                    });
+                    txCallbackActive = false;
+                    return result;
+                }
+            );
+
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'customer-structural-1',
+                email: 'test@example.com',
+                metadata: { name: 'Test User', userId: 'user-1' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'Test Plan'
+            } as never);
+
+            // Act
+            await trialService.blockExpiredTrials();
+
+            // Assert — list() must have been called while the tx callback was active.
+            // This FAILS against the BUG (list() is called after withServiceTransaction
+            // returns) and PASSES against the FIX (list() is called inside the callback).
+            expect(listCalledInsideTx).toBe(true);
+        });
+
+        it('[T-004] second invocation that cannot acquire lock returns 0 without touching QZPay', async () => {
+            // Arrange — simulate the second invocation arriving when the first holds the lock.
+            // pg_try_advisory_xact_lock returns false → the invocation must return 0
+            // and must NOT call subscriptions.list, subscriptions.cancel, or customers.get.
+
+            mockWithServiceTransaction.mockImplementationOnce(
+                async <T>(
+                    callback: (ctx: { tx: { execute: ReturnType<typeof vi.fn> } }) => Promise<T>
+                ) =>
+                    callback({
+                        tx: {
+                            execute: vi.fn().mockResolvedValue({
+                                rows: [{ pg_try_advisory_xact_lock: false }]
+                            })
+                        }
+                    })
+            );
+
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: [
+                    {
+                        id: 'sub-lock-skip',
+                        customerId: 'customer-lock-skip',
+                        planId: 'plan-1',
+                        status: 'trialing',
+                        trialEnd: expiredEnd.toISOString(),
+                        metadata: {}
+                    }
+                ]
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert — lock not acquired: must skip immediately, no processing
+            expect(result).toBe(0);
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalled();
+            // In the FIXED implementation, list() is called INSIDE the claim tx,
+            // so it won't be called when lock acquisition fails.
+            // (In the BUG, list() is called AFTER the tx commits regardless.)
+            // We assert cancel is not called as the critical invariant.
+        });
+
+        // ── T-016: claim must pass limit to subscriptions.list() ────────────────
+        //
+        // blockExpiredTrials must pass `limit: BLOCK_EXPIRED_TRIALS_BATCH_SIZE` to
+        // `subscriptions.list()` to bound how many subs are claimed per run.
+        // An unbounded fetch could hold the advisory lock for seconds on a large
+        // tenant base. The cron cadence drains the backlog over successive ticks.
+
+        it('[T-016] claim phase passes limit to subscriptions.list()', async () => {
+            // Arrange
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: []
+            } as never);
+
+            // Act
+            await trialService.blockExpiredTrials();
+
+            // Assert: list() must have been called with a `limit` field so the
+            // fetch is bounded. We do not pin the exact number so the constant
+            // can be tuned without touching tests; we just require it is present
+            // and is a positive integer.
+            expect(mockBilling.subscriptions.list).toHaveBeenCalledOnce();
+            const callArg = (mockBilling.subscriptions.list as ReturnType<typeof vi.fn>).mock
+                .calls[0]?.[0] as Record<string, unknown> | undefined;
+            expect(typeof callArg?.limit).toBe('number');
+            expect((callArg?.limit as number) > 0).toBe(true);
+        });
+
+        it('[T-016] large fixture — only up to batch size subs are processed per run', async () => {
+            // Arrange: generate 5 expired trialing subs; the list mock honours the limit
+            // by returning exactly what it is configured to return (we return all 5 here
+            // to verify the processing loop handles them correctly — the capping is
+            // enforced by the real QZPay storage adapter, not the service itself).
+            const now = new Date();
+            const makeSub = (i: number) => ({
+                id: `sub-large-${i}`,
+                customerId: `cust-large-${i}`,
+                status: 'trialing' as const,
+                trialEnd: new Date(now.getTime() - 1000 * i).toISOString(),
+                metadata: {}
+            });
+
+            const largeBatch = Array.from({ length: 5 }, (_, i) => makeSub(i + 1));
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: largeBatch
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'cust-large-1',
+                email: 'host@example.com',
+                metadata: { name: 'Host', userId: 'u1' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert: all 5 expired subs in the batch are processed.
+            // The list() call must still carry a limit so future large deployments
+            // are automatically bounded without code changes.
+            expect(result).toBe(5);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(5);
+            const listArg = (mockBilling.subscriptions.list as ReturnType<typeof vi.fn>).mock
+                .calls[0]?.[0] as Record<string, unknown> | undefined;
+            expect(typeof listArg?.limit).toBe('number');
+        });
+
+        // Item 4 regression (SPEC-194 adversarial review):
+        // A subscription in the claimed batch may already be in a terminal state
+        // (cancelled/expired/abandoned) between the claim commit and process phase.
+        // The pre-cancel status guard must skip such subscriptions without calling
+        // billing.subscriptions.cancel(), and the blockedCount should NOT include them.
+        it('item-4: skips cancel for claimed subscription already in a terminal status', async () => {
+            // Arrange: one subscription in terminal 'cancelled' state, one in 'trialing'
+            const now = new Date();
+            const expiredEnd = new Date(now);
+            expiredEnd.setDate(expiredEnd.getDate() - 1);
+
+            const cancelledSub = {
+                id: 'sub-already-cancelled',
+                customerId: 'customer-terminal',
+                status: 'cancelled', // terminal — should be skipped
+                trialEnd: expiredEnd.toISOString(),
+                metadata: {}
+            };
+            const trialingSub = {
+                id: 'sub-trialing-valid',
+                customerId: 'customer-valid',
+                status: 'trialing', // valid — should be processed
+                trialEnd: expiredEnd.toISOString(),
+                metadata: {}
+            };
+
+            vi.spyOn(mockBilling.subscriptions, 'list').mockResolvedValue({
+                data: [cancelledSub, trialingSub]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'cancel').mockResolvedValue({} as never);
+            vi.spyOn(mockBilling.customers, 'get').mockResolvedValue({
+                id: 'customer-valid',
+                email: 'valid@example.com',
+                metadata: { name: 'Valid User', userId: 'u-valid' }
+            } as never);
+            vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
+                id: 'plan-1',
+                name: 'owner-basico'
+            } as never);
+
+            // Act
+            const result = await trialService.blockExpiredTrials();
+
+            // Assert: only the trialing sub is blocked; cancel NOT called for the terminal one.
+            expect(result).toBe(1);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledTimes(1);
+            expect(mockBilling.subscriptions.cancel).toHaveBeenCalledWith('sub-trialing-valid');
+            expect(mockBilling.subscriptions.cancel).not.toHaveBeenCalledWith(
+                'sub-already-cancelled'
+            );
         });
     });
 

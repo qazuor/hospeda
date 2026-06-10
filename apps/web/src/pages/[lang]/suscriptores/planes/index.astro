@@ -5,38 +5,53 @@
  * page-specific copy, metadata, and JSON-LD live here, the card UI itself
  * is shared with /suscriptores/turistas/.
  *
- * Reads pricing directly from @repo/billing config (single source of truth).
+ * Fetches pricing from the public API at runtime (SSR) so that operator
+ * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
+ * Cache-Control: s-maxage=300, stale-while-revalidate=60 lets Cloudflare
+ * serve cached HTML for up to 5 minutes while revalidating in the background.
+ * T-017 will add a Cloudflare cache purge on plan save to force immediate
+ * refresh after an admin edit.
  *
  * @route /{lang}/suscriptores/planes/
- * @rendering SSG (prerender=true) — billing config lives in code; price changes
- *   ship via deploy and SSG regenerates automatically.
+ * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
+ *   time; Cache-Control: s-maxage=300, stale-while-revalidate=60.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import MarketingHero from '@/components/marketing/MarketingHero.astro';
 import PricingCardsGrid from '@/components/billing/PricingCardsGrid.astro';
 import PriceSpecificationJsonLd from '@/components/seo/PriceSpecificationJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import { ALL_PLANS } from '@repo/billing';
-import type { GetStaticPaths } from 'astro';
+import {
+	fetchPublicPlans,
+	filterPlansByCategory,
+	PRICING_CACHE_MAX_AGE_SECONDS,
+	PRICING_CACHE_SWR_SECONDS,
+} from '@/lib/billing/fetch-plans';
+import { BarChartIcon, BuildingIcon, StarIcon } from '@repo/icons';
 
-export const prerender = true;
-
-export const getStaticPaths = (() => {
-	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
-}) satisfies GetStaticPaths;
+export const prerender = false;
 
 const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(locale);
 
-// Read owner plans straight from the billing config. Same source the rest of
-// the system reads from (checkout, entitlements, admin viewer), so what we
-// display here is what gets charged.
-const ownerPlans = ALL_PLANS.filter((plan) => plan.category === 'owner' && plan.isActive)
-	.slice()
-	.sort((a, b) => a.sortOrder - b.sortOrder);
+// Set Cache-Control so Cloudflare caches the rendered HTML at the CDN edge.
+// s-maxage=300: serve from cache for up to 5 minutes.
+// stale-while-revalidate=60: revalidate in the background while serving stale.
+// T-017 adds a targeted purge on plan save for immediate invalidation.
+Astro.response.headers.set(
+	'Cache-Control',
+	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
+);
+
+// Fetch active plans from the public API endpoint at runtime.
+const fetchResult = await fetchPublicPlans();
+const ownerPlans = fetchResult.ok
+	? filterPlansByCategory(fetchResult.plans, 'owner')
+	: [];
 
 const intlLocale = getIntlLocale(locale);
 const highlightedSlug = ownerPlans[1]?.slug ?? 'owner-pro';
@@ -54,6 +69,12 @@ const jsonLdPlans = ownerPlans.map((plan) => ({
 	price: plan.monthlyPriceArs / 100,
 	url: planPageUrl,
 }));
+
+// Split heading to underline the last word with a handwritten accent.
+const headingFull = t('pricing.owner.heading', 'Planes para propietarios');
+const headingWords = headingFull.trim().split(/\s+/);
+const headingAccent = headingWords.pop() ?? headingFull;
+const headingMain = headingWords.join(' ');
 ---
 
 <MarketingLayout
@@ -66,20 +87,19 @@ const jsonLdPlans = ownerPlans.map((plan) => ({
 >
 	{hasPlans && <PriceSpecificationJsonLd slot="head-extra" plans={jsonLdPlans} />}
 
-	<section class="pricing-hero section section--warm">
-		<div class="pricing-hero__container" data-reveal="up">
-			<p class="pricing-hero__tagline">{t('pricing.owner.tagline', 'Planes y precios')}</p>
-			<h1 class="pricing-hero__title">
-				{t('pricing.owner.heading', 'Planes para propietarios')}
-			</h1>
-			<p class="pricing-hero__subtitle">
-				{t(
-					'pricing.owner.subtitle',
-					'Elegí el plan que mejor se adapte a tu propiedad y objetivos.'
-				)}
-			</p>
-		</div>
-	</section>
+	<MarketingHero
+		tagline={t('pricing.owner.tagline', 'Planes y precios')}
+		titleMain={headingMain}
+		titleAccent={headingAccent}
+		subtitle={t(
+			'pricing.owner.subtitle',
+			'Elegí el plan que mejor se adapte a tu propiedad y objetivos.'
+		)}
+	>
+		<Fragment slot="icon-1"><BuildingIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-2"><StarIcon size="md" weight="duotone" /></Fragment>
+		<Fragment slot="icon-3"><BarChartIcon size="md" weight="duotone" /></Fragment>
+	</MarketingHero>
 
 	<section class="pricing-cards section" aria-labelledby="pricing-cards-heading">
 		<PricingCardsGrid
@@ -94,41 +114,7 @@ const jsonLdPlans = ownerPlans.map((plan) => ({
 			emptyMessage={t('pricing.owner.empty', 'Planes no disponibles en este momento.')}
 			emptyActionUrl={buildUrl({ locale, path: 'contacto' })}
 			emptyActionLabel={t('pricing.empty.contact', 'Contactanos')}
-			periodLabel={t('pricing.owner.period', '/mes')}
 			ctaText={t('pricing.cta', 'Empezar')}
 		/>
 	</section>
 </MarketingLayout>
-
-<style>
-	.pricing-hero__container {
-		max-width: var(--container-max);
-		margin: 0 auto;
-		padding: 0 var(--space-container-x);
-		text-align: center;
-	}
-
-	.pricing-hero__tagline {
-		font-family: var(--font-decorative);
-		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-		color: var(--brand-accent);
-		font-style: italic;
-		margin: 0 0 var(--space-2);
-	}
-
-	.pricing-hero__title {
-		font-family: var(--font-heading);
-		font-weight: 700;
-		font-size: clamp(1.75rem, 4vw, 2.5rem);
-		color: var(--core-foreground);
-		margin: 0 0 var(--space-4);
-	}
-
-	.pricing-hero__subtitle {
-		font-family: var(--font-sans);
-		font-size: var(--text-body-lg);
-		color: var(--core-muted-foreground);
-		max-width: 50ch;
-		margin: 0 auto;
-	}
-</style>

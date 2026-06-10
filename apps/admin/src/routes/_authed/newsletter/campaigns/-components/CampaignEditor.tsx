@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import type { NewsletterCampaign } from '@repo/schemas';
-import { NewsletterCampaignLocaleFilterEnum } from '@repo/schemas';
+import { NewsletterCampaignLocaleFilterEnum, NewsletterContentTypeEnum } from '@repo/schemas';
 import { renderTiptapContent } from '@repo/utils';
 import { useForm } from '@tanstack/react-form';
 import { useNavigate } from '@tanstack/react-router';
@@ -62,11 +62,25 @@ export interface CampaignEditorProps {
 
 // ─── Form state types ─────────────────────────────────────────────────────────
 
+/**
+ * Sentinel for the "no segmentation" option in the contentType <Select>.
+ * Radix Select does not accept empty-string values, so we use a literal
+ * `'all'` token that maps back to `null` when persisting.
+ */
+const CONTENT_TYPE_ALL = 'all' as const;
+type ContentTypeOption = NewsletterContentTypeEnum | typeof CONTENT_TYPE_ALL;
+
 /** Internal form value shape (matches TanStack Form defaultValues). */
 interface CampaignFormValues {
     title: string;
     subject: string;
     localeFilter: NewsletterCampaignLocaleFilterEnum;
+    /**
+     * Audience content-type segmentation.
+     * - `null`/`undefined` → no segmentation (legacy behavior).
+     * - One of NewsletterContentTypeEnum → only subscribers opted-in for that type.
+     */
+    contentType: NewsletterContentTypeEnum | null;
     // Using unknown for bodyJson avoids deep TiptapDocument inference issues with @tanstack/react-form.
     // The field is typed as TiptapDocument | null in usage but stored as unknown here
     // to prevent "Type instantiation is excessively deep" TS errors.
@@ -80,6 +94,7 @@ function buildDefaults(campaign?: NewsletterCampaign): CampaignFormValues {
         localeFilter:
             (campaign?.localeFilter as NewsletterCampaignLocaleFilterEnum) ??
             NewsletterCampaignLocaleFilterEnum.ALL,
+        contentType: (campaign?.contentType as NewsletterContentTypeEnum | null) ?? null,
         bodyJson: campaign?.bodyJson ?? null
     };
 }
@@ -247,6 +262,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                         title,
                         subject,
                         localeFilter: v.localeFilter as NewsletterCampaignLocaleFilterEnum,
+                        contentType: v.contentType,
                         // biome-ignore lint/suspicious/noExplicitAny: required for Zod schema compatibility
                         bodyJson: buildBodyJson(v.bodyJson) as any
                     });
@@ -285,6 +301,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
         const title = value.title as string;
         const subject = value.subject as string;
         const localeFilter = value.localeFilter as NewsletterCampaignLocaleFilterEnum;
+        const contentType = value.contentType;
         // biome-ignore lint/suspicious/noExplicitAny: required for Zod schema compatibility
         const bodyJson = buildBodyJson(value.bodyJson) as any;
 
@@ -293,6 +310,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                 title,
                 subject,
                 localeFilter,
+                contentType,
                 bodyJson
             });
             setSavedOnce(true);
@@ -305,7 +323,13 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                 params: { campaignId: created.id }
             });
         } else if (isEdit && campaign?.id) {
-            await updateMutation.mutateAsync({ title, subject, localeFilter, bodyJson });
+            await updateMutation.mutateAsync({
+                title,
+                subject,
+                localeFilter,
+                contentType,
+                bodyJson
+            });
             setSavedOnce(true);
             addToast({
                 message: t('admin-newsletter.campaigns.savedDraftToast'),
@@ -386,7 +410,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
 
             {/* Sending banner */}
             {campaign?.status === 'sending' && (
-                <output className="block rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                <output className="block rounded-md border border-info/30 bg-info/10 px-4 py-3 text-foreground text-sm">
                     Esta campaña se está enviando actualmente. Los campos no son editables.
                 </output>
             )}
@@ -442,6 +466,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                                                 subject: form.state.values.subject as string,
                                                 localeFilter: form.state.values
                                                     .localeFilter as NewsletterCampaignLocaleFilterEnum,
+                                                contentType: form.state.values.contentType,
                                                 bodyJson: form.state.values.bodyJson
                                             });
                                         }}
@@ -486,6 +511,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                                                 subject: next,
                                                 localeFilter: form.state.values
                                                     .localeFilter as NewsletterCampaignLocaleFilterEnum,
+                                                contentType: form.state.values.contentType,
                                                 bodyJson: form.state.values.bodyJson
                                             });
                                         }}
@@ -521,6 +547,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                                                 title: form.state.values.title as string,
                                                 subject: form.state.values.subject as string,
                                                 localeFilter: next,
+                                                contentType: form.state.values.contentType,
                                                 bodyJson: form.state.values.bodyJson
                                             });
                                         }}
@@ -556,6 +583,81 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                             )}
                         </form.Field>
 
+                        {/* Content-type segmentation */}
+                        <form.Field name="contentType">
+                            {(field) => {
+                                // Map between the form's `NewsletterContentTypeEnum | null`
+                                // and the Radix Select's required non-empty string value.
+                                const selectValue: ContentTypeOption =
+                                    field.state.value ?? CONTENT_TYPE_ALL;
+
+                                return (
+                                    <div className="flex flex-col gap-1.5">
+                                        <Label htmlFor="campaign-content-type">
+                                            Segmentación por tipo de contenido
+                                        </Label>
+                                        <Select
+                                            value={selectValue}
+                                            onValueChange={(value) => {
+                                                const next: NewsletterContentTypeEnum | null =
+                                                    value === CONTENT_TYPE_ALL
+                                                        ? null
+                                                        : (value as NewsletterContentTypeEnum);
+                                                field.handleChange(next);
+                                                scheduleAutosave({
+                                                    title: form.state.values.title as string,
+                                                    subject: form.state.values.subject as string,
+                                                    localeFilter: form.state.values
+                                                        .localeFilter as NewsletterCampaignLocaleFilterEnum,
+                                                    contentType: next,
+                                                    bodyJson: form.state.values.bodyJson
+                                                });
+                                            }}
+                                            disabled={isReadOnly || isSending}
+                                        >
+                                            <SelectTrigger
+                                                id="campaign-content-type"
+                                                data-testid="campaign-content-type-select"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={CONTENT_TYPE_ALL}>
+                                                    Todos los suscriptores (sin segmentar)
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value={NewsletterContentTypeEnum.OFFERS}
+                                                >
+                                                    Ofertas
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value={NewsletterContentTypeEnum.EVENTS}
+                                                >
+                                                    Eventos
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value={NewsletterContentTypeEnum.GUIDES}
+                                                >
+                                                    Guías
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value={NewsletterContentTypeEnum.PRODUCT_NEWS}
+                                                >
+                                                    Novedades del producto
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-muted-foreground text-xs">
+                                            Solo los suscriptores con esta preferencia activa
+                                            recibirán la campaña. Dejar en &quot;sin segmentar&quot;
+                                            envía a toda la audiencia que cumpla el filtro de
+                                            idioma.
+                                        </p>
+                                    </div>
+                                );
+                            }}
+                        </form.Field>
+
                         {/* Rich text body */}
                         <form.Field name="bodyJson">
                             {(field) => (
@@ -574,6 +676,7 @@ export function CampaignEditor({ mode, campaign }: CampaignEditorProps) {
                                                 subject: form.state.values.subject as string,
                                                 localeFilter: form.state.values
                                                     .localeFilter as NewsletterCampaignLocaleFilterEnum,
+                                                contentType: form.state.values.contentType,
                                                 bodyJson: next
                                             });
                                         }}

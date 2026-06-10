@@ -64,18 +64,25 @@ const { chips, ariaLabel } = Astro.props;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         list-style: none;
+        /* Edge-fade widths, driven by the scroll-state script below. Default is
+           0 (no fade) on both sides so the FIRST chip is never dimmed at rest
+           (BETA-30: "Cultura" looked faded under a fixed left fade). The script
+           raises a side to 48px only when there is off-screen content to scroll
+           toward on that side. */
+        --tag-chips-fade-start: 0px;
+        --tag-chips-fade-end: 0px;
         mask-image: linear-gradient(
             to right,
             transparent 0,
-            black 48px,
-            black calc(100% - 48px),
+            black var(--tag-chips-fade-start),
+            black calc(100% - var(--tag-chips-fade-end)),
             transparent 100%
         );
         -webkit-mask-image: linear-gradient(
             to right,
             transparent 0,
-            black 48px,
-            black calc(100% - 48px),
+            black var(--tag-chips-fade-start),
+            black calc(100% - var(--tag-chips-fade-end)),
             transparent 100%
         );
     }
@@ -90,7 +97,7 @@ const { chips, ariaLabel } = Astro.props;
         white-space: nowrap;
         padding: 6px 16px;
         border-radius: var(--radius-pill, 9999px);
-        border: 1px solid var(--border, oklch(from var(--brand-primary) l c h / 0.25));
+        border: 1px solid var(--border, var(--brand-primary-a25));
         background-color: var(--core-card);
         color: var(--core-foreground);
         font-family: var(--font-sans);
@@ -112,7 +119,7 @@ const { chips, ariaLabel } = Astro.props;
         background-color: var(--brand-accent);
         color: var(--accent-foreground, #fff);
         border-color: var(--brand-accent);
-        box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.3);
+        box-shadow: 0 2px 8px var(--brand-accent-a30);
     }
 
     .tag-chips__chip:focus-visible {
@@ -120,3 +127,45 @@ const { chips, ariaLabel } = Astro.props;
         outline-offset: 2px;
     }
 </style>
+
+<script>
+    /**
+     * Toggle the left/right edge fade per scroll position so the fade only
+     * appears on a side that has off-screen chips (BETA-30). At rest (scrollLeft
+     * 0) the left fade stays off, keeping the first chip ("Cultura") crisp.
+     * Runs on every page load incl. View Transitions; idempotent per list.
+     */
+    const FADE = '48px';
+    const NONE = '0px';
+
+    function initTagChipsFades(): void {
+        const lists = document.querySelectorAll<HTMLElement>('.tag-chips__list');
+        for (const list of lists) {
+            if (list.dataset.fadeInit === 'true') continue;
+            list.dataset.fadeInit = 'true';
+
+            const update = (): void => {
+                const maxScroll = list.scrollWidth - list.clientWidth;
+                const scrollable = maxScroll > 1;
+                const atStart = list.scrollLeft <= 1;
+                const atEnd = list.scrollLeft >= maxScroll - 1;
+                list.style.setProperty(
+                    '--tag-chips-fade-start',
+                    scrollable && !atStart ? FADE : NONE
+                );
+                list.style.setProperty(
+                    '--tag-chips-fade-end',
+                    scrollable && !atEnd ? FADE : NONE
+                );
+            };
+
+            list.addEventListener('scroll', update, { passive: true });
+            if (typeof ResizeObserver !== 'undefined') {
+                new ResizeObserver(update).observe(list);
+            }
+            update();
+        }
+    }
+
+    document.addEventListener('astro:page-load', initTagChipsFades);
+</script>

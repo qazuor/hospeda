@@ -1,8 +1,11 @@
 /**
  * Billing Settings Page
  *
- * Manages system-wide billing configuration including trials, payments,
- * webhooks, and notifications.
+ * Manages system-wide billing configuration: trials, payments, and
+ * notifications. The form binds to the FLAT contract served by
+ * `GET/PATCH /api/v1/admin/billing/settings` (see apps/api/src/routes/billing/
+ * settings.ts). Webhook configuration is env-managed and not part of this
+ * surface (SPEC-143 smoke F-ADMIN-SETTINGS).
  */
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
@@ -11,62 +14,89 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import {
+    type BillingSettings,
     type UpdateBillingSettingsPayload,
     useBillingSettingsQuery,
     useUpdateBillingSettingsMutation
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { getFriendlyErrorInfo, reportError } from '@/lib/errors';
-import { formatDate } from '@repo/i18n';
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/settings')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingSettingsPage
 });
 
+const DEFAULT_VALUES = {
+    ownerTrialDays: 14,
+    complexTrialDays: 28,
+    trialAutoBlock: true,
+    gracePeriodDays: 3,
+    currency: 'ARS',
+    taxRate: 21,
+    maxPaymentRetries: 3,
+    retryIntervalHours: 24,
+    sendTrialExpiryReminder: true,
+    trialExpiryReminderDays: 3,
+    sendPaymentFailedNotification: true,
+    sendSubscriptionCancelledNotification: true
+};
+
+/**
+ * Map the API settings payload to the form's value shape, falling back to the
+ * defaults for any field the server omits. Used as the dirty-tracking baseline
+ * via `form.reset(...)` so the form mounts pristine and only flags dirty on a
+ * real user edit (SPEC-143 smoke F-ADMIN-SETTINGS-DIRTY).
+ */
+function toFormValues(settings: BillingSettings): typeof DEFAULT_VALUES {
+    return {
+        ownerTrialDays: settings.ownerTrialDays ?? DEFAULT_VALUES.ownerTrialDays,
+        complexTrialDays: settings.complexTrialDays ?? DEFAULT_VALUES.complexTrialDays,
+        trialAutoBlock: settings.trialAutoBlock ?? DEFAULT_VALUES.trialAutoBlock,
+        gracePeriodDays: settings.gracePeriodDays ?? DEFAULT_VALUES.gracePeriodDays,
+        currency: settings.currency ?? DEFAULT_VALUES.currency,
+        taxRate: settings.taxRate ?? DEFAULT_VALUES.taxRate,
+        maxPaymentRetries: settings.maxPaymentRetries ?? DEFAULT_VALUES.maxPaymentRetries,
+        retryIntervalHours: settings.retryIntervalHours ?? DEFAULT_VALUES.retryIntervalHours,
+        sendTrialExpiryReminder:
+            settings.sendTrialExpiryReminder ?? DEFAULT_VALUES.sendTrialExpiryReminder,
+        trialExpiryReminderDays:
+            settings.trialExpiryReminderDays ?? DEFAULT_VALUES.trialExpiryReminderDays,
+        sendPaymentFailedNotification:
+            settings.sendPaymentFailedNotification ?? DEFAULT_VALUES.sendPaymentFailedNotification,
+        sendSubscriptionCancelledNotification:
+            settings.sendSubscriptionCancelledNotification ??
+            DEFAULT_VALUES.sendSubscriptionCancelledNotification
+    };
+}
+
 function BillingSettingsPage() {
-    const { t, locale } = useTranslations();
+    const { t } = useTranslations();
     const { addToast } = useToast();
-    const [hasChanges, setHasChanges] = useState(false);
 
     const { data: settings, isLoading, error } = useBillingSettingsQuery();
     const updateMutation = useUpdateBillingSettingsMutation();
 
     const form = useForm({
-        defaultValues: {
-            trial: {
-                trialDurationDays: 14,
-                autoBlockOnExpiry: true
-            },
-            payment: {
-                gracePeriodDays: 3,
-                paymentRetryAttempts: 3,
-                retryIntervalHours: 24,
-                defaultCurrency: 'ARS'
-            },
-            notification: {
-                sendPaymentReminders: true,
-                reminderDaysBeforeDue: 3,
-                sendReceiptOnPayment: true
-            }
-        },
+        defaultValues: DEFAULT_VALUES,
         onSubmit: async ({ value }) => {
             try {
                 const payload: UpdateBillingSettingsPayload = value;
-
-                await updateMutation.mutateAsync(payload);
-
+                const saved = await updateMutation.mutateAsync(payload);
+                // Adopt the persisted values as the new dirty baseline so the
+                // form returns to pristine (Save disabled) right after a save.
+                form.reset(toFormValues(saved));
                 addToast({
                     title: t('admin-billing.settings.toastSavedTitle'),
                     message: t('admin-billing.settings.toastSavedMessage'),
                     variant: 'success'
                 });
-
-                setHasChanges(false);
             } catch (err) {
                 addToast({
                     title: t('admin-billing.settings.toastErrorTitle'),
@@ -80,40 +110,14 @@ function BillingSettingsPage() {
         }
     });
 
-    // Update form when settings are loaded
+    // Seed the form once settings load, using the server values as the dirty
+    // baseline (reset updates the form's default values). This keeps the form
+    // pristine on mount even when server values differ from DEFAULT_VALUES.
     useEffect(() => {
         if (settings) {
-            form.setFieldValue('trial.trialDurationDays', settings.trial.trialDurationDays);
-            form.setFieldValue('trial.autoBlockOnExpiry', settings.trial.autoBlockOnExpiry);
-            form.setFieldValue('payment.gracePeriodDays', settings.payment.gracePeriodDays);
-            form.setFieldValue(
-                'payment.paymentRetryAttempts',
-                settings.payment.paymentRetryAttempts
-            );
-            form.setFieldValue('payment.retryIntervalHours', settings.payment.retryIntervalHours);
-            form.setFieldValue('payment.defaultCurrency', settings.payment.defaultCurrency);
-            form.setFieldValue(
-                'notification.sendPaymentReminders',
-                settings.notification.sendPaymentReminders
-            );
-            form.setFieldValue(
-                'notification.reminderDaysBeforeDue',
-                settings.notification.reminderDaysBeforeDue
-            );
-            form.setFieldValue(
-                'notification.sendReceiptOnPayment',
-                settings.notification.sendReceiptOnPayment
-            );
+            form.reset(toFormValues(settings));
         }
     }, [settings, form]);
-
-    // Track form changes
-    useEffect(() => {
-        const isDirty = form.state.isDirty;
-        if (isDirty !== hasChanges) {
-            setHasChanges(isDirty);
-        }
-    }, [form.state.isDirty, hasChanges]);
 
     // Report load errors to Sentry once per occurrence.
     useEffect(() => {
@@ -173,7 +177,7 @@ function BillingSettingsPage() {
         );
     }
 
-    const isApiAvailable = settings && !error;
+    const isApiAvailable = !!settings && !error;
 
     return (
         <SidebarPageLayout>
@@ -195,22 +199,26 @@ function BillingSettingsPage() {
                         </p>
                     </div>
 
-                    <Button
-                        type="submit"
-                        disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
-                    >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <form.Subscribe selector={(state) => state.isDirty}>
+                        {(isDirty) => (
+                            <Button
+                                type="submit"
+                                disabled={!isDirty || updateMutation.isPending || !isApiAvailable}
+                            >
+                                {updateMutation.isPending && (
+                                    <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                                )}
+                                <SaveIcon className="mr-2 h-4 w-4" />
+                                {t('admin-billing.settings.saveChanges')}
+                            </Button>
                         )}
-                        <SaveIcon className="mr-2 h-4 w-4" />
-                        {t('admin-billing.settings.saveChanges')}
-                    </Button>
+                    </form.Subscribe>
                 </div>
 
                 {!isApiAvailable && (
-                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
+                    <Card className="border-warning/30 bg-warning/10">
                         <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                            <p className="text-foreground text-sm">
                                 <strong>{t('admin-billing.settings.noteLabel')}</strong>{' '}
                                 {t('admin-billing.settings.apiUnavailable')}
                             </p>
@@ -228,16 +236,17 @@ function BillingSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2">
-                            <form.Field name="trial.trialDurationDays">
+                            <form.Field name="ownerTrialDays">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="trial.trialDurationDays">
-                                            {t('admin-billing.settings.trial.durationLabel')}
+                                        <Label htmlFor="ownerTrialDays">
+                                            {t('admin-billing.settings.trial.ownerDurationLabel')}
                                         </Label>
                                         <Input
-                                            id="trial.trialDurationDays"
+                                            id="ownerTrialDays"
                                             type="number"
                                             min={1}
+                                            max={90}
                                             value={field.state.value}
                                             onChange={(e) =>
                                                 field.handleChange(Number(e.target.value))
@@ -245,22 +254,41 @@ function BillingSettingsPage() {
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            {t('admin-billing.settings.trial.durationHint')}
+                                            {t('admin-billing.settings.trial.ownerDurationHint')}
                                         </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
                                     </div>
                                 )}
                             </form.Field>
 
-                            <form.Field name="trial.autoBlockOnExpiry">
+                            <form.Field name="complexTrialDays">
+                                {(field) => (
+                                    <div>
+                                        <Label htmlFor="complexTrialDays">
+                                            {t('admin-billing.settings.trial.complexDurationLabel')}
+                                        </Label>
+                                        <Input
+                                            id="complexTrialDays"
+                                            type="number"
+                                            min={1}
+                                            max={90}
+                                            value={field.state.value}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                            onBlur={field.handleBlur}
+                                        />
+                                        <p className="mt-1 text-muted-foreground text-xs">
+                                            {t('admin-billing.settings.trial.complexDurationHint')}
+                                        </p>
+                                    </div>
+                                )}
+                            </form.Field>
+
+                            <form.Field name="trialAutoBlock">
                                 {(field) => (
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="trial.autoBlockOnExpiry">
+                                            <Label htmlFor="trialAutoBlock">
                                                 {t('admin-billing.settings.trial.autoBlockLabel')}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
@@ -268,7 +296,7 @@ function BillingSettingsPage() {
                                             </p>
                                         </div>
                                         <Switch
-                                            id="trial.autoBlockOnExpiry"
+                                            id="trialAutoBlock"
                                             checked={field.state.value}
                                             onCheckedChange={field.handleChange}
                                         />
@@ -289,16 +317,17 @@ function BillingSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="grid gap-6 md:grid-cols-2">
-                            <form.Field name="payment.gracePeriodDays">
+                            <form.Field name="gracePeriodDays">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="payment.gracePeriodDays">
+                                        <Label htmlFor="gracePeriodDays">
                                             {t('admin-billing.settings.payment.graceLabel')}
                                         </Label>
                                         <Input
-                                            id="payment.gracePeriodDays"
+                                            id="gracePeriodDays"
                                             type="number"
                                             min={0}
+                                            max={30}
                                             value={field.state.value}
                                             onChange={(e) =>
                                                 field.handleChange(Number(e.target.value))
@@ -308,80 +337,18 @@ function BillingSettingsPage() {
                                         <p className="mt-1 text-muted-foreground text-xs">
                                             {t('admin-billing.settings.payment.graceHint')}
                                         </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
                                     </div>
                                 )}
                             </form.Field>
 
-                            <form.Field name="payment.paymentRetryAttempts">
+                            <form.Field name="currency">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="payment.paymentRetryAttempts">
-                                            {t('admin-billing.settings.payment.retryLabel')}
-                                        </Label>
-                                        <Input
-                                            id="payment.paymentRetryAttempts"
-                                            type="number"
-                                            min={1}
-                                            max={10}
-                                            value={field.state.value}
-                                            onChange={(e) =>
-                                                field.handleChange(Number(e.target.value))
-                                            }
-                                            onBlur={field.handleBlur}
-                                        />
-                                        <p className="mt-1 text-muted-foreground text-xs">
-                                            {t('admin-billing.settings.payment.retryHint')}
-                                        </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </form.Field>
-
-                            <form.Field name="payment.retryIntervalHours">
-                                {(field) => (
-                                    <div>
-                                        <Label htmlFor="payment.retryIntervalHours">
-                                            {t('admin-billing.settings.payment.intervalLabel')}
-                                        </Label>
-                                        <Input
-                                            id="payment.retryIntervalHours"
-                                            type="number"
-                                            min={1}
-                                            value={field.state.value}
-                                            onChange={(e) =>
-                                                field.handleChange(Number(e.target.value))
-                                            }
-                                            onBlur={field.handleBlur}
-                                        />
-                                        <p className="mt-1 text-muted-foreground text-xs">
-                                            {t('admin-billing.settings.payment.intervalHint')}
-                                        </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
-                                    </div>
-                                )}
-                            </form.Field>
-
-                            <form.Field name="payment.defaultCurrency">
-                                {(field) => (
-                                    <div>
-                                        <Label htmlFor="payment.defaultCurrency">
+                                        <Label htmlFor="currency">
                                             {t('admin-billing.settings.payment.currencyLabel')}
                                         </Label>
                                         <Input
-                                            id="payment.defaultCurrency"
+                                            id="currency"
                                             type="text"
                                             maxLength={3}
                                             value={field.state.value}
@@ -394,69 +361,81 @@ function BillingSettingsPage() {
                                         <p className="mt-1 text-muted-foreground text-xs">
                                             {t('admin-billing.settings.payment.currencyHint')}
                                         </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
                                     </div>
                                 )}
                             </form.Field>
-                        </div>
-                    </CardContent>
-                </Card>
 
-                {/* Webhook Settings */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t('admin-billing.settings.webhook.title')}</CardTitle>
-                        <CardDescription>
-                            {t('admin-billing.settings.webhook.description')}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label htmlFor="webhook.webhookUrl">
-                                {t('admin-billing.settings.webhook.urlLabel')}
-                            </Label>
-                            <Input
-                                id="webhook.webhookUrl"
-                                type="text"
-                                value={settings?.webhook.webhookUrl || ''}
-                                disabled
-                                className="mt-2"
-                            />
-                            <p className="mt-1 text-muted-foreground text-xs">
-                                {t('admin-billing.settings.webhook.readOnly')}
-                            </p>
-                        </div>
+                            <form.Field name="taxRate">
+                                {(field) => (
+                                    <div>
+                                        <Label htmlFor="taxRate">
+                                            {t('admin-billing.settings.payment.taxRateLabel')}
+                                        </Label>
+                                        <Input
+                                            id="taxRate"
+                                            type="number"
+                                            min={0}
+                                            max={100}
+                                            value={field.state.value}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                            onBlur={field.handleBlur}
+                                        />
+                                        <p className="mt-1 text-muted-foreground text-xs">
+                                            {t('admin-billing.settings.payment.taxRateHint')}
+                                        </p>
+                                    </div>
+                                )}
+                            </form.Field>
 
-                        <div>
-                            <Label htmlFor="webhook.webhookSecret">
-                                {t('admin-billing.settings.webhook.secretLabel')}
-                            </Label>
-                            <Input
-                                id="webhook.webhookSecret"
-                                type="password"
-                                value={settings?.webhook.webhookSecret || ''}
-                                disabled
-                                className="mt-2"
-                            />
-                            <p className="mt-1 text-muted-foreground text-xs">
-                                {t('admin-billing.settings.webhook.secretHint')}
-                            </p>
-                        </div>
+                            <form.Field name="maxPaymentRetries">
+                                {(field) => (
+                                    <div>
+                                        <Label htmlFor="maxPaymentRetries">
+                                            {t('admin-billing.settings.payment.retryLabel')}
+                                        </Label>
+                                        <Input
+                                            id="maxPaymentRetries"
+                                            type="number"
+                                            min={0}
+                                            max={10}
+                                            value={field.state.value}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                            onBlur={field.handleBlur}
+                                        />
+                                        <p className="mt-1 text-muted-foreground text-xs">
+                                            {t('admin-billing.settings.payment.retryHint')}
+                                        </p>
+                                    </div>
+                                )}
+                            </form.Field>
 
-                        <div>
-                            <Label>{t('admin-billing.settings.webhook.lastReceivedLabel')}</Label>
-                            <p className="mt-2 text-sm">
-                                {settings?.webhook.lastWebhookReceivedAt
-                                    ? formatDate({
-                                          date: settings.webhook.lastWebhookReceivedAt,
-                                          locale
-                                      })
-                                    : t('admin-billing.settings.webhook.none')}
-                            </p>
+                            <form.Field name="retryIntervalHours">
+                                {(field) => (
+                                    <div>
+                                        <Label htmlFor="retryIntervalHours">
+                                            {t('admin-billing.settings.payment.intervalLabel')}
+                                        </Label>
+                                        <Input
+                                            id="retryIntervalHours"
+                                            type="number"
+                                            min={1}
+                                            max={168}
+                                            value={field.state.value}
+                                            onChange={(e) =>
+                                                field.handleChange(Number(e.target.value))
+                                            }
+                                            onBlur={field.handleBlur}
+                                        />
+                                        <p className="mt-1 text-muted-foreground text-xs">
+                                            {t('admin-billing.settings.payment.intervalHint')}
+                                        </p>
+                                    </div>
+                                )}
+                            </form.Field>
                         </div>
                     </CardContent>
                 </Card>
@@ -471,23 +450,23 @@ function BillingSettingsPage() {
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-4">
-                            <form.Field name="notification.sendPaymentReminders">
+                            <form.Field name="sendTrialExpiryReminder">
                                 {(field) => (
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="notification.sendPaymentReminders">
+                                            <Label htmlFor="sendTrialExpiryReminder">
                                                 {t(
-                                                    'admin-billing.settings.notification.remindersLabel'
+                                                    'admin-billing.settings.notification.trialReminderLabel'
                                                 )}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
                                                 {t(
-                                                    'admin-billing.settings.notification.remindersHint'
+                                                    'admin-billing.settings.notification.trialReminderHint'
                                                 )}
                                             </p>
                                         </div>
                                         <Switch
-                                            id="notification.sendPaymentReminders"
+                                            id="sendTrialExpiryReminder"
                                             checked={field.state.value}
                                             onCheckedChange={field.handleChange}
                                         />
@@ -495,16 +474,19 @@ function BillingSettingsPage() {
                                 )}
                             </form.Field>
 
-                            <form.Field name="notification.reminderDaysBeforeDue">
+                            <form.Field name="trialExpiryReminderDays">
                                 {(field) => (
                                     <div className="pl-6">
-                                        <Label htmlFor="notification.reminderDaysBeforeDue">
-                                            {t('admin-billing.settings.notification.daysLabel')}
+                                        <Label htmlFor="trialExpiryReminderDays">
+                                            {t(
+                                                'admin-billing.settings.notification.trialReminderDaysLabel'
+                                            )}
                                         </Label>
                                         <Input
-                                            id="notification.reminderDaysBeforeDue"
+                                            id="trialExpiryReminderDays"
                                             type="number"
                                             min={1}
+                                            max={30}
                                             value={field.state.value}
                                             onChange={(e) =>
                                                 field.handleChange(Number(e.target.value))
@@ -513,34 +495,55 @@ function BillingSettingsPage() {
                                             className="mt-2"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            {t('admin-billing.settings.notification.daysHint')}
+                                            {t(
+                                                'admin-billing.settings.notification.trialReminderDaysHint'
+                                            )}
                                         </p>
-                                        {field.state.meta.errors && (
-                                            <p className="mt-1 text-destructive text-xs">
-                                                {field.state.meta.errors[0]}
-                                            </p>
-                                        )}
                                     </div>
                                 )}
                             </form.Field>
 
-                            <form.Field name="notification.sendReceiptOnPayment">
+                            <form.Field name="sendPaymentFailedNotification">
                                 {(field) => (
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="notification.sendReceiptOnPayment">
+                                            <Label htmlFor="sendPaymentFailedNotification">
                                                 {t(
-                                                    'admin-billing.settings.notification.receiptLabel'
+                                                    'admin-billing.settings.notification.paymentFailedLabel'
                                                 )}
                                             </Label>
                                             <p className="text-muted-foreground text-xs">
                                                 {t(
-                                                    'admin-billing.settings.notification.receiptHint'
+                                                    'admin-billing.settings.notification.paymentFailedHint'
                                                 )}
                                             </p>
                                         </div>
                                         <Switch
-                                            id="notification.sendReceiptOnPayment"
+                                            id="sendPaymentFailedNotification"
+                                            checked={field.state.value}
+                                            onCheckedChange={field.handleChange}
+                                        />
+                                    </div>
+                                )}
+                            </form.Field>
+
+                            <form.Field name="sendSubscriptionCancelledNotification">
+                                {(field) => (
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <Label htmlFor="sendSubscriptionCancelledNotification">
+                                                {t(
+                                                    'admin-billing.settings.notification.subscriptionCancelledLabel'
+                                                )}
+                                            </Label>
+                                            <p className="text-muted-foreground text-xs">
+                                                {t(
+                                                    'admin-billing.settings.notification.subscriptionCancelledHint'
+                                                )}
+                                            </p>
+                                        </div>
+                                        <Switch
+                                            id="sendSubscriptionCancelledNotification"
                                             checked={field.state.value}
                                             onCheckedChange={field.handleChange}
                                         />
@@ -553,27 +556,34 @@ function BillingSettingsPage() {
 
                 {/* Footer Actions */}
                 <div className="flex justify-end gap-4 border-t pt-6">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            form.reset();
-                            setHasChanges(false);
-                        }}
-                        disabled={!hasChanges || updateMutation.isPending}
-                    >
-                        {t('admin-billing.settings.discardChanges')}
-                    </Button>
-                    <Button
-                        type="submit"
-                        disabled={!hasChanges || updateMutation.isPending || !isApiAvailable}
-                    >
-                        {updateMutation.isPending && (
-                            <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                    <form.Subscribe selector={(state) => state.isDirty}>
+                        {(isDirty) => (
+                            <>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        form.reset(settings ? toFormValues(settings) : undefined);
+                                    }}
+                                    disabled={!isDirty || updateMutation.isPending}
+                                >
+                                    {t('admin-billing.settings.discardChanges')}
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        !isDirty || updateMutation.isPending || !isApiAvailable
+                                    }
+                                >
+                                    {updateMutation.isPending && (
+                                        <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />
+                                    )}
+                                    <SaveIcon className="mr-2 h-4 w-4" />
+                                    {t('admin-billing.settings.saveConfig')}
+                                </Button>
+                            </>
                         )}
-                        <SaveIcon className="mr-2 h-4 w-4" />
-                        {t('admin-billing.settings.saveConfig')}
-                    </Button>
+                    </form.Subscribe>
                 </div>
             </form>
         </SidebarPageLayout>

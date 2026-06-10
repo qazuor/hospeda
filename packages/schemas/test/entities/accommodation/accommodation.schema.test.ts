@@ -319,6 +319,169 @@ describe('AccommodationSchema', () => {
         });
     });
 
+    describe('richDescription field (SPEC-187 P2-T1)', () => {
+        it('should accept a 5000-character markdown string (boundary inclusive)', () => {
+            const validData = createValidAccommodation();
+            // Build a 5000-char string of valid markdown (headings + plain text).
+            // '## Title\n\n' is 10 chars; pad the rest with 'a' to reach exactly 5000.
+            const prefix = '## Title\n\n';
+            const paddingLen = 5000 - prefix.length;
+            const markdown = prefix + 'a'.repeat(paddingLen);
+            expect(markdown.length).toBe(5000);
+            const data = { ...validData, richDescription: markdown };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.richDescription).toBe(markdown);
+            }
+        });
+
+        it('should reject a 5001-character string with too_big error', () => {
+            const validData = createValidAccommodation();
+            const tooLong = 'a'.repeat(5001);
+            const data = { ...validData, richDescription: tooLong };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find((i) => i.path[0] === 'richDescription');
+                expect(issue).toBeDefined();
+                expect(issue?.code).toBe('too_big');
+            }
+        });
+
+        it('should accept undefined (optional field, presence = entitled)', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, richDescription: undefined };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.richDescription).toBeUndefined();
+            }
+        });
+
+        it('should accept rich markdown content with headings and emphasis', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                richDescription:
+                    '## Premium Suite\n\n**Luxury** awaits with *italics* and a [link](https://example.com).'
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.richDescription).toBe(
+                    '## Premium Suite\n\n**Luxury** awaits with *italics* and a [link](https://example.com).'
+                );
+            }
+        });
+
+        it('should not require richDescription when other required fields are valid', () => {
+            // Regression: P1 schema parses successfully without richDescription
+            const validData = createValidAccommodation();
+            // Strip richDescription explicitly
+            const { richDescription: _omit, ...dataWithoutRich } = validData;
+
+            const result = AccommodationSchema.safeParse(dataWithoutRich);
+
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('socialNetworks field', () => {
+        it('should accept valid social network URLs', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'https://facebook.com/myaccommodation',
+                    instagram: 'https://instagram.com/myaccommodation',
+                    twitter: 'https://twitter.com/myaccommodation',
+                    linkedIn: 'https://linkedin.com/company/myaccommodation',
+                    tiktok: 'https://tiktok.com/@myaccommodation',
+                    youtube: 'https://youtube.com/@myaccommodation'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.socialNetworks?.facebook).toBe(
+                    'https://facebook.com/myaccommodation'
+                );
+                expect(result.data.socialNetworks?.instagram).toBe(
+                    'https://instagram.com/myaccommodation'
+                );
+            }
+        });
+
+        it('should accept partial social network data', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'https://facebook.com/myaccommodation'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.socialNetworks?.facebook).toBe(
+                    'https://facebook.com/myaccommodation'
+                );
+                expect(result.data.socialNetworks?.instagram).toBeUndefined();
+            }
+        });
+
+        it('should accept undefined socialNetworks (optional)', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, socialNetworks: undefined };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept null socialNetworks', () => {
+            const validData = createValidAccommodation();
+            const data = { ...validData, socialNetworks: null };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject invalid social network URLs', () => {
+            const validData = createValidAccommodation();
+            const data = {
+                ...validData,
+                socialNetworks: {
+                    facebook: 'not-a-url'
+                }
+            };
+
+            const result = AccommodationSchema.safeParse(data);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find(
+                    (i) => i.path.includes('socialNetworks') && i.path.includes('facebook')
+                );
+                expect(issue).toBeDefined();
+            }
+        });
+    });
+
     describe('Type Inference', () => {
         it('should infer correct TypeScript types', () => {
             const validData = createValidAccommodation();

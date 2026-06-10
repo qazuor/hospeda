@@ -143,6 +143,18 @@ export const originVerificationMiddleware = async (c: Context, next: Next) => {
         return;
     }
 
+    // Skip webhook endpoints. They are server-to-server requests from external
+    // providers (MercadoPago, Brevo, etc), whose Origin will never be one of
+    // our own surfaces. Each webhook router enforces its own authentication
+    // (HMAC-SHA256 signature verification for MP; per-provider equivalents).
+    // Applying CSRF-style origin verification to them blocks legitimate
+    // deliveries even when the signature is valid (see SPEC-143 staging smoke
+    // 2026-05-21 Finding #13).
+    if (c.req.path.startsWith('/api/v1/webhooks/')) {
+        await next();
+        return;
+    }
+
     // Skip in test environment unless explicitly testing
     if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_ORIGIN_VERIFICATION) {
         await next();

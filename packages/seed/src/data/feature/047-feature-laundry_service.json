@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "047-feature-laundry_service",
-    "name": "Servicio de lavandería",
+    "name": {
+        "es": "Servicio de lavandería",
+        "en": "Servicio de lavandería",
+        "pt": "Servicio de lavandería"
+    },
     "slug": "laundry_service",
-    "description": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
+    "description": {
+        "es": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
+        "en": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes",
+        "pt": "Facilidad de lavado, secado y planchado de ropa disponible para los huéspedes"
+    },
     "icon": "LaundryServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,

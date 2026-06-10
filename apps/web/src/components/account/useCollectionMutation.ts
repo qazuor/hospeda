@@ -11,10 +11,12 @@
  * Extracted from CreateEditCollectionModal.client.tsx to keep that file under 500 lines.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import {
     type BookmarkCollectionItem,
     userBookmarkCollectionsApi
 } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { useCallback, useState } from 'react';
 
@@ -65,10 +67,13 @@ const HTTP_FORBIDDEN = 403;
  */
 export function useCollectionMutation({
     collectionId,
-    callbacks
+    callbacks,
+    locale
 }: {
     readonly collectionId?: string;
     readonly callbacks: CollectionMutationCallbacks;
+    /** Locale for translating API error codes. Optional for back-compat. */
+    readonly locale?: SupportedLocale;
 }): UseCollectionMutationResult {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -98,7 +103,7 @@ export function useCollectionMutation({
                         : await userBookmarkCollectionsApi.create(trimmedInput);
 
                 if (result.ok) {
-                    const saved: BookmarkCollectionItem = result.data.data;
+                    const saved: BookmarkCollectionItem = result.data;
                     onSaved?.({ id: saved.id, name: saved.name });
                     onClose();
                     return true;
@@ -124,14 +129,18 @@ export function useCollectionMutation({
                 // Generic error
                 addToast({
                     type: 'error',
-                    message: result.error.message ?? 'Ocurrió un error. Intentá de nuevo.'
+                    message: translateApiError({
+                        error: result.error,
+                        locale,
+                        fallback: 'Ocurrió un error. Intentá de nuevo.'
+                    })
                 });
                 return false;
             } finally {
                 setIsSubmitting(false);
             }
         },
-        [collectionId, callbacks]
+        [collectionId, callbacks, locale]
     );
 
     return { isSubmitting, submit };

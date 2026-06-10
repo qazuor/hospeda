@@ -251,6 +251,38 @@ export function getPermissionDescription(permission: PermissionEnum): string {
 }
 
 /**
+ * Checks if an actor may use a lightweight relation-selector lookup endpoint
+ * (SPEC-169 §5.5 / decision D4).
+ *
+ * Every `/options` endpoint exposes only public-grade identity fields
+ * (`id`, `label`, `slug`) and is therefore gated ONLY by admin-panel access —
+ * NOT by any entity-specific `_VIEW_ALL` / `_VIEW_OWN` grant. This deliberately
+ * lets an EDITOR (or any admin-panel role) populate relation selectors without a
+ * broad view grant, which is the whole point of the lookup tier (it stops selectors
+ * from forcing `_VIEW_ALL`).
+ *
+ * This is the shared, entity-agnostic check reused by every entity's `findOptions`
+ * service method. It mirrors the route-level admin-access gate (`createAdminRoute`
+ * with NO `requiredPermissions`, which requires `ACCESS_PANEL_ADMIN` OR
+ * `ACCESS_API_ADMIN`). Re-checking here keeps the service safe even if called
+ * outside the HTTP boundary.
+ *
+ * @param actor - The actor performing the lookup.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks admin-panel access.
+ */
+export function checkCanFindOptions(actor: Actor): void {
+    if (
+        !hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) &&
+        !hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN)
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: admin panel access required for options lookup'
+        );
+    }
+}
+
+/**
  * A generic permission checker that throws a ServiceError if the check fails.
  * It verifies if the actor has the `_ANY` permission, or if they have the `_OWN`
  * permission and the `isEntityOwner` condition is met.

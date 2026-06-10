@@ -282,15 +282,16 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         expect(subs[0]?.status).toBe('pending_provider');
     });
 
-    it('returns 500 when the adapter throws (provider sync failure under log strategy)', async () => {
-        // qzpay-core was constructed with `providerSyncErrorStrategy: 'log'`
-        // (the qzpay default). When the adapter throws, qzpay logs a warning
-        // and returns the un-enriched local session (no providerInitPoint).
-        // The hospeda handler then surfaces MISSING_INIT_POINT as 500.
+    it('returns 503 (PROVIDER_RATE_LIMITED) when the adapter throws a 429 (provider sync failure, throw strategy)', async () => {
+        // qzpay-core is constructed with `providerSyncErrorStrategy: 'throw'`
+        // (SPEC-149 T-002). When checkout.create throws, qzpay-core wraps the
+        // error in QZPayProviderSyncError and re-throws. The hospeda handler
+        // detects it via isBillingProviderError(), maps MP 429 →
+        // PROVIDER_RATE_LIMITED → HTTP 503 with a Retry-After header.
         //
-        // This validates the qzpay log-strategy branch end-to-end, distinct
-        // from the previous test which exercised the success-with-missing-url
-        // path. Both reach the same 500 but via different qzpay internals.
+        // This validates the throw-strategy branch end-to-end for the annual
+        // flow, distinct from the previous test which exercises the
+        // success-with-missing-url path.
         mpStub.config.setError(
             'checkout.create',
             429,
@@ -303,7 +304,20 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             billingInterval: 'annual'
         });
 
-        expect(response.status).toBe(500);
+        // Post-SPEC-149: MP 429 → QZPayProviderSyncError → PROVIDER_RATE_LIMITED → 503.
+        expect(response.status).toBe(503);
+
+        const body = (await response.json()) as {
+            readonly success: boolean;
+            readonly error: { readonly code: string };
+        };
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('PROVIDER_RATE_LIMITED');
+
+        // Retry-After header must be present for rate-limited responses.
+        const retryAfter = response.headers.get('Retry-After');
+        expect(retryAfter).not.toBeNull();
+        expect(Number(retryAfter)).toBeGreaterThan(0);
 
         // Adapter was called and threw — outcome recorded as 'error'.
         const calls = mpStub.config.getCalls('checkout.create');
@@ -410,7 +424,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT: POST the signed webhook
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -473,7 +487,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -508,9 +522,13 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         const localSubscriptionId = await createPendingAnnualSubscription();
         const providerPaymentId = `pay_test_${randomUUID()}`;
 
-        // ACT: build a body but use wrong-hmac headers — Hospeda's own
-        // webhookSignatureMiddleware (HMAC over the body with the test secret)
-        // rejects BEFORE qzpay-hono even runs.
+        // qzpay-hono's webhook router is the signature gate now (the custom
+        // hospeda webhookSignatureMiddleware was removed in PR #1221). Make the
+        // stub's verifySignature reject so the gate returns 401.
+        mpStub.config.setSuccess('webhooks.verifySignature', false);
+
+        // ACT: build a body with wrong-hmac headers; qzpay-hono verifies the
+        // signature via the stub above and rejects with 401 before dispatch.
         const body = JSON.stringify({
             id: Math.floor(Math.random() * 1_000_000_000) + 100_000_000,
             type: 'payment',
@@ -521,7 +539,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         });
         const badHeaders = invalidSignatureHeaders({ body, mode: 'wrong-hmac' });
 
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
@@ -542,8 +560,9 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
         expect(subs).toHaveLength(1);
         expect(subs[0]?.status).toBe('pending_provider');
 
-        // ASSERT: stub never reached (hospeda's middleware short-circuited).
-        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(0);
+        // ASSERT: qzpay verified the signature once (and it failed); the event
+        // was never constructed because the gate rejected before dispatch.
+        expect(mpStub.config.getCalls('webhooks.verifySignature')).toHaveLength(1);
         expect(mpStub.config.getCalls('webhooks.constructEvent')).toHaveLength(0);
         expect(mpStub.config.getCalls('payments.retrieve')).toHaveLength(0);
     });
@@ -619,8 +638,9 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
 
         // ACT 1: probe BEFORE webhook activation. The sub is in
         // `pending_provider`, so loadEntitlements finds no active sub and
-        // returns an empty set with shouldCache=true; the empty set lands
-        // in the cache for this customer.
+        // returns the tourist-free fallback (SPEC-143 T-143-58) with
+        // shouldCache=true; the fallback set lands in the cache for this
+        // customer.
         const preRes = await probeApp.request('/probe');
         expect(preRes.status).toBe(200);
         const preBody = (await preRes.json()) as {
@@ -628,8 +648,26 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             readonly limits: Readonly<Record<string, number>>;
             readonly billingLoadFailed: boolean;
         };
-        expect(preBody.entitlements).toEqual([]);
-        expect(preBody.limits).toEqual({});
+        // Tourist-free entitlements: SAVE_FAVORITES, WRITE_REVIEWS,
+        // READ_REVIEWS, CAN_VIEW_RECOMMENDATIONS, AI_CHAT, AI_SEARCH (6 keys).
+        // The exact shape comes from TOURIST_FREE_PLAN in packages/billing/src/config/plans.config.ts.
+        // AI_CHAT and AI_SEARCH were added by SPEC-173 (ai core, merged ~2026-06-05),
+        // causing this assertion to drift from the original 4-item set.
+        expect(new Set(preBody.entitlements)).toEqual(
+            new Set([
+                'save_favorites',
+                'write_reviews',
+                'read_reviews',
+                'can_view_recommendations',
+                'ai_chat',
+                'ai_search'
+            ])
+        );
+        expect(preBody.limits).toEqual({
+            max_favorites: 3,
+            max_ai_chat_per_month: 10,
+            max_ai_search_per_month: 30
+        });
         expect(preBody.billingLoadFailed).toBe(false);
 
         // Snapshot the cache size so we can prove exactly one entry was
@@ -666,7 +704,7 @@ describe('SPEC-143 T-143-09 — annual checkout', () => {
             })
         );
         const { body, headers } = buildSignedWebhookRequest({ providerPaymentId });
-        const webhookRes = await app.request('/api/v1/webhooks/mercadopago', {
+        const webhookRes = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

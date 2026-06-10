@@ -204,6 +204,23 @@ export const HOSPEDA_ENV_VARS = [
             'Generalo con:  openssl rand -base64 32  — NUNCA lo rotes en prod (movería todas las ubicaciones aproximadas que se muestran al público). Lo consume service-core de forma transitiva (location-obfuscation.ts, accommodation.projections.ts).'
     },
     {
+        name: 'HOSPEDA_VIEWS_HASH_SECRET',
+        description:
+            'Server-only HMAC secret used as a pepper when computing privacy-safe, day-scoped visitor deduplication hashes for cross-entity view tracking (SPEC-159). The hash is SHA-256(HMAC-SHA256(secret, date) + truncatedIp + userAgent) — the raw IP is never stored or logged. Min 32 chars enforced by Zod. Rotating this value invalidates all outstanding day-hashes (visitors will be counted as new for that day).',
+        descriptionEs:
+            'Secreto HMAC server-only que actúa como pepper al computar hashes de visita con privacidad por día para el seguimiento de vistas entre entidades (SPEC-159). El hash es SHA-256(HMAC-SHA256(secret, fecha) + ipTruncada + userAgent); la IP cruda nunca se almacena ni se loguea. Mínimo 32 caracteres validado por Zod. Rotarlo invalida todos los hashes del día actual (los visitantes se cuentan como nuevos).',
+        type: 'string',
+        required: true,
+        secret: true,
+        exampleValue: 'V7k4n1Q8f2H5p9L3m6R0s4T7v1W4y8Z2a5B8c1D4e7F0=',
+        apps: ['api'],
+        category: 'auth',
+        howToObtain:
+            'Generate with:  openssl rand -base64 48  — keep stable across deploys (rotating changes the day-hash for all current visitors). Each environment (dev/staging/prod) MUST have its own distinct value. The secret is consumed exclusively by apps/api/src/utils/visitor-hash.ts.',
+        howToObtainEs:
+            'Generalo con:  openssl rand -base64 48  — dejalo estable entre deploys (rotarlo cambia el hash del día para todos los visitantes activos). Cada entorno (dev/staging/prod) DEBE tener su propio valor. Lo consume exclusivamente apps/api/src/utils/visitor-hash.ts.'
+    },
+    {
         name: 'HOSPEDA_GEOCODING_USER_AGENT',
         description:
             'User-Agent header sent to Photon (Komoot) and Nominatim (OSM) when the admin location picker queries them. Required by Nominatim usage policy; missing or generic values may cause throttling.',
@@ -235,6 +252,23 @@ export const HOSPEDA_ENV_VARS = [
             'Always HOSPEDA_API_URL + "/api/auth". Local: http://localhost:3001/api/auth. Production: https://api.hospeda.com.ar/api/auth. Better Auth handles sign-in/sign-out/sessions at this path.',
         howToObtainEs:
             'Siempre es HOSPEDA_API_URL + "/api/auth". Local: http://localhost:3001/api/auth. Producción: https://api.hospeda.com.ar/api/auth. Better Auth maneja sign-in/sign-out/sesiones en esa ruta.'
+    },
+    {
+        name: 'HOSPEDA_DEV_COOKIE_DOMAIN',
+        description:
+            'DEV-ONLY session-cookie domain override for the *.hospeda.local cross-subdomain recipe (SPEC-182). Ignored in production (cookie domain is pinned to hospeda.com.ar). See docs/guides/auth-local-dev.md.',
+        descriptionEs:
+            'Override DEV-ONLY del dominio de la cookie de sesión para la receta cross-subdomain *.hospeda.local (SPEC-182). Se ignora en producción (el dominio queda fijo en hospeda.com.ar). Ver docs/guides/auth-local-dev.md.',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '.hospeda.local',
+        apps: ['api'],
+        category: 'auth',
+        howToObtain:
+            'Set to `.hospeda.local` in apps/api/.env.local AFTER adding the /etc/hosts entries (web/admin/api.hospeda.local -> 127.0.0.1). Leave unset for plain localhost development (per-host cookies). Never set in Coolify.',
+        howToObtainEs:
+            'Poné `.hospeda.local` en apps/api/.env.local DESPUÉS de agregar las entradas de /etc/hosts (web/admin/api.hospeda.local -> 127.0.0.1). Dejala sin setear para desarrollo en localhost plano (cookies por host). Nunca la setees en Coolify.'
     },
     {
         name: 'HOSPEDA_GOOGLE_CLIENT_ID',
@@ -443,6 +477,27 @@ export const HOSPEDA_ENV_VARS = [
             'Free-text label, 1-11 ASCII uppercase chars (letters, digits, spaces). MP rejects anything longer or with lowercase / non-ASCII. Defaults to "HOSPEDA"; override only if MP homologation feedback requests it.',
         howToObtainEs:
             'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
+    },
+
+    // -------------------------------------------------------------------------
+    // AI / Credential Vault
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AI_VAULT_MASTER_KEY',
+        description:
+            'AES-256-GCM master key for the AI credential vault (apps/api only). Encrypts/decrypts provider API keys at rest. Min 32 chars (Zod). Optional until AI features are wired everywhere.',
+        descriptionEs:
+            'Clave maestra AES-256-GCM para el vault de credenciales de IA (solo apps/api). Cifra/descifra las API keys de proveedores en reposo. Mínimo 32 caracteres (Zod). Opcional hasta que las features de IA estén cableadas en todos los entornos.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-aes-256-gcm-master-key-min-32-chars-xxxxxxxx',
+        apps: ['api'],
+        category: 'ai',
+        howToObtain:
+            'Generate a random 32+ char base64 key with:  openssl rand -base64 32  — keep it STABLE across deploys (rotating it invalidates all vault-encrypted credentials). Each environment (dev/staging/prod) MUST have its own value, set in Coolify.',
+        howToObtainEs:
+            'Generá una clave aleatoria de 32+ chars en base64 con:  openssl rand -base64 32  — mantenela ESTABLE entre deploys (si la rotás, invalidás todas las credenciales cifradas del vault). Cada entorno (dev/staging/prod) DEBE tener la suya, seteada en Coolify.'
     },
 
     // -------------------------------------------------------------------------
@@ -734,6 +789,50 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     // -------------------------------------------------------------------------
+    // User self-service subscription cancellation (SPEC-147)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_USER_CANCEL_ENABLED',
+        description:
+            'Feature flag for the user self-service subscription cancellation route (SPEC-147). Ships dark by default (false) until the SPEC-203 UI lands. Set to "true" to enable.',
+        descriptionEs:
+            'Feature flag de la ruta de auto-cancelación de suscripción por el usuario (SPEC-147). Por defecto desactivado (false) hasta que llegue la UI de SPEC-203. Poné "true" para habilitar.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Set "true" to enable the user self-service cancel endpoint. Leave unset or set "false" to keep it dark (ships disabled until SPEC-203 UI). Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
+        howToObtainEs:
+            'Poné "true" para habilitar el endpoint de auto-cancelación del usuario. Dejalo sin setear o en "false" para mantenerlo dark (se entrega desactivado hasta la UI de SPEC-203). Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
+    },
+
+    // -------------------------------------------------------------------------
+    // MercadoPago subscription polling fallback (SPEC-143)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_BILLING_POLLING_ENABLED',
+        description:
+            'Feature flag for the MercadoPago subscription_preapproval polling fallback. When enabled, start-paid schedules a polling job that queries MP /preapproval/{id} until the preapproval is authorized, then flips the local subscription to active. Provides resilience against unreliable MP webhook delivery (Finding #17).',
+        descriptionEs:
+            'Feature flag del fallback de polling para subscription_preapproval de MercadoPago. Cuando está activo, start-paid agenda un job que consulta /preapproval/{id} hasta que el preapproval esté authorized y luego flipea la subscripción local a active. Da resiliencia ante entregas no confiables de webhooks de MP (Finding #17).',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'Leave "true" (default) so the polling cron job runs and start-paid enqueues fallback jobs. Set "false" as a kill-switch if the polling layer is misbehaving in prod and you need to disable it without a redeploy. The webhook handler still works either way.',
+        howToObtainEs:
+            'Dejá en "true" (default) para que el cron de polling corra y start-paid encole jobs de fallback. Poné "false" como kill-switch si el polling se rompe en prod y hay que desactivarlo sin redeploy. El webhook handler sigue funcionando igual.'
+    },
+
+    // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
     // -------------------------------------------------------------------------
     {
@@ -1009,6 +1108,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
+        deprecated: true,
         exampleValue: 'spam,scam,phishing',
         apps: ['api'],
         category: 'messaging',
@@ -1025,6 +1125,7 @@ export const HOSPEDA_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
+        deprecated: true,
         exampleValue: 'mailinator.com,guerrillamail.com',
         apps: ['api'],
         category: 'messaging',
@@ -1032,6 +1133,85 @@ export const HOSPEDA_ENV_VARS = [
             'Comma-separated list (no spaces) of email-domain blacklist used to reject signup/inquiry from disposable email providers. Example: "mailinator.com,guerrillamail.com,tempmail.com".',
         howToObtainEs:
             'Lista separada por comas (sin espacios) de dominios bloqueados para rechazar signups/consultas desde proveedores de email descartables. Ejemplo: "mailinator.com,guerrillamail.com,tempmail.com".'
+    },
+
+    // -------------------------------------------------------------------------
+    // Content auto-moderation (SPEC-195)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_MODERATION_PROVIDER',
+        description:
+            'Content moderation engine provider. "openai" uses OpenAI Moderation API, "local" uses DB word-list, "stub" uses the v1 binary blocklist (kill-switch).',
+        descriptionEs:
+            'Proveedor del motor de moderación de contenido. "openai" usa la API de Moderación de OpenAI, "local" usa la lista de palabras de la DB, "stub" usa la blocklist binaria v1 (kill-switch).',
+        type: 'enum',
+        required: false,
+        secret: false,
+        defaultValue: 'stub',
+        exampleValue: 'stub',
+        enumValues: ['openai', 'local', 'stub'] as const,
+        apps: ['api'],
+        category: 'moderation'
+    },
+    {
+        name: 'HOSPEDA_OPENAI_API_KEY',
+        description:
+            'OpenAI API key for the Moderation API provider. Required when HOSPEDA_MODERATION_PROVIDER=openai.',
+        descriptionEs:
+            'API key de OpenAI para el proveedor de la API de Moderación. Obligatoria cuando HOSPEDA_MODERATION_PROVIDER=openai.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'sk-...',
+        apps: ['api'],
+        category: 'moderation',
+        helpUrl: 'https://platform.openai.com/api-keys',
+        howToObtain:
+            'OpenAI Platform → API keys → Create new secret key. Copy the value starting with "sk-". The Moderation API is free-tier; no billing setup required.',
+        howToObtainEs:
+            'OpenAI Platform → API keys → Create new secret key. Copiá el valor que empieza con "sk-". La API de Moderación es free-tier; no requiere setup de billing.'
+    },
+    {
+        name: 'HOSPEDA_MODERATION_CACHE_TTL_SECONDS',
+        description:
+            'TTL in seconds for the in-memory LRU moderation cache. Identical text within this window returns the cached result without calling the provider.',
+        descriptionEs:
+            'TTL en segundos para la cache LRU en memoria de moderación. Texto idéntico dentro de esta ventana devuelve el resultado cacheado sin llamar al proveedor.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '300',
+        exampleValue: '300',
+        apps: ['api'],
+        category: 'moderation'
+    },
+    {
+        name: 'HOSPEDA_MODERATION_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for the OpenAI Moderation API call. If the provider does not respond within this window, the engine falls back to the local word-list path.',
+        descriptionEs:
+            'Timeout en milisegundos para la llamada a la API de Moderación de OpenAI. Si el proveedor no responde dentro de esta ventana, el motor cae al path de lista de palabras local.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '1500',
+        exampleValue: '1500',
+        apps: ['api'],
+        category: 'moderation'
+    },
+    {
+        name: 'HOSPEDA_AI_MODERATION_REQUIRED',
+        description:
+            'Gates the startup moderation-credential healthcheck (SPEC-198). When "true", the API refuses to start if no resolvable OpenAI credential exists in the AI vault (HOSPEDA_AI_VAULT_MASTER_KEY + a stored credential). Default "false" so envs without AI moderation boot normally. Set to "true" in production once the vault credential is provisioned.',
+        descriptionEs:
+            'Controla el healthcheck de credencial de moderación al arranque (SPEC-198). Cuando es "true", la API se niega a arrancar si no hay credencial de OpenAI resoluble en el vault de IA (HOSPEDA_AI_VAULT_MASTER_KEY + una credencial almacenada). Por defecto "false" para que los entornos sin moderación por IA arranquen normalmente. Poné "true" en producción una vez aprovisionada la credencial del vault.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'moderation'
     },
 
     // -------------------------------------------------------------------------
@@ -1098,6 +1278,38 @@ export const HOSPEDA_ENV_VARS = [
             'Free-text label applied to all Sentry events. Set to `production` on the prod container and `staging` on the staging container. Takes precedence over NODE_ENV in the Sentry init — lets both deployments run with NODE_ENV=production (preserving prod-like trace/profile sampling) while remaining separable in the Sentry dashboard.',
         howToObtainEs:
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
+    },
+    {
+        name: 'HOSPEDA_POSTHOG_KEY',
+        description: 'PostHog project API key for server-side AI event analytics',
+        descriptionEs: 'API key del proyecto PostHog para analíticas server-side de eventos de IA',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'phc_xxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'PostHog → your project → Settings → Project API Keys → copy the project API key (starts with phc_). Leave blank to disable AI event analytics without breaking anything.',
+        howToObtainEs:
+            'PostHog → tu proyecto → Settings → Project API Keys → copiá el project API key (empieza con phc_). Dejala vacía para deshabilitar las analíticas de eventos de IA sin romper nada.'
+    },
+    {
+        name: 'HOSPEDA_POSTHOG_HOST',
+        description: 'PostHog API host (defaults to https://us.i.posthog.com)',
+        descriptionEs: 'Host de la API de PostHog (por defecto https://us.i.posthog.com)',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://us.i.posthog.com',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://posthog.com/docs/libraries/node',
+        howToObtain:
+            'Only needed when using a self-hosted PostHog instance or the EU cloud (https://eu.i.posthog.com). Leave unset to use the default US cloud endpoint.',
+        howToObtainEs:
+            'Solo necesitás configurarlo si usás una instancia self-hosted de PostHog o el cloud EU (https://eu.i.posthog.com). Si no lo configurás, se usa el endpoint por defecto del cloud US.'
     },
     {
         name: 'SENTRY_AUTH_TOKEN',

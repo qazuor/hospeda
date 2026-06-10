@@ -1,17 +1,21 @@
-import { GridCard } from '@/components/grid';
+import { GridCard, GridEmptyState } from '@/components/grid';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import type { DataTableColumn, DataTableSort } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { DataTableToolbar } from '@/components/table/DataTableToolbar';
+import { TableSearchInput } from '@/components/table/TableSearchInput';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
+import { useHasPermission } from '@/hooks/use-user-permissions';
 import { adminLogger } from '@/utils/logger';
 import type { TranslationKey } from '@repo/i18n';
 import { AddIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { EntitySummarySheet, type SummaryColumn } from './EntitySummarySheet';
 import { createEntityApi } from './api/createEntityApi';
 import { FilterBar } from './filters/FilterBar';
 import { useFilterState } from './filters/useFilterState';
@@ -20,7 +24,8 @@ import type {
     EntityConfig,
     EntityListComponents,
     EntityListSearchParams,
-    GenerateRowType
+    GenerateRowType,
+    SortConfig
 } from './types';
 
 /**
@@ -56,6 +61,13 @@ const DEFAULT_PAGINATION_CONFIG = {
     defaultPageSize: 10,
     allowedPageSizes: [10, 20, 30, 50] as const
 } as const;
+
+/**
+ * Fallback sort applied to any list whose config does not set `defaultSort`.
+ * Every entity table exposes a sortable `createdAt` column, so newest-first
+ * is the sensible shared default. A config can override it per entity.
+ */
+const DEFAULT_SORT_CONFIG: SortConfig = { id: 'createdAt', desc: true };
 
 /**
  * Static Tailwind grid column class map.
@@ -124,7 +136,12 @@ export const createEntityListPage = <TData extends { id: string }>(
         const pageSize = paginationConfig.allowedPageSizes.includes(Number(search.pageSize))
             ? Number(search.pageSize)
             : paginationConfig.defaultPageSize;
-        const view = search.view === 'grid' ? 'grid' : 'table';
+        // Use URL value when explicitly set; otherwise fall back to the config's defaultView
+        // so that grid-only configs (allowViewToggle:false, defaultView:'grid') start in grid.
+        const view =
+            search.view === 'grid' || search.view === 'table'
+                ? search.view
+                : viewConfig.defaultView;
         const q = typeof search.q === 'string' ? search.q : '';
         const sort = typeof search.sort === 'string' ? search.sort : undefined;
         const cols = typeof search.cols === 'string' ? search.cols : undefined;
@@ -237,7 +254,7 @@ export const createEntityListPage = <TData extends { id: string }>(
 
         // Parse sort from URL ("field:direction" format)
         const parsedSort: DataTableSort = useMemo(() => {
-            if (!search.sort) return [];
+            if (!search.sort) return [config.defaultSort ?? DEFAULT_SORT_CONFIG];
             try {
                 const parts = search.sort.split(':');
                 if (parts.length === 2 && parts[0]) {
@@ -247,7 +264,7 @@ export const createEntityListPage = <TData extends { id: string }>(
             } catch {
                 return [];
             }
-        }, [search.sort]);
+        }, [search.sort, config.defaultSort]);
 
         // updateSearch must be defined before useFilterState (which stores it in callbacks)
         const updateSearch = useCallback(
@@ -293,9 +310,26 @@ export const createEntityListPage = <TData extends { id: string }>(
         const rows: Row[] = (data?.data ?? []) as Row[];
         const total = data?.total ?? 0;
 
+        // Peek drawer state: holds the row whose own-entity link was clicked in table view
+        const [peekRow, setPeekRow] = useState<Row | null>(null);
+
+        /**
+         * Ref that always holds the current view mode.
+         * Using a ref here lets the column linkHandlers read the current view at call-time
+         * without needing to include `search.view` in the useMemo dependency array,
+         * which would re-build the entire columns array on every view toggle.
+         */
+        const viewRef = useRef(search.view);
+        viewRef.current = search.view;
+
+        // Resolve ANALYTICS_VIEW permission once for the whole list page.
+        // Passed to createColumns so permission-gated columns (e.g. "Vistas (30d)")
+        // can be conditionally included without the column factory needing its own hook.
+        const hasAnalyticsView = useHasPermission(PermissionEnum.ANALYTICS_VIEW);
+
         // Generate columns
         const columns = useMemo<readonly DataTableColumn<Row>[]>(() => {
-            const columnsConfig = config.createColumns(t);
+            const columnsConfig = config.createColumns(t, { hasAnalyticsView });
             return columnsConfig.map((columnConfig) => ({
                 ...columnConfig,
                 accessorKey: columnConfig.accessorKey as keyof Row & string,
@@ -304,19 +338,33 @@ export const createEntityListPage = <TData extends { id: string }>(
                 linkHandler: columnConfig.linkHandler
                     ? (row: Row) => {
                           const result = columnConfig.linkHandler?.(row);
-                          if (result) {
-                              navigate(result);
+                          if (!result) return;
+                          // Own-entity link in table view → open the peek drawer instead of navigating.
+                          // viewRef.current is read at call-time so the check is always fresh.
+                          // The link must point to THIS row's own detail page: a basePath
+                          // prefix match alone is not enough, because related-entity columns
+                          // (e.g. event organizer/location live under the same /events subtree)
+                          // would falsely match — so also require the target id to be the row's.
+                          const linkParams = result.params as { id?: unknown } | undefined;
+                          const isOwnEntity =
+                              typeof result.to === 'string' &&
+                              result.to.startsWith(config.basePath) &&
+                              linkParams?.id === row.id;
+                          if (isOwnEntity && viewRef.current === 'table') {
+                              setPeekRow(row);
+                              return;
                           }
+                          navigate(result);
                       }
                     : undefined
             }));
-        }, [navigate, config.createColumns, t]);
+        }, [navigate, config.createColumns, config.basePath, t, hasAnalyticsView]);
 
         // Column visibility logic
         const getInitialColumnVisibility = useCallback(
             (viewType: 'table' | 'grid') => {
                 const visibility: Record<string, boolean> = {};
-                for (const columnConfig of config.createColumns(t)) {
+                for (const columnConfig of config.createColumns(t, { hasAnalyticsView })) {
                     if (viewType === 'table') {
                         visibility[columnConfig.id] = columnConfig.startVisibleOnTable !== false;
                     } else {
@@ -325,7 +373,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                 }
                 return visibility;
             },
-            [config.createColumns, t]
+            [config.createColumns, t, hasAnalyticsView]
         );
 
         const initialColumnVisibility = useMemo(() => {
@@ -346,6 +394,72 @@ export const createEntityListPage = <TData extends { id: string }>(
             () => columns.map((c) => ({ id: c.id, label: String(c.header) })),
             [columns]
         );
+
+        /**
+         * Columns shaped for EntitySummarySheet.
+         *
+         * When `config.peekFields` is defined we use the curated list — each entry
+         * maps directly to a `SummaryColumn` with an explicit `format` hint.
+         * For badge fields, `badgeOptions` are resolved from the matching column
+         * definition (avoiding duplication in the config). If no matching column
+         * is found, any `badgeOptions` declared on the peek field itself are used.
+         * Otherwise we fall back to deriving the list from all `columns` (generic
+         * behaviour for entities that haven't declared peekFields yet).
+         */
+        const summaryColumns = useMemo<readonly SummaryColumn[]>(
+            () => {
+                if (config.peekFields) {
+                    return config.peekFields.map((pf) => {
+                        // For badge fields, look up the matching column to reuse its badgeOptions
+                        const matchingColumn =
+                            pf.format === 'badge'
+                                ? columns.find(
+                                      (c) =>
+                                          c.accessorKey === pf.accessorKey ||
+                                          c.id === pf.accessorKey
+                                  )
+                                : undefined;
+                        const badgeOptions = matchingColumn?.badgeOptions ?? pf.badgeOptions;
+
+                        return {
+                            id: pf.accessorKey,
+                            header: t(pf.labelKey as TranslationKey),
+                            accessorKey: pf.accessorKey,
+                            format: pf.format,
+                            maxLength: pf.maxLength,
+                            badgeOptions
+                        };
+                    });
+                }
+                return columns.map((c) => ({
+                    id: c.id,
+                    header: String(c.header),
+                    accessorKey: c.accessorKey as string
+                }));
+            },
+            // biome-ignore lint/correctness/useExhaustiveDependencies: config.peekFields is stable (config object is defined at module level)
+            [columns, config.peekFields, t]
+        );
+
+        /** Navigate to the full view page of the current peek row. */
+        const handlePeekViewFull = useCallback(() => {
+            if (!peekRow) return;
+            navigate({
+                to: `${config.basePath}/$id`,
+                params: { id: peekRow.id }
+            } as DynamicNavigateOptions);
+            setPeekRow(null);
+        }, [peekRow, navigate, config.basePath]);
+
+        /** Navigate to the edit page of the current peek row. */
+        const handlePeekEdit = useCallback(() => {
+            if (!peekRow) return;
+            navigate({
+                to: `${config.basePath}/$id/edit`,
+                params: { id: peekRow.id }
+            } as DynamicNavigateOptions);
+            setPeekRow(null);
+        }, [peekRow, navigate, config.basePath]);
 
         // Handlers
         const handleViewChange = useCallback(
@@ -414,39 +528,67 @@ export const createEntityListPage = <TData extends { id: string }>(
             );
         }, [config.layoutConfig, config.entityKey, config.name, t, navigate]);
 
+        const searchInput = searchConfig.enabled ? (
+            <TableSearchInput
+                key={`search-config-${searchConfig.minChars}`}
+                query={localQuery}
+                onQueryChange={handleQueryChange}
+                isSearching={isSearching}
+                onClearSearch={handleClearSearch}
+                searchMinChars={searchConfig.minChars}
+                searchPlaceholder={translatedSearchPlaceholder}
+            />
+        ) : null;
+
+        // SPEC-182: opt-in entity-specific header actions (e.g. the users list's
+        // "Create host account" modal). Rendered before the create button. When
+        // unset, the header is unchanged (create button only).
+        const HeaderActionsComponent = config.layoutConfig?.headerActionsComponent;
+        const headerActions = HeaderActionsComponent ? (
+            <div className="flex items-center gap-2">
+                <HeaderActionsComponent />
+                {createButtonAction}
+            </div>
+        ) : (
+            createButtonAction
+        );
+
         return (
             <SidebarPageLayout
                 title={translatedTitle}
-                actions={createButtonAction}
+                actions={headerActions}
             >
                 <div className="space-y-4">
-                    <DataTableToolbar
-                        key={`search-config-${searchConfig.minChars}`}
-                        view={search.view}
-                        onViewChange={viewConfig.allowViewToggle ? handleViewChange : () => {}}
-                        query={localQuery}
-                        onQueryChange={searchConfig.enabled ? handleQueryChange : () => {}}
-                        isSearching={isSearching}
-                        onClearSearch={handleClearSearch}
-                        searchMinChars={searchConfig.minChars}
-                        searchPlaceholder={translatedSearchPlaceholder}
-                        columnVisibility={currentViewVisibility}
-                        onColumnVisibilityChange={handleColsChange}
-                        availableColumns={availableColumns}
-                    />
-
-                    {config.filterBarConfig && (
-                        <FilterBar
-                            config={config.filterBarConfig}
-                            activeFilters={filterState.activeFilters}
-                            onFilterChange={filterState.handleFilterChange}
-                            onClearAll={filterState.handleClearAll}
-                            onResetDefaults={filterState.handleResetDefaults}
-                            hasActiveFilters={filterState.hasActiveFilters}
-                            hasNonDefaultFilters={filterState.hasNonDefaultFilters}
-                            chips={filterState.chips}
+                    <div className="space-y-3 rounded-md border bg-card p-4">
+                        <DataTableToolbar
+                            view={search.view}
+                            onViewChange={handleViewChange}
+                            showViewToggle={viewConfig.allowViewToggle}
+                            columnVisibility={currentViewVisibility}
+                            onColumnVisibilityChange={handleColsChange}
+                            availableColumns={availableColumns}
                         />
-                    )}
+
+                        {config.filterBarConfig ? (
+                            <FilterBar
+                                config={config.filterBarConfig}
+                                activeFilters={filterState.activeFilters}
+                                onFilterChange={filterState.handleFilterChange}
+                                onClearAll={filterState.handleClearAll}
+                                onResetDefaults={filterState.handleResetDefaults}
+                                hasActiveFilters={filterState.hasActiveFilters}
+                                hasNonDefaultFilters={filterState.hasNonDefaultFilters}
+                                chips={filterState.chips}
+                                searchSlot={searchInput}
+                            />
+                        ) : (
+                            searchInput && (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {searchInput}
+                                </div>
+                            )
+                        )}
+                    </div>
 
                     {search.view === 'table' ? (
                         <DataTable<Row>
@@ -463,6 +605,7 @@ export const createEntityListPage = <TData extends { id: string }>(
                             onSortChange={handleSortChange}
                             columnVisibility={currentViewVisibility}
                             onColumnVisibilityChange={handleColsChange}
+                            highlightedRowId={peekRow?.id ?? undefined}
                         />
                     ) : (
                         <div
@@ -473,31 +616,98 @@ export const createEntityListPage = <TData extends { id: string }>(
                             })}`}
                         >
                             {isLoading ? (
-                                <div className="text-muted-foreground text-sm">
+                                <div className="col-span-full text-muted-foreground text-sm">
                                     {t('ui.loading.text')}
                                 </div>
                             ) : rows.length === 0 ? (
-                                <div className="text-muted-foreground text-sm">
-                                    {filterState.hasActiveFilters
-                                        ? t(
-                                              'admin-entities.list.noResultsFiltered' as TranslationKey
-                                          )
-                                        : t('admin-entities.list.noResults' as TranslationKey)}
-                                </div>
+                                <GridEmptyState hasActiveFilters={filterState.hasActiveFilters} />
                             ) : (
-                                rows.map((r) => (
-                                    <GridCard<Row>
-                                        key={r.id}
-                                        item={r}
-                                        columns={columns}
-                                        visibleColumns={getGridVisibleColumns()}
-                                        maxFields={viewConfig.gridConfig?.maxFields || 10}
-                                    />
-                                ))
+                                rows.map((r) => {
+                                    // Access renderCard from the original config (not the
+                                    // DEFAULT_VIEW_CONFIG merge) to preserve its optional type.
+                                    // TData is propagated through ViewConfig<TData> so no casts
+                                    // are needed here — row is already typed as TData.
+                                    const renderCard = config.viewConfig?.gridConfig?.renderCard;
+                                    if (renderCard) {
+                                        return renderCard({
+                                            row: r,
+                                            onPeek: (row) => setPeekRow(row as Row),
+                                            onEdit: (row) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: (row as Row).id }
+                                                } as DynamicNavigateOptions),
+                                            onDelete: (_row) => {
+                                                // Delete is handled externally; no-op here unless
+                                                // a future spec wires a delete handler into the config.
+                                            }
+                                        });
+                                    }
+                                    return (
+                                        <GridCard<Row>
+                                            key={r.id}
+                                            item={r}
+                                            columns={columns}
+                                            visibleColumns={getGridVisibleColumns()}
+                                            maxFields={viewConfig.gridConfig?.maxFields || 10}
+                                            onPeek={(row) => setPeekRow(row)}
+                                            onEdit={(row) =>
+                                                navigate({
+                                                    to: `${config.basePath}/$id/edit`,
+                                                    params: { id: row.id }
+                                                } as DynamicNavigateOptions)
+                                            }
+                                        />
+                                    );
+                                })
                             )}
                         </div>
                     )}
                 </div>
+
+                {/* Peek drawer: shows a summary of the selected row in table view.
+                    modal={false} → non-modal: no scroll-lock/focus-trap, overlay is
+                    pointer-events-none, list remains interactive. Clicking another
+                    entity name switches content instead of closing (handled via
+                    onInteractOutside inside EntitySummarySheet). */}
+                <EntitySummarySheet
+                    open={peekRow !== null}
+                    onOpenChange={(o) => {
+                        if (!o) setPeekRow(null);
+                    }}
+                    row={peekRow as Record<string, unknown> | null}
+                    columns={summaryColumns}
+                    title={
+                        peekRow !== null && peekRow !== undefined
+                            ? String(
+                                  (peekRow as Record<string, unknown>).name ??
+                                      (peekRow as Record<string, unknown>).title ??
+                                      (peekRow as Record<string, unknown>).displayName ??
+                                      (peekRow as Record<string, unknown>).id ??
+                                      ''
+                              )
+                            : ''
+                    }
+                    subtitle={
+                        config.peekSubtitleField && peekRow
+                            ? String(
+                                  (peekRow as Record<string, unknown>)[config.peekSubtitleField] ??
+                                      ''
+                              ) || undefined
+                            : undefined
+                    }
+                    featured={
+                        config.peekFeaturedField && peekRow
+                            ? Boolean(
+                                  (peekRow as Record<string, unknown>)[config.peekFeaturedField]
+                              )
+                            : false
+                    }
+                    featuredLabel={t('admin-entities.columns.featured' as TranslationKey)}
+                    onViewFull={handlePeekViewFull}
+                    onEdit={handlePeekEdit}
+                    modal={false}
+                />
             </SidebarPageLayout>
         );
     };

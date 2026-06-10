@@ -11,15 +11,16 @@ import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { LocationMap } from '@/components/maps/LocationMap.client';
 import DestinationDetailHeader from '@/components/destination/DestinationDetailHeader.astro';
 import DestinationGallery from '@/components/destination/DestinationGallery.astro';
 import DestinationMiniMap from '@/components/destination/DestinationMiniMap.astro';
 import DestinationSidebarCtas from '@/components/destination/DestinationSidebarCtas.astro';
 import DestinationStatsCard from '@/components/destination/DestinationStatsCard.astro';
-import DestinationFaqPlaceholder from '@/components/destination/DestinationFaqPlaceholder.astro';
+import DestinationFaqAccordion from '@/components/destination/DestinationFaqAccordion.astro';
 import DestinationClimatePlaceholder from '@/components/destination/DestinationClimatePlaceholder.astro';
 import DestinationReviewsSection from '@/components/destination/DestinationReviewsSection.astro';
 import DestinationRelatedPosts from '@/components/destination/DestinationRelatedPosts.astro';
@@ -32,11 +33,21 @@ import {
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
-import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
+import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
+import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
+import { getApiUrl } from '@/lib/env';
+import {
+	toAccommodationCardProps,
+	toDestinationFaqs,
+	toEventCardProps
+} from '@/lib/api/transforms';
+import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { AlertTriangleIcon } from '@repo/icons';
 import { renderContent } from '@/lib/render-content';
+import { getDestinationSameAs } from '@/lib/destination-sameas';
 import { Image } from 'astro:assets';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -88,6 +99,10 @@ const attractions = (dest.attractions as ReadonlyArray<{
 }>) ?? [];
 
 const ratingBreakdown = dest.rating as Record<string, number | undefined> | null | undefined;
+
+// --- FAQs (SPEC-158): normalize + build FAQPage JSON-LD sections -----------
+const faqs = toDestinationFaqs(dest.faqs);
+const faqSections = faqs.map((faq) => ({ heading: faq.question, body: faq.answer }));
 
 // --- Previews (accommodations, events, posts) and counts --------------------
 let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
@@ -295,23 +310,20 @@ const destLat = destCoords?.lat ? Number.parseFloat(destCoords.lat) : null;
 const destLng = destCoords?.long ? Number.parseFloat(destCoords.long) : null;
 const hasDestCoords = Number.isFinite(destLat) && Number.isFinite(destLng);
 
-const jsonLd: Record<string, unknown> = {
-	'@context': 'https://schema.org',
-	'@type': 'TouristDestination',
-	name,
-	description: summary || description,
-	image: featuredImageObj.url,
-	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
-	...(hasDestCoords
-		? {
-				geo: {
-					'@type': 'GeoCoordinates',
-					latitude: destLat,
-					longitude: destLng
-				}
-		  }
-		: {})
-};
+const placeGeo =
+	hasDestCoords && destLat !== null && destLng !== null
+		? { latitude: destLat, longitude: destLng }
+		: undefined;
+
+const placeUrl = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;
+const placeImage =
+	featuredImageObj.url && !featuredImageObj.url.includes('placeholder')
+		? featuredImageObj.url
+		: undefined;
+
+// Entity disambiguation (schema.org sameAs): interim curated slug→Wikipedia
+// map. Resolves only for the main Entre Ríos destinations; undefined otherwise.
+const placeSameAs = getDestinationSameAs({ slug });
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) -------------------------------
 const siteOriginDest = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -342,11 +354,26 @@ const safeDescriptionHtml = renderContent({
 	locale={locale}
 	title={name}
 	description={summary || description}
+	ogImage={placeImage}
+	ogType="Destino"
+	ogSubtitle={t('destinations.region', 'Entre Ríos, Argentina')}
+	ogRating={stats.averageRating > 0 ? stats.averageRating.toFixed(1) : undefined}
 	showBreadcrumbs={true}
 	showSidebar={true}
 >
-	<JsonLd slot="head-extra" data={jsonLd} />
+	<PlaceJsonLd
+		slot="head-extra"
+		name={name}
+		description={summary || description}
+		url={placeUrl}
+		image={placeImage}
+		geo={placeGeo}
+		sameAs={placeSameAs}
+	/>
 	<BreadcrumbJsonLd slot="head-extra" items={breadcrumbJsonLdItems} />
+	{faqSections.length > 0 && (
+		<FAQPageJsonLd slot="head-extra" sections={faqSections} inLanguage={locale} />
+	)}
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 
@@ -395,6 +422,15 @@ const safeDescriptionHtml = renderContent({
 			</div>
 		)}
 
+		<!-- Report incorrect info (SPEC-191 FR-7): inline link after the
+		     description, deep-linking the report form with this destination. -->
+		<p class="dest-detail__report-link">
+			<AlertTriangleIcon size={16} weight="fill" aria-hidden="true" />
+			<a href={`${buildUrl({ locale, path: 'colaborar/reportar' })}?destino=${encodeURIComponent(slug)}`}>
+				{t('contributions.reportLink.inline', '¿Viste información incorrecta o desactualizada? Reportala')}
+			</a>
+		</p>
+
 		<!-- Photo gallery (extras beyond the hero) -->
 		{galleryImages.length > 0 && (
 			<div class="dest-detail__section">
@@ -407,6 +443,22 @@ const safeDescriptionHtml = renderContent({
 			</div>
 		)}
 
+		<!-- Photo-contribution banner (SPEC-191 FR-8): after the gallery —
+		     the visitor just saw this destination's photos (or their absence). -->
+		<div class="dest-detail__section">
+			<ContributionBanner
+				title={t('contributions.banner.photos.title', '¿Tenés fotos de este destino?')}
+				description={t(
+					'contributions.banner.photos.description',
+					'Compartilas con la comunidad y ayudá a mostrarlo como se merece.'
+				)}
+				ctaLabel={t('contributions.banner.photos.cta', 'Aportar fotos')}
+				ctaHref={buildUrl({ locale, path: 'colaborar/fotos' })}
+				source="destination_detail"
+				variant="photos"
+			/>
+		</div>
+
 		<!-- Reviews + per-dimension rating (combined) -->
 		<div class="dest-detail__section">
 			<DestinationReviewsSection
@@ -415,13 +467,34 @@ const safeDescriptionHtml = renderContent({
 				reviewsCount={stats.reviewsCount}
 				ratingBreakdown={ratingBreakdown}
 				locale={locale}
-			/>
+			>
+				<Fragment slot="actions">
+					{isAuthenticated ? (
+						<DestinationReviewSidebarCard
+							client:idle
+							variant="inline"
+							destinationId={destId}
+							destinationName={name}
+							locale={locale}
+							apiUrl={getApiUrl()}
+						/>
+					) : (
+						<DestinationReviewSignInCta
+							variant="inline"
+							locale={locale}
+							returnPath={`destinos/${path}`}
+						/>
+					)}
+				</Fragment>
+			</DestinationReviewsSection>
 		</div>
 
-		<!-- FAQ placeholder (real FAQ data is not yet in the destination schema) -->
-		<div class="dest-detail__section">
-			<DestinationFaqPlaceholder locale={locale} />
-		</div>
+		<!-- FAQs (SPEC-158): rendered only when the destination has FAQs -->
+		{faqs.length > 0 && (
+			<div class="dest-detail__section">
+				<DestinationFaqAccordion faqs={faqs} lang={locale} />
+			</div>
+		)}
 
 		<!-- Accommodation preview -->
 		<section class="dest-detail__section">
@@ -480,7 +553,7 @@ const safeDescriptionHtml = renderContent({
 				<div class="dest-detail__preview-grid">
 					{eventCards.map((card, i) => (
 						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<EventCardHorizontal data={card} locale={locale} />
+							<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
 						</div>
 					))}
 				</div>
@@ -561,6 +634,24 @@ const safeDescriptionHtml = renderContent({
 			eventsCount={stats.eventsCount}
 			locale={locale}
 		/>
+
+		{isAuthenticated ? (
+			/* client:idle (NOT client:visible): the sticky sidebar is taller than
+			   the viewport, so this last card only intersects at full page scroll —
+			   with client:visible the CTA renders as a dead SSR button until then. */
+			<DestinationReviewSidebarCard
+				client:idle
+				destinationId={destId}
+				destinationName={name}
+				locale={locale}
+				apiUrl={getApiUrl()}
+			/>
+		) : (
+			<DestinationReviewSignInCta
+				locale={locale}
+				returnPath={`destinos/${path}`}
+			/>
+		)}
 	</div>
 </DetailLayout>
 
@@ -586,6 +677,26 @@ const safeDescriptionHtml = renderContent({
 	}
 	.dest-detail__description :global(p:last-child) {
 		margin-bottom: 0;
+	}
+
+	.dest-detail__report-link {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		margin: -1rem 0 2rem;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-xs);
+		color: var(--core-muted-foreground);
+	}
+	.dest-detail__report-link a {
+		color: var(--brand-primary);
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.dest-detail__report-link a:hover,
+	.dest-detail__report-link a:focus-visible {
+		color: var(--brand-accent);
+		text-decoration: underline;
 	}
 
 	.dest-detail__section {

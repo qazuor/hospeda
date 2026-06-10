@@ -43,6 +43,7 @@
             "outputs": [".output/**", ".tanstack/**", "src/routeTree.gen.ts"]
         },
         "lint": {
+            "dependsOn": ["^build"],
             "outputs": []
         },
         "dev": {

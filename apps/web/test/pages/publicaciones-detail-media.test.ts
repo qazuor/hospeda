@@ -39,6 +39,19 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
         });
     });
 
+    describe('related posts grid reads images from the nested media field (BETA-51)', () => {
+        it('does NOT read related-post images as a flat p.featuredImage', () => {
+            // The related-posts loop used `p.featuredImage` (a field that does
+            // not exist on the schema), so every related card showed the
+            // placeholder. The cover regression test above only guarded `post.`.
+            expect(pageSrc).not.toMatch(/\bp\.featuredImage\b/);
+        });
+
+        it('reads each related-post image from p.media.featuredImage.url', () => {
+            expect(pageSrc).toMatch(/featuredImage\?\.url\s*\?\?\s*null/);
+        });
+    });
+
     describe('renders the gallery via ImageGallery island when media is available', () => {
         it('imports ImageGallery', () => {
             expect(pageSrc).toContain("from '@/components/ImageGallery.client'");

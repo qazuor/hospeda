@@ -100,9 +100,15 @@ export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSche
  */
 export const OwnerPromotionAdminSchema = OwnerPromotionSchema.extend({
     /** Resolved owner data (admin tier). Available when the API joins the user. */
-    owner: UserAdminSchema.optional(),
-    /** Resolved accommodation data (admin tier). Available when the API joins the record. */
-    accommodation: AccommodationAdminSchema.optional()
+    owner: UserAdminSchema.nullable().optional(),
+    /**
+     * Resolved accommodation data (admin tier). Available when the API joins the
+     * record. Nullable because a promotion can target ALL of the owner's
+     * accommodations (`accommodationId` is null), in which case the relation
+     * loader returns `null` — `.optional()` alone rejects null and 500s the
+     * admin list (SPEC-143 smoke F-ADMIN-OWNERPROMO).
+     */
+    accommodation: AccommodationAdminSchema.nullable().optional()
 });
 
 export type OwnerPromotionAdmin = z.infer<typeof OwnerPromotionAdminSchema>;

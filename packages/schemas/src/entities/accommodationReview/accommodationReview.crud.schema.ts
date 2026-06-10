@@ -19,7 +19,8 @@ import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
 /**
  * Schema for creating a new accommodation review
- * Omits auto-generated fields like id and audit fields
+ * Omits auto-generated fields like id, audit fields, and moderation fields
+ * (the service sets moderationState; it is not user-settable via HTTP).
  */
 export const AccommodationReviewCreateInputSchema = AccommodationReviewSchema.omit({
     id: true,
@@ -29,8 +30,34 @@ export const AccommodationReviewCreateInputSchema = AccommodationReviewSchema.om
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    averageRating: true
+    averageRating: true,
+    moderationState: true,
+    moderatedById: true,
+    moderatedAt: true,
+    moderationReason: true
 });
+
+/**
+ * Body-only variant of {@link AccommodationReviewCreateInputSchema} for HTTP
+ * routes where `accommodationId` is sourced from the URL path and `userId`
+ * is resolved from the authenticated actor. Validating against this variant
+ * lets the client POST just the review payload (rating + optional title +
+ * optional content) without redundantly echoing identifiers the server
+ * already knows.
+ *
+ * The original input schema remains intact (service-layer callers and admin
+ * tooling still pass the full payload), per the schemas additive-only policy.
+ *
+ * `.strict()` (HTTP boundary hardening, mirrors DestinationReviewCreateBodySchema):
+ * a body that echoes `userId` or `accommodationId` is REJECTED instead of
+ * silently stripped, so impersonation attempts fail loudly at validation.
+ * Strictness is applied only at this HTTP boundary — the service-layer
+ * create input schema stays lax per the additive-only compat policy.
+ */
+export const AccommodationReviewCreateBodySchema = AccommodationReviewCreateInputSchema.omit({
+    accommodationId: true,
+    userId: true
+}).strict();
 
 /**
  * Schema for accommodation review creation response
@@ -44,11 +71,13 @@ export const AccommodationReviewCreateOutputSchema = AccommodationReviewSchema;
 
 /**
  * Schema for updating an accommodation review (PUT - complete replacement).
- * Omits auto-generated fields and makes all fields partial.
+ * Omits auto-generated fields, moderation fields, and makes all fields partial.
  *
  * SPEC-063-gaps T-017 (GAP-016, defense-in-depth): `.strict()` enforces that
  * unknown keys are rejected at the route boundary with a 400 VALIDATION_ERROR
  * instead of being silently dropped by the Hono zValidator middleware.
+ * Moderation fields are omitted — they are managed through the dedicated
+ * moderation endpoint, not through standard CRUD operations.
  */
 export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.omit({
     id: true,
@@ -58,7 +87,11 @@ export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.om
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    averageRating: true
+    averageRating: true,
+    moderationState: true,
+    moderatedById: true,
+    moderatedAt: true,
+    moderationReason: true
 })
     .partial()
     .strict();

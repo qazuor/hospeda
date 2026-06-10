@@ -252,6 +252,22 @@ const OrganizerLogoUploadSchema = z.object({
 });
 
 /**
+ * Request validation for `POST /api/v1/protected/media/upload-entity` (multipart form fields).
+ *
+ * Subset of `AdminUploadRequestSchema` restricted to entity image roles
+ * (featured, gallery) for the four CRUD content entities. The protected
+ * tier does NOT allow avatar, sponsorLogo, or organizerLogo uploads —
+ * those remain admin-only.
+ *
+ * The ownership check is performed at the route level after schema
+ * validation, against the authenticated actor's ID.
+ */
+export const ProtectedUploadEntityRequestSchema = z.discriminatedUnion('role', [
+    FeaturedImageUploadSchema,
+    GalleryUploadSchema
+]);
+
+/**
  * Request validation for `POST /api/v1/admin/media/upload` (multipart form fields).
  *
  * GAP-078-153: the schema is a Zod discriminated union on `role` so the
@@ -545,6 +561,9 @@ export type MediaRole = z.infer<typeof MediaRoleSchema>;
 
 /** Validated form fields for a media upload request (discriminated union). */
 export type AdminUploadRequest = z.infer<typeof AdminUploadRequestSchema>;
+
+/** Validated form fields for a protected entity media upload request. */
+export type ProtectedUploadEntityRequest = z.infer<typeof ProtectedUploadEntityRequestSchema>;
 
 /** Featured-image variant of the upload request. */
 export type FeaturedImageUploadRequest = z.infer<typeof FeaturedImageUploadSchema>;

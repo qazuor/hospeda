@@ -29,6 +29,12 @@ import { z } from 'zod';
  * - `'event_submission'` — operators wanting to publish events.
  * - `'accommodation'` — DEPRECATED legacy value kept for schema compatibility
  *   (additive-only policy). Not exposed by the public form anymore.
+ * - `'report_destination_info'` — content-error report from a destination page
+ *   (SPEC-191, /colaborar/reportar).
+ * - `'photo_submission'` — destination photo contribution
+ *   (SPEC-191, /colaborar/fotos).
+ * - `'editor_application'` — blog/events volunteer editor application
+ *   (SPEC-191, /colaborar/editores).
  */
 export const ContactTypeEnumSchema = z.enum([
     'general',
@@ -40,7 +46,10 @@ export const ContactTypeEnumSchema = z.enum([
     'press',
     'partnerships',
     'event_submission',
-    'accommodation'
+    'accommodation',
+    'report_destination_info',
+    'photo_submission',
+    'editor_application'
 ]);
 
 /** Inferred TypeScript type for {@link ContactTypeEnumSchema}. */

@@ -4,7 +4,7 @@
     "slug": "san-justo",
     "name": "San Justo",
     "summary": "Villa San Justo es una pequeña colonia agrícola del Departamento Uruguay, Entre Ríos, fundada en 1874 por Dolores Costa de Urquiza cerca del Palacio San José.",
-    "description": "Villa San Justo es una tranquila localidad rural ubicada en el Departamento Uruguay, provincia de Entre Ríos, a unos 25 km de Concepción del Uruguay y muy cerca del Palacio San José. Fue fundada en 1874 como colonia agrícola por Doña Dolores Costa de Urquiza, viuda del General Justo José de Urquiza, y poblada por inmigrantes italianos y franceses. Su trazado original de 23 manzanas se extiende a ambos lados del Boulevard o Camino Real. Hoy conserva su perfil agropecuario y forma parte del circuito turístico Caminos del Palacio. Su principal atractivo es la Parroquia Nuestra Señora de los Dolores, mandada a construir en 1887, junto a su plaza central y el entorno rural característico de la microregión del Palacio San José.",
+    "description": "## San Justo, una colonia agrícola junto al Palacio\n\n**Villa San Justo** es una tranquila localidad rural del **Departamento Uruguay**, en la provincia de Entre Ríos, situada a unos **25 km de Concepción del Uruguay** y muy próxima al célebre **Palacio San José**. Pequeña y de aire pueblerino, conserva hasta hoy el perfil agropecuario con el que nació y forma parte del circuito turístico regional conocido como **Caminos del Palacio**.\n\n## Una historia ligada a Urquiza\n\nLa villa nació en **1874** como colonia agrícola fundada por **Dolores Costa de Urquiza**, viuda del general **Justo José de Urquiza**, sobre tierras lindantes con su residencia, el Palacio San José. Tras el asesinato de Urquiza en 1870, la región había quedado empobrecida, y la colonia se pobló con **inmigrantes italianos y franceses** que llegaban en oleadas a los puertos de Buenos Aires y Montevideo. Su trazado original, de 23 manzanas, se ordenó a ambos lados del **Boulevard o Camino Real**. En 1889 la colonia se convirtió en pueblo y, ya en el siglo XX, se constituyó como municipio, hoy una pequeña comunidad de algo más de mil setecientos habitantes.\n\n## Qué ver\n\nEl principal atractivo es la **Parroquia Nuestra Señora de los Dolores**, mandada a construir en 1887 por la propia Dolores Costa, que preside la plaza central junto al entorno rural característico de la microrregión del Palacio San José. Por su cercanía, San Justo se recorre cómodamente combinándola con la visita al Palacio y a la ciudad de Concepción del Uruguay, en un paseo que une historia, campo y patrimonio entrerriano.",
     "isFeatured": false,
     "moderationState": "APPROVED",
     "destinationType": "CITY",
@@ -254,6 +254,38 @@
         "013-attraction-centro_agropecuario",
         "010-attraction-casa_historica",
         "037-attraction-estancia_turistica"
+    ],
+    "faqs": [
+        {
+            "question": "¿Cómo se llega a San Justo en Entre Ríos?",
+            "answer": "Villa San Justo se ubica en el Departamento Uruguay, a unos 25 km de Concepción del Uruguay y muy cerca de localidades como Caseros y Pronunciamiento. Lo más habitual es llegar en auto desde Concepción del Uruguay por la red vial de la zona, en un trayecto corto que la integra al circuito Caminos del Palacio.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Es esta San Justo de Entre Ríos o la de Buenos Aires?",
+            "answer": "Esta es Villa San Justo, en el Departamento Uruguay de la provincia de Entre Ríos, fundada en 1874 por Dolores Costa de Urquiza junto al Palacio San José. No debe confundirse con San Justo de La Matanza (Buenos Aires) ni con San Justo de la provincia de Santa Fe: son localidades distintas y sin relación entre sí.",
+            "category": "Cómo llegar"
+        },
+        {
+            "question": "¿Qué se puede hacer y ver en San Justo?",
+            "answer": "El principal atractivo es la Parroquia Nuestra Señora de los Dolores, mandada a construir en 1887, frente a la plaza central. Por su cercanía al Palacio San José, San Justo se suele recorrer dentro del circuito Caminos del Palacio, combinando su casco rural con la visita al palacio y a Concepción del Uruguay.",
+            "category": "Qué hacer"
+        },
+        {
+            "question": "¿Cuál es la mejor época para visitar San Justo?",
+            "answer": "Al tratarse de una localidad rural para recorrer a paso tranquilo, la primavera y el otoño son ideales por su clima templado. El verano puede ser caluroso, propio del campo entrerriano. Conviene planificar la visita junto con el Palacio San José y Concepción del Uruguay para aprovechar mejor el día.",
+            "category": "Cuándo visitar"
+        },
+        {
+            "question": "¿Qué servicios encuentro en San Justo?",
+            "answer": "San Justo es un pueblo pequeño de perfil agropecuario, con servicios básicos para el visitante. Para una oferta más amplia de alojamiento, gastronomía y comercios conviene apoyarse en la cercana Concepción del Uruguay, a unos 25 km, que funciona como base para recorrer la microrregión del Palacio San José.",
+            "category": "Servicios"
+        },
+        {
+            "question": "¿Por qué San Justo está ligada al Palacio San José?",
+            "answer": "Porque la colonia fue fundada en 1874 por Dolores Costa de Urquiza sobre tierras lindantes con el Palacio San José, su residencia. Los primeros colonos italianos y franceses fueron alojados en construcciones próximas al palacio, y ese vínculo histórico hace que hoy el pueblo integre el circuito turístico Caminos del Palacio.",
+            "category": "Qué hacer"
+        }
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,

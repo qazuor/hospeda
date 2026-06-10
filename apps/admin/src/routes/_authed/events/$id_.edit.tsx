@@ -2,6 +2,7 @@ import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { EventQualityScore } from '@/features/events/components/EventQualityScore';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -71,6 +72,7 @@ function EventEditPage() {
                     initialMode="edit"
                     entityData={entityData}
                     zodSchema={EventUpdateInputSchema}
+                    qualityScore={({ isReduced }) => <EventQualityScore compact={isReduced} />}
                 >
                     <EntityEditContent
                         entityType="event"

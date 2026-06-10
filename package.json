@@ -53,14 +53,15 @@
         "db:restart": "pnpm db:stop && pnpm db:start",
         "db:reset": "docker compose --env-file docker/.env down -v && docker compose --env-file docker/.env up -d postgres redis && sleep 10 && pnpm db:migrate && pnpm db:apply-extras",
         "db:fresh": "docker compose --env-file docker/.env down -v && docker compose --env-file docker/.env up -d postgres redis && sleep 10 && pnpm db:generate && pnpm db:migrate && pnpm db:apply-extras && pnpm db:seed",
-        "db:fresh-dev": "docker compose --env-file docker/.env down -v && docker compose --env-file docker/.env up -d postgres redis && sleep 10 && pnpm --filter @repo/db db:push && pnpm db:apply-extras && pnpm db:seed",
-        "db:apply-extras": "bash packages/db/scripts/apply-postgres-extras.sh",
+        "db:fresh-dev": "docker compose --env-file docker/.env down -v && docker compose --env-file docker/.env up -d postgres redis && sleep 10 && pnpm --filter @repo/db db:push && pnpm db:apply-extras && pnpm db:seed && pnpm db:seed:test-users",
+        "db:apply-extras": "node packages/db/scripts/apply-postgres-extras.mjs",
         "db:logs": "docker compose --env-file docker/.env logs -f postgres",
         "db:migrate": "pnpm --filter @repo/db db:migrate",
         "db:migrate:prod": "bash scripts/migrate-production.sh",
         "db:generate": "pnpm --filter @repo/db db:generate",
         "db:studio": "pnpm --filter @repo/db db:studio",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
+        "db:seed:test-users": "pnpm --filter @repo/seed seed:test-users",
         "pgadmin:start": "docker compose --env-file docker/.env up -d pgadmin",
         "pgadmin:stop": "docker compose --env-file docker/.env stop pgadmin",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
@@ -96,7 +97,7 @@
     },
     "packageManager": "pnpm@9.12.3",
     "engines": {
-        "node": ">=20"
+        "node": ">=22.12.0"
     },
     "dependencies": {
         "glob": "^11.1.0",
@@ -107,7 +108,11 @@
         "overrides": {
             "react": "19.1.1",
             "react-dom": "19.1.1",
-            "devalue": ">=5.6.3",
+            "vitest": "3.2.6",
+            "@vitest/coverage-v8": "3.2.6",
+            "@vitest/ui": "3.2.6",
+            "fast-uri": "3.1.2",
+            "devalue": ">=5.8.1",
             "seroval": ">=1.4.1",
             "tar": ">=7.5.11",
             "tar-fs": ">=3.1.1",
@@ -146,20 +151,21 @@
             "@opentelemetry/api": "1.9.1",
             "@remix-run/node": ">=2.17.2",
             "@remix-run/router": ">=1.23.2",
-            "@remix-run/server-runtime": ">=2.17.3",
+            "@remix-run/server-runtime": ">=2.17.5",
             "esbuild": ">=0.25.0",
             "@tanstack/form-core": "0.42.1",
             "csstype": "3.1.3",
             "@types/react": "19.1.10",
             "@types/react-dom": "19.1.7",
-            "@vitejs/plugin-react": "^4.7.0"
+            "@vitejs/plugin-react": "^4.7.0",
+            "turbo-stream": ">=3.0.0"
         },
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"
         },
         "publicHoistPattern": ["react", "react-dom", "*react*"],
         "auditConfig": {
-            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5"]
+            "ignoreGhsas": ["GHSA-rmmr-r34h-pfm5", "GHSA-5xrq-8626-4rwp"]
         }
     },
     "lint-staged": {

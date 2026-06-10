@@ -83,6 +83,20 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.redirect(`${path}/${search}`, 301);
     }
 
+    // Step 3.1: Legacy URL alias — the inbox page was originally hosted at
+    // `/{locale}/mi-cuenta/messages/...` (English slug). It was renamed to
+    // `/consultas/` for parity with the rest of the account section, which is
+    // all-Spanish. Any old link (bookmark, email, beta doc cached by Cloudflare)
+    // gets a permanent 308 redirect so deep links to specific conversations
+    // (`/messages/{conversationId}`) continue to work.
+    const legacyMessagesMatch = path.match(/^\/(es|en|pt)\/mi-cuenta\/messages(\/.*)?$/);
+    if (legacyMessagesMatch) {
+        const localeSegment = legacyMessagesMatch[1];
+        const tail = legacyMessagesMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/mi-cuenta/consultas${tail}${search}`, 308);
+    }
+
     // Step 3.5: Beta tester docs live under `/beta` outside the `/{lang}/` namespace.
     // Skip locale enforcement, session parsing, and auth checks. Still attach the
     // CSP header below (security) and stamp `X-Robots-Tag: noindex, nofollow` so
@@ -115,7 +129,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
             const directives = buildCspHeader({
                 nonce: cspNonce,
                 apiUrl: getApiUrl(),
-                sentryReportUri
+                sentryReportUri,
+                // Drop the external *.sentry.io connect-src when the first-party
+                // Sentry tunnel is active (SPEC-181 follow-up).
+                sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
             });
             betaResponse.headers.set('Content-Security-Policy-Report-Only', directives);
         }
@@ -128,9 +145,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // If the locale segment is missing or not a supported locale, redirect to the
     // default locale while preserving the rest of the path.
+    // REQ-19: 301 (permanent) — this is a stable URL strategy decision; Google
+    // passes full link equity through 301s but not through the default 302.
     if (locale === null) {
         const redirectUrl = buildLocaleRedirect({ restOfPath: restOfPath || path });
-        return context.redirect(redirectUrl);
+        return context.redirect(redirectUrl, 301);
     }
 
     // Step 5: Store the validated locale in locals for downstream pages/components.
@@ -275,7 +294,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const directives = buildCspHeader({
             nonce: cspNonce,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
-            sentryReportUri
+            sentryReportUri,
+            // Drop the external *.sentry.io connect-src when the first-party
+            // Sentry tunnel is active (SPEC-181 follow-up).
+            sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL)
         });
 
         response.headers.set(CSP_HEADER_NAME, directives);

@@ -187,6 +187,7 @@
     },
     "favorites": {
         "tabs": {
+            "all": "Todos",
             "accommodation": "Acomodações",
             "destination": "Destinos",
             "event": "Eventos",
@@ -208,7 +209,9 @@
             "removing": "Removendo...",
             "removeError": "Erro ao remover favorito da coleção",
             "removeConfirm": "Remover este favorito da coleção? Continuará salvo nos seus favoritos.",
-            "fetchError": "Não foi possível carregar a coleção. Tente novamente mais tarde.",
+            "fetchError": "Tivemos um problema temporário ao carregar esta coleção. Tente novamente em alguns minutos.",
+            "errorTitle": "Não conseguimos carregar a coleção",
+            "backToList": "Voltar para meus favoritos",
             "prevPage": "Página anterior",
             "nextPage": "Próxima página",
             "pageInfo": "Página {{page}} de {{total}}",
@@ -291,7 +294,8 @@
         "ratingEditLabel": "Avaliação",
         "saving": "Salvando...",
         "deleting": "Excluindo...",
-        "total": "Total: {{count}} avaliações",
+        "total_one": "Total: {{count}} avaliação",
+        "total_other": "Total: {{count}} avaliações",
         "typeAccommodation": "Acomodação",
         "typeDestination": "Destino",
         "errors": {
@@ -375,6 +379,21 @@
             "cancelButton": "Cancelar assinatura",
             "viewPlans": "Ver planos",
             "upgradeLink": "Melhorar plano",
+            "pauseButton": "Pausar assinatura",
+            "pauseAriaLabel": "Pausar assinatura",
+            "resumeButton": "Retomar assinatura",
+            "pauseSuccess": "Assinatura pausada.",
+            "pauseError": "Não foi possível pausar a assinatura.",
+            "resumeSuccess": "Assinatura retomada.",
+            "resumeError": "Não foi possível retomar a assinatura.",
+            "status": {
+                "paused": "Pausada"
+            },
+            "pauseModal": {
+                "title": "Pausar assinatura",
+                "body": "Ao pausar, você deixa de pagar e suas acomodações ficam ocultas do site e você não poderá editá-las até retomar. Toda a sua configuração é preservada e volta igual ao retomar.",
+                "confirm": "Pausar"
+            },
             "cancelModal": {
                 "title": "Cancelar assinatura?",
                 "confirm": "Sim, cancelar assinatura"

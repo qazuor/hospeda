@@ -50,5 +50,17 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Welcome and campaign deliveries respect the opt-out and live in the
     // dedicated NEWSLETTER category so the preference service can route them.
     [NotificationType.NEWSLETTER_WELCOME]: NotificationCategory.NEWSLETTER,
-    [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER
+    [NotificationType.NEWSLETTER_CAMPAIGN]: NotificationCategory.NEWSLETTER,
+
+    // AI cost threshold alert (SPEC-173 T-025) — sent to SUPER_ADMIN only
+    [NotificationType.AI_COST_THRESHOLD_ALERT]: NotificationCategory.ADMIN,
+
+    // Soft-cancel confirmation (SPEC-147) — always sent, user-initiated
+    [NotificationType.SUBSCRIPTION_CANCEL_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
+
+    // D3 access-ending reminder (SPEC-147 T-010) — REMINDER: user can opt out
+    [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER,
+
+    // Plan retirement notification (SPEC-148) — TRANSACTIONAL: admin-triggered, always sent
+    [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL
 };

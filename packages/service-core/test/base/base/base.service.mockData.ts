@@ -47,7 +47,9 @@ export const mockUser: InferredUser = {
     imageCaption: null,
     // SPEC-113 profile completion flags
     profileCompleted: false,
-    setPasswordPrompted: false
+    setPasswordPrompted: false,
+    // SPEC-143 #29 service-suspension flag (canonical source)
+    serviceSuspended: false
 };
 
 export const mockActor: Actor = new ActorFactoryBuilder()

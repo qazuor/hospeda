@@ -23,7 +23,30 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// ─── Hoisted mocks ─────────────────────────────────────────────────────────
+
+const { mockCatalogGetBySlug } = vi.hoisted(() => ({
+    mockCatalogGetBySlug: vi.fn()
+}));
+
 // ─── Module mocks — must be declared before any imports ────────────────────
+
+// After SPEC-192 T-014/T-025 cutover, addon and plan reads go through DB-backed services.
+// PlanService is required by addon-plan-change.service.ts (imported transitively via
+// addon-lifecycle.service.ts).
+vi.mock('@repo/service-core', () => ({
+    AddonCatalogService: vi.fn().mockImplementation(() => ({
+        getBySlug: mockCatalogGetBySlug,
+        list: vi.fn()
+    })),
+    PlanService: vi.fn().mockImplementation(() => ({
+        getById: vi.fn(),
+        getBySlug: vi.fn()
+    })),
+    BILLING_EVENT_TYPES: {
+        ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
+    }
+}));
 
 vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn()
@@ -43,11 +66,7 @@ vi.mock('@repo/db', () => ({
     }
 }));
 
-vi.mock('@repo/service-core', () => ({
-    BILLING_EVENT_TYPES: {
-        ADDON_REVOCATION_FAILED: 'ADDON_REVOCATION_FAILED'
-    }
-}));
+// @repo/service-core mock now lives in the hoisted section above
 
 vi.mock('@repo/db/schemas/billing', () => ({
     billingAddonPurchases: {
@@ -101,7 +120,6 @@ vi.mock('@sentry/node', () => ({
 
 // ─── Imports — after mocks ──────────────────────────────────────────────────
 
-import { getAddonBySlug } from '@repo/billing';
 import * as Sentry from '@sentry/node';
 import * as entitlementMiddleware from '../../src/middlewares/entitlement';
 import { handleSubscriptionCancellationAddons } from '../../src/services/addon-lifecycle-cancellation.service';
@@ -223,8 +241,11 @@ describe('handleSubscriptionCancellationAddons', () => {
 
     beforeEach(() => {
         mockBilling = createMockBilling();
-        // Default: getAddonBySlug returns undefined (retired addon)
-        vi.mocked(getAddonBySlug).mockReturnValue(undefined);
+        // Default: catalog returns NOT_FOUND (retired addon path — same semantics as old undefined)
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'addon not found' }
+        });
         // Default: revokeAddonForSubscriptionCancellation succeeds
         vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue(ENT_REVOCATION_OK);
     });
@@ -239,12 +260,12 @@ describe('handleSubscriptionCancellationAddons', () => {
     describe('AC-1.1: happy path with 2 active addons', () => {
         it('should revoke and cancel both addons, returning succeeded list', async () => {
             // Arrange
-            vi.mocked(getAddonBySlug).mockImplementation((slug: string) => {
-                if (slug === PURCHASE_ENT.addonSlug)
-                    return ENT_ADDON_DEF as ReturnType<typeof getAddonBySlug>;
+            // After SPEC-192 T-014 cutover, catalog resolves via AddonCatalogService.getBySlug
+            mockCatalogGetBySlug.mockImplementation(async (slug: string) => {
+                if (slug === PURCHASE_ENT.addonSlug) return { success: true, data: ENT_ADDON_DEF };
                 if (slug === PURCHASE_LIMIT.addonSlug)
-                    return LIMIT_ADDON_DEF as ReturnType<typeof getAddonBySlug>;
-                return undefined;
+                    return { success: true, data: LIMIT_ADDON_DEF };
+                return { success: false, error: { code: 'NOT_FOUND', message: 'addon not found' } };
             });
 
             vi.mocked(revokeAddonForSubscriptionCancellation)
@@ -547,12 +568,15 @@ describe('handleSubscriptionCancellationAddons', () => {
     });
 
     // =========================================================================
-    // AC-1.7: Retired addon — getAddonBySlug returns undefined
+    // AC-1.7: Retired addon — catalog returns NOT_FOUND → addonDef=undefined
     // =========================================================================
     describe('AC-1.7: retired addon with undefined definition', () => {
         it('should pass undefined addonDef to revokeAddonForSubscriptionCancellation', async () => {
-            // Arrange
-            vi.mocked(getAddonBySlug).mockReturnValue(undefined);
+            // Arrange — NOT_FOUND from catalog → addonDef=undefined (same semantics as old config undefined)
+            mockCatalogGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'addon not found' }
+            });
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValueOnce({
                 purchaseId: PURCHASE_ENT.id,
                 addonSlug: PURCHASE_ENT.addonSlug,
@@ -585,8 +609,11 @@ describe('handleSubscriptionCancellationAddons', () => {
         });
 
         it('should mark purchase as canceled in DB even for retired addons', async () => {
-            // Arrange
-            vi.mocked(getAddonBySlug).mockReturnValue(undefined);
+            // Arrange — NOT_FOUND from catalog → addonDef=undefined, revoke path still proceeds
+            mockCatalogGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND', message: 'addon not found' }
+            });
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValueOnce({
                 purchaseId: PURCHASE_ENT.id,
                 addonSlug: PURCHASE_ENT.addonSlug,

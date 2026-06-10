@@ -21,6 +21,7 @@ import { getBadgeStatusColor } from '@/lib/colors';
 import AccommodationTypeBadge from '@/components/shared/ui/AccommodationTypeBadge.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { StarIcon } from '@repo/icons';
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
@@ -55,11 +56,8 @@ const { t, tPlural } = createTranslations(locale);
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 const isNew = (Date.now() - new Date(accommodation.createdAt).getTime()) < THIRTY_DAYS_MS;
 
-const featuredColors = getBadgeStatusColor({ status: 'featured' });
 const newColors = getBadgeStatusColor({ status: 'new' });
 
-const featuredStyle =
-  `background-color: ${featuredColors.bg}; color: ${featuredColors.text}; border-color: ${featuredColors.border};`;
 const newStyle =
   `background-color: ${newColors.bg}; color: ${newColors.text}; border-color: ${newColors.border};`;
 ---
@@ -74,8 +72,9 @@ const newStyle =
         class="detail-header__type-badge"
       />
       {accommodation.isFeatured && (
-        <span class="detail-header__status-pill" style={featuredStyle}>
-          {t('accommodations.detail.badges.featured')}
+        <span class="featured-badge">
+          <StarIcon size={12} weight="fill" aria-hidden="true" />
+          <span>{t('accommodations.detail.badges.featured')}</span>
         </span>
       )}
       {isNew && (

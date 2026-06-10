@@ -7,9 +7,15 @@
  * order, first hit wins:
  *
  *   1. Global `--target=<env>` flag on the command line.
- *   2. `HOPS_DEFAULT_TARGET` env var in `.env.local`.
- *   3. Default: `prod` (keeps pre-split behaviour for commands that didn't
- *      pass a flag).
+ *   2. `HOPS_DEFAULT_TARGET` env var in `.env.local` (opt-in per-machine
+ *      default; NOT honoured by destructive/write commands — see policy
+ *      enforcement in `src/index.ts`).
+ *
+ * There is NO implicit fallback to `prod`. If neither source provides a
+ * target for a command that needs one, `resolveTarget` returns
+ * `source: 'none'` and the caller decides whether to die, prompt, or
+ * continue (e.g. commands with `targetPolicy: 'none'` ignore the target
+ * entirely).
  *
  * Note: `HOPS_DEFAULT_TARGET` is intentionally distinct from `HOPS_TARGET`
  * (the latter is consumed by `install.sh` for the binary install path).
@@ -36,6 +42,17 @@ import { get } from './env.ts';
 /** Supported target environments. */
 export type Target = 'prod' | 'staging';
 
+/**
+ * Target policy for a command.
+ *
+ * - `'none'`              No prod/staging concept. No target required.
+ * - `'default-ok'`        Read-only or low-risk. Accepts flag, env var, or
+ *                         interactive prompt.
+ * - `'explicit-required'` Writes/destroys data. Requires explicit `--target=`
+ *                         flag; ignores `HOPS_DEFAULT_TARGET`.
+ */
+export type TargetPolicy = 'none' | 'default-ok' | 'explicit-required';
+
 const VALID_TARGETS: ReadonlyArray<Target> = ['prod', 'staging'];
 
 /**
@@ -59,23 +76,44 @@ const APP_RESOURCE_NAMES: Readonly<
 };
 
 /**
+ * Where the resolved target came from.
+ *
+ * - `'flag'`  — the operator passed `--target=<env>` on the command line.
+ * - `'env'`   — the target came from `HOPS_DEFAULT_TARGET` in `.env.local`.
+ * - `'none'`  — neither source provided a target; the caller must decide
+ *               whether to die(), prompt, or continue (commands with
+ *               `targetPolicy: 'none'` ignore the result entirely).
+ */
+export type TargetSource = 'flag' | 'env' | 'none';
+
+/**
  * Result of parsing `--target=<env>` from argv. Returns the resolved
- * target plus argv with the flag stripped so commands see a clean argv.
+ * target (or `undefined` when neither the flag nor `HOPS_DEFAULT_TARGET`
+ * was set), the source of that resolution, and argv with the flag
+ * stripped so commands see a clean argv.
  */
 export interface TargetParseResult {
-    readonly target: Target;
+    /** Resolved target, or `undefined` when no source provided one. */
+    readonly target: Target | undefined;
+    /** Where the target value came from. */
+    readonly source: TargetSource;
+    /** Argv with `--target` / `--target=<env>` stripped. */
     readonly remainingArgv: ReadonlyArray<string>;
 }
 
 /**
- * Parse the global `--target=<env>` flag from argv and resolve the
+ * Parse the global `--target=<env>` flag from argv and determine the
  * effective target using the order documented at the top of this file.
  *
  * Accepted forms:
  *   --target=staging      (preferred — single token)
  *   --target staging      (two tokens)
  *
- * @throws when the value is present but not one of {@link VALID_TARGETS}.
+ * Returns `target: undefined, source: 'none'` when neither the flag nor
+ * `HOPS_DEFAULT_TARGET` provided a value — callers enforce the policy
+ * appropriate for the command being dispatched.
+ *
+ * @throws when the flag or env var is present but not one of {@link VALID_TARGETS}.
  */
 export function resolveTarget(argv: ReadonlyArray<string>): TargetParseResult {
     const remaining: string[] = [];
@@ -95,13 +133,26 @@ export function resolveTarget(argv: ReadonlyArray<string>): TargetParseResult {
         if (token !== undefined) remaining.push(token);
     }
 
-    const candidate = flagValue ?? get('HOPS_DEFAULT_TARGET') ?? 'prod';
-    if (!isValidTarget(candidate)) {
-        throw new Error(
-            `Invalid target '${candidate}'. Valid values: ${VALID_TARGETS.join(', ')}. Set via --target=<env> or HOPS_DEFAULT_TARGET in .env.local.`
-        );
+    if (flagValue !== undefined) {
+        if (!isValidTarget(flagValue)) {
+            throw new Error(
+                `Invalid --target value '${flagValue}'. Valid targets: ${VALID_TARGETS.join(' | ')}.\nUsage: hops --target=<${VALID_TARGETS.join('|')}> <command>`
+            );
+        }
+        return { target: flagValue, source: 'flag', remainingArgv: remaining };
     }
-    return { target: candidate, remainingArgv: remaining };
+
+    const envValue = get('HOPS_DEFAULT_TARGET');
+    if (envValue !== undefined) {
+        if (!isValidTarget(envValue)) {
+            throw new Error(
+                `Invalid HOPS_DEFAULT_TARGET value '${envValue}'. Valid targets: ${VALID_TARGETS.join(' | ')}.\nFix the value in scripts/server-tools/.env.local.`
+            );
+        }
+        return { target: envValue, source: 'env', remainingArgv: remaining };
+    }
+
+    return { target: undefined, source: 'none', remainingArgv: remaining };
 }
 
 /**

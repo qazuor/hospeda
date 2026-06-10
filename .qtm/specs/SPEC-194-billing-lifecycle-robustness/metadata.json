@@ -1,0 +1,33 @@
+{
+    "specId": "SPEC-194",
+    "title": "Billing Lifecycle Robustness & Bug Fixes",
+    "type": "feature",
+    "complexity": "high",
+    "status": "completed",
+    "created": "2026-06-03T00:00:00Z",
+    "approved": null,
+    "completed": "2026-06-05T03:00:58Z",
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "lifecycle",
+        "refunds",
+        "dunning",
+        "trials",
+        "crons",
+        "state-machine",
+        "robustness",
+        "bugfix"
+    ],
+    "parent": "SPEC-193",
+    "dependsOn": ["SPEC-143", "SPEC-168"],
+    "relatesTo": ["SPEC-145", "SPEC-149", "SPEC-167", "SPEC-192"],
+    "blocks": ["real-money-go-live"],
+    "worktree": null,
+    "branch": null,
+    "base": "staging",
+    "effortEstimateHours": "50-80",
+    "engramRefs": {
+        "reorg": "billing/spec-reorg-2026-06"
+    }
+}

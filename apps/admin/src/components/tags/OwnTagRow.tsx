@@ -8,10 +8,10 @@ import { PostTagColorBadge } from './PostTagColorBadge';
 
 /** Maps lifecycleState values to badge style classes. */
 const STATE_BADGE: Readonly<Record<string, string>> = {
-    ACTIVE: 'bg-green-100 text-green-800',
+    ACTIVE: 'bg-success/15 text-success',
     INACTIVE: 'bg-gray-100 text-gray-600',
-    DRAFT: 'bg-yellow-100 text-yellow-800',
-    ARCHIVED: 'bg-orange-100 text-orange-700'
+    DRAFT: 'bg-warning/15 text-warning',
+    ARCHIVED: 'bg-warning/15 text-warning'
 } as const;
 
 const STATE_LABEL: Readonly<Record<string, string>> = {

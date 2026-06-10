@@ -26,13 +26,20 @@
  * message instead of a generic error.
  */
 
-import { CityDestinationPicker } from '@/components/form/CityDestinationPicker.client';
-import type { CityDestinationValue } from '@/components/form/CityDestinationPicker.client';
+import { SearchableSelect } from '@/components/form/SearchableSelect.client';
+import type { SelectableItem } from '@/components/form/SearchableSelect.client';
+import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
+import { translateApiError } from '@/lib/api-errors';
+import { destinationsApi } from '@/lib/api/endpoints';
+import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
+import { buildUrlWithParams } from '@/lib/urls';
+import { addToast } from '@/store/toast-store';
 import { AccommodationTypeEnum } from '@repo/schemas';
-import { useId, useState } from 'react';
-import styles from './CreatePropertyMiniForm.module.css';
+import type { DestinationPublic } from '@repo/schemas';
+import { useCallback, useId, useMemo, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +76,33 @@ type FieldErrors = Readonly<{
 
 type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
 
+/**
+ * Force Better Auth to re-read the session from the database and rotate its
+ * cookie cache. Required after the onboarding endpoint promotes the user
+ * USER → HOST in DB: without this call, the cached session cookie still
+ * carries `role=USER` for up to 5 minutes (Better Auth's default
+ * `cookieCache.maxAge`), and the admin guard would route the freshly
+ * promoted host straight to `/auth/forbidden`.
+ *
+ * See:
+ *   https://better-auth.com/docs/concepts/session-management
+ *     → "Disable Cookie Cache"
+ *
+ * Best-effort: errors are swallowed so a network blip on this call does not
+ * block the post-submit redirect.
+ */
+async function refreshSessionFromDatabase(apiUrl: string): Promise<void> {
+    try {
+        await fetch(`${apiUrl.replace(/\/$/, '')}/api/auth/get-session?disableCookieCache=true`, {
+            credentials: 'include',
+            cache: 'no-store'
+        });
+    } catch {
+        // Non-fatal: the admin guard will still resolve correctly once the
+        // 5-minute cookie cache expires.
+    }
+}
+
 type OnboardingStartResponse = {
     readonly data?: {
         readonly status: OnboardingStartStatus;
@@ -78,6 +112,7 @@ type OnboardingStartResponse = {
     readonly error?: {
         readonly message?: string;
         readonly code?: string;
+        readonly details?: unknown;
     };
 };
 
@@ -86,6 +121,9 @@ type OnboardingStartResponse = {
 // ---------------------------------------------------------------------------
 
 const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
+
+/** Max suggestions surfaced by the city autocomplete dropdown. */
+const CITY_AUTOCOMPLETE_LIMIT = 10;
 
 /**
  * Minimal create-property form. On submit, POSTs to the draft endpoint and
@@ -107,11 +145,91 @@ export function CreatePropertyMiniForm({
 
     const [name, setName] = useState('');
     const [summary, setSummary] = useState('');
-    const [type, setType] = useState<string>('');
-    const [city, setCity] = useState<CityDestinationValue | null>(null);
+    const [typeItem, setTypeItem] = useState<SelectableItem | null>(null);
+    const [city, setCity] = useState<SelectableItem | null>(null);
     const [errors, setErrors] = useState<FieldErrors>({});
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Items for the accommodation type picker. Memoized so the dropdown
+    // doesn't re-allocate on every render. Each item carries the matching
+    // icon resolved via the shared helper — same affordances the home page
+    // search bar uses.
+    const typeItems = useMemo<ReadonlyArray<SelectableItem>>(
+        () =>
+            ACCOMMODATION_TYPE_VALUES.map((value) => ({
+                id: value,
+                label: t(`host.miniForm.types.${value}`, value),
+                icon: getAccommodationTypeIcon({ type: value })
+            })),
+        [t]
+    );
+
+    // City picker uses async mode — hits the public destinations endpoint
+    // (CITY-typed, name-only search scope, ranked client-side so prefix
+    // matches sort above substring matches).
+    const loadCityItems = useCallback(
+        async (query: string): Promise<ReadonlyArray<SelectableItem>> => {
+            const response = await destinationsApi.list({
+                destinationType: 'CITY',
+                q: query,
+                searchScope: 'name',
+                pageSize: CITY_AUTOCOMPLETE_LIMIT
+            });
+            if (!response.ok) {
+                webLogger.warn('CreatePropertyMiniForm city autocomplete failed', {
+                    error: response.error.message
+                });
+                return [];
+            }
+            const needle = query.trim().toLowerCase();
+            return response.data.items
+                .filter(
+                    (item: DestinationPublic): item is DestinationPublic & { id: string } =>
+                        typeof item.id === 'string'
+                )
+                .map(
+                    (item): SelectableItem => ({
+                        id: item.id,
+                        label: item.name,
+                        featured: Boolean(item.isFeatured)
+                    })
+                )
+                .sort((a, b) => {
+                    const an = a.label.toLowerCase();
+                    const bn = b.label.toLowerCase();
+                    const aExact = an === needle;
+                    const bExact = bn === needle;
+                    if (aExact !== bExact) return aExact ? -1 : 1;
+                    const aStarts = an.startsWith(needle);
+                    const bStarts = bn.startsWith(needle);
+                    if (aStarts !== bStarts) return aStarts ? -1 : 1;
+                    return an.localeCompare(bn);
+                });
+        },
+        []
+    );
+
+    // "No encuentro mi ciudad" → contact form, with the user's last query
+    // inlined into the prefilled message when present so the support inbox
+    // sees the exact spelling that failed to resolve.
+    const cityNotFoundHref = useMemo(() => {
+        return buildUrlWithParams({
+            locale,
+            path: 'contacto',
+            params: {
+                type: 'publish_accommodation',
+                subject: t(
+                    'host.form.sections.ubicacion.cityPicker.contactSubject',
+                    'Solicitud de nueva ciudad'
+                ),
+                message: t(
+                    'host.form.sections.ubicacion.cityPicker.contactMessage',
+                    'No encontré mi ciudad en el buscador del formulario de publicación. Me gustaría poder publicar mi alojamiento ahí. ¿Pueden agregarla?'
+                )
+            }
+        });
+    }, [locale, t]);
 
     function validate(): FieldErrors {
         const next: Record<string, string> = {};
@@ -127,7 +245,7 @@ export function CreatePropertyMiniForm({
                 'La descripción corta debe tener al menos 10 caracteres.'
             );
         }
-        if (!type) {
+        if (!typeItem) {
             next.type = t('host.miniForm.errors.type', 'Elegí el tipo de alojamiento.');
         }
         if (!city?.id) {
@@ -159,7 +277,8 @@ export function CreatePropertyMiniForm({
                     body: JSON.stringify({
                         name: name.trim(),
                         summary: summary.trim(),
-                        type,
+                        // typeItem.id is the AccommodationType enum value; guaranteed by validate()
+                        type: typeItem?.id ?? '',
                         // city.id is guaranteed by validate()
                         destinationId: city?.id ?? ''
                     })
@@ -178,17 +297,39 @@ export function CreatePropertyMiniForm({
             }
 
             if (!response.ok) {
-                let message = t(
+                const localizedFallback = t(
                     'host.miniForm.errors.submit',
                     'No pudimos crear el alojamiento. Probá de nuevo en un momento.'
                 );
+                let parsedErrorBody: OnboardingStartResponse | undefined;
                 try {
-                    const body = (await response.json()) as OnboardingStartResponse;
-                    if (body.error?.message) message = body.error.message;
+                    parsedErrorBody = (await response.json()) as OnboardingStartResponse;
                 } catch {
                     // Body wasn't JSON; keep the localized fallback message.
                 }
-                setSubmitError(message);
+
+                // 403 LIMIT_REACHED: host has hit their accommodation publish limit.
+                // Show a localized toast with an upgrade CTA instead of an inline form error.
+                if (response.status === 403 && parsedErrorBody?.error?.code === 'LIMIT_REACHED') {
+                    const limitPayload = buildLimitReachedPayloadFromDetails({
+                        details: parsedErrorBody.error?.details,
+                        locale
+                    });
+                    addToast({
+                        type: 'error',
+                        message: limitPayload.message,
+                        action: limitPayload.action
+                    });
+                    return;
+                }
+
+                setSubmitError(
+                    translateApiError({
+                        error: parsedErrorBody?.error,
+                        t,
+                        fallback: localizedFallback
+                    })
+                );
                 return;
             }
 
@@ -204,21 +345,28 @@ export function CreatePropertyMiniForm({
                 return;
             }
 
-            // Users without admin panel access (plain HOST role) cannot
-            // open /admin/* — they would land on /auth/forbidden. Send
-            // them to the web property list instead.
-            if (!canAccessAdminPanel) {
-                window.location.href = accountPropertiesUrl;
+            const adminBase = adminUrl.replace(/\/$/, '');
+
+            // `already_host`: the user already held a privileged role before
+            // this submit, so the pre-submit `canAccessAdminPanel` flag is
+            // still accurate. No session refresh is needed because nothing
+            // changed in the user's role / permissions.
+            if (data.status === 'already_host') {
+                window.location.href = canAccessAdminPanel
+                    ? `${adminBase}/accommodations`
+                    : accountPropertiesUrl;
                 return;
             }
 
-            const adminBase = adminUrl.replace(/\/$/, '');
-            // Branch on status: created/resumed go to the edit page, already_host
-            // goes to the admin home where the user creates listings normally.
-            if (data.status === 'already_host') {
-                window.location.href = `${adminBase}/accommodations`;
-                return;
-            }
+            // `created` / `resumed`: the endpoint just promoted the user
+            // USER → HOST atomically with the draft creation. Better Auth's
+            // cookie cache still carries the pre-promotion `role=USER` for
+            // up to 5 minutes, so we force a session refresh from the DB
+            // before redirecting to the admin. Otherwise the admin guard
+            // would read the stale cookie and bounce the host to
+            // `/auth/forbidden?reason=host-missing-permission`.
+            await refreshSessionFromDatabase(apiUrl);
+
             if (!data.accommodationId) {
                 setSubmitError(
                     t(
@@ -243,23 +391,29 @@ export function CreatePropertyMiniForm({
 
     return (
         <form
-            className={styles.form}
+            className="form form--card"
             onSubmit={(event) => {
                 void handleSubmit(event);
             }}
             noValidate
         >
             {/* Name */}
-            <div className={styles.field}>
+            <div className="form-field">
                 <label
-                    className={styles.label}
+                    className="form-label"
                     htmlFor={nameId}
                 >
                     {t('host.miniForm.fields.name', 'Nombre del alojamiento')}
+                    <span
+                        className="form-required"
+                        aria-hidden="true"
+                    >
+                        *
+                    </span>
                 </label>
                 <input
                     id={nameId}
-                    className={styles.input}
+                    className="form-input"
                     type="text"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
@@ -271,7 +425,7 @@ export function CreatePropertyMiniForm({
                 {errors.name && (
                     <p
                         id={`${nameId}-error`}
-                        className={styles.error}
+                        className="form-error"
                         role="alert"
                     >
                         {errors.name}
@@ -279,68 +433,79 @@ export function CreatePropertyMiniForm({
                 )}
             </div>
 
-            {/* Type */}
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor={typeId}
-                >
-                    {t('host.miniForm.fields.type', 'Tipo de alojamiento')}
-                </label>
-                <select
-                    id={typeId}
-                    className={styles.select}
-                    value={type}
-                    onChange={(event) => setType(event.target.value)}
+            {/* Type — shared SearchableSelect in local mode (icon affordance per type). */}
+            <div className="form-field">
+                <SearchableSelect
+                    locale={locale}
+                    inputId={typeId}
+                    label={t('host.miniForm.fields.type', 'Tipo de alojamiento')}
+                    value={typeItem}
+                    onChange={(item) => setTypeItem(item)}
+                    items={typeItems}
+                    placeholder={t('host.miniForm.fields.typePlaceholder', 'Elegí una opción')}
+                    emptyLabel={t('host.miniForm.fields.typeEmpty', 'No hay tipos que coincidan')}
+                    error={errors.type ?? null}
                     required
-                    aria-invalid={errors.type ? 'true' : 'false'}
-                    aria-describedby={errors.type ? `${typeId}-error` : undefined}
-                >
-                    <option value="">
-                        {t('host.miniForm.fields.typePlaceholder', 'Elegí una opción')}
-                    </option>
-                    {ACCOMMODATION_TYPE_VALUES.map((value) => (
-                        <option
-                            key={value}
-                            value={value}
-                        >
-                            {t(`host.miniForm.types.${value}`, value)}
-                        </option>
-                    ))}
-                </select>
-                {errors.type && (
-                    <p
-                        id={`${typeId}-error`}
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {errors.type}
-                    </p>
-                )}
+                    testId="property-type"
+                />
             </div>
 
-            {/* City picker */}
-            <div className={styles.field}>
-                <CityDestinationPicker
+            {/* City — shared SearchableSelect in async mode (hits public destinations API). */}
+            <div className="form-field">
+                <SearchableSelect
                     locale={locale}
+                    label={t('host.form.sections.ubicacion.cityPicker.label', 'Ciudad')}
                     value={city}
-                    onSelect={(id, displayName) => setCity({ id, name: displayName })}
+                    onChange={(item) => setCity(item)}
+                    loadItems={loadCityItems}
+                    minQueryLength={2}
+                    placeholder={t(
+                        'host.form.sections.ubicacion.cityPicker.placeholder',
+                        'Buscá tu ciudad (mín. 2 letras)'
+                    )}
+                    loadingLabel={t(
+                        'host.form.sections.ubicacion.cityPicker.loading',
+                        'Buscando ciudades...'
+                    )}
+                    emptyLabel={t(
+                        'host.form.sections.ubicacion.cityPicker.empty',
+                        'No hay coincidencias'
+                    )}
                     error={errors.destinationId ?? null}
                     required
+                    testId="property-city"
+                    footer={
+                        <a
+                            href={cityNotFoundHref}
+                            className="combobox__helper-link"
+                            data-testid="city-picker-not-found"
+                        >
+                            {t(
+                                'host.form.sections.ubicacion.cityPicker.notFoundLink',
+                                'No encuentro mi ciudad'
+                            )}
+                        </a>
+                    }
                 />
             </div>
 
             {/* Summary */}
-            <div className={styles.field}>
+            <div className="form-field">
                 <label
-                    className={styles.label}
+                    className="form-label"
                     htmlFor={summaryId}
                 >
                     {t('host.miniForm.fields.summary', 'Descripción corta')}
+                    <span
+                        className="form-required"
+                        aria-hidden="true"
+                    >
+                        *
+                    </span>
                 </label>
                 <textarea
                     id={summaryId}
-                    className={styles.textarea}
+                    className="form-textarea"
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
                     rows={3}
@@ -349,7 +514,7 @@ export function CreatePropertyMiniForm({
                     aria-invalid={errors.summary ? 'true' : 'false'}
                     aria-describedby={errors.summary ? `${summaryId}-error` : undefined}
                 />
-                <p className={styles.hint}>
+                <p className="form-hint">
                     {t(
                         'host.miniForm.fields.summaryHint',
                         'Una frase de presentación. Después podés ampliar todo en el panel.'
@@ -358,7 +523,7 @@ export function CreatePropertyMiniForm({
                 {errors.summary && (
                     <p
                         id={`${summaryId}-error`}
-                        className={styles.error}
+                        className="form-error"
                         role="alert"
                     >
                         {errors.summary}
@@ -368,31 +533,55 @@ export function CreatePropertyMiniForm({
 
             {submitError && (
                 <p
-                    className={styles.submitError}
+                    className="form-error-banner"
                     role="alert"
                 >
                     {submitError}
                 </p>
             )}
 
-            <div className={styles.actions}>
+            <div className="form-actions">
                 <button
                     type="submit"
-                    className={styles.submitBtn}
+                    className="btn-gradient btn-gradient--accent btn-gradient--shape-rounded"
                     disabled={isSubmitting}
                 >
-                    {isSubmitting
-                        ? t('host.miniForm.actions.submitting', 'Creando...')
-                        : t('host.miniForm.actions.submit', 'Crear y continuar en el panel')}
+                    <span className="gradient-btn__label">
+                        {isSubmitting
+                            ? t('host.miniForm.actions.submitting', 'Creando...')
+                            : t('host.miniForm.actions.submit', 'Crear y continuar en el panel')}
+                    </span>
                 </button>
             </div>
 
-            <p className={styles.disclaimer}>
+            <p className="form-disclaimer">
                 {t(
                     'host.miniForm.disclaimer',
                     'Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.'
                 )}
             </p>
+            <aside
+                className="form-trial-callout"
+                role="note"
+            >
+                <span
+                    className="form-trial-callout__icon"
+                    aria-hidden="true"
+                >
+                    🎁
+                </span>
+                <div className="form-trial-callout__body">
+                    <p className="form-trial-callout__title">
+                        {t('host.pages.nueva.trialCalloutTitle', '14 días gratis al publicar')}
+                    </p>
+                    <p className="form-trial-callout__text">
+                        {t(
+                            'host.pages.nueva.trialNote',
+                            'Cuando publiques tu primera propiedad arranca tu trial gratis de 14 días. Sin tarjeta, sin compromiso. Podés probar todo el panel mientras armás tu borrador.'
+                        )}
+                    </p>
+                </div>
+            </aside>
         </form>
     );
 }

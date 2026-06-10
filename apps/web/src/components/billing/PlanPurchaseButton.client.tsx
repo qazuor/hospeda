@@ -4,17 +4,17 @@
  *
  * On click, reads the Better Auth session via `useSession`. If the user is
  * unauthenticated, redirects to the sign-in page with a return redirect. If
- * authenticated, POSTs to the protected billing checkout endpoint and follows
- * the returned `checkoutUrl` to the MercadoPago payment page.
+ * authenticated, calls `billingApi.createCheckout` (the Hospeda-custom
+ * `start-paid` route) and follows the returned `checkoutUrl` to the
+ * MercadoPago payment page.
  *
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
 import type { JSX } from 'react';
-import { useEffect, useState } from 'react';
-import { userApi } from '../../lib/api/endpoints-protected';
+import { useEffect, useRef, useState } from 'react';
+import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
-import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
@@ -25,25 +25,31 @@ import styles from './PlanPurchaseButton.module.css';
 // ---------------------------------------------------------------------------
 
 /**
- * Shape returned by `POST /api/v1/protected/billing/checkout`.
- * The outer API envelope (`{ success, data }`) is unwrapped by `apiClient`.
- */
-interface CheckoutResponse {
-    readonly checkoutUrl: string;
-    readonly orderId: string;
-    readonly amount: number;
-    readonly currency: string;
-    readonly expiresAt: string | null;
-}
-
-/**
  * Props for the PlanPurchaseButton component.
+ *
+ * Both `monthlyPrice` and `annualPrice` are passed in regardless of the
+ * current toggle state because the button is mounted once at page-render
+ * time and the user can flip the toggle freely afterward. The component
+ * picks the price to display by listening for the toggle's
+ * `data-billing` attribute change and reading from its closest ancestor
+ * with that attribute. The chosen interval is also forwarded to the
+ * `/start-paid` call on click so the backend creates the right kind of
+ * subscription (monthly preapproval vs annual checkout).
+ *
+ * Plans that do not support annual billing pass `annualPrice: null`.
+ * When the toggle is set to "annual" and the plan has no annual price,
+ * the button renders a disabled "Monthly plan only" state instead.
  */
 export interface PlanPurchaseButtonProps {
-    /** Billing plan identifier sent to the checkout endpoint. */
-    readonly planId: string;
-    /** Numeric plan price used for display next to the CTA text. */
-    readonly price: number;
+    /** Billing plan slug sent to the checkout endpoint. */
+    readonly planSlug: string;
+    /** Monthly price in cents (smallest currency unit). Always present — every plan has a monthly price. */
+    readonly monthlyPrice: number;
+    /**
+     * Annual price in cents, or `null` when the plan does not offer an
+     * annual variant. Display + checkout adapt accordingly.
+     */
+    readonly annualPrice: number | null;
     /** Currency code shown with the price. */
     readonly currency: 'ARS' | 'USD';
     /** Button label text (e.g. "Contratar" or "Get started"). */
@@ -125,8 +131,9 @@ function formatPrice({
  * ```astro
  * <PlanPurchaseButton
  *   client:load
- *   planId="plan_starter"
- *   price={1200}
+ *   planSlug="owner-pro"
+ *   monthlyPrice={120000}
+ *   annualPrice={1200000}
  *   currency="ARS"
  *   ctaText="Contratar"
  *   locale={locale}
@@ -134,8 +141,9 @@ function formatPrice({
  * ```
  */
 export function PlanPurchaseButton({
-    planId,
-    price,
+    planSlug,
+    monthlyPrice,
+    annualPrice,
     currency,
     ctaText,
     locale
@@ -144,11 +152,28 @@ export function PlanPurchaseButton({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
+    // The toggle lives outside this island (vanilla JS in PricingCardsGrid).
+    // The island observes the closest `data-billing` ancestor for changes so
+    // the displayed price + the checkout payload stay in sync with the
+    // toggle without coupling the two components via a store. Initial value
+    // is 'monthly' — the toggle defaults to monthly on first render.
+    const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
 
     const { t } = createTranslations(locale);
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
-    const formattedPrice = formatPrice({ amount: price, currency });
+    const hasAnnual = annualPrice !== null && annualPrice > 0;
+    const isAnnualUnavailable = billingInterval === 'annual' && !hasAnnual;
+    // Convert cents to major units for the display formatter (the formatter
+    // takes a number that it prefixes with the currency symbol; passing
+    // cents would render "$ 12000000" for a $120000 plan).
+    const displayPriceCents =
+        billingInterval === 'annual' && hasAnnual ? (annualPrice as number) : monthlyPrice;
+    const formattedPrice = formatPrice({
+        amount: displayPriceCents / 100,
+        currency
+    });
 
     const processingText = t('billing.checkout.button.processing', 'Procesando...');
     const processingAriaLabel = t('billing.checkout.button.processingAriaLabel', 'Procesando pago');
@@ -161,6 +186,7 @@ export function PlanPurchaseButton({
         'billing.checkout.button.currentPlanAriaLabel',
         'Este es tu plan actual'
     );
+    const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
 
     // Fetch the user's current subscription once they're authenticated. Shared
     // across every PlanPurchaseButton on the page via subscriptionPromise so a
@@ -179,7 +205,28 @@ export function PlanPurchaseButton({
         };
     }, [isAuthenticated]);
 
-    const isCurrentPlan = isAuthenticated && currentPlanSlug === planId;
+    // Observe the closest ancestor that carries the billing-interval toggle
+    // state (set by PricingCardsGrid.astro's inline vanilla JS). We use a
+    // MutationObserver because the toggle changes the attribute imperatively
+    // and there is no React-side signal to react to. Pattern keeps the
+    // toggle UI as pure HTML+JS in the Astro template (cheap, SSG-friendly)
+    // while letting the island stay in sync.
+    useEffect(() => {
+        const root = buttonRef.current?.closest('[data-billing]') as HTMLElement | null;
+        if (!root) return;
+        const readCurrent = (): 'monthly' | 'annual' =>
+            root.dataset.billing === 'annual' ? 'annual' : 'monthly';
+        setBillingInterval(readCurrent());
+        const observer = new MutationObserver(() => {
+            setBillingInterval(readCurrent());
+        });
+        observer.observe(root, { attributes: true, attributeFilter: ['data-billing'] });
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
+    const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
 
     /**
      * Handle button click.
@@ -188,6 +235,14 @@ export function PlanPurchaseButton({
     async function handleClick(): Promise<void> {
         // Clear any previous error on each attempt.
         setError(null);
+
+        // If the toggle is on annual but this plan has no annual price,
+        // the button rendered the disabled "Monthly plan only" state and
+        // should not have been clickable. Defensive guard in case the
+        // disabled state is bypassed (e.g. assistive tech edge cases).
+        if (isAnnualUnavailable) {
+            return;
+        }
 
         if (!isAuthenticated) {
             const plansPath = buildUrl({ locale, path: 'suscriptores/planes' });
@@ -204,32 +259,17 @@ export function PlanPurchaseButton({
         setLoading(true);
 
         try {
-            const url = `${getApiUrl()}/api/v1/protected/billing/checkout`;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ planId })
+            const result = await billingApi.createCheckout({
+                planSlug,
+                billingInterval
             });
 
-            const body: unknown = await response.json().catch(() => null);
-
-            if (!response.ok) {
+            if (!result.ok || !result.data.checkoutUrl) {
                 setError(errorText);
                 return;
             }
 
-            // Unwrap the standard API envelope: { success, data: CheckoutResponse }
-            const envelope = body as { data?: CheckoutResponse } | null;
-            const data = envelope?.data;
-
-            if (!data?.checkoutUrl) {
-                setError(errorText);
-                return;
-            }
-
-            window.location.href = data.checkoutUrl;
+            window.location.href = result.data.checkoutUrl;
         } catch {
             setError(errorText);
         } finally {
@@ -239,19 +279,24 @@ export function PlanPurchaseButton({
 
     const buttonAriaLabel = isCurrentPlan
         ? currentPlanAriaLabel
-        : loading
-          ? processingAriaLabel
-          : `${ctaText} — ${formattedPrice}`;
+        : isAnnualUnavailable
+          ? monthlyOnlyLabel
+          : loading
+            ? processingAriaLabel
+            : `${ctaText} — ${formattedPrice}`;
+
+    const buttonDisabled = loading || isCurrentPlan || isAnnualUnavailable;
 
     return (
         <div className={styles.wrapper}>
             <button
+                ref={buttonRef}
                 type="button"
-                disabled={loading || isCurrentPlan}
+                disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
                 aria-busy={loading}
-                aria-disabled={isCurrentPlan}
-                onClick={isCurrentPlan ? undefined : () => void handleClick()}
+                aria-disabled={isCurrentPlan || isAnnualUnavailable}
+                onClick={buttonDisabled ? undefined : () => void handleClick()}
                 className={`${styles.button}${isCurrentPlan ? ` ${styles.buttonCurrent}` : ''}`}
             >
                 {isCurrentPlan ? (
@@ -282,6 +327,10 @@ export function PlanPurchaseButton({
                             aria-hidden="true"
                         />
                         <span>{processingText}</span>
+                    </span>
+                ) : isAnnualUnavailable ? (
+                    <span className={styles.idleContent}>
+                        <span className={styles.ctaText}>{monthlyOnlyLabel}</span>
                     </span>
                 ) : (
                     <span className={styles.idleContent}>

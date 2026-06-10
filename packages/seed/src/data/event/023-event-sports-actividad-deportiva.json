@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "023-event-sports-actividad-deportiva",
     "slug": "actividad-deportiva",
-    "name": "Actividad Deportiva",
-    "summary": "Evento sports - Actividad Deportiva",
-    "description": "Descripción detallada del evento Actividad Deportiva. Este es un evento de categoría SPORTS que se desarrolla en Entre Ríos.",
+    "name": "Travesía de Mountain Bike por el Palmar",
+    "summary": "Travesía de mountain bike de 45 km por los caminos rurales del entorno del Parque Nacional El Palmar. Ruta de dificultad media, con paradas técnicas, hidratación y almuerzo de cierre incluido.",
+    "description": "Una travesía de mountain bike pensada para ciclistas con experiencia recreativa que quieren conocer el entorno rural del Parque Nacional El Palmar desde otra perspectiva. La ruta combina caminos de tierra, senderos boscosos, paseos por costas de arroyos y tramos por plantaciones cítricas, con un nivel técnico medio y un ritmo amigable.\n\n**El recorrido**\n\n- **Distancia:** 45 km de longitud total.\n- **Desnivel:** acumulado de 350 metros, prácticamente plano.\n- **Tiempo estimado:** 4 a 5 horas con paradas.\n- **Superficie:** tierra compacta (70%), ripio (20%), pavimento (10%).\n- **Paradas técnicas:** 4 a lo largo del recorrido, con hidratación, fruta y baño.\n- **Velocidad promedio:** 10-12 km/h, ritmo grupal.\n\n**Lo que vas a ver**\n\n- Plantaciones de citrus en plena floración (octubre, perfume único).\n- Costas del arroyo El Palmar, con fauna nativa.\n- Plantaciones de monte nativo recuperado.\n- Vistas panorámicas del palmar de yatay desde caminos rurales.\n- Pequeños caseríos rurales con almacenes antiguos.\n\n**Lo que incluye**\n\n- Guía de ruta acompañante y guía de cierre (sweep).\n- Vehículo de apoyo con kit de reparación, agua y refrigerios.\n- Hidratación durante el recorrido y refrigerio en cada parada.\n- Almuerzo final estilo asado de campo en chacra rural.\n- Seguro de actividad para todos los participantes.\n\n**Requisitos**\n\n- Bicicleta mountain bike o gravel en buen estado (revisar cubiertas, frenos, transmisión).\n- Casco obligatorio.\n- Experiencia previa en recorridos similares.\n- Buena condición física general.\n- Edad mínima: 16 años (los menores requieren autorización).\n\n**Información práctica**\n\n- **Cuándo:** un sábado de octubre, salida 8.30 (presentarse a las 8).\n- **Punto de partida:** entrada del Parque Nacional El Palmar.\n- **Inscripción:** con cupo limitado a 25 participantes. Cierra una semana antes de la actividad.\n- **Llevá:** bici, casco, guantes, gafas, ropa cómoda y de cambio, kit personal de reparación, cámara para fotos.",
     "category": "SPORTS",
     "authorId": "admin-user",
     "pricing": {
@@ -25,9 +25,18 @@
         }
     },
     "seo": {
-        "title": "Actividad Deportiva 2025 - Entre Ríos - Hospeda",
-        "description": "Participa en la Actividad Deportiva 2025 en Entre Ríos. Una jornada de deportes y recreación para todas las edades.",
-        "keywords": ["sports", "entre rios", "evento", "cultura"]
+        "title": "Travesía Mountain Bike por El Palmar - Hospeda",
+        "description": "Travesía MTB de 45 km por el entorno rural del Parque Nacional El Palmar: caminos de tierra, plantaciones cítricas y vistas al palmar. Apto para nivel medio.",
+        "keywords": [
+            "mountain bike",
+            "MTB entre ríos",
+            "ciclismo el palmar",
+            "travesía bicicleta",
+            "ciclismo aventura",
+            "actividad deportiva",
+            "ciclismo argentina",
+            "MTB litoral"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

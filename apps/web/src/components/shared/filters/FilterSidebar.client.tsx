@@ -18,11 +18,13 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import styles from './FilterSidebar.module.css';
 import { FilterGroup } from './components/FilterGroup';
 import { MobileDrawer } from './components/MobileDrawer';
+import { SectionHeader } from './components/SectionHeader';
 import { SortPopover } from './components/SortPopover';
 import {
     buildParamsFromState,
     computeInitialCollapsed,
     filterReducer,
+    groupActiveCount,
     groupHasActiveSelection,
     initStateFromParams
 } from './filter-reducer';
@@ -115,8 +117,80 @@ function SidebarPanel({
     drawerMode = false,
     onCloseDrawer
 }: SidebarPanelProps) {
-    const inlineFilters = filters.filter((g) => g.type === 'toggle');
-    const collapsibleFilters = filters.filter((g) => g.type !== 'toggle');
+    // When the consuming page declares section-headers, switch to a strict
+    // declaration-order render so each filter group lands under its intended
+    // section. Otherwise keep the legacy "inline toggles up top, collapsibles
+    // below" layout so events / posts (which don't use sections) don't move.
+    const useSectionedLayout = filters.some((g) => g.type === 'section-header');
+    const inlineFilters = useSectionedLayout ? [] : filters.filter((g) => g.type === 'toggle');
+    const collapsibleFilters = useSectionedLayout
+        ? []
+        : filters.filter((g) => g.type !== 'toggle' && g.type !== 'section-header');
+
+    /** Helper: render a single filter group as inline (toggles) or
+     * collapsible (everything else). Used by the sectioned layout to dispatch
+     * by type without duplicating the JSX in two places. */
+    const renderEntry = (group: (typeof filters)[number]) => {
+        if (group.type === 'section-header') {
+            return (
+                <SectionHeader
+                    key={group.id}
+                    label={group.label}
+                    icon={group.icon}
+                    locale={locale}
+                />
+            );
+        }
+        if (group.type === 'toggle') {
+            const hasActive = groupHasActiveSelection(group, state);
+            return (
+                <div
+                    key={group.id}
+                    className={styles.inlineFilter}
+                >
+                    <FilterGroupContent
+                        group={group}
+                        state={state}
+                        dispatch={dispatch}
+                        locale={locale}
+                    />
+                    {hasActive && (
+                        <button
+                            type="button"
+                            className={styles.groupReset}
+                            onClick={() => onResetGroup(group.id)}
+                            aria-label={`${t('ui.filter.reset', 'Limpiar')} ${group.label}`}
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
+            );
+        }
+        const hasActive = groupHasActiveSelection(group, state);
+        const activeCount = groupActiveCount(group, state);
+        return (
+            <FilterGroup
+                key={group.id}
+                id={group.id}
+                label={group.label}
+                locale={locale}
+                collapsed={!!collapsed[group.id]}
+                hasActive={hasActive}
+                activeCount={activeCount}
+                onToggle={() => onToggleGroup(group.id)}
+                onReset={() => onResetGroup(group.id)}
+            >
+                <FilterGroupContent
+                    group={group}
+                    state={state}
+                    dispatch={dispatch}
+                    onSearchChange={(v: string) => dispatch({ type: 'SET_SEARCH', value: v })}
+                    locale={locale}
+                />
+            </FilterGroup>
+        );
+    };
 
     return (
         <>
@@ -182,60 +256,69 @@ function SidebarPanel({
             </div>
 
             <div className={styles.sidebarBody}>
-                {/* Inline toggle filters — always visible, no collapsible wrapper */}
-                {inlineFilters.map((group) => {
-                    const hasActive = groupHasActiveSelection(group, state);
-                    return (
-                        <div
-                            key={group.id}
-                            className={styles.inlineFilter}
-                        >
-                            <FilterGroupContent
-                                group={group}
-                                state={state}
-                                dispatch={dispatch}
-                                locale={locale}
-                            />
-                            {hasActive && (
-                                <button
-                                    type="button"
-                                    className={styles.groupReset}
-                                    onClick={() => onResetGroup(group.id)}
-                                    aria-label={`${t('ui.filter.reset', 'Limpiar')} ${group.label}`}
+                {useSectionedLayout ? (
+                    // Sectioned layout: declaration order is preserved so
+                    // headers, inline toggles and collapsibles interleave
+                    // exactly as the consuming page declared them.
+                    filters.map(renderEntry)
+                ) : (
+                    <>
+                        {/* Legacy layout: inline toggles up top, collapsibles below */}
+                        {inlineFilters.map((group) => {
+                            const hasActive = groupHasActiveSelection(group, state);
+                            return (
+                                <div
+                                    key={group.id}
+                                    className={styles.inlineFilter}
                                 >
-                                    ×
-                                </button>
-                            )}
-                        </div>
-                    );
-                })}
-
-                {/* Collapsible filter groups */}
-                {collapsibleFilters.map((group) => {
-                    const hasActive = groupHasActiveSelection(group, state);
-                    return (
-                        <FilterGroup
-                            key={group.id}
-                            id={group.id}
-                            label={group.label}
-                            locale={locale}
-                            collapsed={!!collapsed[group.id]}
-                            hasActive={hasActive}
-                            onToggle={() => onToggleGroup(group.id)}
-                            onReset={() => onResetGroup(group.id)}
-                        >
-                            <FilterGroupContent
-                                group={group}
-                                state={state}
-                                dispatch={dispatch}
-                                onSearchChange={(v: string) =>
-                                    dispatch({ type: 'SET_SEARCH', value: v })
-                                }
-                                locale={locale}
-                            />
-                        </FilterGroup>
-                    );
-                })}
+                                    <FilterGroupContent
+                                        group={group}
+                                        state={state}
+                                        dispatch={dispatch}
+                                        locale={locale}
+                                    />
+                                    {hasActive && (
+                                        <button
+                                            type="button"
+                                            className={styles.groupReset}
+                                            onClick={() => onResetGroup(group.id)}
+                                            aria-label={`${t('ui.filter.reset', 'Limpiar')} ${group.label}`}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {collapsibleFilters.map((group) => {
+                            const hasActive = groupHasActiveSelection(group, state);
+                            const activeCount = groupActiveCount(group, state);
+                            return (
+                                <FilterGroup
+                                    key={group.id}
+                                    id={group.id}
+                                    label={group.label}
+                                    locale={locale}
+                                    collapsed={!!collapsed[group.id]}
+                                    hasActive={hasActive}
+                                    activeCount={activeCount}
+                                    onToggle={() => onToggleGroup(group.id)}
+                                    onReset={() => onResetGroup(group.id)}
+                                >
+                                    <FilterGroupContent
+                                        group={group}
+                                        state={state}
+                                        dispatch={dispatch}
+                                        onSearchChange={(v: string) =>
+                                            dispatch({ type: 'SET_SEARCH', value: v })
+                                        }
+                                        locale={locale}
+                                    />
+                                </FilterGroup>
+                            );
+                        })}
+                    </>
+                )}
             </div>
         </>
     );
@@ -274,23 +357,12 @@ export function FilterSidebar({
             initStateFromParams({ filters: f, defaultSort: ds, params: p })
     );
 
-    /** Pre-sort filters once from initial state so active filters float to top on load only. */
-    const sortedFilters = useMemo(() => {
-        const initialState = initStateFromParams({
-            filters,
-            defaultSort,
-            params: initialParams ?? {}
-        });
-        const active: FilterGroupType[] = [];
-        const inactive: FilterGroupType[] = [];
-        for (const group of filters) {
-            (groupHasActiveSelection(group, initialState) ? active : inactive).push(group);
-        }
-        return [...active, ...inactive];
-    }, [filters, defaultSort, initialParams]);
-
+    // Filter render order is the declaration order from the consuming page —
+    // it stays stable across navigations so users build spatial memory of
+    // where each filter lives. Active filters get a background tint + count
+    // badge in `FilterGroup` (see CSS module) instead of floating to the top.
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>(() =>
-        computeInitialCollapsed({ filters: sortedFilters, state })
+        computeInitialCollapsed({ filters, state })
     );
 
     // Close drawer when viewport grows beyond mobile breakpoint
@@ -353,9 +425,15 @@ export function FilterSidebar({
             if (!group) return;
             if (group.type === 'search') {
                 dispatch({ type: 'SET_SEARCH', value: '' });
-            } else {
-                dispatch({ type: 'CLEAR_GROUP', groupId });
+                return;
             }
+            // icon-chips with priority chips: also reset their independent
+            // boolean toggle URL params (hasWifi, hasPool, ...).
+            const extraToggleKeys =
+                group.type === 'icon-chips' && group.priorityOptions
+                    ? group.priorityOptions.map((p) => p.value)
+                    : undefined;
+            dispatch({ type: 'CLEAR_GROUP', groupId, extraToggleKeys });
         },
         [filters]
     );
@@ -370,7 +448,7 @@ export function FilterSidebar({
     );
 
     const panelProps: SidebarPanelProps = {
-        filters: sortedFilters,
+        filters,
         state,
         dispatch,
         collapsed,

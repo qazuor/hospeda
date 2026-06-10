@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "089-amenity-services-full-board",
-    "name": "full_board",
+    "name": {
+        "es": "full_board",
+        "en": "full_board",
+        "pt": "full_board"
+    },
     "slug": "full_board",
-    "description": "Pensión completa opcional",
+    "description": {
+        "es": "Pensión completa opcional",
+        "en": "Pensión completa opcional",
+        "pt": "Pensión completa opcional"
+    },
     "type": "SERVICES",
     "icon": "FullBoardIcon",
     "isBuiltin": false,

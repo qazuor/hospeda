@@ -5,3 +5,6 @@
 
 // Rating schemas (types are exported from schemas)
 export * from './destination.rating.schema.js';
+
+// FAQ schemas (types are exported from schemas)
+export * from './destination.faq.schema.js';

@@ -1,4 +1,4 @@
-import type { Post } from '@repo/schemas';
+import type { Post, PostMonthlyTrendItem } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
@@ -161,6 +161,69 @@ export class PostModel extends BaseModelImpl<Post> {
             .update(posts)
             .set({ likes: sql`GREATEST(COALESCE(${posts.likes}, 0) - 1, 0)` })
             .where(eq(posts.id, id));
+    }
+
+    /**
+     * Atomically adjusts the `comments` counter by `delta` (clamped at 0).
+     *
+     * Used by the comment service to keep `posts.comments` in sync as comments
+     * are created (+1), soft-deleted/hard-deleted (-1), moderated APPROVED↔REJECTED
+     * (±1), and restored (+1). The existing value is treated as a baseline, so
+     * legacy counts that predate the comments table are preserved (SPEC-165 RD-7 /
+     * AC-24 / AC-25). `GREATEST(..., 0)` guards against the counter going negative.
+     *
+     * @param params.id - The post id.
+     * @param params.delta - The amount to add (use a negative value to subtract).
+     * @param tx - Optional transaction client.
+     */
+    async adjustCommentCount(
+        { id, delta }: { id: string; delta: number },
+        tx?: DrizzleClient
+    ): Promise<void> {
+        const db = this.getClient(tx);
+        await db
+            .update(posts)
+            .set({ comments: sql`GREATEST(COALESCE(${posts.comments}, 0) + ${delta}, 0)` })
+            .where(eq(posts.id, id));
+    }
+
+    /**
+     * Returns a 12-month posts-per-month trend series, zero-filled.
+     *
+     * Uses a PostgreSQL CTE with `generate_series` to materialise the
+     * 12-month window (current month included, oldest first) and a LEFT JOIN
+     * against `posts` so months with no creations appear as explicit zeros.
+     * Soft-deleted posts (deleted_at IS NOT NULL) are excluded.
+     *
+     * @param tx - Optional Drizzle transaction client (for test isolation).
+     * @returns Array of 12 `{ month: YYYY-MM, count: number }` items, ASC.
+     */
+    async getMonthlyTrend(tx?: DrizzleClient): Promise<PostMonthlyTrendItem[]> {
+        const db = this.getClient(tx);
+
+        const rows = await db.execute<{ month: string; count: string }>(sql`
+            WITH months AS (
+                SELECT to_char(
+                    date_trunc('month', now()) - (gs.n * interval '1 month'),
+                    'YYYY-MM'
+                ) AS month
+                FROM generate_series(11, 0, -1) AS gs(n)
+            )
+            SELECT
+                m.month,
+                COALESCE(COUNT(p.id), 0)::int AS count
+            FROM months m
+            LEFT JOIN posts p
+                ON to_char(date_trunc('month', p.created_at), 'YYYY-MM') = m.month
+                AND p.deleted_at IS NULL
+            GROUP BY m.month
+            ORDER BY m.month ASC
+        `);
+
+        return rows.rows.map((row) => ({
+            month: row.month,
+            count: Number(row.count)
+        }));
     }
 }
 

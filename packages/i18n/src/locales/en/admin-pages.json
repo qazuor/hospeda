@@ -33,7 +33,8 @@
         "settingsCritical": "Settings - Portal (Critical)",
         "analyticsUsage": "Analytics - Usage",
         "analyticsDebug": "Analytics - Debug",
-        "analyticsBusiness": "Analytics - Business"
+        "analyticsBusiness": "Analytics - Business",
+        "analyticsViews": "Analytics - Views"
     },
     "auth": {
         "signin": {
@@ -79,9 +80,25 @@
         "forbidden": {
             "title": "Access Denied",
             "message": "You don't have the required permissions to access the admin panel. Contact your administrator if you believe this is an error.",
+            "greeting": "Hi {{name}},",
+            "email": "You're signed in as {{email}}",
             "switchAccount": "Sign in with another account",
             "goToSite": "Go to website",
-            "contactAdmin": "Contact administrator"
+            "contactAdmin": "Contact support",
+            "reason": {
+                "host-missing-permission": {
+                    "title": "There's a problem with your account",
+                    "message": "We see you're a host but your admin panel access is disabled. This is likely a missing config on your account. Drop us a line and we'll sort it out."
+                },
+                "generic": {
+                    "title": "Restricted area",
+                    "message": "This area is for Hospeda admins and hosts. Your account doesn't have access. If you think this is a mistake, contact us or sign in with another account."
+                }
+            },
+            "mailto": {
+                "subject": "Admin panel access request",
+                "body": "Hi, I need help accessing the Hospeda admin panel.\n\n— My account details —\nEmail: {email}\nUser ID: {userId}\nReason: {reason}\nOriginal path: {originalPath}\n\n— My message —\n"
+            }
         },
         "callback": {
             "completing": "Completing authentication..."
@@ -358,6 +375,27 @@
             "colP99": "P99 (ms)",
             "rawData": "Raw Metrics Data",
             "loading": "Loading..."
+        },
+        "views": {
+            "title": "Entity Views",
+            "subtitle": "View statistics by accommodation, post, and event",
+            "summaryTitle": "Views Summary",
+            "top10Title": "Top 10 by Type",
+            "labelAccommodation": "Accommodations",
+            "labelPost": "Posts",
+            "labelEvent": "Events",
+            "labelUnique": "Unique",
+            "labelTotal": "Total",
+            "colRank": "#",
+            "colUnique": "Unique",
+            "colTotal": "Total",
+            "empty": "No views in this period",
+            "chart": {
+                "title": "Daily series (last 30 days)",
+                "accommodation": "Accommodations",
+                "post": "Posts",
+                "event": "Events"
+            }
         }
     },
     "access": {
@@ -573,12 +611,29 @@
                 "viewRoleDetails": "View Role Details:",
                 "viewRoleDetailsDesc": "To see the complete list of permissions for the",
                 "rolesPageLink": "Roles page",
-                "directOverrides": "Direct Permission Overrides",
-                "directOverridesDesc": "User-specific permission exceptions",
-                "noDirectOverrides": "No direct permission overrides",
-                "noDirectOverridesDesc": "This user only has permissions inherited from their role",
+                "directOverrides": "Direct Permissions",
+                "directOverridesDesc": "Permissions assigned directly to this user (beyond their role)",
+                "noDirectOverrides": "No direct overrides",
+                "noDirectOverridesDesc": "This user only uses permissions from their role",
                 "futureFeature": "Future Feature:",
-                "futureFeatureDesc": "Permission management functionality will be available in a future update. This will allow administrators to grant or revoke specific permissions at the user level, overriding role defaults."
+                "futureFeatureDesc": "Permission management functionality will be available in a future update. This will allow administrators to grant or revoke specific permissions at the user level, overriding role defaults.",
+                "grantOverrides": "Granted Permissions",
+                "denyOverrides": "Denied Permissions",
+                "addOverride": "Add override",
+                "removeOverride": "Remove override",
+                "confirmRemove": "Remove this override?",
+                "confirmRemoveDesc": "The user will revert to their role's permissions",
+                "effectGrant": "Granted",
+                "effectDeny": "Denied",
+                "inheritedFromRole": "Inherited",
+                "sensitivePermissionWarning": "This permission has broad scope. Make sure the user should have it.",
+                "changesTakeEffectNextRequest": "Changes take effect on the user's next request",
+                "searchPermissions": "Search permissions...",
+                "selectEffect": "Select effect",
+                "grantPermission": "Grant",
+                "denyPermission": "Deny",
+                "cancel": "Cancel",
+                "error": "Something went wrong"
             }
         }
     },
@@ -887,6 +942,178 @@
                 "number": "At least one number",
                 "special": "At least one special character (!@#$%^&*...)"
             }
+        }
+    },
+    "security": {
+        "title": "Security",
+        "available": {
+            "title": "Available actions",
+            "subtitle": "What you can manage today"
+        },
+        "changePassword": {
+            "title": "Change password",
+            "subtitle": "Update your password to keep your account secure"
+        },
+        "stubs": {
+            "twoFactorAuth": {
+                "title": "Two-factor authentication",
+                "subtitle": "An extra layer of security at sign-in"
+            },
+            "activeSessions": {
+                "title": "Active sessions",
+                "subtitle": "View and close sessions open on other devices"
+            },
+            "loginHistory": {
+                "title": "Login history",
+                "subtitle": "Record of recent access to your account"
+            },
+            "changeEmail": {
+                "title": "Change email",
+                "subtitle": "Update the address associated with your account"
+            }
+        }
+    },
+    "data": {
+        "title": "My data",
+        "comingSoon": {
+            "title": "You'll soon be able to manage your data from here",
+            "description": "We're preparing the section to export your information, pause your account, and request data deletion in accordance with current regulations."
+        },
+        "supportContact": {
+            "label": "In the meantime, write to us at:",
+            "email": "soporte@hospeda.com.ar"
+        }
+    },
+    "announcements": {
+        "title": "Global announcements",
+        "subtitle": "Messages shown on the website to every visitor",
+        "list": {
+            "loading": "Loading announcements…",
+            "error": "We couldn't load the announcements. Please try again.",
+            "empty": {
+                "title": "There are no announcements yet",
+                "description": "When you publish one it will appear here and on the website."
+            },
+            "newAnnouncement": "New announcement",
+            "editAction": "Edit",
+            "deleteAction": "Delete",
+            "deleteConfirm": "Delete this announcement? This cannot be undone.",
+            "deleteError": "We couldn't delete the announcement. Please try again.",
+            "deleteSuccess": "Announcement deleted"
+        },
+        "variant": {
+            "info": "Informational",
+            "warning": "Warning",
+            "danger": "Critical"
+        },
+        "dismissible": {
+            "yes": "Visitor can dismiss",
+            "no": "Always visible"
+        },
+        "window": {
+            "alwaysOn": "Always on",
+            "startsAt": "From {{date}}",
+            "endsAt": "Until {{date}}",
+            "between": "{{from}} to {{to}}"
+        },
+        "form": {
+            "createTitle": "Create announcement",
+            "createSubtitle": "Set the message, its variant and the publication window",
+            "editTitle": "Edit announcement",
+            "editSubtitle": "Update the announcement details",
+            "textLabel": {
+                "es": "Text (Spanish)",
+                "en": "Text (English)",
+                "pt": "Text (Portuguese)"
+            },
+            "textPlaceholder": "Write the announcement message…",
+            "variantLabel": "Variant",
+            "dismissibleLabel": "Allow dismissal",
+            "dismissibleHint": "The visitor will be able to hide it after reading.",
+            "startsAtLabel": "Starts on (optional)",
+            "endsAtLabel": "Ends on (optional)",
+            "submitCreate": "Create announcement",
+            "submitEdit": "Save changes",
+            "saving": "Saving…",
+            "cancel": "Cancel",
+            "errorGeneric": "We couldn't save the announcement. Check the fields and try again.",
+            "errorRequiredText": "Text is required in all 3 languages",
+            "errorEndBeforeStart": "End date must be after the start date"
+        }
+    },
+    "billing": {
+        "title": "My billing",
+        "subtitle": "Review your plan, usage and payment options",
+        "subscription": {
+            "title": "My plan",
+            "subtitle": "Status and validity of your subscription",
+            "status": {
+                "active": "Active",
+                "trialing": "Trial",
+                "past_due": "Past due",
+                "canceled": "Canceled",
+                "incomplete": "Incomplete",
+                "incomplete_expired": "Incomplete (expired)",
+                "abandoned": "Abandoned",
+                "unknown": "Unknown"
+            },
+            "currentPeriodEnd": "Expires on {{date}}",
+            "noActive": {
+                "title": "You don't have an active subscription",
+                "description": "Subscription details will appear here once you sign up for a plan."
+            },
+            "errorLoading": "We couldn't load your subscription. Please try again in a few minutes."
+        },
+        "usage": {
+            "title": "Plan usage",
+            "subtitle": "How much you've used against your current plan limits",
+            "accommodations": "Published accommodations",
+            "unitOfLimit": "{{used}} of {{limit}}",
+            "unlimited": "Unlimited",
+            "noActive": "Subscribe to a plan to see your usage.",
+            "errorLoading": "We couldn't load your usage. Please try again in a few minutes."
+        },
+        "actions": {
+            "title": "Actions",
+            "subtitle": "Manage your subscription and download invoices",
+            "manageSubscription": "Manage my subscription",
+            "manageSubscriptionHint": "We'll take you to hospeda.com.ar to change your plan or payment method.",
+            "downloadLatestInvoice": "Download latest invoice",
+            "noLatestInvoice": "You don't have any invoices available to download yet."
+        }
+    },
+    "faqs": {
+        "title": "Frequently asked questions",
+        "addTitle": "New frequently asked question",
+        "empty": "No FAQs yet. Add the first one.",
+        "fields": {
+            "question": "Question",
+            "answer": "Answer",
+            "category": "Category",
+            "categoryPlaceholder": "E.g. How to get there, What to do…"
+        },
+        "actions": {
+            "add": "Add FAQ",
+            "edit": "Edit",
+            "save": "Save",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "confirmDelete": "Confirm?"
+        },
+        "errors": {
+            "loadFailed": "Could not load FAQs.",
+            "createFailed": "Could not create the FAQ. Please try again.",
+            "updateFailed": "Could not update the FAQ. Please try again.",
+            "deleteFailed": "Could not delete the FAQ. Please try again.",
+            "reorderFailed": "Could not save the new order. Please try again."
+        },
+        "dnd": {
+            "dragHandle": "Drag to reorder",
+            "instructions": "To reorder with keyboard: Space to pick up, Arrows to move, Space/Enter to drop, Escape to cancel.",
+            "onDragStart": "You picked up question number {{position}}.",
+            "onDragOver": "Moved question from position {{from}} to {{to}}.",
+            "onDragEnd": "Question dropped at position {{position}}.",
+            "onDragCancel": "Reordering cancelled. Question returned to position {{position}}."
         }
     }
 }

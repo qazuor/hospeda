@@ -24,6 +24,7 @@
 
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
+import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
@@ -35,9 +36,11 @@ import {
     ChatIcon,
     ChevronDownIcon,
     CreditCardIcon,
+    DashboardIcon,
     FavoriteIcon,
     type IconProps,
     LogoutIcon,
+    NewsletterIcon,
     SettingsIcon,
     ShieldIcon,
     StarIcon,
@@ -112,11 +115,14 @@ const TEXTS = {
             dashboard: 'Mi cuenta',
             favorites: 'Mis favoritos',
             properties: 'Mis alojamientos',
-            messages: 'Mis mensajes',
+            messages: 'Mis consultas',
             reviews: 'Mis reseñas',
+            hostDashboard: 'Panel del anfitrión',
             subscription: 'Mi suscripción',
             preferences: 'Preferencias',
-            adminPanel: 'Panel de administración'
+            newsletter: 'Boletín de novedades',
+            adminPanel: 'Panel de administración',
+            hostMode: 'Modo anfitrión'
         }
     },
     en: {
@@ -129,11 +135,14 @@ const TEXTS = {
             dashboard: 'My account',
             favorites: 'My favorites',
             properties: 'My listings',
-            messages: 'My messages',
+            messages: 'My inquiries',
             reviews: 'My reviews',
+            hostDashboard: 'Host dashboard',
             subscription: 'My subscription',
             preferences: 'Preferences',
-            adminPanel: 'Admin panel'
+            newsletter: 'Newsletter',
+            adminPanel: 'Admin panel',
+            hostMode: 'Host mode'
         }
     },
     pt: {
@@ -146,30 +155,38 @@ const TEXTS = {
             dashboard: 'Minha conta',
             favorites: 'Meus favoritos',
             properties: 'Meus imóveis',
-            messages: 'Minhas mensagens',
+            messages: 'Minhas consultas',
             reviews: 'Minhas avaliações',
+            hostDashboard: 'Painel do anfitrião',
             subscription: 'Minha assinatura',
             preferences: 'Preferências',
-            adminPanel: 'Painel de administração'
+            newsletter: 'Boletim de novidades',
+            adminPanel: 'Painel de administração',
+            hostMode: 'Modo anfitrião'
         }
     }
 } as const;
+
+/**
+ * Permission that distinguishes platform staff (ADMIN / SUPER_ADMIN /
+ * CLIENT_MANAGER / EDITOR) from a HOST. All five roles share
+ * `access.panelAdmin`, but only staff get `access.apiAdmin`. We use this to
+ * pick between the "Modo anfitrión" label (for a HOST that just got admin
+ * access to manage their own listings) and "Panel de administración" (for
+ * actual Hospeda staff doing platform-wide work).
+ */
+const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;
 
 // ---------------------------------------------------------------------------
 // /auth/me fetch with sessionStorage cache
 // ---------------------------------------------------------------------------
 
 /**
- * sessionStorage key used by UserMenu to cache the `/auth/me` snapshot.
- * Exported so other modules (notably `refreshBetterAuthSession()` in
- * `lib/auth-client.ts`) can invalidate the cache after operations that
- * change the user record — e.g. submitting the SPEC-113 profile
- * completion form. Without invalidation, the UserMenu paints from the
- * stale snapshot for up to {@link AUTH_ME_CACHE_TTL_MS} after the change,
- * which is what made the navbar look empty after first-time profile
- * completion.
+ * Re-exported from `@/lib/auth-cache` so existing importers of
+ * `AUTH_ME_CACHE_KEY` from this module keep working without churn.
+ * The canonical declaration lives in the shared module — see the JSDoc there.
  */
-export const AUTH_ME_CACHE_KEY = 'authMeSnapshot';
+export { AUTH_ME_CACHE_KEY };
 const AUTH_ME_CACHE_TTL_MS = 60 * 1000;
 
 interface AuthMeSnapshot {
@@ -259,12 +276,19 @@ async function fetchAuthMe(): Promise<AuthMeSnapshot> {
 function buildMenuItems({
     texts,
     locale,
-    adminPanelUrl
+    adminPanelUrl,
+    permissions
 }: {
     readonly texts: (typeof TEXTS)[keyof typeof TEXTS];
     readonly locale: SupportedLocale;
     readonly adminPanelUrl: string | undefined;
+    readonly permissions: ReadonlyArray<string>;
 }): ReadonlyArray<MenuItem> {
+    // Discriminate HOST vs staff: a HOST has `access.panelAdmin` but NOT
+    // `access.apiAdmin`. See STAFF_DISCRIMINATOR_PERMISSION JSDoc above.
+    const isStaff = permissions.includes(STAFF_DISCRIMINATOR_PERMISSION);
+    const adminPanelLabel = isStaff ? texts.items.adminPanel : texts.items.hostMode;
+
     return [
         {
             id: 'dashboard',
@@ -288,7 +312,7 @@ function buildMenuItems({
         {
             id: 'messages',
             label: texts.items.messages,
-            href: buildUrl({ locale, path: 'mi-cuenta/messages' }),
+            href: buildUrl({ locale, path: 'mi-cuenta/consultas' }),
             icon: ChatIcon
         },
         {
@@ -298,10 +322,23 @@ function buildMenuItems({
             icon: StarIcon
         },
         {
+            id: 'host-dashboard',
+            label: texts.items.hostDashboard,
+            href: buildUrl({ locale, path: 'mi-cuenta/host-dashboard' }),
+            icon: DashboardIcon,
+            requiredPermission: 'access.panelAdmin'
+        },
+        {
             id: 'subscription',
             label: texts.items.subscription,
             href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
             icon: CreditCardIcon
+        },
+        {
+            id: 'newsletter',
+            label: texts.items.newsletter,
+            href: buildUrl({ locale, path: 'mi-cuenta/newsletter' }),
+            icon: NewsletterIcon
         },
         {
             id: 'preferences',
@@ -313,7 +350,7 @@ function buildMenuItems({
             ? ([
                   {
                       id: 'admin-panel',
-                      label: texts.items.adminPanel,
+                      label: adminPanelLabel,
                       href: adminPanelUrl,
                       icon: ShieldIcon,
                       external: true,
@@ -445,7 +482,15 @@ export function UserMenu({
 
     // ── Item filtering ──────────────────────────────────────────────────
     const visibleItems = useMemo(() => {
-        const all = buildMenuItems({ texts, locale, adminPanelUrl });
+        // Empty array while permissions are still resolving — `buildMenuItems`
+        // uses it to pick the staff-vs-host label, and the filter below hides
+        // gated items until permissions arrive.
+        const all = buildMenuItems({
+            texts,
+            locale,
+            adminPanelUrl,
+            permissions: permissions ?? []
+        });
         return all.filter((item) => {
             if (!item.requiredPermission) return true;
             // While permissions are loading, hide gated items so we don't flash items the user can't actually use.
@@ -470,7 +515,11 @@ export function UserMenu({
     }
 
     // ── Render: authenticated ──────────────────────────────────────────
-    const initials = getInitials({ name: user.name, placeholder: '?' });
+    // Fall back to email when the user has no name/displayName set so the
+    // trigger label and dropdown header never render empty.
+    const displayName = user.name.trim().length > 0 ? user.name : user.email;
+    const initials = getInitials({ name: user.name, email: user.email, placeholder: '?' });
+    const showEmailLine = displayName !== user.email;
 
     return (
         <div className={styles.wrapper}>
@@ -480,7 +529,7 @@ export function UserMenu({
                 onClick={() => setIsOpen((prev) => !prev)}
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
-                aria-label={`${texts.openMenu}: ${user.name}`}
+                aria-label={`${texts.openMenu}: ${displayName}`}
                 className={cn(
                     styles.trigger,
                     variant === 'hero' ? styles.triggerHero : styles.triggerScrolled
@@ -501,7 +550,7 @@ export function UserMenu({
                         {initials}
                     </span>
                 )}
-                <span className={styles.displayName}>{user.name}</span>
+                <span className={styles.displayName}>{displayName}</span>
                 <span
                     aria-hidden="true"
                     className={cn(styles.chevron, isOpen && styles.chevronOpen)}
@@ -519,8 +568,8 @@ export function UserMenu({
                 >
                     {/* Header */}
                     <div className={styles.menuHeader}>
-                        <p className={styles.menuHeaderName}>{user.name}</p>
-                        <p className={styles.menuHeaderEmail}>{user.email}</p>
+                        <p className={styles.menuHeaderName}>{displayName}</p>
+                        {showEmailLine && <p className={styles.menuHeaderEmail}>{user.email}</p>}
                     </div>
 
                     {/* Navigation items */}

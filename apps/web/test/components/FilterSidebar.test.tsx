@@ -103,6 +103,9 @@ vi.mock('@/components/shared/filters/components/MobileDrawer.module.css', () => 
 vi.mock('@/components/shared/filters/components/SortPopover.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
+vi.mock('@/components/shared/filters/components/SectionHeader.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
 
 // ---------------------------------------------------------------------------
 // Test fixtures
@@ -525,6 +528,88 @@ describe('FilterSidebar — active filter badge', () => {
     });
 });
 
+describe('FilterSidebar — per-group active count badge', () => {
+    it('renders a count badge with the number of selections when the group has multi-select active', () => {
+        const props = buildProps({
+            filters: [checkboxGroup],
+            initialParams: { type: 'hotel,hostel' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        // The group header toggle button (id="filter-type") wraps the label
+        // plus, when active, a [N] count badge. We assert the badge digit "2"
+        // sits inside the same toggle button as the label.
+        const toggleBtn = container.querySelector('button[id="filter-type"]');
+        expect(toggleBtn).not.toBeNull();
+        expect(toggleBtn?.textContent).toMatch(/Tipo de alojamiento.*2/);
+    });
+
+    it('does not render the count badge when no options are selected for a multi-select group', () => {
+        const props = buildProps({ filters: [checkboxGroup], initialParams: {} });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const toggleBtn = container.querySelector('button[id="filter-type"]');
+        expect(toggleBtn?.textContent?.trim()).toBe('Tipo de alojamiento');
+    });
+
+    it('does not render a count badge for non-multi-select group types (stepper, dual-range)', () => {
+        // Stepper active (guests=4 > default 1) and dual-range with a min set
+        // are both "hasActive=true" but neither should show a [N] badge.
+        const props = buildProps({
+            filters: [stepperGroup, dualRangeGroup],
+            initialParams: { guests: '4', minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const guestsToggle = container.querySelector('button[id="filter-guests"]');
+        const priceToggle = container.querySelector('button[id="filter-price"]');
+        expect(guestsToggle?.textContent?.trim()).toBe('Huéspedes');
+        expect(priceToggle?.textContent?.trim()).toBe('Precio por noche');
+    });
+});
+
+describe('FilterSidebar — stable group order (no active-first sort)', () => {
+    it('preserves the declaration order of filter groups regardless of which are active', () => {
+        // Declaration order: checkbox (type), then dual-range (price).
+        // Pre-select the SECOND group (price). With the old "active-first
+        // sort" feature, price would move to the top. Now it should stay
+        // second.
+        const props = buildProps({
+            filters: [checkboxGroup, dualRangeGroup],
+            initialParams: { minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        // Two desktop fieldsets in the order they were declared.
+        const fieldsets = Array.from(container.querySelectorAll('fieldset[aria-labelledby]'));
+        // Both desktop + drawer instances render in jsdom; take the first
+        // rendering pass (2 entries for 2 groups).
+        const desktopFieldsets = fieldsets.slice(0, 2);
+        const ids = desktopFieldsets.map((fs) => fs.getAttribute('aria-labelledby'));
+        expect(ids).toEqual(['filter-type', 'filter-price']);
+    });
+});
+
+describe('FilterSidebar — stable group order (no active-first sort)', () => {
+    it('preserves the declaration order of filter groups regardless of which are active', () => {
+        // declaration order: checkbox (type), then dualRange (price)
+        // Pre-select the SECOND group (price) so the old "active-first sort" would
+        // move it to the top. We assert the DOM order is unchanged.
+        const props = buildProps({
+            filters: [checkboxGroup, dualRangeGroup],
+            initialParams: { minPrice: '5000' }
+        });
+        const { container } = render(<FilterSidebar {...props} />);
+
+        const fieldsets = Array.from(container.querySelectorAll('fieldset[aria-labelledby]'));
+        // Filter to the desktop sidebar instance (both desktop + drawer render in jsdom).
+        // Take the first half of the fieldsets which corresponds to one rendering pass.
+        const desktopFieldsets = fieldsets.slice(0, 2);
+        const ids = desktopFieldsets.map((fs) => fs.getAttribute('aria-labelledby'));
+        expect(ids).toEqual(['filter-type', 'filter-price']);
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Tests: structural snapshot — position='left'
 //
@@ -620,5 +705,272 @@ describe('FilterSidebar — snapshot position="top"', () => {
         expect(wrapperLeft.getAttribute('data-position')).toBe('left');
         expect(wrapperTop.getAttribute('data-position')).toBe('top');
         expect(wrapperLeft.className).not.toBe(wrapperTop.className);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: section-header decorative entry + sectioned layout
+//
+// When `filters` declares at least one `section-header`, the sidebar switches
+// from the legacy "inline toggles first, collapsibles below" layout to a
+// strictly-declaration-order render so each group lands under its intended
+// header. Listings that don't declare any section-header keep the legacy
+// ordering — covered by the "stable group order" describes above.
+// ---------------------------------------------------------------------------
+
+const locationHeader: FilterGroup = {
+    id: 'section-location',
+    type: 'section-header',
+    label: 'UBICACIÓN'
+};
+
+const priceHeader: FilterGroup = {
+    id: 'section-price',
+    type: 'section-header',
+    label: 'PRECIO Y CALIDAD',
+    icon: 'PriceIcon'
+};
+
+describe('FilterSidebar — section-header decorative entry', () => {
+    it('renders the section-header label text in the sidebar body', () => {
+        // Arrange / Act
+        render(<FilterSidebar {...buildProps({ filters: [locationHeader, selectSearchGroup] })} />);
+
+        // Assert — label appears at least once (desktop sidebar; the drawer
+        // also renders an instance, so we use getAllByText).
+        expect(screen.getAllByText('UBICACIÓN').length).toBeGreaterThan(0);
+    });
+
+    it('renders the section-header as a non-interactive presentation element', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [locationHeader, selectSearchGroup] })} />
+        );
+
+        // Assert — the header is announced as role="presentation" and is NOT
+        // wrapped in a button / fieldset / collapsible toggle. Section
+        // headers carry no state; they're a visual divider only.
+        const headers = container.querySelectorAll('[role="presentation"]');
+        const labels = Array.from(headers).map((h) => h.textContent ?? '');
+        expect(labels.some((l) => l.includes('UBICACIÓN'))).toBe(true);
+        // None of the header nodes should themselves be buttons.
+        for (const node of headers) {
+            expect(node.tagName.toLowerCase()).not.toBe('button');
+        }
+    });
+
+    it('renders the optional icon when the section-header config carries one', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [priceHeader, dualRangeGroup] })} />
+        );
+
+        // Assert — the header with an `icon` field renders an icon slot
+        // (sectionHeaderIcon class) right next to the label.
+        const headerNodes = container.querySelectorAll('[role="presentation"]');
+        const priceHeaderNode = Array.from(headerNodes).find((n) =>
+            n.textContent?.includes('PRECIO Y CALIDAD')
+        );
+        expect(priceHeaderNode).toBeDefined();
+        expect(priceHeaderNode?.querySelector('.sectionHeaderIcon')).not.toBeNull();
+    });
+
+    it('switches to sectioned layout (declaration order) when filters contain a section-header', () => {
+        // Arrange — declare a toggle group AFTER a checkbox group. In the
+        // legacy "inline toggles first" layout the toggle would be hoisted
+        // above the checkbox. With a section-header present the layout
+        // switches to strict declaration order, so the checkbox stays first.
+        const sectioned: FilterGroup[] = [
+            locationHeader,
+            checkboxGroup, // 'Tipo de alojamiento'
+            toggleGroup // 'Solo destacados'
+        ];
+
+        // Act
+        const { container } = render(<FilterSidebar {...buildProps({ filters: sectioned })} />);
+
+        // Assert — find the checkbox group toggle and the toggle filter in
+        // the desktop sidebar, and confirm the toggle does NOT appear
+        // before the checkbox group in document order.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        expect(desktopSidebar).not.toBeNull();
+        const checkboxToggle = desktopSidebar?.querySelector('button[id="filter-type"]');
+        const toggleLabel = Array.from(desktopSidebar?.querySelectorAll('label') ?? []).find((n) =>
+            n.textContent?.includes('Solo destacados')
+        );
+        expect(checkboxToggle).not.toBeNull();
+        expect(toggleLabel).toBeDefined();
+        // checkbox group must come BEFORE the inline toggle in the DOM.
+        if (checkboxToggle && toggleLabel) {
+            const cmp = checkboxToggle.compareDocumentPosition(toggleLabel);
+            // DOCUMENT_POSITION_FOLLOWING === 0x04 — toggleLabel is after
+            // checkboxToggle in document order.
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
+    });
+
+    it('keeps legacy layout (inline toggles first) when no section-header is declared', () => {
+        // Arrange — same group set without a section-header. The toggle
+        // should now be hoisted above the checkbox group (legacy layout).
+        const legacy: FilterGroup[] = [checkboxGroup, toggleGroup];
+
+        // Act
+        const { container } = render(<FilterSidebar {...buildProps({ filters: legacy })} />);
+
+        // Assert — in the desktop sidebar the toggle's inline label comes
+        // BEFORE the checkbox group's collapsible header.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const checkboxToggle = desktopSidebar?.querySelector('button[id="filter-type"]');
+        const toggleLabel = Array.from(desktopSidebar?.querySelectorAll('label') ?? []).find((n) =>
+            n.textContent?.includes('Solo destacados')
+        );
+        expect(checkboxToggle).not.toBeNull();
+        expect(toggleLabel).toBeDefined();
+        if (checkboxToggle && toggleLabel) {
+            const cmp = toggleLabel.compareDocumentPosition(checkboxToggle);
+            // DOCUMENT_POSITION_FOLLOWING means `checkboxToggle` is after
+            // `toggleLabel` — i.e. the toggle was hoisted to the top.
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: icon-chips `priorityOptions` (quick-filter chips)
+//
+// `priorityOptions` are highlighted "shortcut" chips rendered ABOVE the
+// regular icon-chips list. Each chip emits an independent boolean URL param
+// (e.g. `hasWifi=true`) and is reset by the per-group "× reset" button via
+// the `extraToggleKeys` field on `CLEAR_GROUP`. The accommodations listing
+// is the only consumer today; coverage protects the wiring against silent
+// regressions during future refactors of the filter system.
+// ---------------------------------------------------------------------------
+
+const amenitiesWithPriority: FilterGroup = {
+    id: 'amenities',
+    label: 'Comodidades',
+    type: 'icon-chips',
+    options: [
+        { value: 'desayuno', label: 'Desayuno' },
+        { value: 'aire-acondicionado', label: 'Aire acondicionado' },
+        { value: 'tv', label: 'TV' }
+    ],
+    priorityOptions: [
+        { value: 'hasWifi', label: 'Wi-Fi' },
+        { value: 'hasPool', label: 'Pileta' },
+        { value: 'hasParking', label: 'Estacionamiento' },
+        { value: 'allowsPets', label: 'Acepta mascotas' }
+    ]
+};
+
+describe('FilterSidebar — icon-chips priorityOptions', () => {
+    it('renders a separate priority fieldset above the regular chip list', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — the priority fieldset is announced with a "… — destacados"
+        // aria-label so screen reader users can distinguish the two regions.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        expect(priorityFieldset).not.toBeNull();
+    });
+
+    it('renders each priorityOption as a button with aria-pressed', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — each priority chip is a button carrying aria-pressed (the
+        // toggle state). The pressed state is `"false"` when the URL has no
+        // matching boolean param.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        const buttons = priorityFieldset?.querySelectorAll('button[aria-pressed]') ?? [];
+        const labels = Array.from(buttons).map((b) => b.textContent?.trim());
+        expect(labels).toContain('Wi-Fi');
+        expect(labels).toContain('Pileta');
+        expect(labels).toContain('Estacionamiento');
+        expect(labels).toContain('Acepta mascotas');
+        for (const btn of buttons) {
+            expect(btn).toHaveAttribute('aria-pressed', 'false');
+        }
+    });
+
+    it('marks a priority chip aria-pressed=true when its URL boolean is set', () => {
+        // Arrange — hydrate the sidebar from a URL like `?hasWifi=true`. Per
+        // the reducer (`initStateFromParams`), each priority chip's `value`
+        // is the URL param name and `'true'` flips the toggle on.
+        const { container } = render(
+            <FilterSidebar
+                {...buildProps({
+                    filters: [amenitiesWithPriority],
+                    initialParams: { hasWifi: 'true' }
+                })}
+            />
+        );
+
+        // Assert — only the Wi-Fi chip is pressed; the rest stay unpressed.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        const buttons = priorityFieldset?.querySelectorAll('button[aria-pressed]') ?? [];
+        const byLabel = new Map<string, Element>();
+        for (const btn of buttons) byLabel.set(btn.textContent?.trim() ?? '', btn);
+        expect(byLabel.get('Wi-Fi')).toHaveAttribute('aria-pressed', 'true');
+        expect(byLabel.get('Pileta')).toHaveAttribute('aria-pressed', 'false');
+        expect(byLabel.get('Estacionamiento')).toHaveAttribute('aria-pressed', 'false');
+        expect(byLabel.get('Acepta mascotas')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('renders priority chips BEFORE the regular icon-chips list in DOM order', () => {
+        // Arrange / Act
+        const { container } = render(
+            <FilterSidebar {...buildProps({ filters: [amenitiesWithPriority] })} />
+        );
+
+        // Assert — the priority fieldset is positioned ahead of the regular
+        // chip group in document order so users see shortcuts first.
+        const desktopSidebar = container.querySelector('.sidebarDesktop');
+        const priorityFieldset = desktopSidebar?.querySelector(
+            'fieldset[aria-label*="destacados"]'
+        );
+        // The regular icon-chips list lives inside the .chipGroup wrapper
+        // emitted by IconChipsFilter (mocked CSS module returns the class
+        // name verbatim).
+        const regularChipGroup = desktopSidebar?.querySelector('.chipGroup');
+        expect(priorityFieldset).not.toBeNull();
+        expect(regularChipGroup).not.toBeNull();
+        if (priorityFieldset && regularChipGroup) {
+            const cmp = priorityFieldset.compareDocumentPosition(regularChipGroup);
+            expect((cmp & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true);
+        }
+    });
+
+    it('counts priority chips alongside regular selections in the group badge', () => {
+        // Arrange — pre-select one regular chip (`desayuno`) AND flip one
+        // priority chip on (`hasWifi=true`). The badge next to the group
+        // toggle should read "2" (1 priority + 1 regular). `groupActiveCount`
+        // sums both sources for icon-chips groups.
+        const { container } = render(
+            <FilterSidebar
+                {...buildProps({
+                    filters: [amenitiesWithPriority],
+                    initialParams: { amenities: 'desayuno', hasWifi: 'true' }
+                })}
+            />
+        );
+
+        // Assert
+        const toggleBtn = container.querySelector('button[id="filter-amenities"]');
+        expect(toggleBtn).not.toBeNull();
+        expect(toggleBtn?.textContent).toMatch(/Comodidades.*2/);
     });
 });

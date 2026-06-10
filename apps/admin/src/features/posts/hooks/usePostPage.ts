@@ -27,7 +27,7 @@ export const usePostPage = (entityId: string) => {
 
     // Consolidated configuration
     const entityConfig = useMemo(() => {
-        const consolidatedConfig = createPostConsolidatedConfig(t);
+        const consolidatedConfig = createPostConsolidatedConfig(t, entityId);
 
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
         const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
@@ -37,7 +37,7 @@ export const usePostPage = (entityId: string) => {
             editSections,
             metadata: consolidatedConfig.metadata
         };
-    }, [t]);
+    }, [t, entityId]);
 
     // Permissions configuration - static
     const permissions = useMemo(

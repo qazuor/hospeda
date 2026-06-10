@@ -31,6 +31,13 @@ export type { ImageViewFieldProps } from './ImageViewField';
 export { GalleryViewField } from './GalleryViewField';
 export type { GalleryViewFieldProps } from './GalleryViewField';
 
+export { VideoGalleryViewField } from './VideoGalleryViewField';
+export type { VideoGalleryViewFieldProps } from './VideoGalleryViewField';
+
+// Internationalized (i18n) Text View Fields
+export { I18nTextViewField } from './I18nTextViewField';
+export type { I18nTextViewFieldProps } from './I18nTextViewField';
+
 // TODO: Implement additional view field types
 // export { NumberViewField } from './NumberViewField';
 // export type { NumberViewFieldProps } from './NumberViewField';

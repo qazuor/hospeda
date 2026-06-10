@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "054-amenity-family-friendly-children-games",
-    "name": "children_games",
+    "name": {
+        "es": "children_games",
+        "en": "children_games",
+        "pt": "children_games"
+    },
     "slug": "children_games",
-    "description": "Juegos infantiles",
+    "description": {
+        "es": "Juegos infantiles",
+        "en": "Juegos infantiles",
+        "pt": "Juegos infantiles"
+    },
     "type": "FAMILY_FRIENDLY",
     "icon": "KidsGamesIcon",
     "isBuiltin": false,

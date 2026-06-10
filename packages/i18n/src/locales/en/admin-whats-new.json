@@ -1,0 +1,23 @@
+{
+    "badge": {
+        "label": "{{count}} unread update(s)",
+        "labelNone": "No updates"
+    },
+    "modal": {
+        "title": "What's New",
+        "close": "Got it"
+    },
+    "panel": {
+        "title": "Latest updates",
+        "markAllRead": "Mark all as read",
+        "empty": "No updates available.",
+        "seeEntry": "View"
+    },
+    "card": {
+        "seeAll": "See all"
+    },
+    "status": {
+        "new": "New",
+        "seen": "Seen"
+    }
+}

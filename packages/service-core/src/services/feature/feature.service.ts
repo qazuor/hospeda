@@ -1,4 +1,10 @@
-import { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
+import {
+    AccommodationModel,
+    FeatureModel,
+    RAccommodationFeatureModel,
+    escapeLikePattern,
+    sql
+} from '@repo/db';
 import type {
     Accommodation,
     AccommodationFeature,
@@ -92,7 +98,7 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Lifecycle hook: normalizes input and generates slug before creating a feature.
-     * If slug is not provided, generates a unique slug from the name.
+     * If slug is not provided, generates a unique slug from the Spanish locale of the name.
      */
     protected async _beforeCreate(
         data: z.infer<typeof CreateFeatureSchema>,
@@ -119,6 +125,7 @@ export class FeatureService extends BaseCrudRelatedService<
     /**
      * Lifecycle hook: normalizes input and generates slug before updating a feature.
      * If name is updated and slug is not provided, generates a new unique slug.
+     * Comparison uses the Spanish locale (es) as the canonical locale.
      */
     protected async _beforeUpdate(
         data: z.infer<typeof UpdateFeatureSchema>,
@@ -133,7 +140,9 @@ export class FeatureService extends BaseCrudRelatedService<
                 const found = await this.model.findById(data.id as Feature['id']);
                 entity = found ?? undefined;
             }
-            if (!entity || (entity && data.name !== entity.name)) {
+            // Compare by canonical locale (es) to detect a real name change
+            const nameChanged = !entity || data.name.es !== entity.name.es;
+            if (nameChanged) {
                 slug = await generateFeatureSlug(data.name, this.model);
             }
         }
@@ -196,11 +205,18 @@ export class FeatureService extends BaseCrudRelatedService<
     ): Promise<{ items: Feature[]; total: number }> {
         const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
-        if (name) where.name = name;
+        // name is a plain text search term; the DB column is now JSONB.
+        // Do NOT pass name into buildWhereClause — use additionalConditions instead
+        // to query the Spanish locale via name->>'es' ILIKE %term%.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        const { items, total } = await this.model.findAll(where);
+
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+
+        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
         return { items, total };
     }
 
@@ -211,17 +227,27 @@ export class FeatureService extends BaseCrudRelatedService<
     ): Promise<{ count: number }> {
         const { name, slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
-        if (name) where.name = name;
+        // name is a plain text search term; the DB column is now JSONB.
+        // Do NOT pass name into buildWhereClause — use additionalConditions instead.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
-        const count = await this.model.count(where);
+
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
     /**
      * Searches for features with accommodation counts.
      * Uses a single batch COUNT query instead of N+1 individual queries.
+     *
+     * The `name` filter is a plain text search term applied against the Spanish
+     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     *
      * @param actor - The actor performing the action
      * @param params - The search parameters with optional filters
      * @param ctx - Optional service context carrying transaction and hookState.
@@ -245,12 +271,20 @@ export class FeatureService extends BaseCrudRelatedService<
         const pageSize = pagination?.pageSize ?? 10;
 
         const where: Record<string, unknown> = {};
-        if (name) where.name = name;
+        // name is a plain text search term; search against the es locale via JSONB extraction.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const { items, total } = await this.model.findAll(where, { page, pageSize });
+        const additionalConditions = name
+            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
+            : undefined;
+
+        const { items, total } = await this.model.findAll(
+            where,
+            { page, pageSize },
+            additionalConditions
+        );
 
         // Batch fetch accommodation counts in a single query instead of N+1
         const featureIds = items.map((feature) => feature.id as string);

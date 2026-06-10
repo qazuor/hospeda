@@ -156,9 +156,10 @@ describe('UserBookmarkSchema', () => {
             expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(true);
         });
 
-        it('should reject name shorter than 3 characters', () => {
+        it('should accept short names (no min length on output side)', () => {
+            // Must mirror UserBookmarkUpdateNotesSchema, which has no min length.
             const bookmark = createUserBookmarkFixture({ name: 'AB' });
-            expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(false);
+            expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(true);
         });
 
         it('should reject name longer than 100 characters', () => {
@@ -178,9 +179,12 @@ describe('UserBookmarkSchema', () => {
             expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(true);
         });
 
-        it('should reject description shorter than 10 characters', () => {
+        it('should accept short descriptions (no min length on output side)', () => {
+            // Must mirror UserBookmarkUpdateNotesSchema, which has no min length.
+            // Without this, short notes saved via the inline editor fail response
+            // validation and poison subsequent list reads.
             const bookmark = createUserBookmarkFixture({ description: 'Short' });
-            expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(false);
+            expect(UserBookmarkSchema.safeParse(bookmark).success).toBe(true);
         });
 
         it('should reject description longer than 300 characters', () => {

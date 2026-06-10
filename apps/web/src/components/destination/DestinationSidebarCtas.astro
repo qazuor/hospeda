@@ -10,7 +10,7 @@
  * the count is zero (they navigate to a "no results" page that explains
  * the situation in product copy).
  */
-import { BedroomsIcon, CalendarIcon } from '@repo/icons';
+import { AlertTriangleIcon, BedroomsIcon, CalendarIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -27,6 +27,9 @@ const { t } = createTranslations(locale);
 
 const accommodationsHref = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
+// Report-incorrect-info deep link (SPEC-191 FR-7): pre-fills the report form
+// with this destination's slug via the ?destino= query param.
+const reportHref = `${buildUrl({ locale, path: 'colaborar/reportar' })}?destino=${encodeURIComponent(slug)}`;
 ---
 
 <nav class="dest-cta-card" aria-label={t('destination.detail.sidebarCtas.label', 'Acciones rápidas')}>
@@ -71,6 +74,21 @@ const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 		</span>
 		<span class="dest-cta-card__arrow" aria-hidden="true">→</span>
 	</a>
+
+	<a href={reportHref} class="dest-cta-card__row">
+		<span class="dest-cta-card__icon dest-cta-card__icon--report" aria-hidden="true">
+			<AlertTriangleIcon size={20} weight="fill" />
+		</span>
+		<span class="dest-cta-card__text">
+			<span class="dest-cta-card__label">
+				{t('contributions.reportLink.label', 'Reportar información incorrecta')}
+			</span>
+			<span class="dest-cta-card__hint">
+				{t('contributions.reportLink.hint', '¿Viste un error? Avisanos')}
+			</span>
+		</span>
+		<span class="dest-cta-card__arrow" aria-hidden="true">→</span>
+	</a>
 </nav>
 
 <style>
@@ -99,7 +117,7 @@ const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 	}
 
 	.dest-cta-card__row:hover {
-		background-color: oklch(from var(--brand-primary) l c h / 0.05);
+		background-color: var(--brand-primary-a05);
 	}
 
 	.dest-cta-card__row:focus-visible {
@@ -111,6 +129,10 @@ const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 		display: inline-flex;
 		flex-shrink: 0;
 		color: var(--brand-primary);
+	}
+
+	.dest-cta-card__icon--report {
+		color: var(--brand-accent);
 	}
 
 	.dest-cta-card__text {

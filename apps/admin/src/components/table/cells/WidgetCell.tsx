@@ -38,7 +38,7 @@ export const WidgetCell = <TData,>({ row, widgetRenderer }: WidgetCellProps<TDat
         // Handle rendering errors gracefully
         adminLogger.error('Widget renderer error', error);
         return (
-            <span className="text-red-500 text-sm dark:text-red-400">
+            <span className="text-destructive text-sm">
                 {t('admin-common.tableCells.widgetError')}
             </span>
         );

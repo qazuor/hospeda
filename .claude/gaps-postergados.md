@@ -6,7 +6,7 @@ Decisiones tomadas en sesión de revisión del 2026-03-08.
 
 - **Severidad:** CRITICAL (P0)
 - **Razón de postergación:** Requiere cambio arquitectónico en dos repos (Hospeda + QZPay). Se creó SPEC-038-addon-entitlements-architecture dedicada.
-- **SPEC dedicada:** `.claude/specs/SPEC-038-addon-entitlements-architecture/spec.md`
+- **SPEC dedicada:** `.qtm/specs/SPEC-038-addon-entitlements-architecture/spec.md`
 - **Hallazgo de verificación:** Confirmado que `plans.update()` en QZPay modifica el plan GLOBAL en tabla `billing_plans`. Las suscripciones solo tienen FK `planId`. Sin embargo, QZPay ya tiene tablas `billing_customer_entitlements` y `billing_customer_limits` per-cliente que NO se usan.
 - **Solución:** Cambiar de `plans.update()` a usar sistema de customer entitlements/limits de QZPay.
 - **Fecha:** 2026-03-08
@@ -215,7 +215,7 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 
 ## SPEC-063 Triage (2026-04-20) — Gaps postergados / promovidos a nuevas SPECs
 
-Contexto completo: `.claude/specs/specs-gaps-063.md` seccion "Triage 2026-04-20 — Decisiones".
+Contexto completo: `.qtm/specs/specs-gaps-063.md` seccion "Triage 2026-04-20 — Decisiones".
 
 ### GAP-063-012 — Cron archive job sin audit trail persistente
 

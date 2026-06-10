@@ -22,6 +22,14 @@ export interface FilterGroupProps {
     readonly collapsed: boolean;
     /** Whether this group has at least one active filter selection. */
     readonly hasActive: boolean;
+    /**
+     * Number of selected options for multi-select families (checkbox / radio /
+     * select-search / icon-chips). When provided and > 0, renders a `[N]`
+     * badge next to the label so the count is visible without expanding the
+     * group. `null` / `undefined` for filter types where a count is not
+     * meaningful (toggle, stepper, range, date-range, search).
+     */
+    readonly activeCount?: number | null;
     /** Called when the user clicks the header or chevron to toggle collapsed state. */
     readonly onToggle: () => void;
     /** Called when the user clicks the per-group reset button. */
@@ -44,11 +52,13 @@ export function FilterGroup({
     locale,
     collapsed,
     hasActive,
+    activeCount,
     onToggle,
     onReset,
     children
 }: FilterGroupProps) {
     const { t } = createTranslations(locale);
+    const showCountBadge = typeof activeCount === 'number' && activeCount > 0;
 
     return (
         <fieldset
@@ -71,6 +81,17 @@ export function FilterGroup({
                             />
                         )}
                         {label}
+                        {showCountBadge && (
+                            <span
+                                className={styles.groupCountBadge}
+                                aria-label={t(
+                                    'ui.filter.activeSelections',
+                                    `${activeCount} selecciones activas`
+                                ).replace('{{count}}', String(activeCount))}
+                            >
+                                {activeCount}
+                            </span>
+                        )}
                     </span>
                 </button>
                 <span className={styles.groupHeaderActions}>

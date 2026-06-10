@@ -215,8 +215,12 @@ describe('Amenity CRUD Schemas', () => {
         it('should validate valid create input', () => {
             const validInput = {
                 slug: 'wifi-access',
-                name: 'WiFi Access',
-                description: 'High-speed internet access throughout the property',
+                name: { es: 'WiFi Access', en: 'WiFi Access', pt: 'WiFi Access' },
+                description: {
+                    es: 'High-speed internet access throughout the property',
+                    en: 'High-speed internet access throughout the property',
+                    pt: 'High-speed internet access throughout the property'
+                },
                 icon: 'wifi-icon',
                 type: 'CONNECTIVITY',
                 isBuiltin: false,
@@ -231,7 +235,7 @@ describe('Amenity CRUD Schemas', () => {
         it('should validate minimal create input', () => {
             const minimalInput = {
                 slug: 'pool',
-                name: 'Pool',
+                name: { es: 'Pool', en: 'Pool', pt: 'Pool' },
                 type: 'OUTDOORS',
                 lifecycleState: 'ACTIVE',
                 visibility: 'PUBLIC'
@@ -244,8 +248,16 @@ describe('Amenity CRUD Schemas', () => {
     describe('AmenityUpdateInputSchema', () => {
         it('should validate partial update input', () => {
             const partialUpdate = {
-                name: 'Updated Amenity Name',
-                description: 'Updated description'
+                name: {
+                    es: 'Updated Amenity Name',
+                    en: 'Updated Amenity Name',
+                    pt: 'Updated Amenity Name'
+                },
+                description: {
+                    es: 'Updated description long enough',
+                    en: 'Updated description long enough',
+                    pt: 'Updated description long enough'
+                }
             };
 
             expect(() => AmenityUpdateInputSchema.parse(partialUpdate)).not.toThrow();

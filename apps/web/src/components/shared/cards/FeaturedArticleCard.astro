@@ -20,7 +20,7 @@ import {
     formatReadingTime,
 } from '@/lib/article-card-utils';
 import { Image } from 'astro:assets';
-import { CalendarIcon, ClockIcon } from '@repo/icons';
+import { CalendarIcon, ClockIcon, StarIcon, UserIcon } from '@repo/icons';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { getPostCategoryColor, getPostCategoryLabel, getPostCategoryEmoji, getBadgeStatusColor, getMutedColorScheme } from '@/lib/colors';
 
@@ -36,7 +36,6 @@ interface Props {
 const { data, locale, isTrending = false } = Astro.props;
 const { t } = createTranslations(locale);
 const trendingColors = getBadgeStatusColor({ status: 'trending' });
-const promotedColors = getBadgeStatusColor({ status: 'promoted' });
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
@@ -105,11 +104,11 @@ const mutedColorScheme = getMutedColorScheme();
             )}
             {data.isPromoted && (
                 <span
-                    class="featured-card__overlay-badge featured-card__overlay-badge--promoted"
+                    class="featured-card__overlay-badge--promoted featured-badge"
                     aria-label={t('articles.promoted', 'Destacado')}
-                    style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
                 >
-                    {t('articles.promoted', 'Destacado')}
+                    <StarIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{t('articles.promoted', 'Destacado')}</span>
                 </span>
             )}
         </div>
@@ -160,7 +159,7 @@ const mutedColorScheme = getMutedColorScheme();
             <div class="featured-card__author-row">
                 {data.authorName && (
                     <span class="featured-card__avatar-wrapper">
-                        {data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') && (
+                        {data.authorAvatar && !data.authorAvatar.includes('placeholder') && !data.authorAvatar.endsWith('.svg') ? (
                             <Image
                                 src={data.authorAvatar}
                                 alt={data.authorName}
@@ -171,13 +170,14 @@ const mutedColorScheme = getMutedColorScheme();
                                 format="webp"
                                 data-hide-on-error
                             />
+                        ) : (
+                            <span
+                                class="featured-card__avatar featured-card__avatar--placeholder"
+                                aria-hidden="true"
+                            >
+                                <UserIcon size={18} weight="fill" />
+                            </span>
                         )}
-                        <span
-                            class="featured-card__avatar featured-card__avatar--placeholder"
-                            aria-hidden="true"
-                        >
-                            {data.authorName.charAt(0)}
-                        </span>
                     </span>
                 )}
                 {data.authorName && (

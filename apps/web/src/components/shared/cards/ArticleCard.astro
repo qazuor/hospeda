@@ -18,6 +18,7 @@ import {
 } from '@/lib/article-card-utils';
 import Badge from '@/components/shared/ui/Badge.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { StarIcon } from '@repo/icons';
 import {
     getPostCategoryColor,
     getPostCategoryLabel,
@@ -61,7 +62,6 @@ const categoryColor = getPostCategoryColor({ category: data.category });
 const categoryLabel = getPostCategoryLabel({ category: data.category, t });
 const categoryEmoji = getPostCategoryEmoji({ category: data.category });
 const trendingColors = getBadgeStatusColor({ status: 'trending' });
-const promotedColors = getBadgeStatusColor({ status: 'promoted' });
 const mutedColorScheme = getMutedColorScheme();
 
 const { visible: visibleTags } = truncateTags({ tags: data.tags ?? [], maxVisible: 2 });
@@ -97,11 +97,9 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
                     </span>
                 )}
                 {data.isPromoted && (
-                    <span
-                        class="article-card__overlay-badge"
-                        style={`background-color: ${promotedColors.bg}; color: ${promotedColors.text};`}
-                    >
-                        {t('blog.card.promoted', 'Destacado')}
+                    <span class="featured-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{t('blog.card.promoted', 'Destacado')}</span>
                     </span>
                 )}
                 {data.isNews && (
@@ -150,7 +148,7 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
             <p class="article-card__excerpt">{excerpt}</p>
 
             <CardMeta
-                author={{ name: data.authorName }}
+                author={{ name: data.authorName, avatarUrl: data.authorAvatar }}
                 date={data.publishedAt}
                 readingTimeMinutes={data.readingTimeMinutes}
                 locale={locale}
@@ -240,8 +238,8 @@ const readingTimeSuffix = t('blog.detail.readingTime', 'min de lectura');
         font-size: var(--text-caption);
         font-weight: 600;
         color: var(--warning, #f59e0b);
-        background-color: oklch(from var(--warning, #f59e0b) l c h / 0.12);
-        border: 1px solid oklch(from var(--warning, #f59e0b) l c h / 0.35);
+        background-color: var(--warning-a12);
+        border: 1px solid var(--warning-a35);
         border-radius: var(--radius-pill);
         padding: 0.2rem 0.5rem;
         line-height: 1;

@@ -50,6 +50,13 @@
         left: 0;
         bottom: 0;
         width: min(85vw, 380px);
+        /* Explicit full-viewport height — the user-agent `<dialog>` stylesheet
+         * sets `height: fit-content` which can collapse the panel when the
+         * filter list is short, leaving a blank strip below. `100dvh` follows
+         * the browser's dynamic viewport so the panel stays full-height even
+         * as the address bar shows/hides. */
+        height: 100dvh;
+        max-height: 100dvh;
         z-index: 400;
         background-color: var(--core-card);
         box-shadow: 4px 0 24px oklch(0 0 0 / 0.12);
@@ -58,6 +65,7 @@
         overflow: hidden;
         border: none;
         padding: 0;
+        margin: 0;
     }
 
     .drawerOpen {

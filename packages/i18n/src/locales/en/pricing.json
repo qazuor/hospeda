@@ -10,6 +10,17 @@
     "empty": {
         "contact": "Contact us"
     },
+    "toggle": {
+        "monthly": "Monthly",
+        "annual": "Annual",
+        "annualSaving": "Save {percent}%",
+        "ariaLabel": "Choose billing frequency"
+    },
+    "period": {
+        "month": "/month",
+        "year": "/year"
+    },
+    "monthlyOnly": "Monthly plan only",
     "owner": {
         "title": "Plans for owners — Hospeda",
         "description": "Publish your accommodation with the plan that best fits your business.",

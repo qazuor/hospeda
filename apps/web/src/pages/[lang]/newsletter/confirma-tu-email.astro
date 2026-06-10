@@ -1,0 +1,110 @@
+---
+/**
+ * @file [lang]/newsletter/confirma-tu-email.astro
+ * @description Post-guest-subscribe landing page (newsletter polish spec).
+ *
+ * Flow: a visitor submits the public footer form → POST /api/v1/public/newsletter/subscribe
+ * returns `pending_verification` → the form redirects here with `?email=<their-email>`.
+ * The page reminds the visitor to check their inbox, surfaces a resend button
+ * (rate-limited 1 req/min server-side, plus a 60s local cooldown), and a
+ * cancel link back to the homepage.
+ *
+ * Server-rendered. The only interactive piece is the NewsletterResendButton
+ * island, which manages its own state.
+ *
+ * Marked noindex — post-action landing, no SEO value.
+ */
+
+import { NewsletterResendButton } from '@/components/newsletter/NewsletterResendButton.client';
+import StatusPage from '@/components/shared/StatusPage.astro';
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { EmailIcon } from '@repo/icons';
+
+const lang = (Astro.params.lang ?? 'es') as SupportedLocale;
+const { t } = createTranslations(lang);
+
+// Pull the email out of the redirect query param. We validate it lightly
+// before rendering — anything that doesn't look like an email is dropped so
+// an attacker can't reflect arbitrary content via the URL.
+const rawEmail = (Astro.url.searchParams.get('email') ?? '').trim();
+const isPlausibleEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) && rawEmail.length <= 255;
+const email = isPlausibleEmail ? rawEmail : '';
+
+const pageTitle = t(
+    'newsletter.confirmYourEmail.title',
+    'Revisá tu email para confirmar la suscripción.'
+);
+const pageDescription = email
+    ? t(
+          'newsletter.confirmYourEmail.descriptionWithEmail',
+          'Te enviamos un email a {email} con un link para confirmar.',
+          { email }
+      )
+    : t(
+          'newsletter.confirmYourEmail.descriptionGeneric',
+          'Te enviamos un email con un link para confirmar tu suscripción.'
+      );
+const noteText = t(
+    'newsletter.confirmYourEmail.spamNote',
+    'Si no lo encontrás en tu bandeja, revisá la carpeta de spam.'
+);
+const cancelLink = t('newsletter.confirmYourEmail.cancelLink', 'Volver al inicio');
+---
+
+<DefaultLayout
+    locale={lang}
+    title={pageTitle}
+    description={pageDescription}
+    noindex={true}
+>
+    <StatusPage
+        variant="info"
+        Icon={EmailIcon}
+        title={pageTitle}
+        description={pageDescription}
+        hideBlob
+    >
+        <p slot="extras" class="newsletter-confirm-email__note">{noteText}</p>
+
+        {email && (
+            <div slot="extras" class="newsletter-confirm-email__resend">
+                <NewsletterResendButton client:visible email={email} locale={lang} />
+            </div>
+        )}
+
+        <a slot="actions" class="newsletter-confirm-email__link" href={`/${lang}/`}>
+            {cancelLink}
+        </a>
+    </StatusPage>
+</DefaultLayout>
+
+<style>
+    .newsletter-confirm-email__note {
+        color: var(--core-muted-foreground);
+        font-size: var(--text-sm, 0.875rem);
+        text-align: center;
+        margin-block-start: var(--space-2, 0.5rem);
+    }
+
+    .newsletter-confirm-email__resend {
+        margin-block-start: var(--space-4, 1rem);
+        display: flex;
+        justify-content: center;
+    }
+
+    .newsletter-confirm-email__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-2, 0.5rem) var(--space-5, 1.25rem);
+        border-radius: var(--radius-button, 8px);
+        font-size: var(--text-button, 0.9375rem);
+        font-weight: 600;
+        text-decoration: none;
+        background-color: transparent;
+        color: var(--brand-primary);
+        border: 1px solid var(--brand-primary);
+    }
+</style>

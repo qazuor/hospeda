@@ -1,4 +1,24 @@
 {
+    "ratingDimensions": {
+        "landscape": "Landscape",
+        "attractions": "Attractions",
+        "accessibility": "Accessibility",
+        "safety": "Safety",
+        "cleanliness": "Cleanliness",
+        "hospitality": "Hospitality",
+        "culturalOffer": "Cultural offer",
+        "gastronomy": "Gastronomy",
+        "affordability": "Affordability",
+        "nightlife": "Nightlife",
+        "infrastructure": "Infrastructure",
+        "environmentalCare": "Environmental care",
+        "wifiAvailability": "WiFi availability",
+        "shopping": "Shopping",
+        "beaches": "Beaches",
+        "greenSpaces": "Green spaces",
+        "localEvents": "Local events",
+        "weatherSatisfaction": "Weather"
+    },
     "entities": {
         "accommodation": {
             "singular": "Accommodation",
@@ -65,6 +85,11 @@
             "singular": "Review",
             "plural": "Reviews",
             "description": "Manage reviews and ratings"
+        },
+        "appLog": {
+            "singular": "Log entry",
+            "plural": "Application logs",
+            "description": "WARN and ERROR events emitted by system services"
         }
     },
     "columns": {
@@ -72,6 +97,8 @@
         "name": "Name",
         "slug": "Slug",
         "description": "Description",
+        "summary": "Summary",
+        "photo": "Photo",
         "shortDescription": "Short Description",
         "type": "Type",
         "category": "Category",
@@ -135,9 +162,35 @@
         "eventsCount": "Events",
         "destinationsCount": "Destinations",
         "postsCount": "Posts",
+        "relatedEntities": "Related",
         "relatedAccommodation": "Rel. Accommodation",
         "relatedDestination": "Rel. Destination",
-        "relatedEvent": "Rel. Event"
+        "relatedEvent": "Rel. Event",
+        "publishedAt": "Published At",
+        "expiresAt": "Expires At",
+        "isNews": "Is News",
+        "featuredInWebsite": "Featured In Website",
+        "likes": "Likes",
+        "comments": "Comments",
+        "shares": "Shares",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "locationCity": "City",
+        "emailVerified": "Email Verified",
+        "banned": "Banned",
+        "banReason": "Ban Reason",
+        "banExpires": "Ban Expires",
+        "avatar": "Avatar",
+        "views30d": "Views (30d)",
+        "appLog": {
+            "loggedAt": "Date/Time",
+            "level": "Level",
+            "category": "Category",
+            "label": "Label",
+            "request": "Request",
+            "userId": "User",
+            "message": "Message"
+        }
     },
     "actions": {
         "view": "View",
@@ -181,6 +234,18 @@
             "confirm": "Yes, archive",
             "cancel": "Cancel"
         },
+        "roleChange": {
+            "title": "Change role of {entity}",
+            "message": "Are you sure you want to change the role of this {entity}? This is a sensitive action that affects critical permissions.",
+            "confirm": "Yes, change role",
+            "cancel": "Cancel"
+        },
+        "reject": {
+            "title": "Reject {entity}",
+            "message": "Are you sure you want to reject this {entity}?",
+            "confirm": "Yes, reject",
+            "cancel": "Cancel"
+        },
         "restore": {
             "title": "Restore {entity}",
             "message": "Do you want to restore this {entity}?",
@@ -197,6 +262,11 @@
     "messages": {
         "created": "{entity} created successfully",
         "updated": "{entity} updated successfully",
+        "featuredOn": "«{name}» marked as featured",
+        "featuredOff": "«{name}» removed from featured",
+        "visibilityChanged": "Visibility of «{name}» changed to {value}",
+        "stateChanged": "Status of «{name}» changed to {value}",
+        "moderationChanged": "Moderation of «{name}» changed to {value}",
         "deleted": "{entity} deleted successfully",
         "deletedFeminine": "{entity} deleted successfully",
         "archived": "{entity} archived successfully",
@@ -233,6 +303,15 @@
             "rowsPerPage": "Rows per page"
         }
     },
+    "grid": {
+        "statistics": "Statistics",
+        "moreFields": "more fields",
+        "actions": {
+            "peek": "View",
+            "edit": "Edit",
+            "delete": "Delete"
+        }
+    },
     "detail": {
         "title": "{entity} - Detail",
         "sections": {
@@ -245,6 +324,15 @@
             "relations": "Relations",
             "metadata": "Metadata",
             "audit": "Audit"
+        },
+        "viewStats": {
+            "sectionTitle": "View statistics",
+            "chips": {
+                "unique": "Unique",
+                "total": "Total",
+                "ariaUnique": "{{window}}: {{count}} unique visitors",
+                "ariaTotal": "{{window}}: {{count}} total views"
+            }
         }
     },
     "form": {
@@ -308,12 +396,18 @@
             "resort": "Resort"
         },
         "amenity": {
-            "basic": "Basic",
-            "comfort": "Comfort",
-            "luxury": "Luxury",
-            "technology": "Technology",
-            "recreation": "Recreation",
-            "business": "Business"
+            "climateControl": "Climate control",
+            "connectivity": "Connectivity",
+            "entertainment": "Entertainment",
+            "kitchen": "Kitchen",
+            "bedAndBath": "Bedroom & bath",
+            "outdoors": "Outdoors",
+            "accessibility": "Accessibility",
+            "services": "Services",
+            "safety": "Safety",
+            "familyFriendly": "Family friendly",
+            "workFriendly": "Work friendly",
+            "generalAppliances": "Appliances"
         },
         "event": {
             "concert": "Concert",
@@ -436,6 +530,9 @@
             "uploadedAlt": "Uploaded image",
             "altTextLabel": "Alt Text",
             "altTextPlaceholder": "Describe the image for accessibility",
+            "altTextRequiredHint": "Required for accessibility",
+            "replaceLabel": "Replace image",
+            "lightboxOpenLabel": "Open image in full size",
             "captionLabel": "Caption",
             "captionPlaceholder": "Image caption",
             "descriptionLabel": "Description",
@@ -467,10 +564,39 @@
             "invalidType": "Invalid file type.",
             "fallbackAriaLabel": "User initials"
         },
+        "coordinates": {
+            "latLabel": "Latitude",
+            "lngLabel": "Longitude",
+            "privacyNotice": "Enter the exact address and mark the precise point on the map. Don't worry: the public site never shows the exact location, only an approximate area around 300 meters around the point you provide.",
+            "mapLoading": "Loading map...",
+            "emptyHint": "Click on the map or enter coordinates to locate the accommodation",
+            "activationHint": "Click to enable zoom",
+            "clearLabel": "Clear coordinates",
+            "geocodingForwardLabel": "Locate on map",
+            "geocodingReverseLabel": "Fill address",
+            "geocodingForwardFound": "Point located at: {address}",
+            "geocodingForwardStreetOnly": "Street found but exact number unavailable. Drag the pin to fine-tune. ({address})",
+            "geocodingForwardNotFound": "Address not found. Try adding more details (city, number).",
+            "geocodingReverseFilled": "Address found: {address}",
+            "geocodingReverseKept": "The address matches what you already entered ({address}).",
+            "geocodingReverseNotFound": "No address could be resolved for this point.",
+            "geocodingNetworkError": "Could not reach the geocoding service. Try again.",
+            "reverseDialogTitle": "Load address",
+            "reverseDialogIntro": "We found: {address}",
+            "reverseDialogChangesHeading": "We will load:",
+            "reverseDialogStreetLabel": "Street",
+            "reverseDialogNumberLabel": "Number",
+            "reverseDialogNoChanges": "Street and number are already filled. Nothing will be changed.",
+            "reverseDialogEmptyValue": "(clear field)",
+            "reverseDialogConfirm": "Load address",
+            "reverseDialogCancel": "Cancel"
+        },
         "gallery": {
             "imageAlt": "Gallery image {index}",
             "captionPlaceholder": "Caption",
             "altTextPlaceholder": "Alt text",
+            "descriptionPlaceholder": "Detailed description",
+            "altTextRequiredHint": "Required for accessibility",
             "uploadAriaLabel": "Upload images",
             "uploading": "Uploading...",
             "uploadingProgress": "Uploading {size}...",
@@ -489,6 +615,18 @@
                 "onDragCancel": "Movement cancelled. Image returned to position {position}."
             }
         },
+        "videoGallery": {
+            "add": "Add video",
+            "remove": "Remove video",
+            "urlPlaceholder": "https://www.youtube.com/watch?v=...",
+            "captionPlaceholder": "Short caption (optional)",
+            "descriptionPlaceholder": "Description of the video content (optional)",
+            "empty": "No videos yet. Paste a YouTube or Vimeo URL to add one.",
+            "emptyView": "No videos uploaded.",
+            "invalidUrl": "Paste a full URL (http or https).",
+            "duplicateUrl": "That video is already in the gallery.",
+            "externalProvider": "External"
+        },
         "fileUploadNotImplemented": "File upload not yet implemented",
         "unknownFieldType": "Unknown field type: {type}"
     },
@@ -498,11 +636,19 @@
         "titleDefault": "Premium Feature",
         "description": "This feature is available on higher plans. Upgrade your plan to access this section.",
         "fieldPremium": "{field} - Premium",
-        "fieldPremiumDescription": "This feature is available on higher plans"
+        "fieldPremiumDescription": "This feature is available on higher plans",
+        "richDescriptionNudge": "Your plan does not include rich descriptions. You can edit the description as plain text.",
+        "videoNudge": "Video embedding is available on higher plans.",
+        "upgradeLink": "Upgrade plan"
     },
     "limitGate": {
         "fieldLimitReached": "{field} - Limit reached",
-        "description": "You have reached the limit of your current plan"
+        "description": "You have reached the limit of your current plan",
+        "titleDefault": "You reached your plan limit",
+        "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
+        "upgradeLink": "View my subscription",
+        "belowLimit": "{max} - {current} slots left on your current plan.",
+        "atLimit": "You've hit your plan's limit. Upgrade to add more."
     },
     "selects": {
         "destination": {
@@ -512,6 +658,103 @@
         "owner": {
             "placeholder": "Select an owner...",
             "unknown": "Unknown User"
+        }
+    },
+    "peek": {
+        "summary": "Summary",
+        "viewFull": "View full page",
+        "edit": "Edit",
+        "close": "Close",
+        "booleanYes": "Yes",
+        "booleanNo": "No",
+        "emptyValue": "—"
+    },
+    "premiumBlock": {
+        "title": "Features available on higher plans",
+        "description": "These features unlock when you upgrade your plan.",
+        "cta": "Upgrade plan"
+    },
+    "qualityScore": {
+        "triggerLabel": "Quality",
+        "triggerAriaLabel": "Listing quality: {score} out of 100. Open breakdown.",
+        "popoverHeading": "Listing quality",
+        "popoverHint": "Improve these to make your listing convert better.",
+        "groups": {
+            "done": "Done",
+            "pending": "Room to improve",
+            "premium": "Take it further"
+        },
+        "emptyDone": "You haven't completed any goal yet.",
+        "emptyPending": "All quality goals met! Your listing is at its peak.",
+        "premiumDescription": "Premium plan features to amplify your listing.",
+        "premiumCta": "Upgrade plan",
+        "goToSection": "Go to section",
+        "signals": {
+            "featuredImage": {
+                "label": "Featured image uploaded"
+            },
+            "galleryPhotos": {
+                "label": "At least {target} gallery photos",
+                "hint": "{current} of {target} uploaded"
+            },
+            "photosAlt": {
+                "label": "Alt text on every photo",
+                "hint": "{missing} photo(s) without alt text"
+            },
+            "description": {
+                "label": "Detailed description",
+                "hint": "{current} of {target} characters"
+            },
+            "summary": {
+                "label": "Short summary"
+            },
+            "locationPin": {
+                "label": "Location pinned on the map"
+            },
+            "contact": {
+                "label": "At least one contact channel"
+            },
+            "services": {
+                "label": "Services filled",
+                "hint": "{current} of {target} ticked"
+            },
+            "price": {
+                "label": "Price set"
+            },
+            "videoGallery": {
+                "label": "Video gallery"
+            },
+            "virtualTour": {
+                "label": "360° virtual tour"
+            },
+            "dates": {
+                "label": "Event dates"
+            },
+            "organizer": {
+                "label": "Organizer assigned"
+            },
+            "category": {
+                "label": "Category selected"
+            },
+            "location": {
+                "label": "Event venue"
+            },
+            "content": {
+                "label": "Article body",
+                "hint": "{current} of {target} characters"
+            },
+            "readingTime": {
+                "label": "Reading time set"
+            },
+            "author": {
+                "label": "Author assigned"
+            },
+            "relatedEntity": {
+                "label": "Linked to another entity"
+            },
+            "publishedAt": {
+                "label": "Publish date"
+            }
         }
     }
 }

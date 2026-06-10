@@ -182,7 +182,7 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
     .category-tiles__visual {
         position: relative;
         height: 110px;
-        background-color: oklch(from var(--brand-primary) l c h / 0.08);
+        background-color: var(--brand-primary-a08);
         overflow: hidden;
         border-radius: var(--radius-card) var(--radius-card) 0 0;
     }
@@ -210,8 +210,8 @@ const { tiles, sectionTitle, sectionTagline } = Astro.props;
         height: 100%;
         background: linear-gradient(
             135deg,
-            oklch(from var(--brand-accent) l c h / 0.15) 0%,
-            oklch(from var(--brand-primary) l c h / 0.12) 100%
+            var(--brand-accent-a15) 0%,
+            var(--brand-primary-a12) 100%
         );
     }
 

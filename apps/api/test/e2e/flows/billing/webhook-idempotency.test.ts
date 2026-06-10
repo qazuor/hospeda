@@ -220,15 +220,18 @@ describe('SPEC-143 T-143-15 — webhook idempotency (duplicate event id)', () =>
             outerEventId: sharedOuterEventId,
             providerPaymentId
         });
-        const firstResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...first.headers
-            },
-            body: first.body
-        });
+        const firstResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...first.headers
+                },
+                body: first.body
+            }
+        );
         expect(firstResponse.status).toBe(200);
 
         // Sanity — the sub was activated and a single row landed in
@@ -263,15 +266,18 @@ describe('SPEC-143 T-143-15 — webhook idempotency (duplicate event id)', () =>
             outerEventId: sharedOuterEventId,
             providerPaymentId
         });
-        const secondResponse = await app.request('/api/v1/webhooks/mercadopago', {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                'user-agent': 'mp-webhook-test',
-                ...second.headers
-            },
-            body: second.body
-        });
+        const secondResponse = await app.request(
+            '/api/v1/webhooks/mercadopago?source_news=webhooks',
+            {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'mp-webhook-test',
+                    ...second.headers
+                },
+                body: second.body
+            }
+        );
         expect(secondResponse.status).toBe(200);
 
         // ASSERT — still EXACTLY ONE row in billing_webhook_events. Two
@@ -368,7 +374,7 @@ describe('SPEC-143 T-143-15 — webhook idempotency (duplicate event id)', () =>
             outerEventId: sharedOuterEventId,
             providerPaymentId
         });
-        const response = await app.request('/api/v1/webhooks/mercadopago', {
+        const response = await app.request('/api/v1/webhooks/mercadopago?source_news=webhooks', {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',

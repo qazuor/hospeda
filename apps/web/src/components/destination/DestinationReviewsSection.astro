@@ -36,12 +36,17 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
     </h2>
 
     {reviewsCount === 0 ? (
-        <p class="dest-reviews__empty">
-            {t(
-                'destination.detail.reviews.empty',
-                'Todavía no hay reseñas para este destino.'
-            )}
-        </p>
+        <>
+            <p class="dest-reviews__empty">
+                {t(
+                    'destination.detail.reviews.empty',
+                    'Todavía no hay reseñas para este destino.'
+                )}
+            </p>
+            <div class="dest-reviews__actions">
+                <slot name="actions" />
+            </div>
+        </>
     ) : (
         <>
             <div class="dest-reviews__summary">
@@ -63,15 +68,18 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
                 </div>
             )}
 
-            <button
-                class="dest-reviews__view-all"
-                type="button"
-                data-reviews-modal-trigger=""
-                data-destination-id={destinationId}
-                aria-haspopup="dialog"
-            >
-                {t('destination.detail.reviews.viewAll', 'Ver todas las reseñas')}
-            </button>
+            <div class="dest-reviews__actions">
+                <button
+                    class="dest-reviews__view-all"
+                    type="button"
+                    data-reviews-modal-trigger=""
+                    data-destination-id={destinationId}
+                    aria-haspopup="dialog"
+                >
+                    {t('destination.detail.reviews.viewAll', 'Ver todas las reseñas')}
+                </button>
+                <slot name="actions" />
+            </div>
 
             <DestinationReviewsModal
                 client:idle
@@ -100,7 +108,7 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
         font-family: var(--font-sans);
         font-size: 0.95rem;
         color: var(--core-muted-foreground);
-        margin: 0;
+        margin: 0 0 1rem;
     }
 
     .dest-reviews__summary {
@@ -134,6 +142,13 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
         font-family: var(--font-sans);
         font-size: 0.9rem;
         color: var(--core-muted-foreground);
+    }
+
+    .dest-reviews__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .dest-reviews__view-all {

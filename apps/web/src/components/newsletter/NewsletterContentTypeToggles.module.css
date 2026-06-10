@@ -1,0 +1,100 @@
+/**
+ * NewsletterContentTypeToggles.module.css
+ * Scoped styles for the per-content checkboxes block on the account
+ * newsletter preferences page.
+ *
+ * Sits on the account surface (--core-card), so foreground tokens default
+ * to --core-foreground rather than the inverted footer palette.
+ */
+
+.fieldset {
+    border: none;
+    padding: 0;
+    margin: var(--space-4, 1rem) 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.fieldset[disabled] {
+    opacity: 0.6;
+}
+
+.legend {
+    font-family: var(--font-heading);
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+    padding: 0;
+    margin-bottom: var(--space-1, 0.25rem);
+}
+
+.liveRegion {
+    min-height: 1.25rem;
+    margin: 0;
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+}
+
+.list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.item {
+    margin: 0;
+}
+
+.label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--brand-primary-a15);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card-a60);
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 150ms) ease;
+}
+
+.label:hover {
+    background-color: var(--brand-primary-a05);
+}
+
+.checkbox {
+    margin: 0;
+    margin-top: 0.15rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.checkbox:disabled {
+    cursor: not-allowed;
+}
+
+.labelText {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    min-width: 0;
+}
+
+.labelTitle {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.labelDescription {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+    line-height: 1.4;
+}

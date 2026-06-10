@@ -3,8 +3,8 @@
     "id": "003-event-music-festival-del-rio-colon-2025",
     "slug": "festival-del-rio-colon-2025",
     "name": "Festival del Río Colón 2025",
-    "summary": "Festival cultural y musical a orillas del rio.",
-    "description": "El Festival del Río es un evento cultural que celebra la música, el arte y la historia de Colón. Se desarrolla en el pintoresco Anfiteatro Municipal con una vista espectacular al río Uruguay. Durante tres días, artistas locales y nacionales presentan espectáculos musicales, obras de teatro y exposiciones artísticas en un ambiente único e inspirador.",
+    "summary": "Tres noches de música, arte y teatro a orillas del río Uruguay. El festival al aire libre más característico del litoral, gratuito y con artistas locales y nacionales en el Anfiteatro Municipal de Colón.",
+    "description": "El Festival del Río es uno de los eventos culturales más esperados del año en el litoral entrerriano. Se desarrolla en el pintoresco Anfiteatro Municipal de Colón, con vista directa al río Uruguay y la costa uruguaya enfrente. Durante tres noches, artistas locales y nacionales presentan espectáculos musicales, obras de teatro y exposiciones artísticas en un ambiente único e inspirador.\n\n**Una propuesta cultural integral**\n\nA diferencia de los festivales puramente musicales, el Festival del Río combina varias disciplinas en una misma programación: música popular argentina, jazz, folclore, rock litoraleño, intervenciones teatrales y exposiciones de artistas plásticos. La grilla se construye con curaduría, intentando ofrecer cada año una mezcla equilibrada entre nombres consagrados y propuestas emergentes.\n\n**Programación tipo:**\n\n- **Día 1:** apertura con artistas locales y exposición fotográfica en el hall del anfiteatro.\n- **Día 2:** noche temática (folclore, jazz o rock litoraleño según edición), con el espectáculo principal.\n- **Día 3:** cierre con artista invitado de alcance nacional y ceremonia de despedida.\n- **Paralelo:** ferias artesanales, food trucks de pescados de río, talleres infantiles y muestras de pintura sobre el río Uruguay.\n\n**El Anfiteatro Municipal**\n\nEl escenario natural del festival es uno de los mejores espacios al aire libre del litoral. Con capacidad para 3.000 personas sentadas en grada, tiene una acústica notable y una postal inmejorable: el sol cae detrás del escenario sobre el río Uruguay, generando atardeceres que muchos artistas describen como inolvidables.\n\n**Información práctica**\n\n- **Cuándo:** tres días en junio (puede variar levemente según edición).\n- **Dónde:** Anfiteatro Municipal de Colón, sobre la costanera.\n- **Entrada:** GRATUITA. Es una política sostenida desde la primera edición.\n- **Capacidad:** abierta, recomendamos llegar temprano para asegurar buena ubicación.\n- **Llevar:** abrigo (la noche refresca con la brisa del río), repelente, mate o termo si lo deseás.\n- **Combinar con:** un día en Banco Pelay, visita al Palacio San José (a 35 km) o cruzar a Paysandú en Uruguay por el puente internacional.\n\n**Una postal del litoral**\n\nEl Festival del Río es una de esas experiencias que definen al litoral entrerriano: música popular, río, cielo abierto y gente. No es el festival más grande del país, pero sí uno de los más cálidos. Vale la pena planificar un viaje a Colón para coincidir con sus fechas y vivir un fin de semana cultural a la sombra de los grandes árboles de la costanera.",
     "category": "MUSIC",
     "date": {
         "start": "2026-06-20T19:00:00-03:00",
@@ -51,9 +51,18 @@
         ]
     },
     "seo": {
-        "title": "Festival del Río Colón 2025 - Música y Cultura - Hospeda",
-        "description": "Festival cultural gratuito en el Anfiteatro Municipal de Colón con música, arte y vista al río Uruguay.",
-        "keywords": ["festival", "colon", "musica", "rio uruguay", "cultura"]
+        "title": "Festival del Río Colón 2025: música y cultura gratis",
+        "description": "Tres noches gratuitas de música, arte y teatro a orillas del río Uruguay en el Anfiteatro Municipal de Colón. Folclore, jazz, rock y artistas nacionales.",
+        "keywords": [
+            "festival del río",
+            "colón entre ríos",
+            "música río uruguay",
+            "anfiteatro colón",
+            "festival gratuito",
+            "folclore litoral",
+            "evento música",
+            "cultura litoral"
+        ]
     },
     "lifecycleState": "ACTIVE"
 }

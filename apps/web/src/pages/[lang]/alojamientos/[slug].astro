@@ -9,18 +9,20 @@
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import JsonLd from '@/components/seo/JsonLd.astro';
+import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
-import { renderContent } from '@/lib/render-content';
+import { renderContent as renderRich } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
+import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import LocationSection from '@/components/accommodation/LocationSection.astro';
 import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
@@ -28,7 +30,9 @@ import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
+import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
@@ -126,7 +130,7 @@ const result = await accommodationsApi.getBySlug({ slug });
 if (!result.ok || !result.data) return new Response(null, { status: 404 });
 
 const rawAccommodation = result.data as Record<string, unknown>;
-const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation });
+const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
 
 // Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
 const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');
@@ -216,6 +220,28 @@ const currentUser = Astro.locals.user
       }
     : null;
 
+// --- Review eligibility: only allow leaving a review if the visitor has
+// already initiated a conversation with this property's host. Acts as a
+// lightweight "has the visitor actually engaged with this property?" check
+// — strong enough to block drive-by reviews, weak enough to not require
+// a verified stay/booking workflow we don't have yet.
+let canLeaveReview = false;
+if (isAuthenticated) {
+    try {
+        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+        const convResult = await protectedConversationsApi.list({
+            accommodationId: accommodation.id,
+            pageSize: 1,
+            cookieHeader
+        });
+        canLeaveReview = convResult.ok && (convResult.data.items?.length ?? 0) > 0;
+    } catch {
+        // Fail-closed: any error reading the inbox means we hide the form
+        // rather than risk surfacing it to someone who shouldn't see it.
+        canLeaveReview = false;
+    }
+}
+
 // --- Bookmark count + favorite status (graceful degradation, never blocks render) ---
 let bookmarkCount: number | undefined;
 let initialIsFavorited: boolean | undefined;
@@ -266,6 +292,8 @@ if (userId) {
 
 // --- Gallery images for ImageGallery island ---
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
+// SPEC-186: pass the FULL gallery — the island owns all capping (count-aware grid
+// shows a bounded preview and a "+N más" overlay for the rest).
 const galleryImages = (() => {
     const featured = {
         url: accommodation.featuredImage || '/images/placeholder-accommodation.svg',
@@ -273,12 +301,12 @@ const galleryImages = (() => {
     };
     const extras =
         accommodation.media.galleryItems.length > 0
-            ? accommodation.media.galleryItems.slice(0, 3).map((item) => ({
+            ? accommodation.media.galleryItems.map((item) => ({
                   url: item.url,
                   alt: item.caption ?? accommodation.name,
                   caption: item.caption
               }))
-            : accommodation.media.images.slice(0, 3).map((url) => ({
+            : accommodation.media.images.map((url) => ({
                   url,
                   alt: accommodation.name
               }));
@@ -289,46 +317,62 @@ const galleryImages = (() => {
 const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
 const seoDescription = accommodation.seo?.description ?? accommodation.summary;
 
+// --- OG card (PHOTO mode) ---
+// Use the entity featured image (skip the local placeholder so brand mode kicks
+// in instead of rendering a placeholder photo card). Subtitle = locality; rating
+// only when there is a real average (>0).
+const ogFeaturedImage =
+    accommodation.featuredImage && !accommodation.featuredImage.includes('placeholder')
+        ? accommodation.featuredImage
+        : undefined;
+const ogRating = accommodation.averageRating > 0 ? accommodation.averageRating.toFixed(1) : undefined;
+const ogSubtitle = accommodation.destination?.name || undefined;
+
 // --- Description rendering ---
-// `accommodation.description` may arrive as markdown (current authoring format),
-// HTML (future TipTap admin output), or plain text. `renderContent` normalizes
-// all three into safe HTML for `set:html`. (Previously this field was piped
-// straight into `set:html` without sanitization — pre-existing XSS hole, fixed
-// here alongside the markdown rendering work.)
-const safeDescriptionHtml = renderContent({
-    raw: accommodation.description ?? '',
-    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+// SPEC-187 FR-4 contract:
+// presence of `accommodation.richDescription` is the ONLY signal that the
+// page may render rich HTML. Do not evaluate entitlements here — the API
+// gate already omitted the field when the owner is not entitled.
+const safeDescriptionText = renderPlain({
+    raw: accommodation.description ?? ''
 });
+const richDescriptionSiteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const safeRichDescriptionHtml = accommodation.richDescription
+    ? renderRich({
+          raw: accommodation.richDescription,
+          siteOrigin: richDescriptionSiteOrigin
+      })
+    : '';
 
 // --- JSON-LD (LodgingBusiness) ---
-const TYPE_MAP: Readonly<Record<string, string>> = {
+const ACCOMMODATION_TYPE_MAP: Readonly<Record<string, string>> = {
     HOTEL: 'Hotel', HOSTEL: 'Hostel', MOTEL: 'Motel', RESORT: 'Resort', CAMPING: 'Campground'
 };
-const schemaType = TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
+const lodgingAccommodationType =
+    ACCOMMODATION_TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
 
-const jsonLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
-    '@type': schemaType,
-    name: accommodation.name,
-    description: accommodation.summary,
-    image: accommodation.featuredImage,
-    url: Astro.url.href,
-    address: {
-        '@type': 'PostalAddress',
-        addressLocality: accommodation.destination.name,
-        addressCountry: 'AR'
-    },
-    ...(accommodation.location.lat != null && accommodation.location.lng != null
-        ? { geo: { '@type': 'GeoCoordinates', latitude: accommodation.location.lat, longitude: accommodation.location.lng } }
-        : {}),
-    ...(accommodation.averageRating > 0
-        ? { aggregateRating: { '@type': 'AggregateRating', ratingValue: accommodation.averageRating, reviewCount: accommodation.reviewsCount, bestRating: 5, worstRating: 1 } }
-        : {}),
-    ...(accommodation.extraInfo?.bedrooms != null ? { numberOfRooms: accommodation.extraInfo.bedrooms } : {}),
-    ...(accommodation.amenities.length > 0
-        ? { amenityFeature: accommodation.amenities.map((a) => ({ '@type': 'LocationFeatureSpecification', name: a.name, value: true })) }
-        : {})
-};
+const lodgingGeo =
+    accommodation.location.lat != null && accommodation.location.lng != null
+        ? { latitude: accommodation.location.lat, longitude: accommodation.location.lng }
+        : undefined;
+
+const lodgingAggregateRating =
+    accommodation.averageRating > 0
+        ? {
+              ratingValue: accommodation.averageRating,
+              reviewCount: accommodation.reviewsCount,
+              bestRating: 5,
+              worstRating: 1,
+          }
+        : undefined;
+
+const lodgingNumberOfRooms =
+    accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
+
+const lodgingAmenities =
+    accommodation.amenities.length > 0
+        ? accommodation.amenities.map((a) => a.name)
+        : undefined;
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -352,10 +396,31 @@ const faqSections = accommodation.faqs.map((faq) => ({
     locale={locale}
     title={seoTitle}
     description={seoDescription}
+    ogImage={ogFeaturedImage}
+    ogType="Alojamiento"
+    ogSubtitle={ogSubtitle}
+    ogRating={ogRating}
     showBreadcrumbs={true}
     showSidebar={true}
 >
-    <JsonLd slot="head-extra" data={jsonLd} />
+    <LodgingBusinessJsonLd
+        slot="head-extra"
+        name={accommodation.name}
+        description={accommodation.summary}
+        url={Astro.url.href}
+        image={accommodation.featuredImage}
+        address={{
+            streetAddress: '',
+            addressLocality: accommodation.destination.name,
+            addressRegion: '',
+            addressCountry: 'AR',
+        }}
+        accommodationType={lodgingAccommodationType}
+        geo={lodgingGeo}
+        aggregateRating={lodgingAggregateRating}
+        numberOfRooms={lodgingNumberOfRooms}
+        amenities={lodgingAmenities}
+    />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
     {faqSections.length > 0 && (
         <FAQPageJsonLd slot="head-extra" sections={faqSections} />
@@ -388,10 +453,22 @@ const faqSections = accommodation.faqs.map((faq) => ({
             images={galleryImages}
             variant="detail"
             locale={locale}
+            viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
             client:visible
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
-        <Description summary={accommodation.summary} descriptionHtml={safeDescriptionHtml} />
+        {accommodation.richDescription ? (
+            <section class="description-rich">
+                {accommodation.summary && (
+                    <div class="description-rich__summary">
+                        <p>{accommodation.summary}</p>
+                    </div>
+                )}
+                <div class="description-rich__body" set:html={safeRichDescriptionHtml} />
+            </section>
+        ) : (
+            <Description summary={accommodation.summary} descriptionText={safeDescriptionText} />
+        )}
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />
@@ -446,7 +523,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     {eventItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} />)}
+            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item })} locale={locale} isAuthenticated={isAuthenticated} />)}
         </RelatedCarousel>
     )}
 
@@ -457,6 +534,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
         accommodationId={accommodation.id}
         locale={locale}
     />
+
+    <!-- AI chat widget (SPEC-200) — only for authenticated users -->
+    {isAuthenticated && (
+        <AiChatWidget
+            client:idle
+            accommodationId={accommodation.id}
+            locale={locale}
+            apiUrl={getApiUrl()}
+        />
+    )}
 
     <!-- Sidebar -->
     <Fragment slot="sidebar">
@@ -476,6 +563,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     initialMessage={prefilledMessage}
                 />
             </OwnerCard>
+            {isAuthenticated && (
+                <ReviewSidebarCard
+                    client:visible
+                    accommodationId={accommodation.id}
+                    accommodationName={accommodation.name}
+                    canLeaveReview={canLeaveReview}
+                    locale={locale}
+                    apiUrl={getApiUrl()}
+                />
+            )}
         </div>
     </Fragment>
 </DetailLayout>
@@ -490,5 +587,23 @@ const faqSections = accommodation.faqs.map((faq) => ({
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
+    }
+    .description-rich__summary {
+        background-color: var(--surface-warm);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-4, 16px) var(--space-5, 20px);
+        margin-bottom: var(--space-5, 20px);
+    }
+    .description-rich__summary p {
+        font-family: var(--font-sans);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+    .description-rich__body {
+        font-family: var(--font-sans);
+        color: var(--core-foreground);
     }
 </style>

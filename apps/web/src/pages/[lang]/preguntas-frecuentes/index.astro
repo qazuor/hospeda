@@ -11,6 +11,7 @@
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
+import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -138,26 +139,14 @@ const resolvedCategories = categories.map((cat) => ({
 }));
 
 // ─── JSON-LD: FAQPage with every Q/A flattened ────────────────────────────────
-const faqJsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'FAQPage',
-	name: t('faq.title'),
-	description: t('faq.description'),
-	inLanguage: locale,
-	mainEntity: resolvedCategories.flatMap((cat) =>
-		cat.items.map((item) => ({
-			'@type': 'Question',
-			name: item.question,
-			acceptedAnswer: {
-				'@type': 'Answer',
-				text: item.answer
-			}
-		}))
-	)
-};
+// Routed through the shared, XSS-hardened FAQPageJsonLd component instead of an
+// inline JSON.stringify (SPEC-157 D-1: single canonical JSON-LD path).
+const faqSections = resolvedCategories.flatMap((cat) =>
+	cat.items.map((item) => ({ heading: item.question, body: item.answer }))
+);
 
 const contactHref = buildUrl({ locale, path: '/contacto/' });
-const whatsappHref = 'https://wa.me/5493442453797';
+const whatsappHref = 'https://wa.me/543442453797';
 
 // Split titles to underline the last word with a handwritten accent.
 const splitLastWord = (full: string): { main: string; accent: string } => {
@@ -175,11 +164,13 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 	title={t('faq.title')}
 	description={t('faq.description')}
 >
-	<script
+	<FAQPageJsonLd
 		slot="head-extra"
-		type="application/ld+json"
-		set:html={JSON.stringify(faqJsonLd)}
-	></script>
+		sections={faqSections}
+		name={t('faq.title')}
+		description={t('faq.description')}
+		inLanguage={locale}
+	/>
 
 	<!-- ───── Hero ───────────────────────────────────────────────────────── -->
 	<section class="faq-hero section section--warm">
@@ -444,7 +435,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 	/* ─── Category nav ──────────────────────────────────────────────────── */
 	.faq-nav {
 		background-color: var(--core-card);
-		border-bottom: 1px solid oklch(from var(--core-foreground) l c h / 0.08);
+		border-bottom: 1px solid var(--core-foreground-a08);
 		position: relative;
 		z-index: 5;
 	}
@@ -485,7 +476,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		gap: 0.5rem;
 		padding: 0.5rem 0.875rem;
 		border-radius: var(--radius-pill);
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		background-color: var(--brand-primary-a08);
 		color: var(--brand-primary);
 		font-family: var(--font-sans);
 		font-size: var(--text-body-sm);
@@ -516,7 +507,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 			position: sticky;
 			top: 0;
 			backdrop-filter: blur(8px);
-			background-color: oklch(from var(--core-card) l c h / 0.92);
+			background-color: var(--core-card-a90);
 		}
 
 		.faq-nav__container {
@@ -558,13 +549,13 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		height: 56px;
 		flex-shrink: 0;
 		border-radius: var(--radius-md, 10px);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		margin-top: 0.25rem;
 	}
 
 	.faq-category:nth-of-type(even) .faq-category__icon {
-		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
 
@@ -625,14 +616,14 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		height: 32px;
 		flex-shrink: 0;
 		border-radius: 50%;
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		transition: transform var(--duration-normal) ease;
 	}
 
 	.faq-item[open] .faq-item__icon {
 		transform: rotate(180deg);
-		background-color: oklch(from var(--brand-accent) l c h / 0.15);
+		background-color: var(--brand-accent-a15);
 		color: var(--brand-accent);
 	}
 
@@ -724,7 +715,7 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 	}
 
 	.faq-still__btn--primary:hover {
-		background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+		background-color: var(--brand-primary-lm05);
 	}
 
 	.faq-still__btn--secondary {
@@ -810,8 +801,8 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 40% 40%,
-			oklch(from var(--brand-primary) l c h / 0.14),
-			oklch(from var(--brand-accent) l c h / 0.06) 55%,
+			var(--brand-primary-a15),
+			var(--brand-accent-a05) 55%,
 			transparent 75%
 		);
 		filter: blur(2px);
@@ -837,21 +828,21 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		right: 14%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+		background-color: var(--brand-primary-a30);
 	}
 	.faq-hero__dot--2 {
 		bottom: 22%;
 		left: 8%;
 		width: 9px;
 		height: 9px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 	.faq-hero__dot--3 {
 		bottom: 30%;
 		right: 8%;
 		width: 14px;
 		height: 14px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.22);
+		background-color: var(--brand-accent-a20);
 	}
 
 	/* Still Need Help CTA */
@@ -865,8 +856,8 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 50% 50%,
-			oklch(from var(--brand-accent) l c h / 0.18),
-			oklch(from var(--brand-primary) l c h / 0.08) 55%,
+			var(--brand-accent-a20),
+			var(--brand-primary-a08) 55%,
 			transparent 75%
 		);
 		filter: blur(3px);
@@ -891,14 +882,14 @@ const stillHeading = splitLastWord(t('faq.stillNeedHelp.title'));
 		right: 12%;
 		width: 12px;
 		height: 12px;
-		background-color: oklch(from var(--brand-accent) l c h / 0.3);
+		background-color: var(--brand-accent-a30);
 	}
 	.faq-still__dot--2 {
 		bottom: 18%;
 		left: 18%;
 		width: 9px;
 		height: 9px;
-		background-color: oklch(from var(--brand-primary) l c h / 0.28);
+		background-color: var(--brand-primary-a30);
 	}
 
 	@media (max-width: 900px) {

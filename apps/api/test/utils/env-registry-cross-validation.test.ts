@@ -39,11 +39,6 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     'TEST_DB_URL',
     'TEST_DB_NAME',
 
-    // Messaging moderation — registered for documentation; values are loaded
-    // by the messaging service via its own section schema, not by ApiEnvSchema.
-    'HOSPEDA_MESSAGING_BLOCKED_WORDS',
-    'HOSPEDA_MESSAGING_BLOCKED_DOMAINS',
-
     // Build-time only — consumed by @sentry/esbuild-plugin during the API
     // build to upload source maps. Not read by the runtime, so it is
     // deliberately absent from ApiEnvBaseSchema. Registered with apps: ['api']

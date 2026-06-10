@@ -1,18 +1,43 @@
 /**
  * Public destination reviews list endpoint
- * Returns paginated list of reviews for a destination
+ * Returns paginated list of reviews for a specific destination.
+ * Each review includes `user: { name, image }` from the users table.
  */
+import { getDb, users } from '@repo/db';
 import {
     DestinationIdSchema,
     DestinationReviewPublicSchema,
     DestinationReviewsByDestinationHttpSchema
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
+import { inArray } from 'drizzle-orm';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
 import { createPublicListRoute } from '../../../../utils/route-factory';
+
+/** Safe user fields exposed in public review responses. */
+interface PublicUserInfo {
+    readonly name: string | null;
+    readonly image: string | null;
+}
+
+/**
+ * Response shape for this endpoint: review fields + a deliberately-narrower
+ * user projection (name + image) so we can batch-enrich without exposing the
+ * full UserPublicSchema. Mirrors the accommodation public reviews route.
+ */
+const PublicReviewWithUserSchema = DestinationReviewPublicSchema.omit({
+    user: true,
+    destination: true
+}).extend({
+    user: z.object({
+        name: z.string().nullable(),
+        image: z.string().nullable()
+    })
+});
 
 /**
  * GET /api/v1/public/destinations/:destinationId/reviews
@@ -33,7 +58,7 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         destinationId: DestinationIdSchema
     },
     requestQuery: DestinationReviewsByDestinationHttpSchema.shape,
-    responseSchema: DestinationReviewPublicSchema,
+    responseSchema: PublicReviewWithUserSchema,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
@@ -47,13 +72,75 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
 
+        const reviews = result.data.data ?? [];
+
+        // Batch-fetch user info for all reviews
+        const userIds = [
+            ...new Set(
+                reviews
+                    .map((r) => (r as Record<string, unknown>).userId as string | undefined)
+                    .filter((id): id is string => typeof id === 'string')
+            )
+        ];
+
+        const userMap = new Map<string, PublicUserInfo>();
+        if (userIds.length > 0) {
+            /**
+             * @remarks getDb() is used directly here to batch-fetch a narrow set of
+             * non-sensitive user fields (displayName, firstName, lastName, image) for
+             * multiple user IDs in a single query. UserService._canView() enforces that
+             * only the user themselves or actors with USER_READ_ALL can retrieve a user
+             * record, making it incompatible with this public batch enrichment pattern.
+             */
+            const db = getDb();
+            const userRows = await db
+                .select({
+                    id: users.id,
+                    displayName: users.displayName,
+                    firstName: users.firstName,
+                    lastName: users.lastName,
+                    image: users.image,
+                    profile: users.profile
+                })
+                .from(users)
+                .where(inArray(users.id, userIds));
+
+            for (const u of userRows) {
+                const name =
+                    u.displayName ??
+                    (u.firstName && u.lastName
+                        ? `${u.firstName} ${u.lastName.charAt(0)}.`
+                        : (u.firstName ?? null));
+                // The dedicated `users.image` column is currently unpopulated
+                // for seeded users; the canonical avatar lives in
+                // `profile.avatar` (see `routes/user/public/getBySlug.ts`).
+                // Prefer `image` when present so social-login data still wins.
+                const profileAvatar =
+                    (u.profile as { avatar?: string | null } | null)?.avatar ?? null;
+                // Treat empty strings as null so the UI falls back to initials
+                // instead of attempting to render an empty <img src="">.
+                const image = u.image || profileAvatar || null;
+                userMap.set(u.id, { name, image });
+            }
+        }
+
         // AC-005: strip admin-only fields (lifecycleState, audit fields, adminInfo)
-        // via DestinationReviewPublicSchema before the response leaves the public
-        // tier. The route factory only uses responseSchema for OpenAPI docs, not
-        // runtime validation, so the strip must happen here. Tracked systemically
-        // in SPEC-087.
-        const rawItems = result.data.data ?? [];
-        const items = rawItems.map((item) => DestinationReviewPublicSchema.parse(item));
+        // before the response leaves the public tier, then attach the narrow
+        // user projection (matches `PublicReviewWithUserSchema`).
+        const ReviewWithoutRelations = DestinationReviewPublicSchema.omit({
+            user: true,
+            destination: true
+        });
+
+        const items = reviews.map((review) => {
+            const userId = (review as Record<string, unknown>).userId as string | undefined;
+            const userInfo = userId ? userMap.get(userId) : undefined;
+            const stripped = ReviewWithoutRelations.parse(review);
+            return {
+                ...stripped,
+                user: userInfo ?? { name: null, image: null }
+            };
+        });
 
         return {
             items,

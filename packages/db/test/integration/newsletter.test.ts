@@ -1,17 +1,13 @@
 /**
- * Integration tests for the newsletter tables (SPEC-101 T-101-07 + T-101-03).
+ * Integration tests for the newsletter tables (SPEC-101 T-101-07).
  *
- * Verifies the three newsletter tables that landed in T-101-04/05/06, the
- * partial-unique and unique constraints from manual SQL 0022 and 0023, and
- * the legacy opt-in seed migration from manual SQL 0024.
+ * Verifies the three newsletter tables that landed in T-101-04/05/06, and the
+ * partial-unique and unique constraints from extras SQL 0022 and 0023.
  *
  * Each test uses {@link withTestTransaction} so the data ALWAYS rolls back —
  * parallel-safe and zero cleanup.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
@@ -22,20 +18,11 @@ import {
 } from '../../src/schemas/index.ts';
 import { closeTestPool, getTestDb, testData, withTestTransaction } from './helpers';
 
-const __filename = fileURLToPath(import.meta.url);
-const SEED_SQL_PATH = resolve(
-    __filename,
-    '../../../src/migrations/manual/0024_newsletter_seed_existing_optins.sql'
-);
-
-/** SQL content of the 0024 seed file. Read once at module load. */
-const SEED_SQL = readFileSync(SEED_SQL_PATH, 'utf-8');
-
 /**
  * Gate flag set by `global-setup.ts` after `apply-postgres-extras.mjs` runs.
- * The manual migrations (0022 partial UNIQUE, 0023 delivery UNIQUE, 0024 seed)
- * are not declared in the Drizzle schema, so every test that exercises them
- * must skip when extras did not apply (SPEC-108 T-108-03).
+ * The extras migrations (0022 partial UNIQUE, 0023 delivery UNIQUE) are not
+ * declared in the Drizzle schema, so every test that exercises them must skip
+ * when extras did not apply (SPEC-108 T-108-03).
  */
 const postgresExtrasApplied = process.env.HOSPEDA_TEST_POSTGRES_EXTRAS_APPLIED === '1';
 
@@ -185,108 +172,6 @@ describe('Newsletter schema — integration', () => {
                     expect(first?.id).toBeDefined();
                     expect(second?.id).toBeDefined();
                     expect(first?.id).not.toBe(second?.id);
-                });
-            }
-        );
-    });
-
-    // -----------------------------------------------------------------------
-    // Legacy seed migration (manual SQL 0024) — T-101-03
-    // -----------------------------------------------------------------------
-
-    describe('manual SQL 0024 — legacy opt-in seed', () => {
-        it.skipIf(!postgresExtrasApplied)(
-            'seeds an ACTIVE subscriber for every user with settings.newsletter=true',
-            async () => {
-                await withTestTransaction(async (tx) => {
-                    // 3 users covering each branch of the seed query.
-                    const optedIn = testData.user({
-                        settings: { newsletter: true, languageWeb: 'en' }
-                    });
-                    const optedOut = testData.user({
-                        settings: { newsletter: false, languageWeb: 'es' }
-                    });
-                    const optedInButDeleted = testData.user({
-                        settings: { newsletter: true, languageWeb: 'pt' },
-                        deletedAt: new Date()
-                    });
-                    await tx.insert(users).values([optedIn, optedOut, optedInButDeleted]);
-
-                    await tx.execute(sql.raw(SEED_SQL));
-
-                    const seeded = await tx.execute<{
-                        user_id: string;
-                        status: string;
-                        locale: string;
-                        source: string;
-                    }>(sql`
-                    SELECT user_id, status, locale, source
-                    FROM newsletter_subscribers
-                    WHERE source = 'migration'
-                    ORDER BY user_id
-                `);
-
-                    expect(seeded.rows).toHaveLength(1);
-                    expect(seeded.rows[0]).toMatchObject({
-                        user_id: optedIn.id,
-                        status: 'active',
-                        locale: 'en',
-                        source: 'migration'
-                    });
-                });
-            }
-        );
-
-        it.skipIf(!postgresExtrasApplied)(
-            'is idempotent — running the seed twice produces no duplicates',
-            async () => {
-                await withTestTransaction(async (tx) => {
-                    const optedIn = testData.user({
-                        settings: { newsletter: true, languageWeb: 'es' }
-                    });
-                    await tx.insert(users).values(optedIn);
-
-                    await tx.execute(sql.raw(SEED_SQL));
-                    await tx.execute(sql.raw(SEED_SQL));
-
-                    const seeded = await tx.execute<{ count: string }>(sql`
-                    SELECT COUNT(*)::text AS count
-                    FROM newsletter_subscribers
-                    WHERE user_id = ${optedIn.id} AND source = 'migration'
-                `);
-
-                    expect(seeded.rows[0]?.count).toBe('1');
-                });
-            }
-        );
-
-        it.skipIf(!postgresExtrasApplied)(
-            'falls back to es when languageWeb is missing or unsupported',
-            async () => {
-                await withTestTransaction(async (tx) => {
-                    const noLang = testData.user({ settings: { newsletter: true } });
-                    const weirdLang = testData.user({
-                        settings: { newsletter: true, languageWeb: 'fr' }
-                    });
-                    const legacyLang = testData.user({
-                        settings: { newsletter: true, language: 'pt' }
-                    });
-                    await tx.insert(users).values([noLang, weirdLang, legacyLang]);
-
-                    await tx.execute(sql.raw(SEED_SQL));
-
-                    const seeded = await tx.execute<{ user_id: string; locale: string }>(sql`
-                    SELECT user_id, locale
-                    FROM newsletter_subscribers
-                    WHERE source = 'migration'
-                `);
-
-                    const byUser = Object.fromEntries(
-                        seeded.rows.map((r) => [r.user_id, r.locale])
-                    );
-                    expect(byUser[noLang.id]).toBe('es');
-                    expect(byUser[weirdLang.id]).toBe('es');
-                    expect(byUser[legacyLang.id]).toBe('pt');
                 });
             }
         );

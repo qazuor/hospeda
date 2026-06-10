@@ -53,11 +53,9 @@ interface StatusBadgeProps {
 
 const STATUS_STYLES: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground border-border',
-    sending:
-        'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-800',
-    sent: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-950 dark:text-green-200 dark:border-green-800',
-    cancelled:
-        'bg-red-100 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800'
+    sending: 'border-info/30 bg-info/15 text-info',
+    sent: 'border-success/30 bg-success/15 text-success',
+    cancelled: 'border-destructive/30 bg-destructive/15 text-destructive'
 };
 
 const STATUS_LABELS: Record<string, string> = {

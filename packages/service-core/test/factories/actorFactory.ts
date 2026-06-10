@@ -95,7 +95,11 @@ export class ActorFactoryBuilder extends BaseFactoryBuilder<Actor> {
             permissions: [
                 PermissionEnum.ACCOMMODATION_CREATE,
                 PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                PermissionEnum.ACCOMMODATION_DELETE_OWN
+                PermissionEnum.ACCOMMODATION_DELETE_OWN,
+                // SPEC-169 T-027: a real HOST holds ACCOMMODATION_VIEW_OWN (never VIEW_ALL).
+                // The mock HOST reflects the post-SPEC-169 seed so admin list/view paths
+                // owner-scope correctly instead of FORBIDDEN.
+                PermissionEnum.ACCOMMODATION_VIEW_OWN
             ]
         });
     }

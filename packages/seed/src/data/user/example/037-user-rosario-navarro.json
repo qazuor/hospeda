@@ -15,16 +15,11 @@
         "preferredPhone": "MOBILE"
     },
     "location": {
-        "city": "Ibicuy",
-        "state": "Entre Ríos",
         "country": "Argentina",
-        "zipCode": "2847",
-        "street": "Entre Ríos",
-        "number": "147",
-        "coordinates": {
-            "lat": "-33.7333",
-            "long": "-59.1833"
-        }
+        "region": "Entre Ríos",
+        "city": "Ibicuy",
+        "addressLine1": "Entre Ríos 147",
+        "postalCode": "2847"
     },
     "profile": {
         "bio": "Anfitrión especializado en brindar experiencias únicas en Ibicuy, Entre Ríos. Apasionado por el turismo y la hospitalidad.",

@@ -126,6 +126,7 @@ if (IS_CLI_ENTRY) {
     const options = {
         required: args.includes('--required'),
         example: args.includes('--example'),
+        testUsers: args.includes('--test-users'),
         reset: args.includes('--reset'),
         migrate: args.includes('--migrate'),
         rollbackOnError: args.includes('--rollbackOnError'),

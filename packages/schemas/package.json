@@ -9,11 +9,15 @@
         ".": {
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
+        },
+        "./feedback.server": {
+            "types": "./dist/feedback.server.d.ts",
+            "import": "./dist/feedback.server.js"
         }
     },
     "files": ["dist"],
     "scripts": {
-        "build": "tsup src/index.ts --format esm,cjs --dts",
+        "build": "tsup src/index.ts src/feedback.server.ts --format esm,cjs --dts",
         "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
@@ -26,7 +30,6 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "@repo/feedback": "workspace:*",
         "@repo/utils": "workspace:*",
         "@repo/config": "workspace:*",
         "zod": "^4.0.8"

@@ -66,6 +66,22 @@ function makeSearchMock(opts: {
 }
 
 /**
+ * Creates a chainable mock for db.select().from().where() used by countByFilters,
+ * resolving the count query to [{ count: total }] and optionally capturing the
+ * composed WHERE clause for structural assertions.
+ */
+function makeCountMock(opts: { total?: number; captureWhere?: (clause: unknown) => void }) {
+    const { total = 0, captureWhere } = opts;
+    const whereFn = vi.fn((clause: unknown) => {
+        if (captureWhere) captureWhere(clause);
+        return Promise.resolve([{ count: total }]);
+    });
+    const fromFn = vi.fn().mockReturnValue({ where: whereFn });
+    const selectFn = vi.fn().mockReturnValue({ from: fromFn });
+    return { db: { select: selectFn }, mocks: { selectFn, fromFn, whereFn } };
+}
+
+/**
  * Creates a mock for db.query.accommodations.findMany() + db.select().from().where()
  * (used by searchWithRelations).
  */
@@ -446,6 +462,454 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
             // Assert — offset = (3-1) * 2 = 4
             expect((capturedArgs as { limit?: number })?.limit).toBe(2);
             expect((capturedArgs as { offset?: number })?.offset).toBe(4);
+        });
+    });
+
+    // =========================================================================
+    // countByFilters() — amenity/feature/anyAmenityGroups filter
+    //
+    // Regression coverage: prior to this fix, countByFilters silently ignored
+    // amenities, features, and anyAmenityGroups, so the total returned to the
+    // public list endpoint diverged from the actual number of matching items.
+    // The model now mirrors search()/searchWithRelations() — every WHERE
+    // applied to items must also apply to the count.
+    // =========================================================================
+
+    describe('countByFilters() — amenity/feature/anyAmenityGroups filter', () => {
+        it('returns count from db and applies a WHERE clause for amenities', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 7,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({ amenities: ['amenity-1'] });
+
+            expect(result).toEqual({ count: 7 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('returns count from db and applies a WHERE clause for features', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 3,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({ features: ['feature-1', 'feature-2'] });
+
+            expect(result).toEqual({ count: 3 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('returns count from db and applies a WHERE clause for anyAmenityGroups', async () => {
+            let capturedWhere: unknown;
+            const { db } = makeCountMock({
+                total: 5,
+                captureWhere: (clause) => {
+                    capturedWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({
+                anyAmenityGroups: [['am-wifi-1', 'am-wifi-2']]
+            });
+
+            expect(result).toEqual({ count: 5 });
+            expect(capturedWhere).toBeDefined();
+        });
+
+        it('matches search() WHERE structure when the same filters are applied (count/items parity)', async () => {
+            // Arrange — capture WHERE from both calls using the same filters.
+            // The model must build identical WHERE clauses for items and count
+            // queries; otherwise the public list endpoint returns a misleading
+            // total. Drizzle's SQL object exposes `queryChunks`, an array of
+            // SQL fragments that grow with each conditional clause pushed.
+            const sharedParams = {
+                amenities: ['am-1', 'am-2'],
+                features: ['feat-1'],
+                anyAmenityGroups: [['am-wifi-1']]
+            };
+
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(sharedParams);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(sharedParams);
+
+            // Both clauses must exist.
+            expect(searchWhere).toBeDefined();
+            expect(countWhere).toBeDefined();
+
+            // Structural parity: the number of inner SQL chunks must match,
+            // proving countByFilters applied the same set of conditions as
+            // search(). If the model regressed and dropped any of the three
+            // filters, the count clause would have fewer chunks than search.
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(searchChunks)).toBe(true);
+            expect(Array.isArray(countChunks)).toBe(true);
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('treats empty amenities/features arrays as no filter (no extra clause)', async () => {
+            let withFiltersWhere: unknown;
+            const { db: withFiltersDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    withFiltersWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(withFiltersDb as any);
+            await model.countByFilters({ amenities: [], features: [] });
+
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            const withFiltersChunks = (withFiltersWhere as { queryChunks?: unknown[] })
+                ?.queryChunks;
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((withFiltersChunks as unknown[]).length).toBe(
+                (baselineChunks as unknown[]).length
+            );
+        });
+    });
+
+    // =========================================================================
+    // bbox viewport filter (SPEC-097) — countByFilters + search parity
+    // =========================================================================
+
+    describe('viewport bbox filter (SPEC-097)', () => {
+        const FULL_BBOX = {
+            bboxNorth: -32.0,
+            bboxSouth: -34.0,
+            bboxEast: -57.0,
+            bboxWest: -59.0
+        };
+
+        it('countByFilters() adds two clauses when the four bbox params are present', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let bboxWhere: unknown;
+            const { db: bboxDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    bboxWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(bboxDb as any);
+            await model.countByFilters(FULL_BBOX);
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const bboxChunks = (bboxWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(baselineChunks)).toBe(true);
+            expect(Array.isArray(bboxChunks)).toBe(true);
+            // Two `and(...)` chunks come from the lat + long predicates.
+            expect((bboxChunks as unknown[]).length).toBeGreaterThan(
+                (baselineChunks as unknown[]).length
+            );
+        });
+
+        it('countByFilters() ignores a partial bbox (missing one bound = no filter)', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let partialWhere: unknown;
+            const { db: partialDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    partialWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(partialDb as any);
+            await model.countByFilters({
+                bboxNorth: FULL_BBOX.bboxNorth,
+                bboxSouth: FULL_BBOX.bboxSouth,
+                bboxEast: FULL_BBOX.bboxEast
+                // bboxWest intentionally omitted
+            });
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const partialChunks = (partialWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((partialChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        });
+
+        it('search() and countByFilters() compose the same WHERE clause for a full bbox', async () => {
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(FULL_BBOX);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(FULL_BBOX);
+
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('searchWithRelations() resolves when a full bbox is supplied', async () => {
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.searchWithRelations(FULL_BBOX);
+            expect(result.items).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+    });
+
+    // =========================================================================
+    // Geo radius filter (haversine) — countByFilters + search + searchWithRelations
+    // =========================================================================
+
+    describe('geo radius filter (haversine)', () => {
+        const FULL_GEO = {
+            latitude: -32.4846,
+            longitude: -58.2326,
+            radius: 25
+        };
+
+        it('countByFilters() adds one clause when the latitude/longitude/radius triplet is present', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let geoWhere: unknown;
+            const { db: geoDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    geoWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(geoDb as any);
+            await model.countByFilters(FULL_GEO);
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const geoChunks = (geoWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((geoChunks as unknown[]).length).toBeGreaterThan(
+                (baselineChunks as unknown[]).length
+            );
+        });
+
+        it('countByFilters() ignores a partial triplet (missing radius = no filter)', async () => {
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.countByFilters({});
+
+            let partialWhere: unknown;
+            const { db: partialDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    partialWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(partialDb as any);
+            await model.countByFilters({
+                latitude: FULL_GEO.latitude,
+                longitude: FULL_GEO.longitude
+                // radius intentionally omitted
+            });
+
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const partialChunks = (partialWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((partialChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        });
+
+        it('search() and countByFilters() compose the same WHERE clause for a full triplet', async () => {
+            let searchWhere: unknown;
+            const { db: searchDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    searchWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(searchDb as any);
+            await model.search(FULL_GEO);
+
+            let countWhere: unknown;
+            const { db: countDb } = makeCountMock({
+                total: 0,
+                captureWhere: (clause) => {
+                    countWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(countDb as any);
+            await model.countByFilters(FULL_GEO);
+
+            const searchChunks = (searchWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const countChunks = (countWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect((countChunks as unknown[]).length).toBe((searchChunks as unknown[]).length);
+        });
+
+        it('searchWithRelations() resolves when the full triplet is supplied', async () => {
+            const { db } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.searchWithRelations(FULL_GEO);
+            expect(result.items).toEqual([]);
+            expect(result.total).toBe(0);
+        });
+
+        it('countByFilters() resolves when bbox and geo radius are combined', async () => {
+            // Both predicates are AND-composed at the model layer, so the
+            // count query must still resolve without throwing.
+            const { db } = makeCountMock({ total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            const result = await model.countByFilters({
+                bboxNorth: -32.0,
+                bboxSouth: -34.0,
+                bboxEast: -57.0,
+                bboxWest: -59.0,
+                ...FULL_GEO
+            });
+            expect(result.count).toBe(0);
+        });
+    });
+
+    // =========================================================================
+    // Optional include flags (amenities / features projections)
+    // =========================================================================
+
+    describe('searchWithRelations() — include flags', () => {
+        it('omits amenities/features from the with-clause by default', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({});
+
+            expect(mocks.findManyFn).toHaveBeenCalledTimes(1);
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            // Default relations are still loaded.
+            expect(findManyArg.with).toHaveProperty('destination');
+            expect(findManyArg.with).toHaveProperty('owner');
+            // Amenities/features should NOT be present when not asked for.
+            expect(findManyArg.with).not.toHaveProperty('amenities');
+            expect(findManyArg.with).not.toHaveProperty('features');
+        });
+
+        it('adds the amenities relation when includeAmenities is true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({ includeAmenities: true });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('amenities');
+            // The nested `with: { amenity: true }` is what flattens the
+            // junction row to the canonical {amenity: {...}} shape the web
+            // transforms expect.
+            expect((findManyArg.with.amenities as { with?: unknown }).with).toEqual({
+                amenity: true
+            });
+            // Features still skipped because the flag was not set.
+            expect(findManyArg.with).not.toHaveProperty('features');
+        });
+
+        it('adds the features relation when includeFeatures is true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({ includeFeatures: true });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('features');
+            expect((findManyArg.with.features as { with?: unknown }).with).toEqual({
+                feature: true
+            });
+            expect(findManyArg.with).not.toHaveProperty('amenities');
+        });
+
+        it('adds both relations when both flags are true', async () => {
+            const { db, mocks } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            getDb.mockReturnValue(db as any);
+
+            await model.searchWithRelations({
+                includeAmenities: true,
+                includeFeatures: true
+            });
+
+            const findManyArg = mocks.findManyFn.mock.calls[0]?.[0] as {
+                with: Record<string, unknown>;
+            };
+            expect(findManyArg.with).toHaveProperty('amenities');
+            expect(findManyArg.with).toHaveProperty('features');
         });
     });
 

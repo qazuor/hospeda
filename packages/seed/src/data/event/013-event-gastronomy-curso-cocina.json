@@ -2,9 +2,9 @@
     "$schema": "../../schemas/event.schema.json",
     "id": "013-event-gastronomy-curso-cocina",
     "slug": "curso-cocina",
-    "name": "Curso de Cocina",
-    "summary": "Evento gastronomy - Curso de Cocina",
-    "description": "Descripción detallada del evento Curso de Cocina. Este es un evento de categoría GASTRONOMY que se desarrolla en Entre Ríos.",
+    "name": "Curso de Cocina del Litoral",
+    "summary": "Curso práctico para aprender a cocinar pescados de río, empanadas entrerrianas, sopa paraguaya y dulces tradicionales del litoral. Dictado por chef local con materiales y degustación incluidos.",
+    "description": "Un curso intensivo de un día para aprender los platos más representativos de la cocina entrerriana. Está pensado para entusiastas de la gastronomía que quieren llevarse técnicas concretas y recetas listas para replicar en casa, no sólo para profesionales.\n\n**Lo que vas a cocinar**\n\n- **Pacú a la parrilla:** desde el limpiado del pescado hasta la cocción perfecta con limón y chimichurri.\n- **Surubí en salsa criolla:** una versión simplificada del plato tradicional, con técnicas para que la salsa quede en su punto.\n- **Empanadas entrerrianas:** masa casera con grasa de pella, relleno con uva pasa, fritado perfecto.\n- **Sopa paraguaya:** la 'torta salada' de harina de maíz, queso y cebolla, herencia de las colonias guaraníes.\n- **Dulce de mamón con queso:** uno de los postres más característicos del norte provincial.\n\n**Cómo funciona**\n\nEl curso se desarrolla en formato práctico: aprendés haciendo. El chef explica cada paso, lo demuestra, y después vos lo replicás en tu estación de trabajo. Al final de cada bloque, todos degustan lo que prepararon. La jornada termina con un almuerzo colectivo con todos los platos elaborados.\n\n**Información práctica**\n\n- **Cuándo:** sábado de octubre, de 10 a 17 horas.\n- **Dónde:** espacio gastronómico habilitado en zona rural de Concordia.\n- **Entrada:** GRATUITA, con inscripción previa (cupo limitado a 20 personas).\n- **Incluye:** materiales, recetas impresas, almuerzo, café y postre. Llevate las recetas en libreta o digital.\n- **Llevá:** delantal, libreta para anotar, ganas de ensuciarte las manos.\n\n**Para quién es**\n\nIdeal para amantes de la cocina, viajeros gastronómicos, profesionales del rubro turístico que quieran sumar conocimiento, o cualquier persona que se anime a explorar la cocina del litoral desde adentro.",
     "category": "GASTRONOMY",
     "authorId": "002-user-carlos-martínez",
     "pricing": {
@@ -23,9 +23,18 @@
         }
     },
     "seo": {
-        "title": "Curso de Cocina 2025 - Entre Ríos - Hospeda",
-        "description": "Aprende técnicas culinarias en el Curso de Cocina 2025 en Entre Ríos. Talleres prácticos con chefs expertos y productos locales.",
-        "keywords": ["gastronomy", "entre rios", "evento", "cultura"]
+        "title": "Curso de Cocina del Litoral en Entre Ríos - Hospeda",
+        "description": "Aprendé a cocinar pescados de río, empanadas, sopa paraguaya y dulces tradicionales del litoral. Curso práctico gratuito con materiales y degustación.",
+        "keywords": [
+            "curso cocina",
+            "gastronomía litoral",
+            "pescados río",
+            "empanadas entrerrianas",
+            "sopa paraguaya",
+            "clases cocina argentina",
+            "curso gratuito",
+            "chef entre ríos"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

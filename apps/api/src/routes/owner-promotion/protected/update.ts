@@ -2,6 +2,7 @@
  * Protected update owner promotion endpoint
  * Requires authentication
  */
+import { EntitlementKey } from '@repo/billing';
 import {
     OwnerPromotionIdSchema,
     OwnerPromotionProtectedSchema,
@@ -10,6 +11,7 @@ import {
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { requireEntitlement } from '../../../middlewares/entitlement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -44,5 +46,10 @@ export const protectedUpdateOwnerPromotionRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        // SPEC-145 T-005: CREATE_PROMOTIONS gate on full-replace mutation —
+        // same plan requirement as create.
+        middlewares: [requireEntitlement(EntitlementKey.CREATE_PROMOTIONS)]
     }
 });

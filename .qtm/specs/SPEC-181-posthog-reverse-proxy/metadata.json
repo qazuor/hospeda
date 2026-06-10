@@ -1,0 +1,26 @@
+{
+    "specId": "SPEC-181",
+    "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+    "type": "fix",
+    "complexity": "low-medium",
+    "status": "completed",
+    "created": "2026-06-02T00:00:00Z",
+    "approved": "2026-06-02T00:00:00Z",
+    "completed": "2026-06-03T00:00:00Z",
+    "planFileRef": null,
+    "linear": "BETA-77",
+    "tags": [
+        "posthog",
+        "analytics",
+        "cloudflare-worker",
+        "csp",
+        "web",
+        "infra",
+        "reverse-proxy",
+        "first-party",
+        "ad-blocker",
+        "env-registry",
+        "spec-140",
+        "spec-142"
+    ]
+}

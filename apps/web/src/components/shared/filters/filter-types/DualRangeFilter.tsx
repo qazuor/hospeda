@@ -1,6 +1,14 @@
 /**
  * @file DualRangeFilter.tsx
- * @description Dual range slider filter with formatted value labels for price ranges etc.
+ * @description Dual-thumb range slider with a single track and a colored
+ * segment between the two thumbs. Both `<input type="range">` are overlaid
+ * on the same row so the control fits a single line.
+ *
+ * Semantics: when a thumb is dragged to its extreme boundary the upstream
+ * URL emitter drops the corresponding param — i.e. min at `config.min` means
+ * "no lower bound applied" and max at `config.max` means "no upper bound
+ * applied". The labels swap to "Sin límite" to make this visible.
+ *
  * Accepts a `format` string ('currency' | 'number') instead of a function
  * to remain serializable for SSR/hydration.
  */
@@ -23,6 +31,13 @@ export interface DualRangeFilterConfig {
     readonly includeNullLabel?: string;
     /** URL param name for the include-null toggle (e.g. 'includeNoPrice'). */
     readonly includeNullParam?: string;
+    /**
+     * Whether the include-null toggle starts checked. When true, the URL only
+     * carries `<includeNullParam>=false` after the user explicitly unchecks it
+     * (absent param = checked). When false (default), absent = unchecked and
+     * `<includeNullParam>=true` is emitted when toggled on.
+     */
+    readonly defaultIncludeNull?: boolean;
 }
 
 interface DualRangeFilterProps {
@@ -46,9 +61,18 @@ function formatValue(raw: number, format: DualRangeFilterConfig['format']): stri
     return String(raw);
 }
 
+/** Clamps a percentage into the [0, 100] range. */
+function pct(value: number, min: number, max: number): number {
+    const span = max - min;
+    if (span <= 0) return 0;
+    const raw = ((value - min) / span) * 100;
+    return Math.max(0, Math.min(100, raw));
+}
+
 /**
- * Dual range slider filter. Renders two stacked range inputs.
- * The min thumb cannot exceed the max thumb value and vice-versa.
+ * Dual-thumb range slider. The two native inputs share the same absolute
+ * position so the user can grab either thumb on a single line; the colored
+ * segment between them highlights the active range.
  */
 export function DualRangeFilter({
     config,
@@ -74,20 +98,53 @@ export function DualRangeFilter({
         onMaxChange(String(newMax));
     };
 
-    const minLabel = formatValue(currentMin, config.format);
-    const maxLabel = formatValue(currentMax, config.format);
+    const startPct = pct(currentMin, config.min, config.max);
+    const endPct = pct(currentMax, config.min, config.max);
+
+    const minAtFloor = currentMin <= config.min;
+    const maxAtCeiling = currentMax >= config.max;
+
+    const minLabel = minAtFloor
+        ? t('ui.filter.dualRange.noMin', 'Sin mínimo')
+        : formatValue(currentMin, config.format);
+    const maxLabel = maxAtCeiling
+        ? t('ui.filter.dualRange.noMax', 'Sin máximo')
+        : formatValue(currentMax, config.format);
+
+    // When the min thumb is past the midpoint, raise it above the max thumb
+    // so users can still grab and drag it back toward the lower bound.
+    const midpoint = (config.min + config.max) / 2;
+    const minAboveMid = currentMin > midpoint;
+
+    const labelMinClass = minAtFloor ? styles.unboundedLabel : undefined;
+    const labelMaxClass = maxAtCeiling ? styles.unboundedLabel : undefined;
 
     return (
         <div className={styles.dualRange}>
             <div className={styles.dualRangeTrack}>
+                <span
+                    className={styles.trackRail}
+                    aria-hidden="true"
+                />
+                <span
+                    className={styles.trackActive}
+                    aria-hidden="true"
+                    style={
+                        {
+                            '--start': `${startPct}%`,
+                            '--end': `${endPct}%`
+                        } as React.CSSProperties
+                    }
+                />
                 <input
                     type="range"
-                    className={styles.dualRangeInput}
+                    className={`${styles.dualRangeInput} ${styles.dualRangeInputMin}`}
                     min={config.min}
                     max={config.max}
                     step={config.step ?? 1}
                     value={currentMin}
                     onChange={handleMinChange}
+                    data-above-mid={minAboveMid ? 'true' : undefined}
                     aria-label={`${config.label} ${t('ui.filter.min', 'mínimo')}`}
                     aria-valuemin={config.min}
                     aria-valuemax={config.max}
@@ -96,7 +153,7 @@ export function DualRangeFilter({
                 />
                 <input
                     type="range"
-                    className={styles.dualRangeInput}
+                    className={`${styles.dualRangeInput} ${styles.dualRangeInputMax}`}
                     min={config.min}
                     max={config.max}
                     step={config.step ?? 1}
@@ -113,8 +170,8 @@ export function DualRangeFilter({
                 className={styles.dualRangeLabels}
                 aria-hidden="true"
             >
-                <span>{minLabel}</span>
-                <span>{maxLabel}</span>
+                <span className={labelMinClass}>{minLabel}</span>
+                <span className={labelMaxClass}>{maxLabel}</span>
             </div>
             {config.includeNullLabel && onIncludeNullChange && (
                 <label className={styles.includeNullLabel}>

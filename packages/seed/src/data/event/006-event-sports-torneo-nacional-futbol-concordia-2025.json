@@ -3,8 +3,8 @@
     "id": "006-event-sports-torneo-nacional-futbol-concordia-2025",
     "slug": "torneo-nacional-futbol-concordia-2025",
     "name": "Torneo Nacional de Fútbol Concordia 2025",
-    "summary": "Torneo amateur de tres dias con la participacion de mas de 32 equipos de todas las provincias del Litoral. Premio mayor, transmision por streaming, food trucks, sorteos y la posibilidad de jugar en el predio del Club Atletico Concordia.",
-    "description": "El Torneo Nacional de Fútbol es un evento deportivo que reúne a equipos amateur de todo el país en la histórica ciudad de Concordia. Durante una semana, los mejores equipos compiten en el estadio del Club Atlético Concordia en un ambiente festivo y competitivo. Un evento que combina deporte, camaradería y turismo en una de las ciudades más bellas de Entre Ríos.",
+    "summary": "Una semana de competencia amateur con 32 equipos de todas las provincias del Litoral. Premio mayor, transmisión en streaming, food trucks, sorteos y la chance de jugar en el predio del Club Atlético Concordia. Deporte, camaradería y turismo en un solo evento.",
+    "description": "El Torneo Nacional de Fútbol de Concordia es un clásico del calendario deportivo del litoral. Reúne a equipos amateur de todo el país durante una semana en la histórica ciudad de Concordia, ofreciendo no sólo una competencia de alto nivel sino también una experiencia turística para los participantes y sus familias.\n\n**Formato del torneo**\n\n- **32 equipos** participantes, divididos en 8 grupos de 4.\n- **Fase de grupos** durante los primeros 3 días, todos contra todos.\n- **Octavos, cuartos, semifinales y final** en los siguientes 4 días.\n- Cada partido es de 2 tiempos de 30 minutos con descanso de 10.\n- Categoría **mayores libres**, con cupos adicionales para equipos sub-18 en torneo paralelo.\n- Reglamento conforme a FIFA con adaptaciones para el formato amateur.\n\n**Lo que incluye la inscripción**\n\n- Acceso al predio del Club Atlético Concordia durante toda la semana.\n- Disponibilidad de canchas, vestuarios y servicio médico.\n- Almuerzo y merienda diaria para jugadores.\n- Camiseta conmemorativa del torneo.\n- Acceso a las áreas de food truck y entretenimiento.\n- Sorteos diarios entre todos los inscriptos.\n\n**Más que un torneo**\n\nEl evento se transformó en una verdadera fiesta del fútbol amateur. Hay transmisión en streaming de los partidos principales, escenarios con música en vivo durante los descansos, food trucks gastronómicos con cocina del litoral, y actividades paralelas para los acompañantes y familias.\n\n**Premios**\n\n- **Equipo campeón:** premio mayor en dinero y trofeo.\n- **Subcampeón y semifinalistas:** reconocimientos y premios.\n- **Goleador del torneo, mejor arquero y mejor jugador:** premios individuales.\n- **Fair Play:** distinción al equipo con mejor conducta deportiva.\n\n**Información práctica**\n\n- **Cuándo:** una semana en septiembre.\n- **Dónde:** predio del Club Atlético Concordia.\n- **Inscripción:** valor por equipo, con tope de jugadores por equipo. Cierre de inscripción 30 días antes del inicio.\n- **Alojamiento:** convenios con hoteles y aparts de Concordia con tarifas preferenciales para inscriptos.\n- **Recomendaciones para visitantes:** combinar la semana del torneo con visitas a las Termas de Concordia, el Castillo San Carlos y el lago de Salto Grande.\n\nUn evento que combina deporte, camaradería y turismo en una de las ciudades más bellas del litoral argentino. Si jugás al fútbol amateur, este torneo es probablemente la mejor experiencia deportiva del año en Entre Ríos.",
     "category": "SPORTS",
     "date": {
         "start": "2026-09-05T09:00:00-03:00",
@@ -45,9 +45,18 @@
         ]
     },
     "seo": {
-        "title": "Torneo Nacional Fútbol Concordia 2025 - Hospeda",
-        "description": "Torneo nacional de fútbol amateur en Concordia. Una semana de competencia deportiva con equipos de todo el país.",
-        "keywords": ["futbol", "concordia", "torneo", "deporte", "amateur"]
+        "title": "Torneo Nacional de Fútbol Concordia 2025 - Hospeda",
+        "description": "Una semana de fútbol amateur en Concordia: 32 equipos del país, streaming, food trucks, premio mayor y experiencia turística en el Club Atlético Concordia.",
+        "keywords": [
+            "torneo fútbol concordia",
+            "fútbol amateur entre ríos",
+            "club atlético concordia",
+            "torneo nacional",
+            "deportes concordia",
+            "evento deportivo argentina",
+            "fútbol litoral",
+            "torneo amateur 2025"
+        ]
     },
     "lifecycleState": "ACTIVE"
 }

@@ -1,13 +1,66 @@
 @import "tailwindcss";
 
+/*
+ * Shared brand design tokens (SPEC-153). Provides the [data-app="admin"]
+ * scope consumed below: --color-primary (river), --color-bg-app / -elevated,
+ * --color-fg-primary / -secondary / -muted, --color-border, --color-success
+ * / -warning / -danger / -info, --font-body / -heading, --radius, plus the
+ * theme-independent --palette-* primitives. data-app="admin" is set on
+ * <html> in __root.tsx (T-153-25); the dark variants live under
+ * [data-app="admin"][data-theme="dark"].
+ */
+@import "@repo/design-tokens/tokens.css";
+
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* driver.js base styles (SPEC-174 tour engine). Themed overrides live below. */
+@import "driver.js/dist/driver.css";
+
+/*
+ * Surface elevation (admin UI polish): in LIGHT mode, lift content surfaces
+ * (anything on `bg-card` / `bg-popover` — cards, blocks, table wrappers,
+ * popovers) to a warm off-white that is slightly lighter and warmer than the
+ * river-tinted page background (`--color-bg-app`). This makes each surface
+ * read as a distinct panel against the page. Dark mode keeps the package's
+ * elevated token untouched (the `:not([data-theme="dark"])` guard).
+ */
+[data-app="admin"]:not([data-theme="dark"]) {
+    --color-bg-elevated: oklch(0.99 0.008 80);
+}
+
+/*
+ * Gauge / usage-level scale — a dedicated 4-step ramp (low → medium → high →
+ * critical) for meters and progress bars, intentionally NOT the semantic
+ * feedback tokens (success/warning/destructive). `low`/`high`/`critical`
+ * mirror success/warning/danger hues; `medium` is the yellow step that the
+ * 3-token feedback set lacks. Theme-aware (light base + dark override).
+ */
+[data-app="admin"] {
+    --gauge-low: oklch(0.46 0.131 150);
+    --gauge-medium: oklch(0.62 0.15 100);
+    --gauge-high: oklch(0.588 0.158 85);
+    --gauge-critical: oklch(0.458 0.214 27.325);
+}
+[data-app="admin"][data-theme="dark"] {
+    --gauge-low: oklch(0.58 0.15 150);
+    --gauge-medium: oklch(0.78 0.16 100);
+    --gauge-high: oklch(0.75 0.18 85);
+    --gauge-critical: oklch(0.577 0.245 27.325);
+}
+
+/*
+ * Dark mode is driven by the [data-theme="dark"] attribute (set on <html>,
+ * matching the web app + the [data-app="admin"][data-theme="dark"] scope in
+ * @repo/design-tokens), NOT the legacy `.dark` class. Tailwind `dark:`
+ * utilities resolve against an ancestor carrying the attribute.
+ */
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 body {
     @apply m-0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu",
-        "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    /* Brand body font (Roboto) from @repo/design-tokens; the var carries its
+       own system-font fallback stack. Loaded in __root.tsx (T-153-28). */
+    font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -16,119 +69,102 @@ code {
     font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-:root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.141 0.005 285.823);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.141 0.005 285.823);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.141 0.005 285.823);
-    --primary: oklch(0.21 0.006 285.885);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.967 0.001 286.375);
-    /* L=0.40 yields ~4.7:1 contrast on bg-muted (WCAG AA passes for normal text). */
-    --muted-foreground: oklch(0.4 0.016 285.938);
-    --accent: oklch(0.967 0.001 286.375);
-    --accent-foreground: oklch(0.21 0.006 285.885);
-    /* L=0.5 keeps brand red recognizable but darkens enough to clear AA on bg-destructive/5
-       and other tinted-bg uses where the previous 0.577 fell short. */
-    --destructive: oklch(0.5 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.92 0.004 286.32);
-    --input: oklch(0.92 0.004 286.32);
-    --ring: oklch(0.871 0.006 286.286);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.141 0.005 285.823);
-    --sidebar-primary: oklch(0.21 0.006 285.885);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.967 0.001 286.375);
-    --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-    --sidebar-border: oklch(0.92 0.004 286.32);
-    --sidebar-ring: oklch(0.871 0.006 286.286);
-}
-
-.dark {
-    --background: oklch(0.141 0.005 285.823);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.141 0.005 285.823);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.141 0.005 285.823);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.21 0.006 285.885);
-    --secondary: oklch(0.274 0.006 286.033);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.274 0.006 286.033);
-    /* L=0.82 yields ~4.7:1 contrast on dark bg-muted (WCAG AA passes). */
-    --muted-foreground: oklch(0.82 0.015 286.067);
-    --accent: oklch(0.274 0.006 286.033);
-    --accent-foreground: oklch(0.985 0 0);
-    /* Lifted from 0.55 to 0.65 so destructive text on dark tinted backgrounds clears AA. */
-    --destructive: oklch(0.65 0.22 27);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.274 0.006 286.033);
-    --input: oklch(0.274 0.006 286.033);
-    --ring: oklch(0.442 0.017 285.786);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.21 0.006 285.885);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.274 0.006 286.033);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.274 0.006 286.033);
-    --sidebar-ring: oklch(0.442 0.017 285.786);
-}
-
+/*
+ * shadcn semantic theme, remapped onto @repo/design-tokens (AC-9).
+ *
+ * The shared package exposes a deliberately narrow admin surface (river
+ * primary, app/elevated backgrounds, three foreground levels, one border,
+ * four semantic colors). shadcn needs more semantic slots than that —
+ * notably the subtle neutral hover surfaces (secondary / muted / accent)
+ * and their foregrounds. Those are DERIVED here with `color-mix` against
+ * the theme-aware `--color-bg-app` + `--color-fg-primary`, so they
+ * auto-flip in dark mode (the mix nudges the app background toward the
+ * foreground; in light the foreground is dark, in dark it is light) without
+ * the package having to expose shadcn-specific surface tokens.
+ *
+ * `@theme inline` inlines each value into the generated utilities (it does
+ * NOT emit a `--color-*` custom property), so `--color-primary:
+ * var(--color-primary)` compiles `bg-primary` to `var(--color-primary)`,
+ * which resolves to the [data-app="admin"] design token — no self-reference.
+ * Note the brand accent (orange) design token stays available as
+ * `var(--color-accent)`; shadcn's `accent` utility is intentionally the
+ * neutral hover surface, not the brand orange.
+ */
 @theme inline {
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --color-card: var(--card);
-    --color-card-foreground: var(--card-foreground);
-    --color-popover: var(--popover);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-primary: var(--primary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-secondary: var(--secondary);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-muted: var(--muted);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--accent);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
-    --color-border: var(--border);
-    --color-input: var(--input);
-    --color-ring: var(--ring);
-    --color-chart-1: var(--chart-1);
-    --color-chart-2: var(--chart-2);
-    --color-chart-3: var(--chart-3);
-    --color-chart-4: var(--chart-4);
-    --color-chart-5: var(--chart-5);
+    /* Surfaces — theme-aware design tokens */
+    --color-background: var(--color-bg-app);
+    --color-foreground: var(--color-fg-primary);
+    --color-card: var(--color-bg-elevated);
+    --color-card-foreground: var(--color-fg-primary);
+    --color-popover: var(--color-bg-elevated);
+    --color-popover-foreground: var(--color-fg-primary);
+
+    /* Primary = river brand (the intentional admin re-brand) */
+    --color-primary: var(--color-primary);
+    --color-primary-foreground: var(--palette-neutral-50);
+
+    /* Subtle neutral surfaces — derived so they flip light/dark */
+    --color-secondary: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 6%);
+    --color-secondary-foreground: var(--color-fg-primary);
+    --color-muted: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 4%);
+    --color-muted-foreground: var(--color-fg-muted);
+    --color-accent: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 8%);
+    --color-accent-foreground: var(--color-fg-primary);
+
+    /* Feedback — destructive is shadcn's built-in name; success/warning/info
+       are added so components can use bg-success / text-warning / etc. with
+       the brand semantic tokens (they flip in dark via the token's own dark
+       scope; tint via opacity modifiers e.g. bg-success/10). */
+    --color-destructive: var(--color-danger);
+    --color-destructive-foreground: var(--palette-neutral-50);
+    --color-success: var(--color-success);
+    --color-success-foreground: var(--palette-neutral-50);
+    --color-warning: var(--color-warning);
+    --color-warning-foreground: var(--palette-neutral-50);
+    --color-info: var(--color-info);
+    --color-info-foreground: var(--palette-neutral-50);
+
+    /* Gauge / usage-level scale (meters, progress bars) — a DEDICATED 4-step
+       scale, separate from the semantic feedback tokens, so a mid reading is
+       not forced to share a color with "high". Backed by the theme-aware
+       --gauge-* vars defined near the top of this file. */
+    --color-gauge-low: var(--gauge-low);
+    --color-gauge-medium: var(--gauge-medium);
+    --color-gauge-high: var(--gauge-high);
+    --color-gauge-critical: var(--gauge-critical);
+
+    /* Lines + focus ring (river-tinted) */
+    --color-border: var(--color-border);
+    --color-input: var(--color-border);
+    --color-ring: var(--color-primary);
+
+    /* Charts — brand + supporting hues for visual coherence */
+    --color-chart-1: var(--palette-river-500);
+    --color-chart-2: var(--palette-forest-500);
+    --color-chart-3: var(--palette-accent-500);
+    --color-chart-4: var(--palette-sky-500);
+    --color-chart-5: var(--palette-sand-500);
+
+    /* Radius — shared 0.75rem base from the package */
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);
     --radius-lg: var(--radius);
     --radius-xl: calc(var(--radius) + 4px);
-    --color-sidebar: var(--sidebar);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-ring: var(--sidebar-ring);
+
+    /* Sidebar — admin's primary chrome (AC-13): elevated surface, river
+       primary, derived neutral hover surface. */
+    --color-sidebar: var(--color-bg-elevated);
+    --color-sidebar-foreground: var(--color-fg-primary);
+    --color-sidebar-primary: var(--color-primary);
+    --color-sidebar-primary-foreground: var(--palette-neutral-50);
+    --color-sidebar-accent: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 8%);
+    --color-sidebar-accent-foreground: var(--color-fg-primary);
+    --color-sidebar-border: var(--color-border);
+    --color-sidebar-ring: var(--color-primary);
+
+    /* Brand fonts (loading wired in T-153-28) */
+    --font-sans: var(--font-body);
+    --font-heading: var(--font-heading);
 }
 
 @layer base {
@@ -138,10 +174,35 @@ code {
     body {
         @apply bg-background text-foreground;
     }
+    /*
+     * Brand heading font (Geologica) from @repo/design-tokens, loaded in
+     * __root.tsx. Applied to all headings so the admin matches apps/web, where
+     * headings are Geologica and body copy is Roboto (var(--font-body)).
+     */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--font-heading);
+    }
 }
 
 .text-xss {
     font-size: 0.5rem;
+}
+
+/*
+ * Duotone icons on the river-tinted header band. Phosphor renders the duotone
+ * secondary layer as the path with opacity="0.2"; here we paint it solid white
+ * so non-active nav icons read as a river stroke over a white body — they pop
+ * against the river header. The active nav item is exempt (it sits on a white
+ * pill and keeps the default river duotone).
+ */
+.icon-river-header path[opacity="0.2"] {
+    fill: #fff;
+    opacity: 0.7;
 }
 
 .animate-router-pending {
@@ -184,5 +245,104 @@ code {
     .feedback-root .minimizedDot {
         bottom: 1rem;
         right: 1rem;
+    }
+}
+
+/*
+ * driver.js CSS import + admin theme overrides (SPEC-174 T-010 §7.4).
+ *
+ * The JS runtime is lazy-loaded (dynamic import inside TourProvider), but the
+ * CSS is tiny (~2 kB minified) and does not change at runtime, so a static
+ * import here is fine. The overrides below remap driver.js's CSS variables to
+ * the admin design tokens so the tour popover matches the admin chrome.
+ *
+ * Color mapping:
+ *   --driver-popover-bg         → --color-bg-elevated  (card surface)
+ *   --driver-popover-title-color → --color-fg-primary
+ *   --driver-popover-description-color → --color-fg-secondary
+ *   --driver-btn-bg             → --color-primary       (river)
+ *   --driver-btn-text           → --palette-neutral-50  (white)
+ *   --driver-overlay-color      → black/60 opacity overlay
+ *
+ * driver.js base CSS is imported in the top import block of this file (CSS
+ * requires all `@import` rules before any other rules); these overrides take
+ * precedence by appearing later in the cascade.
+ */
+.driver-popover {
+    background-color: var(--color-bg-elevated);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 16px oklch(0 0 0 / 0.12), 0 1px 4px oklch(0 0 0 / 0.08);
+    max-width: 340px;
+    padding: 1.25rem;
+}
+
+.driver-popover-title {
+    color: var(--color-fg-primary);
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+}
+
+.driver-popover-description {
+    color: var(--color-fg-secondary);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.driver-popover-footer {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.driver-popover-progress-text {
+    color: var(--color-fg-muted);
+    font-size: 0.75rem;
+}
+
+.driver-popover-prev-btn,
+.driver-popover-next-btn,
+.driver-popover-close-btn {
+    background-color: var(--color-primary);
+    color: var(--palette-neutral-50);
+    border: none;
+    border-radius: calc(var(--radius) - 2px);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    padding: 0.4rem 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.driver-popover-prev-btn {
+    background-color: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 8%);
+    color: var(--color-fg-primary);
+}
+
+.driver-popover-prev-btn:hover {
+    background-color: color-mix(in oklab, var(--color-bg-app), var(--color-fg-primary) 14%);
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-close-btn:hover {
+    background-color: color-mix(in oklab, var(--color-primary), oklch(0 0 0) 12%);
+}
+
+.driver-overlay {
+    background-color: oklch(0 0 0 / 0.6);
+}
+
+/* Respect prefers-reduced-motion — disable driver.js animations */
+@media (prefers-reduced-motion: reduce) {
+    .driver-popover,
+    .driver-overlay,
+    .driver-highlighted-element {
+        transition: none !important;
+        animation: none !important;
     }
 }

@@ -139,6 +139,26 @@
     padding: 4px 12px;
 }
 
+/* Canonical "Destacado / Featured" badge — accent fill, white text, star icon.
+ * Shared across cards (accommodation, destination, event, post), detail
+ * headers, and map popups so the platform speaks the same visual language
+ * for featured items. Callers add their own absolute-positioning class
+ * (top/left/right) on top of this one; this rule only owns look + spacing. */
+.featured-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background-color: var(--brand-accent);
+    color: var(--primary-foreground);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 22.4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    white-space: nowrap;
+}
+
 /* =======================================================================
    GRADIENT BUTTON — unified CTA component
    Variants: accent (orange), primary (blue), outline-accent, outline-primary
@@ -191,28 +211,28 @@
     color: var(--accent-foreground, #fff);
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent-l112) 0%,
         var(--brand-accent) 50%,
-        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+        var(--brand-accent-l82) 100%
     );
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-accent-a30);
 }
 .btn-gradient--accent:hover {
-    box-shadow: 0 6px 20px oklch(from var(--brand-accent) l c h / 0.45);
+    box-shadow: 0 6px 20px var(--brand-accent-a45);
 }
 
 .btn-gradient--primary {
     color: var(--primary-foreground, #fff);
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary-l115) 0%,
         var(--brand-primary) 50%,
-        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+        var(--brand-primary-l80) 100%
     );
-    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-primary-a30);
 }
 .btn-gradient--primary:hover {
-    box-shadow: 0 6px 20px oklch(from var(--brand-primary) l c h / 0.45);
+    box-shadow: 0 6px 20px var(--brand-primary-a45);
 }
 
 /* === Outline variants — transparent, fills with gradient on hover === */
@@ -246,35 +266,35 @@
 .btn-gradient--outline-primary::before {
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-primary) calc(l * 1.15) c h) 0%,
+        var(--brand-primary-l115) 0%,
         var(--brand-primary) 50%,
-        oklch(from var(--brand-primary) calc(l * 0.8) c h) 100%
+        var(--brand-primary-l80) 100%
     );
 }
 
 .btn-gradient--outline-accent::before {
     background-image: linear-gradient(
         135deg,
-        oklch(from var(--brand-accent) calc(l * 1.12) c h) 0%,
+        var(--brand-accent-l112) 0%,
         var(--brand-accent) 50%,
-        oklch(from var(--brand-accent) calc(l * 0.82) c h) 100%
+        var(--brand-accent-l82) 100%
     );
 }
 
 .btn-gradient--outline-primary:hover,
 .btn-gradient--outline-accent:hover {
     color: #fff;
-    box-shadow: 0 4px 14px oklch(from currentColor l c h / 0);
+    box-shadow: 0 4px 14px transparent;
 }
 
 .btn-gradient--outline-primary:hover {
     border-color: transparent;
-    box-shadow: 0 4px 14px oklch(from var(--brand-primary) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-primary-a30);
 }
 
 .btn-gradient--outline-accent:hover {
     border-color: transparent;
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.32);
+    box-shadow: 0 4px 14px var(--brand-accent-a30);
 }
 
 .btn-gradient--outline-primary:hover::before,
@@ -389,11 +409,11 @@
 .btn-icon--solid {
     background-color: var(--brand-accent);
     color: var(--accent-foreground);
-    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.28);
+    box-shadow: 0 2px 8px var(--brand-accent-a30);
 }
 .btn-icon--solid:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px oklch(from var(--brand-accent) l c h / 0.42);
+    box-shadow: 0 4px 14px var(--brand-accent-a40);
 }
 .btn-icon--solid:active {
     transform: translateY(0);
@@ -461,7 +481,7 @@
     transition: background var(--duration-normal) ease;
 }
 .search-bar__button:hover {
-    background: oklch(from var(--brand-accent) calc(l * 0.9) c h);
+    background: var(--brand-accent-l90);
 }
 
 /* === Grid Layouts === */
@@ -518,7 +538,7 @@
 }
 @supports (background-color: oklch(from white l c h / 0.95)) {
     .navbar--scrolled {
-        background-color: oklch(from var(--core-card) l c h / 0.95);
+        background-color: var(--core-card-a95);
     }
 }
 
@@ -588,9 +608,9 @@
     min-width: 3rem;
     background: linear-gradient(
         90deg,
-        oklch(from var(--core-muted-foreground) l c h / 0.15) 25%,
-        oklch(from var(--core-background) l c h / 0.4) 50%,
-        oklch(from var(--core-muted-foreground) l c h / 0.15) 75%
+        var(--core-muted-foreground-a15) 25%,
+        var(--core-background-a40) 50%,
+        var(--core-muted-foreground-a15) 75%
     );
     background-size: 200% 100%;
     animation: stat-shimmer 1.5s infinite;
@@ -611,7 +631,7 @@
 @media (prefers-reduced-motion: reduce) {
     .stat-value--loading {
         animation: none;
-        background: oklch(from var(--core-muted-foreground) l c h / 0.15);
+        background: var(--core-muted-foreground-a15);
     }
 }
 
@@ -730,9 +750,381 @@
  * background stays readable on busy content. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .frosted-light {
-        background-color: oklch(from var(--core-card) l c h / 0.95);
+        background-color: var(--core-card-a95);
     }
     .frosted-dark {
-        background-color: oklch(from var(--core-foreground) l c h / 0.92);
+        background-color: var(--core-foreground-a90);
     }
+}
+
+/* =======================================================================
+   FORM PRIMITIVES — shared classes for inputs, labels, and form layout
+   used across the web (ContactForm, CreatePropertyMiniForm, etc.).
+   Mirrors the visual language of ContactForm.module.css.
+   ======================================================================= */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 1.25rem);
+    width: 100%;
+    text-align: left;
+}
+
+.form--card {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: var(--space-6, 1.5rem);
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4, 1rem);
+}
+
+@media (max-width: 480px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.form-label {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.form-required {
+    color: var(--brand-accent);
+    margin-left: var(--space-1, 0.25rem);
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    box-sizing: border-box;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--core-muted-foreground);
+    opacity: 0.7;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
+}
+
+.form-input[aria-invalid="true"],
+.form-select[aria-invalid="true"],
+.form-textarea[aria-invalid="true"] {
+    border-color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.form-input[aria-invalid="true"]:focus,
+.form-select[aria-invalid="true"]:focus,
+.form-textarea[aria-invalid="true"]:focus {
+    box-shadow: 0 0 0 3px var(--destructive-a18);
+}
+
+.form-select {
+    cursor: pointer;
+}
+
+.form-textarea {
+    min-height: 5rem;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.form-hint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+}
+
+.form-error {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--destructive, oklch(0.6 0.22 25));
+}
+
+.form-error-banner {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--destructive-a10);
+    border: 1px solid var(--destructive, oklch(0.6 0.22 25));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--destructive, oklch(0.6 0.22 25));
+    margin: 0;
+}
+
+.form-disclaimer {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.8125rem);
+    color: var(--core-muted-foreground);
+    line-height: 1.5;
+}
+
+/* Trial callout displayed below the form disclaimer (SPEC-143 Block 1).
+ * Designed to be highly visible so prospective hosts notice the 14-day free
+ * trial right at the submit moment — accent border, accent-tinted background,
+ * gift icon, two-line copy (title + body). */
+.form-trial-callout {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4, 1rem);
+    margin: var(--space-5, 1.25rem) 0 0;
+    padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
+    background-color: var(--brand-accent-a15);
+    border: 1px solid var(--brand-accent-a35);
+    border-left: 4px solid var(--brand-accent);
+    border-radius: var(--radius-card);
+    text-align: left;
+}
+
+.form-trial-callout__icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.form-trial-callout__body {
+    flex: 1;
+}
+
+.form-trial-callout__title {
+    margin: 0 0 var(--space-1, 0.25rem);
+    font-family: var(--font-heading);
+    font-size: var(--text-h6, 1.125rem);
+    font-weight: 600;
+    color: var(--brand-accent);
+    line-height: 1.3;
+}
+
+.form-trial-callout__text {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md, 0.9375rem);
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-2, 0.5rem);
+}
+
+@media (max-width: 480px) {
+    .form-actions {
+        justify-content: stretch;
+    }
+    .form-actions > .btn-gradient {
+        width: 100%;
+    }
+}
+
+/* =======================================================================
+   COMBOBOX — shared single/multi-select dropdown primitives.
+   Used by SearchableSelect / SearchableMultiSelect React islands and by
+   the home page SearchBar dropdowns. Visual language matches the home
+   page search panels (rich items with optional icon + checkbox).
+   ======================================================================= */
+
+.combobox {
+    position: relative;
+    width: 100%;
+}
+
+.combobox__input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.combobox__loading-hint {
+    position: absolute;
+    top: 50%;
+    right: var(--space-3, 0.75rem);
+    transform: translateY(-50%);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    pointer-events: none;
+}
+
+.combobox__listbox {
+    position: absolute;
+    top: calc(100% + var(--space-1, 0.25rem));
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    padding: 6px;
+    list-style: none;
+    background-color: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    box-shadow: var(--shadow-card);
+    max-height: 18rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.combobox__listbox[hidden] {
+    display: none;
+}
+
+.combobox__status {
+    padding: 10px 12px;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    text-align: center;
+}
+
+.combobox__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 7px 10px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    line-height: 1.35;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
+}
+
+.combobox__option:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+}
+
+.combobox__option--highlighted {
+    background-color: var(--brand-primary-a05);
+}
+
+.combobox__option--selected {
+    background-color: var(--brand-primary-a10);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.combobox__option--selected.combobox__option--highlighted {
+    background-color: var(--brand-primary-a15);
+}
+
+.combobox__option-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background-color: var(--brand-primary-a08);
+    color: var(--brand-primary);
+}
+
+.combobox__option--selected .combobox__option-icon {
+    background-color: var(--brand-primary);
+    color: var(--core-card);
+}
+
+.combobox__option-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Featured indicator: a small filled star rendered after the label for
+ * options flagged as featured (e.g. featured destinations). Subtle accent
+ * color, no background tint, so the row stays calm but the visual cue is
+ * unmistakable. Shared by SearchableSelect, SearchBar destination panel,
+ * and SelectSearchFilter (multi-select checkbox list). */
+.featured-indicator {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-accent);
+    opacity: 0.9;
+}
+
+.combobox__option-check {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--core-card);
+    transition: background-color var(--duration-fast, 0.15s) ease, border-color
+        var(--duration-fast, 0.15s) ease;
+}
+
+.combobox__option--selected .combobox__option-check {
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--core-card);
+}
+
+.combobox__footer {
+    padding: 6px 8px 2px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+}
+
+.combobox__helper-link {
+    align-self: flex-start;
+    margin-top: var(--space-2, 0.5rem);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--brand-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.combobox__helper-link:hover {
+    color: var(--brand-primary);
 }

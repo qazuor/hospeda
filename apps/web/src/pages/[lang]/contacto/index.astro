@@ -480,8 +480,8 @@ const contactPageJsonLd = {
 		border-radius: 50%;
 		background: radial-gradient(
 			circle at 30% 30%,
-			oklch(from var(--brand-primary) l c h / 0.18),
-			oklch(from var(--brand-accent) l c h / 0.08) 60%,
+			var(--brand-primary-a20),
+			var(--brand-accent-a08) 60%,
 			transparent 75%
 		);
 		filter: blur(2px);
@@ -593,7 +593,7 @@ const contactPageJsonLd = {
 	.contact-channel:focus-visible {
 		transform: translateY(-6px);
 		box-shadow: var(--shadow-card-hover);
-		border-color: oklch(from var(--brand-primary) l c h / 0.2);
+		border-color: var(--brand-primary-a20);
 		outline: none;
 	}
 
@@ -604,7 +604,7 @@ const contactPageJsonLd = {
 		width: 56px;
 		height: 56px;
 		border-radius: var(--radius-md, 10px);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 		flex-shrink: 0;
 	}
@@ -615,7 +615,7 @@ const contactPageJsonLd = {
 	}
 
 	.contact-channel--phone .contact-channel__icon {
-		background-color: oklch(from var(--brand-accent) l c h / 0.12);
+		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
 
@@ -716,7 +716,7 @@ const contactPageJsonLd = {
 		width: 40px;
 		height: 40px;
 		border-radius: var(--radius-md, 10px);
-		background-color: oklch(from var(--brand-primary) l c h / 0.1);
+		background-color: var(--brand-primary-a10);
 		color: var(--brand-primary);
 	}
 
@@ -779,7 +779,7 @@ const contactPageJsonLd = {
 		width: 44px;
 		height: 44px;
 		border-radius: var(--radius-md, 10px);
-		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		background-color: var(--brand-primary-a08);
 		color: var(--brand-primary);
 		transition:
 			background-color var(--duration-fast) ease,

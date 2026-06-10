@@ -143,6 +143,110 @@ function hasExistingTransform(url: string): boolean {
 }
 
 /**
+ * Removes the Cloudinary transform segment (if any) from a Cloudinary delivery
+ * URL, returning the "bare" URL that can be passed back through `getMediaUrl`
+ * with a fresh preset.
+ *
+ * This is useful when a Cloudinary URL has already been baked with a preset
+ * (e.g. `gallery`: `w_800,q_auto,f_auto,dpr_auto`) at extraction time but a
+ * downstream component needs to re-apply a different preset per cell role.
+ * Without stripping, `getMediaUrl` would detect `hasExistingTransform` and
+ * return the URL unchanged, ignoring the new preset entirely.
+ *
+ * Behavior:
+ * - Cloudinary URL with a transform segment after `/upload/`: removes that
+ *   segment and returns the URL with `/upload/` followed directly by the
+ *   version or public-ID path.
+ * - Cloudinary URL with **no** transform segment (already bare): returned as-is.
+ * - Cloudinary URL with a non-`/upload/` delivery segment (`/fetch/`,
+ *   `/private/`, `/authenticated/`): returned as-is (those URLs must not
+ *   be manipulated).
+ * - Non-Cloudinary URL (e.g. `/images/placeholder.svg`, Unsplash): returned
+ *   as-is — pass-through semantics match `getMediaUrl`'s non-Cloudinary path.
+ *
+ * @param url - Any image URL (Cloudinary or otherwise).
+ * @returns The URL with the Cloudinary transform segment stripped, or the
+ *   original URL unchanged when no stripping is applicable.
+ *
+ * @example
+ * ```ts
+ * // URL baked with the 'gallery' preset
+ * stripCloudinaryTransform(
+ *   'https://res.cloudinary.com/demo/image/upload/w_800,q_auto,f_auto,dpr_auto/v1/sample.jpg'
+ * );
+ * // → 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg'
+ *
+ * // URL already bare (no transform segment)
+ * stripCloudinaryTransform(
+ *   'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg'
+ * );
+ * // → 'https://res.cloudinary.com/demo/image/upload/v1/sample.jpg'
+ *
+ * // Non-Cloudinary: pass through unchanged
+ * stripCloudinaryTransform('/images/placeholder-accommodation.svg');
+ * // → '/images/placeholder-accommodation.svg'
+ * ```
+ */
+export function stripCloudinaryTransform(url: string): string {
+    // Only genuine Cloudinary delivery URLs are rewritten. Parse the URL and
+    // compare the hostname exactly; relative or invalid URLs pass through.
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return url;
+    }
+    if (parsed.hostname !== 'res.cloudinary.com') {
+        return url;
+    }
+
+    // Non-`/upload/` delivery types must not be modified.
+    if (NON_UPLOAD_DELIVERY_PATTERN.test(url)) {
+        return url;
+    }
+
+    const uploadIdx = url.indexOf('/upload/');
+    if (uploadIdx === -1) {
+        return url;
+    }
+
+    const uploadEnd = uploadIdx + '/upload/'.length;
+    const afterUpload = url.slice(uploadEnd);
+
+    // Isolate the first path segment after `/upload/`.
+    const firstSlash = afterUpload.indexOf('/');
+    if (firstSlash === -1) {
+        // Nothing after the first segment — nothing to strip.
+        return url;
+    }
+
+    const firstSeg = afterUpload.slice(0, firstSlash);
+
+    // Check whether the first segment is a transform (same logic as
+    // `hasExistingTransform`, but we act on the result rather than returning bool).
+    if (/^v\d+$/.test(firstSeg)) {
+        // It's a version segment, not a transform — URL is already bare.
+        return url;
+    }
+
+    const tokens = firstSeg.split(',');
+    const isTransform = tokens.some(
+        (token) =>
+            token.startsWith('t_') ||
+            ALLOWED_RAW_TOKEN_PREFIXES.some((prefix) => token.startsWith(prefix))
+    );
+
+    if (!isTransform) {
+        // First segment doesn't look like a transform — return as-is.
+        return url;
+    }
+
+    // Strip the transform segment: reconstruct URL skipping the first segment.
+    const remainder = afterUpload.slice(firstSlash + 1);
+    return `${url.slice(0, uploadEnd)}${remainder}`;
+}
+
+/**
  * Builds an optimized image URL from a stored base URL.
  *
  * This is THE single function all apps call to render any image URL.

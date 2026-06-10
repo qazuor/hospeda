@@ -19,6 +19,7 @@ import type {
     QZPayScheduledPlanChange,
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
+import { type KeepSelections, KeepSelectionsSchema } from '@repo/schemas';
 
 /**
  * Discriminated error codes surfaced by
@@ -67,6 +68,22 @@ export interface ScheduleSubscriptionDowngradeInput {
     readonly billing: QZPayBilling;
     /** Optional user id of the actor that requested the downgrade. */
     readonly requestedBy?: string;
+    /**
+     * Optional explicit host selection for which accommodations, promotions,
+     * and photos to keep active after the downgrade applies (SPEC-167 T-015).
+     *
+     * When provided, validated via {@link KeepSelectionsSchema} and persisted
+     * into `QZPayScheduledPlanChange.metadata.keepSelections` so the
+     * `apply-scheduled-plan-changes` cron can read it back at apply time.
+     *
+     * When absent (or when all sub-arrays are empty), the cron uses the
+     * default keep order: most-recently-updated / most-viewed items first.
+     *
+     * On `replacedPriorSchedule` (overwriting an existing pending downgrade):
+     * the NEW selections REPLACE the old ones entirely. There is no merge —
+     * the host's latest intent wins.
+     */
+    readonly keepSelections?: KeepSelections;
     /** Clock override for tests (otherwise `new Date()`). */
     readonly now?: Date;
 }
@@ -109,6 +126,31 @@ function findPriceForInterval<T extends PriceShape>(
 }
 
 /**
+ * Normalize a price's unit amount to a per-interval-unit rate.
+ *
+ * Multi-month prices store the total amount for the whole billing period
+ * (e.g. a quarterly plan stores 3 months' worth). To compare two prices
+ * across different interval counts the amount must be divided by
+ * `intervalCount` first — otherwise a "6-month at $600" plan looks more
+ * expensive than a "1-month at $120" plan even though the per-month rate
+ * ($100 vs $120) makes it a genuine downgrade.
+ *
+ * Mirrors the normalization in `apps/api/src/routes/billing/plan-change.ts`
+ * (lines 270-274).
+ *
+ * @param price - Price shape with `unitAmount` and optional `intervalCount`
+ * @returns Per-interval-unit amount (unitAmount / intervalCount)
+ */
+function normalizedUnitAmount(price: PriceShape): number {
+    // Guard: intervalCount <= 0 is invalid (would divide by zero or produce
+    // a negative/infinite per-unit amount). Treat as 1 to match the
+    // price-per-cycle semantics (item 9a / SPEC-194 adversarial review).
+    const rawCount = price.intervalCount ?? 1;
+    const count = rawCount > 0 ? rawCount : 1;
+    return price.unitAmount / count;
+}
+
+/**
  * Schedule a plan downgrade to apply at the end of the current
  * billing period.
  *
@@ -134,9 +176,25 @@ export async function scheduleSubscriptionDowngrade(
         billingInterval,
         intervalCount,
         billing,
-        requestedBy
+        requestedBy,
+        keepSelections: rawKeepSelections
     } = input;
     const now = input.now ?? new Date();
+
+    // Validate and normalise the optional keepSelections input.
+    // `safeParse` so a malformed caller payload doesn't crash the service —
+    // an invalid shape is treated as absent (logged at debug level) rather
+    // than blocking the schedule. The cron will fall back to the default
+    // keep order, which is the safe degradation.
+    let keepSelections: KeepSelections | undefined;
+    if (rawKeepSelections !== undefined) {
+        const parsed = KeepSelectionsSchema.safeParse(rawKeepSelections);
+        if (parsed.success) {
+            keepSelections = parsed.data;
+        }
+        // Invalid shapes: silently degrade — the host's schedule proceeds
+        // without a custom selection; the cron applies the default sort.
+    }
 
     const sub: QZPaySubscriptionWithHelpers | null =
         await billing.subscriptions.get(currentSubscriptionId);
@@ -147,8 +205,21 @@ export async function scheduleSubscriptionDowngrade(
         );
     }
 
-    if (sub.planId === newPlanId) {
-        throw new SubscriptionDowngradeError('SAME_PLAN', 'Cannot downgrade to the same plan');
+    // SAME_PLAN is true ONLY when both the plan id AND the billing
+    // interval+count match the user's current subscription. Allowing the
+    // same plan with a different interval enables cycle change flows
+    // (annual → monthly on the same tier, scheduled-at-period-end) —
+    // see SPEC-143 T-143-61.
+    const currentInterval = sub.interval;
+    const currentIntervalCount = sub.intervalCount ?? 1;
+    const isSamePlan = sub.planId === newPlanId;
+    const isSameInterval =
+        currentInterval === billingInterval && currentIntervalCount === intervalCount;
+    if (isSamePlan && isSameInterval) {
+        throw new SubscriptionDowngradeError(
+            'SAME_PLAN',
+            'Cannot downgrade to the same plan with the same billing interval'
+        );
     }
 
     const [currentPlan, targetPlan] = await Promise.all([
@@ -169,13 +240,23 @@ export async function scheduleSubscriptionDowngrade(
         );
     }
 
-    const currentPrice = findPriceForInterval(currentPlan.prices, billingInterval, intervalCount);
+    // currentPrice MUST be resolved against the user's CURRENT
+    // subscription interval — otherwise cycle change flows
+    // (annual $1000 → monthly $100 same plan) compare two identical
+    // prices (both annual) and incorrectly throw NOT_A_DOWNGRADE. The
+    // target price keeps using the REQUESTED interval since that is
+    // what the user will be billed for after the schedule applies.
+    const currentPrice = findPriceForInterval(
+        currentPlan.prices,
+        currentInterval,
+        currentIntervalCount
+    );
     const targetPrice = findPriceForInterval(targetPlan.prices, billingInterval, intervalCount);
 
     if (!currentPrice) {
         throw new SubscriptionDowngradeError(
             'NO_MATCHING_PRICE',
-            `Current plan has no active price for interval '${billingInterval}'/${intervalCount}`
+            `Current plan has no active price for the subscription's current interval '${currentInterval}'/${currentIntervalCount}`
         );
     }
     if (!targetPrice) {
@@ -190,10 +271,19 @@ export async function scheduleSubscriptionDowngrade(
     // caller short-circuits or the prices changed mid-flight, surface
     // the mismatch instead of silently scheduling a "downgrade" that
     // would charge MORE per cycle.
-    if (targetPrice.unitAmount >= currentPrice.unitAmount) {
+    //
+    // Normalize by intervalCount (T-017) so multi-month prices are
+    // comparable on a per-interval-unit basis — mirrors the same
+    // normalization in the plan-change route handler. Without this,
+    // an annual→monthly same-tier cycle change (total annual > total
+    // monthly) would be rejected as NOT_A_DOWNGRADE even though the
+    // normalized monthly rate is lower.
+    const normalizedCurrentAmount = normalizedUnitAmount(currentPrice);
+    const normalizedTargetAmount = normalizedUnitAmount(targetPrice);
+    if (normalizedTargetAmount >= normalizedCurrentAmount) {
         throw new SubscriptionDowngradeError(
             'NOT_A_DOWNGRADE',
-            `Target price (${targetPrice.unitAmount}) is not lower than current (${currentPrice.unitAmount}) — downgrade scheduling requires a strictly cheaper plan`
+            `Target price (${normalizedTargetAmount}/interval) is not lower than current (${normalizedCurrentAmount}/interval) — downgrade scheduling requires a strictly cheaper plan`
         );
     }
 
@@ -216,7 +306,15 @@ export async function scheduleSubscriptionDowngrade(
         attemptCount: 0,
         metadata: {
             source: 'plan-change-downgrade',
-            previousPlanId: sub.planId
+            previousPlanId: sub.planId,
+            // keepSelections is serialised to a JSON string because
+            // QZPayMetadata's index signature restricts values to
+            // QZPayMetadataValue (scalar types — string | number | boolean).
+            // The read-back helper `getKeepSelectionsForChange` parses it
+            // back into a KeepSelections object.
+            ...(keepSelections !== undefined
+                ? { keepSelections: JSON.stringify(keepSelections) }
+                : {})
         }
     };
 
@@ -261,9 +359,67 @@ export async function clearPendingScheduledPlanChange(
 }
 
 /**
+ * Extract the persisted `keepSelections` from a `QZPayScheduledPlanChange`
+ * metadata blob.
+ *
+ * Called by the `apply-scheduled-plan-changes` cron (T-013) when it applies
+ * a scheduled downgrade and needs to know which items the host explicitly
+ * selected to keep active.
+ *
+ * Returns `undefined` when:
+ *   - The scheduled change has no metadata.
+ *   - The metadata has no `keepSelections` key.
+ *   - The stored value fails schema validation (corrupt / schema-evolved data).
+ *
+ * The caller MUST treat `undefined` as "use the default keep order" — the
+ * cron's restriction step applies the most-recently-updated / most-viewed
+ * sort when no explicit selection is present.
+ *
+ * @param scheduledChange - The `QZPayScheduledPlanChange` object from the
+ *   subscription row (already fetched by the cron from the DB).
+ * @returns Parsed `KeepSelections` if present and valid, `undefined` otherwise.
+ *
+ * @example
+ * ```ts
+ * const selections = getKeepSelectionsForChange(row.scheduledPlanChange);
+ * if (selections?.accommodationIds?.length) {
+ *   // apply explicit keep list
+ * } else {
+ *   // apply default keep sort
+ * }
+ * ```
+ */
+export function getKeepSelectionsForChange(
+    scheduledChange: Pick<QZPayScheduledPlanChange, 'metadata'>
+): KeepSelections | undefined {
+    const meta = scheduledChange.metadata as Record<string, unknown> | undefined | null;
+    if (!meta || typeof meta !== 'object') {
+        return undefined;
+    }
+    const raw = meta.keepSelections;
+    if (raw === undefined || raw === null) {
+        return undefined;
+    }
+    // keepSelections is stored as a JSON string (QZPayMetadata restricts values
+    // to scalar types — see storage comment in scheduleSubscriptionDowngrade).
+    // Parse back to an object before schema validation.
+    let parsed: unknown = raw;
+    if (typeof raw === 'string') {
+        try {
+            parsed = JSON.parse(raw);
+        } catch {
+            return undefined;
+        }
+    }
+    const result = KeepSelectionsSchema.safeParse(parsed);
+    return result.success ? result.data : undefined;
+}
+
+/**
  * Test-only exports for unit-testing helpers without a full billing
  * mock.
  */
 export const _internals = {
-    findPriceForInterval
+    findPriceForInterval,
+    normalizedUnitAmount
 };

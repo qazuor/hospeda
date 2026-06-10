@@ -1,7 +1,8 @@
 /**
  * Sidebar Components
  *
- * Level 2 navigation - contextual sidebar that changes based on active section.
+ * Level 2 navigation — contextual sidebar driven by the NEW config-driven IA
+ * system (SPEC-154).
  */
 
 export { Sidebar } from './Sidebar';
@@ -12,5 +13,3 @@ export type { SidebarGroupProps } from './SidebarGroup';
 
 export { SidebarItem } from './SidebarItem';
 export type { SidebarItemProps } from './SidebarItem';
-
-export { SidebarSeparator } from './SidebarSeparator';

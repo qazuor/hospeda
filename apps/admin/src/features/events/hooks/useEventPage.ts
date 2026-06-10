@@ -27,7 +27,7 @@ export const useEventPage = (entityId: string) => {
 
     // Consolidated configuration
     const entityConfig = useMemo(() => {
-        const consolidatedConfig = createEventConsolidatedConfig(t);
+        const consolidatedConfig = createEventConsolidatedConfig(t, entityId);
 
         const viewSections = filterSectionsByMode(consolidatedConfig.sections, 'view');
         const editSections = filterSectionsByMode(consolidatedConfig.sections, 'edit');
@@ -37,7 +37,7 @@ export const useEventPage = (entityId: string) => {
             editSections,
             metadata: consolidatedConfig.metadata
         };
-    }, [t]);
+    }, [t, entityId]);
 
     // Permissions configuration - static
     const permissions = useMemo(

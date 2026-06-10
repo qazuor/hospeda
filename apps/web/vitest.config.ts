@@ -29,7 +29,16 @@ export default defineConfig({
             '@repo/logger': resolve(rootDir, 'packages/logger/src'),
             '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
             '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
-            '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
+            '@repo/service-core': resolve(rootDir, 'packages/service-core/src'),
+            '@repo/media': resolve(rootDir, 'packages/media/src'),
+            // SPEC-187: pre-existing workspace-build fix. The `@repo/feedback`
+            // subpath is missing from this config; without it, every test that
+            // transitively imports `packages/schemas/src/feedback.ts` (which
+            // re-exports from `@repo/feedback/schemas`) fails to load. Mirror
+            // the api vitest.config.ts pattern.
+            '@repo/feedback/schemas': resolve(rootDir, 'packages/feedback/src/schemas'),
+            '@repo/feedback': resolve(rootDir, 'packages/feedback/src'),
+            '@repo/billing': resolve(rootDir, 'packages/billing/src')
         }
     },
     optimizeDeps: {
@@ -45,6 +54,14 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: ['./test/setup.ts'],
+        // SPEC-131: provide dummy API + site URLs so validateWebEnv() succeeds in jsdom
+        // tests. Without these, apiClient.request() throws before reaching fetch() —
+        // bypassing vi.stubGlobal('fetch', ...) mocks and producing incorrect error state
+        // instead of the intended loading / success state the tests assert on.
+        env: {
+            PUBLIC_API_URL: 'http://localhost:3001',
+            PUBLIC_SITE_URL: 'http://localhost:4321'
+        },
         pool: 'forks',
         poolOptions: {
             forks: {

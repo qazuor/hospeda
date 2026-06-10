@@ -35,11 +35,13 @@ import {
 } from '@/features/billing-addons';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { requireBillingAccess } from '@/lib/billing-access';
 import { SearchIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
 export const Route = createFileRoute('/_authed/billing/addons')({
+    beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingAddonsPage
 });
 
@@ -371,8 +373,8 @@ function BillingAddonsPage() {
                             onClick={handleConfirmAction}
                             className={
                                 confirmAction?.type === 'expire'
-                                    ? 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600'
-                                    : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
+                                    ? 'bg-warning hover:bg-warning/90'
+                                    : 'bg-success hover:bg-success/90'
                             }
                         >
                             {confirmAction?.type === 'expire'

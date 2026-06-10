@@ -87,7 +87,7 @@ pnpm typecheck        # TypeScript validation
 # Database
 pnpm db:start         # Start PostgreSQL + Redis (Docker)
 pnpm db:stop          # Stop database containers
-pnpm db:migrate       # Apply migrations
+pnpm db:migrate       # Apply pending versioned migrations (real drizzle-kit migrate)
 pnpm db:generate      # Generate migration from schema changes
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Seed database
@@ -144,6 +144,47 @@ pnpm env:check:registry  # Local: confirm app schemas match @repo/config registr
 - Test files live in `test/` directories alongside or within `src/`
 - `.only()` and hard-coded `.skip()` are **forbidden** in committed code — CI will fail
 - Use `it.skipIf(condition)` for legitimate conditional test skipping
+
+### Billing architecture quick reference (SPEC-193 era)
+
+Hospeda billing is built on **QZPay** (`@qazuor/qzpay-core`) with a MercadoPago payment adapter. Key files:
+
+- **Routes**: `apps/api/src/routes/billing/` (start-paid, plan-change, subscription-cancel, addons, webhooks, etc.)
+- **Services**: `packages/service-core/src/services/billing/` (subscription, addon, promo-code, settings — deliberately outside `BaseCrudService`)
+- **Cron jobs**: `apps/api/src/cron/jobs/` (dunning, webhook-retry, finalize-cancelled-subs, trial-expiry, addon-expiry, apply-scheduled-plan-changes, subscription-poll, abandoned-pending-subs, exchange-rate-fetch)
+- **Config**: `packages/billing/` (plan definitions, entitlement keys, limits, MP adapter factory)
+- **DB adapter**: `packages/db/src/billing/drizzle-adapter.ts` (QZPay Drizzle storage adapter)
+
+Key DB columns: `billing_subscriptions.mp_subscription_id` stores the MercadoPago preapproval ID for monthly recurring subscriptions (NULL for annual one-time charges). `billing_customers.segment` (not `category`). `billing_plans.id` is UUID; `billing_subscriptions.plan_id` is varchar but stores the plan UUID.
+
+Three distinct grace mechanisms exist (see [`docs/billing/grace-period-source-of-truth.md`](docs/billing/grace-period-source-of-truth.md)):
+past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active` status), and soft-cancel grace (until `currentPeriodEnd`).
+
+For MP sandbox setup, webhook configuration, sandbox test-user creation, and rollback: see [`docs/migration/mercadopago-sandbox-runbook.md`](docs/migration/mercadopago-sandbox-runbook.md). For incident response: [`docs/billing/billing-runbooks.md`](docs/billing/billing-runbooks.md). For entitlement gate decisions: [`docs/billing/endpoint-gate-matrix.md`](docs/billing/endpoint-gate-matrix.md).
+
+### Local testing for billing entitlements (SPEC-143)
+
+For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
+
+`pnpm db:fresh-dev` creates 13 dev-only test users covering every role × plan combination (2 staff + 3 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`.
+
+Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
+
+### Billing testing — manual smoke checklist required (SPEC-143)
+
+Any PR that touches the billing surface (checkout, webhooks, cron, refund, admin billing ops, entitlements) MUST have the relevant manual staging smoke executed before merging to `staging`, in addition to CI passing. The vitest e2e suite uses an MP stub and cannot catch divergences between the stub and real MercadoPago behavior; the staging smoke against the real MP sandbox is the gate.
+
+Workflow:
+
+1. Before opening the PR, identify which sections of [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) the change exercises.
+2. Run those sections against `https://staging.hospeda.com.ar` with the MP sandbox credentials configured on `hospeda-api-staging`. Use [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) to pick the right card + cardholder combo per sub-flow.
+3. File the sign-off entry inside the relevant section of the checklist (date, executor, PR number, result, notes).
+4. Reference the sign-off in the PR description so reviewers can verify it.
+5. For PRs that change the **billing CORE** (start-paid route, webhook handlers, dunning/exchange-rate crons, refund flow, admin billing ops), the prod smoke ([`.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)) MUST be executed too — that's the production go-live gate. Routine billing-touching PRs (UI tweaks, copy changes, schema additions) only need staging.
+
+Failed smokes block merge. Notes-only passes (smoke surfaces a known documented bug from an engram entry) can merge but the bug entry must be linked from the PR.
+
+This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decision Q1).
 
 ### Git Conventions
 
@@ -245,7 +286,7 @@ Common biome errors that block commits:
 - Use `client:*` directives wisely (prefer `client:idle` or `client:visible`)
 - i18n for all user-facing text
 - **Styling**: vanilla CSS / CSS Modules (`*.module.css` colocated with the component). Do NOT use Tailwind utility classes here — Tailwind is admin-only.
-- Forms: native HTML + small custom hooks (NOT React Hook Form — that's admin-only)
+- Forms: native HTML + small custom hooks (NOT TanStack Form — that's admin-only)
 
 ### Admin (TanStack Start)
 
@@ -254,7 +295,7 @@ Common biome errors that block commits:
 - Shadcn UI components for consistent UI
 - Better Auth authentication with `beforeLoad` guards
 - **Styling**: Tailwind CSS v4 utility classes. Do NOT use CSS Modules here.
-- Forms: React Hook Form + Zod
+- Forms: TanStack Form (`@tanstack/react-form`) + Zod schemas from `@repo/schemas` (validation via `schema.safeParse()` inside form handlers — NOT `zodResolver`)
 
 ## Environment Configuration
 
@@ -304,7 +345,7 @@ API_PORT=3001
 | Validation | Zod via `@repo/schemas` | yup, joi, class-validator |
 | UI (Admin) | Shadcn UI | MUI, Ant Design, Chakra |
 | UI (Web) | Astro components, React islands | Full React pages |
-| Forms | React Hook Form + Zod (admin), native HTML (web) | Formik |
+| Forms | TanStack Form + Zod (admin), native HTML (web) | Formik, React Hook Form |
 | Tables | TanStack Table | ag-grid |
 | Data fetching | TanStack Query (admin) | SWR, axios |
 | Styling (Admin) | Tailwind CSS v4 | CSS modules, styled-components, vanilla CSS |
@@ -332,7 +373,9 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
 - **No legacy env aliasing**: Per SPEC-035, env vars are validated by Zod against `HOSPEDA_*` names exclusively in `apps/api/src/utils/env.ts` (`ApiEnvBaseSchema`). There is NO runtime mapping from unprefixed names. The only accepted exceptions are platform-injected vars (`NODE_ENV`, `CI`, `API_PORT`, `API_HOST`) which are read as-is. See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full policy.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
-- **`drizzle-kit push` is not enough**: triggers, materialized views (`search_index`), and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any `drizzle-kit push` or `pnpm db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh`. See [ADR-017](docs/decisions/ADR-017-postgres-specific-features.md) and [triggers manifest](packages/db/docs/triggers-manifest.md).
+- **Two migration carriles** — structural changes (tables/columns/indexes/FKs/enums) go to `packages/db/src/migrations/` via `pnpm db:generate` + `pnpm db:migrate`; Drizzle-invisible objects (triggers, materialized views, CHECK constraints, special indexes) go to `packages/db/src/migrations/extras/` (hand-written, idempotent, re-applied by `pnpm db:apply-extras`). Always run `db:apply-extras` after `db:migrate`. See [packages/db/CLAUDE.md](packages/db/CLAUDE.md) and [docs/guides/migrations.md](docs/guides/migrations.md).
+- **`db:push` is dev-only** — NEVER run `drizzle-kit push` against the VPS. Use `pnpm db:migrate` for staging and production. On VPS use `hops db-migrate --target=staging|prod`.
+- **`db:generate` before a schema PR** — the drift guard blocks CI if the TS schema changed without a committed migration file.
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
 
 ## Single Source of Truth
@@ -359,7 +402,7 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 
 ### Workflow
 
-1. **New feature/change** → Use `/spec` to generate a formal specification in `.claude/specs/`
+1. **New feature/change** → Use `/spec` to generate a formal specification in `.qtm/specs/`
 2. **Spec approved** → Use `/task-master:task-from-spec` to generate tasks
 3. **Working on tasks** → Use `/task-master:next-task` to pick the next available task
 4. **Task completed** → Quality gate (`/task-master:quality-gate`) before marking done
@@ -379,8 +422,8 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 
 There are TWO index files that must stay in sync:
 
-- `.claude/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
-- `.claude/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
+- `.qtm/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
+- `.qtm/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
 
 The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
 
@@ -394,14 +437,14 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
    - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
 2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
 3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
-4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.claude/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
-5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .claude/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
+4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.qtm/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
+5. Audit: a quick sanity check is `jq -r '.epics[] | select(.status != "completed" and .status != "merged" and .status != "obsolete") | .specId' .qtm/tasks/index.json` — that list should match the `draft` / `in-progress` rows in `specs/index.json`. If it doesn't, fix `tasks/index.json` immediately.
 
 ### Spec Files Location
 
-- Specifications: `.claude/specs/SPEC-NNN-slug/spec.md`
-- Task state: `.claude/tasks/SPEC-NNN-slug/state.json`
-- Progress: `.claude/tasks/SPEC-NNN-slug/progress.md`
+- Specifications: `.qtm/specs/SPEC-NNN-slug/spec.md`
+- Task state: `.qtm/tasks/SPEC-NNN-slug/state.json`
+- Progress: `.qtm/tasks/SPEC-NNN-slug/progress.md`
 
 ## Important Notes
 
@@ -443,15 +486,30 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 
 ## Spec Workflow + Worktrees
 
-Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.claude/specs/SPEC-NNN-slug/`):
+Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.qtm/specs/SPEC-NNN-slug/`):
 
 1. **Por default crear worktree, sin preguntar** (la política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para specs formales — el usuario eligió default-on para este caso).
 2. **Nombre**: `spec-<NNN>-<slug>` (ej: `spec-098-vps-migration`).
 3. **Path**: `../hospeda-spec-<NNN>-<slug>` (al lado del repo, no dentro).
 4. **Branch**: `spec/SPEC-<NNN>-<slug>` (sigue convención de specs del proyecto).
 5. **Antes de crear**: correr `git worktree list` y revisar. Si ya existe una worktree para esa spec (matching nombre o branch), USAR esa en lugar de crear nueva. Avisar al usuario "ya existe la worktree X en path Y, sigo ahí".
-6. **Después de crear**: copiar manualmente los archivos de `.worktreeinclude` (`git worktree add` no lo hace solo), avisar al usuario el path absoluto, y sugerir abrir nueva terminal o `cd` ahí.
+6. **Después de crear (OBLIGATORIO copiar env)**: ejecutar SIEMPRE, desde la raíz del repo, `./scripts/copy-env-to-worktree.sh <ruta-ABSOLUTA-del-worktree>`. El script lee `.worktreeinclude` y copia los `.env.local` / `docker/.env` gitignored que `git worktree add` NO copia solo. Sin esto la worktree no arranca. **Usar ruta ABSOLUTA siempre** (tanto en `git worktree add` como acá): `git worktree add ../foo` resuelve el `..` contra el cwd del shell, NO contra la raíz del repo, y si el cwd es un subdir crea el worktree anidado en el lugar equivocado. Después avisar al usuario el path absoluto y sugerir abrir nueva terminal o `cd` ahí. **Atajo**: `bash ~/.claude/skills/worktree/scripts/wt-create.sh <type> <slug>` hace `git worktree add` + esta copia de env + `pnpm install` + build de packages en un solo paso (respeta los patrones de `.claude/project.config.json`).
 7. **Guardar nota** en engram con `topic_key: spec/SPEC-<NNN>-<slug>/worktree` con path + branch + estado, para que futuras sesiones la encuentren.
+
+### Operar el worktree (levantar / bajar la app)
+
+Para correr la app en un worktree (los 3 servers con puertos + DB aislados), **NO levantes los servers ni armes la DB a mano** — usá los comandos del skill `worktree` (vive en `~/.claude/skills/worktree/`, manejado por `.claude/project.config.json`). Guía completa: [`docs/guides/worktree-dev-environments.md`](docs/guides/worktree-dev-environments.md).
+
+Dos pares simétricos:
+
+- `pnpm cli wt:up` — levanta todo: puertos libres, DB por worktree clonada del template (o auto-heal), env, build de packages, 3 servers, health wait. Idempotente.
+- `pnpm cli wt:down` — para los servers **solamente** (DB + worktree quedan; `wt:up` reinicia al instante).
+- `pnpm cli wt:remove` — teardown total (servers + DB + worktree + branch); funciona desde adentro del worktree.
+- `pnpm cli wt:create` — imprime el uso de `wt-create.sh <type> <slug>` (el CLI no pasa args interactivos).
+
+Bootstrap (una vez por máquina): `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` crea `hospeda_template` desde `hospeda_dev` para que los worktrees clonen la DB al instante.
+
+> Sub-agentes: NO heredan el catálogo de skills. Si delegás trabajo de worktree, pasales en el prompt el path `~/.claude/skills/worktree/SKILL.md` y esta sección.
 
 ### Excepciones (NO crear worktree, trabajar en directorio actual)
 

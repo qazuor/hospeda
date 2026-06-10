@@ -1,0 +1,18 @@
+{
+    "specId": "SPEC-128",
+    "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-05-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["hospeda", "qzpay", "cleanup", "smoke", "e2e", "runbook", "ops"],
+    "parent": "SPEC-193",
+    "parentLegacy": "SPEC-122",
+    "phase": "F+G",
+    "dependsOn": ["SPEC-126", "SPEC-127"],
+    "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
+    "firstAllocatedViaEngramProtocol": true
+}

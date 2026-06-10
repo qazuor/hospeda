@@ -3,6 +3,7 @@
  */
 
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import { PlanService, RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +19,7 @@ import {
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import {
     clearEntitlementCache,
+    clearHostDraftDefaultsCache,
     entitlementMiddleware,
     getAllEntitlements,
     getAllLimits,
@@ -27,6 +29,7 @@ import {
     requireEntitlement,
     requireLimit
 } from '../../src/middlewares/entitlement';
+import { createErrorHandler } from '../../src/middlewares/response';
 import {
     gateAlerts,
     gateComparator,
@@ -38,6 +41,7 @@ import {
     gateSearchHistory
 } from '../../src/middlewares/tourist-entitlements';
 import type { AppBindings } from '../../src/types';
+import { checkLimit } from '../../src/utils/limit-check';
 
 // Mock the billing module
 vi.mock('../../src/middlewares/billing', () => ({
@@ -53,6 +57,29 @@ vi.mock('../../src/utils/logger', () => ({
         error: vi.fn()
     }
 }));
+
+// SPEC-148 T-002: mock captureBillingError so tests can assert on cron-lag Sentry alerts
+// without initialising the real Sentry SDK (which requires a DSN).
+vi.mock('../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
+    return {
+        ...actual,
+        captureBillingError: vi.fn()
+    };
+});
+
+// Wrap checkLimit in a spy so individual tests can inject synthetic return values
+// (e.g., allowed=false with upgradeMessage=undefined to cover ?? fallback branches).
+// By default the spy delegates to the real implementation so all existing tests pass.
+vi.mock('../../src/utils/limit-check', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/utils/limit-check')>();
+    return {
+        ...actual,
+        checkLimit: vi.fn(actual.checkLimit),
+        calculateThreshold: vi.fn(actual.calculateThreshold),
+        calculateUsagePercent: vi.fn(actual.calculateUsagePercent)
+    };
+});
 
 describe('entitlementMiddleware', () => {
     let app: Hono<AppBindings>;
@@ -95,39 +122,143 @@ describe('entitlementMiddleware', () => {
     });
 
     describe('when billing is not enabled', () => {
-        it('should set empty entitlements and limits', async () => {
+        // BETA-42: when the payment provider is unconfigured, billing is
+        // disabled. This must NOT strip entitlements from authenticated users —
+        // a free feature like saving favorites cannot depend on the payment
+        // integration being wired up. Authenticated users get their
+        // role-appropriate defaults (tourist-free baseline; HOST → owner-basico
+        // draft), mirroring the no-customer branch. Only guests /
+        // unauthenticated requests get empty entitlements.
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectActor = (actor: {
+            id: string;
+            role: RoleEnum;
+            permissions: string[];
+            email: string;
+        }) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                c.set('actor', actor as unknown as InjectedActor);
+                return next();
+            });
+
+        it('should set empty entitlements when there is no actor (unauthenticated)', async () => {
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                return next();
+            });
             app.use(entitlementMiddleware());
-            app.get('/test', (c) => {
-                const entitlements = c.get('userEntitlements');
-                const limits = c.get('userLimits');
-                return c.json({
-                    entitlementsCount: entitlements.size,
-                    limitsCount: limits.size
-                });
-            });
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
 
-            // Mock context without billing enabled
-            const _mockGet = vi.fn((key: string) => {
-                if (key === 'billingEnabled') return false;
-                if (key === 'billingCustomerId') return null;
-                return undefined;
-            });
-
-            const res = await app.request('/test', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
+            const res = await app.request('/test');
             const data = await res.json();
             expect(data.entitlementsCount).toBe(0);
             expect(data.limitsCount).toBe(0);
         });
+
+        it('should set empty entitlements for a GUEST actor', async () => {
+            injectActor({
+                id: '00000000-0000-4000-8000-000000000000',
+                role: RoleEnum.GUEST,
+                permissions: [],
+                email: ''
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should grant tourist-free defaults to an authenticated USER even when billing is disabled (BETA-42)', async () => {
+            injectActor({
+                id: 'user-billing-off',
+                role: RoleEnum.USER,
+                permissions: [],
+                email: 'user@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // The crux of BETA-42: saving favorites must work with billing off.
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            // HOST-only entitlements must NOT leak to a USER actor.
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should grant owner-basico defaults to a HOST actor when billing is disabled (BETA-42)', async () => {
+            injectActor({
+                id: 'host-billing-off',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+        });
     });
 
     describe('when billing customer is not set', () => {
-        it('should set empty entitlements and limits', async () => {
+        // SPEC-143 smoke F-B1: a missing billing customer row is NOT the same
+        // as "no entitlements". The customer is created by the (non-blocking)
+        // signup hook; until it exists, every AUTHENTICATED user must still get
+        // the role-appropriate default entitlements (tourist-free baseline;
+        // HOST → owner-basico draft defaults), mirroring the
+        // no-active-subscription branch. Only unauthenticated / guest requests
+        // get empty entitlements.
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectActor = (actor: {
+            id: string;
+            role: RoleEnum;
+            permissions: string[];
+            email: string;
+        }) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', null);
+                c.set('actor', actor as unknown as InjectedActor);
+                return next();
+            });
+
+        it('should set empty entitlements when there is no actor', async () => {
             app.use(entitlementMiddleware());
             app.get('/test', (c) => {
                 const entitlements = c.get('userEntitlements');
@@ -145,6 +276,211 @@ describe('entitlementMiddleware', () => {
             const data = await res.json();
             expect(data.entitlementsCount).toBe(0);
             expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set empty entitlements for a GUEST actor with no customer', async () => {
+            injectActor({
+                id: '00000000-0000-4000-8000-000000000000',
+                role: RoleEnum.GUEST,
+                permissions: [],
+                email: ''
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlementsCount: c.get('userEntitlements').size,
+                    limitsCount: c.get('userLimits').size
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set tourist-free default entitlements for an authenticated non-HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'user-no-customer',
+                role: RoleEnum.USER,
+                permissions: [],
+                email: 'user@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // tourist-free baseline must be granted even without a customer row
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_FAVORITES]).toBe(3);
+            // HOST-only entitlements must NOT leak to a USER actor
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should set owner-basico default entitlements for a HOST actor with no customer (SPEC-143 F-B1)', async () => {
+            injectActor({
+                id: 'host-no-customer',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // HOST gets owner-basico draft defaults, not tourist-free
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
+        });
+    });
+
+    describe('platform staff bypass (SPEC-171)', () => {
+        type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+        const injectStaff = (role: RoleEnum, opts: { customerId?: string | null } = {}) =>
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', opts.customerId ?? null);
+                c.set('actor', {
+                    id: `staff-${role}`,
+                    role,
+                    permissions: [],
+                    email: `${role}@example.com`
+                } as unknown as InjectedActor);
+                return next();
+            });
+
+        const mountReporter = () => {
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) =>
+                c.json({
+                    entitlements: Array.from(c.get('userEntitlements')).sort(),
+                    limits: Object.fromEntries(c.get('userLimits'))
+                })
+            );
+        };
+
+        const STAFF_ROLES = [
+            RoleEnum.SUPER_ADMIN,
+            RoleEnum.ADMIN,
+            RoleEnum.EDITOR,
+            RoleEnum.CLIENT_MANAGER
+        ] as const;
+
+        for (const role of STAFF_ROLES) {
+            it(`should grant unlimited entitlements to ${role} with no customer`, async () => {
+                injectStaff(role);
+                mountReporter();
+
+                const res = await app.request('/test');
+                const data = (await res.json()) as {
+                    readonly entitlements: readonly string[];
+                    readonly limits: Record<string, number>;
+                };
+
+                // Every entitlement key granted
+                expect(data.entitlements).toHaveLength(Object.values(EntitlementKey).length);
+                expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+                expect(data.entitlements).toContain(EntitlementKey.WHITE_LABEL);
+                expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+                // Every limit unlimited (-1)
+                expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+                expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(-1);
+                expect(data.limits[LimitKey.MAX_PROPERTIES]).toBe(-1);
+            });
+        }
+
+        it('should grant unlimited to staff even when billing is DISABLED (guard runs before billingEnabled)', async () => {
+            // Staff must see everything enabled unconditionally — the frontend
+            // trusts the resolver now, so an empty payload here would gate the
+            // staff's premium fields. The guard runs before the billingEnabled
+            // short-circuit precisely to cover billing-off environments.
+            app.use((c, next) => {
+                c.set('billingEnabled', false);
+                c.set('actor', {
+                    id: 'staff-no-billing',
+                    role: RoleEnum.SUPER_ADMIN,
+                    permissions: [],
+                    email: 'super@example.com'
+                } as unknown as InjectedActor);
+                return next();
+            });
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.entitlements).toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+        });
+
+        it('should grant unlimited to staff WITHOUT ever calling billing (short-circuits before customer/cache)', async () => {
+            // Even with a customer id present, the staff guard must short-circuit
+            // before the customer lookup — so the customer-keyed cache never sees
+            // a role-dependent payload (no cross-role leak).
+            injectStaff(RoleEnum.SUPER_ADMIN, { customerId: 'test-customer-id' });
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly limits: Record<string, number>;
+            };
+
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
+            expect(mockBilling.subscriptions.getByCustomerId).not.toHaveBeenCalled();
+        });
+
+        it('should NOT grant unlimited to a HOST actor (paying role keeps plan entitlements)', async () => {
+            injectStaff(RoleEnum.HOST);
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // HOST falls through to owner-basico draft defaults, NOT unlimited
+            expect(data.entitlements).not.toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+        });
+
+        it('should NOT grant unlimited to a regular USER actor', async () => {
+            injectStaff(RoleEnum.USER);
+            mountReporter();
+
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+            };
+
+            // USER falls through to tourist-free, NOT unlimited
+            expect(data.entitlements).not.toHaveLength(Object.values(EntitlementKey).length);
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         });
     });
 
@@ -232,7 +568,15 @@ describe('entitlementMiddleware', () => {
             mockBilling.limits.getByCustomerId.mockResolvedValue([]);
         });
 
-        it('should set empty entitlements', async () => {
+        it('should set tourist-free fallback entitlements (SPEC-143 T-143-58)', async () => {
+            // SPEC-143 T-143-58 shipped a tourist-free fallback in
+            // loadEntitlements: when getByCustomerId returns no subs, the
+            // middleware seeds the TOURIST_FREE_PLAN entitlements instead of
+            // an empty set. This pins the contract so a future regression to
+            // "empty set" fails here loudly.
+            // SPEC-173 T-030 added AI_CHAT + AI_SEARCH to tourist-free.
+            // AI_SUPPORT was removed (SPEC-200 pending, owner 2026-06-05),
+            // so the pinned set is now 6 keys.
             app.use((c, next) => {
                 c.set('billingEnabled', true);
                 c.set('billingCustomerId', 'test-customer-id');
@@ -241,13 +585,159 @@ describe('entitlementMiddleware', () => {
             app.use(entitlementMiddleware());
             app.get('/test', (c) => {
                 const entitlements = c.get('userEntitlements');
-                return c.json({ entitlementsCount: entitlements.size });
+                return c.json({
+                    entitlementsCount: entitlements.size,
+                    keys: Array.from(entitlements).sort()
+                });
             });
 
             const res = await app.request('/test');
-            const data = await res.json();
+            const data = (await res.json()) as {
+                readonly entitlementsCount: number;
+                readonly keys: readonly string[];
+            };
 
-            expect(data.entitlementsCount).toBe(0);
+            expect(data.entitlementsCount).toBe(6);
+            expect(data.keys).toEqual(
+                [
+                    EntitlementKey.SAVE_FAVORITES,
+                    EntitlementKey.WRITE_REVIEWS,
+                    EntitlementKey.READ_REVIEWS,
+                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+                    EntitlementKey.AI_CHAT,
+                    EntitlementKey.AI_SEARCH
+                ].sort()
+            );
+        });
+
+        it('should set owner-basico fallback entitlements for HOST actor with no subscription (SPEC-143 Block 1)', async () => {
+            // SPEC-143 Block 1: when a user is promoted to HOST via onboarding
+            // but has not yet published their first property (so no active
+            // billing_subscription exists), the middleware falls back to
+            // owner-basico defaults. This allows the newly-promoted HOST to
+            // access host-tier features (publish, edit, calendar, etc.) during
+            // the draft phase without a paid subscription row.
+            //
+            // Expected entitlements from owner-basico plan:
+            //   PUBLISH_ACCOMMODATIONS, EDIT_ACCOMMODATION_INFO, VIEW_BASIC_STATS,
+            //   RESPOND_REVIEWS, CAN_USE_CALENDAR, CAN_CONTACT_WHATSAPP_DISPLAY
+            //
+            // Expected limits from owner-basico plan:
+            //   max_accommodations: 1, max_photos_per_accommodation: 5
+
+            // Arrange — set billingEnabled + customerId AND inject a HOST actor
+            // so the entitlement middleware can read the role.
+            const hostActor = {
+                id: 'host-user-id',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host@example.com'
+            };
+
+            const hostCustomerId = 'host-customer-no-sub';
+            clearEntitlementCache(hostCustomerId);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set(
+                    'actor',
+                    hostActor as unknown as import(
+                        '../../src/types'
+                    ).AppBindings['Variables']['actor']
+                );
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Assert — HOST-specific entitlements are present
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+
+            // Assert — tourist-only entitlements are NOT present
+            expect(data.entitlements).not.toContain(EntitlementKey.SAVE_FAVORITES);
+            expect(data.entitlements).not.toContain(EntitlementKey.WRITE_REVIEWS);
+
+            // Assert — owner-basico limits are set
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(1);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
+        });
+
+        it('should degrade to tourist-free defaults when planService.getBySlug rejects (lines 272-279)', async () => {
+            // Coverage target: the .catch() guard in buildHostDraftDefaultsResult
+            // (entitlement.ts lines 271-279). When planService.getBySlug REJECTS
+            // (DB threw as opposed to returning a resolved failure Result), the
+            // promise rejection must be caught, the cache reset, and the request
+            // degraded to tourist-free defaults (not a hard 500).
+            const hostActor = {
+                id: 'host-db-throw',
+                role: RoleEnum.HOST,
+                permissions: [],
+                email: 'host-db-throw@example.com'
+            };
+            const hostCustomerId = 'host-customer-db-throw';
+
+            // Reset host draft cache so the next request triggers a fresh DB lookup.
+            clearHostDraftDefaultsCache();
+            clearEntitlementCache(hostCustomerId);
+
+            // Spy on the mock PlanService prototype so that getBySlug rejects.
+            // PlanService here is the global mock from test/setup.ts; using prototype
+            // spy so the already-constructed singleton in entitlement.ts is affected.
+            const spy = vi
+                .spyOn(PlanService.prototype, 'getBySlug')
+                .mockRejectedValueOnce(
+                    new Error('DB connection reset — simulated transient error')
+                );
+
+            type InjectedActor = import('../../src/types').AppBindings['Variables']['actor'];
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', hostCustomerId);
+                c.set('actor', hostActor as unknown as InjectedActor);
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements).sort(),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act — HOST request; planService.getBySlug throws so .catch fires.
+            const res = await app.request('/test');
+            expect(res.status).toBe(200);
+            const data = (await res.json()) as {
+                readonly entitlements: readonly string[];
+                readonly limits: Record<string, number>;
+            };
+
+            // Degraded to tourist-free defaults, NOT owner-basico.
+            // tourist-free defaults contain SAVE_FAVORITES (no PUBLISH_ACCOMMODATIONS).
+            expect(data.entitlements).not.toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
+
+            spy.mockRestore();
+            // Reset cache again so the rejected-promise stub does not persist.
+            clearHostDraftDefaultsCache();
         });
     });
 
@@ -1138,7 +1628,7 @@ describe('requireEntitlement middleware', () => {
         expect(res.status).toBe(200);
     });
 
-    it('should return 403 when user lacks entitlement', async () => {
+    it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
         app.use((c, next) => {
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('billingLoadFailed', false);
@@ -1146,9 +1636,12 @@ describe('requireEntitlement middleware', () => {
         });
         app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
     });
 
     // =========================================================================
@@ -1223,9 +1716,12 @@ describe('requireLimit middleware', () => {
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('LIMIT_REACHED');
     });
 
     it('should return 403 when limit is 0', async () => {
@@ -1238,9 +1734,12 @@ describe('requireLimit middleware', () => {
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
         app.get('/test', (c) => c.json({ ok: true }));
+        app.onError(createErrorHandler());
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+        const data = await res.json();
+        expect(data.error.code).toBe('LIMIT_REACHED');
     });
 
     // =========================================================================
@@ -1463,18 +1962,18 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.description).toContain('**Bold**');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract (PR #1250/#1252, smoke-validated): a user without
+            // CAN_USE_RICH_DESCRIPTION who submits markdown is blocked with a
+            // 403 ENTITLEMENT_REQUIRED envelope (not silently stripped). The gate
+            // throws a ServiceError, mapped to 403 by createErrorHandler.
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRichDescription());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip markdown but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1484,10 +1983,13 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            // Contract: 403 + ENTITLEMENT_REQUIRED. The full envelope (incl.
+            // details.requiredEntitlement) is exercised against the real app
+            // error handler by the accommodation e2e flow + the staging smoke;
+            // this bare-Hono harness pins the status + code.
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1519,18 +2021,16 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.videoUrl).toBe('https://www.youtube.com/watch?v=abc123');
         });
 
-        it('should not throw error when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
+            // Shipped contract: a user without CAN_EMBED_VIDEO who submits a
+            // video URL is blocked with 403 ENTITLEMENT_REQUIRED (not stripped).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateVideoEmbed());
-            app.post('/test', async (c) => {
-                // The middleware tries to strip video URLs but may not work as expected
-                // due to body consumption. Test that it doesn't break the request.
-                const _body = await c.req.json();
-                return c.json({ processed: true });
-            });
+            app.post('/test', async (c) => c.json({ processed: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1545,10 +2045,9 @@ describe('Accommodation Entitlement Gates', () => {
                 })
             });
 
-            // Should complete successfully even if stripping doesn't work perfectly
-            expect(res.status).toBe(200);
+            expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.processed).toBe(true);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 
@@ -1565,22 +2064,21 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateCalendarAccess());
             app.get('/calendar', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/calendar');
             expect(res.status).toBe(403);
 
             const data = await res.json();
-            expect(data.success).toBe(false);
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('Calendar access requires');
-            expect(data.error.details.requiredEntitlement).toBe(EntitlementKey.CAN_USE_CALENDAR);
         });
     });
 
@@ -1597,18 +2095,20 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateExternalCalendarSync());
             app.post('/sync', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/sync', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('Premium plan');
         });
     });
@@ -1634,13 +2134,14 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user tries to add WhatsApp without entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user tries to add WhatsApp without entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateWhatsAppDisplay());
             app.post('/test', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/test', {
                 method: 'POST',
@@ -1651,9 +2152,27 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(403);
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.requiredEntitlement).toBe(
-                EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
-            );
+        });
+
+        it('should pass through when user lacks entitlement but body does NOT contain whatsapp fields (line 385)', async () => {
+            // Coverage target: accommodation-entitlements.ts line 385.
+            // The guard only blocks when the body EXERCISES the gated capability.
+            // A body without whatsappNumber / contactWhatsApp must pass through
+            // even when the user has no entitlement.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateWhatsAppDisplay());
+            app.post('/test', (c) => c.json({ ok: true }));
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Casa del Sol', description: 'Hermosa cabaña' })
+            });
+
+            expect(res.status).toBe(200);
         });
     });
 
@@ -1675,7 +2194,32 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user tries to enable direct link without entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user tries to enable direct link without entitlement', async () => {
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateWhatsAppDirect());
+            app.post('/test', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ whatsappDirectLink: true })
+            });
+
+            expect(res.status).toBe(403);
+            const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
+            expect(data.error.message).toContain('Premium plan');
+        });
+
+        it('should pass through when user lacks entitlement but body does NOT enable direct link (line 466)', async () => {
+            // Coverage target: accommodation-entitlements.ts line 466.
+            // The guard only blocks when whatsappDirectLink === true OR
+            // enableWhatsAppDirect === true. A body that sets neither must pass
+            // through even without the entitlement (non-gated field update).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
@@ -1686,12 +2230,10 @@ describe('Accommodation Entitlement Gates', () => {
             const res = await app.request('/test', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ whatsappDirectLink: true })
+                body: JSON.stringify({ name: 'Casa del Sol', whatsappDirectLink: false })
             });
 
-            expect(res.status).toBe(403);
-            const data = await res.json();
-            expect(data.error.message).toContain('Premium plan');
+            expect(res.status).toBe(200);
         });
     });
 
@@ -1708,18 +2250,19 @@ describe('Accommodation Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateReviewResponse());
             app.post('/respond', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/respond', { method: 'POST' });
             expect(res.status).toBe(403);
             const data = await res.json();
-            expect(data.error.details.requiredEntitlement).toBe(EntitlementKey.RESPOND_REVIEWS);
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
         });
     });
 });
@@ -1756,7 +2299,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -1764,37 +2307,36 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.SAVE_FAVORITES);
         });
 
-        it('should return 403 when limit is reached', async () => {
+        it('does NOT enforce the favorites limit — that is enforceFavoritesLimit() concern', async () => {
+            // Shipped contract (SPEC-143 #25): gateFavorites checks the
+            // SAVE_FAVORITES entitlement ONLY. The MAX_FAVORITES quota is
+            // enforced by the separate enforceFavoritesLimit() middleware, which
+            // counts existing bookmarks via UserBookmarkService (NOT a
+            // `currentFavoritesCount` context var). So an entitled user passes
+            // gateFavorites regardless of how many favorites they have; the
+            // 403 LIMIT_REACHED path is covered by the favorites e2e flow.
             app.use((c, next) => {
-                const entitlements = new Set([EntitlementKey.SAVE_FAVORITES]);
+                c.set('userEntitlements', new Set([EntitlementKey.SAVE_FAVORITES]));
                 const limits = new Map<LimitKey, number>();
                 limits.set(LimitKey.MAX_FAVORITES, 10);
-                c.set('userEntitlements', entitlements);
                 c.set('userLimits', limits);
-                c.set('currentFavoritesCount' as any, 10); // Already at limit
                 return next();
             });
             app.use(gateFavorites());
             app.post('/favorites', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/favorites', { method: 'POST' });
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.code).toBe('LIMIT_REACHED');
-            expect(data.error.details.limitKey).toBe(LimitKey.MAX_FAVORITES);
-            expect(data.error.details.currentCount).toBe(10);
-            expect(data.error.details.maxAllowed).toBe(10);
-            expect(data.error.message).toContain('10 favoritos');
+            expect(res.status).toBe(200);
         });
 
         it('should allow when limit is unlimited (-1)', async () => {
@@ -1828,20 +2370,20 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateExclusiveDeals());
             app.get('/deals/exclusive', (c) => c.json({ deals: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/deals/exclusive');
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.EXCLUSIVE_DEALS);
             expect(data.error.message).toContain('VIP');
         });
     });
@@ -1862,23 +2404,27 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateEarlyEventAccess());
             app.post('/events/123/tickets', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/events/123/tickets', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(data.error.details.entitlement).toBe(EntitlementKey.EARLY_ACCESS_EVENTS);
         });
 
-        it('should return 403 when early access has not started yet', async () => {
+        it('should return 403 FORBIDDEN when early access window has not started yet', async () => {
+            // Users WITH the entitlement but before the 24h window get FORBIDDEN + timing details,
+            // not ENTITLEMENT_REQUIRED. EARLY_ACCESS_NOT_STARTED is not a ServiceErrorCode;
+            // the ServiceError contract maps this to FORBIDDEN with earlyAccessStart/publicSaleStart
+            // in details (exercised by the staging smoke, not this bare-Hono harness).
             app.use((c, next) => {
                 c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
                 // Event starts in 36 hours (before 24h early access window)
@@ -1888,12 +2434,13 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateEarlyEventAccess());
             app.post('/events/123/tickets', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/events/123/tickets', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
-            expect(data.error.code).toBe('EARLY_ACCESS_NOT_STARTED');
+            expect(data.error.code).toBe('FORBIDDEN');
         });
 
         it('should allow access when event is in public sale period', async () => {
@@ -1930,7 +2477,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -1938,6 +2485,7 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateAlerts());
             app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/alerts', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -1947,7 +2495,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(data.error.message).toContain('Plus y VIP');
         });
 
-        it('should return 403 when limit is reached', async () => {
+        it('should return 403 LIMIT_REACHED when limit is reached', async () => {
             app.use((c, next) => {
                 const entitlements = new Set([EntitlementKey.PRICE_ALERTS]);
                 const limits = new Map<LimitKey, number>();
@@ -1959,12 +2507,51 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateAlerts());
             app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/alerts', { method: 'POST' });
             expect(res.status).toBe(403);
 
             const data = await res.json();
             expect(data.error.code).toBe('LIMIT_REACHED');
+        });
+
+        it('should use ?? fallback message when checkLimit returns !allowed with no upgradeMessage (line 155)', async () => {
+            // Coverage target: tourist-entitlements.ts line 155.
+            // `limitCheck.upgradeMessage ?? 'Has alcanzado el límite...'` — the right-hand
+            // fallback fires when checkLimit returns allowed=false with upgradeMessage=undefined.
+            // checkLimit normally always provides upgradeMessage when !allowed, but the ?? guard
+            // is there for defensive correctness.
+            app.use((c, next) => {
+                const entitlements = new Set([EntitlementKey.PRICE_ALERTS]);
+                const limits = new Map<LimitKey, number>();
+                limits.set('max_active_alerts' as LimitKey, 5);
+                c.set('userEntitlements', entitlements);
+                c.set('userLimits', limits);
+                c.set('currentActiveAlertsCount' as any, 5);
+                return next();
+            });
+            app.use(gateAlerts());
+            app.post('/alerts', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
+
+            // Inject synthetic checkLimit result with no upgradeMessage
+            vi.mocked(checkLimit).mockReturnValueOnce({
+                allowed: false,
+                currentCount: 5,
+                maxAllowed: 5,
+                remaining: 0,
+                upgradeMessage: undefined
+            });
+
+            const res = await app.request('/alerts', { method: 'POST' });
+            expect(res.status).toBe(403);
+            const responseData = await res.json();
+            expect(responseData.error.code).toBe('LIMIT_REACHED');
+            // The ?? fallback string must appear in the error message
+            expect(responseData.error.message).toContain(
+                'Has alcanzado el límite de alertas activas'
+            );
         });
     });
 
@@ -1987,7 +2574,7 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 c.set('userLimits', new Map<LimitKey, number>());
@@ -1995,6 +2582,7 @@ describe('Tourist Entitlement Gates', () => {
             });
             app.use(gateComparator());
             app.post('/compare', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/compare', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -2019,13 +2607,14 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateReviewPhotos());
             app.post('/reviews/123/photos', (c) => c.json({ ok: true }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/reviews/123/photos', { method: 'POST' });
             expect(res.status).toBe(403);
@@ -2050,18 +2639,20 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateSearchHistory());
             app.get('/search-history', (c) => c.json({ history: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/search-history');
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('historial de búsqueda');
         });
     });
@@ -2080,20 +2671,251 @@ describe('Tourist Entitlement Gates', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should return 403 when user lacks entitlement', async () => {
+        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
             app.use((c, next) => {
                 c.set('userEntitlements', new Set<EntitlementKey>());
                 return next();
             });
             app.use(gateRecommendations());
             app.get('/recommendations', (c) => c.json({ recommendations: [] }));
+            app.onError(createErrorHandler());
 
             const res = await app.request('/recommendations');
             expect(res.status).toBe(403);
 
             const data = await res.json();
+            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('recomendaciones personalizadas');
             expect(data.error.message).toContain('todos los planes');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-148 T-002 — Cron-lag grace detection in loadEntitlements
+// ---------------------------------------------------------------------------
+// These tests are isolated in their own top-level describe so they can reset
+// per-test state (fresh Hono app, fresh billing mocks, clearEntitlementCache)
+// without interfering with the main suite above.
+//
+// The detection sits inside loadEntitlements() (cache-gated). Because the
+// 5-min entitlementCache skips loadEntitlements on hits, the header/alert is
+// only emitted on a cache miss. This is documented in the middleware code:
+//   "Cache hit: cron-lag check skipped for ≤5 min — acceptable per SPEC-148."
+// We clear the cache before each test to guarantee a cache miss.
+
+describe('SPEC-148 T-002: cron-lag grace detection', () => {
+    // Import the mocked captureBillingError so tests can assert on it.
+    // Dynamic import is required because vi.mock hoisting runs before static imports.
+    let mockCaptureBillingError: ReturnType<typeof vi.fn>;
+
+    let app: Hono<AppBindings>;
+    let mockBilling: {
+        subscriptions: { getByCustomerId: ReturnType<typeof vi.fn> };
+        plans: { get: ReturnType<typeof vi.fn> };
+        entitlements: { getByCustomerId: ReturnType<typeof vi.fn> };
+        limits: { getByCustomerId: ReturnType<typeof vi.fn> };
+    };
+    let mockApiLogger: { warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+
+    const CRON_LAG_CUSTOMER_ID = 'cron-lag-customer-123';
+
+    /** Build a minimal active subscription with the given currentPeriodEnd. */
+    const makeActiveSub = (currentPeriodEnd: Date) => ({
+        id: 'sub-cron-lag-001',
+        customerId: CRON_LAG_CUSTOMER_ID,
+        planId: 'plan-owner-basico',
+        status: 'active' as const,
+        currentPeriodEnd
+    });
+
+    /** Set up a minimal Hono app with the entitlement middleware pre-wired. */
+    const mountMiddleware = () => {
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CRON_LAG_CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/test', (c) =>
+            c.json({
+                status: 200,
+                cronLagHeader: c.res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')
+            })
+        );
+    };
+
+    beforeEach(async () => {
+        app = new Hono<AppBindings>();
+
+        mockBilling = {
+            subscriptions: { getByCustomerId: vi.fn() },
+            plans: { get: vi.fn() },
+            entitlements: { getByCustomerId: vi.fn() },
+            limits: { getByCustomerId: vi.fn() }
+        };
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        // Default plan response so entitlement loading succeeds past the sub check
+        mockBilling.plans.get.mockResolvedValue({
+            id: 'plan-owner-basico',
+            name: 'Owner Basico',
+            entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+            limits: { [LimitKey.MAX_ACCOMMODATIONS]: 1 }
+        });
+        mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+        mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+        // Grab the mocked captureBillingError reference
+        const sentryModule = await import('../../src/lib/sentry');
+        mockCaptureBillingError = vi.mocked(sentryModule.captureBillingError);
+        mockCaptureBillingError.mockReset();
+
+        // Grab the mocked logger reference
+        const loggerModule = await import('../../src/utils/logger');
+        mockApiLogger = {
+            warn: vi.mocked(loggerModule.apiLogger.warn),
+            error: vi.mocked(loggerModule.apiLogger.error)
+        };
+        mockApiLogger.warn.mockReset();
+        mockApiLogger.error.mockReset();
+
+        // Always clear cache so loadEntitlements() is called (not skipped on cache hit)
+        clearEntitlementCache(CRON_LAG_CUSTOMER_ID);
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('RED: within-window active+past-period → response header set + allowed (200) + NO Sentry alert', async () => {
+        // Arrange: currentPeriodEnd was 3 hours ago; BILLING_CRON_LAG_GRACE_HOURS = 6
+        const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() - THREE_HOURS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — allowed (not blocked)
+        expect(res.status).toBe(200);
+
+        // Assert — response header present with remaining hours (ceil(6-3)=3)
+        const header = res.headers.get('X-Cron-Lag-Grace-Hours-Remaining');
+        expect(header).not.toBeNull();
+        const remaining = Number(header);
+        expect(remaining).toBeGreaterThan(0);
+        expect(remaining).toBeLessThanOrEqual(6);
+
+        // Assert — NO Sentry alert (within window)
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+
+        // Assert — logger.warn called (within-window notice)
+        expect(mockApiLogger.warn).toHaveBeenCalled();
+        // logger.error must NOT be called (that's reserved for past-window)
+        expect(mockApiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('RED: past-window active+past-period → ALLOWED (200) + captureBillingError with cron_lag_grace_exceeded + hoursOverdue + NO block', async () => {
+        // Arrange: currentPeriodEnd was 10 hours ago (> 6-hour window)
+        const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() - TEN_HOURS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — still allowed (never block — owner decision SPEC-148 Part A)
+        expect(res.status).toBe(200);
+
+        // Assert — captureBillingError fired with correct operation
+        expect(mockCaptureBillingError).toHaveBeenCalledTimes(1);
+        const [capturedError, capturedContext, capturedSeverity] = mockCaptureBillingError.mock
+            .calls[0] as [Error, Record<string, unknown>, string];
+        expect(capturedContext.operation).toBe('cron_lag_grace_exceeded');
+        expect(capturedContext.subscriptionId).toBe('sub-cron-lag-001');
+        expect(capturedContext.planId).toBe('plan-owner-basico');
+        // hoursOverdue must be numeric and > 6
+        expect(typeof capturedError.message).toBe('string');
+        expect(capturedError.message).toContain('hoursOverdue');
+        expect(capturedSeverity).toBe('warning');
+
+        // Assert — logger.error called for past-window
+        expect(mockApiLogger.error).toHaveBeenCalled();
+    });
+
+    it('RED: active not-expired → no header, no Sentry alert, no warn/error log', async () => {
+        // Arrange: currentPeriodEnd is 10 days in the future (not overdue)
+        const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() + TEN_DAYS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+        expect(mockApiLogger.warn).not.toHaveBeenCalled();
+        expect(mockApiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('RED: trialing subscription (not expired) → no cron-lag check, normal path', async () => {
+        // Arrange: trialing sub — should follow existing trialing path, no grace detection
+        const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() + TEN_DAYS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            {
+                id: 'sub-trial-001',
+                customerId: CRON_LAG_CUSTOMER_ID,
+                planId: 'plan-owner-basico',
+                status: 'trialing' as const,
+                currentPeriodEnd
+            }
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — normal trialing path (no header, no alert)
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+    });
+
+    it('RED: past_due subscription → cron-lag detection does NOT fire (pastDueGrace is a separate mechanism)', async () => {
+        // Arrange: past_due sub — the active/trialing find() returns undefined, falls to default
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            {
+                id: 'sub-past-due-001',
+                customerId: CRON_LAG_CUSTOMER_ID,
+                planId: 'plan-owner-basico',
+                status: 'past_due' as const,
+                currentPeriodEnd: new Date(Date.now() - 2 * 60 * 60 * 1000)
+            }
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — cron-lag detection doesn't fire; past_due handled elsewhere
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
     });
 });

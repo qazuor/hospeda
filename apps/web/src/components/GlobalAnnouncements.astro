@@ -1,0 +1,192 @@
+---
+/**
+ * @file GlobalAnnouncements.astro
+ * @description Renders admin-curated global announcements at the top of
+ * the page (SPEC-156 PR-4 T-041 / AC-19).
+ *
+ * Data flow:
+ *   1. Server-side: call `announcementsApi.list()` (which goes through the
+ *      shared API client), filter by [startsAt, endsAt] using the current
+ *      Date so freshly-expired items disappear immediately even when the
+ *      5-minute server cache still includes them.
+ *   2. Render one banner per active item with its variant tone + the
+ *      locale-selected text + a dismiss button when `dismissible: true`.
+ *   3. Client-side: a small inline script removes any banner whose id is
+ *      already in the `hospeda_ann_dismissed` cookie, attaches the dismiss
+ *      handler that re-writes the cookie, and re-filters by date one more
+ *      time to mask the 5-min server cache window.
+ *
+ * The script intentionally does NOT depend on a React island — the
+ * interaction surface is tiny (one click handler + cookie writes) so
+ * shipping any extra JS would be wasteful.
+ */
+
+import { announcementsApi } from '@/lib/api/endpoints';
+import { filterActiveByDate, pickAnnouncementText } from '@/lib/announcements';
+
+export interface Props {
+    /** Current page locale (e.g. 'es', 'en', 'pt'). Drives copy selection. */
+    readonly locale: 'es' | 'en' | 'pt' | string;
+}
+
+const { locale } = Astro.props;
+
+const response = await announcementsApi.list();
+const all = response.ok ? response.data : [];
+const active = filterActiveByDate(all, new Date());
+
+const variantToneClass: Record<string, string> = {
+    info: 'global-announcement--info',
+    warning: 'global-announcement--warning',
+    danger: 'global-announcement--danger'
+};
+
+const dismissAriaLabel =
+    locale === 'en'
+        ? 'Dismiss announcement'
+        : locale === 'pt'
+          ? 'Fechar comunicado'
+          : 'Cerrar anuncio';
+
+const cspNonce = Astro.locals.cspNonce ?? '';
+---
+
+{active.length > 0 && (
+    <div
+        class="global-announcements"
+        data-testid="global-announcements"
+    >
+        {active.map((item) => (
+            <div
+                class:list={['global-announcement', variantToneClass[item.variant] ?? '']}
+                data-announcement-id={item.id}
+                data-starts-at={item.startsAt ?? ''}
+                data-ends-at={item.endsAt ?? ''}
+                role="status"
+            >
+                <p class="global-announcement__text">{pickAnnouncementText(item, locale)}</p>
+                {item.dismissible && (
+                    <button
+                        type="button"
+                        class="global-announcement__dismiss"
+                        data-dismiss-id={item.id}
+                        aria-label={dismissAriaLabel}
+                    >
+                        ×
+                    </button>
+                )}
+            </div>
+        ))}
+    </div>
+)}
+
+<style>
+    .global-announcements {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+        padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    }
+
+    .global-announcement {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3, 0.75rem);
+        padding: var(--space-2, 0.6rem) var(--space-3, 0.875rem);
+        border-radius: var(--radius-md, 0.5rem);
+        border: 1px solid transparent;
+        font-size: 0.875rem;
+        font-family: var(--font-sans);
+    }
+
+    .global-announcement__text {
+        margin: 0;
+        flex: 1;
+    }
+
+    .global-announcement__dismiss {
+        appearance: none;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-size: 1.25rem;
+        line-height: 1;
+        padding: 0 var(--space-1, 0.25rem);
+        color: inherit;
+    }
+
+    .global-announcement--info {
+        background: var(--brand-primary-a12);
+        border-color: var(--brand-primary-a35);
+        color: var(--brand-primary, #1e40af);
+    }
+
+    .global-announcement--warning {
+        background: var(--brand-accent-a15);
+        border-color: var(--brand-accent-a40);
+        color: var(--brand-accent, #92400e);
+    }
+
+    .global-announcement--danger {
+        background: oklch(from #ef4444 l c h / 0.14);
+        border-color: oklch(from #ef4444 l c h / 0.5);
+        color: #7f1d1d;
+    }
+</style>
+
+<script is:inline nonce={cspNonce}>
+    (function setupGlobalAnnouncements() {
+        const COOKIE_NAME = 'hospeda_ann_dismissed';
+        const root = document.querySelector('[data-testid="global-announcements"]');
+        if (!root) return;
+
+        function readDismissed() {
+            const cookies = document.cookie.split(';');
+            for (const raw of cookies) {
+                const [name, value] = raw.split('=').map((s) => s.trim());
+                if (name === COOKIE_NAME) {
+                    return new Set(decodeURIComponent(value).split(',').filter(Boolean));
+                }
+            }
+            return new Set();
+        }
+
+        function writeDismissed(ids) {
+            const value = encodeURIComponent(Array.from(ids).join(','));
+            const oneYear = 60 * 60 * 24 * 365;
+            document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${oneYear}; SameSite=Lax`;
+        }
+
+        function applyFilters() {
+            const now = Date.now();
+            const dismissed = readDismissed();
+            const banners = root.querySelectorAll('.global-announcement');
+            banners.forEach((banner) => {
+                const id = banner.getAttribute('data-announcement-id') || '';
+                const startsAt = banner.getAttribute('data-starts-at') || '';
+                const endsAt = banner.getAttribute('data-ends-at') || '';
+
+                let hide = false;
+                if (dismissed.has(id)) hide = true;
+                if (!hide && startsAt && new Date(startsAt).getTime() > now) hide = true;
+                if (!hide && endsAt && new Date(endsAt).getTime() < now) hide = true;
+
+                banner.style.display = hide ? 'none' : '';
+            });
+        }
+
+        root.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            const id = target.getAttribute('data-dismiss-id');
+            if (!id) return;
+            const dismissed = readDismissed();
+            dismissed.add(id);
+            writeDismissed(dismissed);
+            applyFilters();
+        });
+
+        applyFilters();
+    })();
+</script>

@@ -23,6 +23,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { ModerationStatusEnumSchema } from '../../enums/index.js';
 
 /**
  * Admin search schema for accommodation reviews.
@@ -83,11 +84,24 @@ export const AccommodationReviewAdminSearchSchema = AdminSearchBaseSchema.extend
         .min(1, { message: 'zodError.admin.search.accommodationReview.maxRating.min' })
         .max(5, { message: 'zodError.admin.search.accommodationReview.maxRating.max' })
         .optional()
-        .describe('Maximum average rating filter (1-5, inclusive, supports decimals)')
+        .describe('Maximum average rating filter (1-5, inclusive, supports decimals)'),
+
+    /**
+     * Filter by moderation state (PENDING, APPROVED, REJECTED).
+     *
+     * SPEC-166 T-021: Admin list uses `_executeAdminSearch` which does NOT
+     * force-override `moderationState` the way the public `_executeSearch` does.
+     * Passing this filter lets admins query the moderation queue directly, e.g.
+     * `moderationState=PENDING` to list all unmoderated reviews.
+     */
+    moderationState: ModerationStatusEnumSchema.optional().describe(
+        'Filter reviews by moderation state (PENDING, APPROVED, REJECTED)'
+    )
 });
 
 /**
  * Type inferred from {@link AccommodationReviewAdminSearchSchema}.
- * Represents the validated admin search parameters for accommodation reviews.
+ * Represents the validated admin search parameters for accommodation reviews,
+ * including the `moderationState` filter added in SPEC-166 T-021.
  */
 export type AccommodationReviewAdminSearch = z.infer<typeof AccommodationReviewAdminSearchSchema>;

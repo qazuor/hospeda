@@ -7,6 +7,7 @@
  * HOST/ADMIN/SUPERADMIN roles see an additional admin escalation button.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
 import { getAdminUrl } from '@/lib/env';
@@ -15,7 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { ArrowRightIcon, CancelIcon, DownloadIcon } from '@repo/icons';
+import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './SubscriptionDashboard.module.css';
 
@@ -34,7 +35,14 @@ const ADMIN_ROLES = new Set([
 ]);
 
 /** Subscription status label map keys */
-type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due' | 'pending';
+type SubscriptionStatus =
+    | 'active'
+    | 'trial'
+    | 'cancelled'
+    | 'expired'
+    | 'past_due'
+    | 'pending'
+    | 'paused';
 
 /** User shape passed from the Astro page */
 export interface SubscriptionDashboardUser {
@@ -74,6 +82,8 @@ function getBadgeClass(status: SubscriptionStatus): string {
             return styles.badgePastDue ?? '';
         case 'pending':
             return styles.badgePending ?? '';
+        case 'paused':
+            return styles.badgePaused ?? '';
         default:
             return styles.badgePending ?? '';
     }
@@ -185,16 +195,21 @@ function EmptyState({ locale }: { readonly locale: SupportedLocale }) {
     );
 }
 
-/** Confirmation modal for cancel subscription action. */
+/** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
+const SUPPORT_EMAIL = 'info@hospeda.com';
+
+/**
+ * Cancel-instructions modal.
+ *
+ * User self-cancel via API is not yet implemented (tracked under SPEC-147),
+ * so this modal directs the user to email support instead. Once the
+ * self-cancel endpoint ships the modal can revert to a confirm-and-call flow.
+ */
 function CancelConfirmModal({
     locale,
-    isLoading,
-    onConfirm,
     onDismiss
 }: {
     readonly locale: SupportedLocale;
-    readonly isLoading: boolean;
-    readonly onConfirm: () => void;
     readonly onDismiss: () => void;
 }) {
     const { t } = createTranslations(locale);
@@ -219,6 +234,11 @@ function CancelConfirmModal({
         };
     }, [onDismiss]);
 
+    const subject = encodeURIComponent(
+        t('account.pages.subscription.cancelModal.emailSubject', 'Cancelación de suscripción')
+    );
+    const mailtoHref = `mailto:${SUPPORT_EMAIL}?subject=${subject}`;
+
     return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
         <div
@@ -239,7 +259,7 @@ function CancelConfirmModal({
                 <p className={styles.modalBody}>
                     {t(
                         'account.pages.subscription.cancelModal.body',
-                        'Al cancelar, tu suscripción seguirá activa hasta el final del período de facturación actual. ¿Confirmás la cancelación?'
+                        `Para cancelar tu suscripción, escribinos a ${SUPPORT_EMAIL} y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.`
                     )}
                 </p>
                 <div className={styles.modalActions}>
@@ -247,20 +267,104 @@ function CancelConfirmModal({
                         type="button"
                         className={styles.btnSecondary}
                         onClick={onDismiss}
-                        disabled={isLoading}
                     >
-                        {t('common.cancel', 'No, volver')}
+                        {t('common.close', 'Cerrar')}
+                    </button>
+                    <a
+                        href={mailtoHref}
+                        className={styles.btnDanger}
+                    >
+                        {t(
+                            'account.pages.subscription.cancelModal.contactSupport',
+                            'Escribir a soporte'
+                        )}
+                    </a>
+                </div>
+            </dialog>
+        </div>
+    );
+}
+
+/**
+ * Pause confirmation modal (SPEC-143 #29).
+ *
+ * A host self-pause is always "full": billing stops AND the owner's
+ * accommodations are hidden from the public site + locked from editing until
+ * resume. The modal spells that out before calling the self-serve pause.
+ */
+function PauseConfirmModal({
+    locale,
+    isPausing,
+    onConfirm,
+    onDismiss
+}: {
+    readonly locale: SupportedLocale;
+    readonly isPausing: boolean;
+    readonly onConfirm: () => void;
+    readonly onDismiss: () => void;
+}) {
+    const { t } = createTranslations(locale);
+
+    function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
+        if (e.target === e.currentTarget) {
+            onDismiss();
+        }
+    }
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === 'Escape') {
+                onDismiss();
+            }
+        }
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onDismiss]);
+
+    return (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is supplemental; Escape key handler covers keyboard users
+        <div
+            className={styles.modalBackdrop}
+            onClick={handleBackdropClick}
+        >
+            <dialog
+                className={styles.modal}
+                open
+                aria-labelledby="pause-modal-title"
+            >
+                <h2
+                    id="pause-modal-title"
+                    className={styles.modalTitle}
+                >
+                    {t('account.pages.subscription.pauseModal.title', 'Pausar suscripción')}
+                </h2>
+                <p className={styles.modalBody}>
+                    {t(
+                        'account.pages.subscription.pauseModal.body',
+                        'Al pausar, dejás de pagar y tus alojamientos se ocultan del sitio y no podrás editarlos hasta reanudar. Toda tu configuración se conserva y vuelve igual al reanudar.'
+                    )}
+                </p>
+                <div className={styles.modalActions}>
+                    <button
+                        type="button"
+                        className={styles.btnSecondary}
+                        onClick={onDismiss}
+                        disabled={isPausing}
+                    >
+                        {t('common.cancel', 'Cancelar')}
                     </button>
                     <button
                         type="button"
                         className={styles.btnDanger}
                         onClick={onConfirm}
-                        disabled={isLoading}
-                        aria-busy={isLoading}
+                        disabled={isPausing}
+                        aria-busy={isPausing}
                     >
-                        {isLoading
-                            ? t('common.loading', 'Procesando...')
-                            : t('account.pages.subscription.cancelModal.confirm', 'Sí, cancelar')}
+                        {isPausing
+                            ? t('common.loading', 'Cargando...')
+                            : t('account.pages.subscription.pauseModal.confirm', 'Pausar')}
                     </button>
                 </div>
             </dialog>
@@ -294,13 +398,15 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
-    const [isCancelling, setIsCancelling] = useState(false);
+    const [showPauseModal, setShowPauseModal] = useState(false);
+    const [isPausing, setIsPausing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
     const isAdminRole = ADMIN_ROLES.has(user.role);
 
     // ── Fetch ──────────────────────────────────────────────────────────────
 
+    // biome-ignore lint/correctness/useExhaustiveDependencies: stable identity by design — `t` and `userApi` are captured at first mount and never change between renders for a given locale.
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setFetchError(null);
@@ -310,7 +416,11 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
 
             if (!subResult.ok) {
                 setFetchError(
-                    subResult.error.message || 'No se pudo cargar la información de suscripción.'
+                    translateApiError({
+                        error: subResult.error,
+                        t,
+                        fallback: 'No se pudo cargar la información de suscripción.'
+                    })
                 );
                 return;
             }
@@ -319,55 +429,13 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
         } finally {
             setIsLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // intentionally empty — fetchData never changes identity
+    }, []);
 
     useEffect(() => {
         void fetchData();
     }, [fetchData]);
 
     // ── Actions ────────────────────────────────────────────────────────────
-
-    async function handleCancelConfirm() {
-        setIsCancelling(true);
-        try {
-            // The protected cancel endpoint doesn't require a subscriptionId in our API
-            // It cancels the current user's active subscription server-side.
-            // We pass a placeholder that the endpoint ignores (per existing billingApi pattern).
-            const result = await billingApi.cancelSubscription({
-                subscriptionId: 'current'
-            });
-
-            if (!result.ok) {
-                addToast({
-                    type: 'error',
-                    message:
-                        result.error.message ||
-                        t(
-                            'account.pages.subscription.cancelError',
-                            'No se pudo cancelar la suscripción. Intentá de nuevo.'
-                        )
-                });
-                return;
-            }
-
-            // Optimistically update the local status
-            setSubscription((prev) =>
-                prev ? { ...prev, status: 'cancelled', cancelAtPeriodEnd: true } : prev
-            );
-
-            setShowCancelModal(false);
-            addToast({
-                type: 'success',
-                message: t(
-                    'account.pages.subscription.cancelSuccess',
-                    'Suscripción cancelada. Seguirá activa hasta el fin del período actual.'
-                )
-            });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
 
     async function handleDownloadInvoice() {
         setIsDownloading(true);
@@ -412,6 +480,55 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
             }
         } finally {
             setIsDownloading(false);
+        }
+    }
+
+    async function handlePause() {
+        setIsPausing(true);
+        try {
+            const result = await billingApi.pauseSubscription();
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.pauseError',
+                        'No se pudo pausar la suscripción.'
+                    )
+                });
+                return;
+            }
+            setShowPauseModal(false);
+            addToast({
+                type: 'success',
+                message: t('account.pages.subscription.pauseSuccess', 'Suscripción pausada.')
+            });
+            await fetchData();
+        } finally {
+            setIsPausing(false);
+        }
+    }
+
+    async function handleResume() {
+        setIsPausing(true);
+        try {
+            const result = await billingApi.resumeSubscription();
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: t(
+                        'account.pages.subscription.resumeError',
+                        'No se pudo reanudar la suscripción.'
+                    )
+                });
+                return;
+            }
+            addToast({
+                type: 'success',
+                message: t('account.pages.subscription.resumeSuccess', 'Suscripción reanudada.')
+            });
+            await fetchData();
+        } finally {
+            setIsPausing(false);
         }
     }
 
@@ -465,6 +582,8 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     }
 
     const canCancel = status === 'active' || status === 'trial';
+    const canPause = status === 'active' || status === 'trial';
+    const canResume = status === 'paused';
 
     // ── JSX ────────────────────────────────────────────────────────────────
 
@@ -554,6 +673,51 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                               )}
                     </button>
 
+                    {/* Pause subscription (active/trial) */}
+                    {canPause && (
+                        <button
+                            type="button"
+                            className={styles.btnSecondary}
+                            onClick={() => {
+                                setShowPauseModal(true);
+                            }}
+                            aria-label={t(
+                                'account.pages.subscription.pauseAriaLabel',
+                                'Pausar suscripción'
+                            )}
+                        >
+                            <PowerOffIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {t('account.pages.subscription.pauseButton', 'Pausar suscripción')}
+                        </button>
+                    )}
+
+                    {/* Resume subscription (paused) */}
+                    {canResume && (
+                        <button
+                            type="button"
+                            className={styles.btnPrimary}
+                            onClick={() => void handleResume()}
+                            disabled={isPausing}
+                            aria-busy={isPausing}
+                        >
+                            <PlayIcon
+                                size={16}
+                                weight="regular"
+                                aria-hidden="true"
+                            />
+                            {isPausing
+                                ? t('common.loading', 'Cargando...')
+                                : t(
+                                      'account.pages.subscription.resumeButton',
+                                      'Reanudar suscripción'
+                                  )}
+                        </button>
+                    )}
+
                     {/* Cancel subscription (only when cancellable) */}
                     {canCancel && (
                         <button
@@ -593,14 +757,24 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                 </div>
             </section>
 
-            {/* ── Cancel confirmation modal ── */}
+            {/* ── Cancel instructions modal (self-cancel pending; SPEC-147) ── */}
             {showCancelModal && (
                 <CancelConfirmModal
                     locale={locale}
-                    isLoading={isCancelling}
-                    onConfirm={() => void handleCancelConfirm()}
                     onDismiss={() => {
                         setShowCancelModal(false);
+                    }}
+                />
+            )}
+
+            {/* ── Pause confirmation modal (SPEC-143 #29) ── */}
+            {showPauseModal && (
+                <PauseConfirmModal
+                    locale={locale}
+                    isPausing={isPausing}
+                    onConfirm={() => void handlePause()}
+                    onDismiss={() => {
+                        if (!isPausing) setShowPauseModal(false);
                     }}
                 />
             )}

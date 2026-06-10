@@ -53,6 +53,16 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                     [action.groupId]: { from: action.from, to: action.to }
                 }
             };
+        case 'SET_GEO': {
+            if (action.value === null) {
+                const { [action.groupId]: _removed, ...rest } = state.geo;
+                return { ...state, geo: rest };
+            }
+            return {
+                ...state,
+                geo: { ...state.geo, [action.groupId]: action.value }
+            };
+        }
         case 'REMOVE_FILTER': {
             const current = state.selections[action.groupId] ?? [];
             return {
@@ -66,6 +76,11 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
         case 'CLEAR_GROUP': {
             const { [action.groupId]: _removed, ...restRanges } = state.ranges;
             const { [action.groupId]: _removedDate, ...restDates } = state.dates;
+            const { [action.groupId]: _removedGeo, ...restGeo } = state.geo;
+            const extraReset: Record<string, boolean> = {};
+            for (const key of action.extraToggleKeys ?? []) {
+                extraReset[key] = false;
+            }
             return {
                 ...state,
                 selections: { ...state.selections, [action.groupId]: [] },
@@ -73,10 +88,17 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                 toggles: {
                     ...state.toggles,
                     [action.groupId]: false,
-                    [`${action.groupId}_includeNull`]: false
+                    [`${action.groupId}_includeNull`]: false,
+                    // Price-composite sub-toggles. Harmless when the group is
+                    // not a price-composite. `includeUnpriced` resets to its
+                    // default of TRUE so the URL drops the param.
+                    [`${action.groupId}_isFree`]: false,
+                    [`${action.groupId}_includeUnpriced`]: true,
+                    ...extraReset
                 },
                 ranges: restRanges,
-                dates: restDates
+                dates: restDates,
+                geo: restGeo
             };
         }
         case 'CLEAR_ALL':
@@ -86,6 +108,7 @@ export function filterReducer(state: FilterState, action: FilterAction): FilterS
                 steppers: {},
                 toggles: {},
                 dates: {},
+                geo: {},
                 search: '',
                 sort: state.sort
             };
@@ -109,30 +132,54 @@ export function getStepperDefault(group: FilterGroup): number {
  * Returns true when the given group has any active selection in the current state.
  */
 export function groupHasActiveSelection(group: FilterGroup, state: FilterState): boolean {
-    if (
-        group.type === 'checkbox' ||
-        group.type === 'radio' ||
-        group.type === 'select-search' ||
-        group.type === 'icon-chips'
-    ) {
+    if (group.type === 'section-header') return false;
+    if (group.type === 'checkbox' || group.type === 'radio' || group.type === 'select-search') {
         return (state.selections[group.id] ?? []).length > 0;
     }
+    if (group.type === 'icon-chips') {
+        const hasSelections = (state.selections[group.id] ?? []).length > 0;
+        const hasPriorityActive =
+            group.priorityOptions?.some((p) => state.toggles[p.value] === true) ?? false;
+        return hasSelections || hasPriorityActive;
+    }
     if (group.type === 'stepper') {
+        // `emitWhenAtDefault` controls URL emission only (so context fields
+        // like adults/children survive pagination); a value at its default is
+        // never "active" from the user's POV.
         const def = getStepperDefault(group);
         const stateVal = state.steppers[group.id];
-        if (group.emitWhenAtDefault === true) return stateVal !== undefined;
         return (stateVal ?? def) > def;
     }
     if (group.type === 'stars') {
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
-        return hasIncludeNull || (state.steppers[group.id] ?? 0) > 0;
+        const includeNullDefault = group.defaultIncludeNull === true;
+        const includeNullState = state.toggles[`${group.id}_includeNull`];
+        const includeNullChanged =
+            includeNullState !== undefined && includeNullState !== includeNullDefault;
+        return includeNullChanged || (state.steppers[group.id] ?? 0) > 0;
     }
     if (group.type === 'toggle') return !!state.toggles[group.id];
+    if (group.type === 'price-composite') {
+        // Active if isFree is set, OR includeUnpriced is explicitly OFF
+        // (server default is ON), OR the dual-range has non-default values.
+        const isFree = !!state.toggles[`${group.id}_isFree`];
+        const includeUnpricedDefault = true;
+        const includeUnpriced =
+            state.toggles[`${group.id}_includeUnpriced`] ?? includeUnpricedDefault;
+        const range = state.ranges[group.id];
+        const rangeActive = !!(
+            (range?.min && range.min !== String(group.min)) ||
+            (range?.max && range.max !== String(group.max))
+        );
+        return isFree || includeUnpriced !== includeUnpricedDefault || rangeActive;
+    }
     if (group.type === 'dual-range') {
         const range = state.ranges[group.id];
-        const hasIncludeNull = !!state.toggles[`${group.id}_includeNull`];
+        const includeNullDefault = group.defaultIncludeNull === true;
+        const includeNullState = state.toggles[`${group.id}_includeNull`];
+        const includeNullChanged =
+            includeNullState !== undefined && includeNullState !== includeNullDefault;
         return (
-            hasIncludeNull ||
+            includeNullChanged ||
             !!(
                 (range?.min && range.min !== String(group.min)) ||
                 (range?.max && range.max !== String(group.max))
@@ -143,7 +190,41 @@ export function groupHasActiveSelection(group: FilterGroup, state: FilterState):
         const v = state.dates[group.id];
         return !!(v?.from || v?.to);
     }
+    if (group.type === 'geo-radius') {
+        return state.geo[group.id] !== undefined;
+    }
     return false;
+}
+
+/**
+ * Returns the number of active selections for a multi-select filter group,
+ * or `null` for filter types where a count is not meaningful (toggles,
+ * single-value ranges, search, date pickers, etc).
+ *
+ * Consumed by `FilterGroup` to render a `[N]` count badge next to the group
+ * label so users can see how many options they have selected at a glance
+ * without expanding the group.
+ *
+ * Only the multi-select families return a number — those are the cases where
+ * the user can stack multiple values, and the count adds information beyond
+ * the dot/tint that already signal "this group is active".
+ */
+export function groupActiveCount(group: FilterGroup, state: FilterState): number | null {
+    if (group.type === 'checkbox' || group.type === 'radio' || group.type === 'select-search') {
+        const count = (state.selections[group.id] ?? []).length;
+        return count > 0 ? count : null;
+    }
+    if (group.type === 'icon-chips') {
+        const selectionsCount = (state.selections[group.id] ?? []).length;
+        const priorityCount =
+            group.priorityOptions?.filter((p) => state.toggles[p.value] === true).length ?? 0;
+        const total = selectionsCount + priorityCount;
+        return total > 0 ? total : null;
+    }
+    if (group.type === 'geo-radius') {
+        return state.geo[group.id] !== undefined ? 1 : null;
+    }
+    return null;
 }
 
 /**
@@ -158,11 +239,18 @@ export function computeInitialCollapsed({
     readonly state: FilterState;
 }): Record<string, boolean> {
     const result: Record<string, boolean> = {};
-    let isFirst = true;
+    let isFirstCollapsible = true;
     for (const group of filters) {
+        // Section headers don't have collapsed state — skip them so they
+        // don't burn the "expand the first group" allowance either.
+        if (group.type === 'section-header') continue;
         const hasActive = groupHasActiveSelection(group, state);
-        result[group.id] = !(hasActive || isFirst);
-        isFirst = false;
+        // Groups can opt into a forced-collapsed default so secondary sections
+        // stay quiet until the user opens them, regardless of their position.
+        const forcedCollapsed = group.type === 'geo-radius' && group.defaultCollapsed === true;
+        const expand = (hasActive || isFirstCollapsible) && !forcedCollapsed;
+        result[group.id] = !expand;
+        isFirstCollapsible = false;
     }
     return result;
 }
@@ -186,10 +274,12 @@ export function initStateFromParams({
     const steppers: Record<string, number> = {};
     const toggles: Record<string, boolean> = {};
     const dates: Record<string, { from: string; to: string }> = {};
+    const geo: Record<string, FilterState['geo'][string]> = {};
     const search = params.q ?? '';
     const sort = params.sortBy ?? defaultSort;
 
     for (const group of filters) {
+        if (group.type === 'section-header') continue;
         if (
             group.type === 'checkbox' ||
             group.type === 'radio' ||
@@ -199,14 +289,27 @@ export function initStateFromParams({
             const val = params[group.id];
             if (val) selections[group.id] = val.split(',');
         }
+        if (group.type === 'icon-chips' && group.priorityOptions) {
+            // Priority chips emit independent boolean toggle params
+            // (e.g. `hasWifi=true`, `hasPool=true`). Each chip's `value`
+            // IS the URL param name.
+            for (const opt of group.priorityOptions) {
+                if (params[opt.value] === 'true') toggles[opt.value] = true;
+            }
+        }
         if (group.type === 'dual-range') {
             const cap = group.id.charAt(0).toUpperCase() + group.id.slice(1);
             const min = params[`min${cap}`] ?? '';
             const max = params[`max${cap}`] ?? '';
             if (min || max) ranges[group.id] = { min, max };
             const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
+            if (includeNullParam) {
+                if (group.defaultIncludeNull === true) {
+                    // Default checked: ON unless URL explicitly says 'false'.
+                    toggles[`${group.id}_includeNull`] = params[includeNullParam] !== 'false';
+                } else if (params[includeNullParam] === 'true') {
+                    toggles[`${group.id}_includeNull`] = true;
+                }
             }
         }
         if (group.type === 'stepper') {
@@ -217,21 +320,62 @@ export function initStateFromParams({
             const val = params.minRating;
             if (val) steppers[group.id] = Number(val);
             const includeNullParam = group.includeNullParam;
-            if (includeNullParam && params[includeNullParam] === 'true') {
-                toggles[`${group.id}_includeNull`] = true;
+            if (includeNullParam) {
+                if (group.defaultIncludeNull === true) {
+                    toggles[`${group.id}_includeNull`] = params[includeNullParam] !== 'false';
+                } else if (params[includeNullParam] === 'true') {
+                    toggles[`${group.id}_includeNull`] = true;
+                }
             }
         }
         if (group.type === 'toggle') {
             if (params[group.id] === 'true') toggles[group.id] = true;
         }
         if (group.type === 'date-range') {
-            const from = params.checkIn ?? '';
-            const to = params.checkOut ?? '';
+            const fromParam = group.fromParam ?? 'checkIn';
+            const toParam = group.toParam ?? 'checkOut';
+            const from = params[fromParam] ?? '';
+            const to = params[toParam] ?? '';
             if (from || to) dates[group.id] = { from, to };
+        }
+        if (group.type === 'price-composite') {
+            if (params.isFree === 'true') toggles[`${group.id}_isFree`] = true;
+            if (params.includeUnpriced === 'false') {
+                toggles[`${group.id}_includeUnpriced`] = false;
+            } else {
+                // Default: include unpriced events. Server treats absent as TRUE.
+                toggles[`${group.id}_includeUnpriced`] = true;
+            }
+            const min = params.minPrice ?? '';
+            const max = params.maxPrice ?? '';
+            if (min || max) ranges[group.id] = { min, max };
+        }
+        if (group.type === 'geo-radius') {
+            const lat = Number.parseFloat(params.latitude ?? '');
+            const long = Number.parseFloat(params.longitude ?? '');
+            const radius = Number.parseFloat(params.radius ?? '');
+            if (Number.isFinite(lat) && Number.isFinite(long) && Number.isFinite(radius)) {
+                // Decide which mode the URL belongs to: if the coordinates
+                // match one of the config's destinations, restore destination
+                // mode and remember the matched id; otherwise fall back to
+                // browser mode (user shared their location previously).
+                const matchedDest = group.destinationOptions.find(
+                    (opt) => opt.lat === lat && opt.long === long
+                );
+                geo[group.id] = matchedDest
+                    ? {
+                          mode: 'destination',
+                          lat,
+                          long,
+                          radius,
+                          destId: matchedDest.value
+                      }
+                    : { mode: 'browser', lat, long, radius };
+            }
         }
     }
 
-    return { selections, ranges, steppers, toggles, dates, search, sort };
+    return { selections, ranges, steppers, toggles, dates, geo, search, sort };
 }
 
 /**
@@ -257,6 +401,16 @@ export function buildParamsFromState({
         if (range.max) params.set(`max${cap}`, range.max);
     }
     for (const group of filters) {
+        if (group.type === 'section-header') continue;
+        if (group.type === 'icon-chips' && group.priorityOptions) {
+            // Emit each priority chip as `?<value>=true` when active. Absent
+            // means the server treats it as off — no need to emit `false`.
+            for (const opt of group.priorityOptions) {
+                if (state.toggles[opt.value] === true) {
+                    params.set(opt.value, 'true');
+                }
+            }
+        }
         if (group.type === 'stepper' || group.type === 'stars') {
             const def = getStepperDefault(group);
             const stateVal = state.steppers[group.id];
@@ -271,17 +425,46 @@ export function buildParamsFromState({
         if (group.type === 'toggle' && state.toggles[group.id]) {
             params.set(group.id, 'true');
         }
-        if (
-            (group.type === 'dual-range' || group.type === 'stars') &&
-            group.includeNullParam &&
-            state.toggles[`${group.id}_includeNull`]
-        ) {
-            params.set(group.includeNullParam, 'true');
+        if ((group.type === 'dual-range' || group.type === 'stars') && group.includeNullParam) {
+            const isOn = state.toggles[`${group.id}_includeNull`];
+            if (group.defaultIncludeNull === true) {
+                // Default ON: only emit when explicitly OFF, so absent = checked.
+                if (isOn === false) params.set(group.includeNullParam, 'false');
+            } else if (isOn === true) {
+                params.set(group.includeNullParam, 'true');
+            }
         }
         if (group.type === 'date-range') {
             const v = state.dates[group.id];
-            if (v?.from) params.set('checkIn', v.from);
-            if (v?.to) params.set('checkOut', v.to);
+            const fromParam = group.fromParam ?? 'checkIn';
+            const toParam = group.toParam ?? 'checkOut';
+            if (v?.from) params.set(fromParam, v.from);
+            if (v?.to) params.set(toParam, v.to);
+        }
+        if (group.type === 'price-composite') {
+            const isFree = !!state.toggles[`${group.id}_isFree`];
+            if (isFree) params.set('isFree', 'true');
+            // Only emit includeUnpriced when explicitly OFF — server default is TRUE,
+            // so an absent param means "include unpriced".
+            const includeUnpricedRaw = state.toggles[`${group.id}_includeUnpriced`];
+            const includeUnpriced = includeUnpricedRaw ?? true;
+            if (!includeUnpriced) params.set('includeUnpriced', 'false');
+            // Price range is only meaningful when not filtering free-only.
+            if (!isFree) {
+                const range = state.ranges[group.id];
+                if (range?.min && range.min !== String(group.min))
+                    params.set('minPrice', range.min);
+                if (range?.max && range.max !== String(group.max))
+                    params.set('maxPrice', range.max);
+            }
+        }
+        if (group.type === 'geo-radius') {
+            const value = state.geo[group.id];
+            if (value) {
+                params.set('latitude', String(value.lat));
+                params.set('longitude', String(value.long));
+                params.set('radius', String(value.radius));
+            }
         }
     }
     return params;

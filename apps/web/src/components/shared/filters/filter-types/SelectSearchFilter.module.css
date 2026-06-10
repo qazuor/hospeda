@@ -20,9 +20,9 @@
     align-items: center;
     gap: 0.25rem;
     padding: 0.25rem 0.5rem;
-    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    background-color: var(--brand-primary-a08);
     color: var(--brand-primary);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.12);
+    border: 1px solid var(--brand-primary-a12);
     border-radius: var(--radius-pill);
     font-family: var(--font-sans);
     font-size: 0.6875rem;
@@ -32,8 +32,8 @@
 }
 
 .selectSearchChip:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.14);
-    border-color: oklch(from var(--brand-primary) l c h / 0.22);
+    background-color: var(--brand-primary-a15);
+    border-color: var(--brand-primary-a20);
 }
 
 /* Small close glyph rendered inside selectSearchChip. */
@@ -66,7 +66,7 @@
 
 .selectSearchInput:focus {
     border-color: var(--brand-primary);
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.1);
+    box-shadow: 0 0 0 3px var(--brand-primary-a10);
     outline: none;
 }
 
@@ -76,6 +76,13 @@
     gap: 0.125rem;
     max-height: 13rem;
     overflow-y: auto;
+    /* Firefox uses its native (wider) scrollbar — the ::-webkit rules below
+     * do not apply there, so the scrollbar overlapped the right-aligned
+     * featured (star) indicator on each option (BETA-29). Make the scrollbar
+     * thin and reserve a stable gutter so it never covers the content. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--core-muted-foreground-a15) transparent;
+    scrollbar-gutter: stable;
     border: none;
     padding: 0;
     margin: 0;
@@ -91,7 +98,7 @@
 }
 
 .selectSearchList::-webkit-scrollbar-thumb {
-    background-color: oklch(from var(--core-muted-foreground) l c h / 0.15);
+    background-color: var(--core-muted-foreground-a15);
     border-radius: var(--radius-pill);
 }
 
@@ -149,4 +156,14 @@
     accent-color: var(--brand-accent);
     cursor: pointer;
     flex-shrink: 0;
+}
+
+/* Label text inside the checkbox row — flex so featured indicator can be
+ * right-aligned without breaking ellipsis on long names. */
+.checkboxText {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

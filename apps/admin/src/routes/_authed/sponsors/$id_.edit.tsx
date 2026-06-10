@@ -33,7 +33,10 @@ function SponsorEditPage() {
                 entityData={entityData}
                 zodSchema={PostSponsorUpdateInputSchema}
             >
-                <EntityEditContent entityType="sponsor" />
+                <EntityEditContent
+                    entityType="sponsor"
+                    flat
+                />
             </EntityPageBase>
         </RoutePermissionGuard>
     );

@@ -71,6 +71,10 @@ export class AccommodationService {
         return { data: { items: [], total: 0 } };
     }
 
+    async findOptions(_actor: unknown, _params: { q?: string; limit?: number }) {
+        return { data: { items: [] } };
+    }
+
     async searchForList(
         _actor: unknown,
         _opts: {

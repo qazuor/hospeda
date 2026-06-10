@@ -71,7 +71,43 @@ export const BILLING_EVENT_TYPES = {
      * dispatched. The D-1 variant is independent from D-3 — a trial gets both
      * reminders, but never the same variant twice (SPEC-126 D5).
      */
-    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1'
+    TRIAL_PRE_END_NOTIF_D1: 'TRIAL_PRE_END_NOTIF_D1',
+    /**
+     * Fired when a user explicitly requests cancellation of their subscription
+     * via the self-service cancellation flow (SPEC-147). Persisted immediately
+     * at cancellation request time so the intent is auditable even if the
+     * subsequent finalization step fails.
+     */
+    USER_CANCELED: 'USER_CANCELED',
+    /**
+     * Fired when a cancelled subscription's end-of-period finalization job
+     * runs and completes the transition to the cancelled state (SPEC-147).
+     * Written by the cron/job that processes subscriptions past their
+     * current_period_end while in a pending-cancellation status.
+     */
+    FINALIZE_CANCELLED_SUB: 'FINALIZE_CANCELLED_SUB',
+    /**
+     * Fired when the D3 "access ending soon" reminder email is dispatched for
+     * a soft-cancelled subscription (SPEC-147 T-010). Acts as the per-subscription
+     * dedup guard in the `finalize-cancelled-subs` cron so a single sub does not
+     * receive the same reminder on consecutive daily runs.
+     */
+    SUBSCRIPTION_ACCESS_ENDING_NOTIF: 'SUBSCRIPTION_ACCESS_ENDING_NOTIF',
+    /**
+     * Fired once per admin disable action when a billing plan is marked as
+     * disabled by an admin (SPEC-148). Carries the acting admin user ID and
+     * the count of subscriptions affected by the disable, enabling operational
+     * audit of bulk plan-retirement events.
+     */
+    PLAN_DISABLED_BY_ADMIN: 'PLAN_DISABLED_BY_ADMIN',
+    /**
+     * Fired once per affected subscription when a plan is disabled/retired
+     * and the subscription is flagged for cancel-at-period-end (SPEC-148).
+     * Distinct from PLAN_DISABLED_BY_ADMIN (the admin action); this event
+     * tracks the per-subscription migration side-effect so individual sub
+     * histories remain auditable without inspecting admin-level event rows.
+     */
+    PLAN_DISABLED_MIGRATION: 'PLAN_DISABLED_MIGRATION'
 } as const;
 
 /**

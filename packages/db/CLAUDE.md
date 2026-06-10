@@ -281,47 +281,92 @@ const result = await db.execute(
 
 ## Migrations
 
-The migrations folder (`src/migrations/`) is clean and will be populated when the first
-production migration is generated. The meta journal starts empty.
+The project uses **two physically separate migration carriles** enforced by directory. Every
+schema change must land in exactly one of them — the golden rule below decides which.
 
-### Development workflow (preferred)
+### Golden Rule: which carril?
 
-During development, bypass the migration system entirely and push the schema directly to the DB:
+| Question | Answer | Carril |
+|----------|--------|--------|
+| Can Drizzle declare it in the TS schema (table / column / normal index / FK / enum)? | Yes | `src/migrations/` — run `db:generate` |
+| Is it a Drizzle-invisible object (trigger / matview / CHECK / special index / role)? | Yes | `src/migrations/extras/` — hand-written, idempotent |
+| Is it a data transformation of existing rows (type-cast USING / backfill UPDATE)? | Yes | `src/migrations/` — hand-edit the generated file to add the `USING` |
+
+`push` and `generate` **never** convert data. Conversions are always explicit with `USING`.
+
+### Carril 1 — `src/migrations/` (Drizzle-generated, versioned)
+
+Drizzle-generated structural migrations (tables, columns, normal indexes, FKs, enums) plus
+any hand-edited data conversions tied to a structural change. Numbered automatically by
+drizzle-kit, journal-tracked in `src/migrations/meta/`, applied once each by `db:migrate`.
+
+The baseline is `src/migrations/0000_baseline.sql`.
 
 ```bash
-pnpm db:push          # Push schema changes directly (no migration file generated)
+pnpm db:generate      # Generate .sql from TS schema diff (review before committing)
+pnpm db:migrate       # Apply all pending migrations to the DB (real drizzle-kit migrate)
 ```
 
-After any `db:push`, always run the extras script to apply triggers, materialized views, and
-JSONB CHECK constraints that Drizzle cannot manage:
+### Carril 2 — `src/migrations/extras/` (hand-written, idempotent)
+
+PostgreSQL objects Drizzle cannot declare: materialized views, triggers, CHECK constraints,
+GIN/partial/functional indexes. Files are:
+
+- Hand-written SQL
+- Named `NNN-name.kind.sql` (3-digit prefix for ordering, e.g. `001-search-index.matview.sql`)
+- **Idempotent** — use `IF NOT EXISTS` / `CREATE OR REPLACE` throughout
+- Re-applied on every `pnpm db:apply-extras` call (not just once)
 
 ```bash
-packages/db/scripts/apply-postgres-extras.sh
+pnpm db:apply-extras   # Re-apply every extras/*.sql in lexical order
 ```
 
-### Production workflow
+Always run `db:apply-extras` after `db:migrate` on a fresh environment.
 
-When preparing a release, generate a migration file from the current schema state, then apply it:
+### Dev vs VPS comparison
+
+| | Dev (local) | CI + VPS (staging = prod) |
+|---|---|---|
+| Structure | `push` (fast, disposable DB) | versioned `migrate` |
+| Data conversion | irrelevant (fresh DB every time) | explicit migration with `USING` |
+| Source of truth | the TS schema | the migrations in git |
+
+### Development workflow
+
+Iterate freely in dev — push resets the DB to match the TS schema immediately:
 
 ```bash
-pnpm db:generate      # Generate .sql migration file from schema diff
-pnpm db:migrate       # Apply pending migration files to the DB
+pnpm db:push          # Push schema directly to local DB (no migration file — DEV ONLY)
+pnpm db:fresh-dev     # Reset + push + seed (the normal local dev loop)
 ```
 
-> NOTE: `db:migrate` in `package.json` is aliased to `drizzle-kit push` — for production use
-> run `drizzle-kit migrate` directly via `pnpm run drizzle-kit migrate --config drizzle.config.ts`
-> after generating the file with `db:generate`.
+`push` is **dev-only** and must NEVER be run against a VPS. It drops objects the migration
+history depends on and cannot be rolled back.
+
+### Close-of-work workflow (mandatory before a schema PR)
+
+1. Iterate freely in dev with `push` / `db:fresh-dev`.
+2. Run `pnpm --filter @repo/db db:generate` and review the generated file.
+3. If the column type change requires a data conversion, hand-edit the generated `.sql` to add
+   the `USING` expression (Drizzle won't invent it).
+4. Never run `push` against the VPS. Ever.
+5. CI's drift guard (`scripts/check-schema-drift.sh`) blocks a PR if a committed schema
+   change has no matching migration — it is not optional.
 
 ### Migration File Example
 
 ```sql
--- src/migrations/0000_initial_schema.sql
-CREATE TABLE accommodations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(255) NOT NULL,
-  slug VARCHAR(255) NOT NULL UNIQUE,
-  created_at TIMESTAMP DEFAULT NOW() NOT NULL
-);
+-- src/migrations/0001_add_display_order.sql
+ALTER TABLE "accommodation_faqs" ADD COLUMN "display_order" integer DEFAULT 0 NOT NULL;
+```
+
+Data conversion example (hand-edited after `db:generate`):
+
+```sql
+-- Drizzle generated the ALTER TABLE; we hand-add USING for the cast:
+ALTER TABLE "some_table"
+  ALTER COLUMN "status" TYPE new_status_enum
+  USING status::text::new_status_enum;
 ```
 
 ## Enums
@@ -611,6 +656,24 @@ buildOrderByClause(sortBy: string, table: unknown, sortOrder: 'asc' | 'desc' = '
 
 The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `useDefaultParameterLast` rule enforces this ordering. If you swap them, the pre-commit hook will fail.
 
+## Lean append-only tables (approved deviation from BaseModel)
+
+Most tables extend `BaseModel` and carry full audit columns (`createdById`,
+`updatedById`, `deletedAt`, `adminInfo`) plus soft-delete. A small set of
+**append-only telemetry tables** deliberately omit these columns:
+
+| Table | Precedent spec | Reason |
+|---|---|---|
+| `app_log_entries` | SPEC-??? | Structured log sink; never edited, never user-owned |
+| `entity_views` | SPEC-159 | High-write view capture; audit/FK overhead would bloat the hottest-write table |
+
+These tables use **TTL purge crons** (nightly `DELETE WHERE <time_col> < now() - interval
+'N days'`) instead of soft-delete, and they do NOT extend `BaseModel`. This is an approved,
+documented convention deviation — do not "fix" them by adding BaseModel columns.
+
+Apply this pattern only for tables that are: (a) append-only, (b) never user-owned or
+role-scoped for CRUD, and (c) high-write enough that audit column overhead is measurable.
+
 ## Notes
 
 - Models are stateless - create new instances as needed
@@ -620,29 +683,54 @@ The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `u
 
 ## PostgreSQL Extras: Features Drizzle Cannot Declare
 
-Three categories of PostgreSQL features are **not** visible to `drizzle-kit push` or
-`drizzle-kit generate` and must be applied separately via a dedicated script:
+These objects live in **Carril 2** (`src/migrations/extras/`). They are applied by
+`pnpm db:apply-extras` and must be idempotent (re-run safely after any schema reset).
 
-| Category | Objects | Migration files |
-|----------|---------|-----------------|
-| Materialized view | `search_index` + GIN index + `refresh_search_index()` | `manual/0016`, `manual/0017`, `manual/0018` |
-| Triggers | `set_updated_at` (all tables), `delete_entity_bookmarks` (5 tables) | `manual/0019`, `manual/0020` |
-| CHECK constraints | `billing_addon_purchases`: status, limit_adjustments, entitlement_adjustments | `0025`, `0026` |
+| File | Category | Objects |
+|------|----------|---------|
+| `001-search-index.matview.sql` | Materialized view | `search_index` + GIN + UNIQUE index + `refresh_search_index()` |
+| `002-set-updated-at.trigger.sql` | Trigger | `set_updated_at` on all tables with `updated_at` |
+| `003-delete-entity-bookmarks.trigger.sql` | Trigger | `delete_entity_bookmarks` on 5 tables |
+| `004-billing.constraints.sql` | CHECK constraints | `billing_addon_purchases` status / JSONB checks |
+| `005-media.constraints.sql` | CHECK constraints | media-related column constraints |
+| `006-conversation.indexes.sql` | Special indexes | conversation functional/partial indexes |
+| `007-messages.constraints.sql` | CHECK constraints | messages column constraints |
+| `008-bookmark.indexes.sql` | Special indexes | bookmark partial/functional indexes |
+| `009-newsletter.indexes.sql` | Special indexes | newsletter functional indexes |
+| `010-abandoned-status.data-migration.sql` | Data migration | Canonicalises `incomplete_expired` → `abandoned` in billing_subscriptions |
+| `011-entity-views.indexes.sql` | Special indexes | entity_views partial/functional indexes |
+| `012-content-moderation-thresholds.check.sql` | CHECK constraints | Cross-column CHECK `pending < reject` on content_moderation_thresholds |
+| `013-moderation-role-grants.data.sql` | Bootstrap data | MODERATION_* permission grants for `admin` + `super_admin` roles (SPEC-195) |
 
-### Applying after a schema push
+### Applying after migrate
 
-After any `drizzle-kit push` or `pnpm db:fresh-dev`, run:
+After `pnpm db:migrate` or on a fresh environment, always run:
 
 ```bash
-packages/db/scripts/apply-postgres-extras.sh
+pnpm db:apply-extras
+# or directly:
+node packages/db/scripts/apply-postgres-extras.mjs
 # or with an explicit URL:
-packages/db/scripts/apply-postgres-extras.sh "postgresql://user:pass@host:5432/hospeda"
+node packages/db/scripts/apply-postgres-extras.mjs "postgresql://user:pass@host:5432/hospeda"
 ```
 
-The script is **idempotent** (uses `IF NOT EXISTS` / `CREATE OR REPLACE` throughout).
+The implementation uses the `pg` driver (no `psql` dependency) so it works on hosts that do
+not have postgres client tools installed (e.g. the VPS host where `hops db-seed` runs).
+The thin `apply-postgres-extras.sh` wrapper is kept for backwards compatibility.
 
-After `pnpm db:migrate` on a fresh environment, the numbered migrations (0025, 0026) are already
-applied by Drizzle, but the `manual/` migrations are not. Run the script to cover those too.
+### Extensions preflight (MANDATORY on a fresh/reset VPS)
+
+`000-reset-schema.sql` uses `DROP SCHEMA public CASCADE`, which removes all extensions'
+objects. Before running `migrate` on a wiped VPS, restore the extensions:
+
+```bash
+psql "$URL" -f packages/db/scripts/reset/001-extensions.sql
+# then:
+pnpm db:migrate
+pnpm db:apply-extras
+```
+
+The baseline uses `gen_random_uuid()` (pgcrypto) — the migrate step will fail without this.
 
 For full details, constraint definitions, and verification queries see:
 [packages/db/docs/triggers-manifest.md](docs/triggers-manifest.md)
@@ -650,12 +738,21 @@ For full details, constraint definitions, and verification queries see:
 ## Common Gotchas
 
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
-- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
+- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar. Despite the varchar type, `plan_id` stores the plan **UUID** (`billing_plans.id`), NOT the slug — verified against real data (SPEC-168 D1). Plan mutations therefore target the `id` (UUID), and the slug (`billing_plans.name`) is **immutable** after creation (config/web/entitlements resolve by slug). Plans are now **runtime-editable** from the admin (SPEC-168); the `@repo/billing` config is seed-only.
 - `billing_customers` uses `segment` column, not `category`
+- `billing_subscriptions.mp_subscription_id` stores the **MercadoPago preapproval ID** for monthly recurring subscriptions. It is `NULL` for annual one-time charges (those use a one-time payment object, not a preapproval). Use this column when looking up a subscription in the MP sandbox dashboard (Subscriptions → search by preapproval ID). See [`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md) for inspection steps.
 - `numeric()` columns use `mode: 'number'` for runtime JS number coercion (SPEC-056). For monetary values, prefer `integer` storage in centavos (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
-- **`drizzle-kit push` alone is not enough** .. triggers, materialized views, and JSONB CHECK
-  constraints are invisible to Drizzle. Always run `apply-postgres-extras.sh` afterward.
+- **`drizzle-kit push` is dev-only** — NEVER run it against a VPS. Use `db:migrate` (real
+  `drizzle-kit migrate`) for CI and VPS. See [docs/guides/migrations.md](../../docs/guides/migrations.md).
+- **Always run `apply-extras` after `migrate`** — triggers, materialized views, and JSONB
+  CHECK constraints live in `src/migrations/extras/` and are invisible to Drizzle's migrate
+  command. Run `pnpm db:apply-extras` after every `db:migrate` on a fresh environment.
+- **`db:generate` is mandatory before a schema PR** — the drift guard (`scripts/check-schema-drift.sh`)
+  blocks CI if the TS schema changed without a committed migration. Run `db:generate` and
+  review the generated file before opening a PR.
+- **Two carriles, never mix** — structural changes go to `src/migrations/` (Drizzle-generated),
+  Drizzle-invisible objects go to `src/migrations/extras/` (hand-written, idempotent, NNN prefix).
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike(col, term)` from `@repo/db`, which automatically escapes `%`, `_`, and `\` before calling `ilike()`. The only file that may import `ilike` directly is `src/utils/drizzle-helpers.ts`. CI enforces this.
 
 ## Related Documentation

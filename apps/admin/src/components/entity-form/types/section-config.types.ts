@@ -9,6 +9,19 @@ import type { FieldConfig } from './field-config.types';
 export type SectionConfig = {
     id: string;
 
+    /**
+     * Optional custom render function that bypasses the standard field-grid
+     * renderer entirely. When provided, the section is rendered by calling
+     * this function and the `fields` array is ignored by `EntityViewContent`.
+     *
+     * Used for non-standard sections such as `stats-chips` (SPEC-197 T-016)
+     * that inject a React component rather than a field list.
+     *
+     * The section is still subject to permission filtering via
+     * `section.permissions.view` / `section.permissions.edit`.
+     */
+    customRender?: () => React.ReactNode;
+
     // Direct translations (explicit control)
     title?: string;
     description?: string;

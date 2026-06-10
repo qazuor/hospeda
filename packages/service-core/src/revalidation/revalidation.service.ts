@@ -1,3 +1,11 @@
+/**
+ * Revalidation service — schedules and executes Astro ISR cache revalidation.
+ *
+ * Slightly over the 500-line guideline; split deferred (reviewed SPEC-167 T-023).
+ *
+ * @module revalidation/revalidation.service
+ */
+
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import type { RevalidationConfigRecord } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -194,6 +202,30 @@ export class RevalidationService {
     scheduleRevalidation(event: EntityChangeData, reason?: string): void {
         // Resolve config asynchronously and schedule -- fully fire-and-forget
         void this.resolveConfigAndSchedule(event, reason);
+    }
+
+    /**
+     * Schedule revalidation for a targeted list of entity change events.
+     *
+     * Routes each event through the same debounce/fire-and-forget path as
+     * {@link scheduleRevalidation}. Duplicate events for the same entity key
+     * (`entityType:entityId`) are merged by the existing debounce -- no extra
+     * deduplication needed here. Empty `events` is a no-op.
+     *
+     * Callers supply complete {@link EntityChangeData} objects (slug + context).
+     * The service does not fetch slugs -- callers supply events.
+     *
+     * @param params.events - Entity change events to schedule
+     * @param params.reason - Optional reason propagated to each log entry
+     */
+    scheduleRevalidationBatch(params: {
+        readonly events: ReadonlyArray<EntityChangeData>;
+        readonly reason?: string;
+    }): void {
+        const { events, reason } = params;
+        for (const event of events) {
+            this.scheduleRevalidation(event, reason);
+        }
     }
 
     /**

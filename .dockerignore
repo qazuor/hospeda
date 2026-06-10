@@ -22,18 +22,7 @@ build/
 **/.env.*
 
 # VCS and tooling metadata
-# Important: exclude .git/** (the contents) instead of .git (the directory).
-# Docker BuildKit silently ignores `!` negations when their parent directory
-# is fully excluded — `.git` + `!.git/HEAD` does NOT include HEAD. Using
-# `.git/**` excludes every path inside .git/ but still allows the negation
-# below to re-include the specific file we need.
-.git/**
-# Exception: ship just .git/HEAD so the Dockerfiles can resolve the deploy
-# commit SHA at build time and bake it into the Sentry release tag (web and
-# admin client bundles). Coolify clones in detached HEAD via
-# `git checkout <sha>`, so the file contains a literal 40-char SHA — no
-# refs traversal needed. ~41 bytes added to the build context, negligible.
-!.git/HEAD
+.git
 .github
 .husky
 .vscode

@@ -7,12 +7,12 @@
  * @module services/billing/addon/addon-user-addons
  */
 
-import { getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import type { QueryContext } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
+import { AddonCatalogService } from './addon-catalog.service.js';
 import type { ServiceResult, UserAddon } from './addon.types.js';
 import { addonAdjustmentsArraySchema } from './addon.types.js';
 
@@ -78,25 +78,37 @@ export interface UserAddonBillingClient {
     };
 }
 
+// ─── Module-level singleton — avoids re-constructing on every call ────────────
+const catalogService = new AddonCatalogService();
+
 // ─── Query Functions ──────────────────────────────────────────────────────────
 
 /**
  * Map a single addon purchase row to a UserAddon object.
  *
+ * Resolves catalog metadata (name, billingType, priceArs) from the DB-backed
+ * {@link AddonCatalogService}. Falls back to safe defaults when the slug is
+ * not found in the catalog.
+ *
  * @param purchase - Raw purchase row from the database.
+ * @param ctx - Optional query context forwarded to the catalog service.
  * @returns Mapped UserAddon object.
  */
-function mapPurchaseToUserAddon(purchase: {
-    id: string;
-    addonSlug: string;
-    status: string;
-    purchasedAt: Date;
-    expiresAt: Date | null;
-    canceledAt: Date | null;
-    limitAdjustments: unknown;
-    entitlementAdjustments: unknown;
-}): UserAddon {
-    const addonDef = getAddonBySlug(purchase.addonSlug);
+async function mapPurchaseToUserAddon(
+    purchase: {
+        id: string;
+        addonSlug: string;
+        status: string;
+        purchasedAt: Date;
+        expiresAt: Date | null;
+        canceledAt: Date | null;
+        limitAdjustments: unknown;
+        entitlementAdjustments: unknown;
+    },
+    ctx?: QueryContext
+): Promise<UserAddon> {
+    const catalogResult = await catalogService.getBySlug(purchase.addonSlug, ctx);
+    const addonDef = catalogResult.success ? catalogResult.data : null;
 
     let affectsLimitKey: string | null = null;
     let limitIncrease: number | null = null;
@@ -146,17 +158,23 @@ function mapPurchaseToUserAddon(purchase: {
  * Parse addon adjustments from subscription JSON metadata for backward
  * compatibility. Returns UserAddon entries for addons not already in the table.
  *
+ * Resolves catalog metadata from the DB-backed {@link AddonCatalogService}.
+ * Falls back to safe defaults when the slug is not found in the catalog.
+ *
  * @param subscriptions - Active subscriptions for the customer.
  * @param existingTableSlugs - Set of addon slugs already found in the table.
+ * @param ctx - Optional query context forwarded to the catalog service.
  * @returns UserAddon entries parsed from metadata.
  */
-function parseMetadataAddons({
+async function parseMetadataAddons({
     subscriptions,
-    existingTableSlugs
+    existingTableSlugs,
+    ctx
 }: {
     readonly subscriptions: readonly BillingSubscription[];
     readonly existingTableSlugs: ReadonlySet<string>;
-}): readonly UserAddon[] {
+    readonly ctx?: QueryContext;
+}): Promise<readonly UserAddon[]> {
     const result: UserAddon[] = [];
 
     const activeSubscription = subscriptions.find(
@@ -191,7 +209,9 @@ function parseMetadataAddons({
             continue;
         }
 
-        const addonDef = getAddonBySlug(adj.addonSlug);
+        const catalogResult = await catalogService.getBySlug(adj.addonSlug, ctx);
+        const addonDef = catalogResult.success ? catalogResult.data : null;
+
         result.push({
             id: `${activeSubscription.id}_${adj.addonSlug}`,
             addonSlug: adj.addonSlug,
@@ -262,17 +282,18 @@ export async function queryUserAddons({
             )
         );
 
-    const userAddonsFromTable: UserAddon[] = addonPurchases.map((purchase) =>
-        mapPurchaseToUserAddon(purchase)
+    const userAddonsFromTable: UserAddon[] = await Promise.all(
+        addonPurchases.map((purchase) => mapPurchaseToUserAddon(purchase, ctx))
     );
 
     const existingTableSlugs = new Set(userAddonsFromTable.map((a) => a.addonSlug));
 
     // Backward compatibility: merge from JSON metadata
     const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
-    const userAddonsFromMetadata = parseMetadataAddons({
+    const userAddonsFromMetadata = await parseMetadataAddons({
         subscriptions,
-        existingTableSlugs
+        existingTableSlugs,
+        ctx
     });
 
     return { success: true, data: [...userAddonsFromTable, ...userAddonsFromMetadata] };

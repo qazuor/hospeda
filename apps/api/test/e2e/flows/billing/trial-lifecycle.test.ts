@@ -450,17 +450,25 @@ describe('SPEC-143 trial lifecycle e2e', () => {
             const cacheSizeAfterCron = getEntitlementCacheStats().size;
             expect(cacheSizeAfterCron).toBe(cacheSizeBeforeCron - 1);
 
-            // ASSERT: a fresh probe re-loads from billing storage and sees
-            // an empty entitlement set (the now-cancelled sub is no longer
-            // an active subscription).
+            // ASSERT: a fresh probe re-loads from billing storage. The
+            // now-cancelled sub is no longer active, so the loader returns
+            // the tourist-free fallback (SPEC-143 T-143-58) instead of an
+            // empty set.
             const postProbeRes = await probeApp.request('/probe');
             const postProbeBody = (await postProbeRes.json()) as {
                 readonly entitlements: readonly string[];
                 readonly limits: Readonly<Record<string, number>>;
                 readonly billingLoadFailed: boolean;
             };
-            expect(postProbeBody.entitlements).toEqual([]);
-            expect(postProbeBody.limits).toEqual({});
+            expect(new Set(postProbeBody.entitlements)).toEqual(
+                new Set([
+                    'save_favorites',
+                    'write_reviews',
+                    'read_reviews',
+                    'can_view_recommendations'
+                ])
+            );
+            expect(postProbeBody.limits).toEqual({ max_favorites: 3 });
             expect(postProbeBody.billingLoadFailed).toBe(false);
         });
 

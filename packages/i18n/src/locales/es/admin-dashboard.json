@@ -4,6 +4,32 @@
         "refresh": "Actualizar",
         "create": "Crear"
     },
+    "dashboard": {
+        "host": {
+            "views": {
+                "empty": "Sin vistas en este período.",
+                "locked": {
+                    "description": "Disponible con un plan activo",
+                    "cta": "Ver planes"
+                }
+            }
+        },
+        "editor": {
+            "views": {
+                "empty": "Sin vistas en este período."
+            }
+        },
+        "admin": {
+            "views": {
+                "title": "Vistas de plataforma",
+                "entityTypes": {
+                    "ACCOMMODATION": "Alojamientos",
+                    "POST": "Posts",
+                    "EVENT": "Eventos"
+                }
+            }
+        }
+    },
     "kpis": {
         "visitors": "Visitantes",
         "posts": "Publicaciones",

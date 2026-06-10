@@ -13,7 +13,8 @@ export const CATEGORY_DISPLAY_ORDER = [
     'environment',
     'documentation',
     'infrastructure',
-    'package-tools'
+    'package-tools',
+    'worktree'
 ] as const satisfies readonly CommandCategory[];
 
 /**
@@ -29,7 +30,8 @@ export const CATEGORY_LABELS: Record<CommandCategory, string> = {
     environment: 'Environment',
     documentation: 'Documentation',
     infrastructure: 'Infrastructure',
-    'package-tools': 'Package Tools'
+    'package-tools': 'Package Tools',
+    worktree: 'Worktree'
 };
 
 /**

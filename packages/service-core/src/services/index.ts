@@ -1,10 +1,15 @@
 export * from './accommodation/accommodation.service';
+export * from './appLog/index.js';
 export * from './conversation/index.js';
+export * from './contentModeration';
+export * from './cronRun/index.js';
 export * from './accommodationReview/accommodationReview.service';
 export * from './amenity/amenity.service';
 export * from './attraction/attraction.service';
 export * from './destination/destination.service';
 export * from './destinationReview/destinationReview.service';
+export * from './entityComment/entityComment.service';
+export * from './entityView/index.js';
 export * from './event/event.service';
 export * from './exchange-rate';
 export * from './geocoding';
@@ -12,7 +17,9 @@ export * from './eventLocation/eventLocation.service';
 export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';
 export * from './feature/feature.normalizers';
+export * from './permission/permission.effects';
 export * from './permission/permission.service';
+export * from './platformSettings/index.js';
 export * from './post/post.service';
 export * from './postSponsor/postSponsor.service';
 export * from './postSponsorship/postSponsorship.service';
@@ -27,6 +34,7 @@ export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';
+export * from './moderation';
 
 // HookState types for service consumers
 export type {

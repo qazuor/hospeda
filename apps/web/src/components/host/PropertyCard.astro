@@ -9,8 +9,12 @@
  * - DRAFT    → amber background  → i18n key `host.properties.card.status.DRAFT`
  * - ACTIVE   → green background  → i18n key `host.properties.card.status.PUBLISHED` (user-facing label)
  * - ARCHIVED → red background    → i18n key `host.properties.card.status.SUSPENDED`
+ *
+ * SPEC-208 PR2: Edit link added — routes to the web editor page at
+ * `/{locale}/mi-cuenta/propiedades/{id}/editar/` instead of the admin panel.
  */
 
+import { getAdminUrlOrThrow } from '@/lib/env';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -82,16 +86,20 @@ const priceText = hasPrice
     : null;
 const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
 
-/** Action URLs. */
+/** Action URLs.
+ *
+ * The publish action still routes to the admin panel — the authoritative
+ * publish flow (draft → active with trial logic) lives there (SPEC-205 P1).
+ * The edit action routes to the web editor (SPEC-208 PR2).
+ * View-on-site and unpublish are web-native actions.
+ */
+const adminBase = getAdminUrlOrThrow().replace(/\/$/, '');
+const publishUrl = `${adminBase}/accommodations/${property.id}/edit?action=publish`;
 const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
 const unpublishUrl = buildUrl({
     locale,
     path: `mi-cuenta/propiedades/${property.id}?action=unpublish`
-});
-const publishUrl = buildUrl({
-    locale,
-    path: `mi-cuenta/propiedades/${property.id}/editar?action=publish`
 });
 
 const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
@@ -140,8 +148,8 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
 
         <!-- ACTIONS -->
         <div class="prop-card__actions" role="group" aria-label={property.name}>
-            <!-- Edit: always visible -->
-            <a href={editUrl} class="prop-card__action prop-card__action--primary">
+            <!-- Edit: always available (routes to web editor) -->
+            <a href={editUrl} class="prop-card__action prop-card__action--secondary">
                 {t('host.properties.card.actions.edit', 'Editar')}
             </a>
 
@@ -164,7 +172,7 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                 </a>
             )}
 
-            <!-- Publish: only when DRAFT -->
+            <!-- Publish: only when DRAFT (routes to admin for publish flow) -->
             {isDraft && (
                 <a href={publishUrl} class="prop-card__action prop-card__action--secondary">
                     {t('host.properties.card.actions.publish', 'Publicar')}
@@ -347,15 +355,6 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
     .prop-card__action:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
-    }
-
-    .prop-card__action--primary {
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground, #ffffff);
-    }
-
-    .prop-card__action--primary:hover {
-        opacity: 0.88;
     }
 
     .prop-card__action--secondary {

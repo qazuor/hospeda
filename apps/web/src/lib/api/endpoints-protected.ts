@@ -410,19 +410,19 @@ export const billingApi = {
      *
      * @example
      * ```ts
-     * const result = await billingApi.changePlan({ planId: 'plan-uuid', billingInterval: 'monthly' });
+     * const result = await billingApi.changePlan({ newPlanId: 'plan-uuid', billingInterval: 'monthly' });
      * ```
      */
     changePlan({
-        planId,
+        newPlanId,
         billingInterval
     }: {
-        readonly planId: string;
+        readonly newPlanId: string;
         readonly billingInterval: string;
     }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/change-plan`,
-            body: { planId, billingInterval }
+            body: { newPlanId, billingInterval }
         });
     },
 
@@ -444,6 +444,45 @@ export const billingApi = {
     }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({
             path: `${PROTECTED}/billing/subscriptions/${subscriptionId}`
+        });
+    },
+
+    /**
+     * Pause the authenticated user's own subscription (SPEC-143 #29).
+     *
+     * A host self-pause is always "full": it stops billing AND hides/edit-locks
+     * the owner's accommodations until resume. No body — it targets the caller's
+     * own active subscription.
+     */
+    pauseSubscription(): Promise<
+        ApiResult<{
+            readonly success: boolean;
+            readonly subscriptionId: string;
+            readonly status: string;
+            readonly accommodationsUpdated: number;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/me/subscription-pause`,
+            body: {}
+        });
+    },
+
+    /**
+     * Resume the authenticated user's own paused subscription (SPEC-143 #29).
+     * Restarts billing and restores the owner's accommodations.
+     */
+    resumeSubscription(): Promise<
+        ApiResult<{
+            readonly success: boolean;
+            readonly subscriptionId: string;
+            readonly status: string;
+            readonly accommodationsUpdated: number;
+        }>
+    > {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/me/subscription-resume`,
+            body: {}
         });
     },
 
@@ -472,25 +511,38 @@ export const billingApi = {
     /**
      * Create a checkout session to purchase a plan.
      *
-     * @param params - Plan ID and billing interval
+     * Uses the Hospeda-custom `start-paid` route which handles the full paid
+     * subscription bootstrap: customer creation, MercadoPago preapproval,
+     * trial-to-paid transitions, and idempotency. The legacy `/checkout`
+     * endpoint was deprecated in SPEC-126.
+     *
+     * @param params - Plan slug and billing interval
      * @returns The checkout URL to redirect the user to
      *
      * @example
      * ```ts
-     * const result = await billingApi.createCheckout({ planId: 'plan-uuid', billingInterval: 'yearly' });
+     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual' });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
      * ```
      */
     createCheckout({
-        planId,
+        planSlug,
         billingInterval
     }: {
-        readonly planId: string;
-        readonly billingInterval: string;
+        readonly planSlug: string;
+        readonly billingInterval: 'monthly' | 'annual';
     }): Promise<ApiResult<{ readonly checkoutUrl: string }>> {
         return apiClient.postProtected({
-            path: `${PROTECTED}/billing/checkout`,
-            body: { planId, billingInterval }
+            path: `${PROTECTED}/billing/subscriptions/start-paid`,
+            body: { planSlug, billingInterval },
+            // `/start-paid` is wrapped by `idempotencyKeyMiddleware` (SPEC-143
+            // T-143-60). A fresh UUID v4 per click means double-click retries
+            // get the cached response (no duplicate MP preference + sub row)
+            // while two distinct user actions remain independent. The
+            // disabled-while-loading guard on the button covers the simultaneous
+            // double-click case; the middleware covers the network-level retry
+            // case (slow network → user reloads, etc.).
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
 
@@ -550,6 +602,76 @@ export const billingApi = {
     getAddons(): Promise<ApiResult<{ readonly addons: readonly UserAddon[] }>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/addons/my`
+        });
+    },
+
+    /**
+     * Get the trial status for the authenticated user.
+     *
+     * Returns `isExpired: true` with populated `startedAt`, `expiresAt`, and
+     * `planSlug` for users whose trial expired and subscription was cancelled.
+     * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
+     *
+     * @returns Trial status information for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getTrialStatus();
+     * if (result.ok && result.data.isExpired) { ... }
+     * ```
+     */
+    getTrialStatus(): Promise<
+        ApiResult<{
+            readonly isOnTrial: boolean;
+            readonly isExpired: boolean;
+            readonly daysRemaining: number | null;
+            readonly startedAt: string | null;
+            readonly expiresAt: string | null;
+            readonly planSlug: string | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/trial/status`
+        });
+    },
+
+    /**
+     * Get the entitlements for the authenticated user.
+     *
+     * Returns the user's current feature flags (entitlements array), plan
+     * limits map, and active plan context. Mirrors the response shape of
+     * `GET /api/v1/protected/users/me/entitlements`.
+     *
+     * - `entitlements`: sorted array of feature-flag keys (e.g. `["can_use_rich_description"]`)
+     * - `limits`: object map of limit keys to numeric values (e.g. `{ max_accommodations: 1 }`).
+     *   A value of `-1` means unlimited.
+     * - `plan`: active plan summary or `null` if the user has no active paid plan.
+     * - `asOf`: ISO timestamp of when the values were resolved.
+     *
+     * @returns Entitlement data for the current user.
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.getEntitlements();
+     * if (result.ok) {
+     *   const maxAccommodations = result.data.limits.max_accommodations; // -1 = unlimited
+     * }
+     * ```
+     */
+    getEntitlements(): Promise<
+        ApiResult<{
+            readonly entitlements: ReadonlyArray<string>;
+            readonly limits: Readonly<Record<string, number>>;
+            readonly plan: {
+                readonly slug: string;
+                readonly name: string;
+                readonly status: string;
+            } | null;
+            readonly asOf: string;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/users/me/entitlements`
         });
     }
 };
@@ -679,6 +801,78 @@ export const reviewsApi = {
         reviewId
     }: { readonly reviewId: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/reviews/${reviewId}` });
+    }
+};
+
+// --- Destination Reviews (Protected) ---
+
+/** Rating dimensions required for a destination review (18 aspects) */
+export interface DestinationReviewRating {
+    readonly landscape: number;
+    readonly attractions: number;
+    readonly accessibility: number;
+    readonly safety: number;
+    readonly cleanliness: number;
+    readonly hospitality: number;
+    readonly culturalOffer: number;
+    readonly gastronomy: number;
+    readonly affordability: number;
+    readonly nightlife: number;
+    readonly infrastructure: number;
+    readonly environmentalCare: number;
+    readonly wifiAvailability: number;
+    readonly shopping: number;
+    readonly beaches: number;
+    readonly greenSpaces: number;
+    readonly localEvents: number;
+    readonly weatherSatisfaction: number;
+}
+
+/** Data sent when creating a destination review. userId and destinationId are NOT included. */
+export interface CreateDestinationReviewBody {
+    readonly rating: DestinationReviewRating;
+    readonly title?: string;
+    readonly content?: string;
+}
+
+/** Protected destination review API endpoints */
+export const destinationReviewsApi = {
+    /**
+     * Create a new review for a destination.
+     *
+     * The authenticated user's id is injected server-side; do NOT include
+     * `userId` in the body — the endpoint will reject it with a 400.
+     *
+     * @param params - Destination ID and review data
+     * @returns The created review record (moderationState will be PENDING)
+     *
+     * @example
+     * ```ts
+     * const result = await destinationReviewsApi.create({
+     *   destinationId: 'dest-uuid',
+     *   body: {
+     *     rating: { landscape: 5, attractions: 4, accessibility: 4, safety: 5,
+     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, gastronomy: 5,
+     *               affordability: 4, nightlife: 3, infrastructure: 4, environmentalCare: 4,
+     *               wifiAvailability: 3, shopping: 3, beaches: 5, greenSpaces: 4,
+     *               localEvents: 4, weatherSatisfaction: 5 },
+     *     title: 'Hermoso lugar',
+     *     content: 'Pasamos un finde excelente, mucha naturaleza.'
+     *   }
+     * });
+     * ```
+     */
+    create({
+        destinationId,
+        body
+    }: {
+        readonly destinationId: string;
+        readonly body: CreateDestinationReviewBody;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/destinations/${destinationId}/reviews`,
+            body
+        });
     }
 };
 
@@ -840,12 +1034,23 @@ export const protectedConversationsApi = {
     /**
      * List all conversations in the authenticated user's inbox.
      *
-     * @param params - Optional pagination and archive filter
+     * @param params - Optional pagination, archive filter, and SSR cookie header
      */
     list(params?: {
         readonly page?: number;
         readonly pageSize?: number;
         readonly archivedByGuest?: boolean;
+        /**
+         * Filter the inbox by a single accommodation. Useful to answer
+         * "has the visitor already contacted the host of this property?"
+         * — the accommodation detail page uses this to gate the review form.
+         */
+        readonly accommodationId?: string;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<
         ApiResult<{
             readonly items: readonly ConversationInboxItem[];
@@ -857,23 +1062,34 @@ export const protectedConversationsApi = {
             };
         }>
     > {
-        return apiClient.getProtected({ path: `${PROTECTED}/conversations`, params });
+        const { cookieHeader, ...rest } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
     },
 
     /**
      * Get a conversation thread by ID.
      *
-     * @param params - Conversation ID and optional cursor/limit
+     * @param params - Conversation ID, optional cursor/limit, and SSR cookie header
      */
     getThread(params: {
         readonly id: string;
         readonly cursor?: string;
         readonly limit?: number;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<ConversationThreadResponse>> {
-        const { id, ...rest } = params;
+        const { id, cookieHeader, ...rest } = params;
         return apiClient.getProtected({
             path: `${PROTECTED}/conversations/${id}`,
-            params: rest as Record<string, unknown>
+            params: rest as Record<string, unknown>,
+            cookieHeader
         });
     },
 
@@ -917,6 +1133,333 @@ export const protectedConversationsApi = {
      */
     getUnreadCount(): Promise<ApiResult<{ readonly count: number }>> {
         return apiClient.getProtected({ path: `${PROTECTED}/conversations/unread-count` });
+    }
+};
+
+// --- Owner Conversations (Protected — SPEC-206) ---
+
+/** Conversation summary item in the owner inbox */
+export interface OwnerConversationInboxItem {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly lastMessageExcerpt: string | null;
+    readonly unreadCount: number;
+    readonly lastActivityAt: string;
+    readonly status: string;
+}
+
+/** Conversation detail for the owner thread view */
+export interface OwnerConversationDetail {
+    readonly id: string;
+    readonly accommodationId: string;
+    readonly accommodationName: string;
+    readonly guestName: string;
+    readonly guestId: string | null;
+    readonly status: string;
+    readonly lastReadAtByOwner: string | null;
+    readonly createdAt: string;
+}
+
+/** Thread response for the owner conversation detail */
+export interface OwnerConversationThreadResponse {
+    readonly conversation: OwnerConversationDetail;
+    readonly messages: readonly ConversationMessageItem[];
+    readonly nextCursor: string | null;
+}
+
+/** Protected owner conversations API endpoints (require auth + host role) */
+export const ownerConversationsApi = {
+    /**
+     * List conversations for the authenticated owner's accommodations.
+     *
+     * @param params - Optional pagination, status filter, search, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.list({ pageSize: 20 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly status?: string;
+        readonly search?: string;
+        readonly cookieHeader?: string;
+    }): Promise<
+        ApiResult<{
+            readonly items: readonly OwnerConversationInboxItem[];
+            readonly pagination: {
+                readonly page: number;
+                readonly pageSize: number;
+                readonly total: number;
+                readonly totalPages: number;
+            };
+        }>
+    > {
+        const { cookieHeader, ...rest } = params ?? {};
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get a conversation thread by ID (owner side).
+     *
+     * @param params - Conversation ID, optional cursor/limit, and SSR cookie header
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getById({ id: 'conv-uuid' });
+     * if (result.ok) console.log(result.data.messages);
+     * ```
+     */
+    getById(params: {
+        readonly id: string;
+        readonly cursor?: string;
+        readonly limit?: number;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<OwnerConversationThreadResponse>> {
+        const { id, cookieHeader, ...rest } = params;
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/${id}`,
+            params: rest as Record<string, unknown>,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Get the count of unread conversations for the authenticated owner.
+     *
+     * @returns Unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.getUnreadCount();
+     * if (result.ok) console.log(result.data.count);
+     * ```
+     */
+    getUnreadCount(): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/conversations/owner/unread-count`
+        });
+    },
+
+    /**
+     * Send a reply to a conversation (owner side).
+     *
+     * @param params - Conversation ID and message body
+     * @returns The created message
+     *
+     * @example
+     * ```ts
+     * const result = await ownerConversationsApi.reply({
+     *   id: 'conv-uuid',
+     *   message: 'Gracias por tu consulta!'
+     * });
+     * ```
+     */
+    reply(params: {
+        readonly id: string;
+        readonly message: string;
+    }): Promise<ApiResult<ConversationMessageItem>> {
+        const { id, message } = params;
+        return apiClient.postProtected({
+            path: `${PROTECTED}/conversations/owner/${id}/messages`,
+            body: { body: message }
+        });
+    }
+};
+
+// --- Host Dashboard (Protected) ---
+
+/** Plan info returned by the host dashboard endpoint */
+export interface HostDashboardPlanInfo {
+    readonly slug: string;
+    readonly name: string;
+    readonly status: 'active' | 'trial' | 'cancelled' | 'expired' | 'past_due';
+    readonly isTrial: boolean;
+}
+
+/** Property counts returned by the host dashboard endpoint */
+export interface HostDashboardProperties {
+    readonly total: number;
+    readonly published: number;
+    readonly draft: number;
+    readonly archived: number;
+}
+
+/** Host dashboard aggregated response from the API */
+export interface HostDashboardApiResponse {
+    readonly properties: HostDashboardProperties;
+    readonly plan: HostDashboardPlanInfo | null;
+    readonly unreadConversations: number;
+}
+
+/**
+ * Protected host dashboard API endpoints.
+ * Returns aggregated dashboard data for the authenticated host user.
+ * Gated by VIEW_BASIC_STATS entitlement (SPEC-205).
+ */
+export const hostDashboardApi = {
+    /**
+     * Get the host dashboard aggregated data.
+     *
+     * @returns Property counts, plan info, and unread conversation count
+     *
+     * @example
+     * ```ts
+     * const result = await hostDashboardApi.get();
+     * if (result.ok) console.log(result.data.properties.published);
+     * ```
+     */
+    get(): Promise<ApiResult<HostDashboardApiResponse>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/host/dashboard` });
+    }
+};
+
+// --- Host Analytics (Protected — SPEC-207) ---
+
+/** Analytics window type for time-range queries */
+type AnalyticsWindow = '7d' | '30d';
+
+/** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
+export const hostAnalyticsApi = {
+    /**
+     * Get accommodation views over a time window.
+     *
+     * @param params - Time window: '7d' or '30d'
+     * @returns Daily view counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getViews({ window: '7d' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getViews({
+        window: windowParam
+    }: {
+        readonly window: AnalyticsWindow;
+    }): Promise<
+        ApiResult<{
+            readonly window: AnalyticsWindow;
+            readonly items: readonly { readonly date: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/views`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get favorites breakdown across collections.
+     *
+     * @returns Bookmark counts per collection for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
+     * if (result.ok) console.log(result.data.collections);
+     * ```
+     */
+    getFavoritesBreakdown(): Promise<
+        ApiResult<{
+            readonly collections: readonly {
+                readonly collection: string;
+                readonly count: number;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/favorites`
+        });
+    },
+
+    /**
+     * Get response rate and average response time.
+     *
+     * @returns Response rate percentage and average response time in minutes
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getResponseRate();
+     * if (result.ok) console.log(result.data.responseRatePct);
+     * ```
+     */
+    getResponseRate(): Promise<
+        ApiResult<{
+            readonly responseRatePct: number;
+            readonly avgResponseTimeMinutes: number | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/response-rate`
+        });
+    },
+
+    /**
+     * Get monthly inquiry trend over the specified number of months.
+     *
+     * @param params - Number of months to look back (default: 6)
+     * @returns Monthly inquiry counts for the host's accommodations
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getInquiryTrend({ months: 6 });
+     * if (result.ok) console.log(result.data.months);
+     * ```
+     */
+    getInquiryTrend({
+        months = 6
+    }: {
+        readonly months?: number;
+    } = {}): Promise<
+        ApiResult<{
+            readonly months: readonly { readonly month: string; readonly count: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/inquiries`,
+            params: { months }
+        });
+    },
+
+    /**
+     * Get market comparison data for the host's accommodations.
+     *
+     * @returns Market comparison items with ratings, reviews, and prices
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getMarketComparison();
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    getMarketComparison(): Promise<
+        ApiResult<{
+            readonly items: readonly {
+                readonly accommodationId: string;
+                readonly accommodationName: string;
+                readonly accommodationType: string;
+                readonly destinationName: string | null;
+                readonly yourRating: number | null;
+                readonly yourReviews: number;
+                readonly destinationAvgRating: number | null;
+                readonly yourPrice: number | null;
+                readonly destinationAvgPrice: number | null;
+            }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host/analytics/market-comparison`
+        });
     }
 };
 
@@ -991,6 +1534,295 @@ export const protectedAccommodationsApi = {
     }
 };
 
+// --- Media (Protected) ---
+
+/**
+ * Protected media API endpoints (require auth session).
+ */
+export const protectedMediaApi = {
+    /**
+     * Delete a Cloudinary media asset for an entity owned by the authenticated user.
+     *
+     * The server verifies that the publicId encodes an entity owned by the actor.
+     * Returns { deleted: true, publicId, wasPresent } on success.
+     * Best-effort: callers should not block UI on failure.
+     *
+     * @param params - The Cloudinary publicId of the asset to delete
+     * @returns Whether the asset was deleted and whether it was present
+     *
+     * @example
+     * ```ts
+     * const result = await protectedMediaApi.deleteMedia({
+     *   publicId: 'hospeda/dev/accommodations/uuid/gallery/abc123'
+     * });
+     * if (result.ok) console.log(result.data.wasPresent);
+     * ```
+     */
+    deleteMedia({
+        publicId
+    }: {
+        readonly publicId: string;
+    }): Promise<
+        ApiResult<{
+            readonly deleted: true;
+            readonly publicId: string;
+            readonly wasPresent?: boolean;
+        }>
+    > {
+        const encoded = encodeURIComponent(publicId);
+        return apiClient.delete({
+            path: `${PROTECTED}/media/delete-entity?publicId=${encoded}`
+        });
+    }
+};
+
+// --- Accommodation Editor (SPEC-208) ---
+
+/**
+ * Protected geocoding API endpoints (SPEC-208, Phase C PR2).
+ * Wraps the protected geocoding proxy for the web accommodation editor.
+ */
+export const geocodingApi = {
+    /**
+     * Search for address suggestions via the geocoding proxy.
+     *
+     * @param params - Query string and optional locale
+     * @returns Array of geocoding suggestions with label, lat, lng, and structured fields
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.search({ q: 'Belgrano 123' });
+     * if (result.ok) console.log(result.data.suggestions);
+     * ```
+     */
+    search({
+        q,
+        locale = 'es'
+    }: {
+        readonly q: string;
+        readonly locale?: 'es' | 'en' | 'pt';
+    }): Promise<
+        ApiResult<{
+            readonly suggestions: ReadonlyArray<{
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            }>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/autocomplete`,
+            params: { q, locale }
+        });
+    },
+
+    /**
+     * Reverse geocode coordinates to a structured address.
+     *
+     * @param params - Latitude and longitude
+     * @returns A single geocoding suggestion or null
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.reverse({ lat: -32.4825, lng: -58.2372 });
+     * if (result.ok && result.data.suggestion) console.log(result.data.suggestion.label);
+     * ```
+     */
+    reverse({
+        lat,
+        lng
+    }: {
+        readonly lat: number;
+        readonly lng: number;
+    }): Promise<
+        ApiResult<{
+            readonly suggestion: {
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            } | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/reverse`,
+            params: { lat, lng }
+        });
+    }
+};
+
+/**
+ * Protected accommodation edit API endpoints.
+ * Wraps the protected accommodation GET/PATCH and public amenities/destinations
+ * endpoints used by the web editor form.
+ */
+export const accommodationEditApi = {
+    /**
+     * Get a single accommodation by ID for editing.
+     * Uses the protected endpoint which enforces ownership (ownerId === actor.id).
+     *
+     * @param params - Accommodation ID and optional SSR cookie header
+     * @returns The accommodation record or null
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown> | null>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Update an accommodation via PATCH.
+     * Only sends the fields provided in `data` (partial update).
+     *
+     * @param params - Accommodation ID and partial update data
+     * @returns The update result
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}`,
+            body: data
+        });
+    },
+
+    /**
+     * Fetch all active amenities for the editor's checkbox group.
+     * Uses the public amenities endpoint (no auth required).
+     *
+     * @returns Paginated list of amenity records
+     */
+    getAmenities(): Promise<
+        ApiResult<import('./types').PaginatedResponse<Record<string, unknown>>>
+    > {
+        return apiClient.getList({
+            path: `${BASE}/amenities`,
+            params: { pageSize: 200 }
+        });
+    },
+
+    /**
+     * Fetch all destinations for the editor's destination select.
+     * Uses the public destinations endpoint (no auth required).
+     *
+     * @returns Paginated list of destination records
+     */
+    getDestinations(): Promise<
+        ApiResult<import('./types').PaginatedResponse<Record<string, unknown>>>
+    > {
+        return apiClient.getList({
+            path: `${BASE}/destinations`,
+            params: { pageSize: 200 }
+        });
+    }
+};
+
+// --- Comments (Protected — SPEC-165) ---
+
+/**
+ * Comment entity returned by the protected create endpoint.
+ * This is the full comment schema (includes moderation state, author object, etc.).
+ * Only a subset is used by the web frontend.
+ */
+export interface CommentProtectedItem {
+    readonly id: string;
+    readonly content: string;
+    readonly createdAt: string;
+    readonly author: {
+        readonly id: string;
+        readonly displayName: string | null;
+    } | null;
+}
+
+/**
+ * Protected comment API endpoints (require an authenticated session).
+ */
+export const protectedCommentsApi = {
+    /**
+     * Post a new comment on a post or event.
+     *
+     * Maps to:
+     *   POST /api/v1/protected/posts/:postId/comments   (entityType === 'POST')
+     *   POST /api/v1/protected/events/:eventId/comments (entityType === 'EVENT')
+     *
+     * Rate-limited to 5 requests/minute per user. Returns 429 with a
+     * `Retry-After` header when the limit is exceeded.
+     *
+     * @param params - Entity type, entity ID, and comment content
+     * @returns The created comment record
+     *
+     * @example
+     * ```ts
+     * const result = await protectedCommentsApi.create({
+     *   entityType: 'POST',
+     *   entityId: post.id,
+     *   content: 'Great article!'
+     * });
+     * if (result.ok) console.log(result.data.id);
+     * ```
+     */
+    create({
+        entityType,
+        entityId,
+        content
+    }: {
+        readonly entityType: 'POST' | 'EVENT';
+        readonly entityId: string;
+        readonly content: string;
+    }): Promise<ApiResult<CommentProtectedItem>> {
+        const segment = entityType === 'EVENT' ? 'events' : 'posts';
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${segment}/${entityId}/comments`,
+            body: { content }
+        });
+    },
+
+    /**
+     * Soft-delete a comment owned by the authenticated user.
+     *
+     * Maps to: DELETE /api/v1/protected/comments/:commentId
+     *
+     * Only the comment author can delete their own comment.
+     * Returns 204/200 on success, 403 if not the owner.
+     *
+     * @param params - Comment ID to delete
+     * @returns Whether the deletion succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await protectedCommentsApi.deleteOwn({ commentId: 'comment-uuid' });
+     * if (result.ok) console.log('Deleted');
+     * ```
+     */
+    deleteOwn({
+        commentId
+    }: {
+        readonly commentId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/comments/${commentId}` });
+    }
+};
+
 // --- User Bookmark Collections (Protected) ---
 
 /** Usage counters for bookmark collections returned by the list endpoint */
@@ -1052,16 +1884,30 @@ export interface CollectionBookmarkRow {
     readonly name: string | null;
     readonly description: string | null;
     readonly createdAt: string;
+    /** Server-enriched display fields resolved from the referenced entity. */
+    readonly entityName?: string | null;
+    readonly entitySlug?: string | null;
+    readonly entityImage?: string | null;
 }
 
-/** Response shape from the user-bookmark-collections/:id endpoint */
-export interface BookmarkCollectionDetailResponse {
-    readonly collection: BookmarkCollectionItem;
-    readonly bookmarks: {
-        readonly rows: readonly CollectionBookmarkRow[];
-        readonly total: number;
-        readonly page: number;
-        readonly pageSize: number;
+/**
+ * Response shape from the user-bookmark-collections/:id endpoint.
+ *
+ * The server inlines the collection fields at the top level (no `collection`
+ * wrapper) and the bookmarks are paginated using the standard `{ data, pagination }`
+ * envelope from `PaginationResultSchema`. Mirrors `UserBookmarkCollectionDetailResponseSchema`.
+ */
+export interface BookmarkCollectionDetailResponse extends BookmarkCollectionItem {
+    readonly bookmarks?: {
+        readonly data: readonly CollectionBookmarkRow[];
+        readonly pagination: {
+            readonly page: number;
+            readonly pageSize: number;
+            readonly total: number;
+            readonly totalPages: number;
+            readonly hasNextPage: boolean;
+            readonly hasPreviousPage: boolean;
+        };
     };
 }
 
@@ -1090,12 +1936,18 @@ export const userBookmarkCollectionsApi = {
         id,
         bookmarksPage,
         bookmarksPageSize,
-        entityType
+        entityType,
+        cookieHeader
     }: {
         readonly id: string;
         readonly bookmarksPage?: number;
         readonly bookmarksPageSize?: number;
         readonly entityType?: CollectionBookmarkEntityType;
+        /**
+         * SSR-only: raw `Cookie` header forwarded to the API so the request
+         * carries the user's session. Browser callers should omit this.
+         */
+        readonly cookieHeader?: string;
     }): Promise<ApiResult<BookmarkCollectionDetailResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/user-bookmark-collections/${id}`,
@@ -1103,7 +1955,8 @@ export const userBookmarkCollectionsApi = {
                 bookmarksPage,
                 bookmarksPageSize,
                 entityType
-            } as Record<string, unknown>
+            } as Record<string, unknown>,
+            cookieHeader
         });
     },
 
@@ -1147,9 +2000,7 @@ export const userBookmarkCollectionsApi = {
      * if (result.ok) console.log(result.data.id);
      * ```
      */
-    create(
-        input: CreateBookmarkCollectionInput
-    ): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+    create(input: CreateBookmarkCollectionInput): Promise<ApiResult<BookmarkCollectionItem>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/user-bookmark-collections`,
             body: input
@@ -1178,7 +2029,7 @@ export const userBookmarkCollectionsApi = {
     }: {
         readonly id: string;
         readonly input: UpdateBookmarkCollectionInput;
-    }): Promise<ApiResult<{ readonly data: BookmarkCollectionItem }>> {
+    }): Promise<ApiResult<BookmarkCollectionItem>> {
         return apiClient.patch({
             path: `${PROTECTED}/user-bookmark-collections/${id}`,
             body: input

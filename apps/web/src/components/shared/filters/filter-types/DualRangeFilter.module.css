@@ -1,34 +1,90 @@
 /* DualRangeFilter.module.css
- * Dual-slider numeric range used inside FilterSidebar groups.
+ * Dual-thumb numeric range used inside FilterSidebar groups.
+ * Both <input type="range"> are overlaid on the same track so the control
+ * stays on a SINGLE line regardless of width. The active range between the
+ * two thumbs is highlighted via the `.trackActive` overlay.
  * Uses CSS custom properties from global.css — never hardcode values.
  */
 
 .dualRange {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-    padding: 0.25rem 0;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.25rem;
+    width: 100%;
 }
 
+/* Track stack: rail (gray) + active (brand color) + two overlapping inputs.
+   `height` matches the thumb size so the inputs can be clicked easily, but
+   the visual rail is thinner (centered via the rail element below). */
 .dualRangeTrack {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
+    width: 100%;
+    height: 1.25rem;
 }
 
-.dualRangeInput {
-    width: 100%;
+/* Full-width gray rail behind the thumbs. */
+.trackRail {
+    position: absolute;
+    inset: 0;
+    top: 50%;
+    transform: translateY(-50%);
     height: 0.375rem;
+    width: 100%;
+    background: var(--core-foreground-a12);
+    border-radius: var(--radius-pill);
+    pointer-events: none;
+}
+
+/* Highlighted segment between the two thumbs.
+   `--start` and `--end` are percentages set from the JSX inline style. The
+   declarations here act as defaults until the JSX style overrides them, and
+   register the names with the css-tokens lint pass. */
+.trackActive {
+    --start: 0%;
+    --end: 100%;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: var(--start, 0%);
+    right: calc(100% - var(--end, 100%));
+    height: 0.375rem;
+    background: var(--brand-accent);
+    border-radius: var(--radius-pill);
+    pointer-events: none;
+}
+
+/* Both inputs share the same absolute placement so the user can grab either
+   thumb. The native track is hidden — only the thumb shows. `pointer-events`
+   is restricted to the thumb so the rail underneath stays clickable too. */
+.dualRangeInput {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     appearance: none;
     -webkit-appearance: none;
-    background: oklch(from var(--border) l c h / 0.6);
-    border-radius: var(--radius-pill);
+    background: transparent;
+    pointer-events: none;
     outline: none;
-    cursor: pointer;
+    margin: 0;
     accent-color: var(--brand-accent);
 }
 
+/* Hide the native track segments — we paint our own rail/active above. */
+.dualRangeInput::-webkit-slider-runnable-track {
+    background: transparent;
+    border: none;
+    height: 100%;
+}
+
+.dualRangeInput::-moz-range-track {
+    background: transparent;
+    border: none;
+    height: 100%;
+}
+
+/* Thumb: re-enable pointer-events so it can be dragged. */
 .dualRangeInput::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 1.25rem;
@@ -37,7 +93,8 @@
     background: var(--brand-accent);
     cursor: pointer;
     border: 2.5px solid white;
-    box-shadow: 0 1px 4px oklch(0 0 0 / 0.2);
+    box-shadow: 0 1px 4px oklch(0 0 0 / 0.25);
+    pointer-events: auto;
     transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
 }
 
@@ -48,16 +105,34 @@
     background: var(--brand-accent);
     cursor: pointer;
     border: 2.5px solid white;
-    box-shadow: 0 1px 4px oklch(0 0 0 / 0.2);
+    box-shadow: 0 1px 4px oklch(0 0 0 / 0.25);
+    pointer-events: auto;
 }
 
 .dualRangeInput:hover::-webkit-slider-thumb {
-    transform: scale(1.15);
-    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.3);
+    transform: scale(1.12);
+    box-shadow: 0 2px 8px var(--brand-accent-a35);
 }
 
 .dualRangeInput:focus-visible::-webkit-slider-thumb {
-    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.2), 0 1px 4px oklch(0 0 0 / 0.2);
+    box-shadow: 0 0 0 3px var(--brand-primary-a25), 0 1px 4px oklch(0 0 0 / 0.2);
+}
+
+/* Z-order matters when the two thumbs sit at the same position: the one
+   declared later wins by default. Bump z-index on the active input so its
+   thumb is reachable even when both are at the same value. */
+.dualRangeInputMin {
+    z-index: 3;
+}
+.dualRangeInputMax {
+    z-index: 4;
+}
+
+/* When the min thumb is at or above the midpoint, raise it so the user can
+   still grab it (otherwise the max thumb covers it). Toggled via a data attr
+   set on the JSX side. */
+.dualRangeInputMin[data-above-mid="true"] {
+    z-index: 5;
 }
 
 .dualRangeLabels {
@@ -68,6 +143,14 @@
     font-weight: 600;
     color: var(--core-muted-foreground);
     font-variant-numeric: tabular-nums;
+    width: 100%;
+}
+
+/* "Sin límite" hint when one bound is at its extreme (filter not applied). */
+.unboundedLabel {
+    color: var(--core-muted-foreground-a60);
+    font-style: italic;
+    font-weight: 500;
 }
 
 /* Optional "include items without a value" checkbox shown below the slider. */

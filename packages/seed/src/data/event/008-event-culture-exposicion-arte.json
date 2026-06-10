@@ -3,8 +3,8 @@
     "id": "008-event-culture-exposicion-arte",
     "slug": "exposicion-arte",
     "name": "Exposición de Arte",
-    "summary": "Muestra colectiva con artistas del Litoral.",
-    "description": "Descripción detallada del evento Exposición de Arte. Este es un evento de categoría CULTURE que se desarrolla en Entre Ríos.",
+    "summary": "Muestra colectiva con más de 40 artistas del litoral argentino. Pintura, escultura, fotografía e instalaciones contemporáneas en el marco histórico del Palacio San José. Cuatro días de arte, charlas y encuentros con los creadores.",
+    "description": "Una muestra colectiva que reúne a más de 40 artistas visuales del litoral argentino en uno de los espacios más imponentes del país: el Palacio San José, antigua residencia del General Urquiza. La exposición combina pintura, escultura, fotografía e instalaciones contemporáneas, y propone un diálogo entre la producción artística actual y el patrimonio histórico del lugar.\n\n**Lo que se exhibe**\n\n- **Pintura:** obras de artistas reconocidos de Paraná, Concordia, Colón y Concepción del Uruguay. Predominio del paisaje litoraleño, pero con apertura a propuestas abstractas y figurativas contemporáneas.\n- **Escultura:** piezas en madera nativa, metal y cerámica, varias inspiradas en la fauna y la flora del delta.\n- **Fotografía:** registros del territorio entrerriano, sus pueblos, sus costumbres y sus paisajes en transformación.\n- **Instalaciones:** obras site-specific creadas para los salones del palacio, que dialogan con la arquitectura del siglo XIX.\n\n**Actividades paralelas**\n\n- Charlas con curadores y artistas en el salón principal.\n- Visitas guiadas con perspectiva crítica del arte regional.\n- Encuentros sobre arte contemporáneo y patrimonio.\n- Talleres familiares de creación plástica.\n\n**Información práctica**\n\n- **Cuándo:** cuatro días en mayo (jueves a domingo).\n- **Dónde:** Palacio San José, a 35 km de Colón sobre la Ruta Provincial 39.\n- **Entrada:** incluye recorrido por la muestra y visita al palacio.\n- **Horario:** 10 a 18 horas.\n- **Acceso:** estacionamiento gratuito, baños y cafetería en el predio.\n\nUna oportunidad inusual para combinar arte contemporáneo con uno de los sitios históricos más relevantes de Argentina.",
     "category": "CULTURE",
     "authorId": "admin-user",
     "pricing": {
@@ -25,9 +25,18 @@
         }
     },
     "seo": {
-        "title": "Exposición de Arte 2025 - Entre Ríos - Hospeda",
-        "description": "Disfruta de la Exposición de Arte 2025. Un evento cultural con obras de artistas locales y nacionales, talleres y actividades para la familia.",
-        "keywords": ["culture", "entre rios", "evento", "cultura"]
+        "title": "Exposición de Arte en Palacio San José - Hospeda",
+        "description": "Muestra colectiva con 40+ artistas del litoral: pintura, escultura, fotografía e instalaciones en el Palacio San José. Cuatro días de arte contemporáneo.",
+        "keywords": [
+            "exposición arte",
+            "palacio san josé",
+            "arte contemporáneo argentina",
+            "artistas litoral",
+            "muestra colectiva",
+            "concepción del uruguay",
+            "pintura escultura",
+            "patrimonio entre ríos"
+        ]
     },
     "lifecycleState": "ACTIVE",
     "date": {

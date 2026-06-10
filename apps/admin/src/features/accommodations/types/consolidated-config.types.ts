@@ -29,12 +29,16 @@ export interface ConsolidatedFieldConfig extends Omit<FieldConfig, 'modes'> {
 }
 
 /**
- * Consolidated section that supports multiple modes
+ * Consolidated section that supports multiple modes.
+ *
+ * `fields` is optional to support custom-render sections (e.g. `stats-chips`)
+ * that do not use the standard field-grid renderer. For those sections,
+ * supply `customRender` (from `SectionConfig`) instead of `fields`.
  */
 export interface ConsolidatedSectionConfig extends Omit<SectionConfig, 'fields' | 'modes'> {
     /** Modes in which this section is visible */
     modes: ConfigMode[];
-    /** Section fields with multi-mode support */
+    /** Section fields with multi-mode support. Empty array is valid for custom-render sections. */
     fields: ConsolidatedFieldConfig[];
 }
 

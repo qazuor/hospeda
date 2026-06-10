@@ -1,9 +1,17 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "038-amenity-accessibility-elevator",
-    "name": "elevator",
+    "name": {
+        "es": "elevator",
+        "en": "elevator",
+        "pt": "elevator"
+    },
     "slug": "elevator",
-    "description": "Ascensor disponible",
+    "description": {
+        "es": "Ascensor disponible",
+        "en": "Ascensor disponible",
+        "pt": "Ascensor disponible"
+    },
     "type": "ACCESSIBILITY",
     "icon": "ElevatorIcon",
     "isBuiltin": false,

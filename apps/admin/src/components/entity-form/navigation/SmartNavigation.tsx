@@ -64,17 +64,11 @@ const getSectionColors = (status: SectionProgress['status'], isActive: boolean) 
 
     switch (status) {
         case 'complete':
-            return cn(
-                baseClasses,
-                'text-green-700 dark:text-green-300 hover:bg-green-50 dark:hover:bg-green-950 border-green-200 dark:border-green-800'
-            );
+            return cn(baseClasses, 'text-success hover:bg-success/10 border-success/30');
         case 'error':
             return cn(baseClasses, 'text-destructive hover:bg-destructive/5 border-destructive/30');
         case 'partial':
-            return cn(
-                baseClasses,
-                'text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950 border-amber-200 dark:border-amber-800'
-            );
+            return cn(baseClasses, 'text-warning hover:bg-warning/10 border-warning/30');
         case 'empty':
             return cn(baseClasses, 'text-muted-foreground hover:bg-accent border-border');
         case 'disabled':
@@ -228,11 +222,11 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
                                                     className={cn(
                                                         'h-2 rounded-full transition-all duration-300',
                                                         section.status === 'complete' &&
-                                                            'bg-green-500 dark:bg-green-400',
+                                                            'bg-success',
                                                         section.status === 'error' &&
-                                                            'bg-red-500 dark:bg-red-400',
+                                                            'bg-destructive',
                                                         section.status === 'partial' &&
-                                                            'bg-amber-500 dark:bg-amber-400',
+                                                            'bg-warning',
                                                         section.status === 'empty' &&
                                                             'bg-muted-foreground/30'
                                                     )}
@@ -281,8 +275,8 @@ export const SmartNavigation: React.FC<SmartNavigationProps> = ({
                         className={cn(
                             'flex items-center justify-between rounded-md p-2 text-sm',
                             overallProgress.readyForSubmission
-                                ? 'bg-green-50 text-green-800 dark:bg-green-950 dark:text-green-200'
-                                : 'bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                                ? 'bg-success/10 text-success'
+                                : 'bg-warning/10 text-warning'
                         )}
                     >
                         <div className="flex items-center space-x-2">
