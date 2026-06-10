@@ -1,3 +1,10 @@
+import type {
+    AppSourceId,
+    ColorSchemeId,
+    DeviceTypeId,
+    FeedbackEnvironment,
+    FeedbackInteraction
+} from '@repo/schemas';
 /**
  * @repo/feedback - Environment data collector utility.
  *
@@ -8,13 +15,6 @@
  * `undefined` on failure.
  */
 import { UAParser } from 'ua-parser-js';
-import type {
-    AppSourceId,
-    ColorSchemeId,
-    DeviceTypeId,
-    FeedbackEnvironment,
-    FeedbackInteraction
-} from '../schemas/feedback.schema.js';
 
 /** Default localStorage key prefixes scanned for feature flags. */
 export const DEFAULT_FEATURE_FLAG_PREFIXES = ['feature_', 'ff_'] as const;

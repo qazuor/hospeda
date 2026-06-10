@@ -1,3 +1,5 @@
+import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '@repo/schemas';
+import { REPORT_TYPE_IDS, feedbackFormSchema } from '@repo/schemas';
 /**
  * @repo/feedback - FeedbackForm component
  *
@@ -10,8 +12,6 @@ import { FEEDBACK_CONFIG } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
-import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
-import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
 import './FeedbackForm.css';
 import { SuccessScreen } from './SuccessScreen.js';
 import { StepBasic } from './steps/StepBasic.js';

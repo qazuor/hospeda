@@ -1,3 +1,4 @@
+import type { FeedbackFormData } from '@repo/schemas';
 /**
  * T-043: Linear integration test.
  *
@@ -12,7 +13,6 @@
  * rendering or DOM required.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeedbackFormData } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Constants
