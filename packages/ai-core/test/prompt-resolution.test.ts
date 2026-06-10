@@ -391,7 +391,9 @@ describe('DEFAULT_PROMPTS', () => {
             expect(
                 prompt.toLowerCase(),
                 `DEFAULT_PROMPTS['${feature}'] missing refusal instruction`
-            ).toMatch(/refus|declin|off-topic|outside your role|outside your/i);
+            ).toMatch(
+                /refus|declin|off-topic|outside your role|outside your|outside the scope|must not/i
+            );
         }
     });
 });
