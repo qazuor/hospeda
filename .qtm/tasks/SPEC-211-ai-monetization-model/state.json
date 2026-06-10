@@ -234,164 +234,164 @@
             "id": "T-007",
             "title": "Implement resolveOwnerLimitsForOwnerId in owner-entitlement.ts",
             "description": "In `apps/api/src/middlewares/owner-entitlement.ts`, add the function `resolveOwnerLimitsForOwnerId(ownerId: string): Promise<Map<LimitKey, number>>` per §7.2. Mirror `resolveOwnerEntitlementsForOwnerId`: resolve ownerId → billing customer → active subscription → plan limits JSONB + customer-level limit overrides via `billing.subscriptions.getByCustomerId`, `billing.plans.get`, `billing.limits.getByCustomerId`. Falls back to owner-basico DB row limits when no active sub. Cache consistent with 5-min entitlement cache. Test file: `apps/api/test/unit/middlewares/owner-entitlement.test.ts` — assert: (1) owner with active sub → correct limits map; (2) owner with no sub → owner-basico fallback limits returned; (3) customer-level override merges correctly (AC-1.1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Implement ownerId → billing customer → plan limits resolution chain",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement owner-basico fallback when no active subscription",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply customer-level limit overrides",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit tests: active sub, no-sub fallback, override merge (AC-1.1)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "middleware", "phase-1", "ai-chat", "billing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T00:10:00.000Z",
+                "completed": "2026-06-10T01:00:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Define Model C field-split table as exhaustive TypeScript constant",
             "description": "In `packages/billing/src/config/model-c-field-split.ts` (new file), define a typed exhaustive record classifying every seed-controlled `billing_plans` column as `'capability'` or `'commercial'` per §8.2. Entries: `entitlements` → capability; `limits` presence → capability; `limits` values → commercial; `metadata.monthlyPriceArs` / `annualPriceArs` → commercial; `active` → commercial; `description` → commercial; `metadata.displayName` → commercial; `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields → capability. Export from `@repo/billing`. Test: `packages/billing/test/model-c-field-split.test.ts` — assert every column listed in §8.2 is classified and no unclassified column exists (AC-2.3).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003", "T-004"],
             "blocks": ["T-010", "T-011"],
             "subtasks": [
                 {
                     "title": "Create model-c-field-split.ts with typed field-split record",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Classify all §8.2 columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from @repo/billing barrel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write guard test: all classified, no unclassified (AC-2.3)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "phase-2", "model-c"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T00:10:00.000Z",
+                "completed": "2026-06-10T01:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Inline owner-scoped gate, quota check, and metering in chat route handler",
             "description": "In `apps/api/src/routes/ai/protected/chat.ts`, replace the tourist-keyed `createAiQuotaMiddleware('chat')` gate with inline owner-scoped logic per §7.3: (1) resolve `ownerId` from `accommodation.ownerId` (already fetched as 404 guard); (2) call `resolveOwnerEntitlementsForOwnerId` + `resolveOwnerLimitsForOwnerId`; (3) gate: owner lacks `AI_CHAT` → 403 `ENTITLEMENT_REQUIRED` (use the i18n key from T-006); (4) quota: `getMonthlyCallCount({ userId: ownerId, feature: 'chat', now })` >= ownerLimit → 403 `LIMIT_REACHED`; (5) `recordAiUsage({ userId: ownerId, ... })`. Keep `createAiRateLimitMiddlewares('chat')` untouched. Test: `apps/api/test/integration/ai/chat-owner-metered.test.ts` — AC-1.2 (success, recordAiUsage called with ownerId) + AC-1.3 (owner-at-quota → 403 LIMIT_REACHED) + AC-1.5 (rate-limit preserved).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "Remove createAiQuotaMiddleware('chat') from chat route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add owner entitlement + limit resolution inline",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add owner quota check (getMonthlyCallCount keyed by ownerId)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire recordAiUsage keyed by ownerId (not tourist userId)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write integration tests AC-1.2, AC-1.3, AC-1.5",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "phase-1", "ai-chat", "billing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T00:10:00.000Z",
+                "completed": "2026-06-10T01:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Update billingPlans.seed.ts capability-layer sync policy",
             "description": "In `packages/seed/src/required/billingPlans.seed.ts`, replace the current warn-only-on-divergence behaviour with the Model C per-field policy per §7.5: capability-layer divergence → sync DB to config (overwrite); commercial-layer divergence → leave DB as-is (log for visibility only). Reference the field-split table from T-008. Add a guard: every seed-controlled column must be classified in the field-split table before the seed runs (fail-fast on unclassified column). Test: `packages/seed/test/billing-plans-seed.test.ts` — assert capability sync updates DB, commercial mismatch leaves DB unchanged (AC-2.2 seed side, AC-2.3 guard).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Import field-split table from @repo/billing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Capability divergence: overwrite DB column from config",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Commercial divergence: log and skip (do not overwrite)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard: fail-fast if a seed-controlled column is unclassified",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write seed tests for capability-sync and commercial-no-clobber",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "billing", "phase-2", "model-c"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T00:10:00.000Z",
+                "completed": "2026-06-10T01:00:00.000Z"
             }
         },
         {
@@ -678,9 +678,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 11,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.2
     }

@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 6/17 tasks (35%) — setup phase COMPLETE (T-001..T-006); next: core phase (T-007..T-010)
+## Progress: 10/17 tasks (59%) — setup + core phases COMPLETE (T-001..T-010); next: T-011 (Model C extras migration linchpin), then testing + docs
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -42,22 +42,22 @@
 
 ### Core Phase
 
-- [ ] **T-007** (complexity: 3) - Implement resolveOwnerLimitsForOwnerId in owner-entitlement.ts
+- [x] **T-007** (complexity: 3) - Implement resolveOwnerLimitsForOwnerId in owner-entitlement.ts
   - Add `resolveOwnerLimitsForOwnerId(ownerId)` to `apps/api/src/middlewares/owner-entitlement.ts`
   - Blocked by: T-006
   - Blocks: T-009
 
-- [ ] **T-008** (complexity: 2) - Define Model C field-split table as exhaustive TypeScript constant
+- [x] **T-008** (complexity: 2) - Define Model C field-split table as exhaustive TypeScript constant
   - Create `packages/billing/src/config/model-c-field-split.ts` classifying all §8.2 columns
   - Blocked by: T-001, T-003, T-004
   - Blocks: T-010, T-011
 
-- [ ] **T-009** (complexity: 3) - Inline owner-scoped gate, quota check, and metering in chat route handler
+- [x] **T-009** (complexity: 3) - Inline owner-scoped gate, quota check, and metering in chat route handler
   - Replace tourist-keyed quota middleware with inline owner-scoped logic in chat.ts
   - Blocked by: T-007
   - Blocks: T-013
 
-- [ ] **T-010** (complexity: 3) - Update billingPlans.seed.ts capability-layer sync policy
+- [x] **T-010** (complexity: 3) - Update billingPlans.seed.ts capability-layer sync policy
   - Replace warn-only with per-field Model C sync policy in billingPlans.seed.ts
   - Blocked by: T-008
   - Blocks: T-011
