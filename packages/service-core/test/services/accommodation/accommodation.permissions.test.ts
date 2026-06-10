@@ -1,5 +1,11 @@
 import type { Accommodation, UserIdType } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     checkCanAdminList,
@@ -353,6 +359,103 @@ describe('Accommodation Permissions', () => {
                 expect(err.code).not.toBe(ServiceErrorCode.FORBIDDEN);
             }
         }
+    });
+
+    // =========================================================================
+    // checkCanView — lifecycle state guard (regression: public-draft-visibility)
+    //
+    // DRAFT/INACTIVE/ARCHIVED accommodations must be hidden (NOT_FOUND) from
+    // non-owners without ACCOMMODATION_VIEW_ALL.  The owner and staff must still
+    // be able to see their own non-ACTIVE listings.
+    // =========================================================================
+
+    describe('checkCanView — lifecycle state guard', () => {
+        it('hides a DRAFT accommodation as NOT_FOUND for an anonymous user', () => {
+            const draft = {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+            try {
+                checkCanView(createActor([], 'anonymous-id'), draft);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        });
+
+        it('hides an INACTIVE accommodation as NOT_FOUND for a non-owner', () => {
+            const inactive = {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.INACTIVE
+            };
+            try {
+                checkCanView(createActor([], 'another-user'), inactive);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        });
+
+        it('hides an ARCHIVED accommodation as NOT_FOUND for a non-owner', () => {
+            const archived = {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.ARCHIVED
+            };
+            try {
+                checkCanView(createActor([], 'another-user'), archived);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                }
+            }
+        });
+
+        it('lets the owner view their own DRAFT accommodation (key regression guard)', () => {
+            const draft = {
+                ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+            // Owner must NOT get NOT_FOUND for their own DRAFTs.
+            expect(() => checkCanView(createActor([], mockUserId), draft)).not.toThrow();
+        });
+
+        it('lets ACCOMMODATION_VIEW_ALL staff view a DRAFT accommodation', () => {
+            const draft = {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+            expect(() =>
+                checkCanView(
+                    createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL], 'staff-id'),
+                    draft
+                )
+            ).not.toThrow();
+        });
+
+        it('returns NOT_FOUND (not FORBIDDEN) for DRAFT to avoid leaking existence', () => {
+            const draft = {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            };
+            try {
+                checkCanView(createActor([]), draft);
+                throw new Error('Should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(err.code).not.toBe(ServiceErrorCode.FORBIDDEN);
+                }
+            }
+        });
     });
 
     it('checkCanList always allows', () => {
