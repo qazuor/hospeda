@@ -109,6 +109,8 @@ export async function uploadToProvider(
         readonly overwrite?: boolean;
         readonly entityType: string;
         readonly entityId: string;
+        /** The authenticated actor's id. Used in observability logs. */
+        readonly actorId?: string;
     }
 ): Promise<UploadHelperResult | UploadHelperError> {
     let uploadResult: Awaited<ReturnType<typeof provider.upload>>;
@@ -176,7 +178,7 @@ export async function uploadToProvider(
             preset: `${params.entityType}:entity`,
             entityType: params.entityType,
             entityId: params.entityId,
-            actorId: params.entityId
+            actorId: params.actorId
         },
         'media upload success'
     );
@@ -202,3 +204,133 @@ export const ENTITY_MAX_BYTES = ENTITY_MAX_FILE_SIZE_MB * 1024 * 1024;
 
 /** Content-length margin for the pre-check. */
 export const CONTENT_LENGTH_MARGIN_BYTES = CONTENT_LENGTH_MARGIN;
+
+// ---------------------------------------------------------------------------
+// buildPatchPayload
+// ---------------------------------------------------------------------------
+
+/**
+ * Shape of a single media image as sent by the web editor (nested form).
+ */
+export interface NestedMediaImage {
+    readonly id: string;
+    readonly alt?: string;
+}
+
+/**
+ * Nested media shape sent by the web editor when patching accommodation media.
+ *
+ * The web app sends `{ media: { featuredImage, gallery } }` after a successful
+ * upload. `buildPatchPayload` normalises this to flat service-layer keys.
+ */
+export interface NestedMediaInput {
+    readonly featuredImage?: NestedMediaImage | null;
+    readonly gallery?: readonly NestedMediaImage[];
+}
+
+/**
+ * Input accepted by `buildPatchPayload`.
+ *
+ * Can be either:
+ * - **nested**: `{ media: { featuredImage?, gallery? }, ...otherFields }`
+ * - **flat**: `{ featuredImageId?, galleryImageIds?, ...otherFields }`
+ * - **mixed**: both shapes are present (nested wins for the media keys).
+ *
+ * All non-media keys are passed through untouched.
+ */
+export interface BuildPatchPayloadInput {
+    readonly media?: NestedMediaInput;
+    readonly featuredImageId?: string | null;
+    readonly galleryImageIds?: readonly string[];
+    readonly [key: string]: unknown;
+}
+
+/**
+ * Result of `buildPatchPayload` after normalisation.
+ *
+ * Always uses flat service-layer keys. The `media` wrapper is stripped.
+ */
+export interface BuildPatchPayloadResult {
+    readonly featuredImageId?: string | null;
+    readonly galleryImageIds?: readonly string[];
+    readonly [key: string]: unknown;
+}
+
+/**
+ * Normalise a media patch payload from nested→flat form.
+ *
+ * The web editor sends `{ media: { featuredImage: { id, alt }, gallery: [] } }`
+ * after a successful upload. The service layer expects flat keys
+ * (`featuredImageId`, `galleryImageIds`). This function bridges the two shapes
+ * so the PATCH route handler can work with either form transparently.
+ *
+ * **Normalisation rules:**
+ * - If `input.media?.featuredImage` is a non-null object, its `.id` is promoted
+ *   to `featuredImageId` on the output.
+ * - If `input.media?.featuredImage` is `null`, `featuredImageId` is explicitly
+ *   set to `null` so the DB row receives a NULL write (clearing the image).
+ * - If `input.media?.gallery` is an array, the `.id` of each entry is collected
+ *   into `galleryImageIds`.
+ * - When `input.media` is absent, flat keys (`featuredImageId`,
+ *   `galleryImageIds`) are forwarded unchanged, including `null` values.
+ * - When neither nested nor flat media keys are present for a given field, that
+ *   key is omitted from the output entirely (no accidental undefined writes).
+ * - All non-media keys are forwarded as-is.
+ *
+ * @param input - The raw PATCH body from the route handler
+ * @returns Normalised flat payload ready for the service layer
+ *
+ * @example
+ * ```ts
+ * // Nested form (from web editor after upload)
+ * buildPatchPayload({ media: { featuredImage: { id: 'img-1', alt: 'Room' }, gallery: [] } })
+ * // → { featuredImageId: 'img-1', galleryImageIds: [] }
+ *
+ * // Clearing the featured image
+ * buildPatchPayload({ media: { featuredImage: null, gallery: [] } })
+ * // → { featuredImageId: null, galleryImageIds: [] }
+ *
+ * // Flat form (legacy or other callers)
+ * buildPatchPayload({ featuredImageId: 'img-2', galleryImageIds: ['g-1'] })
+ * // → { featuredImageId: 'img-2', galleryImageIds: ['g-1'] }
+ * ```
+ */
+export function buildPatchPayload(input: BuildPatchPayloadInput): BuildPatchPayloadResult {
+    // Strip the `media` wrapper from the output; all other keys are forwarded.
+    const {
+        media,
+        featuredImageId: flatFeaturedId,
+        galleryImageIds: flatGalleryIds,
+        ...rest
+    } = input;
+
+    const result: Record<string, unknown> = { ...rest };
+
+    if (media !== undefined) {
+        // ── Nested form: extract from media wrapper ──────────────────────────
+
+        // featuredImage: object → extract id; null → explicit null for DB clear
+        if (Object.prototype.hasOwnProperty.call(media, 'featuredImage')) {
+            result.featuredImageId = media.featuredImage != null ? media.featuredImage.id : null;
+        }
+
+        // gallery: array → extract ids
+        if (media.gallery !== undefined) {
+            result.galleryImageIds = media.gallery.map((img) => img.id);
+        }
+    } else {
+        // ── Flat form: forward as-is, including explicit null ────────────────
+
+        // Only include featuredImageId when the caller explicitly provided it
+        // (including null — null signals a deliberate clear, not an omission).
+        if (Object.prototype.hasOwnProperty.call(input, 'featuredImageId')) {
+            result.featuredImageId = flatFeaturedId ?? null;
+        }
+
+        if (flatGalleryIds !== undefined) {
+            result.galleryImageIds = flatGalleryIds;
+        }
+    }
+
+    return result as BuildPatchPayloadResult;
+}

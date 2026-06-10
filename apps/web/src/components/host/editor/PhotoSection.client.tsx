@@ -5,16 +5,30 @@
  * Handles featured image and gallery image uploads via the protected
  * media upload endpoint. Provides file selection, preview, upload progress,
  * and delete functionality.
+ *
+ * Fix A (SPEC-208): On image remove, calls the protected DELETE endpoint
+ * (best-effort) so Cloudinary assets are cleaned up when a host removes a photo.
+ *
+ * Fix B (SPEC-208): Enforces the client-side gallery cap derived from
+ * `ENTITY_GALLERY_CAPS.accommodation` (imported from @repo/schemas) so the
+ * upload control is disabled and a localised message is shown when the gallery
+ * is full — preventing a round-trip to the server.
  */
 
+import { protectedMediaApi } from '@/lib/api/endpoints-protected';
 import type { MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { webLogger } from '@/lib/logger';
+import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
 import styles from './PhotoSection.module.css';
 
 // Re-export for consumers that import MediaImage from this module
 export type { MediaImage };
+
+/** Gallery cap for accommodation entities (mirrors server-side enforcement). */
+const ACCOMMODATION_GALLERY_CAP = ENTITY_GALLERY_CAPS.accommodation;
 
 /** Photo section data extracted from the accommodation's media JSONB. */
 export interface PhotoSectionData {
@@ -103,6 +117,12 @@ async function uploadEntityImage({
  * Manages featured image and gallery uploads. Uses XHR for upload progress
  * tracking. File validation (type, size) is performed client-side before
  * the upload request is sent.
+ *
+ * On remove: calls the protected DELETE endpoint for Cloudinary cleanup
+ * (best-effort — failures are logged but do not block the UI).
+ *
+ * Gallery cap: upload control is disabled once the gallery reaches
+ * ACCOMMODATION_GALLERY_CAP images; a localised message is shown.
  */
 export function PhotoSection({
     locale,
@@ -118,6 +138,9 @@ export function PhotoSection({
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
+
+    /** Whether the gallery has reached the per-accommodation cap. */
+    const isGalleryFull = data.gallery.length >= ACCOMMODATION_GALLERY_CAP;
 
     // --- Validation ---
 
@@ -186,8 +209,25 @@ export function PhotoSection({
     );
 
     const handleFeaturedRemove = useCallback(() => {
+        const removed = data.featuredImage;
         onFeaturedImageChange(null);
-    }, [onFeaturedImageChange]);
+        // Fix A: best-effort Cloudinary cleanup
+        if (removed?.publicId) {
+            protectedMediaApi
+                .deleteMedia({ publicId: removed.publicId })
+                .then((result) => {
+                    if (!result.ok) {
+                        webLogger.warn(
+                            '[PhotoSection] featured image delete returned non-ok:',
+                            result.error
+                        );
+                    }
+                })
+                .catch((err: unknown) => {
+                    webLogger.warn('[PhotoSection] featured image delete failed:', err);
+                });
+        }
+    }, [data.featuredImage, onFeaturedImageChange]);
 
     // --- Gallery upload ---
 
@@ -195,6 +235,20 @@ export function PhotoSection({
         async (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
             if (!file) return;
+
+            // Fix B: client-side cap guard (do not hit the server when already at cap)
+            if (isGalleryFull) {
+                setUploadError(
+                    t(
+                        'host.properties.editor.photo.galleryCapReached',
+                        `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
+                    ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))
+                );
+                if (galleryInputRef.current) {
+                    galleryInputRef.current.value = '';
+                }
+                return;
+            }
 
             const error = validateFile(file);
             if (error) {
@@ -228,13 +282,30 @@ export function PhotoSection({
                 }
             }
         },
-        [accommodationId, data.gallery, validateFile, onGalleryChange, t]
+        [accommodationId, data.gallery, validateFile, onGalleryChange, t, isGalleryFull]
     );
 
     const handleGalleryRemove = useCallback(
         (index: number) => {
+            const removed = data.gallery[index];
             const newGallery = data.gallery.filter((_, i) => i !== index);
             onGalleryChange(newGallery);
+            // Fix A: best-effort Cloudinary cleanup
+            if (removed?.publicId) {
+                protectedMediaApi
+                    .deleteMedia({ publicId: removed.publicId })
+                    .then((result) => {
+                        if (!result.ok) {
+                            webLogger.warn(
+                                '[PhotoSection] gallery image delete returned non-ok:',
+                                result.error
+                            );
+                        }
+                    })
+                    .catch((err: unknown) => {
+                        webLogger.warn('[PhotoSection] gallery image delete failed:', err);
+                    });
+            }
         },
         [data.gallery, onGalleryChange]
     );
@@ -333,6 +404,16 @@ export function PhotoSection({
                     {t('host.properties.editor.photo.gallery', 'Galería de fotos')}
                 </label>
 
+                {/* Fix B: gallery cap message when full */}
+                {isGalleryFull && (
+                    <p className={styles.error}>
+                        {t(
+                            'host.properties.editor.photo.galleryCapReached',
+                            `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
+                        ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))}
+                    </p>
+                )}
+
                 <div className={styles.gallery}>
                     {data.gallery.map((image, index) => (
                         <div
@@ -363,14 +444,17 @@ export function PhotoSection({
                         </div>
                     ))}
 
-                    <button
-                        type="button"
-                        className={styles.galleryAddButton}
-                        onClick={() => !isUploading && galleryInputRef.current?.click()}
-                        disabled={isUploading}
-                    >
-                        +
-                    </button>
+                    {/* Fix B: disable add button when at cap */}
+                    {!isGalleryFull && (
+                        <button
+                            type="button"
+                            className={styles.galleryAddButton}
+                            onClick={() => !isUploading && galleryInputRef.current?.click()}
+                            disabled={isUploading}
+                        >
+                            +
+                        </button>
+                    )}
                 </div>
 
                 <input

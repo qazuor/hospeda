@@ -187,7 +187,9 @@
                 "remove": "Eliminar",
                 "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
                 "tooLarge": "El archivo no puede superar 5MB",
-                "uploadFailed": "Error al subir la imagen"
+                "uploadFailed": "Error al subir la imagen",
+                "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
+                "galleryCapLabel": "Galería llena"
             },
             "action": {
                 "save": "Guardar",
