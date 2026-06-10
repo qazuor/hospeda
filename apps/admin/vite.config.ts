@@ -4,6 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { z } from 'zod';
@@ -158,6 +159,16 @@ export default defineConfig({
                       org: 'qazuor',
                       project: 'hospeda-admin',
                       authToken: process.env.SENTRY_AUTH_TOKEN
+                  })
+              ]
+            : []),
+        // Bundle analysis — only when ANALYZE=1 (pnpm build:analyze)
+        ...(process.env.ANALYZE
+            ? [
+                  visualizer({
+                      open: false,
+                      filename: 'stats.html',
+                      gzipSize: true
                   })
               ]
             : [])

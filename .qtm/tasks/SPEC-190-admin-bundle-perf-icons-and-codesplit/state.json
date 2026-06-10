@@ -1,0 +1,128 @@
+{
+    "version": "1.0",
+    "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+    "specRef": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
+    "created": "2026-06-10T00:00:00.000Z",
+    "summary": {
+        "total": 14,
+        "pending": 12,
+        "inProgress": 0,
+        "completed": 2,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add rollup-plugin-visualizer + build:analyze script to apps/admin",
+            "status": "completed",
+            "phase": "phase-1-measurement",
+            "complexity": 1,
+            "detail": "Install rollup-plugin-visualizer as devDep in apps/admin. Add a build:analyze script to apps/admin/package.json that runs vite build with the visualizer plugin enabled. The script must produce an HTML treemap/sunburst report and emit per-chunk raw + gzip sizes. FR-1."
+        },
+        {
+            "id": "T-002",
+            "title": "Capture baseline bundle snapshot (components-entity, vendor*, lib-utils, icons)",
+            "status": "completed",
+            "phase": "phase-1-measurement",
+            "complexity": 1,
+            "detail": "Run build:analyze on the UNCHANGED admin codebase. Record a machine-readable baseline snapshot (small table or report metadata) of at least: components-entity, vendor*, lib-utils, and any icon-related chunk \u2014 raw + gzip bytes. Commit the snapshot. The baseline must reflect ~401 KB raw for components-entity (NOT 4 MB). FR-1."
+        },
+        {
+            "id": "T-003",
+            "title": "Add sideEffects: false to packages/icons/package.json",
+            "status": "pending",
+            "phase": "phase-2-icon-front",
+            "complexity": 1,
+            "detail": "Add \"sideEffects\": false to packages/icons/package.json. Icon modules are pure component factories (SVG/React, no CSS or global side-effects \u2014 verified). This enables tree-shaking: consumers importing named icons no longer retain unused icon modules. Rebuild admin + web and verify no icon module is wrongly dropped. FR-2."
+        },
+        {
+            "id": "T-004",
+            "title": "Isolate resolver behind @repo/icons/resolver subpath export",
+            "status": "pending",
+            "phase": "phase-2-icon-front",
+            "complexity": 3,
+            "detail": "Move ICON_MAP and resolveIcon out of the main barrel (packages/icons/src/index.ts line 13) into a dedicated subpath export. Add an exports entry \"./resolver\" to packages/icons/package.json with matching tsup/build output and types. Create the resolver entry point (packages/icons/src/resolver.ts re-exporting from icon-resolver.ts). Migrate ALL call sites: apps/admin entity-list/IconNameCell.tsx, apps/web SSR consumers (AmenitiesGrid.astro, FeaturesGrid.astro, Badge.tsx/Badge.astro, filters/*). Verify zero bare-@repo/icons resolver imports remain. FR-3."
+        },
+        {
+            "id": "T-005",
+            "title": "Lazify admin IconNameCell resolver usage (dynamic import)",
+            "status": "pending",
+            "phase": "phase-2-icon-front",
+            "complexity": 2,
+            "detail": "In apps/admin/src/components/entity-list/IconNameCell.tsx, replace the static resolveIcon import with a dynamic import() so ICON_MAP lands in a separate async chunk (not components-entity). Preserve behavior: icon renders after async resolve; em-dash/mono slug fallback for empty/unknown icon. The resolver chunk is fetched once and reused (no per-row thrash). FR-4."
+        },
+        {
+            "id": "T-006",
+            "title": "Remove dead lucide manualChunks branch from vite.config.ts",
+            "status": "pending",
+            "phase": "phase-2-icon-front",
+            "complexity": 1,
+            "detail": "Delete the if (id.includes('lucide')) return 'vendor-icons' branch in apps/admin/vite.config.ts (~line 276). Verified: no lucide-react dependency or import exists in apps/admin (only a stale comment in newsletter/RichTextEditor.tsx:111). Build must succeed; no vendor-icons chunk was ever populated. FR-5."
+        },
+        {
+            "id": "T-007",
+            "title": "Re-measure after icon front (Phase 2 delta)",
+            "status": "pending",
+            "phase": "phase-2-icon-front",
+            "complexity": 1,
+            "detail": "Re-run build:analyze after all Phase 2 changes (FR-2/3/4/5). Record the icon-front delta: components-entity and icon chunk sizes before vs after. Verify web SSR still works and does not leak ICON_MAP to the web client bundle. FR-9 partial."
+        },
+        {
+            "id": "T-008",
+            "title": "React.lazy + Suspense heavy fields at FieldTypeEnum boundary",
+            "status": "pending",
+            "phase": "phase-3-field-split",
+            "complexity": 3,
+            "detail": "In apps/admin/src/components/entity-form/EntityFormSection.tsx, replace static top-of-file imports of heavy field components with React.lazy + Suspense at the FieldTypeEnum switch: RichTextField (tiptap), CoordinatesField (+ CoordinatesMapView, leaflet), ImageField, GalleryField, VideoGalleryField. Light fields (TextField, SelectField, SwitchField, etc.) stay static. Each heavy field becomes its own async chunk loaded only when a form renders that field type. SSR/hydration correctness (TanStack Start) and form value/error/onChange/onBlur wiring MUST be preserved. Each lazy field gets a Suspense fallback. FR-6."
+        },
+        {
+            "id": "T-009",
+            "title": "Break entity-list \u2192 entity-form/fields edge (relocate DeleteConfirmDialog)",
+            "status": "pending",
+            "phase": "phase-3-field-split",
+            "complexity": 2,
+            "detail": "Break the edge: entity-list/InlineStateSelectCell.tsx and entity-list/DeleteRowButton.tsx import DeleteConfirmDialog from entity-form/fields/DeleteConfirmDialog \u2014 this drags the form-field tree into entity-list. Relocate DeleteConfirmDialog to a neutral location (e.g. components/shared/ or components/common/). Update all import paths. Verify no true circular dependency exists. Confirm/break any cycle with the visualizer. FR-7."
+        },
+        {
+            "id": "T-010",
+            "title": "Adjust manualChunks so entity trees split and lazy chunks land standalone",
+            "status": "pending",
+            "phase": "phase-3-field-split",
+            "complexity": 2,
+            "detail": "Replace the single greedy id.includes('/components/entity-') match in apps/admin/vite.config.ts (~lines 292-295) so entity-list, entity-form, and entity-pages split into distinct chunks and the new lazy field chunks land in their own files (not folded back into components-entity). The rule must be deterministic and documented inline. FR-8."
+        },
+        {
+            "id": "T-011",
+            "title": "Re-measure after field split + de-couple (Phase 3 delta)",
+            "status": "pending",
+            "phase": "phase-3-field-split",
+            "complexity": 1,
+            "detail": "Re-run build:analyze after all Phase 3 changes (FR-6/7/8). Record the field-split delta: components-entity before vs after. Verify no chunk regresses larger than the FR-1 baseline. Verify admin app loads and routes correctly (no missing-chunk runtime errors). FR-9 partial."
+        },
+        {
+            "id": "T-012",
+            "title": "Write tests: lazy fields, IconNameCell lazy path, relocated DeleteConfirmDialog",
+            "status": "pending",
+            "phase": "phase-3-field-split",
+            "complexity": 2,
+            "detail": "Component tests (Vitest, AAA, >=90% target): IconNameCell lazy path (renders icon after async resolve; fallback for empty/unknown); each lazily-loaded heavy field still renders and wires value/onChange/onBlur (RichText, Coordinates, Image, Gallery, Video); the relocated DeleteConfirmDialog flow in lists. Regression tests for any bug found during lazy-loading or de-coupling."
+        },
+        {
+            "id": "T-013",
+            "title": "Final before/after table + correct false sideEffects doc claim",
+            "status": "pending",
+            "phase": "phase-4-closeout",
+            "complexity": 1,
+            "detail": "Produce the final before/after table (from build:analyze) covering each front: sideEffects, resolver subpath + lazify, heavy-field lazy split, de-couple + manualChunks. Each row shows baseline raw/gzip vs after raw/gzip and the delta. Correct the false sideEffects: false claim in packages/icons/docs/guides/optimization.md (line 17). FR-9."
+        },
+        {
+            "id": "T-014",
+            "title": "Manual admin smoke: every field type in CREATE + EDIT",
+            "status": "pending",
+            "phase": "phase-4-closeout",
+            "complexity": 1,
+            "detail": "MANDATORY SMOKE: manually exercise every field type in the admin browser (superadmin) in both CREATE and EDIT modes: rich-text editing + markdown, coordinates map + Nominatim search, image upload/replace/delete, gallery add/reorder/delete, video gallery add/remove. Confirm lazy-loading + SSR hydration correctness. This is the production readiness gate."
+        }
+    ]
+}

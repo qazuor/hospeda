@@ -42,10 +42,12 @@ admin client bundle, evidence-driven.**
 
 ### Honest framing (read this before estimating any win)
 
-Earlier informal notes claimed the entity chunk was "~4MB". That is **wrong**. The
-chunk is measured at **~401 KB pre-gzip**. The spec must not inherit the inflated
-number — every claim in this document is anchored to a measurement, and Phase 1 exists
-precisely to replace folklore with real before/after numbers.
+Earlier informal notes claimed the entity chunk was "~4MB". A later revision corrected
+this to "~401 KB pre-gzip" based on SSR chunk measurement. **Phase 1 baseline (2026-06-10)
+revealed the actual CLIENT-side `components-entity` chunk is 4044 KB raw / 1129 KB gzip**
+— the 4 MB concern is validated. The 401 KB number was an SSR artifact. Every claim in
+this document is anchored to a measurement, and Phase 1 exists precisely to replace
+folklore with real before/after numbers.
 
 Equally important: **icons are a SECONDARY contributor**, not the headline. The real
 weight in `components-entity` is:
@@ -168,7 +170,7 @@ Given apps/admin has no bundle analyzer today
   When build:analyze is added and run on the unchanged baseline
   Then a visualizer report is produced
   And the components-entity chunk size (raw + gzip) is recorded as the baseline number
-  And the recorded baseline reflects ~401 KB raw for components-entity (not 4 MB)
+  And the recorded baseline reflects ~4044 KB raw / ~1129 KB gzip for components-entity
 
 Given the baseline is captured
   When any later front changes a chunk
