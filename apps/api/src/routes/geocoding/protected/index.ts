@@ -6,6 +6,9 @@
  * Photon/Nominatim directly. Same proxy pattern as the admin geocoding routes
  * but gated by session auth (no admin permissions required).
  *
+ * Auth is enforced by `createProtectedRoute`, which injects
+ * `protectedAuthMiddleware`. Any request without a valid session receives 401.
+ *
  * - Autocomplete: type-ahead address suggestions via Photon
  * - Reverse: coordinates → structured address via Nominatim
  */
@@ -14,7 +17,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { createRouter } from '../../../utils/create-app.js';
 import { env } from '../../../utils/env.js';
-import { createSimpleRoute } from '../../../utils/route-factory.js';
+import { createProtectedRoute } from '../../../utils/route-factory.js';
 
 const SuggestionSchema = z.object({
     label: z.string(),
@@ -38,13 +41,13 @@ const ReverseResponseSchema = z.object({
 
 const userAgent = env.HOSPEDA_GEOCODING_USER_AGENT;
 
-const protectedAutocompleteRoute = createSimpleRoute({
+const protectedAutocompleteRoute = createProtectedRoute({
     method: 'get',
     path: '/autocomplete',
     summary: 'Geocoding autocomplete (Photon)',
     description:
-        'Type-ahead address suggestions biased to Argentina. Proxies to Photon and caches identical queries server-side.',
-    tags: ['Protected - Geocoding'],
+        'Type-ahead address suggestions biased to Argentina. Proxies to Photon and caches identical queries server-side. Requires a user session.',
+    tags: ['Geocoding'],
     responseSchema: AutocompleteResponseSchema,
     handler: async (ctx: Context) => {
         const url = new URL(ctx.req.url);
@@ -62,17 +65,16 @@ const protectedAutocompleteRoute = createSimpleRoute({
             (url.searchParams.get('locale') as 'es' | 'en' | 'pt' | undefined) ?? undefined;
         const suggestions = await geocodingAutocomplete({ query: q, locale }, { userAgent });
         return { suggestions: [...suggestions] };
-    },
-    options: { skipAuth: true }
+    }
 });
 
-const protectedReverseRoute = createSimpleRoute({
+const protectedReverseRoute = createProtectedRoute({
     method: 'get',
     path: '/reverse',
     summary: 'Geocoding reverse (Nominatim)',
     description:
-        'Resolves coordinates to a structured address. Used after the host drags the location pin.',
-    tags: ['Protected - Geocoding'],
+        'Resolves coordinates to a structured address. Used after the host drags the location pin. Requires a user session.',
+    tags: ['Geocoding'],
     responseSchema: ReverseResponseSchema,
     handler: async (ctx: Context) => {
         const url = new URL(ctx.req.url);
@@ -98,8 +100,7 @@ const protectedReverseRoute = createSimpleRoute({
         }
         const suggestion = await geocodingReverse({ lat, lng }, { userAgent });
         return { suggestion };
-    },
-    options: { skipAuth: true }
+    }
 });
 
 const router = createRouter();

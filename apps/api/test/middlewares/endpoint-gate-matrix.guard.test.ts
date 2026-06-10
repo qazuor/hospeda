@@ -216,6 +216,7 @@ const MULTI_ROUTE_INDEX_FILES: ReadonlySet<string> = new Set([
     'billing/index.ts', // QZPay protected tier (customers, subscriptions, plans, etc.)
     'billing/admin/index.ts', // QZPay admin tier
     'geocoding/admin/index.ts', // Geocoding admin proxy
+    'geocoding/protected/index.ts', // Geocoding protected proxy (autocomplete + reverse, SPEC-208)
     'platform-settings/admin/index.ts', // Platform settings admin CRUD
     'revalidation/index.ts', // Revalidation admin routes
     'exchange-rates/admin/index.ts', // Exchange-rate admin routes
