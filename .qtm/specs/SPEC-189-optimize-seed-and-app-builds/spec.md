@@ -3,7 +3,7 @@ specId: SPEC-189
 title: Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback
 slug: optimize-seed-and-app-builds
 type: refactor
-status: draft
+status: completed
 complexity: medium
 owner: qazuor
 created: 2026-06-02

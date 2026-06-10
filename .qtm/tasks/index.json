@@ -117,13 +117,16 @@
         {
             "specId": "SPEC-189",
             "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-189-optimize-seed-and-app-builds",
+            "base": "staging",
             "linearIssues": ["BETA-54"],
-            "note": "tasks pending atomization",
-            "archived": false
+            "note": "12/12 completed. Front B (schemas/feedback decouple) + Front A (seed from src no-build). Build set: schemas dropped feedback+icons. Seed cold startup ~9s vs ~30-60s before.",
+            "archived": true,
+            "archivedAt": "2026-06-10"
         },
         {
             "specId": "SPEC-190",
