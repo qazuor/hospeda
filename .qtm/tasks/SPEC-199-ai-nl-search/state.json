@@ -491,7 +491,7 @@
             "id": "T-014",
             "title": "Create aiSearch i18n namespace: 3 JSON files and 4-step config.ts registration",
             "description": "Create packages/i18n/src/locales/es/aiSearch.json, en/aiSearch.json, pt/aiSearch.json with all keys from §5.7 including chip keys: type, minGuests, maxGuests, minPrice, maxPrice, city, destinationId, hasPool, hasWifi, allowsPets, hasParking, amenities, checkIn, checkOut, minRating, maxRating, minBedrooms, maxBedrooms, minBathrooms, maxBathrooms, features.\n\n4-STEP REGISTRATION in packages/i18n/src/config.ts (ALL four required, skipping any = silent empty translations at runtime):\n1. Add 'aiSearch' to the namespaces array\n2. Add static imports: import aiSearchEs from './locales/es/aiSearch.json' (+ en/pt)\n3. Add namespace under rawTranslations.es, .en, .pt\n4. The 3 JSON files above\n\nNo separate test file — verified at runtime; component tests in T-020 will catch missing keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-015", "T-016", "T-017"],
@@ -516,21 +516,21 @@
             "tags": ["i18n", "frontend", "setup"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Create NlSearchInput.tsx component with character counter and submit",
             "description": "Create apps/web/src/components/ai-search/NlSearchInput.tsx (pure React component, no API call) and NlSearchInput.module.css. Component receives: value, onChange, onSubmit, isLoading props. Features: textarea with maxLength=500, live character counter (N/500), submit button disabled when value.trim().length===0 or isLoading, Enter key triggers submit (no debounce). CSS Modules for styling (NO Tailwind).\n\nTEST FILE: covered by T-020 AiSearchPanel.test.tsx integration (character count updates, submit-disabled-when-empty). Direct NlSearchInput unit test is optional if panel test covers all behaviors.\nRequired assertions (§8.3):\n- Character count updates as user types (e.g. 'hello' → '5/500')\n- Submit button disabled when query empty\n- Submit button disabled during isLoading state",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-017"],
@@ -547,21 +547,21 @@
             "tags": ["frontend", "component", "react"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Create IntentChips.tsx with sessionStorage read, chip render, and removal navigation",
             "description": "Create apps/web/src/components/ai-search/IntentChips.tsx and IntentChips.module.css. On mount: read sessionStorage.ai_search_chips (guarded with typeof sessionStorage==='undefined' SSR check, wrapped in try/catch for private-mode errors). Render one chip per mappedParams key that has a chip label in aiSearch.chips.* i18n namespace. On chip removal: (1) remove key from active params, (2) update sessionStorage.ai_search_chips, (3) window.location.replace('/[lang]/alojamientos/' + updatedParams). Do NOT render chips for 'q' key (raw keyword). CSS Modules, NO Tailwind.\n\nTEST FILE: apps/web/src/components/ai-search/IntentChips.test.tsx [NEW] — covered in T-020\nRequired assertions (§8.3, AC-7, AC-8):\n- Renders one chip per key in sessionStorage.ai_search_chips (per AC-7)\n- Removing hasPool chip removes it from sessionStorage + navigates without hasPool param (AC-8)\n- No chips rendered when sessionStorage empty",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-017", "T-020"],
@@ -586,21 +586,21 @@
             "tags": ["frontend", "component", "react"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Create AiSearchPanel.client.tsx with full state machine (anon + auth flows)",
             "description": "Create apps/web/src/components/ai-search/AiSearchPanel.client.tsx and AiSearchPanel.module.css. Props: {locale:'es'|'en'|'pt', isAuthenticated:boolean, currentUrl:string}. State: isOpen, query, status:'idle'|'loading'|'success'|'error', errorType:null|'quota'|'network'|'fallback', mappedParams, intentChips.\n\nAnonymous flow: on submit → trackEvent(AiSearchLoginPrompted, {locale}) → navigate to buildLoginRedirect({locale,currentUrl}). No API call.\n\nAuthenticated flow: (1) trackEvent(AiSearchSubmitted), (2) status='loading', (3) apiClient.postProtected('/api/v1/protected/ai/search-intent', {query,locale}), (4a) fallbackToKeyword:false → trackEvent(AiSearchIntentApplied) + serialize mappedParams as URLSearchParams + write sessionStorage.ai_search_chips (SSR guard + try/catch) + navigate; (4b) fallbackToKeyword:true → trackEvent(AiSearchFallbackKeyword, {reason:'low_confidence',confidence}) + navigate with q=rawQuery + show fallback notice; (5) 403 → show upgrade prompt; (6) 429 → show rate-limit message; (7) 502/503/network → trackEvent(AiSearchFallbackKeyword,{reason:'api_error'}) + show service error + keyword fallback CTA. Use apiClient.postProtected (NOT raw fetch). CSS Modules, NO Tailwind.\n\nTEST REQUIREMENTS in T-020.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-014", "T-015", "T-016"],
             "blocks": ["T-018", "T-020"],
@@ -629,21 +629,21 @@
             "tags": ["frontend", "component", "react", "integration"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Create AiSearchTrigger.astro floating CTA component",
             "description": "Create apps/web/src/components/ai-search/AiSearchTrigger.astro. Fixed-position floating button with i18n text from aiSearch.triggerLabel (per locale). Renders AiSearchPanel.client.tsx island with client:visible directive (loads only when trigger is visible — reduces initial JS bundle). Receives locale, isAuthenticated, currentUrl as props from the parent Astro page and passes them to AiSearchPanel. NO Tailwind — vanilla CSS or inline style for position if needed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-017"],
             "blocks": ["T-019"],
@@ -656,21 +656,21 @@
             "tags": ["frontend", "astro", "component"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Wire AiSearchTrigger into alojamientos/index.astro listing page",
             "description": "Edit apps/web/src/pages/[lang]/alojamientos/index.astro to import and render <AiSearchTrigger> component. Pass locale, isAuthenticated (from auth context / Better Auth session), and currentUrl (from Astro.url.href or Astro.request.url) as props. The trigger must NOT modify the existing filter sidebar or main search bar (separate floating UI per §3 Q2). Optionally also wire into the home page if applicable.\n\nNo new test file needed — smoke verification in T-021 covers end-to-end render.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-018"],
             "blocks": ["T-021"],
@@ -683,14 +683,14 @@
             "tags": ["frontend", "astro", "wiring"],
             "phase": "frontend",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T07:13:19.000Z"
             }
         },
         {
@@ -770,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 8,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.38
     }
