@@ -29,6 +29,12 @@
         "amenities": "Comodidades adicionais",
         "checkIn": "Entrada: {{value}}",
         "checkOut": "Saída: {{value}}",
-        "minRating": "Avaliação mínima: {{value}}"
+        "minRating": "Avaliação mínima: {{value}}",
+        "maxRating": "Avaliação máxima: {{value}}",
+        "minBedrooms": "Mínimo {{value}} quartos",
+        "maxBedrooms": "Até {{value}} quartos",
+        "minBathrooms": "Mínimo {{value}} banheiros",
+        "maxBathrooms": "Até {{value}} banheiros",
+        "features": "Características adicionais"
     }
 }

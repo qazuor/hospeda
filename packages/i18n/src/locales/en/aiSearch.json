@@ -29,6 +29,12 @@
         "amenities": "Additional amenities",
         "checkIn": "Check-in: {{value}}",
         "checkOut": "Check-out: {{value}}",
-        "minRating": "Min. rating: {{value}}"
+        "minRating": "Min. rating: {{value}}",
+        "maxRating": "Max. rating: {{value}}",
+        "minBedrooms": "Min. {{value}} bedrooms",
+        "maxBedrooms": "Up to {{value}} bedrooms",
+        "minBathrooms": "Min. {{value}} bathrooms",
+        "maxBathrooms": "Up to {{value}} bathrooms",
+        "features": "Additional features"
     }
 }
