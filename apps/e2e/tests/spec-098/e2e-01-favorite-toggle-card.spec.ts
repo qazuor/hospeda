@@ -40,7 +40,11 @@ interface ToggleBookmarkResponse {
 
 /** Minimal shape returned by the bookmark list endpoint */
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<{ readonly id: string; readonly entityId: string }>;
+    // GET /api/v1/protected/user-bookmarks returns { data: { bookmarks: [...], total } }
+    readonly data?: {
+        readonly bookmarks?: ReadonlyArray<{ readonly id: string; readonly entityId: string }>;
+        readonly total?: number;
+    };
 }
 
 test.describe('E2E-01: favorite toggle on listing card @p0 @favorites @card @spec-098', () => {
@@ -243,7 +247,7 @@ test.describe('E2E-01: favorite toggle on listing card @p0 @favorites @card @spe
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as BookmarkListResponse;
-        const ids = listBody.data?.map((row) => row.entityId) ?? [];
+        const ids = listBody.data?.bookmarks?.map((row) => row.entityId) ?? [];
         expect(ids).not.toContain(acc.id);
     });
 });

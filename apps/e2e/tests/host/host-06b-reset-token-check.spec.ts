@@ -31,7 +31,31 @@ import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
+/**
+ * Extracts the password-reset token from the `verification` table.
+ *
+ * Better Auth stores reset tokens as:
+ *   identifier = `reset-password:<token>`
+ *   value      = userId
+ *
+ * This bypasses email delivery for environments without HOSPEDA_EMAIL_API_KEY.
+ */
+async function getResetTokenFromDb(userId: string): Promise<string | null> {
+    const rows = await execSQL<{ identifier: string }>(
+        `SELECT identifier FROM verification
+         WHERE value = $1
+           AND identifier LIKE 'reset-password:%'
+           AND expires_at > NOW()
+         ORDER BY expires_at DESC
+         LIMIT 1`,
+        [userId]
+    );
+    if (!rows[0]?.identifier) return null;
+    return rows[0].identifier.replace('reset-password:', '');
+}
+
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 const CHECK_URL = `${API_URL}/api/v1/public/auth/reset-password/check`;
 
 const tamperToken = (token: string): string => {
@@ -57,36 +81,52 @@ test.describe('HOST-06b: reset-password token check (SPEC-118) @p1 @host @auth @
         userId = user.id;
 
         // Force email verified — HOST-01 covers the verification path.
-        await execSQL(
-            'UPDATE users SET email_verified_at = NOW(), email_verified = true WHERE id = $1',
-            [user.id]
-        );
+        // Note: users table has `email_verified` (boolean) only — no _at column.
+        await execSQL('UPDATE users SET email_verified = true WHERE id = $1', [user.id]);
 
-        // ── 1. Trigger forget-password ────────────────────────────────────
-        const forgetRes = await fetch(`${API_URL}/api/auth/forget-password`, {
+        // ── 1. Trigger password reset ──────────────────────────────────────
+        // Note: Better Auth uses `request-password-reset`, not `forget-password`.
+        const forgetRes = await fetch(`${API_URL}/api/auth/request-password-reset`, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ email: user.email })
+            headers: { 'content-type': 'application/json', Origin: WEB_URL },
+            body: JSON.stringify({
+                email: user.email,
+                redirectTo: `${WEB_URL}/es/auth/reset-password`
+            })
         });
         expect(
             forgetRes.status >= 200 && forgetRes.status < 300,
-            `forget-password should return 2xx (got ${forgetRes.status})`
+            `request-password-reset should return 2xx (got ${forgetRes.status})`
         ).toBe(true);
 
-        // ── 2. Extract token from the reset email ─────────────────────────
-        const email = await waitForEmail({
-            to: user.email,
-            subject: /reset|recuperar|restablecer/i,
-            timeoutMs: 10_000
-        });
-        const link = extractFirstLink(email.HTML ?? email.Text ?? '');
-        expect(link).not.toBeNull();
-        const token = new URL(link as string).searchParams.get('token');
-        expect(token, 'reset link must carry a token').not.toBeNull();
-        const validToken = token as string;
+        // ── 2. Extract token — prefer email delivery, fall back to DB ────
+        // When HOSPEDA_EMAIL_API_KEY is not set, the API skips sending email
+        // but Better Auth still writes the token to the `verification` table
+        // as `identifier = reset-password:<token>`.
+        let validToken: string | null = null;
+        try {
+            const email = await waitForEmail({
+                to: user.email,
+                subject: /reset|recuperar|restablecer/i,
+                timeoutMs: 5_000
+            });
+            const link = extractFirstLink(email.HTML ?? email.Text ?? '');
+            if (link) {
+                validToken = new URL(link).searchParams.get('token');
+            }
+        } catch {
+            // Email not delivered — extract token from DB directly.
+        }
+
+        if (!validToken) {
+            validToken = await getResetTokenFromDb(user.id);
+        }
+
+        expect(validToken, 'reset token must be retrievable (email or DB)').not.toBeNull();
+        const resolvedToken = validToken as string;
 
         // ── 3. Fresh token → valid:true ───────────────────────────────────
-        const freshRes = await fetch(`${CHECK_URL}?token=${encodeURIComponent(validToken)}`, {
+        const freshRes = await fetch(`${CHECK_URL}?token=${encodeURIComponent(resolvedToken)}`, {
             method: 'GET'
         });
         expect(freshRes.status).toBe(200);
@@ -97,7 +137,7 @@ test.describe('HOST-06b: reset-password token check (SPEC-118) @p1 @host @auth @
 
         // ── 4. Tampered token → invalid ───────────────────────────────────
         const tamperedRes = await fetch(
-            `${CHECK_URL}?token=${encodeURIComponent(tamperToken(validToken))}`,
+            `${CHECK_URL}?token=${encodeURIComponent(tamperToken(resolvedToken))}`,
             { method: 'GET' }
         );
         expect(tamperedRes.status).toBe(200);
@@ -110,8 +150,8 @@ test.describe('HOST-06b: reset-password token check (SPEC-118) @p1 @host @auth @
         const newPassword = `New-${Date.now().toString(36)}-Aa1!`;
         const consumeRes = await fetch(`${API_URL}/api/auth/reset-password`, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ token: validToken, newPassword, password: newPassword })
+            headers: { 'content-type': 'application/json', Origin: WEB_URL },
+            body: JSON.stringify({ token: resolvedToken, newPassword, password: newPassword })
         });
         expect(
             consumeRes.status >= 200 && consumeRes.status < 300,
@@ -121,7 +161,7 @@ test.describe('HOST-06b: reset-password token check (SPEC-118) @p1 @host @auth @
         // ── 6. Same token after consume → invalid ─────────────────────────
         // Better Auth deletes the verifications row on consume; SPEC-118's
         // contract collapses "used" + "tampered" + "unknown" into `invalid`.
-        const consumedRes = await fetch(`${CHECK_URL}?token=${encodeURIComponent(validToken)}`, {
+        const consumedRes = await fetch(`${CHECK_URL}?token=${encodeURIComponent(resolvedToken)}`, {
             method: 'GET'
         });
         expect(consumedRes.status).toBe(200);

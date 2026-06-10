@@ -45,6 +45,18 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
     test('paid host: write OK → cancel keeps grace → period_end past blocks writes', async ({
         page
     }) => {
+        // Paywall enforcement requires billing to be configured
+        // (HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN set). Without it, the entitlement
+        // middleware falls back to "draft defaults" and grants write access regardless
+        // of subscription state. Mark fixme when billing is not configured.
+        if (!process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+            test.fixme(
+                true,
+                'HOST-04: billing not configured — paywall enforcement unavailable (set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN to run)'
+            );
+            return;
+        }
+
         // ── Setup: paid host with active subscription ──────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
@@ -53,7 +65,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
         // Pick any active non-trial plan from seed.
         const planRows = await execSQL<{ id: string }>(
             `SELECT id FROM billing_plans
-             WHERE is_active = true
+             WHERE active = true
              ORDER BY created_at ASC
              LIMIT 1`
         );

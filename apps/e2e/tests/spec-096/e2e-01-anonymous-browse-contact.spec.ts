@@ -39,15 +39,16 @@ test.describe('E2E-1: anonymous browse + contact form @p0 @guest @discovery @cro
             `${API_URL}/api/v1/public/accommodations?pageSize=10`
         );
         expect(listRes.ok(), `listing should be 200, got ${listRes.status()}`).toBe(true);
+        // The route factory wraps paginated results in { data: { items: [...], pagination } }.
         const listBody = (await listRes.json()) as {
-            data?: ReadonlyArray<PublicAccommodationRow>;
+            data?: { items?: ReadonlyArray<PublicAccommodationRow>; pagination?: unknown };
         };
         expect(
-            (listBody.data?.length ?? 0) > 0,
+            (listBody.data?.items?.length ?? 0) > 0,
             'public listing should contain at least one seeded accommodation'
         ).toBe(true);
 
-        const first = listBody.data?.[0];
+        const first = listBody.data?.items?.[0];
         expect(first?.id).toBeTruthy();
 
         // ── 2. Detail ─────────────────────────────────────────────────────

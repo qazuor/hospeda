@@ -50,7 +50,7 @@ test.describe('E2E-8: subscription cancel flow @p0 @host @billing @cross-app', (
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {
@@ -67,11 +67,15 @@ test.describe('E2E-8: subscription cancel flow @p0 @host @billing @cross-app', (
         });
 
         // Snapshot of period_end before cancel (used to assert it is preserved).
-        const beforeRows = await execSQL<{ current_period_end: string }>(
+        // Note: pg returns timestamptz columns as Date objects; normalise to ISO string
+        // so that toBe() (===) compares the same type across both snapshots.
+        const beforeRows = await execSQL<{ current_period_end: Date | string }>(
             'SELECT current_period_end FROM billing_subscriptions WHERE id = $1',
             [subscriptionId]
         );
-        const periodEndBefore = beforeRows[0]?.current_period_end;
+        const rawBefore = beforeRows[0]?.current_period_end;
+        const periodEndBefore =
+            rawBefore instanceof Date ? rawBefore.toISOString() : String(rawBefore ?? '');
         expect(periodEndBefore).toBeTruthy();
 
         // ── Action: cancel via DB (covers the post-handler state) ─────────
@@ -88,8 +92,8 @@ test.describe('E2E-8: subscription cancel flow @p0 @host @billing @cross-app', (
         const afterRows = await execSQL<{
             status: string;
             cancel_at_period_end: boolean;
-            canceled_at: string | null;
-            current_period_end: string;
+            canceled_at: Date | string | null;
+            current_period_end: Date | string;
         }>(
             `SELECT status, cancel_at_period_end, canceled_at, current_period_end
              FROM billing_subscriptions WHERE id = $1`,
@@ -98,10 +102,12 @@ test.describe('E2E-8: subscription cancel flow @p0 @host @billing @cross-app', (
         expect(afterRows[0]?.status).toBe('cancelled');
         expect(afterRows[0]?.cancel_at_period_end).toBe(true);
         expect(afterRows[0]?.canceled_at).not.toBeNull();
-        expect(
-            afterRows[0]?.current_period_end,
-            'period_end must be preserved (grace period intact)'
-        ).toBe(periodEndBefore);
+        const rawAfter = afterRows[0]?.current_period_end;
+        const periodEndAfter =
+            rawAfter instanceof Date ? rawAfter.toISOString() : String(rawAfter ?? '');
+        expect(periodEndAfter, 'period_end must be preserved (grace period intact)').toBe(
+            periodEndBefore
+        );
 
         // ── Optional Mailpit leg (graceful when no handler is wired up) ──
         // Wait briefly for a possible cancel notification.

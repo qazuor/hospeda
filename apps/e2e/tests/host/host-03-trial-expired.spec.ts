@@ -42,16 +42,31 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
     });
 
     test('trial-expired host: blocks writes via UI + API, keeps reads', async ({ page }) => {
+        // Paywall enforcement requires billing to be configured
+        // (HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN set). Without it, the entitlement
+        // middleware falls back to "draft defaults" and grants write access regardless
+        // of trial state. Mark fixme when billing is not configured.
+        if (!process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+            test.fixme(
+                true,
+                'HOST-03: billing not configured — trial-expiry paywall unavailable (set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN to run)'
+            );
+            return;
+        }
+
         // ── Setup ──────────────────────────────────────────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        // Get the trial plan id from the seed data (any plan with status trialing-eligible).
+        // Get the trial plan id from the seed data (any plan with at least one price
+        // that has trial_days > 0 — `has_trial` column does not exist; trial info
+        // lives on billing_prices.trial_days).
         const planRows = await execSQL<{ id: string }>(
-            `SELECT id FROM billing_plans
-             WHERE has_trial = true AND is_active = true
-             ORDER BY created_at ASC
+            `SELECT DISTINCT bp.id FROM billing_plans bp
+             JOIN billing_prices pr ON pr.plan_id = bp.id
+             WHERE bp.active = true AND pr.trial_days > 0
+             ORDER BY bp.id ASC
              LIMIT 1`
         );
         const planId = planRows[0]?.id;

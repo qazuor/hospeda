@@ -48,7 +48,7 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {
@@ -85,7 +85,7 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         // contract, not the publish/unpublish UI flow (covered by HOST-01).
         await execSQL(
             `UPDATE accommodations
-             SET lifecycle_state = 'DRAFT'::lifecycle_status,
+             SET lifecycle_state = 'DRAFT',
                  updated_at = NOW()
              WHERE id = $1`,
             [accommodation.id]
@@ -107,16 +107,18 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         }
 
         // ── 4. Public listing does not include the accommodation ──────────
+        // Sort by created_at DESC so the just-unpublished item would be at the
+        // top of page 1 if it were still public — asserting its ABSENCE here
+        // is therefore deterministic (not buried on page 2+).
         const listRes = await page.request.get(
-            `${API_URL}/api/v1/public/accommodations?pageSize=100`
+            `${API_URL}/api/v1/public/accommodations?pageSize=100&sortBy=createdAt&sortOrder=desc`
         );
-        if (listRes.ok()) {
-            const listBody = (await listRes.json()) as {
-                data?: ReadonlyArray<{ id: string }>;
-            };
-            const ids = listBody.data?.map((row) => row.id) ?? [];
-            expect(ids).not.toContain(accommodation.id);
-        }
+        expect(listRes.ok(), `public listing should be 200, got ${listRes.status()}`).toBe(true);
+        const listBody = (await listRes.json()) as {
+            data?: { items?: ReadonlyArray<{ id: string }> };
+        };
+        const ids = listBody.data?.items?.map((row) => row.id) ?? [];
+        expect(ids).not.toContain(accommodation.id);
 
         // ── 5. DB invariant: row exists, lifecycle is DRAFT, not deleted ──
         const rows = await execSQL<{ lifecycle_state: string; deleted_at: string | null }>(

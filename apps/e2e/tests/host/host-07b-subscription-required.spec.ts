@@ -48,13 +48,25 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
     test('cancelled+expired host: PATCH ACTIVE rejected, accommodation stays DRAFT', async ({
         page
     }) => {
+        // Paywall enforcement requires billing to be configured
+        // (HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN set). Without it, the entitlement
+        // middleware falls back to "draft defaults" and grants write access regardless
+        // of subscription state. Mark fixme when billing is not configured.
+        if (!process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+            test.fixme(
+                true,
+                'HOST-07b: billing not configured — paywall enforcement unavailable (set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN to run)'
+            );
+            return;
+        }
+
         // ── Setup: host with cancelled+expired subscription + DRAFT acc ───
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {
