@@ -223,13 +223,13 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         expect(accsPublished[0]?.lifecycle_state).toBe('ACTIVE');
 
         // Trial subscription created OUTSIDE the local DB transaction (per
-        // architecture). The QZPay test-control adapter (T-036) or real MP
-        // sandbox credentials make this assertion deterministic. Without either,
-        // skip the billing assertion — the rest of the test still validates role
-        // promotion, admin redirect, public visibility, and idempotency.
-        const hasBillingConfigured =
-            Boolean(process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) ||
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true';
+        // architecture). Only the QZPay test-control adapter (T-036) makes this
+        // assertion deterministic — a stub MP token sets the access token but does
+        // NOT create the trialing subscription, so it cannot gate this assertion.
+        // Without the test-control adapter, skip the billing assertion — the rest
+        // of the test still validates role promotion, admin redirect, public
+        // visibility, and idempotency.
+        const hasBillingConfigured = process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true';
         if (hasBillingConfigured) {
             const subsPublished = await execSQL<{ status: string }>(
                 `SELECT s.status FROM billing_subscriptions s

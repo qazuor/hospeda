@@ -42,14 +42,16 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
     });
 
     test('trial-expired host: blocks writes via UI + API, keeps reads', async ({ page }) => {
-        // Paywall enforcement requires billing to be configured
-        // (HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN set). Without it, the entitlement
-        // middleware falls back to "draft defaults" and grants write access regardless
-        // of trial state. Mark fixme when billing is not configured.
-        if (!process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+        // Paywall enforcement is only deterministic with the QZPay test-control
+        // adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true). A stub MP token lets
+        // billing init succeed but the entitlement middleware still falls back to
+        // "draft defaults" and grants writes regardless of trial state, so a stub
+        // run cannot validate the paywall. Real paywall behavior is covered by the
+        // staging billing smoke (the project's billing gate).
+        if (process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED !== 'true') {
             test.fixme(
                 true,
-                'HOST-03: billing not configured — trial-expiry paywall unavailable (set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN to run)'
+                'HOST-03: deterministic billing not configured — needs the QZPay test-control adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true); a stub MP token is not enough.'
             );
             return;
         }
