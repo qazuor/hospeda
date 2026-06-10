@@ -1778,7 +1778,11 @@ export class AccommodationService extends BaseCrudService<
             sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess,
             excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope
+            excludePlanRestricted: !hasVipAccess && !isOwnScope,
+            // Restrict to ACTIVE lifecycle state for public reads.
+            // Owners always see their own non-ACTIVE accommodations (so their
+            // "my listings" view shows DRAFTs); VIP/staff see all lifecycleStates.
+            activeOnly: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1807,7 +1811,8 @@ export class AccommodationService extends BaseCrudService<
             ...params,
             excludeRestricted: !hasVipAccess,
             excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope
+            excludePlanRestricted: !hasVipAccess && !isOwnScope,
+            activeOnly: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1871,7 +1876,8 @@ export class AccommodationService extends BaseCrudService<
                     pageSize,
                     excludeRestricted: !hasVipAccess,
                     excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-                    excludePlanRestricted: !hasVipAccess && !isOwnScope
+                    excludePlanRestricted: !hasVipAccess && !isOwnScope,
+                    activeOnly: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1933,7 +1939,8 @@ export class AccommodationService extends BaseCrudService<
                     excludeOwnerSuspended: !hasVipAccess,
                     // SPEC-167 T-004: top-rated list is always a public view (no
                     // own-scope), so plan-restricted mirrors ownerSuspended exactly.
-                    excludePlanRestricted: !hasVipAccess
+                    excludePlanRestricted: !hasVipAccess,
+                    activeOnly: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -2089,7 +2096,8 @@ export class AccommodationService extends BaseCrudService<
                         // SPEC-167 T-026: destination list is always a public view (no
                         // own-scope), so both visibility flags mirror each other exactly.
                         excludeOwnerSuspended: !hasVipAccess,
-                        excludePlanRestricted: !hasVipAccess
+                        excludePlanRestricted: !hasVipAccess,
+                        activeOnly: !hasVipAccess
                     },
                     ctx?.tx
                 );
@@ -2144,7 +2152,8 @@ export class AccommodationService extends BaseCrudService<
                     excludeRestricted: !hasVipAccess,
                     excludeOwnerSuspended: !hasVipAccess,
                     // SPEC-167 T-004: destination top-rated is always a public view.
-                    excludePlanRestricted: !hasVipAccess
+                    excludePlanRestricted: !hasVipAccess,
+                    activeOnly: !hasVipAccess
                 });
 
                 const accommodations =

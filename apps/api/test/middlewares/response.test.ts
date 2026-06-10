@@ -591,4 +591,103 @@ describe('Response Middleware', () => {
             expect(response.metadata?.pagination).toEqual(pagination);
         });
     });
+
+    describe('DB pool exhaustion → 503 (isDbPoolExhausted)', () => {
+        it('should map pg pool-timeout message to HTTP 503 with SERVICE_UNAVAILABLE code', async () => {
+            // Arrange
+            app.get('/db-pool-timeout', () => {
+                throw new Error(
+                    'timeout exceeded when trying to connect (node-postgres pool exhausted)'
+                );
+            });
+
+            // Act
+            const res = await app.request('/db-pool-timeout');
+
+            // Assert
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
+            expect(data.error.message).toBe('Database temporarily unavailable — please retry');
+        });
+
+        it('should map postgres max_connections message to HTTP 503 with SERVICE_UNAVAILABLE code', async () => {
+            // Arrange
+            app.get('/db-too-many-clients', () => {
+                throw new Error('sorry, too many clients already');
+            });
+
+            // Act
+            const res = await app.request('/db-too-many-clients');
+
+            // Assert
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
+            expect(data.error.message).toBe('Database temporarily unavailable — please retry');
+        });
+
+        it('should map "connection timeout" message to HTTP 503', async () => {
+            // Arrange
+            app.get('/db-conn-timeout', () => {
+                throw new Error('connection timeout after 5000ms');
+            });
+
+            // Act
+            const res = await app.request('/db-conn-timeout');
+
+            // Assert
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
+        });
+
+        it('should map "pool is draining" message to HTTP 503', async () => {
+            // Arrange
+            app.get('/db-pool-draining', () => {
+                throw new Error('pool is draining and cannot accept work');
+            });
+
+            // Act
+            const res = await app.request('/db-pool-draining');
+
+            // Assert
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
+        });
+
+        it('should match pool-exhaustion messages case-insensitively (uppercase variant)', async () => {
+            // isDbPoolExhausted lowercases before matching — ensure uppercase input is caught
+            app.get('/db-upper-case', () => {
+                throw new Error('TIMEOUT EXCEEDED WHEN TRYING TO CONNECT');
+            });
+
+            const res = await app.request('/db-upper-case');
+
+            expect(res.status).toBe(503);
+            const data = await res.json();
+            expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
+        });
+
+        it('should NOT map an unrelated error message to 503 (regression guard)', async () => {
+            // A plain Error that has nothing to do with pool exhaustion must still hit the 500 catch-all
+            app.get('/unrelated-error', () => {
+                throw new Error('something completely unrelated went wrong');
+            });
+
+            const res = await app.request('/unrelated-error');
+
+            expect(res.status).toBe(500);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('INTERNAL_ERROR');
+            // The catch-all masks the real message with the generic error message from config
+            expect(data.error.message).toBe('Internal server error');
+        });
+    });
 });

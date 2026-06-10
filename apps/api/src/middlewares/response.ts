@@ -254,6 +254,34 @@ const getHttpStatusFromErrorCode = (code: ServiceErrorCode): number => {
 };
 
 /**
+ * Returns true when an error originates from `pg` pool exhaustion.
+ *
+ * The `pg` package throws a plain `Error` (no subclass, no `.code` property)
+ * for two distinct pool-exhaustion scenarios:
+ *
+ * 1. **Pool timeout** — `connectionTimeoutMillis` elapsed before a free
+ *    slot became available:
+ *    `"timeout exceeded when trying to connect"`
+ *
+ * 2. **Postgres max_connections** — the database server itself refuses
+ *    the connection attempt:
+ *    `"sorry, too many clients already"`
+ *
+ * These are transient infrastructure conditions that should be surfaced as
+ * 503 (Service Unavailable) so that upstream load balancers and clients know
+ * to retry rather than treat the response as a permanent application bug.
+ */
+function isDbPoolExhausted(error: Error): boolean {
+    const msg = error.message.toLowerCase();
+    return (
+        msg.includes('timeout exceeded when trying to connect') ||
+        msg.includes('sorry, too many clients already') ||
+        msg.includes('connection timeout') ||
+        msg.includes('pool is draining')
+    );
+}
+
+/**
  * Creates an error handler for Hono app.onError()
  * This is the preferred way to handle errors in Hono
  *
@@ -261,7 +289,8 @@ const getHttpStatusFromErrorCode = (code: ServiceErrorCode): number => {
  * 1. ServiceError (from @repo/service-core) - uses code property for HTTP status
  * 2. HTTPException (from Hono) - uses status property
  * 3. SyntaxError (JSON parsing) - returns 400
- * 4. All other errors - returns 500
+ * 4. DB pool exhaustion - returns 503
+ * 5. All other errors - returns 500
  */
 export const createErrorHandler = () => {
     return (error: Error, c: Context) => {
@@ -340,7 +369,19 @@ export const createErrorHandler = () => {
             errorMessage = error.message;
             statusCode = 404;
         }
-        // Priority 5: Default to internal error
+        // Priority 5: DB connection pool exhaustion — maps to 503 Service Unavailable.
+        // The `pg` pool throws a plain Error (not a subclass) with recognisable messages
+        // when it cannot acquire a connection within connectionTimeoutMillis:
+        //   - "timeout exceeded when trying to connect" (node-postgres pool timeout)
+        //   - "sorry, too many clients already"          (Postgres max_connections hit)
+        // These are transient infrastructure conditions; returning 500 would mask them
+        // as application bugs. 503 signals the load balancer / client to retry.
+        else if (isDbPoolExhausted(error)) {
+            errorCode = ServiceErrorCode.SERVICE_UNAVAILABLE;
+            errorMessage = 'Database temporarily unavailable — please retry';
+            statusCode = 503;
+        }
+        // Priority 6: Default to internal error
         else {
             errorCode = ServiceErrorCode.INTERNAL_ERROR;
             errorMessage = responseConfig.errorMessage;

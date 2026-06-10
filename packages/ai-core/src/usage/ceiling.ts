@@ -2,7 +2,10 @@
  * Cost-ceiling check for AI usage (SPEC-173 T-017).
  *
  * Compares accumulated AI spend for the current calendar month against the
- * admin-configured ceilings in `ai_settings.costCeilings`.  Throws
+ * effective cost ceilings.  When the `ai_settings` blob defines
+ * `costCeilings`, those operator values are used; otherwise
+ * {@link DEFAULT_COST_CEILINGS} applies automatically (SPEC-211 G-1: ceiling
+ * is always-on — "no ceiling at all" is not a valid runtime state).  Throws
  * {@link AiCeilingHitError} when spend has reached or exceeded a ceiling
  * (global or per-feature), hard-stopping the call before any provider is
  * invoked.
@@ -38,6 +41,7 @@ import { resolveConfig } from '../config/index.js';
 import { AiCeilingHitError } from '../engine/errors.js';
 import type { AggregateAiUsageByMonthInput } from '../storage/index.js';
 import { aggregateAiUsageByMonth } from '../storage/index.js';
+import { DEFAULT_COST_CEILINGS } from './model-rates.js';
 import { getUtcMonthRange } from './reporting/month-range.js';
 
 // ---------------------------------------------------------------------------
@@ -191,8 +195,14 @@ function fireThresholdAlert(hook: ThresholdAlertHook, alertInput: ThresholdAlert
  * Checks whether the current calendar-month spend has reached or exceeded
  * any configured cost ceiling (global or per-feature).
  *
- * **Returns** `void` when spend is below all applicable ceilings, or when no
- * ceilings are configured.
+ * **Returns** `void` when spend is below all applicable ceilings.
+ *
+ * **Ceiling resolution (SPEC-211 G-1 — ceiling is always-on):**
+ * - When the `ai_settings` blob defines `costCeilings`, those operator values
+ *   are used as-is (operator override wins; no merging with defaults).
+ * - When `costCeilings` is absent from the blob, {@link DEFAULT_COST_CEILINGS}
+ *   applies automatically — "no ceiling at all" is NOT a valid runtime state.
+ *   Raise the blob value to loosen the limits; do not remove the field.
  *
  * **Throws** {@link AiCeilingHitError} when:
  * - Global ceiling is set AND total month spend `>= globalMonthlyMicroUsd`.
@@ -231,12 +241,20 @@ export async function checkCostCeiling(input: CheckCostCeilingInput): Promise<vo
     // 1. Resolve config (uses in-memory TTL cache — fast path is a sync return).
     const config = await resolveConfig();
 
-    // 2. No ceilings configured → nothing to check, allow the call.
-    if (config.costCeilings === undefined || config.costCeilings === null) {
-        return;
-    }
-
-    const { costCeilings } = config;
+    // 2. Determine the effective ceilings.
+    //    SPEC-211 G-1: ceiling is always-on. When the operator blob has no
+    //    costCeilings defined, fall back to DEFAULT_COST_CEILINGS so spend is
+    //    never uncapped by default. To loosen the limits, an admin must write an
+    //    explicit costCeilings object into the ai_settings blob via the admin UI.
+    //    This is all-or-nothing at the costCeilings object level: if the blob
+    //    DEFINES costCeilings, use it as-is (operator override wins); if absent,
+    //    use DEFAULT_COST_CEILINGS in full. Fields within an operator blob remain
+    //    individually optional (e.g. a missing globalMonthlyMicroUsd inside an
+    //    operator blob still means "no global ceiling").
+    const costCeilings =
+        config.costCeilings !== undefined && config.costCeilings !== null
+            ? config.costCeilings
+            : DEFAULT_COST_CEILINGS;
 
     // 3. Derive the current calendar-month boundaries from the supplied `now`.
     //    `getUTCMonth()` returns 0-based (0 = Jan), so add 1 for 1-based month.

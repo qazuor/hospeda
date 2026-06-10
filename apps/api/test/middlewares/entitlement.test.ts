@@ -575,8 +575,11 @@ describe('entitlementMiddleware', () => {
             // an empty set. This pins the contract so a future regression to
             // "empty set" fails here loudly.
             // SPEC-173 T-030 added AI_CHAT + AI_SEARCH to tourist-free.
-            // AI_SUPPORT was removed (SPEC-200 pending, owner 2026-06-05),
-            // so the pinned set is now 6 keys.
+            // AI_SUPPORT was removed (SPEC-200 pending, owner 2026-06-05).
+            // SPEC-211 then removed AI_CHAT (chat is now owner-governed — the
+            // listing owner pays, not the tourist) and AI_SEARCH (search is a
+            // free platform feature, no per-plan entitlement), so the pinned
+            // set is now 4 keys.
             app.use((c, next) => {
                 c.set('billingEnabled', true);
                 c.set('billingCustomerId', 'test-customer-id');
@@ -597,15 +600,13 @@ describe('entitlementMiddleware', () => {
                 readonly keys: readonly string[];
             };
 
-            expect(data.entitlementsCount).toBe(6);
+            expect(data.entitlementsCount).toBe(4);
             expect(data.keys).toEqual(
                 [
                     EntitlementKey.SAVE_FAVORITES,
                     EntitlementKey.WRITE_REVIEWS,
                     EntitlementKey.READ_REVIEWS,
-                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-                    EntitlementKey.AI_CHAT,
-                    EntitlementKey.AI_SEARCH
+                    EntitlementKey.CAN_VIEW_RECOMMENDATIONS
                 ].sort()
             );
         });

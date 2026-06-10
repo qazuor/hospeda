@@ -89,7 +89,9 @@ describe('AccommodationService.search', () => {
             sortOrder: 'asc',
             excludeRestricted: false,
             excludeOwnerSuspended: false,
-            excludePlanRestricted: false
+            excludePlanRestricted: false,
+            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
+            activeOnly: false
         });
     });
 
@@ -179,7 +181,9 @@ describe('AccommodationService.search', () => {
             sortOrder: 'asc',
             excludeRestricted: false,
             excludeOwnerSuspended: false,
-            excludePlanRestricted: false
+            excludePlanRestricted: false,
+            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
+            activeOnly: false
         });
     });
 });

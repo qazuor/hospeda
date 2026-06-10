@@ -1511,6 +1511,9 @@ importers:
 
   packages/seed:
     dependencies:
+      '@repo/ai-core':
+        specifier: workspace:*
+        version: link:../ai-core
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing

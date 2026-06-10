@@ -14,8 +14,11 @@
  * - no row found → { valid: false, reason: 'invalid' }
  * - DB throws → fail-closed to { valid: false, reason: 'invalid' }
  * - expiresAt === now → expired (boundary)
+ * - WHERE clause uses identifier = 'reset-password:<token>' (regression guard)
  */
 
+import { verifications } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Capture logger errors so we can introspect what the fail-closed branch saw.
@@ -44,6 +47,22 @@ const buildMockDb = (rows: Array<{ expiresAt: Date }>) => {
     const selectMock = vi.fn().mockReturnValue({ from: fromMock });
     // biome-ignore lint/suspicious/noExplicitAny: Drizzle client surface is large; we only stub what the handler touches.
     return { select: selectMock } as any;
+};
+
+/**
+ * Same as `buildMockDb` but also returns the `whereMock` spy so callers can
+ * inspect the WHERE-clause argument that was passed to `.where(...)`.
+ *
+ * Used exclusively by the WHERE-clause regression guard test.
+ */
+const buildMockDbTracked = (rows: Array<{ expiresAt: Date }>) => {
+    const limitMock = vi.fn().mockResolvedValue(rows);
+    const whereMock = vi.fn().mockReturnValue({ limit: limitMock });
+    const fromMock = vi.fn().mockReturnValue({ where: whereMock });
+    const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+    // biome-ignore lint/suspicious/noExplicitAny: Drizzle client surface is large; we only stub what the handler touches.
+    const db = { select: selectMock } as any;
+    return { db, whereMock };
 };
 
 /** A db whose `select()` throws synchronously, simulating an infra failure. */
@@ -108,5 +127,44 @@ describe('checkResetPasswordToken (SPEC-118)', () => {
         const result = await checkResetPasswordToken({ token: 'boundary-token', db });
 
         expect(result).toEqual({ valid: false, reason: 'expired' });
+    });
+
+    /**
+     * Regression guard for the SPEC-118 lookup bug.
+     *
+     * The pre-fix implementation queried `WHERE value = token` (and a LIKE on
+     * identifier). Better Auth 1.4.x stores reset-password verifications as
+     * `identifier = 'reset-password:<token>'` / `value = userId`, so the old
+     * WHERE never matched a real row — the endpoint always returned
+     * `{valid:false, reason:'invalid'}`.
+     *
+     * This test captures the SQL condition object passed to `.where(...)` and
+     * compares it — via deep equality on the Drizzle AST — against the
+     * expected `eq(verifications.identifier, 'reset-password:<token>')`.
+     *
+     * If anyone reverts the lookup to `eq(verifications.value, token)` or
+     * introduces a LIKE/AND expression, the captured argument will no longer
+     * deep-equal the reference condition and this test will fail.
+     */
+    it('passes WHERE identifier = "reset-password:<token>" to the query (regression guard)', async () => {
+        const token = 'regression-guard-token';
+        const { db, whereMock } = buildMockDbTracked([
+            { expiresAt: new Date(Date.now() + 60_000) }
+        ]);
+
+        await checkResetPasswordToken({ token, db });
+
+        // The actual argument Drizzle received in .where(...)
+        const receivedCondition = whereMock.mock.calls[0]?.[0];
+
+        // The reference condition: what the fixed implementation SHOULD pass.
+        // Constructed with the real drizzle-orm eq() and the real verifications
+        // column so the AST node is identical to what the production code
+        // builds. Any deviation (wrong column, wrong operator, wrong value,
+        // missing prefix) will produce a structurally different object and
+        // toEqual will fail.
+        const expectedCondition = eq(verifications.identifier, `reset-password:${token}`);
+
+        expect(receivedCondition).toEqual(expectedCondition);
     });
 });
