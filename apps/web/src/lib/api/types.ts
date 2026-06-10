@@ -202,6 +202,20 @@ export interface AccommodationEditData {
 }
 
 /**
+ * Image stored in an accommodation's media field.
+ *
+ * Shared between the photo section component and the API transform layer.
+ * Only `url` is required — publicId/width/height come from Cloudinary upload
+ * responses and are preserved for display/dedup purposes.
+ */
+export interface MediaImage {
+    readonly url: string;
+    readonly publicId: string;
+    readonly width: number;
+    readonly height: number;
+}
+
+/**
  * Amenity item for the editor's multi-checkbox group.
  * Fetched from the public amenities endpoint.
  */
