@@ -1,6 +1,6 @@
 import type { CliCommand } from './types.js';
 
-/** All 49 curated commands for the Hospeda CLI */
+/** All 50 curated commands for the Hospeda CLI */
 const CURATED_COMMANDS: readonly CliCommand[] = [
     // ── Development (5) ──────────────────────────────────────
     {
@@ -390,7 +390,7 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         curated: true
     },
 
-    // ── Worktree (3) ────────────────────────────────────────
+    // ── Worktree (4) ────────────────────────────────────────
     {
         id: 'wt:up',
         description: 'Start DB + servers for this worktree (idempotent)',
@@ -405,11 +405,23 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
     },
     {
         id: 'wt:down',
-        description: 'Stop servers + drop worktree DB (prints remove cmd)',
+        description: 'Stop servers only (DB + worktree preserved)',
         category: 'worktree',
         execution: {
             type: 'shell',
             command: 'bash ~/.claude/skills/worktree/scripts/wt-down.sh'
+        },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
+    {
+        id: 'wt:remove',
+        description: 'Tear down everything: servers + DB + worktree + branch',
+        category: 'worktree',
+        execution: {
+            type: 'shell',
+            command: 'bash ~/.claude/skills/worktree/scripts/wt-remove.sh'
         },
         source: 'root',
         mode: 'one-shot',
