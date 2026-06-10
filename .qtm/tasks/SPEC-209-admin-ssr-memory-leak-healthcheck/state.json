@@ -464,7 +464,7 @@
             "id": "T-013",
             "title": "Update apps/admin/CLAUDE.md with healthcheck contract and memory-leak fix",
             "description": "Document the SPEC-209 changes in the admin app's CLAUDE.md so future maintainers understand the healthcheck architecture and the SSR-safety requirement (AC-3.2 — guard test must be documented):\n\n- Add a section 'Healthcheck' under the architecture section:\n  - /healthz is a cheap endpoint (no SSR, no QZPayBilling) — used by Coolify / Docker HEALTHCHECK\n  - Never add server-side business logic to the healthcheck handler\n  - The Dockerfile HEALTHCHECK and Coolify resource UI Test field must both point to /healthz\n- Add a section 'SSR Safety Rules':\n  - createQZPayBilling MUST NOT be called in any server-executed code path (useEffect only)\n  - Guard test: apps/admin/test/guard/ssr-root-guard.test.ts — explain what it checks\n  - QueryClient per-request is intentional (TanStack SSR pattern) — do NOT move it client-only\n- Link to apps/admin/docs/spec-209-heap-snapshot-procedure.md for the investigation record\n- Keep the update concise (< 30 lines added)\n\nFiles affected:\n- apps/admin/CLAUDE.md\n- (read-only reference): apps/admin/docs/spec-209-heap-snapshot-procedure.md\n\nTest requirements: none — documentation task. Verified by reviewer inspection.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": [],
@@ -491,16 +491,16 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:51:04.000Z",
+                "completed": "2026-06-10T03:52:01.000Z"
             }
         }
     ],
     "summary": {
         "total": 13,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.1
     }
