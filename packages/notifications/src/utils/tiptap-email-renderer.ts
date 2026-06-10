@@ -1,4 +1,5 @@
 import { type TiptapDocument, renderTiptapContent } from '@repo/utils';
+import sanitizeHtml from 'sanitize-html';
 
 /**
  * Inline styles applied to base HTML elements when rendering a TipTap
@@ -55,32 +56,82 @@ const EMAIL_INLINE_STYLES: ReadonlyArray<readonly [RegExp, string]> = [
 ];
 
 /**
- * Tags that must be stripped out of any HTML reaching an email body.
- * The base renderer never emits these, but the stripper is kept as a
- * defence-in-depth measure for the case where someone bypasses the
- * renderer and passes pre-existing HTML in the future.
+ * Tags allowed in an email body. This is the complete set the base TipTap
+ * renderer can emit (headings, lists, inline formatting, links, images) plus
+ * a couple of harmless structural tags. Anything outside this allowlist
+ * (`script`, `style`, `iframe`, `object`, `form`, ...) is discarded.
  */
-const DISALLOWED_TAG_PATTERNS: ReadonlyArray<RegExp> = [
-    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-    /<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi,
-    /<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi,
-    /<object\b[^>]*>[\s\S]*?<\/object>/gi,
-    /<embed\b[^>]*>/gi,
-    /<form\b[^>]*>[\s\S]*?<\/form>/gi,
-    /<link\b[^>]*>/gi,
-    /<meta\b[^>]*>/gi,
-    /\son\w+="[^"]*"/gi,
-    /\son\w+='[^']*'/gi
+const EMAIL_ALLOWED_TAGS: readonly string[] = [
+    'p',
+    'br',
+    'hr',
+    'blockquote',
+    'pre',
+    'code',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'ul',
+    'ol',
+    'li',
+    'strong',
+    'em',
+    'u',
+    's',
+    'a',
+    'img'
 ];
 
 /**
- * Strips tags and inline event handlers that are unsafe in an email body.
+ * Attributes allowed per tag. Every attribute not listed here is dropped,
+ * which removes ALL inline event handlers (`onclick`, `onerror`, ...) and any
+ * `style`/`srcset`/etc. The renderer emits `target`/`rel` on links, so we keep
+ * them.
+ */
+const EMAIL_ALLOWED_ATTRIBUTES: { readonly a: readonly string[]; readonly img: readonly string[] } =
+    {
+        a: ['href', 'target', 'rel'],
+        img: ['src', 'alt']
+    };
+
+/**
+ * URL schemes permitted in `href`/`src`. Excludes `javascript:`, `data:`, and
+ * `vbscript:`, which are the classic email/webmail XSS vectors. The base
+ * renderer escapes href text but does NOT scheme-check it, so this is the
+ * layer that actually neutralises a `javascript:` link coming from a TipTap
+ * document.
+ */
+const EMAIL_ALLOWED_SCHEMES: readonly string[] = ['http', 'https', 'mailto'];
+
+/**
+ * Sanitises an HTML fragment for safe inclusion in an email body.
+ *
+ * Uses the `sanitize-html` parser with a strict allowlist instead of a regex
+ * blacklist. A parser cannot be defeated by the malformed-tag, unquoted
+ * attribute, or nested-tag tricks that bypass regex strippers, and it has no
+ * catastrophic-backtracking surface.
  *
  * @param html - HTML produced by the base TipTap renderer (or arbitrary input)
- * @returns HTML with disallowed elements removed
+ * @returns HTML containing only allowlisted tags, attributes, and URL schemes
  */
-function stripDisallowedTags(html: string): string {
-    return DISALLOWED_TAG_PATTERNS.reduce((acc, pattern) => acc.replace(pattern, ''), html);
+export function sanitizeEmailHtml(html: string): string {
+    if (!html) {
+        return '';
+    }
+    return sanitizeHtml(html, {
+        allowedTags: [...EMAIL_ALLOWED_TAGS],
+        allowedAttributes: {
+            a: [...EMAIL_ALLOWED_ATTRIBUTES.a],
+            img: [...EMAIL_ALLOWED_ATTRIBUTES.img]
+        },
+        allowedSchemes: [...EMAIL_ALLOWED_SCHEMES],
+        // Images must load over the network; never allow `data:` image URIs.
+        allowedSchemesByTag: { img: ['http', 'https'] },
+        disallowedTagsMode: 'discard'
+    });
 }
 
 /**
@@ -107,11 +158,15 @@ function applyInlineStyles(html: string): string {
  * Pipeline:
  *  1. Delegate the JSON → HTML conversion to `renderTiptapContent` in
  *     `@repo/utils` (single source of truth for the base output).
- *  2. Strip a small set of disallowed tags and inline event handlers as
- *     defence-in-depth (the base renderer does not emit them, but consumers
- *     may bypass it in future).
+ *  2. Sanitise the HTML through `sanitize-html` with a strict allowlist
+ *     (`sanitizeEmailHtml`). This discards unsafe tags, every inline event
+ *     handler, and any non-http(s)/mailto URL scheme — including a
+ *     `javascript:` link the base renderer would otherwise emit verbatim.
  *  3. Apply inline styles to known semantic elements so the markup renders
  *     consistently in email clients that ignore external CSS.
+ *
+ * Sanitisation runs BEFORE styling so the parser never strips the inline
+ * `style` attributes added in step 3.
  *
  * The returned HTML is meant to be passed as `bodyHtml` to the
  * `NewsletterCampaign` template wrapper, which itself injects it verbatim
@@ -136,6 +191,6 @@ export function renderTiptapEmailContent({
     if (baseHtml === '') {
         return '';
     }
-    const stripped = stripDisallowedTags(baseHtml);
-    return applyInlineStyles(stripped);
+    const sanitized = sanitizeEmailHtml(baseHtml);
+    return applyInlineStyles(sanitized);
 }
