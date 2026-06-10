@@ -81,7 +81,15 @@ interface ImageGalleryProps {
  * @param url - Any image URL.
  */
 function isCloudinaryUrl(url: string): boolean {
-    return url.includes('res.cloudinary.com');
+    // Exact hostname match. A substring check (`includes`) would treat a spoofed
+    // host like `res.cloudinary.com.evil.com` as Cloudinary (CodeQL
+    // js/incomplete-url-substring-sanitization). Relative/invalid URLs are not
+    // Cloudinary, so a parse failure resolves to false.
+    try {
+        return new URL(url).hostname === 'res.cloudinary.com';
+    } catch {
+        return false;
+    }
 }
 
 /**
