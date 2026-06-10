@@ -82,7 +82,7 @@
             "id": "T-003",
             "title": "Repoint Dockerfile HEALTHCHECK to /healthz",
             "description": "Update apps/admin/Dockerfile to point the container healthcheck at /healthz instead of /:\n- Currently there is no explicit HEALTHCHECK instruction in the Dockerfile (Coolify defines it externally). Add an explicit HEALTHCHECK instruction in the runner stage:\n  HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 CMD curl -f http://localhost:3000/healthz || exit 1\n- Verify curl is already installed (it is — 'apk add --no-cache curl' is present in the runner stage)\n- Add a comment above the HEALTHCHECK line referencing SPEC-209 and explaining that / triggers full React SSR\n- Note in a PR comment that the Coolify resource UI healthcheck Test field may also need to be updated from 'curl -f http://localhost:3000/' to 'curl -f http://localhost:3000/healthz' — this is an operator step (AC-1.3)\n\nFiles affected:\n- apps/admin/Dockerfile\n\nTest requirements:\n- This change cannot be unit-tested; verification is:\n  - Run 'docker build' locally to confirm the image builds (typecheck gate)\n  - The integration test in T-005 covers the /healthz endpoint behavior\n  - PR description must include the operator checklist item for Coolify UI update",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": [],
@@ -109,8 +109,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:08:25.000Z",
+                "completed": "2026-06-10T03:09:43.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.1
     }
