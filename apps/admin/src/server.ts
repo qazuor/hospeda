@@ -31,20 +31,39 @@ import { createRouter } from './router';
 
 const HEALTHCHECK_PATH = '/healthz';
 
+/**
+ * Returns a 200 JSON `{"status":"ok"}` Response when the request targets
+ * `/healthz`, or `null` for every other path so the caller can fall through
+ * to the SSR handler.
+ *
+ * Extracted as a pure named export so unit tests can exercise the healthcheck
+ * logic without spinning up the Nitro/H3 server or the TanStack router
+ * (SPEC-209 T-005).
+ *
+ * @param request - The Web API Request to inspect.
+ * @returns A Response for `/healthz` probes, or `null` otherwise.
+ */
+export function healthcheckResponse(request: Request): Response | null {
+    const { pathname } = new URL(request.url);
+
+    if (pathname !== HEALTHCHECK_PATH) {
+        return null;
+    }
+
+    return new Response(JSON.stringify({ status: 'ok' }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' }
+    });
+}
+
 const handler = createStartHandler({
     createRouter
 });
 
 export default defineHandlerCallback(async (ctx) => {
     // ctx.request is the Web API Request created by toWebRequest(h3Event).
-    const { pathname } = new URL(ctx.request.url);
-
-    if (pathname === HEALTHCHECK_PATH) {
-        return new Response(JSON.stringify({ status: 'ok' }), {
-            status: 200,
-            headers: { 'content-type': 'application/json' }
-        });
-    }
+    const hc = healthcheckResponse(ctx.request);
+    if (hc) return hc;
 
     const startHandler = await handler(defaultStreamHandler);
     return startHandler(ctx);
