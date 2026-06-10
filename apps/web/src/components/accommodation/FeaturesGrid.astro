@@ -7,7 +7,8 @@
 import type { AccommodationFeatureItem } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { SmokingAllowedIcon, resolveIcon } from '@repo/icons';
+import { SmokingAllowedIcon } from '@repo/icons';
+import { resolveIcon } from '@repo/icons/resolver';
 
 interface Props {
   readonly features: readonly AccommodationFeatureItem[];

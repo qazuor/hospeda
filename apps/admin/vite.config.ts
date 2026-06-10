@@ -283,11 +283,6 @@ export default defineConfig({
                             return 'vendor-zod';
                         }
 
-                        // Lucide icons
-                        if (id.includes('lucide')) {
-                            return 'vendor-icons';
-                        }
-
                         // Other vendor code
                         return 'vendor';
                     }

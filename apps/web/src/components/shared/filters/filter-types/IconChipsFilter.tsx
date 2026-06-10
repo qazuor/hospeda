@@ -8,7 +8,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons';
+import { resolveIcon } from '@repo/icons/resolver';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './IconChipsFilter.module.css';
 import type { IconChipsFilterConfig } from './filter.types';
