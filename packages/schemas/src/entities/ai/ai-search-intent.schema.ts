@@ -214,25 +214,31 @@ export const SearchIntentEntitiesSchema = z.object({
      *
      * MUST be a string, NOT `z.coerce.date()`: this schema is serialized to JSON
      * Schema for `generateObject` structured output, and `z.date()` has no JSON
-     * Schema representation ("Date cannot be represented in JSON Schema"). The
-     * `.regex` enforces strict `YYYY-MM-DD`: a malformed model date (e.g. "next
-     * weekend", "2026-13-45") fails `safeParse` and drops into the empty-entities
-     * fallback rather than forwarding garbage to the search page. The mapper
-     * compares the two dates lexicographically (ISO date strings sort chronologically).
+     * Schema representation ("Date cannot be represented in JSON Schema").
+     *
+     * **No `.regex()` constraint here**: when `generateObject` converts this Zod
+     * schema to JSON Schema, a `pattern` field is emitted for each `.regex()`.
+     * Ollama's llama.cpp structured-output grammar compiler CRASHES on `pattern`
+     * constraints ("model runner has unexpectedly stopped", ~265 ms, pre-inference).
+     * UUID `format`, enums, numeric min/max, and arrays all compile fine — only
+     * the regex `pattern` is fatal. The regex was therefore removed from this
+     * model-facing schema. Date-format validation is enforced downstream:
+     * the route's step-4 `safeParse` + the mapper normalise and drop malformed
+     * dates (e.g. "next weekend", "2026-13-45") rather than forwarding garbage
+     * to the search page. The mapper also compares dates lexicographically
+     * (ISO date strings sort chronologically).
      */
-    checkIn: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/)
-        .optional(),
+    checkIn: z.string().optional(),
 
     /**
      * Check-out date as an ISO date string (YYYY-MM-DD).
      * If `checkOut <= checkIn`, the mapper drops both dates.
+     *
+     * No `.regex()` constraint — see `checkIn` JSDoc for the rationale (regex
+     * `pattern` in JSON Schema crashes Ollama's grammar compiler).
+     * Format validation is enforced downstream in the route and mapper.
      */
-    checkOut: z
-        .string()
-        .regex(/^\d{4}-\d{2}-\d{2}$/)
-        .optional()
+    checkOut: z.string().optional()
 });
 
 /** Inferred TypeScript type for {@link SearchIntentEntitiesSchema}. */

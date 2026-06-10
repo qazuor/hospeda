@@ -39,7 +39,14 @@ const {
     mockCreateOpenAI,
     mockOpenAiProvider
 } = vi.hoisted(() => {
-    const mockOpenAiProvider = vi.fn();
+    // mockOpenAiProvider is the callable returned by createOpenAI.
+    // It needs a .chat() sub-method for the local-compatible-provider path.
+    const mockChatModel = { type: 'fake-chat-lm' } as const;
+    const mockOpenAiProvider = vi.fn() as ReturnType<typeof import('@ai-sdk/openai').createOpenAI>;
+    // Attach a .chat() method mirroring the real @ai-sdk/openai API.
+    (mockOpenAiProvider as unknown as { chat: (id: string) => typeof mockChatModel }).chat = vi
+        .fn()
+        .mockReturnValue(mockChatModel);
     return {
         mockGenerateText: vi.fn(),
         mockStreamText: vi.fn(),
@@ -104,6 +111,10 @@ beforeEach(() => {
 
     // Re-wire mockCreateOpenAI after reset so it still returns the provider factory.
     mockOpenAiProvider.mockReturnValue(FAKE_LANGUAGE_MODEL);
+    // Re-wire the .chat() sub-method after reset.
+    (mockOpenAiProvider as unknown as { chat: ReturnType<typeof vi.fn> }).chat = vi
+        .fn()
+        .mockReturnValue({ type: 'fake-chat-lm' });
     mockCreateOpenAI.mockReturnValue(mockOpenAiProvider);
     // mockZodSchema is a pass-through by default after reset; re-assign.
     mockZodSchema.mockImplementation((s: unknown) => s);
@@ -143,6 +154,154 @@ describe('OpenAiAdapter', () => {
 
             // Assert
             expect(mockCreateOpenAI).toHaveBeenCalledTimes(1);
+        });
+
+        it('should pass baseURL to createOpenAI when provided', () => {
+            // Act
+            new OpenAiAdapter({ apiKey: TEST_API_KEY, baseURL: 'http://localhost:11434/v1' });
+
+            // Assert
+            expect(mockCreateOpenAI).toHaveBeenCalledWith({
+                apiKey: TEST_API_KEY,
+                baseURL: 'http://localhost:11434/v1'
+            });
+        });
+
+        it('should omit baseURL from createOpenAI when not provided', () => {
+            // Act
+            new OpenAiAdapter({ apiKey: TEST_API_KEY });
+
+            // Assert: called with only apiKey — no baseURL key
+            expect(mockCreateOpenAI).toHaveBeenCalledWith({ apiKey: TEST_API_KEY });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // resolveLanguageModel — endpoint routing (chat vs Responses API)
+    // -------------------------------------------------------------------------
+
+    describe('endpoint routing (chat vs Responses API)', () => {
+        it('should use provider.chat(model) when baseURL is configured (local/compatible provider)', async () => {
+            // Arrange: adapter built with a custom baseURL → local Ollama-style server
+            const adapter = new OpenAiAdapter({
+                apiKey: TEST_API_KEY,
+                baseURL: 'http://localhost:11434/v1'
+            });
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'ok',
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateText({
+                feature: 'text_improve',
+                locale: 'es',
+                model: MOCK_MODEL_ID,
+                prompt: 'hello'
+            });
+
+            // Assert: .chat() was called (chat-completions endpoint), not the bare callable
+            const chatFn = (mockOpenAiProvider as unknown as { chat: ReturnType<typeof vi.fn> })
+                .chat;
+            expect(chatFn).toHaveBeenCalledWith(MOCK_MODEL_ID);
+            // The bare provider callable should NOT have been called for model resolution
+            expect(mockOpenAiProvider).not.toHaveBeenCalledWith(MOCK_MODEL_ID);
+        });
+
+        it('should use provider(model) — Responses API — when no baseURL is set (real OpenAI)', async () => {
+            // Arrange: adapter without baseURL → real OpenAI Responses API
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'ok',
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateText({
+                feature: 'text_improve',
+                locale: 'es',
+                model: MOCK_MODEL_ID,
+                prompt: 'hello'
+            });
+
+            // Assert: bare provider callable used (Responses API), not .chat()
+            expect(mockOpenAiProvider).toHaveBeenCalledWith(MOCK_MODEL_ID);
+            const chatFn = (mockOpenAiProvider as unknown as { chat: ReturnType<typeof vi.fn> })
+                .chat;
+            expect(chatFn).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // maxRetries: 0 — engine is the sole retry authority
+    // -------------------------------------------------------------------------
+
+    describe('maxRetries: 0 (engine retry authority)', () => {
+        it('generateText passes maxRetries:0 to the SDK to prevent retry stacking', async () => {
+            // Arrange
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            mockGenerateText.mockResolvedValueOnce({
+                text: 'ok',
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateText({ feature: 'text_improve', locale: 'es', prompt: 'hi' });
+
+            // Assert: SDK call includes maxRetries:0 so the engine's withRetry is
+            // the sole retry authority (prevents up to 6-call stacking).
+            expect(mockGenerateText).toHaveBeenCalledWith(
+                expect.objectContaining({ maxRetries: 0 })
+            );
+        });
+
+        it('streamText passes maxRetries:0 to the SDK', async () => {
+            // Arrange
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            async function* fakeTextStream() {
+                yield 'chunk';
+            }
+            mockStreamText.mockReturnValueOnce({
+                textStream: fakeTextStream(),
+                usage: Promise.resolve(FAKE_SDK_USAGE),
+                finishReason: Promise.resolve('stop')
+            });
+
+            // Act
+            const { stream } = await adapter.streamText({
+                feature: 'chat',
+                locale: 'es',
+                prompt: 'hi'
+            });
+            // drain the stream so meta resolves cleanly
+            for await (const _ of stream) {
+                // drain
+            }
+
+            // Assert
+            expect(mockStreamText).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0 }));
+        });
+
+        it('generateObject passes maxRetries:0 to the SDK', async () => {
+            // Arrange
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            const schema = z.object({ value: z.string() });
+            mockGenerateObject.mockResolvedValueOnce({
+                object: { value: 'test' },
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateObject({ feature: 'search', locale: 'es', prompt: 'q' }, schema);
+
+            // Assert
+            expect(mockGenerateObject).toHaveBeenCalledWith(
+                expect.objectContaining({ maxRetries: 0 })
+            );
         });
     });
 
