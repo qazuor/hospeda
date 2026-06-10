@@ -87,4 +87,15 @@ RUN apk add --no-cache curl
 COPY --chown=node:node --from=build /repo/apps/admin/.output ./.output
 USER node
 EXPOSE 3000
+# Probe the cheap /healthz server-entry route (SPEC-209), NOT `GET /`. Probing `/`
+# server-renders the whole React root on every 30s probe, constructing a fresh
+# QZPayBilling instance per request — the memory leak this spec fixes. /healthz
+# returns a tiny JSON body without touching React SSR or billing.
+#
+# OPERATOR NOTE: Coolify may ALSO define a healthcheck in the admin resource UI
+# (Health Checks tab). That override takes precedence over this instruction at
+# runtime — it MUST be repointed to /healthz too, or the container silently keeps
+# probing `GET /` and the leak persists. See SPEC-209 T-003 / risk table.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -fsS http://localhost:3000/healthz || exit 1
 CMD ["node", ".output/server/index.mjs"]

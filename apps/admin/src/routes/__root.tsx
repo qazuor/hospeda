@@ -203,8 +203,12 @@ function DocumentTitle() {
 function RootDocument({ children }: { children: React.ReactNode }) {
     const { data: session } = useSession();
 
-    // Use useState with lazy initializer to prevent QueryClient recreation on every render
-    // This ensures the cache persists across component re-renders and navigations
+    // QueryClient is intentionally created via a useState lazy initializer (per-request on SSR,
+    // once on the client). This is the recommended TanStack Query pattern for SSR — each server
+    // render gets an isolated QueryClient so cache from one request never leaks into another.
+    // SPEC-209 identified this as a secondary suspect; after analysis it is NOT the memory-leak
+    // source (the leak was the QZPayBilling construction above). Do not collapse this into a
+    // module-level singleton without fully understanding the SSR isolation implications.
     const [queryClient] = useState(
         () =>
             new QueryClient({
@@ -238,24 +242,38 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             })
     );
 
-    // Create QZPay billing instance with HTTP adapter
-    // Uses lazy initializer to prevent recreation on every render
-    const [billing] = useState(() => {
+    // SPEC-209 AC-2.2 — Build QZPayBilling CLIENT-ONLY via useEffect.
+    //
+    // The previous useState lazy-initializer ran server-side on every SSR
+    // request (TanStack Start mounts RootDocument once per request), producing
+    // ~990 "QZPayBilling initialized" log lines per 48 h from healthcheck
+    // probes. useEffect never executes on the server, so SSR builds no billing
+    // instance. The client builds exactly one on mount, after hydration.
+    //
+    // QZPayProvider is only mounted when billing is non-null (client-side only).
+    // All qzpay-react hook consumers live under _authed/billing/* routes and
+    // are only reachable after client-side navigation — they never execute
+    // during the initial SSR render, so removing the provider from SSR is safe.
+    const [billing, setBilling] = useState<QZPayProviderProps['billing'] | null>(null);
+
+    useEffect(() => {
         const adapter = createHttpBillingAdapter({
             apiUrl: env.VITE_API_URL
             // getAuthToken not provided - Better Auth handles auth via cookies
         });
 
-        // Cast needed: @qazuor/qzpay-react depends on qzpay-core@1.1.0
-        // while admin uses qzpay-core@1.2.0. The interfaces are compatible
-        // but TypeScript sees them as distinct nominal types.
-        // TYPE-WORKAROUND: qzpay-core version skew between @qazuor/qzpay-react (1.1.0) and admin (1.2.0) produces nominally distinct billing types; structurally identical, version-only mismatch.
-        return createQZPayBilling({
-            storage: adapter,
-            defaultCurrency: 'ARS',
-            livemode: env.PROD ?? false
-        }) as unknown as QZPayProviderProps['billing'];
-    });
+        setBilling(
+            // Cast needed: @qazuor/qzpay-react depends on qzpay-core@1.1.0 while
+            // admin uses qzpay-core@1.2.0. The interfaces are compatible but
+            // TypeScript sees them as distinct nominal types.
+            // TYPE-WORKAROUND: qzpay-core version skew between @qazuor/qzpay-react (1.1.0) and admin (1.2.0) produces nominally distinct billing types; structurally identical, version-only mismatch.
+            createQZPayBilling({
+                storage: adapter,
+                defaultCurrency: 'ARS',
+                livemode: env.PROD ?? false
+            }) as unknown as QZPayProviderProps['billing']
+        );
+    }, []);
 
     return (
         <html
@@ -305,27 +323,43 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                  * renders legibly even when the panel's oklch CSS is broken.
                  */}
                 <BrowserGateBanner />
-                <QZPayProvider billing={billing}>
-                    <QZPayThemeProvider theme={adminQzpayTheme}>
-                        <QueryClientProvider client={queryClient}>
-                            <ToastProvider>
-                                <GlobalErrorBoundary>
-                                    <FeedbackErrorBoundary
-                                        appSource="admin"
-                                        apiUrl={env.VITE_API_URL}
-                                        feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
-                                        deployVersion={env.VITE_APP_VERSION}
-                                        userId={session?.user.id}
-                                        userEmail={session?.user.email}
-                                        userName={session?.user.name}
-                                    >
-                                        {children}
-                                    </FeedbackErrorBoundary>
-                                </GlobalErrorBoundary>
-                            </ToastProvider>
-                        </QueryClientProvider>
-                    </QZPayThemeProvider>
-                </QZPayProvider>
+                {/*
+                 * SPEC-209 AC-2.2 — QZPayProvider wraps the tree only once
+                 * billing is available (client-side, after useEffect).
+                 * During SSR and the first hydration frame billing is null, so
+                 * the inner tree renders without QZPayProvider. All qzpay-react
+                 * hook consumers live under _authed/billing/* routes and are
+                 * only reachable after client navigation, by which time billing
+                 * will already be initialised.
+                 *
+                 * QZPayThemeProvider, QueryClientProvider, and ToastProvider
+                 * are intentionally outside the billing conditional so they
+                 * remain stable across the null→billing transition and their
+                 * internal state (query cache, toasts) is preserved.
+                 */}
+                <QZPayThemeProvider theme={adminQzpayTheme}>
+                    <QueryClientProvider client={queryClient}>
+                        <ToastProvider>
+                            <GlobalErrorBoundary>
+                                <FeedbackErrorBoundary
+                                    appSource="admin"
+                                    apiUrl={env.VITE_API_URL}
+                                    feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
+                                    deployVersion={env.VITE_APP_VERSION}
+                                    userId={session?.user.id}
+                                    userEmail={session?.user.email}
+                                    userName={session?.user.name}
+                                >
+                                    {billing !== null ? (
+                                        <QZPayProvider billing={billing}>{children}</QZPayProvider>
+                                    ) : (
+                                        children
+                                    )}
+                                </FeedbackErrorBoundary>
+                            </GlobalErrorBoundary>
+                        </ToastProvider>
+                    </QueryClientProvider>
+                </QZPayThemeProvider>
                 {import.meta.env.VITE_FEEDBACK_ENABLED !== 'false' && (
                     <FeedbackErrorBoundary
                         appSource="admin"
