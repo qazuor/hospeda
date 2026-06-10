@@ -16,8 +16,12 @@
  *
  * ## Idempotency
  *
- * - If no `ai_settings` row exists: inserts the blob with `costCeilings` set
- *   to `DEFAULT_COST_CEILINGS` and minimal empty providers/features maps.
+ * - If no `ai_settings` row exists: SKIPS. A valid `ai_settings` blob requires a
+ *   complete providers/features configuration (every `AiFeature` needs a config
+ *   with provider + model), which is an operator/admin concern this seed has no
+ *   business inventing. The runtime fallback (`DEFAULT_COST_CEILINGS` in
+ *   `ceiling.ts`) already protects spend before any blob exists, so skipping is
+ *   safe — this seed only promotes the ceilings into an already-configured blob.
  * - If a row exists and `costCeilings` is already set: skips (operator wins).
  * - If a row exists but `costCeilings` is absent: merges `DEFAULT_COST_CEILINGS`
  *   into the blob while preserving all other fields.
@@ -50,18 +54,22 @@ export async function seedAiSettings(): Promise<void> {
         return;
     }
 
-    // Build the settings blob to write:
-    // - If a row exists, merge costCeilings into it (preserves providers/features/modelRates).
-    // - If no row exists yet, start from a minimal empty-but-valid blob.
-    const base: AiSettingsValue =
-        existing ??
-        ({
-            providers: {},
-            features: {}
-        } as unknown as AiSettingsValue);
+    // Only promote costCeilings into an EXISTING ai_settings blob. We never
+    // synthesise a fresh blob: a valid AiSettingsValue requires a complete
+    // providers/features map (each AiFeature needs provider + model), which this
+    // seed cannot legitimately invent. When no row exists, the runtime fallback
+    // (DEFAULT_COST_CEILINGS in ceiling.ts) already caps spend, so skipping is
+    // safe. (Without this guard, writing a `{ providers: {}, features: {} }` blob
+    // fails AiSettingsValueSchema validation and aborts the whole seed run.)
+    if (existing === null) {
+        logger.info(
+            '  → AI settings: no ai_settings blob yet — costCeilings active via runtime fallback, seed skipped'
+        );
+        return;
+    }
 
     const merged: AiSettingsValue = {
-        ...base,
+        ...existing,
         costCeilings: DEFAULT_COST_CEILINGS
     };
 

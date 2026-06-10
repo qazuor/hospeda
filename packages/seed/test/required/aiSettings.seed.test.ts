@@ -7,11 +7,12 @@
  *
  * ## Coverage
  *
- * 1. Fresh store (no ai_settings row): writes blob with DEFAULT_COST_CEILINGS.
+ * 1. Fresh store (no ai_settings row): SKIPS (no from-scratch blob — the runtime
+ *    fallback protects; synthesising `{ providers: {}, features: {} }` would fail
+ *    AiSettingsValueSchema and abort the whole seed run).
  * 2. Existing row with costCeilings already set: skips (operator wins).
  * 3. Existing row with NO costCeilings: merges DEFAULT_COST_CEILINGS, preserves other fields.
- * 4. writeAiSettings is called with SYSTEM_USER_ID as actorId.
- * 5. writeAiSettings is NOT called when costCeilings already present.
+ * 4. writeAiSettings is called with SYSTEM_USER_ID as actorId (merge case only).
  *
  * @module test/required/aiSettings.seed
  */
@@ -95,43 +96,24 @@ describe('seedAiSettings (SPEC-211 T-002)', () => {
     // -------------------------------------------------------------------------
 
     describe('when no ai_settings row exists (fresh store)', () => {
-        it('should call writeAiSettings with DEFAULT_COST_CEILINGS', async () => {
+        it('should SKIP and NOT call writeAiSettings (no from-scratch blob; runtime fallback protects)', async () => {
             // Arrange
             mockReadAiSettings.mockResolvedValue(null);
 
             // Act
             await seedAiSettings();
 
-            // Assert — writeAiSettings called exactly once
-            expect(mockWriteAiSettings).toHaveBeenCalledOnce();
+            // Assert — the seed must NOT synthesise a blob (that would be invalid
+            // against AiSettingsValueSchema and abort the whole seed run).
+            expect(mockWriteAiSettings).not.toHaveBeenCalled();
         });
 
-        it('should write costCeilings equal to DEFAULT_COST_CEILINGS', async () => {
+        it('should resolve without error (idempotent no-op)', async () => {
             // Arrange
             mockReadAiSettings.mockResolvedValue(null);
 
-            // Act
-            await seedAiSettings();
-
-            // Assert — costCeilings in the written blob matches the defaults
-            const [callArg] = mockWriteAiSettings.mock.calls[0] as [
-                { value: Record<string, unknown>; actorId: string }
-            ];
-            expect(callArg.value.costCeilings).toEqual(DEFAULT_COST_CEILINGS);
-        });
-
-        it('should use SYSTEM_USER_ID as the actorId', async () => {
-            // Arrange
-            mockReadAiSettings.mockResolvedValue(null);
-
-            // Act
-            await seedAiSettings();
-
-            // Assert
-            const [callArg] = mockWriteAiSettings.mock.calls[0] as [
-                { value: Record<string, unknown>; actorId: string }
-            ];
-            expect(callArg.actorId).toBe(SYSTEM_USER_ID);
+            // Act + Assert
+            await expect(seedAiSettings()).resolves.toBeUndefined();
         });
     });
 
@@ -215,19 +197,22 @@ describe('seedAiSettings (SPEC-211 T-002)', () => {
     // -------------------------------------------------------------------------
 
     describe('idempotency across multiple invocations', () => {
-        it('should write only on the first call and skip on subsequent calls', async () => {
-            // First call — no row, should write
+        it('should skip on a fresh store, and write exactly once when a row without costCeilings appears', async () => {
+            // First call — no row yet, skips (runtime fallback protects)
             mockReadAiSettings.mockResolvedValueOnce(null);
+            await seedAiSettings();
+            expect(mockWriteAiSettings).not.toHaveBeenCalled();
+
+            // Second call — an operator-configured row now exists without ceilings
+            mockReadAiSettings.mockResolvedValueOnce(makeExistingBlob());
             await seedAiSettings();
             expect(mockWriteAiSettings).toHaveBeenCalledOnce();
 
-            // Second call — row with costCeilings now exists
+            // Third call — ceilings now present, skips
             mockReadAiSettings.mockResolvedValueOnce(
                 makeExistingBlob({ costCeilings: DEFAULT_COST_CEILINGS })
             );
             await seedAiSettings();
-
-            // writeAiSettings must NOT have been called again (still only 1 total)
             expect(mockWriteAiSettings).toHaveBeenCalledOnce();
         });
     });
