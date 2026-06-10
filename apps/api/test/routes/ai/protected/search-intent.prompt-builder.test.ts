@@ -13,8 +13,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { AMENITY_ALLOWLIST, FEATURE_ALLOWLIST } from './amenity-allowlist';
-import { buildSearchIntentPrompt } from './search-intent';
+import {
+    AMENITY_ALLOWLIST,
+    FEATURE_ALLOWLIST
+} from '../../../../src/routes/ai/protected/amenity-allowlist';
+import { buildSearchIntentPrompt } from '../../../../src/routes/ai/protected/search-intent';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

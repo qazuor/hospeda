@@ -19,7 +19,7 @@ import {
     FEATURE_ALLOWLIST,
     matchAmenityTerms,
     matchFeatureTerms
-} from './amenity-allowlist';
+} from '../../../../src/routes/ai/protected/amenity-allowlist';
 
 // ─── matchAmenityTerms ────────────────────────────────────────────────────────
 

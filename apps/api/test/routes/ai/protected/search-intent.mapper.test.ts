@@ -9,7 +9,7 @@
 
 import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { mapIntentToSearchParams } from './search-intent.mapper.js';
+import { mapIntentToSearchParams } from '../../../../src/routes/ai/protected/search-intent.mapper.js';
 
 // ─── Location priority ────────────────────────────────────────────────────────
 
