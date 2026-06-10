@@ -7,22 +7,14 @@
  * and delete functionality.
  */
 
+import type { MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useRef, useState } from 'react';
 import styles from './PhotoSection.module.css';
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Image data stored in the accommodation's media field. */
-export interface MediaImage {
-    readonly url: string;
-    readonly publicId: string;
-    readonly width: number;
-    readonly height: number;
-}
+// Re-export for consumers that import MediaImage from this module
+export type { MediaImage };
 
 /** Photo section data extracted from the accommodation's media JSONB. */
 export interface PhotoSectionData {

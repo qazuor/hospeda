@@ -16,7 +16,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import { transformAccommodationEdit, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
+import type { MediaImage } from '@/lib/api/types';
+import { transformAccommodationEdit, transformAccommodationMedia, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
 
@@ -55,6 +56,8 @@ let accommodationData = null;
 let destinations: Awaited<ReturnType<typeof transformDestinationList>> = [];
 let amenities: Awaited<ReturnType<typeof transformAmenityList>> = [];
 let features: Awaited<ReturnType<typeof transformAmenityList>> = [];
+let initialFeaturedImage: MediaImage | null = null;
+let initialGallery: readonly MediaImage[] = [];
 let fetchError = false;
 
 try {
@@ -78,6 +81,10 @@ try {
             const body = (await accomResponse.json()) as { data?: Record<string, unknown> };
             const rawAccom = body.data ?? body;
             accommodationData = transformAccommodationEdit({ item: rawAccom as Record<string, unknown> });
+            // SPEC-208: extract media for the photo section (never pass raw API data)
+            const mediaResult = transformAccommodationMedia({ item: rawAccom as Record<string, unknown> });
+            initialFeaturedImage = mediaResult.featuredImage;
+            initialGallery = mediaResult.gallery;
 
             // Separate amenities from features based on the nested relation
             const allAmenities = rawAccom.amenities as Record<string, unknown>[] | undefined;
@@ -157,6 +164,8 @@ if (!accommodationData || fetchError) {
                 destinations={destinations}
                 amenities={amenities}
                 features={features}
+                initialFeaturedImage={initialFeaturedImage}
+                initialGallery={initialGallery}
             />
         </div>
     </main>
