@@ -3,7 +3,7 @@ spec-id: SPEC-209
 title: Admin SSR memory leak + cheap healthcheck
 type: bugfix
 complexity: medium
-status: in-progress
+status: completed
 created: 2026-06-08T15:45:33Z
 tags: [admin, ssr, memory-leak, billing, qzpay, healthcheck, coolify, nitro, observability]
 ---

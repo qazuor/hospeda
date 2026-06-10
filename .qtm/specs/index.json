@@ -854,11 +854,11 @@
             "specId": "SPEC-209",
             "title": "Admin SSR memory leak + cheap healthcheck",
             "type": "bugfix",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
             "base": "staging",
-            "archived": false,
+            "archived": true,
             "tags": [
                 "admin",
                 "ssr",
@@ -870,7 +870,9 @@
                 "nitro",
                 "observability"
             ],
-            "note": "Worktree spec-209 / branch spec/SPEC-209-admin-ssr-memory-leak-healthcheck. Investigate-first: cheap /healthz + heap-snapshot confirmation before the leak fix in __root.tsx. Number was reassigned from the earlier 'photo archival' reservation."
+            "note": "Worktree spec-209 / branch spec/SPEC-209-admin-ssr-memory-leak-healthcheck. Investigate-first: cheap /healthz + heap-snapshot confirmation before the leak fix in __root.tsx. Number was reassigned from the earlier 'photo archival' reservation.",
+            "archivedAt": "2026-06-10",
+            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
         },
         {
             "specId": "SPEC-210",
