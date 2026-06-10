@@ -236,7 +236,7 @@ export const searchIntentRoute = createProtectedRoute({
             // bypass — the runtime schemas are identical and the structural contract
             // (confidence + entities) is enforced by the safeParse in step 4.
             type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
-            const outputSchema = SearchIntentOutputSchema as unknown as GenerateObjectSchema;
+            const outputSchema = SearchIntentOutputSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the runtime schemas are structurally identical and step 4's safeParse enforces the contract.
             const result = await aiService.generateObject(
                 {
                     feature: 'search',
