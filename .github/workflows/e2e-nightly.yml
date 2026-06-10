@@ -21,6 +21,11 @@ concurrency:
   group: e2e-nightly
   cancel-in-progress: false
 
+# Least-privilege default token: the job reads the repo and uploads
+# artifacts (artifact upload does not require contents: write).
+permissions:
+  contents: read
+
 jobs:
   e2e-full:
     name: E2E Full Suite (nightly)

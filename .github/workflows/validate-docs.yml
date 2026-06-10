@@ -18,6 +18,10 @@ on:
       - 'CLAUDE.md'
       - '.github/workflows/validate-docs.yml'
 
+# Least-privilege default token: the job only reads the repo.
+permissions:
+  contents: read
+
 jobs:
   validate-documentation:
     name: Validate Documentation
