@@ -78,7 +78,7 @@ const startServer = async (): Promise<void> => {
         initializeModerationEngine({
             env: {
                 provider: env.HOSPEDA_MODERATION_PROVIDER,
-                openaiApiKey: env.HOSPEDA_OPENAI_API_KEY,
+                openaiApiKey: env.HOSPEDA_MODERATION_OPENAI_API_KEY,
                 timeoutMs: env.HOSPEDA_MODERATION_TIMEOUT_MS,
                 cacheTtlSeconds: env.HOSPEDA_MODERATION_CACHE_TTL_SECONDS
             },
