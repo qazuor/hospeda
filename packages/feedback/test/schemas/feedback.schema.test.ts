@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-import { ZodError } from 'zod';
 import {
     APP_SOURCE_IDS,
     REPORT_TYPE_IDS,
@@ -7,8 +5,10 @@ import {
     feedbackEnvironmentSchema,
     feedbackErrorInfoSchema,
     feedbackFormSchema
-} from '../../src/schemas/feedback.schema.js';
-import { feedbackApiSchema } from '../../src/schemas/feedback.schema.server.js';
+} from '@repo/schemas';
+import { feedbackApiSchema } from '@repo/schemas/feedback.server';
+import { describe, expect, it } from 'vitest';
+import { ZodError } from 'zod';
 
 // ─── Shared fixtures ──────────────────────────────────────────────────────────
 

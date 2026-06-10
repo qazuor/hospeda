@@ -1,3 +1,4 @@
+import type { FeedbackFormData } from '@repo/schemas';
 /**
  * @repo/feedback - useFeedbackSubmit hook.
  *
@@ -6,7 +7,6 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
-import type { FeedbackFormData } from '../schemas/feedback.schema.js';
 
 /**
  * Result returned by the API on a successful feedback submission.

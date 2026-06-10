@@ -1,3 +1,4 @@
+import type { FeedbackEnvironment } from '@repo/schemas';
 /**
  * Tests for the StepDetails component.
  *
@@ -14,7 +15,6 @@ import {
 } from '../../../src/components/steps/StepDetails.js';
 import { FEEDBACK_CONFIG, SEVERITY_LEVELS } from '../../../src/config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../../src/config/strings.js';
-import type { FeedbackEnvironment } from '../../../src/schemas/feedback.schema.js';
 
 /** Minimal valid environment data for tests */
 const makeEnvironment = (overrides: Partial<FeedbackEnvironment> = {}): FeedbackEnvironment => ({

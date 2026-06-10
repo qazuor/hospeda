@@ -1,3 +1,4 @@
+import type { FeedbackFormData } from '@repo/schemas';
 /**
  * Tests for the useFeedbackSubmit hook logic.
  *
@@ -6,7 +7,6 @@
  * Library while still covering all meaningful behavior.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { FeedbackFormData } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

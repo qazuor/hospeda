@@ -1,3 +1,4 @@
+import type { AppSourceId, FeedbackEnvironment } from '@repo/schemas';
 /**
  * Tests for the useAutoCollect hook logic.
  *
@@ -9,7 +10,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UseAutoCollectInput } from '../../src/hooks/useAutoCollect.js';
 import { collectEnvironmentData } from '../../src/lib/collector.js';
-import type { AppSourceId, FeedbackEnvironment } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // UAParser mock – returns deterministic browser/OS info

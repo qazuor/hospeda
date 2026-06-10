@@ -1,3 +1,4 @@
+import type { ReportTypeId } from '@repo/schemas';
 /**
  * @repo/feedback - StepBasic component
  *
@@ -6,7 +7,6 @@
  */
 import { REPORT_TYPES } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
-import type { ReportTypeId } from '../../schemas/feedback.schema.js';
 import { Button } from '../../ui/Button.js';
 import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';
