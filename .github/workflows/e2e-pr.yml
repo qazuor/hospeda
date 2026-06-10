@@ -76,11 +76,25 @@ jobs:
       HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_REDIS_URL: redis://localhost:6380
-      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+      # Deterministic e2e secrets — isolated throwaway DB, NOT real secrets.
+      # All three are min-32 per the API env schema; hardcoded (not repo secrets)
+      # so the apps boot consistently and share one secret for cross-app auth.
+      HOSPEDA_BETTER_AUTH_SECRET: e2e-better-auth-secret-deterministic-min-32-chars
+      HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
+      HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
       HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
       HOSPEDA_API_URL: http://localhost:3001
       HOSPEDA_SITE_URL: http://localhost:4321
       HOSPEDA_ADMIN_URL: http://localhost:3000
+      # Build-time + runtime vars for the web (PUBLIC_*) and admin (VITE_*) apps,
+      # required by their env schemas when they actually boot under the webServer.
+      PUBLIC_API_URL: http://localhost:3001
+      PUBLIC_SITE_URL: http://localhost:4321
+      PUBLIC_ADMIN_URL: http://localhost:3000
+      VITE_API_URL: http://localhost:3001
+      VITE_SITE_URL: http://localhost:4321
+      VITE_ADMIN_URL: http://localhost:3000
+      VITE_BETTER_AUTH_URL: http://localhost:3001/api/auth
       HOSPEDA_MAILER_HOST: localhost
       HOSPEDA_MAILER_PORT: '1025'
 
