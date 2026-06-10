@@ -484,82 +484,82 @@
             "id": "T-013",
             "title": "Write chat route owner-metered integration tests",
             "description": "In `apps/api/test/integration/ai/chat-owner-metered.test.ts`, write integration tests using StubProvider + mock-actor headers + seeded billing: AC-1.2 — tourist sends chat on a listing whose owner has AI_CHAT + quota; assert 200 success and spy on `recordAiUsage` confirming `userId === ownerId` (not tourist's id); AC-1.3 — tourist sends chat where owner is at `MAX_AI_CHAT_PER_MONTH`; assert 403 LIMIT_REACHED regardless of tourist's own (now absent) entitlement; AC-1.4 DB side — after running extras migration, assert no tourist subscriber row has AI_CHAT; AC-1.5 — per-tourist rate-limit still applies (burst guard).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-011"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Set up test fixture with StubProvider and seeded billing rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-1.2: success + recordAiUsage keyed by ownerId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-1.3: owner-at-quota → 403 LIMIT_REACHED",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-1.4 DB: post-migration tourist rows lack AI_CHAT",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "api", "integration", "phase-1", "ai-chat"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T02:30:00.000Z",
+                "completed": "2026-06-10T02:40:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Refactor search route to drop quota gate and require auth",
             "description": "In `apps/api/src/routes/ai/...search...` (locate the search route file), remove `createAiQuotaMiddleware('search')` entirely. Add auth-required guard: unauthenticated requests get a login-prompt response (not a 403 AI gate). Keep: per-user/IP rate-limit via `createAiRateLimitMiddlewares('search')`, the `ai_settings` per-feature USD ceiling (`perFeatureMonthlyMicroUsd.search`) enforced by the engine ceiling checker, and metering via `recordAiUsage` for cost visibility. The AI_SEARCH EntitlementKey and MAX_AI_SEARCH_PER_MONTH LimitKey entries are NOT removed from enums. Test: `apps/api/test/integration/ai/search-platform.test.ts` — AC-3.2 (authenticated user with no AI entitlements → 200), AC-3.3 (ceiling-hit → 503 CEILING_HIT). Anonymous → login-prompt response.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-011"],
             "blocks": ["T-015", "T-016"],
             "subtasks": [
                 {
                     "title": "Remove createAiQuotaMiddleware('search') from search route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add unauthenticated → login-prompt response (not 403 AI gate)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm rate-limit and USD ceiling remain active",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-3.2 test: authenticated no-entitlement user → 200",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-3.3 test: ceiling-hit → 503 CEILING_HIT",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "phase-3", "ai-search"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T02:30:00.000Z",
+                "completed": "2026-06-10T02:40:00.000Z"
             }
         },
         {
@@ -678,9 +678,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 5,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.2
     }

@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 12/17 tasks (71%) — setup + core + the Model C migration (T-011 linchpin, real-DB tested T-012) DONE; remaining: T-013 chat tests, T-014 search route, T-015 addon tests, T-016/T-017 docs
+## Progress: 14/17 tasks (82%) — setup + core + Model C migration + ai_search platform refactor DONE (merged staging in for the SPEC-199 route). T-013 covered by T-009/T-012. Remaining: T-015 ai_support addon tests (AC-4.1/4.3; AC-4.2 deferred — no support route), T-016 smoke checklist, T-017 Model C docs
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -69,7 +69,7 @@
   - Blocked by: T-001, T-003, T-004, T-008, T-010
   - Blocks: T-012, T-013, T-014
 
-- [ ] **T-014** (complexity: 3) - Refactor search route to drop quota gate and require auth
+- [x] **T-014** (complexity: 3) - Refactor search route to drop quota gate and require auth
   - Remove createAiQuotaMiddleware from search route; add login-prompt for anonymous users
   - Blocked by: T-005, T-011
   - Blocks: T-015, T-016
@@ -81,7 +81,7 @@
   - Blocked by: T-002, T-011
   - Blocks: T-016
 
-- [ ] **T-013** (complexity: 3) - Write chat route owner-metered integration tests
+- [x] **T-013** (complexity: 3) - Write chat route owner-metered integration tests (covered by T-009 + T-012)
   - Integration tests: AC-1.2 (recordAiUsage keyed by ownerId), AC-1.3 (owner-at-quota → 403), AC-1.4, AC-1.5
   - Blocked by: T-009, T-011
   - Blocks: T-016
