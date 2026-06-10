@@ -4,10 +4,10 @@
         {
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/17",
             "path": "SPEC-211-ai-monetization-model",
-            "note": "spec.md written; tasks pending owner resolution of 10 open questions (finite quotas, ai_support packaging, ai_search auth, addon pricing). Phase 0 = cost mitigation that unblocks SPEC-200 to prod."
+            "note": "17 tasks generated (all complexity <=3). 10 OQs resolved 2026-06-09. All 5 phases ship together as one rollout (OQ-10); a single idempotent Model C extras migration (T-011) propagates finite limits + ai_chat/ai_search removals + capability sync to prod billing_plans. SPEC-200 waits for the full rollout. Suggested start: T-001/T-002/T-004/T-005/T-006 (parallel, no deps)."
         },
         {
             "specId": "SPEC-131",

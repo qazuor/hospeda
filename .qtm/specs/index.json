@@ -6,13 +6,13 @@
             "title": "AI Monetization Model",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-211-ai-monetization-model",
             "created": "2026-06-09T00:00:00.000Z",
             "parentSpec": "SPEC-200",
             "archived": false,
             "tags": ["ai", "billing", "entitlements", "monetization"],
-            "note": "Follow-up to SPEC-200. Model C (config-driven capabilities + DB overrides) + host-governed AI monetization. Phase 0 (finite quotas + USD ceiling) unblocks SPEC-200 to prod; phases 1 owner-governed chat, 2 Model C, 3 ai_search->platform, 4 addons/ai_support. 10 open questions pending owner; spec.md written, tasks not yet generated."
+            "note": "Follow-up to SPEC-200. Model C (config-driven capabilities + DB overrides) + host-governed AI monetization. 10 OQs resolved 2026-06-09; all phases ship together via a single Model C extras migration. Tasks generated (17, all complexity <=3)."
         },
         {
             "specId": "SPEC-028",
