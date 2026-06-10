@@ -5,9 +5,9 @@
     "created": "2026-06-10T00:00:00.000Z",
     "summary": {
         "total": 14,
-        "pending": 12,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -31,7 +31,7 @@
         {
             "id": "T-003",
             "title": "Add sideEffects: false to packages/icons/package.json",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 1,
             "detail": "Add \"sideEffects\": false to packages/icons/package.json. Icon modules are pure component factories (SVG/React, no CSS or global side-effects \u2014 verified). This enables tree-shaking: consumers importing named icons no longer retain unused icon modules. Rebuild admin + web and verify no icon module is wrongly dropped. FR-2."
@@ -39,7 +39,7 @@
         {
             "id": "T-004",
             "title": "Isolate resolver behind @repo/icons/resolver subpath export",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 3,
             "detail": "Move ICON_MAP and resolveIcon out of the main barrel (packages/icons/src/index.ts line 13) into a dedicated subpath export. Add an exports entry \"./resolver\" to packages/icons/package.json with matching tsup/build output and types. Create the resolver entry point (packages/icons/src/resolver.ts re-exporting from icon-resolver.ts). Migrate ALL call sites: apps/admin entity-list/IconNameCell.tsx, apps/web SSR consumers (AmenitiesGrid.astro, FeaturesGrid.astro, Badge.tsx/Badge.astro, filters/*). Verify zero bare-@repo/icons resolver imports remain. FR-3."
@@ -47,7 +47,7 @@
         {
             "id": "T-005",
             "title": "Lazify admin IconNameCell resolver usage (dynamic import)",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 2,
             "detail": "In apps/admin/src/components/entity-list/IconNameCell.tsx, replace the static resolveIcon import with a dynamic import() so ICON_MAP lands in a separate async chunk (not components-entity). Preserve behavior: icon renders after async resolve; em-dash/mono slug fallback for empty/unknown icon. The resolver chunk is fetched once and reused (no per-row thrash). FR-4."
@@ -55,7 +55,7 @@
         {
             "id": "T-006",
             "title": "Remove dead lucide manualChunks branch from vite.config.ts",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 1,
             "detail": "Delete the if (id.includes('lucide')) return 'vendor-icons' branch in apps/admin/vite.config.ts (~line 276). Verified: no lucide-react dependency or import exists in apps/admin (only a stale comment in newsletter/RichTextEditor.tsx:111). Build must succeed; no vendor-icons chunk was ever populated. FR-5."
@@ -63,7 +63,7 @@
         {
             "id": "T-007",
             "title": "Re-measure after icon front (Phase 2 delta)",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 1,
             "detail": "Re-run build:analyze after all Phase 2 changes (FR-2/3/4/5). Record the icon-front delta: components-entity and icon chunk sizes before vs after. Verify web SSR still works and does not leak ICON_MAP to the web client bundle. FR-9 partial."
@@ -71,7 +71,7 @@
         {
             "id": "T-008",
             "title": "React.lazy + Suspense heavy fields at FieldTypeEnum boundary",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-3-field-split",
             "complexity": 3,
             "detail": "In apps/admin/src/components/entity-form/EntityFormSection.tsx, replace static top-of-file imports of heavy field components with React.lazy + Suspense at the FieldTypeEnum switch: RichTextField (tiptap), CoordinatesField (+ CoordinatesMapView, leaflet), ImageField, GalleryField, VideoGalleryField. Light fields (TextField, SelectField, SwitchField, etc.) stay static. Each heavy field becomes its own async chunk loaded only when a form renders that field type. SSR/hydration correctness (TanStack Start) and form value/error/onChange/onBlur wiring MUST be preserved. Each lazy field gets a Suspense fallback. FR-6."
@@ -79,7 +79,7 @@
         {
             "id": "T-009",
             "title": "Break entity-list \u2192 entity-form/fields edge (relocate DeleteConfirmDialog)",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-3-field-split",
             "complexity": 2,
             "detail": "Break the edge: entity-list/InlineStateSelectCell.tsx and entity-list/DeleteRowButton.tsx import DeleteConfirmDialog from entity-form/fields/DeleteConfirmDialog \u2014 this drags the form-field tree into entity-list. Relocate DeleteConfirmDialog to a neutral location (e.g. components/shared/ or components/common/). Update all import paths. Verify no true circular dependency exists. Confirm/break any cycle with the visualizer. FR-7."
@@ -87,7 +87,7 @@
         {
             "id": "T-010",
             "title": "Adjust manualChunks so entity trees split and lazy chunks land standalone",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-3-field-split",
             "complexity": 2,
             "detail": "Replace the single greedy id.includes('/components/entity-') match in apps/admin/vite.config.ts (~lines 292-295) so entity-list, entity-form, and entity-pages split into distinct chunks and the new lazy field chunks land in their own files (not folded back into components-entity). The rule must be deterministic and documented inline. FR-8."
@@ -95,7 +95,7 @@
         {
             "id": "T-011",
             "title": "Re-measure after field split + de-couple (Phase 3 delta)",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-3-field-split",
             "complexity": 1,
             "detail": "Re-run build:analyze after all Phase 3 changes (FR-6/7/8). Record the field-split delta: components-entity before vs after. Verify no chunk regresses larger than the FR-1 baseline. Verify admin app loads and routes correctly (no missing-chunk runtime errors). FR-9 partial."
