@@ -732,7 +732,7 @@
             "id": "T-021",
             "title": "Smoke verification: anon gate, chips render/remove, fallback notice, locale",
             "description": "Manual + automated smoke verification that all major user flows work end-to-end. Covers: (1) anonymous gate — anon user submits → no API call, login redirect fires (AC-10), (2) chips appear and are removable after successful intent extraction (AC-3, AC-7, AC-8), (3) fallback notice shown when confidence<0.5 (AC-3), (4) locale correctness — Portuguese query uses 'pt' locale in API call and pt translations render (AC-9). Review typecheck and lint passes on all new files. Verify 90% coverage threshold met (100% on mapper).\n\nThis task is the final quality gate before PR. Run: pnpm typecheck && pnpm lint && pnpm test --coverage from monorepo root. Confirm no .only() or hard-coded .skip() in committed test files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020"],
             "blocks": [],
@@ -757,22 +757,22 @@
             "tags": ["testing", "smoke", "quality"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T08:46:57.000Z"
             }
         }
     ],
     "summary": {
         "total": 21,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.38
     }
