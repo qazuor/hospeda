@@ -420,13 +420,13 @@ importers:
         version: 3.0.125(zod@4.3.6)
       '@hono/node-server':
         specifier: ^1.19.10
-        version: 1.19.14(hono@4.12.16)
+        version: 1.19.14(hono@4.12.25)
       '@hono/swagger-ui':
         specifier: ^0.5.2
-        version: 0.5.2(hono@4.12.16)
+        version: 0.5.2(hono@4.12.25)
       '@hono/zod-openapi':
         specifier: ^1.2.2
-        version: 1.2.2(hono@4.12.16)(zod@4.3.6)
+        version: 1.2.2(hono@4.12.25)(zod@4.3.6)
       '@linear/sdk':
         specifier: ^75.0.0
         version: 75.0.0(graphql@16.12.0)
@@ -435,7 +435,7 @@ importers:
         version: 1.12.0
       '@qazuor/qzpay-hono':
         specifier: ^1.6.0
-        version: 1.6.0(hono@4.12.16)(zod@4.3.6)
+        version: 1.6.0(hono@4.12.25)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
         specifier: ^2.2.0
         version: 2.2.0(mercadopago@2.12.0)
@@ -486,7 +486,7 @@ importers:
         version: link:../../packages/utils
       '@scalar/hono-api-reference':
         specifier: ^0.9.12
-        version: 0.9.13(hono@4.12.16)
+        version: 0.9.13(hono@4.12.25)
       '@sentry/node':
         specifier: ^10.38.0
         version: 10.40.0
@@ -524,11 +524,11 @@ importers:
         specifier: ^19.6.0
         version: 19.6.0
       hono:
-        specifier: ^4.12.16
-        version: 4.12.16
+        specifier: ^4.12.21
+        version: 4.12.25
       hono-rate-limiter:
         specifier: ^0.4.2
-        version: 0.4.2(hono@4.12.16)
+        version: 0.4.2(hono@4.12.25)
       image-size:
         specifier: ^2.0.0
         version: 2.0.2
@@ -7706,8 +7706,8 @@ packages:
     peerDependencies:
       hono: ^4.1.1
 
-  hono@4.12.16:
-    resolution: {integrity: sha512-jN0ZewiNAWSe5khM3EyCmBb250+b40wWbwNILNfEvq84VREWwOIkuUsFONk/3i3nqkz7Oe1PcpM2mwQEK2L9Kg==}
+  hono@4.12.25:
+    resolution: {integrity: sha512-2NFaIyNVgJmBs/ecmtGzlmluTFs5cHEWGTdu0t1HBwYzoGXOL5nUQBRMXsXWla5i4KkG//QMzVP88m1+I3fdAQ==}
     engines: {node: '>=16.9.0'}
 
   hookable@5.5.3:
@@ -11985,25 +11985,25 @@ snapshots:
     dependencies:
       graphql: 16.12.0
 
-  '@hono/node-server@1.19.14(hono@4.12.16)':
+  '@hono/node-server@1.19.14(hono@4.12.25)':
     dependencies:
-      hono: 4.12.16
+      hono: 4.12.25
 
-  '@hono/swagger-ui@0.5.2(hono@4.12.16)':
+  '@hono/swagger-ui@0.5.2(hono@4.12.25)':
     dependencies:
-      hono: 4.12.16
+      hono: 4.12.25
 
-  '@hono/zod-openapi@1.2.2(hono@4.12.16)(zod@4.3.6)':
+  '@hono/zod-openapi@1.2.2(hono@4.12.25)(zod@4.3.6)':
     dependencies:
       '@asteasolutions/zod-to-openapi': 8.4.3(zod@4.3.6)
-      '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
-      hono: 4.12.16
+      '@hono/zod-validator': 0.7.6(hono@4.12.25)(zod@4.3.6)
+      hono: 4.12.25
       openapi3-ts: 4.5.0
       zod: 4.3.6
 
-  '@hono/zod-validator@0.7.6(hono@4.12.16)(zod@4.3.6)':
+  '@hono/zod-validator@0.7.6(hono@4.12.25)(zod@4.3.6)':
     dependencies:
-      hono: 4.12.16
+      hono: 4.12.25
       zod: 4.3.6
 
   '@img/colour@1.1.0': {}
@@ -13185,11 +13185,11 @@ snapshots:
       postgres: 3.4.8
       zod: 4.4.3
 
-  '@qazuor/qzpay-hono@1.6.0(hono@4.12.16)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.6.0(hono@4.12.25)(zod@4.3.6)':
     dependencies:
-      '@hono/zod-validator': 0.7.6(hono@4.12.16)(zod@4.3.6)
+      '@hono/zod-validator': 0.7.6(hono@4.12.25)(zod@4.3.6)
       '@qazuor/qzpay-core': 1.11.0
-      hono: 4.12.16
+      hono: 4.12.25
       zod: 4.3.6
 
   '@qazuor/qzpay-mercadopago@2.2.0(mercadopago@2.12.0)':
@@ -14128,10 +14128,10 @@ snapshots:
     dependencies:
       '@scalar/types': 0.2.11
 
-  '@scalar/hono-api-reference@0.9.13(hono@4.12.16)':
+  '@scalar/hono-api-reference@0.9.13(hono@4.12.25)':
     dependencies:
       '@scalar/core': 0.3.11
-      hono: 4.12.16
+      hono: 4.12.25
 
   '@scalar/openapi-types@0.3.7':
     dependencies:
@@ -17814,11 +17814,11 @@ snapshots:
 
   hex-rgb@4.3.0: {}
 
-  hono-rate-limiter@0.4.2(hono@4.12.16):
+  hono-rate-limiter@0.4.2(hono@4.12.25):
     dependencies:
-      hono: 4.12.16
+      hono: 4.12.25
 
-  hono@4.12.16: {}
+  hono@4.12.25: {}
 
   hookable@5.5.3: {}
 
