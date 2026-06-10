@@ -2,7 +2,7 @@
 id: SPEC-211
 slug: ai-monetization-model
 title: AI Monetization Model
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-09
 parentSpec: SPEC-200
@@ -46,16 +46,16 @@ It carries two owner-approved decisions plus the work needed to make them real:
 2. **Decision 2 — AI monetization rules.** HOST pays for all AI (it is ROI for
    their business); TOURIST pays nothing directly. Per-sub-feature entitlements,
    not a bundle. `ai_chat` is paid and governed by the **listing owner** (not the
-   tourist). `ai_search` becomes a free platform feature governed by rate-limit +
-   a USD ceiling (not a plan entitlement). `ai_support` becomes an addon or
-   top-tier-only. "AI visibility in search" (host ranking boost) becomes an
-   addon. A mandatory cost guardrail removes every `-1` (unlimited) value from AI
-   features.
+   tourist). `ai_search` becomes a free, authenticated-only platform feature
+   governed by rate-limit + a USD ceiling (not a plan entitlement). `ai_support`
+   becomes a recurring **addon** consumed by the host for their own business. A
+   mandatory cost guardrail removes every `-1` (unlimited) value from AI features
+   and sets concrete USD ceilings (USD 100/month total; USD 45/30/15/10 per feature).
 
-The work is sequenced into five phases (§5). **Phase 0 is the minimal,
-low-risk slice that unblocks SPEC-200 for production** (cost mitigation). The
-remaining phases land the full monetization model and the Model C billing
-refactor.
+The work is sequenced into five phases (§5). **All phases ship together in a
+single rollout**; there are no independently-promoted phases. SPEC-200 waits for
+the full model (all phases complete) before being promoted to production. The
+phases are logical units of work, not separate deployments.
 
 ---
 
@@ -123,14 +123,12 @@ SPEC-200 audience decision" — that decision is this spec).
 |---------|-------------|------------------|--------------------------------|
 | `ai_text_improve` | HOST (editing own listing) | the HOST | host + complex plans (unchanged) — but `-1` removed |
 | `ai_chat` | TOURIST (on a listing detail page) | the **listing OWNER** | host + complex plans only; **removed from all tourist plans**; gated + metered against the owner |
-| `ai_search` | TOURIST | the **platform** (free) | NOT a plan entitlement; rate-limit + USD ceiling; **removed from all plans** |
-| `ai_support` | (audience TBD, see §10 OQ-3) | addon or top-tier-only | an addon and/or only `*-premium` plans |
-| AI visibility boost | HOST (marketing upside) | the HOST (purchase) | a new **addon**, like `visibility-boost-*` |
+| `ai_search` | TOURIST / AUTHENTICATED USER | the **platform** (free) | NOT a plan entitlement; authenticated-only (anonymous → login prompt); rate-limit + USD ceiling; **removed from all plans** |
+| `ai_support` | HOST (for their own business) | the HOST (addon purchase) | **recurring addon** granting `AI_SUPPORT`; target categories `['owner', 'complex']`; finite `MAX_AI_SUPPORT_PER_MONTH` (proposal: 100/mo, price ARS 8,000/mo — owner to confirm at Phase 4 implementation) |
 
 **Packaging rule (owner):** *hygiene → plan; upside → addon.* A feature every
 host needs to operate (text improve, chat on their listing) belongs in the plan.
-A discretionary marketing/extra (AI ranking boost, possibly support) belongs in
-an addon.
+A discretionary marketing/extra (AI support, etc.) belongs in an addon.
 
 **Cost guardrail (mandatory):** no real `-1` (unlimited) on any AI feature with
 marginal token cost. Replace every `-1` AI quota with a high-but-finite number.
@@ -141,19 +139,20 @@ backstop, never the only one.
 
 ## 3. Goals
 
-- **G-1** Remove the cost exposure: no `-1` quotas on AI features; confirm a
-  global + per-feature USD ceiling exists; propagate the new finite limits to
-  existing prod `billing_plans` rows. (Phase 0 — unblocks SPEC-200 to prod.)
+- **G-1** Remove the cost exposure: no `-1` quotas on AI features; set concrete
+  global + per-feature USD ceilings (USD 100/month total; USD 45/30/15/10 per
+  feature); propagate the new finite limits to existing prod `billing_plans` rows
+  via a single Model C sync. (Phase 0 config changes; sync runs at rollout.)
 - **G-2** Make `ai_chat` governed and metered against the listing **owner**, not
   the tourist; remove `ai_chat` from tourist plans; keep a per-tourist
   anti-abuse rate limit. (Phase 1.)
 - **G-3** Implement Model C: a deterministic mechanism so config-defined
   **capabilities** propagate to existing DB plans on deploy, while **price/quota
   numbers stay DB-editable**. Applies to all billing features. (Phase 2.)
-- **G-4** Make `ai_search` a free platform feature governed by rate-limit + USD
-  ceiling; remove it from all plans. (Phase 3.)
-- **G-5** Package `ai_support` and "AI visibility boost" per the
-  hygiene-vs-upside rule (addons / top-tier). (Phase 4.)
+- **G-4** Make `ai_search` a free, authenticated-only platform feature governed
+  by rate-limit + USD ceiling; remove it from all plans. (Phase 3.)
+- **G-5** Package `ai_support` as a recurring host addon per the
+  hygiene-vs-upside rule. (Phase 4.)
 
 ## 4. Non-Goals
 
@@ -173,33 +172,34 @@ backstop, never the only one.
 
 ## 5. Phased Plan
 
-Phases are independently shippable and ordered by risk/value. Phase 0 ships
-first and alone unblocks SPEC-200 production promotion.
+Phases are logical units of work ordered by risk/value. **All phases ship
+together in a single rollout.** There are no independently-promoted phases to
+prod. SPEC-200 waits for the full model to be complete before production
+promotion.
 
-### Phase 0 — Cost mitigation (unblocks SPEC-200 to prod)
+DB propagation for ALL phases (finite limits, capability removals, general
+capability sync) runs via a **single idempotent Model C sync** (§7.5) executed
+as an extras migration at rollout — not as separate "bridge migrations" per
+phase. Phases 0 and 1 and 3 describe the config/code changes; §7.5 is the one
+mechanism that propagates all of them to the live `billing_plans` table in one
+pass.
 
-**Why first:** SPEC-200 cannot safely go to prod while top-tier AI quotas are
-`-1` and the only backstop is an optional global ceiling. This phase is the
-minimal change that closes the open cost hole.
+### Phase 0 — Cost mitigation config changes
 
 **Scope:**
 
 - Replace every `-1` AI quota in `plans.config.ts` with a high-but-finite value
-  (the four AI limit keys, on every plan that currently uses `-1`). Proposed
-  values in §6.1 (owner to confirm, see OQ-1).
-- Confirm/define the global + per-feature USD ceiling in `ai_settings`
-  (`AiCostCeilingsSchema.globalMonthlyMicroUsd` and
-  `perFeatureMonthlyMicroUsd`). If unset in prod, set sane values (OQ-2).
-- **Propagate the new finite limits to existing prod `billing_plans` rows.** The
-  seed will NOT do this (divergence policy). Phase 0 ships a deterministic,
-  idempotent **limits-sync step** (script or migration, run on deploy) that
-  updates the `limits` JSONB on existing rows for the four AI limit keys only,
-  leaving operator-set price and non-AI limits untouched. This is a narrow,
-  AI-limit-only forerunner of the general Model C sync (Phase 2); it must not
-  clobber anything else.
+  (the four AI limit keys, on every plan that currently uses `-1`). Values
+  confirmed in §6.1.
+- Set the concrete global + per-feature USD ceilings in `ai_settings`
+  (`AiCostCeilingsSchema`): `globalMonthlyMicroUsd` = 100_000_000 (USD 100),
+  `perFeatureMonthlyMicroUsd` = `{ chat: 45_000_000, search: 30_000_000,
+  text_improve: 15_000_000, support: 10_000_000 }`.
+- These config changes are propagated to the live DB by the single Model C sync
+  (§7.5) at rollout.
 
 **Out of scope for Phase 0:** changing who pays for chat, removing entitlements,
-the general Model C mechanism. Phase 0 only changes numbers + propagates them.
+the Model C mechanism itself. Phase 0 only changes numbers + defines ceilings.
 
 ### Phase 1 — Owner-governed chat (the real fix)
 
@@ -213,8 +213,8 @@ the general Model C mechanism. Phase 0 only changes numbers + propagates them.
   accommodation **owner's** entitlement + limit, and so `getMonthlyCallCount` /
   `recordAiUsage` are keyed by the **owner's** `userId`, not the tourist's.
 - Remove `ai_chat` (and `MAX_AI_CHAT_PER_MONTH`) from the three tourist plans in
-  `plans.config.ts`; ship a DB migration that drops `ai_chat` from existing
-  tourist subscribers' plan rows (Model C capability removal, see §7.6).
+  `plans.config.ts`; the single Model C sync (§7.5) drops `ai_chat` from
+  existing tourist subscriber rows at rollout.
 - Keep a per-tourist + per-IP anti-abuse rate limit on the chat route
   (`createAiRateLimitMiddlewares('chat')` already does this — preserve it).
 
@@ -239,23 +239,28 @@ the general Model C mechanism. Phase 0 only changes numbers + propagates them.
 **Scope:**
 
 - Remove `ai_search` + `MAX_AI_SEARCH_PER_MONTH` from all 9 plans in
-  `plans.config.ts`; ship a DB migration removing them from existing rows.
-- Make the search route a free, authenticated (or anonymous, OQ-4) platform
-  feature governed by per-user/IP rate-limit + the `ai_settings` USD ceiling for
-  the `search` feature — NOT by `createAiQuotaMiddleware('search')`'s
-  entitlement/limit gate.
+  `plans.config.ts`; the single Model C sync (§7.5) removes them from existing
+  rows at rollout.
+- Make the search route a **free, authenticated-only** platform feature: the
+  affordance is visible to anonymous users (so they know the feature exists), but
+  attempting to use it without a session triggers a login prompt. Governed by
+  per-user/IP rate-limit + the `ai_settings` USD ceiling for the `search`
+  feature — NOT by `createAiQuotaMiddleware('search')`'s entitlement/limit gate.
 - Keep metering (`recordAiUsage`) for cost visibility and the USD-ceiling check.
 
-### Phase 4 — Addons + `ai_support` packaging
+### Phase 4 — `ai_support` addon packaging
 
 **Scope:**
 
-- Add an **AI visibility boost** addon to `addons.config.ts` (host ranking boost),
-  following the `visibility-boost-*` shape. Decide whether it grants a new
-  `EntitlementKey` or sets a limit (OQ-5).
-- Package `ai_support` per the hygiene-vs-upside rule: an addon (`grantsEntitlement:
-  AI_SUPPORT`) and/or only on `*-premium` plans, with a finite
-  `MAX_AI_SUPPORT_PER_MONTH` (OQ-3).
+- Add the `ai_support` **recurring addon** to `addons.config.ts`:
+  `grantsEntitlement: AI_SUPPORT`, target categories `['owner', 'complex']`,
+  finite `MAX_AI_SUPPORT_PER_MONTH`. Proposed values (owner to confirm at
+  implementation): quota = 100/mo, `priceArs` = 800_000 (ARS 8,000/month).
+  Because `ai_support` is host-self-consumed (not cross-actor like chat), it is
+  metered against the host who uses it — NOT owner-of-a-listing.
+- No AI visibility boost addon. Visibility is handled by the existing
+  `FEATURED_LISTING` entitlement + `visibility-boost-7d/30d` addons; AI search
+  reuses normal listing/search ranking (OQ-5: dropped).
 - Finalize the full grant matrix (§6.2) and assert it with a config test.
 
 ---
@@ -264,8 +269,8 @@ the general Model C mechanism. Phase 0 only changes numbers + propagates them.
 
 ### 6.1 Phase 0 — finite AI quotas (replace `-1`)
 
-Proposed replacement values for the `-1` AI quotas (owner confirms, OQ-1). All
-other plans keep their current finite values.
+Confirmed replacement values for the `-1` AI quotas (OQ-1: accepted as written).
+All other plans keep their current finite values.
 
 | Plan | `MAX_AI_TEXT_IMPROVE_PER_MONTH` | `MAX_AI_CHAT_PER_MONTH` | `MAX_AI_SEARCH_PER_MONTH` |
 |------|---------------------------------|-------------------------|---------------------------|
@@ -283,43 +288,42 @@ cannot run unbounded cost before the per-user limit OR the USD ceiling trips.
 |------|-------------------|-----------|-------------|--------------|
 | owner-basico | yes (20/mo) | yes (20/mo, owner-metered) | — (platform) | no |
 | owner-pro | yes (100/mo) | yes (100/mo, owner-metered) | — | no |
-| owner-premium | yes (1000/mo) | yes (2000/mo, owner-metered) | — | OQ-3 |
+| owner-premium | yes (1000/mo) | yes (2000/mo, owner-metered) | — | addon only |
 | complex-basico | yes (30/mo) | yes (30/mo, owner-metered) | — | no |
 | complex-pro | yes (150/mo) | yes (150/mo, owner-metered) | — | no |
-| complex-premium | yes (2000/mo) | yes (5000/mo, owner-metered) | — | OQ-3 |
+| complex-premium | yes (2000/mo) | yes (5000/mo, owner-metered) | — | addon only |
 | tourist-free | no | **no** | — (platform) | no |
 | tourist-plus | no | **no** | — | no |
 | tourist-vip | no | **no** | — | no |
 
-`ai_search` is `—` for everyone: it is a platform feature, not a plan
-entitlement. AI visibility boost and `ai_support` (if addon-based) appear via
-addon-level customer overrides, not in this plan matrix.
+`ai_search` is `—` for everyone: it is a platform feature (authenticated-only),
+not a plan entitlement. `ai_support` appears via addon-level customer overrides,
+not in this plan matrix. There is no AI visibility boost addon (dropped — OQ-5).
+
+### 6.3 USD cost ceilings (confirmed — OQ-2)
+
+Set in `ai_settings.costCeilings` (integer µUSD; 1 USD = 1_000_000 µUSD).
+Total monthly budget: USD 100.
+
+| Key | µUSD value | USD equivalent |
+|-----|-----------|----------------|
+| `globalMonthlyMicroUsd` | 100_000_000 | USD 100 |
+| `perFeatureMonthlyMicroUsd.chat` | 45_000_000 | USD 45 |
+| `perFeatureMonthlyMicroUsd.search` | 30_000_000 | USD 30 |
+| `perFeatureMonthlyMicroUsd.text_improve` | 15_000_000 | USD 15 |
+| `perFeatureMonthlyMicroUsd.support` | 10_000_000 | USD 10 |
 
 ---
 
 ## 7. Technical Design
 
-### 7.1 Phase 0 — limits-sync mechanism
+### 7.1 Phase 0 — finite limits in config (no standalone sync)
 
-The seed (`billingPlans.seed.ts`) will not update existing rows. Phase 0 needs a
-separate, deterministic, idempotent step that:
-
-- Reads the target AI limit values from `ALL_PLANS` config (single source of
-  truth for the numbers being pushed).
-- For each existing `billing_plans` row (matched by `name === slug`), updates
-  ONLY the four AI keys in the `limits` JSONB (`max_ai_text_improve_per_month`,
-  `max_ai_chat_per_month`, `max_ai_search_per_month`, `max_ai_support_per_month`)
-  to the config value, leaving every other limit key and `metadata.*PriceArs`
-  untouched.
-- Is safe to re-run (idempotent) and logs what it changed.
-- After running, invalidate the entitlement cache (5-min TTL) for affected
-  customers, or accept up to 5 min of staleness (the cache is keyed by
-  `billingCustomerId`; a deploy restart clears it anyway).
-
-**Carril decision (OQ-6):** this can be a hand-written idempotent SQL/extras
-migration (`packages/db/src/migrations/extras/`) run by `db:apply-extras`, or a
-one-shot ops script invoked on deploy. The Phase 2 Model C sync will subsume it,
-so prefer the lowest-ceremony option that is re-runnable and prod-safe.
+Phase 0 changes the numbers in `plans.config.ts` (replace `-1` values, §6.1)
+and defines the USD ceilings (§6.3). There is **no separate Phase 0 limits-sync
+step**: the propagation of these new finite values to the live `billing_plans`
+table happens via the single Model C sync described in §7.5, which runs once at
+rollout and handles all phases together. See §7.5 for the full sync design.
 
 ### 7.2 Phase 1 — `resolveOwnerLimitsForOwnerId`
 
@@ -370,63 +374,101 @@ must, BEFORE streaming:
 
 **Important:** `createAiQuotaMiddleware('chat')` resolves everything against the
 request actor and CANNOT be reused as-is for owner-governed metering. Phase 1
-replaces that middleware on the chat route with an **owner-scoped equivalent**.
-Options (OQ-7): (a) a new `createAiOwnerQuotaMiddleware('chat')` that reads
-`ownerId` from a context value the route sets before it runs, or (b) inline the
-gate/quota/meter logic in the route handler. The anti-abuse rate limit
-(`createAiRateLimitMiddlewares('chat')`, per-tourist + per-IP) STAYS and remains
-keyed by the requesting tourist — it is a burst guard, not a quota.
+replaces that middleware on the chat route with **inline** owner-scoped
+gate/quota/meter logic in the route handler (OQ-7: option b chosen — no new
+middleware). The anti-abuse rate limit (`createAiRateLimitMiddlewares('chat')`,
+per-tourist + per-IP) STAYS and remains keyed by the requesting tourist — it is
+a burst guard, not a quota.
 
 ### 7.4 Phase 1 — tourist-facing behaviour when chat is unavailable
 
 After `ai_chat` is removed from tourist plans, the gate no longer reads the
 tourist's plan at all. Whether a tourist can chat depends solely on the listing
-owner's plan + remaining owner quota. The widget already maps a pre-stream 403 to
-a generic error (SPEC-200 §11). Decide the copy (OQ-8): "AI chat is not available
-for this accommodation" vs a generic error. The FAB visibility rule
-(authenticated-only) is unchanged.
+owner's plan + remaining owner quota. The widget maps a pre-stream 403 to the
+error copy (SPEC-200 §11).
 
-### 7.5 Phase 2 — Model C mechanism
+**Copy decision (OQ-8: locked):** show the specific message **"AI chat is not
+available for this accommodation"** — NOT a generic error. This must be i18n'd in
+all three supported locales:
+
+- **es:** "El chat de IA no está disponible para este alojamiento"
+- **en:** "AI chat is not available for this accommodation"
+- **pt:** "O chat de IA não está disponível para esta acomodação"
+
+Add these keys to `@repo/i18n` (exact key path to be determined at
+implementation). The FAB visibility rule (authenticated-only) is unchanged.
+
+### 7.5 Phase 2 — Model C mechanism (the single sync)
 
 Model C splits each plan into two layers:
 
 - **Capability layer (config wins, auto-propagated):** which `EntitlementKey`s a
   plan grants; which `LimitKey`s a plan *has* (presence, not value);
-  active/default/category metadata that is structural.
+  `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields.
 - **Commercial layer (DB wins, operator-editable, never clobbered):** numeric
   quota values inside the `limits` JSONB; prices in `billing_prices` and
-  `metadata.*PriceArs`.
+  `metadata.*PriceArs`; `active`, `description`, `metadata.displayName`
+  (operators edit these via the SPEC-168 admin UI and those edits are
+  intentional — confirmed as commercial in OQ-9).
 
-The propagation runs deterministically on deploy. Replace the seed's
-warn-only-on-divergence with a per-field policy:
+The propagation runs as a **single idempotent extras migration** in
+`packages/db/src/migrations/extras/` (run by `db:apply-extras` — OQ-6 locked).
+This one migration handles everything together:
+
+1. **Finite-limit propagation** — updates the four AI limit keys on plans that
+   had `-1` to the config values (Phase 0 numbers, §6.1).
+2. **Capability removals** — removes `AI_CHAT` + `MAX_AI_CHAT_PER_MONTH` from
+   existing tourist subscriber rows; removes `AI_SEARCH` +
+   `MAX_AI_SEARCH_PER_MONTH` from all rows (Phases 1 & 3 config changes,
+   applied here).
+3. **General capability sync** — syncs the full capability layer (all
+   `EntitlementKey`s a plan grants, presence of limit keys, structural metadata)
+   from config to DB, governed by the §8.2 field-split table.
+
+The migration must:
+
+- Be idempotent (safe to re-run; second run reports zero changes).
+- Have a **dry-run / log-only mode** (run it in dry-run first, inspect output,
+  then run for real).
+- Leave commercial-layer fields byte-identical (numeric quota values, prices,
+  `active`, `description`, `displayName`).
+- Call `clearEntitlementCache(customerId)` for every touched customer (or
+  document acceptance of the 5-min staleness window; a deploy restart clears
+  the in-memory cache anyway).
+- Require a verified **`billing_plans` table backup** before running in prod
+  (reuse the SPEC-187 manual-table-backup runbook step).
+- Be tested against a `db:fresh-dev` snapshot and the 13 SPEC-143 test users
+  before prod.
+
+Replace the seed's warn-only-on-divergence with a per-field policy:
 
 - Capability-layer divergence → **sync DB to config** (config is source of truth).
 - Commercial-layer divergence → **leave DB as-is** (operator edits win; still
   log for visibility).
 
 This requires the field-split table (§8.2) to be exhaustive over the columns the
-seed controls, so no field is silently in the wrong layer. The mechanism must be
-idempotent and prod-safe (run via the migration/extras carril or an ops step,
-OQ-6), and must invalidate the entitlement cache for touched customers.
+seed controls, so no field is silently in the wrong layer.
 
-### 7.6 Capability removal migrations (Phases 1 & 3)
+### 7.6 Capability removals — handled by the single sync (§7.5)
 
-Removing an entitlement from existing subscribers (`ai_chat` from tourist plans
-in Phase 1; `ai_search` from all plans in Phase 3) is a Model C
-capability-layer change. Until Phase 2 lands, ship explicit idempotent
-migrations that strip the key from the `entitlements` array and the matching
-`limits` key from the `limits` JSONB on the affected existing rows. After Phase 2,
-this is just config + sync.
+There are no separate "bridge migrations" for Phase 1 (`ai_chat` removal from
+tourist rows) or Phase 3 (`ai_search` removal from all rows). Because all phases
+ship together (OQ-10), these capability removals are steps 1 and 2 of the single
+Model C extras migration described in §7.5. The extras migration runs once at
+rollout against the final `plans.config.ts` state and leaves `billing_plans`
+consistent in one pass. See §7.5 for the full migration specification.
 
 ### 7.7 Phase 3 — `ai_search` as a platform feature
 
 The search route stops using the entitlement/limit gate. It keeps:
 
-- Auth (or anonymous, OQ-4).
+- **Auth required** (OQ-4: authenticated-only; anonymous users see the affordance
+  but are redirected to login on use).
 - A per-user/IP rate-limit (`createAiRateLimitMiddlewares('search')`).
 - The `ai_settings` USD ceiling for `feature: 'search'`
-  (`perFeatureMonthlyMicroUsd.search`) enforced by the engine ceiling checker
-  (`packages/ai-core/src/usage/ceiling.ts`) — the global ceiling still applies.
+  (`perFeatureMonthlyMicroUsd.search` = 30_000_000 µUSD / USD 30) enforced by
+  the engine ceiling checker (`packages/ai-core/src/usage/ceiling.ts`) — the
+  global ceiling (100_000_000 µUSD / USD 100) still applies.
 - Metering via `recordAiUsage` for cost visibility.
 
 The `AI_SEARCH` entitlement key and `MAX_AI_SEARCH_PER_MONTH` limit key are NOT
@@ -435,30 +477,37 @@ by any plan. `AI_ENTITLEMENT_BY_FEATURE`/`AI_LIMIT_BY_FEATURE` keep their entrie
 for type completeness, but the search route no longer invokes the quota
 middleware.
 
-### 7.8 Phase 4 — addons
+### 7.8 Phase 4 — `ai_support` addon
 
-AI visibility boost addon (config-only, `addons.config.ts`):
+There is **no AI visibility boost addon** (OQ-5: dropped — the existing
+`FEATURED_LISTING` entitlement + `visibility-boost-7d/30d` addons cover
+visibility; AI search reuses normal ranking).
+
+`ai_support` is a **recurring addon** (config-only, `addons.config.ts`):
 
 ```ts
-export const AI_VISIBILITY_BOOST_ADDON: AddonDefinition = {
-  slug: 'ai-visibility-boost-30d',
-  name: 'AI Visibility Boost (30 days)',
+export const AI_SUPPORT_ADDON: AddonDefinition = {
+  slug: 'ai-support-monthly',
+  name: 'AI Support (monthly)',
   description: '...',
-  billingType: 'one_time',           // or 'recurring' (OQ-5)
-  priceArs: /* OQ-5 */,
-  durationDays: 30,
-  affectsLimitKey: null,
-  limitIncrease: null,
-  grantsEntitlement: /* a new EntitlementKey, OQ-5 */,
+  billingType: 'recurring',
+  priceArs: 800_000,                 // ARS 8,000/month — TBD-with-proposal: owner to confirm at Phase 4 implementation
+  durationDays: null,                // recurring, no fixed duration
+  affectsLimitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH,
+  limitIncrease: 100,                // TBD-with-proposal: owner to confirm at Phase 4 implementation
+  grantsEntitlement: EntitlementKey.AI_SUPPORT,
   targetCategories: ['owner', 'complex'],
   isActive: true,
   sortOrder: 6
 };
 ```
 
-`ai_support`, if addon-based, grants `EntitlementKey.AI_SUPPORT` and the customer
-override flows in via `billing.entitlements.getByCustomerId`. A finite
-`MAX_AI_SUPPORT_PER_MONTH` must be defined (no `-1`).
+The customer override flows in via `billing.entitlements.getByCustomerId`. The
+feature is host-self-consumed (the host uses AI support for their own business),
+so metering is against the host who purchased the addon — NOT owner-of-a-listing.
+`MAX_AI_SUPPORT_PER_MONTH` must be a finite number (no `-1`). Exact quota and
+price (lines marked TBD-with-proposal above) are confirmed by the owner at Phase 4
+implementation time.
 
 ---
 
@@ -470,13 +519,12 @@ override flows in via `billing.entitlements.getByCustomerId`. A finite
 |------|-------|--------|
 | `packages/billing/src/config/plans.config.ts` | 0,1,3 | finite AI quotas; remove `ai_chat`/`ai_search` from the right plans |
 | `apps/api/src/middlewares/owner-entitlement.ts` | 1 | add `resolveOwnerLimitsForOwnerId` |
-| `apps/api/src/routes/ai/protected/chat.ts` | 1 | owner-scoped gate/quota/meter |
-| `apps/api/src/middlewares/ai-quota.ts` | 1 (maybe) | new owner-scoped quota middleware variant (OQ-7) |
-| `apps/api/src/routes/ai/...search...` | 3 | drop quota gate; rely on rate-limit + USD ceiling |
-| `packages/billing/src/config/addons.config.ts` | 4 | AI visibility boost (+ maybe ai_support) addon |
-| `packages/billing/src/types/entitlement.types.ts` | 4 (maybe) | new entitlement key for AI visibility (OQ-5) |
+| `apps/api/src/routes/ai/protected/chat.ts` | 1 | inline owner-scoped gate/quota/meter (no new middleware — OQ-7) |
+| `apps/api/src/routes/ai/...search...` | 3 | drop quota gate; require auth + login-prompt for anonymous; rate-limit + USD ceiling |
+| `packages/billing/src/config/addons.config.ts` | 4 | `ai_support` recurring addon (no AI visibility boost — OQ-5 dropped) |
 | `packages/seed/src/required/billingPlans.seed.ts` | 2 | capability-layer sync replaces warn-only |
-| `packages/db/src/migrations/extras/` or ops script | 0,1,2,3 | limits sync + capability-removal migrations |
+| `packages/db/src/migrations/extras/` | 0,1,2,3 | **single idempotent extras migration** (OQ-6): finite-limit propagation + capability removals + general capability sync (§7.5) |
+| `@repo/i18n` locale files (es/en/pt) | 1 | add "AI chat not available for this accommodation" copy (OQ-8) |
 
 ### 8.2 Model C field-split (to be made exhaustive in Phase 2)
 
@@ -487,13 +535,16 @@ override flows in via `billing.entitlements.getByCustomerId`. A finite
 | `limits` values (the numbers) | commercial | DB wins → never clobbered |
 | `metadata.monthlyPriceArs` / `annualPriceArs` | commercial | DB wins |
 | `billing_prices.unitAmount` | commercial | DB wins |
-| `active`, `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields | capability/structural | config wins (OQ-9 — confirm `active`) |
-| `description`, `metadata.displayName` | capability/structural | config wins (OQ-9 — operator may have localized these) |
+| `active` | commercial | DB wins — operator edits via SPEC-168 admin UI (OQ-9) |
+| `description` | commercial | DB wins — operator edits via SPEC-168 admin UI (OQ-9) |
+| `metadata.displayName` | commercial | DB wins — operator edits via SPEC-168 admin UI (OQ-9) |
+| `metadata.isDefault`, `metadata.category`, `sortOrder`, trial fields | capability/structural | config wins → synced |
 
-The `active`/`description`/`displayName` rows are flagged OQ-9 because an operator
-may have edited them via the admin UI (SPEC-168), in which case treating them as
-"config wins" would clobber an intentional edit. Owner to confirm the exact line
-between capability and commercial for these.
+**OQ-9 rationale (confirmed):** `active`, `description`, and `metadata.displayName`
+are COMMERCIAL — operators edit these via the SPEC-168 admin UI and those edits
+are intentional. The sync must never overwrite them. The capability layer is
+limited to: the set of granted `EntitlementKey`s, the *presence* of limit keys,
+and structural metadata (`isDefault`, `category`, `sortOrder`, trial fields).
 
 ---
 
@@ -505,12 +556,13 @@ Phases 0/1/2/3 all mutate `billing_plans` JSONB in prod. A wrong sync can strip 
 capability from paying customers or overwrite an operator's deliberate quota/price
 edit.
 
-**Mitigation:** every mutation step is idempotent and scoped to named keys only
-(never a blind row overwrite). Phase 0 touches ONLY the four AI limit keys.
-Capability removals (Phases 1/3) strip ONLY the named key. The Model C sync
-(Phase 2) is governed by the exhaustive field-split table (§8.2) and must have a
-dry-run / log-only mode plus a verified `billing_plans` backup before running in
-prod (reuse the SPEC-187 manual-table-backup runbook step). Test the full sync
+**Mitigation:** a **single idempotent extras migration** (§7.5) handles all
+mutations in one governed pass: finite-limit propagation, capability removals
+(`ai_chat` from tourist rows, `ai_search` from all rows), and general capability
+sync — all governed by the §8.2 field-split table (never a blind row overwrite;
+commercial-layer fields left byte-identical). The migration has a dry-run /
+log-only mode. A verified `billing_plans` table backup is required before running
+in prod (reuse the SPEC-187 manual-table-backup runbook). Test the full sync
 against a `db:fresh-dev` snapshot and the 13 SPEC-143 test users before prod.
 
 ### R-2 — Changing who-can-use-chat in prod (MEDIUM-HIGH IMPACT)
@@ -556,8 +608,9 @@ Making `ai_search` free + platform-governed removes the per-plan quota. Without 
 strong rate-limit + USD ceiling, abuse cost is unbounded.
 
 **Mitigation:** Phase 3 mandates a per-user/IP rate-limit AND a per-feature USD
-ceiling for `search`. Confirm anonymous access policy (OQ-4) — anonymous + free +
-AI is the highest-abuse surface.
+ceiling for `search` (30_000_000 µUSD / USD 30 per §6.3). Access is
+authenticated-only (OQ-4: locked) — anonymous users see the affordance but must
+log in to use it, which significantly reduces the abuse surface.
 
 ### R-6 — Two-source-of-truth confusion (MEDIUM IMPACT)
 
@@ -572,38 +625,40 @@ column is classified. Document in `packages/billing/CLAUDE.md` and the
 
 ---
 
-## 10. Open Questions (for the owner)
+## 10. Resolved Decisions (2026-06-09)
 
-- **OQ-1 (Phase 0 quotas):** Confirm the finite replacement values in §6.1 for the
-  `-1` AI quotas (owner-premium, complex-premium, tourist-vip). Are 1000–5000/mo
-  the right order of magnitude?
-- **OQ-2 (USD ceilings):** What `globalMonthlyMicroUsd` and per-feature
-  (`chat`/`search`/`text_improve`/`support`) ceilings should prod use? Are any
-  already set in the prod `ai_settings` blob?
-- **OQ-3 (`ai_support`):** Addon, top-tier-only plan grant, or both? What finite
-  `MAX_AI_SUPPORT_PER_MONTH`? Who is the audience (host support? tourist support?)
-  — this drives whether it's owner-metered like chat.
-- **OQ-4 (`ai_search` auth):** Free for authenticated users only, or anonymous
-  too? Anonymous + free + AI is the highest-abuse surface.
-- **OQ-5 (AI visibility addon):** One-time or recurring? Price? Does it grant a new
-  `EntitlementKey` (e.g. `AI_SEARCH_BOOST`) consumed by the ranking layer, or set a
-  limit/flag? Is the ranking-boost consumer even built yet?
-- **OQ-6 (migration carril):** For the limits-sync (Phase 0) and Model C sync
-  (Phase 2) — versioned migration, hand-written `extras` migration, or an ops
-  script run on deploy? They mutate JSONB on existing rows, which the structural
-  carril doesn't naturally express.
-- **OQ-7 (owner-quota middleware):** New `createAiOwnerQuotaMiddleware('chat')`
-  reading `ownerId` from context, or inline the owner gate/quota/meter in the chat
-  route handler?
-- **OQ-8 (tourist copy):** When chat is unavailable because the owner's plan/quota
-  excludes it, show a specific "not available for this accommodation" message or
-  the generic error?
-- **OQ-9 (Model C field split):** Confirm the capability/commercial classification
-  for `active`, `description`, and `metadata.displayName` (§8.2) — operators may
-  have edited these via the SPEC-168 admin UI.
-- **OQ-10 (rollout order):** Ship Phase 0 to prod first and alone (unblocking
-  SPEC-200), then 1→2→3→4? Or hold SPEC-200 until Phase 1 (owner-governed chat)
-  is also ready, so chat never ships tourist-metered even briefly?
+All open questions are resolved. Nothing is pending.
+
+- **OQ-1 (Phase 0 quotas):** ACCEPTED as written in §6.1. Values: owner-premium
+  1000/2000/2000, complex-premium 2000/5000/2000, tourist-vip 1000/1000 (removed
+  at rollout by the single sync anyway).
+- **OQ-2 (USD ceilings):** Concrete values set in §6.3. Global: 100_000_000 µUSD
+  (USD 100/month). Per-feature: chat 45M, search 30M, text_improve 15M,
+  support 10M (all µUSD). Nothing was previously set in prod.
+- **OQ-3 (`ai_support`):** Recurring **addon** (`grantsEntitlement: AI_SUPPORT`),
+  target categories `['owner', 'complex']`, audience = HOST for their own
+  business (not tourists), metered against the host. Proposal: quota 100/mo,
+  price ARS 8,000/mo — owner confirms exact values at Phase 4 implementation.
+  "Top-tier-only plan grant" alternative is dropped.
+- **OQ-4 (`ai_search` auth):** Authenticated-only to **use**; affordance visible
+  to anonymous users so they know the feature exists; use without session →
+  login prompt. NOT anonymous usage.
+- **OQ-5 (AI visibility addon):** DROPPED. No AI visibility boost addon and no new
+  AI-ranking `EntitlementKey`. The existing `FEATURED_LISTING` entitlement +
+  `visibility-boost-7d/30d` addons cover visibility. Phase 4 now contains only
+  the `ai_support` host addon work.
+- **OQ-6 (migration carril):** Idempotent **extras migration** in
+  `packages/db/src/migrations/extras/`, run by `db:apply-extras`. Single
+  migration covering all phases (§7.5).
+- **OQ-7 (owner-quota middleware):** **Inline** the owner gate/quota/meter in the
+  chat route handler. No new middleware.
+- **OQ-8 (tourist copy):** Specific message: "AI chat is not available for this
+  accommodation", i18n'd in es/en/pt (see §7.4).
+- **OQ-9 (Model C field split):** `active`, `description`, and
+  `metadata.displayName` are **COMMERCIAL** (DB wins, never clobbered) —
+  operators edit these via SPEC-168. See updated §8.2.
+- **OQ-10 (rollout order):** **All phases ship together** in a single rollout.
+  SPEC-200 waits for the full model. No independent phase promotions.
 
 ---
 
@@ -613,15 +668,19 @@ column is classified. Document in `packages/billing/CLAUDE.md` and the
 
 - **AC-0.1** No `-1` value remains for any of the four AI limit keys in
   `ALL_PLANS` (asserted by a `plans.config` test iterating all plans).
-- **AC-0.2** `ai_settings` defines a `globalMonthlyMicroUsd` and per-feature
-  ceilings for every AI feature in the target prod blob (verified by the settings
-  smoke / a config check).
-- **AC-0.3** The limits-sync step, run against a seeded DB whose AI limits were
-  manually set to `-1`, updates ONLY the four AI limit keys to the config values
-  and leaves all other limit keys and `metadata.*PriceArs` byte-identical
-  (integration test on a real DB).
-- **AC-0.4** The limits-sync step is idempotent: a second run reports zero
-  changes.
+- **AC-0.2** `ai_settings` defines `globalMonthlyMicroUsd = 100_000_000` and
+  `perFeatureMonthlyMicroUsd = { chat: 45_000_000, search: 30_000_000,
+  text_improve: 15_000_000, support: 10_000_000 }` (all integer µUSD per §6.3),
+  verified by a config/smoke check.
+- **AC-0.3** The single Model C sync (§7.5), run against a seeded DB whose AI
+  limits were manually set to `-1`, updates the four AI limit keys to the config
+  values AND removes `AI_CHAT`/`MAX_AI_CHAT_PER_MONTH` from tourist rows AND
+  removes `AI_SEARCH`/`MAX_AI_SEARCH_PER_MONTH` from all rows, while leaving all
+  commercial-layer fields (`limits` values not named above, `metadata.*PriceArs`,
+  `active`, `description`, `displayName`) byte-identical (integration test on a
+  real DB).
+- **AC-0.4** The single Model C sync is idempotent: a second run against the same
+  DB state reports zero changes.
 
 ### Phase 1
 
@@ -634,9 +693,9 @@ column is classified. Document in `packages/billing/CLAUDE.md` and the
 - **AC-1.3** A chat request on a listing whose owner is at their
   `MAX_AI_CHAT_PER_MONTH` quota returns 403 `LIMIT_REACHED`, regardless of the
   tourist's own (now nonexistent) chat entitlement.
-- **AC-1.4** After the Phase 1 migration, no tourist plan in `ALL_PLANS` lists
+- **AC-1.4** After the single Model C sync, no tourist plan in `ALL_PLANS` lists
   `AI_CHAT` or `MAX_AI_CHAT_PER_MONTH`; existing tourist subscriber rows in DB no
-  longer carry them (migration integration test).
+  longer carry them (sync integration test).
 - **AC-1.5** The per-tourist + per-IP rate limit still applies to the chat route
   (burst guard preserved).
 
@@ -654,21 +713,25 @@ column is classified. Document in `packages/billing/CLAUDE.md` and the
 ### Phase 3
 
 - **AC-3.1** No plan in `ALL_PLANS` grants `AI_SEARCH` or `MAX_AI_SEARCH_PER_MONTH`
-  after Phase 3 (config test); existing rows no longer carry them (migration test).
-- **AC-3.2** A search request from a user with no AI entitlements succeeds (free
-  platform feature), subject only to the rate-limit and USD ceiling (integration
-  test).
+  after Phase 3 (config test); existing rows no longer carry them after the
+  single Model C sync (sync integration test).
+- **AC-3.2** A search request from an authenticated user with no AI entitlements
+  succeeds (free platform feature), subject only to the rate-limit and USD ceiling
+  (integration test). An unauthenticated request to the same route returns an
+  appropriate login-prompt response (not a 403 AI gate).
 - **AC-3.3** When the `search` per-feature USD ceiling is exceeded, search returns
   the ceiling-hit response (503 `CEILING_HIT`), exercising the engine ceiling
   checker.
 
 ### Phase 4
 
-- **AC-4.1** The AI visibility boost addon exists in `ALL_ADDONS` and, when
-  purchased, surfaces its granted entitlement via customer-level overrides
-  (integration test).
-- **AC-4.2** `ai_support`, if granted, has a finite `MAX_AI_SUPPORT_PER_MONTH` (no
-  `-1`) and follows the chosen packaging (config test).
+- **AC-4.1** The `ai_support` recurring addon exists in `ALL_ADDONS` with
+  `grantsEntitlement: AI_SUPPORT`, `targetCategories: ['owner', 'complex']`, and
+  a finite `MAX_AI_SUPPORT_PER_MONTH` (no `-1`). When purchased by a host, the
+  `AI_SUPPORT` entitlement surfaces via customer-level overrides (integration
+  test). There is no AI visibility boost addon.
+- **AC-4.2** `ai_support` metering is keyed by the host's `userId` (the purchaser
+  of the addon), NOT an accommodation's ownerId (config + integration test).
 - **AC-4.3** The final grant matrix (§6.2) is asserted by a config snapshot test.
 
 ---
@@ -683,9 +746,11 @@ column is classified. Document in `packages/billing/CLAUDE.md` and the
 - **Route integration tests** (`apps/api/test/integration/ai/`): owner-metered
   chat (AC-1.2/1.3) using `StubProvider` + mock-actor headers + seeded billing,
   free search (AC-3.2/3.3).
-- **Migration/sync integration tests** (real DB via `testDb.setup/clean`):
-  limits-sync idempotence + scoping (AC-0.3/0.4), capability removal (AC-1.4/3.1),
-  Model C sync (AC-2.1/2.2), field-split guard (AC-2.3).
+- **Sync integration tests** (real DB via `testDb.setup/clean`): the single Model
+  C extras migration — idempotence (AC-0.4), scoping (AC-0.3: finite limits +
+  capability removals + commercial-layer byte-identical), capability additions
+  (AC-2.1), commercial-layer no-clobber (AC-2.2), field-split guard (AC-2.3),
+  `ai_chat` tourist removal (AC-1.4), `ai_search` all-plans removal (AC-3.1).
 - **Manual staging billing smoke** (mandatory per root CLAUDE.md billing rule):
   owner-at-quota chat → 403; tourist chat on a healthy owner → success; free
   search → success; search ceiling-hit. File the sign-off in the SPEC-143
@@ -757,15 +822,22 @@ None. No new providers, no new payment integration.
    `packages/ai-core/src/usage/ceiling.ts`. It is the **last resort**, not the
    only guardrail — the owner rule forbids `-1` AI quotas so per-user limits trip
    first.
-6. Phase 0 (remove `-1`, set ceilings, propagate limits) is the minimal,
-   independently-shippable slice that unblocks SPEC-200 for prod. The full model
-   change (owner-governed chat, Model C, platform search, addons) follows in
-   Phases 1–4.
+6. All phases ship together in a single rollout (OQ-10). There are no independently-
+   promoted phases and no "bridge migrations." DB propagation (finite-limit sync +
+   capability removals + general capability sync) runs as one idempotent extras
+   migration (§7.5) at rollout. SPEC-200 waits for the full model.
 7. Removing an entitlement from existing subscribers (`ai_chat` from tourist
-   plans, `ai_search` from all plans) is a Model C capability-layer mutation —
-   config alone won't do it; it needs an explicit idempotent migration until the
-   Phase 2 sync generalizes it.
+   plans, `ai_search` from all plans) is a Model C capability-layer mutation.
+   Because all phases ship together, these removals are steps 1 and 2 of the
+   single Model C extras migration — not standalone "bridge migrations."
 8. Any PR touching this surface triggers the mandatory billing smoke rule (root
    CLAUDE.md). Plan the staging smoke (owner-at-quota chat → 403, free search) and
    a verified `billing_plans` backup before any prod sync (reuse the SPEC-187
    manual-table-backup runbook).
+9. `active`, `description`, and `metadata.displayName` are COMMERCIAL fields (DB
+   wins, never clobbered by the sync) because operators edit them via the SPEC-168
+   admin UI. The capability layer is strictly: EntitlementKey set, LimitKey
+   presence, and structural metadata (isDefault, category, sortOrder, trial).
+10. The USD ceilings are concrete: globalMonthlyMicroUsd = 100_000_000 (USD 100),
+    per-feature chat/search/text_improve/support = 45M/30M/15M/10M µUSD. These are
+    the "last resort" backstop — the per-owner finite quota trips first.
