@@ -45,7 +45,7 @@
  * TDD regression evidence.
  */
 
-import { createElement, useState } from 'react';
+import { createElement, useEffect, useState } from 'react';
 import { renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -72,29 +72,38 @@ vi.mock('@qazuor/qzpay-core', () => {
 import { createQZPayBilling } from '@qazuor/qzpay-core';
 
 // ---------------------------------------------------------------------------
-// Probe component — mirrors the exact pattern in __root.tsx RootDocument:
+// Probe component — mirrors the FIXED pattern in __root.tsx RootDocument
+// (SPEC-209 T-009):
 //
-//   const [billing] = useState(() => {
+//   const [billing, setBilling] = useState<... | null>(null);
+//   useEffect(() => {
 //     ...
-//     return createQZPayBilling({ ... }) as unknown as ...;
-//   });
+//     setBilling(createQZPayBilling({ ... }) as ...);
+//   }, []);
 //
-// We keep it as lean as possible: no providers, no JSX children, just the
-// useState lazy initializer that calls createQZPayBilling.
+// useEffect never executes during renderToString (SSR), so createQZPayBilling
+// is never called server-side. We keep it as lean as possible: no providers,
+// no JSX children, just the useState + useEffect pattern from RootDocument.
 // ---------------------------------------------------------------------------
 
 /**
- * Minimal probe that mirrors the billing useState lazy-initializer in
- * RootDocument. Renders to null — we only care about the factory call count.
+ * Minimal probe that mirrors the fixed billing useEffect pattern in
+ * RootDocument (post SPEC-209 T-009). Renders to null — we only care about
+ * the factory call count being 0 across server renders.
  */
 function BillingProbeComponent(): null {
-    const [_billing] = useState(() =>
-        createQZPayBilling({
-            storage: {} as Parameters<typeof createQZPayBilling>[0]['storage'],
-            defaultCurrency: 'ARS',
-            livemode: false
-        })
-    );
+    const [_billing, setBilling] = useState<ReturnType<typeof createQZPayBilling> | null>(null);
+
+    useEffect(() => {
+        setBilling(
+            createQZPayBilling({
+                storage: {} as Parameters<typeof createQZPayBilling>[0]['storage'],
+                defaultCurrency: 'ARS',
+                livemode: false
+            })
+        );
+    }, []);
+
     return null;
 }
 
