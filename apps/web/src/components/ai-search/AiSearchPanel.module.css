@@ -1,0 +1,240 @@
+/**
+ * @file AiSearchPanel.module.css
+ * @description Styles for the AiSearchPanel React island (SPEC-199 §5.6).
+ *
+ * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
+ * Uses CSS custom properties from global.css; no hardcoded colour values.
+ */
+
+/* ─── Root wrapper ────────────────────────────────────────────────────────────
+   Fixed bottom-right floating entry point. The trigger button is always
+   visible; the panel body overlays it when open.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.root {
+    position: fixed;
+    bottom: var(--space-6, 1.5rem);
+    right: var(--space-6, 1.5rem);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-3, 0.75rem);
+}
+
+/* ─── Trigger button ──────────────────────────────────────────────────────────
+   Floating CTA that opens/closes the panel.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, oklch(1 0 0));
+    border: none;
+    border-radius: var(--radius-pill, 999px);
+    font-family: var(--font-sans);
+    font-size: var(--text-button);
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 16px -4px var(--brand-accent-a50);
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease;
+    white-space: nowrap;
+}
+
+.trigger:hover {
+    background-color: var(--brand-accent-lm04);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -4px var(--brand-accent-a55);
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.trigger:active {
+    transform: translateY(0);
+}
+
+/* ─── Panel ───────────────────────────────────────────────────────────────────
+   Overlay card that appears above the trigger button.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.panel {
+    width: min(420px, calc(100vw - var(--space-6, 1.5rem) * 2));
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-card, 1rem);
+    box-shadow: 0 8px 32px -8px oklch(0 0 0 / 0.2);
+    padding: var(--space-5, 1.25rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+    animation: panelIn var(--duration-normal, 0.2s) ease-out;
+}
+
+@keyframes panelIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ─── Panel header ────────────────────────────────────────────────────────────
+   Title row with title on the left and close button on the right.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.panelTitle {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-heading-sm, 1.125rem);
+    font-weight: 700;
+    color: var(--core-foreground);
+    line-height: 1.3;
+}
+
+.closeBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: var(--core-muted-foreground);
+    font-size: 1.25rem;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.closeBtn:hover {
+    background-color: var(--core-foreground-a08, oklch(0 0 0 / 0.08));
+    color: var(--core-foreground);
+}
+
+.closeBtn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ─── Login hint ──────────────────────────────────────────────────────────────
+   Shown below the input for anonymous visitors before they submit.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.loginHint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+    line-height: 1.5;
+}
+
+/* ─── Inline notice ───────────────────────────────────────────────────────────
+   Success fallback notice (low-confidence path).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.notice {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: oklch(from var(--brand-primary, oklch(0.55 0.17 264)) l c h / 0.08);
+    border: 1px solid oklch(from var(--brand-primary, oklch(0.55 0.17 264)) l c h / 0.2);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+/* ─── Error block ─────────────────────────────────────────────────────────────
+   Container for error message + optional CTA (quota upgrade / keyword fallback).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.errorBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.06);
+    border: 1px solid oklch(from var(--destructive, oklch(0.6 0.22 25)) l c h / 0.2);
+    border-radius: var(--radius-button);
+}
+
+.errorMessage {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+/* ─── CTA link / button ───────────────────────────────────────────────────────
+   Inline CTA rendered either as an <a> (quota) or <button> (keyword fallback).
+   Both share this class for visual consistency.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.ctaLink {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 0;
+    background: none;
+    border: none;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--brand-primary, oklch(0.55 0.17 264));
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--duration-fast) ease;
+}
+
+.ctaLink:hover {
+    color: var(--brand-primary-lm04);
+    text-decoration: underline;
+}
+
+.ctaLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────────
+   On small screens the panel extends closer to the edges.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .root {
+        bottom: var(--space-4, 1rem);
+        right: var(--space-4, 1rem);
+        left: var(--space-4, 1rem);
+        align-items: stretch;
+    }
+
+    .trigger {
+        justify-content: center;
+    }
+
+    .panel {
+        width: 100%;
+    }
+}
