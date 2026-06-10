@@ -24,16 +24,15 @@ describe('IconNameCell', () => {
         expect(screen.getByText('—')).toBeInTheDocument();
     });
 
-    it('renders mono-slug fallback for unknown icon name', async () => {
-        render(<IconNameCell iconName="UnknownIcon" />);
-        // The resolver returns undefined for "UnknownIcon" (mock logic requires
-        // the name to end with "Icon" AND be in the known set — our mock only
-        // returns defined for names ending with "Icon", so this should render).
-        // Actually our mock returns a stub for ANY name ending with "Icon".
-        // Let's test with a non-icon name instead.
+    it('renders mono-slug fallback when resolver returns undefined', async () => {
+        // The mock resolver returns undefined for names that do NOT end in
+        // "Icon", which exercises the genuine unresolved-icon branch: the slug
+        // is shown in mono with no icon SVG next to it.
+        render(<IconNameCell iconName="definitely-not-an-icon" />);
         await waitFor(() => {
-            expect(screen.getByText('UnknownIcon')).toBeInTheDocument();
+            expect(screen.getByText('definitely-not-an-icon')).toBeInTheDocument();
         });
+        expect(screen.queryByTestId('icon-definitely-not-an-icon')).not.toBeInTheDocument();
     });
 
     it('renders icon component after lazy resolver resolves', async () => {
