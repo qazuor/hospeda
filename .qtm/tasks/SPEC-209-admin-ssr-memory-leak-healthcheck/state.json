@@ -343,7 +343,7 @@
             "id": "T-010",
             "title": "Smoke-test admin billing pages after client-only billing fix",
             "description": "Manually verify that client-side billing still works correctly after the client-only billing guard change (risk: client-only billing breaks an SSR-time billing read, per spec risk table):\n\n- This is a manual smoke task (documented procedure), not a code task.\n- Smoke steps to execute locally or on staging:\n  1. Load the admin billing section (e.g. /billing/plans, /billing/subscriptions)\n  2. Verify the QZPayProvider billing context is accessible in client-side React (useQZPay hook returns a non-null billing instance)\n  3. Verify plan list loads correctly (billing HTTP adapter resolves)\n  4. Check browser console — no 'billing is null' or 'QZPayProvider requires billing' errors\n  5. Trigger a billing operation if safe (e.g. view plan details, NOT a real payment)\n- Document the smoke results in the PR description with: environment (local/staging), date, result (PASS/FAIL), any notes\n- If billing is broken client-side: this task BLOCKS the PR — fix must be revised in T-009\n\nFiles affected: none (manual smoke task)\n\nTest requirements:\n- Automated billing access test already exists at apps/admin/test/lib/billing-access.test.ts — run it and confirm it passes\n- This smoke is the final gate before T-011 (integration test completion) and T-012 (staging validation)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012"],
@@ -374,8 +374,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:56:32.000Z",
+                "completed": "2026-06-10T04:04:19.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.1
     }
