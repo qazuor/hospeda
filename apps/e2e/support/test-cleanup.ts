@@ -34,8 +34,7 @@ import type { Pool } from 'pg';
 const CLEANUP_TABLES = [
     'accommodation_reviews',
     'destination_reviews',
-    'conversation_messages',
-    'conversation_participants',
+    'messages',
     'conversations',
     'user_bookmarks',
     'billing_addon_purchases',
@@ -71,11 +70,38 @@ export async function cleanupTestUsers(pool: Pool, userIds: ReadonlyArray<string
         await client.query('BEGIN');
         await client.query("SET LOCAL session_replication_role = 'replica'");
 
+        // Billing tables use a different FK chain:
+        //   users.id → billing_customers.external_id (UUID stored as text)
+        //   billing_customers.id → billing_subscriptions.customer_id (CASCADE)
+        //   billing_customers.id → billing_addon_purchases.customer_id (CASCADE)
+        // Deleting billing_customers cascades subs+addons; explicit deletes for
+        // billing_subscriptions / billing_addon_purchases are skipped.
+        await client.query('DELETE FROM billing_customers WHERE external_id = ANY($1::text[])', [
+            userIds
+        ]);
+
         for (const table of CLEANUP_TABLES) {
-            const column = table === 'users' ? 'id' : 'user_id';
-            // Some tables (e.g. accommodations) use owner_id instead of user_id
-            // for the user reference. Try the most common name first; fall
-            // back via a broader column-name discovery if needed.
+            // Determine the correct user-reference column per table.
+            // - users: primary key is 'id'
+            // - accommodations: FK is 'owner_id'
+            // - billing_*: handled above via billing_customers.external_id
+            // - all other tables: FK is 'user_id'
+            if (
+                table === 'billing_customers' ||
+                table === 'billing_subscriptions' ||
+                table === 'billing_addon_purchases'
+            ) {
+                // Already handled via billing_customers cascade above.
+                continue;
+            }
+            let column: string;
+            if (table === 'users') {
+                column = 'id';
+            } else if (table === 'accommodations') {
+                column = 'owner_id';
+            } else {
+                column = 'user_id';
+            }
             await client.query(`DELETE FROM ${table} WHERE ${column} = ANY($1::uuid[])`, [userIds]);
         }
 
