@@ -22,7 +22,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { CloseIcon } from '@repo/icons';
 import type { AccommodationSearchHttp } from '@repo/schemas';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styles from './IntentChips.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -254,14 +254,16 @@ function paramsToSearch(params: Partial<AccommodationSearchHttp>): string {
  * ```
  */
 export function IntentChips({ locale, lang }: IntentChipsProps) {
-    const { t } = createTranslations(locale);
+    // Memoize so `t` is referentially stable across renders for the same locale.
+    // Calling createTranslations(locale) directly on each render returns a NEW
+    // `t` every time, which combined with `useEffect([t])` below caused an
+    // infinite render loop ("Maximum update depth exceeded").
+    const { t } = useMemo(() => createTranslations(locale), [locale]);
     const [chips, setChips] = useState<ChipDef[]>([]);
     const [params, setParams] = useState<Partial<AccommodationSearchHttp>>({});
 
     // Read stored params on mount (client-only — no sessionStorage in SSR).
-    // `t` is derived from `locale` (prop) and is referentially stable across
-    // renders for the same locale — it is safe to include in the deps array
-    // without causing infinite loops.
+    // `t` is now memoized (stable per locale), so depending on it is safe.
     useEffect(() => {
         const raw = readSession(SESSION_KEY);
         if (!raw) {
