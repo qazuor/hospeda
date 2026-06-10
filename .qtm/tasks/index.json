@@ -5,9 +5,9 @@
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
             "status": "in-progress",
-            "progress": "16/17",
+            "progress": "17/17",
             "path": "SPEC-211-ai-monetization-model",
-            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. Setup + core + Model C extras migration done (T-001..T-012); merged staging in to include the SPEC-199 ai_search route (T-014). Remaining: ai_search platform refactor, ai_support addon tests, docs. ai_support feature route deferred."
+            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec."
         },
         {
             "specId": "SPEC-200",

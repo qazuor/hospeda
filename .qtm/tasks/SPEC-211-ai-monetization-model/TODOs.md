@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 16/17 tasks (94%) — only T-016 (staging smoke checklist) left. ALSO pending before PR: full monorepo typecheck + suite validation after the 184-commit staging merge. AC-4.2 (ai_support metering) + the ai_support feature route deferred to a future spec
+## Progress: 17/17 tasks (100%) — all tasks complete. Spec stays `in-progress` until merged to staging (closeout flips it to completed/archived post-merge). Full monorepo typecheck passed post-merge. AC-4.2 (ai_support metering) + the ai_support feature route deferred to a future spec
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -93,7 +93,7 @@
 
 ### Docs Phase
 
-- [ ] **T-016** (complexity: 2) - Add staging billing smoke checklist entries for SPEC-211
+- [x] **T-016** (complexity: 2) - Add staging billing smoke checklist entries for SPEC-211
   - Add 4 staging smoke entries + prod smoke entries to SPEC-143 checklists
   - Blocked by: T-012, T-013, T-014, T-015
   - Blocks: T-017

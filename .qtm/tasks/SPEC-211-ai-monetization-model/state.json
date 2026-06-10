@@ -601,30 +601,30 @@
             "id": "T-016",
             "title": "Add staging billing smoke checklist entries for SPEC-211",
             "description": "In `.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md`, add SPEC-211 staging smoke entries per the root CLAUDE.md mandatory billing smoke rule: (1) owner-at-quota chat → 403 LIMIT_REACHED (with sign-off template); (2) tourist chat on a healthy owner → success; (3) free search (authenticated, no AI entitlement) → success; (4) search ceiling-hit → 503 CEILING_HIT. Add prod smoke entries in the prod-smoke-checklist for the billing core changes (chat route and extras migration). Include the manual backup step reference from the SPEC-187 runbook.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Add owner-at-quota chat → 403 staging smoke entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add tourist chat on healthy owner → success staging smoke entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add free search → success staging smoke entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add search ceiling-hit → 503 staging smoke entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add prod smoke entries for billing core changes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "testing", "billing-smoke", "phase-2"],
@@ -678,9 +678,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.2
     }
