@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Create AiSearchIntentRequestSchema and SearchIntentEntitiesSchema with barrel export",
             "description": "Create packages/schemas/src/entities/ai/ai-search-intent.schema.ts with AiSearchIntentRequestSchema (query: min(1).max(500), locale optional, .strict()) and SearchIntentEntitiesSchema (ALL slots: locationType, city, destinationId, lat/lon/radius, accommodationType, minGuests/maxGuests, minBedrooms/maxBedrooms, minBathrooms/maxBathrooms, minPrice/maxPrice, currency, minRating/maxRating, hasPool/hasWifi/allowsPets/hasParking booleans, amenitySlugs: string[], featureSlugs: string[], checkIn/checkOut coerce.date). Also export their TS types. Export from packages/schemas/src/entities/ai/index.ts barrel.\n\nTEST FILE: packages/schemas/src/entities/ai/ai-search-intent.schema.test.ts\nRequired assertions (§8.1, AC-5):\n- AiSearchIntentRequestSchema: empty query rejected, query >500 chars rejected, valid locale accepted, invalid locale rejected, .strict() rejects extra keys\n- SearchIntentEntitiesSchema: empty object valid (all slots optional), invalid accommodationType rejected, latitude out of [-90,90] rejected, extra keys stripped (schema NOT strict)\n- New fields: minBedrooms/maxBedrooms accept integer ≥ 0, maxRating accepts number in [0,5], featureSlugs accepts string array",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
@@ -33,14 +33,14 @@
             "tags": ["schemas", "zod", "ai", "setup"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": "2026-06-10T03:43:28.000Z",
-                "completed": null
+                "completed": "2026-06-10T04:00:41.000Z"
             }
         },
         {
@@ -771,8 +771,8 @@
     "summary": {
         "total": 21,
         "pending": 20,
-        "inProgress": 1,
-        "completed": 0,
+        "inProgress": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.38
     }
