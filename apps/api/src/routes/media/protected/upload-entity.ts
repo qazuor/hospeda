@@ -303,7 +303,8 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             tags,
             overwrite,
             entityType,
-            entityId
+            entityId,
+            actorId: actor.id
         });
 
         if ('code' in result) {
