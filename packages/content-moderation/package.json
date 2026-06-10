@@ -24,7 +24,7 @@
         "clean": "rm -rf node_modules && rm -rf dist"
     },
     "dependencies": {
-        "zod": "^4.0.8"
+        "zod": "^4.4.3"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
