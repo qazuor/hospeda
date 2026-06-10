@@ -20,6 +20,10 @@ on:
       - 'scripts/check-links.ts'
       - 'scripts/validate-examples.ts'
 
+# Least-privilege default token: every job only reads the repo.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint Documentation
