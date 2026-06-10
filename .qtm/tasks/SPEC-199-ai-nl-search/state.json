@@ -347,7 +347,7 @@
             "id": "T-010",
             "title": "Create search-intent route handler with middleware chain and generateObject call",
             "description": "Create apps/api/src/routes/ai/protected/search-intent.ts (main route file). Use createProtectedRoute factory with POST '/', request body AiSearchIntentRequestSchema, response AiSearchIntentResponseSchema. middlewares order: [entitlementMiddleware(), ...createAiRateLimitMiddlewares('search'), createAiQuotaMiddleware('search')]. Handler steps: (1) parse/validate body, (2) await createConfiguredAiService(), (3) call aiService.generateObject({feature:'search', prompt:buildSearchIntentPrompt({query,locale??'es'}), locale:locale??'es'}, SearchIntentOutputSchema), (4) entities = result.object.entities, confidence = result.object.confidence, run SearchIntentEntitiesSchema.safeParse() — on fail treat as {} and confidence=0, (5) determine fallbackToKeyword: confidence < 0.5, (6) return response envelope {intent, mappedParams, confidence, fallbackToKeyword}. Add route to barrel apps/api/src/routes/ai/protected/index.ts (create if SPEC-198 did not).\n\nHTTP status codes from §5.1 table must be returned correctly (401/403/429/422/503/502/400).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-005", "T-008", "T-009"],
             "blocks": ["T-011", "T-012"],
@@ -372,21 +372,21 @@
             "tags": ["api", "route", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T05:25:20.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Wire amenity and feature slug-to-UUID DB resolution in route handler",
             "description": "In apps/api/src/routes/ai/protected/search-intent.ts add two DB lookup steps after entities validation: (1) amenity resolution — if entities.amenitySlugs non-empty, query `amenities` table (deep import from @repo/db/src/schemas/accommodation/amenity.dbschema.js, NOT re-exported from @repo/db index) using inArray(amenities.slug, slugIds), collect UUIDs; (2) feature resolution — if entities.featureSlugs non-empty, query `features` table (check if re-exported from @repo/db or use deep import feature.dbschema.js) using inArray(features.slug, slugIds), collect UUIDs. Pass both arrays to mapIntentToSearchParams(validatedEntities, resolvedAmenityIds, resolvedFeatureIds).\n\nTEST coverage (§8.2, AC-11, AC-12, AC-17):\n- Test #10 in integration suite: stub returns entities.amenitySlugs:['bbq'] → mappedParams.amenities contains resolved UUID\n- Test #11 in integration suite: stub returns entities.featureSlugs:['river_front'] → mappedParams.features contains resolved UUID\n- Unknown slug not in DB → omitted from output (AC-12 pattern)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-012"],
@@ -411,21 +411,21 @@
             "tags": ["api", "db", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T05:25:20.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write API integration tests for search-intent route (11 test cases)",
             "description": "Create apps/api/test/integration/ai/search-intent.test.ts [NEW directory + file]. Mount real Hono app via initApp(), use x-mock-actor-* headers (x-mock-actor-id, x-mock-actor-role, x-mock-actor-permissions as JSON-stringified array). Mock AI via vi.mock('@repo/ai-core') for deterministic stubs. touristFreeHeaders: role TOURIST, permissions ['ai.search']. noAiHeaders: role TOURIST, permissions [].\n\nRequired tests (§8.2, AC-1..AC-19):\n1. Auth+entitlement+high-confidence stub → 200, fallbackToKeyword:false, confidence field present\n2. Stub confidence:0.3 → 200, fallbackToKeyword:true\n3. No auth headers → 401\n4. No AI_SEARCH entitlement → 403 ENTITLEMENT_REQUIRED\n5. Query >500 chars → 400 VALIDATION_ERROR\n6. Empty query → 400 VALIDATION_ERROR\n7. Stub throws MODERATION_BLOCKED → 422\n8. billingLoadFailed:true in context → 503 SERVICE_UNAVAILABLE\n9. Stub throws ENGINE_EXHAUSTED → 502\n10. Stub returns entities.amenitySlugs:['bbq'] → mappedParams.amenities has UUID (mock/seed bbq slug)\n11. Stub returns entities.featureSlugs:['river_front'] → mappedParams.features has UUID",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011"],
             "blocks": [],
@@ -450,14 +450,14 @@
             "tags": ["api", "testing", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T05:25:20.000Z"
             }
         },
         {
@@ -770,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 11,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.38
     }
