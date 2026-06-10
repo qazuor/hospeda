@@ -382,7 +382,7 @@
             "id": "T-011",
             "title": "Write post-fix integration test asserting no billing initialization on SSR",
             "description": "Write (or extend) the integration test that confirms the full AC-2.2 fix is in place: after the T-009 change, the admin SSR path must not construct QZPayBilling (AC-2.2):\n\n- File: apps/admin/test/regression/ssr-billing-construction.test.tsx (from T-006 — this task adds post-fix assertions in the same file)\n- Add a test section: 'after fix: billing is not constructed on server render'\n  - Same setup as T-006: mock createQZPayBilling, render RootDocument N=5 times (server-side)\n  - Assert: createQZPayBilling call count is 0 across all server renders\n  - Assert: 'QZPayBilling initialized' log NOT emitted\n- Also add: 'billing initializes exactly once on client mount'\n  - Use jsdom environment (simulates browser)\n  - Render RootDocument, wait for useEffect to fire\n  - Assert: createQZPayBilling called exactly 1 time\n- Link assertions to AC-2.2 in comments\n\nFiles affected:\n- apps/admin/test/regression/ssr-billing-construction.test.tsx (extend)\n\nThis test must be green before T-012 (staging validation) can proceed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-009", "T-010"],
             "blocks": ["T-012"],
@@ -409,8 +409,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:47:15.000Z",
+                "completed": "2026-06-10T03:48:39.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.1
     }
