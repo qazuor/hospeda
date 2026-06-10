@@ -704,13 +704,14 @@
             "title": "AI Natural-Language Search",
             "type": "feat",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-199-ai-nl-search",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-10",
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete."
         },
         {
             "specId": "SPEC-200",
