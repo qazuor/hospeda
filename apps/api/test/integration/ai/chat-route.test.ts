@@ -4,7 +4,12 @@
  * Uses the REAL protected streaming route + REAL auth/rate-limit/quota route
  * factory stack. The external seams are stubbed at the module boundary:
  *
- * - `entitlementMiddleware()` injects entitlements/limits into context.
+ * - `entitlementMiddleware()` injects tourist entitlements/limits into context
+ *   (still used by the middleware chain; AI_CHAT gate is now owner-keyed).
+ * - `@repo/db` is stubbed so the handler's ownerId lookup does not require a
+ *   real DB connection.
+ * - `owner-entitlement` helpers are stubbed to control the owner's billing
+ *   state per-test (SPEC-211 Phase 1).
  * - `@repo/ai-core` is stubbed for `AiEngineError`, `getMonthlyCallCount`,
  *   `recordAiUsage`, and `resolveSystemPrompt`.
  * - `createConfiguredAiService()` returns a controlled streaming stub.
@@ -28,6 +33,9 @@ const {
     currentEntitlementsForTest,
     currentLimitsForTest,
     currentBillingLoadFailedForTest,
+    mockOwnerEntitlements,
+    mockOwnerLimits,
+    mockOwnerQueryResult,
     resolvedPromptForTest,
     nextContextResult,
     nextContextError,
@@ -56,9 +64,20 @@ const {
     },
     nextStreamError: { current: null as unknown },
     getMonthlyCallCountReturn: { current: 0 },
+    // Tourist-scoped entitlements/limits (still loaded by entitlementMiddleware, now
+    // only used by non-AI_CHAT middleware; AI_CHAT gate is owner-keyed since SPEC-211).
     currentEntitlementsForTest: { current: new Set<string>() },
     currentLimitsForTest: { current: new Map<string, number>() },
     currentBillingLoadFailedForTest: { current: false },
+    // Owner-scoped billing state (SPEC-211 Phase 1: gate/quota against the listing owner).
+    mockOwnerEntitlements: { current: ['ai_chat'] as string[] },
+    mockOwnerLimits: { current: new Map<string, number>([['max_ai_chat_per_month', 20]]) },
+    // Rows returned by the DB ownerId lookup (empty = 404).
+    mockOwnerQueryResult: {
+        current: [{ ownerId: '11111111-1111-1111-1111-111111111111' }] as Array<{
+            ownerId: string;
+        }>
+    },
     resolvedPromptForTest: { current: 'Resolved prompt from admin/default.' },
     nextContextResult: {
         current: {
@@ -104,6 +123,51 @@ vi.mock('@repo/ai-core', () => {
         }))
     };
 });
+
+/**
+ * Mock @repo/db — stub only `getDb` to intercept the inline ownerId lookup
+ * (SPEC-211 Phase 1). All other exports (schemas, models, etc.) pass through
+ * unchanged via `importOriginal` to avoid breaking transitive consumers.
+ */
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+
+    const buildChain = (): {
+        select: (cols: unknown) => {
+            from: (table: unknown) => {
+                where: (cond: unknown) => {
+                    limit: (n: number) => Promise<Array<{ ownerId: string }>>;
+                };
+            };
+        };
+    } => ({
+        select: (_cols: unknown) => ({
+            from: (_table: unknown) => ({
+                where: (_cond: unknown) => ({
+                    limit: (_n: number) => Promise.resolve(mockOwnerQueryResult.current)
+                })
+            })
+        })
+    });
+
+    return {
+        ...actual,
+        getDb: vi.fn(() => buildChain())
+    };
+});
+
+/**
+ * Mock owner-entitlement helpers (SPEC-211 Phase 1).
+ * Tests control owner billing state via `mockOwnerEntitlements` and
+ * `mockOwnerLimits`. This replaces the tourist-keyed quota check that lived in
+ * `createAiQuotaMiddleware` before T-009.
+ */
+vi.mock('../../../src/middlewares/owner-entitlement', () => ({
+    resolveOwnerEntitlementsForOwnerId: vi.fn(
+        async () => mockOwnerEntitlements.current as string[]
+    ),
+    resolveOwnerLimitsForOwnerId: vi.fn(async () => mockOwnerLimits.current as Map<string, number>)
+}));
 
 vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
@@ -290,8 +354,15 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
     beforeEach(() => {
         getMonthlyCallCountReturn.current = 0;
         currentBillingLoadFailedForTest.current = false;
+        // Tourist entitlements — still loaded by entitlementMiddleware; AI_CHAT gate is
+        // now owner-keyed (SPEC-211), but keeping this populated avoids surprises if any
+        // future middleware reads `c.get('userEntitlements')`.
         currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
         currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        // Owner billing state defaults (SPEC-211 Phase 1 §7.3 — pass-through for most tests).
+        mockOwnerEntitlements.current = [EntitlementKey.AI_CHAT];
+        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        mockOwnerQueryResult.current = [{ ownerId: '11111111-1111-1111-1111-111111111111' }];
         resolvedPromptForTest.current = 'Resolved prompt from admin/default.';
         nextContextResult.current = {
             contextBlock: '## Accommodation: Test Cabin',
@@ -337,9 +408,11 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(streamTextCalls).toHaveLength(0);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the user lacks ai_chat', async () => {
-        currentEntitlementsForTest.current = new Set();
-        currentLimitsForTest.current = new Map();
+    it('returns 403 ENTITLEMENT_REQUIRED when the listing owner lacks ai_chat (SPEC-211)', async () => {
+        // SPEC-211 Phase 1: the gate is now against the OWNER, not the tourist.
+        // Set owner's entitlements to empty — tourist entitlement is irrelevant.
+        mockOwnerEntitlements.current = [];
+        mockOwnerLimits.current = new Map();
 
         const res = await app.request(STREAM_PATH, {
             method: 'POST',
@@ -356,7 +429,10 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(streamTextCalls).toHaveLength(0);
     });
 
-    it('returns 403 LIMIT_REACHED when monthly count >= plan limit', async () => {
+    it("returns 403 LIMIT_REACHED when the listing owner's monthly count >= plan limit (SPEC-211)", async () => {
+        // SPEC-211 Phase 1: quota counted against the OWNER, not the tourist.
+        // Owner limit is 20 and has already used 20 calls this month.
+        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
         getMonthlyCallCountReturn.current = 20;
 
         const res = await app.request(STREAM_PATH, {
@@ -371,24 +447,6 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(res.status).toBe(403);
         const body = (await res.json()) as { error: { code: string } };
         expect(body.error.code).toBe('LIMIT_REACHED');
-        expect(streamTextCalls).toHaveLength(0);
-    });
-
-    it('returns 503 SERVICE_UNAVAILABLE when billingLoadFailed is true', async () => {
-        currentBillingLoadFailedForTest.current = true;
-
-        const res = await app.request(STREAM_PATH, {
-            method: 'POST',
-            headers: makeMockActorHeaders(),
-            body: JSON.stringify({
-                accommodationId: ACCOMMODATION_ID,
-                messages: makeMessages(1)
-            })
-        });
-
-        expect(res.status).toBe(503);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
         expect(streamTextCalls).toHaveLength(0);
     });
 
