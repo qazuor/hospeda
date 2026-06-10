@@ -42,16 +42,33 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
     });
 
     test('trial-expired host: blocks writes via UI + API, keeps reads', async ({ page }) => {
+        // Paywall enforcement is only deterministic with the QZPay test-control
+        // adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true). A stub MP token lets
+        // billing init succeed but the entitlement middleware still falls back to
+        // "draft defaults" and grants writes regardless of trial state, so a stub
+        // run cannot validate the paywall. Real paywall behavior is covered by the
+        // staging billing smoke (the project's billing gate).
+        if (process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED !== 'true') {
+            test.fixme(
+                true,
+                'HOST-03: deterministic billing not configured — needs the QZPay test-control adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true); a stub MP token is not enough.'
+            );
+            return;
+        }
+
         // ── Setup ──────────────────────────────────────────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        // Get the trial plan id from the seed data (any plan with status trialing-eligible).
+        // Get the trial plan id from the seed data (any plan with at least one price
+        // that has trial_days > 0 — `has_trial` column does not exist; trial info
+        // lives on billing_prices.trial_days).
         const planRows = await execSQL<{ id: string }>(
-            `SELECT id FROM billing_plans
-             WHERE has_trial = true AND is_active = true
-             ORDER BY created_at ASC
+            `SELECT DISTINCT bp.id FROM billing_plans bp
+             JOIN billing_prices pr ON pr.plan_id = bp.id
+             WHERE bp.active = true AND pr.trial_days > 0
+             ORDER BY bp.id ASC
              LIMIT 1`
         );
         const planId = planRows[0]?.id;

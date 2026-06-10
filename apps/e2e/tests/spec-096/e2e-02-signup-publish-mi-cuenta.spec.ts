@@ -31,6 +31,7 @@ import {
     forceVerifyEmail,
     getAnyCityDestinationId,
     getMe,
+    refreshSession,
     signupUser,
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
@@ -70,21 +71,30 @@ test.describe('E2E-2: signup → onboarding → /mi-cuenta visible @p0 @host @on
         expect(result.status).toBe('created');
         expect(result.accommodationId).not.toBeNull();
 
+        // Better Auth caches the session for up to 300s. After startHostOnboarding
+        // promotes USER → HOST in the DB, the old session still reflects USER.
+        // Refresh to get a cookie with the current role.
+        const hostSessionCookie = await refreshSession(user, { apiBaseUrl: API_URL });
+
         // /me reflects HOST role.
-        const me = await getMe(user.sessionCookie, { apiBaseUrl: API_URL });
+        const me = await getMe(hostSessionCookie, { apiBaseUrl: API_URL });
         expect(me?.role).toBe('HOST');
 
         // Protected list — the endpoint /mi-cuenta/propiedades drives —
         // includes the new accommodation.
         const listRes = await page.request.get(
             `${API_URL}/api/v1/protected/accommodations?pageSize=50`,
-            { headers: { cookie: user.sessionCookie } }
+            { headers: { cookie: hostSessionCookie } }
         );
         expect(listRes.ok(), `protected list should be 200 (got ${listRes.status()})`).toBe(true);
+        // The list endpoint uses createListRoute which returns { data: { items: [...], pagination } }.
         const listBody = (await listRes.json()) as {
-            data?: ReadonlyArray<{ id: string; ownerId?: string }>;
+            data?: {
+                items?: ReadonlyArray<{ id: string; ownerId?: string }>;
+                pagination?: unknown;
+            };
         };
-        const ids = listBody.data?.map((row) => row.id) ?? [];
+        const ids = listBody.data?.items?.map((row) => row.id) ?? [];
         expect(
             ids.includes(result.accommodationId as string),
             `protected list should include the new accommodation ${result.accommodationId}`

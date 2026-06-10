@@ -71,10 +71,21 @@ interface SignupResponse {
  * Signs up a new user via the public Better Auth endpoint and returns the
  * created user with an active session cookie.
  *
- * Better Auth issues a `__Secure-better-auth.session_token` (or unprefixed
- * during HTTP-only dev) cookie on signup; we capture it from the
- * `set-cookie` response header so callers can attach it to subsequent
- * requests.
+ * Flow:
+ * 1. POST `/api/auth/sign-up/email` to create the user account.
+ * 2. Force-verify the email via SQL so the sign-in step does not block on
+ *    the email-verification gate (Better Auth has requireEmailVerification=true).
+ * 3. POST `/api/auth/sign-in/email` to mint a real session cookie.
+ *
+ * Better Auth enforces CSRF protection via the `Origin` header on all
+ * state-changing auth endpoints. Direct `fetch()` calls (not from a real
+ * browser) do not send Origin automatically, so we must add it explicitly.
+ * The value must match a configured trustedOrigin — HOSPEDA_SITE_URL
+ * (`http://localhost:4321`) is always in the list for local dev.
+ *
+ * Note: `createUser()` callers that pass `verifyEmail: false` can safely
+ * skip the SQL force-verify step that happens inside this function —
+ * `forceVerifyEmail` used in those callers is idempotent.
  */
 export async function signupUser(
     options: {
@@ -84,27 +95,59 @@ export async function signupUser(
     } = {},
     config?: ApiHelperConfig
 ): Promise<CreatedUser> {
-    const { apiBaseUrl } = resolveBaseUrls(config);
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
     const email = options.email ?? randomEmail();
     const password = options.password ?? randomPassword();
     const name = options.name ?? 'E2E Test User';
 
-    const response = await fetch(`${apiBaseUrl}/api/auth/sign-up/email`, {
+    // Common headers required by Better Auth CSRF guard on state-changing
+    // auth endpoints. Direct fetch() calls never send Origin automatically.
+    const authHeaders = {
+        'content-type': 'application/json',
+        Origin: webBaseUrl
+    } as const;
+
+    // ── 1. Sign up ──────────────────────────────────────────────────────────
+    const signupResponse = await fetch(`${apiBaseUrl}/api/auth/sign-up/email`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: authHeaders,
         body: JSON.stringify({ email, password, name })
     });
-    if (!response.ok) {
+    if (!signupResponse.ok) {
         throw new Error(
-            `signupUser failed: ${response.status} ${response.statusText} — ${await response.text()}`
+            `signupUser: sign-up failed ${signupResponse.status} ${signupResponse.statusText} — ${await signupResponse.text()}`
         );
     }
-    const data = (await response.json()) as SignupResponse;
-    const sessionCookie = extractSessionCookie(response.headers.get('set-cookie'));
-    const userId = data.user?.id;
-    if (!userId || !sessionCookie) {
-        throw new Error('signupUser: response missing user id or session cookie');
+    const signupData = (await signupResponse.json()) as SignupResponse;
+    const userId = signupData.user?.id;
+    if (!userId) {
+        throw new Error('signupUser: sign-up response missing user id');
     }
+
+    // ── 2. Force-verify email via SQL ────────────────────────────────────────
+    // Better Auth has requireEmailVerification=true. Even in non-prod where
+    // the API auto-verifies the email asynchronously (fire-and-forget), the
+    // verification DB write races with the sign-in call below. Forcing it
+    // synchronously here eliminates the race and makes tests deterministic.
+    // The users table has `email_verified` (boolean) only — no _at column.
+    await execSQL('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
+
+    // ── 3. Sign in to get a real session cookie ──────────────────────────────
+    const signinResponse = await fetch(`${apiBaseUrl}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ email, password })
+    });
+    if (!signinResponse.ok) {
+        throw new Error(
+            `signupUser: sign-in failed ${signinResponse.status} ${signinResponse.statusText} — ${await signinResponse.text()}`
+        );
+    }
+    const sessionCookie = extractSessionCookie(signinResponse.headers.get('set-cookie'));
+    if (!sessionCookie) {
+        throw new Error('signupUser: sign-in response missing session cookie');
+    }
+
     return {
         id: userId,
         email,
@@ -120,15 +163,54 @@ export async function signupUser(
  * delivery flow itself.
  */
 export async function forceVerifyEmail(userId: string): Promise<void> {
-    await execSQL(
-        'UPDATE users SET email_verified_at = NOW(), email_verified = true WHERE id = $1',
-        [userId]
-    );
+    // The users table has `email_verified` (boolean) only — no _at column.
+    await execSQL('UPDATE users SET email_verified = true WHERE id = $1', [userId]);
+}
+
+/**
+ * Refreshes a user's session by signing in again with their credentials.
+ *
+ * Better Auth uses a cookie-based session cache (`better-auth.session_data`,
+ * Max-Age=300s). When the user's role is mutated in the DB after the initial
+ * sign-in (e.g. USER → HOST via `startHostOnboarding`), the existing session
+ * still reflects the old role until the cache expires or a new session is
+ * minted. Call this after any role-promotion to get a session cookie that
+ * reflects the new role immediately.
+ *
+ * @param user - The user whose session should be refreshed (needs email + password)
+ * @param config - Optional API config override
+ * @returns A fresh session cookie with the current role from DB
+ */
+export async function refreshSession(
+    user: Pick<CreatedUser, 'email' | 'password'>,
+    config?: ApiHelperConfig
+): Promise<string> {
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
+    const signinResponse = await fetch(`${apiBaseUrl}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', Origin: webBaseUrl },
+        body: JSON.stringify({ email: user.email, password: user.password })
+    });
+    if (!signinResponse.ok) {
+        throw new Error(
+            `refreshSession: sign-in failed ${signinResponse.status} — ${await signinResponse.text()}`
+        );
+    }
+    const sessionCookie = extractSessionCookie(signinResponse.headers.get('set-cookie'));
+    if (!sessionCookie) {
+        throw new Error('refreshSession: sign-in response missing session cookie');
+    }
+    return sessionCookie;
 }
 
 /**
  * Creates a USER, force-verifies email, and (optionally) promotes role.
  * The most common one-call test setup helper.
+ *
+ * When a role other than USER is requested, the role is set via SQL and
+ * a fresh sign-in is performed so the returned `sessionCookie` reflects
+ * the new role immediately (Better Auth caches session data for 300s;
+ * without a fresh sign-in the session would still see `role=USER`).
  */
 export async function createUser(
     options: {
@@ -143,7 +225,9 @@ export async function createUser(
     }
     if (options.role && options.role !== 'USER') {
         await setUserRole(user.id, options.role);
-        return { ...user, role: options.role };
+        // Refresh session so the cookie reflects the promoted role.
+        const freshCookie = await refreshSession(user, config);
+        return { ...user, role: options.role, sessionCookie: freshCookie };
     }
     return user;
 }
@@ -165,7 +249,10 @@ export async function promoteToHost(userId: string): Promise<void> {
 }
 
 interface MeResponse {
-    data?: { id: string; role?: string };
+    // The route factory wraps the handler return inside { data: ... }.
+    // The /me handler returns { actor: { id, role, ... }, isAuthenticated, ... }
+    // so the full envelope is: { success, data: { actor: { id, role }, isAuthenticated }, metadata }
+    data?: { actor?: { id: string; role?: string }; isAuthenticated?: boolean };
 }
 
 /**
@@ -176,14 +263,20 @@ export async function getMe(
     sessionCookie: string,
     config?: ApiHelperConfig
 ): Promise<{ readonly id: string; readonly role: string } | null> {
-    const { apiBaseUrl } = resolveBaseUrls(config);
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
     const response = await fetch(`${apiBaseUrl}/api/v1/public/auth/me`, {
-        headers: { cookie: sessionCookie }
+        headers: {
+            cookie: sessionCookie,
+            // Better Auth CSRF guard inspects the Origin header for session validation.
+            // Direct fetch() calls do not send Origin automatically.
+            Origin: webBaseUrl
+        }
     });
     if (!response.ok) return null;
     const data = (await response.json()) as MeResponse;
-    if (!data.data?.id || !data.data.role) return null;
-    return { id: data.data.id, role: data.data.role };
+    const actor = data.data?.actor;
+    if (!actor?.id || !actor.role) return null;
+    return { id: actor.id, role: actor.role };
 }
 
 interface OnboardingStartResponse {
@@ -198,6 +291,15 @@ interface OnboardingStartResponse {
  * Calls the host-onboarding endpoint (the same one driven by
  * /publicar/nueva on the web app). Used for HOST-01 setups and HOST-07
  * idempotency / republish tests.
+ *
+ * The API schema (AccommodationCreateDraftHttpSchema) expects:
+ *   - `type`: AccommodationTypeEnum value (APARTMENT, HOUSE, etc.) — uppercase.
+ *   - `destinationId`: UUID string.
+ *
+ * This helper accepts both `destinationId` and the legacy `cityDestinationId`
+ * alias (for backward compatibility with existing test callers) and maps both
+ * to the correct `destinationId` field in the JSON body. The `type` value is
+ * uppercased automatically so callers that pass `'house'` still work.
  */
 export async function startHostOnboarding(
     options: {
@@ -205,7 +307,10 @@ export async function startHostOnboarding(
         readonly name: string;
         readonly summary: string;
         readonly type: string;
-        readonly cityDestinationId: string;
+        /** Canonical field name matching AccommodationCreateDraftHttpSchema. */
+        readonly destinationId?: string;
+        /** @deprecated Use `destinationId` instead. Kept for backward compatibility. */
+        readonly cityDestinationId?: string;
     },
     config?: ApiHelperConfig
 ): Promise<{
@@ -213,18 +318,27 @@ export async function startHostOnboarding(
     readonly accommodationId: string | null;
     readonly accommodationSlug: string | null;
 }> {
-    const { apiBaseUrl } = resolveBaseUrls(config);
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
+    // Support legacy `cityDestinationId` callers — map to `destinationId`.
+    const destinationId = options.destinationId ?? options.cityDestinationId;
+    // The API enum requires uppercase (HOUSE, APARTMENT, etc.).
+    const accommodationType = options.type.toUpperCase();
     const response = await fetch(`${apiBaseUrl}/api/v1/protected/host-onboarding/start`, {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
+            // Better Auth CSRF guard inspects the Origin header on ALL requests —
+            // including session validation on protected routes. Direct fetch() calls
+            // do not send Origin automatically; we must set it explicitly so the
+            // auth middleware can reconstruct the session from the cookie.
+            Origin: webBaseUrl,
             cookie: options.sessionCookie
         },
         body: JSON.stringify({
             name: options.name,
             summary: options.summary,
-            type: options.type,
-            cityDestinationId: options.cityDestinationId
+            type: accommodationType,
+            destinationId
         })
     });
     if (!response.ok) {
@@ -286,9 +400,9 @@ export async function createAccommodation(options: {
              visibility, moderation_state, is_featured,
              created_at, updated_at
          ) VALUES (
-             $1, $2, $3, $4, $5,
-             $6, $7, $8::lifecycle_status,
-             'PUBLIC', 'APPROVED', false,
+             $1, $2, $3, $4, $5::accommodation_type_enum,
+             $6, $7, $8::lifecycle_status_enum,
+             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
              NOW(), NOW()
          ) RETURNING id`,
         [
@@ -296,7 +410,7 @@ export async function createAccommodation(options: {
             'E2E Test Accommodation',
             'E2E summary',
             'E2E test accommodation for SPEC-092 fixtures.',
-            'house',
+            'HOUSE',
             options.ownerId,
             destinationId,
             lifecycleState
@@ -327,24 +441,43 @@ export async function createSubscription(options: {
     readonly status: 'trialing' | 'active' | 'canceled' | 'expired';
     readonly periodEnd?: Date;
 }): Promise<{ readonly customerId: string; readonly subscriptionId: string }> {
-    const customerRows = await execSQL<{ id: string }>(
-        `INSERT INTO billing_customers (external_id, segment, created_at, updated_at)
-         VALUES ($1, 'host', NOW(), NOW())
-         ON CONFLICT (external_id) DO UPDATE SET updated_at = NOW()
-         RETURNING id`,
+    // billing_customers.external_id has no UNIQUE constraint — only a regular btree
+    // index. Use SELECT-or-INSERT pattern instead of ON CONFLICT.
+    // billing_customers also requires `email` (NOT NULL).
+    // Filter by livemode=false to match the E2E sandbox environment.
+    const existingCustomer = await execSQL<{ id: string }>(
+        'SELECT id FROM billing_customers WHERE external_id = $1 AND livemode = false LIMIT 1',
         [options.userId]
     );
-    const customerId = customerRows[0]?.id;
-    if (!customerId) throw new Error('createSubscription: customer upsert returned no id');
+    let customerId = existingCustomer[0]?.id;
+    if (!customerId) {
+        // Derive a placeholder email from the userId for seed/test rows.
+        const placeholderEmail = `e2e-billing-${options.userId}@hospeda-test.local`;
+        // livemode=false: the E2E environment runs with HOSPEDA_MERCADO_PAGO_SANDBOX=true,
+        // so QZPay's livemode=false. The Drizzle adapter filters by livemode, so rows
+        // inserted with livemode=true (the column default) are invisible to the adapter.
+        const insertedCustomer = await execSQL<{ id: string }>(
+            `INSERT INTO billing_customers (external_id, email, segment, livemode, created_at, updated_at)
+             VALUES ($1, $2, 'host', false, NOW(), NOW())
+             RETURNING id`,
+            [options.userId, placeholderEmail]
+        );
+        customerId = insertedCustomer[0]?.id;
+        if (!customerId) throw new Error('createSubscription: customer insert returned no id');
+    }
 
     const periodEnd = options.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const periodStart = new Date(); // billing_subscriptions.current_period_start is NOT NULL
+    // livemode=false: matches the E2E environment's sandbox livemode (see customer insert above).
     const subRows = await execSQL<{ id: string }>(
         `INSERT INTO billing_subscriptions (
-             customer_id, plan_id, status, current_period_end,
-             created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, NOW(), NOW())
+             customer_id, plan_id, status,
+             billing_interval, interval_count,
+             current_period_start, current_period_end,
+             livemode, created_at, updated_at
+         ) VALUES ($1, $2, $3, 'month', 1, $4, $5, false, NOW(), NOW())
          RETURNING id`,
-        [customerId, options.planId, options.status, periodEnd]
+        [customerId, options.planId, options.status, periodStart, periodEnd]
     );
     const subscriptionId = subRows[0]?.id;
     if (!subscriptionId) throw new Error('createSubscription: subscription insert returned no id');
@@ -382,11 +515,36 @@ export async function createConversation(options: {
 
 function extractSessionCookie(setCookieHeader: string | null): string | null {
     if (!setCookieHeader) return null;
-    // Better Auth may emit multiple cookies (session, csrf). We forward all
-    // of them as a single Cookie header for subsequent requests.
+    // Better Auth emits TWO cookies: `better-auth.session_token` and
+    // `better-auth.session_data`. BOTH must be forwarded — sending only
+    // session_token is not enough for the session to be recognized.
+    //
+    // Node.js fetch returns all Set-Cookie headers joined by `, `. We split
+    // on `, ` boundaries before a new cookie name. Cookie names follow the
+    // pattern `[word chars].[word chars]` (e.g. `better-auth.session_data`),
+    // so the lookahead MUST include `.` in the character class — without it
+    // the regex fails to split at `better-auth.session_data=` and only the
+    // first cookie is extracted, causing 401 on all subsequent requests.
+    //
+    // Better Auth URL-encodes cookie values in the Set-Cookie header
+    // (e.g. `%3D` for `=`). The Cookie request header accepts the decoded
+    // form just fine, so we decode for readability.
     const cookies = setCookieHeader
-        .split(/,(?=\s*[A-Za-z0-9_-]+=)/)
-        .map((entry) => entry.split(';')[0]?.trim())
+        .split(/,(?=\s*[A-Za-z0-9_.\-]+=)/)
+        .map((entry) => {
+            const nameValue = entry.split(';')[0]?.trim();
+            if (!nameValue) return null;
+            const eqIdx = nameValue.indexOf('=');
+            if (eqIdx === -1) return nameValue;
+            const name = nameValue.slice(0, eqIdx);
+            const rawValue = nameValue.slice(eqIdx + 1);
+            try {
+                return `${name}=${decodeURIComponent(rawValue)}`;
+            } catch {
+                // Malformed percent-encoding — return raw value as-is.
+                return nameValue;
+            }
+        })
         .filter((entry): entry is string => Boolean(entry));
     return cookies.length > 0 ? cookies.join('; ') : null;
 }

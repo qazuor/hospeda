@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import * as publicApi from '../src/index.js';
 
 describe('SPEC-195 public moderation API compatibility', () => {
-    it('preserves the frozen API and adds only the reject threshold export', async () => {
+    it('preserves the frozen API plus the reject threshold and cache-invalidation exports', async () => {
         expect(Object.keys(publicApi).sort()).toEqual([
             'MODERATION_PENDING_THRESHOLD',
             'MODERATION_REJECT_THRESHOLD',
+            'invalidateModerationCache',
+            'invalidateModerationCacheByTermPattern',
             'moderateText',
             'moderateTextInputSchema'
         ]);

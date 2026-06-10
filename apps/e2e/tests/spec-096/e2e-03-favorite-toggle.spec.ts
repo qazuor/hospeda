@@ -35,7 +35,12 @@ interface BookmarkResponse {
 }
 
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<{ id: string; entityId: string }>;
+    // GET /api/v1/protected/user-bookmarks returns the handler result
+    // { bookmarks: [...], total } wrapped by the route factory into { data: { bookmarks, total } }.
+    readonly data?: {
+        readonly bookmarks?: ReadonlyArray<{ id: string; entityId: string }>;
+        readonly total?: number;
+    };
 }
 
 test.describe('E2E-3: favorite toggle round-trip @p0 @guest @cross-app', () => {
@@ -86,7 +91,7 @@ test.describe('E2E-3: favorite toggle round-trip @p0 @guest @cross-app', () => {
         });
         expect(listOnRes.ok()).toBe(true);
         const listOnBody = (await listOnRes.json()) as BookmarkListResponse;
-        const ids = listOnBody.data?.map((row) => row.entityId) ?? [];
+        const ids = listOnBody.data?.bookmarks?.map((row) => row.entityId) ?? [];
         expect(ids).toContain(accommodationId);
 
         // ── 3. Toggle off (delete via same POST) ──────────────────────────
@@ -106,7 +111,7 @@ test.describe('E2E-3: favorite toggle round-trip @p0 @guest @cross-app', () => {
         });
         if (listOffRes.ok()) {
             const listOffBody = (await listOffRes.json()) as BookmarkListResponse;
-            const idsAfter = listOffBody.data?.map((row) => row.entityId) ?? [];
+            const idsAfter = listOffBody.data?.bookmarks?.map((row) => row.entityId) ?? [];
             expect(idsAfter).not.toContain(accommodationId);
         }
     });

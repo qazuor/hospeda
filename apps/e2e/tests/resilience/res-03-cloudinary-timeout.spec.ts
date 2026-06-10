@@ -63,7 +63,7 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {

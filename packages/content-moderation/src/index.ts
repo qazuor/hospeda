@@ -39,6 +39,21 @@ export { moderateTextInputSchema } from './types.js';
 export { moderateText } from './moderate-text.js';
 
 /**
+ * Cache-invalidation hooks for consumers that manage the editable moderation
+ * term list (e.g. service-core's term admin service). These let a term
+ * create/update/delete drop the engine's in-memory cache so the next
+ * `moderateText` call re-reads the updated terms.
+ *
+ * Exposed on the curated public API (instead of forcing a deep
+ * `@repo/content-moderation/engine/*` import) so the package keeps a single,
+ * Node-resolvable entry point — the engine internals stay private.
+ */
+export {
+    invalidateModerationCache,
+    invalidateModerationCacheByTermPattern
+} from './engine/cache.js';
+
+/**
  * Public moderation threshold constant frozen by SPEC-166.
  *
  * Consumers use this value to map a moderation score to an initial
