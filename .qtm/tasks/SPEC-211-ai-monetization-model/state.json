@@ -47,39 +47,39 @@
             "id": "T-002",
             "title": "Set concrete USD cost ceilings in ai_settings config",
             "description": "In `packages/schemas/src/entities/ai/ai-settings.schema.ts` (or the ai_settings default/config location used by the API), set the concrete ceiling values from §6.3: `globalMonthlyMicroUsd = 100_000_000`; `perFeatureMonthlyMicroUsd = { chat: 45_000_000, search: 30_000_000, text_improve: 15_000_000, support: 10_000_000 }`. Verify the existing `AiCostCeilingsSchema` accepts these exact integer values. Test: unit test in `packages/schemas/test/` asserting exact ceiling values parse without error and the integers are in µUSD units (AC-0.2).",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Locate where ai_settings defaults / initial config live in the codebase",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set globalMonthlyMicroUsd = 100_000_000",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Set all four perFeatureMonthlyMicroUsd entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write config smoke test asserting exact ceiling values (AC-0.2)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "phase-0", "cost-control", "ai-settings"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": "2026-06-10T01:50:00.000Z",
-                "completed": null
+                "completed": "2026-06-10T02:00:00.000Z"
             }
         },
         {
@@ -679,8 +679,8 @@
     "summary": {
         "total": 17,
         "pending": 11,
-        "inProgress": 1,
-        "completed": 5,
+        "inProgress": 0,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.2
     }

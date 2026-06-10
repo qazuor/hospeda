@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 5/17 tasks (29%) — setup phase: T-002 in-progress (ceiling wiring pending owner decision)
+## Progress: 6/17 tasks (35%) — setup phase COMPLETE (T-001..T-006); next: core phase (T-007..T-010)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -15,7 +15,7 @@
   - Blocked by: none
   - Blocks: T-003, T-008, T-011
 
-- [ ] **T-002** (complexity: 2) - Set concrete USD cost ceilings in ai_settings config
+- [x] **T-002** (complexity: 2) - Set concrete USD cost ceilings in ai_settings config (+ runtime fallback + seed)
   - Set globalMonthlyMicroUsd + perFeatureMonthlyMicroUsd in AiCostCeilingsSchema config
   - Blocked by: none
   - Blocks: T-012
