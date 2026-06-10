@@ -48,7 +48,6 @@ import {
     SearchIntentOutputSchema
 } from '@repo/schemas';
 import type { Context } from 'hono';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
@@ -180,13 +179,35 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
  * Converts a free-form natural-language accommodation search query into
  * structured filter parameters via `aiService.generateObject`.
  *
- * Middleware order (CRITICAL — wrong order = 503 on every request):
+ * ## Governance model (SPEC-211 Phase 3 — §7.7)
  *
- *   auth (injected by factory) → entitlement → rateLimit-perUser → rateLimit-perIP → quota
+ * `ai_search` is a **platform feature**, not a per-plan billing entitlement.
+ * The route is:
  *
- * `entitlementMiddleware` MUST run before `createAiQuotaMiddleware` — the
- * quota middleware reads `c.get('userEntitlements')` which is populated by
- * `entitlementMiddleware`. Reordering causes 503 on every request.
+ * - Authenticated-only (handled by the factory's `protectedAuthMiddleware`).
+ * - Rate-limited by `createAiRateLimitMiddlewares('search')` (per-user + per-IP
+ *   burst guard).
+ * - Cost-backstopped by the `ai_settings` per-feature USD ceiling for
+ *   `feature: 'search'` (`perFeatureMonthlyMicroUsd.search` = 30_000_000 µUSD /
+ *   USD 30) enforced by the engine ceiling checker
+ *   (`packages/ai-core/src/usage/ceiling.ts`). The global ceiling
+ *   (100_000_000 µUSD / USD 100) also applies. Both run inside
+ *   `createConfiguredAiService()` — NOT as a middleware.
+ * - Metered via `recordAiUsage` (for cost visibility), also inside the engine.
+ *
+ * `createAiQuotaMiddleware('search')` is intentionally absent: there is no
+ * per-plan `AI_SEARCH` entitlement gate or `MAX_AI_SEARCH_PER_MONTH` quota
+ * gate on this route (SPEC-211 §7.7). `AI_SEARCH` and `MAX_AI_SEARCH_PER_MONTH`
+ * are retained in their respective enums (additive-only enum policy) but no
+ * longer granted by any plan.
+ *
+ * Middleware order:
+ *
+ *   auth (injected by factory) → entitlement (loads context) → rateLimit-perUser → rateLimit-perIP
+ *
+ * `entitlementMiddleware` runs first so billing context is always populated for
+ * any downstream middleware or handler that may inspect it. It does NOT gate
+ * `AI_SEARCH` — gating is done solely by auth + rate-limit.
  */
 export const searchIntentRoute = createProtectedRoute({
     method: 'post',
@@ -194,7 +215,8 @@ export const searchIntentRoute = createProtectedRoute({
     summary: 'Extract search intent from natural language',
     description:
         'Converts a free-form natural-language accommodation search query into structured filter parameters. ' +
-        'Gated by the `ai_search` billing entitlement and per-plan monthly quota.',
+        'Platform-governed: requires authentication and is subject to per-user/IP rate limits and a USD cost ceiling. ' +
+        'Not gated by a billing entitlement or per-plan monthly quota (SPEC-211 §7.7).',
     tags: ['AI Search'],
     requestBody: AiSearchIntentRequestSchema,
     responseSchema: AiSearchIntentResponseDataSchema,
@@ -204,13 +226,16 @@ export const searchIntentRoute = createProtectedRoute({
     successStatusCode: 200,
     options: {
         middlewares: [
-            // Layer 0: populate userEntitlements MUST be first — quota middleware reads it.
+            // Layer 0: load billing context into Hono context vars (entitlements, limits,
+            // billingLoadFailed). Does NOT gate AI_SEARCH — search is platform-governed.
+            // Runs first so downstream middleware / handler always has a populated context.
             entitlementMiddleware(),
             // Layer 1: burst control (perUser + perIP sliding-window rate limits).
-            ...createAiRateLimitMiddlewares('search'),
-            // Layer 2: entitlement gate (403 ENTITLEMENT_REQUIRED) + monthly quota
-            // (403 LIMIT_REACHED) + billing-outage guard (503 SERVICE_UNAVAILABLE).
-            createAiQuotaMiddleware('search')
+            // These are the only access guards for this platform feature.
+            ...createAiRateLimitMiddlewares('search')
+            // NOTE: createAiQuotaMiddleware('search') is intentionally omitted.
+            // ai_search is a free platform feature (SPEC-211 Phase 3 §7.7). The USD
+            // cost ceiling and metering are enforced inside the AI engine, not here.
         ]
     },
     handler: async (

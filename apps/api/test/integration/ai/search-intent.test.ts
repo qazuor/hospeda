@@ -1,20 +1,28 @@
 /**
  * Integration tests for `POST /api/v1/protected/ai/search-intent` (SPEC-199 T-012).
  *
+ * Updated by SPEC-211 Phase 3 (§7.7 / T-014): `ai_search` is now a free,
+ * authenticated-only platform feature. `createAiQuotaMiddleware('search')` has
+ * been removed from the middleware chain. The route is governed by auth +
+ * per-user/IP rate limits + a USD cost ceiling enforced by the engine.
+ *
  * Mounts the real `searchIntentRoute` (from `search-intent.ts`) via a Hono
  * sub-app so the full middleware chain runs:
  *
  *   actorMiddleware → protectedAuthMiddleware (factory)
- *     → entitlementMiddleware (STUBBED — see vi.mock below)
- *     → createAiRateLimitMiddlewares (REAL)
- *     → createAiQuotaMiddleware (REAL)
+ *     → entitlementMiddleware (STUBBED — loads context, no AI_SEARCH gate)
+ *     → createAiRateLimitMiddlewares (REAL — per-user + per-IP burst guard)
  *     → handler (REAL — calls createConfiguredAiService + getDb for slug resolution)
+ *
+ * Note: `createAiQuotaMiddleware('search')` is no longer in the chain.
  *
  * ## External seams stubbed
  *
  * - `entitlementMiddleware`: injects `userEntitlements`, `userLimits`, and
  *   `billingLoadFailed` directly into the Hono context. Mirrors the established
  *   pattern in `test/integration/ai/text-improve.test.ts` (SPEC-198 T-006).
+ *   Post-SPEC-211: entitlement contents do NOT gate this route — any authenticated
+ *   user can use search regardless of their billing plan.
  *
  * - `@repo/ai-core`: stubbed with `AiEngineError`, `AiFeatureNotConfiguredError`,
  *   `getMonthlyCallCount`, `recordAiUsage`, `checkCostCeiling`, and
@@ -386,8 +394,12 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
         };
         getMonthlyCallCountReturn.current = 0;
         currentBillingLoadFailedForTest.current = false;
-        currentEntitlementsForTest.current = new Set([EntitlementKey.AI_SEARCH]);
-        currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+        // SPEC-211 §7.7: ai_search is a free platform feature — no AI entitlement
+        // is required. Default to an empty entitlement set (simulates a tourist-free
+        // user with no billing plan grants) to verify the route is open to all
+        // authenticated users regardless of their plan.
+        currentEntitlementsForTest.current = new Set<EntitlementKey>();
+        currentLimitsForTest.current = new Map<LimitKey, number>();
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
     });
@@ -486,12 +498,21 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
     });
 
     // =========================================================================
-    // TC-4: Authenticated WITHOUT ai_search entitlement → 403 ENTITLEMENT_REQUIRED.
-    //       §8.2 test #4.
+    // TC-4 (AC-3.2 — SPEC-211 §7.7): Authenticated WITHOUT any AI entitlements
+    // (e.g. tourist-free user, no billing plan grants) → search SUCCEEDS (200).
+    //
+    // Before SPEC-211: this test asserted 403 ENTITLEMENT_REQUIRED because
+    // `createAiQuotaMiddleware('search')` checked the AI_SEARCH entitlement.
+    //
+    // After SPEC-211 Phase 3: `ai_search` is a free platform feature. No billing
+    // entitlement is required. Any authenticated user can use search regardless of
+    // their plan. The quota middleware has been removed from the chain.
     // =========================================================================
 
-    describe('TC-4 — 403 ENTITLEMENT_REQUIRED', () => {
-        it('returns 403 ENTITLEMENT_REQUIRED when the user lacks ai_search entitlement', async () => {
+    describe('TC-4 (AC-3.2) — 200 success for authenticated user with NO AI entitlements', () => {
+        it('returns 200 when the user has no AI entitlements (tourist-free, no plan grants)', async () => {
+            // Simulate a tourist-free user: empty entitlements, empty limits.
+            // This is the default in beforeEach, set explicitly for clarity.
             currentEntitlementsForTest.current = new Set<EntitlementKey>();
             currentLimitsForTest.current = new Map<LimitKey, number>();
 
@@ -501,12 +522,36 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
                 body: makeValidBody()
             });
 
-            expect(res.status).toBe(403);
+            // Search must succeed — no entitlement gate exists on this route.
+            expect(res.status).toBe(200);
 
             const body = (await res.json()) as SearchIntentResponse;
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(generateObjectCalls).toHaveLength(0);
+            expect(body.success).toBe(true);
+            expect(body.data).toBeDefined();
+            expect(typeof body.data?.confidence).toBe('number');
+            expect(body.data?.mappedParams).toBeDefined();
+
+            // generateObject must have been called — the route reached the handler.
+            expect(generateObjectCalls).toHaveLength(1);
+        });
+
+        it('returns 200 when the user has AI_CHAT entitlement but NOT AI_SEARCH (role:HOST)', async () => {
+            // HOST user with chat but no search entitlement.
+            currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ role: RoleEnum.HOST }),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const body = (await res.json()) as SearchIntentResponse;
+            expect(body.success).toBe(true);
+            // The handler reached generateObject despite no AI_SEARCH entitlement.
+            expect(generateObjectCalls).toHaveLength(1);
         });
     });
 
@@ -579,14 +624,26 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
     });
 
     // =========================================================================
-    // TC-8: billingLoadFailed: true in context → 503 SERVICE_UNAVAILABLE.
-    //       §8.2 test #8.
+    // TC-8 (updated — SPEC-211 §7.7): billingLoadFailed: true in context.
+    //
+    // Before SPEC-211: `createAiQuotaMiddleware('search')` short-circuited with
+    // 503 SERVICE_UNAVAILABLE when billingLoadFailed was true, because the quota
+    // middleware needed to verify the AI_SEARCH entitlement against the billing
+    // context.
+    //
+    // After SPEC-211 Phase 3: `createAiQuotaMiddleware('search')` is gone. The
+    // route is platform-governed — it does NOT consult the billing entitlement
+    // context to gate access. A billing outage is therefore transparent to the
+    // search route: `entitlementMiddleware` sets `billingLoadFailed=true` and
+    // calls `next()` (no 503 from it), the rate-limit middleware is unaffected,
+    // and the handler runs normally.
+    //
+    // The route still returns 200 when billing fails (fail-open for a
+    // platform-governed, non-billing-gated feature).
     // =========================================================================
 
-    describe('TC-8 — 503 SERVICE_UNAVAILABLE billing outage', () => {
-        it('returns 503 SERVICE_UNAVAILABLE when billingLoadFailed is true', async () => {
-            // Billing load failure overrides entitlements — the quota middleware
-            // short-circuits before reaching the handler.
+    describe('TC-8 (updated) — 200 when billingLoadFailed is true (platform feature is billing-transparent)', () => {
+        it('returns 200 even when billingLoadFailed is true (no billing gate on search route)', async () => {
             currentBillingLoadFailedForTest.current = true;
 
             const res = await app.request(ENDPOINT, {
@@ -595,12 +652,14 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
                 body: makeValidBody()
             });
 
-            expect(res.status).toBe(503);
+            // The route is platform-governed — a billing outage does not block search.
+            expect(res.status).toBe(200);
 
             const body = (await res.json()) as SearchIntentResponse;
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('SERVICE_UNAVAILABLE');
-            expect(generateObjectCalls).toHaveLength(0);
+            expect(body.success).toBe(true);
+            expect(body.data).toBeDefined();
+            // generateObject was called — the handler ran despite billingLoadFailed.
+            expect(generateObjectCalls).toHaveLength(1);
         });
     });
 
@@ -748,6 +807,66 @@ describe('POST /api/v1/protected/ai/search-intent — integration (SPEC-199 T-01
             const featuresList = body.data?.mappedParams?.features;
             expect(Array.isArray(featuresList)).toBe(true);
             expect((featuresList as string[]).includes(RIVER_FRONT_FEATURE_UUID)).toBe(true);
+        });
+    });
+
+    // =========================================================================
+    // AC-3.3 (SPEC-211 §7.7) — USD ceiling enforcement gap note.
+    //
+    // When the per-feature USD ceiling for `search` is exceeded, the engine's
+    // `checkCostCeiling` throws `AiCeilingHitError`. The route's `catch` block
+    // maps it via `mapAiEngineErrorToHttpStatus` — which maps `AiEngineError`
+    // subclasses by their `engineCode`. `AiCeilingHitError` has
+    // `engineCode = 'CEILING_HIT'` and is mapped to HTTP 503.
+    //
+    // Gap: `AiCeilingHitError` is thrown INSIDE `createConfiguredAiService()` /
+    // the engine, which is stubbed in this test file. The stub's `checkCostCeiling`
+    // returns `{ allowed: true }` unconditionally and the stub `generateObject`
+    // does NOT invoke the real ceiling check. Driving a ceiling-hit requires
+    // either:
+    //   (a) a real DB + seeded ai_usage rows totalling >= the ceiling, or
+    //   (b) a more granular stub of the engine internals that makes `generateObject`
+    //       throw `AiCeilingHitError` directly.
+    //
+    // Option (b) is feasible here — `AiCeilingHitError extends AiEngineError`, and
+    // `nextGenerateObjectError` already supports arbitrary throws via the stub.
+    // The test below covers the ceiling-hit → 503 path using that mechanism.
+    //
+    // Note: this test validates the CEILING_HIT error mapping path (which existed
+    // before SPEC-211). The ceiling itself is enforced inside the engine, not as a
+    // middleware. This test confirms the route correctly surfaces ceiling errors.
+    // =========================================================================
+
+    describe('AC-3.3 — 503 CEILING_HIT when the USD cost ceiling is exceeded', () => {
+        it('returns 503 CEILING_HIT when the AI engine throws AiCeilingHitError (ceiling exceeded)', async () => {
+            // Simulate the engine throwing AiCeilingHitError (engineCode: 'CEILING_HIT').
+            // This is the error thrown by checkCostCeiling inside createConfiguredAiService
+            // when accumulated spend >= the per-feature or global USD ceiling.
+            const { AiEngineError } = await import('@repo/ai-core');
+            nextGenerateObjectError.current = new AiEngineError(
+                'CEILING_HIT',
+                'Monthly cost ceiling for feature "search" reached'
+            );
+
+            // User has NO AI entitlements (tourist-free) — ceiling check is independent
+            // of billing entitlements. The route should still reach the engine and
+            // surface the ceiling error.
+            currentEntitlementsForTest.current = new Set<EntitlementKey>();
+            currentLimitsForTest.current = new Map<LimitKey, number>();
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(503);
+
+            const body = (await res.json()) as SearchIntentResponse;
+            expect(body.success).toBe(false);
+            expect(body.error?.code).toBe('CEILING_HIT');
+            // The route reached the handler (generateObject was invoked before throwing).
+            expect(generateObjectCalls).toHaveLength(1);
         });
     });
 });
