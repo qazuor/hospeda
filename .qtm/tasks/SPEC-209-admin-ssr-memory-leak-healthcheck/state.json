@@ -43,22 +43,22 @@
             "id": "T-002",
             "title": "Implement /healthz server route returning 200 without React SSR",
             "description": "Implement the cheap healthcheck endpoint in apps/admin/src/routes/healthz.ts using the mechanism confirmed in T-001:\n- Route MUST handle GET /healthz and return HTTP 200 with body { \"status\": \"ok\" } and Content-Type: application/json\n- Route MUST NOT invoke the React root component, construct a QueryClient, or construct a QZPayBilling instance\n- If using TanStack Start API route: export a Route using createServerFn or the equivalent non-SSR handler; wrap in try/catch and return 500 if anything throws unexpectedly\n- If using Nitro route fallback: place handler in apps/admin/src/routes/api/healthz.ts or equivalent Nitro-recognized path, export default event handler returning the JSON response\n- Add a JSDoc block explaining the route purpose and the AC it satisfies (AC-1.1, AC-1.2)\n- The endpoint must respond in < 50 ms (no DB calls, no external calls)\n\nFiles affected:\n- apps/admin/src/routes/healthz.ts (or healthz.tsx)\n\nTest requirements:\n- Unit test in apps/admin/test/lib/healthz.test.ts:\n  - 'GET /healthz returns 200 and {status: ok} body'\n  - 'GET /healthz does not construct QZPayBilling' (mock createQZPayBilling, assert not called)\n  - Test the route handler function in isolation (no need for a full server; call the exported handler directly or via supertest if available)\n- These tests serve as the regression baseline for AC-1.1 and AC-1.2",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-005"],
             "subtasks": [
                 {
                     "title": "Implement route handler with JSON 200 response",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm no SSR / no QZPayBilling construction path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add JSDoc + AC references",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write unit test in apps/admin/test/lib/healthz.test.ts",
@@ -74,8 +74,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:30:38.000Z",
+                "completed": "2026-06-10T02:15:00.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     }
