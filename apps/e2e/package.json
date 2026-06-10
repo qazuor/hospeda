@@ -28,7 +28,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/seed": "workspace:*",
         "@repo/utils": "workspace:*",
-        "drizzle-orm": "^0.44.7",
+        "drizzle-orm": "^0.45.2",
         "pg": "^8.16.3",
         "zod": "^4.0.8"
     },
